@@ -37,13 +37,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 
 public class Issue extends Entity implements Serializable, Cloneable
@@ -563,64 +560,64 @@ public class Issue extends Entity implements Serializable, Cloneable
         _properties.put(name, value);
     }
 
-    public Map<String, String> getRecentTimestampMap(User user)
+    public IssueEvent getMostRecentEvent(User user)
     {
-        List<Map<String, String>> arr = getOrderedTimestampMapArray(user);
-        return arr.size() > 0 ? arr.get(0) : null;
+        ArrayList<IssueEvent> arr = getOrderedEventArray(user);
+        return !arr.isEmpty() ? arr.get(0) : null;
     }
 
-    public List<Map<String, String>> getOrderedTimestampMapArray(User user)
+    public ArrayList<IssueEvent> getOrderedEventArray(User user)
     {
 
-        Comparator<Map<String, String>> mapComparator = (m1, m2) -> {
-            Date d1 = new Date(DateUtil.parseDate(getContainerFromId(), m1.get("date")));
-            Date d2 = new Date(DateUtil.parseDate(getContainerFromId(), m2.get("date")));
-            return d1.compareTo(d2);
-        };
-
-        List<Map<String, String>> activityList = new LinkedList<>();
+        final String DATE_PATTERN = "EEE, d MMM yyyy HH:mm:ss z";
+        ArrayList<IssueEvent> activityList = new ArrayList<>();
 
         if (getCreated() != null)
         {
-            Map<String, String> createdMap = new HashMap<>();
-            createdMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getCreated()));
-            createdMap.put("fullDateTime", DateUtil.formatDateTime(getCreated(), "EEE, d MMM yyyy HH:mm:ss"));
-            createdMap.put("event", "Created");
-            createdMap.put("user", getCreatedByName(user));
-            activityList.add(createdMap);
+            activityList.add(new IssueEvent(
+                    DateUtil.formatDateTime(getContainerFromId(), getCreated()),
+                    DateUtil.formatDateTime(getCreated(), DATE_PATTERN),
+                    getCreated().getTime(),
+                    "Created",
+                    getCreatedByName(user)
+            ));
         }
 
         if (getModified() != null)
         {
-            Map<String, String> modifiedMap = new HashMap<>();
-            modifiedMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getModified()));
-            modifiedMap.put("fullDateTime", DateUtil.formatDateTime(getModified(), "EEE, d MMM yyyy HH:mm:ss"));
-            modifiedMap.put("event", "Modified");
-            modifiedMap.put("user", getModifiedByName(user));
-            activityList.add(modifiedMap);
+            activityList.add(new IssueEvent(
+                    DateUtil.formatDateTime(getContainerFromId(), getModified()),
+                    DateUtil.formatDateTime(getModified(), DATE_PATTERN),
+                    getModified().getTime(),
+                    "Modified",
+                    getModifiedByName(user)
+            ));
         }
 
         if (getResolved() != null)
         {
-            Map<String, String> resolvedMap = new HashMap<>();
-            resolvedMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getResolved()));
-            resolvedMap.put("fullDateTime", DateUtil.formatDateTime(getResolved(), "EEE, d MMM yyyy HH:mm:ss"));
-            resolvedMap.put("event", "Resolved");
-            resolvedMap.put("user", getResolvedByName(user));
-            activityList.add(resolvedMap);
+            activityList.add(new IssueEvent(
+                    DateUtil.formatDateTime(getContainerFromId(), getResolved()),
+                    DateUtil.formatDateTime(getResolved(), DATE_PATTERN),
+                    getResolved().getTime(),
+                    "Resolved",
+                    getResolvedByName(user)
+            ));
         }
 
         if (getClosed() != null)
         {
-            Map<String, String> closedMap = new HashMap<>();
-            closedMap.put("date", DateUtil.formatDateTime(getContainerFromId(), getClosed()));
-            closedMap.put("fullDateTime", DateUtil.formatDateTime(getClosed(), "EEE, d MMM yyyy HH:mm:ss"));
-            closedMap.put("event", "Closed");
-            closedMap.put("user", getClosedByName(user));
-            activityList.add(closedMap);
+            activityList.add(new IssueEvent(
+                    DateUtil.formatDateTime(getContainerFromId(), getClosed()),
+                    DateUtil.formatDateTime(getClosed(), DATE_PATTERN),
+                    getClosed().getTime(),
+                    "Closed",
+                    getClosedByName(user)
+            ));
         }
 
-        return activityList.stream().sorted(mapComparator.reversed()).collect(Collectors.toList());
+        activityList.sort(Comparator.comparing(IssueEvent::getMillis).reversed());
+        return activityList;
     }
 
     @Override
@@ -723,6 +720,59 @@ public class Issue extends Entity implements Serializable, Cloneable
             if (issue != null)
                 return issue.getContainerId();
             return super.getContainerId();
+        }
+    }
+
+    public class IssueEvent implements Comparable<IssueEvent>
+    {
+        private String containerFormattedDate;
+        private String fullTimestamp;
+        private Long millis;
+        private String name;
+        private String user;
+
+        public IssueEvent(String containerFormattedDate, String fullTimestamp, Long millis, String name, String user)
+        {
+            this.containerFormattedDate = containerFormattedDate;
+            this.fullTimestamp = fullTimestamp;
+            this.millis = millis;
+            this.name = name;
+            this.user = user;
+        }
+
+        public String getContainerFormattedDate()
+        {
+            return containerFormattedDate;
+        }
+
+        public String getFullTimestamp()
+        {
+            return fullTimestamp;
+        }
+
+        public Long getMillis()
+        {
+            return this.millis;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public String getUser()
+        {
+            return user;
+        }
+
+        public int compareTo(@NotNull IssueEvent other)
+        {
+            return this.millis.compareTo(other.millis);
+        }
+
+        public String toString()
+        {
+            return getName() + ": " + getContainerFormattedDate() + " by " + getUser();
         }
     }
 }

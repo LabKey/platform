@@ -388,7 +388,7 @@ else
     <div class="row">
         <div class="col-sm-8">
             <div class="form-group">
-                <label for="title" class="control-label col-md-1" style="padding-right: 5px;">Title</label>
+                <label for="title" class="control-label col-md-1" style="padding-right: 5px;">Title *</label>
                 <div class="col-md-11">
                     <input class="form-control" name="title" id="title" value="<%=h(issue.getTitle() == null ? "" : issue.getTitle())%>" placeholder="<%=h(placeHolderString)%>" tabindex="1">
                 </div>
@@ -406,13 +406,13 @@ else
             {%>
                 <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>
             <%}
-                Map<String, String> m = issue.getRecentTimestampMap(user);
+                Issue.IssueEvent m = issue.getMostRecentEvent(user);
                 String lastUpdatedStr = "";
                 String lastUpdatedTitleStr = "";
                 if (null != m)
                 {
-                    lastUpdatedStr = m.get("event") + ": " + m.get("date") + " by " + m.get("user");
-                    lastUpdatedTitleStr = m.get("fullDateTime");
+                    lastUpdatedStr = m.toString();
+                    lastUpdatedTitleStr = m.getFullTimestamp();
                 }
             %>
             <div style="margin: 10px 0;">
@@ -424,14 +424,14 @@ else
 
                 <div id="allTimeStamps" style="display: none;">
                     <%
-                        List<Map<String, String>> mapList = issue.getOrderedTimestampMapArray(user);
+                       ArrayList<Issue.IssueEvent> eventArray = issue.getOrderedEventArray(user);
 
-                        for (int j = 1; j < mapList.size(); j++)
+                        for (int j = 1; j < eventArray.size(); j++)
                         {
-                            Map<String, String> s = mapList.get(j);
-                            String stampString = s.get("event") + ": " + s.get("date") + " by " + s.get("user");
+                            Issue.IssueEvent e = eventArray.get(j);
+                            String stampString = e.toString();
                     %>
-                    <div title="<%=h(s.get("fullDateTime"))%>"><%=h(stampString)%></div>
+                    <div title="<%=h(e.getFullTimestamp())%>"><%=h(stampString)%></div>
                     <%
                         }
                     %>
@@ -533,11 +533,13 @@ else
     <%
             }
     }
-    %>
-    <br>
+    if (propertyArr.size() % 3 != 0)
+    {%>
+       </div>
+    <%}%>
     <div class="form-row">
         <div class="form-group">
-            <label class="control-label">
+            <label for="commentArea" class="control-label">
                 Comment
             </label>
             <div class="col-sm-12">

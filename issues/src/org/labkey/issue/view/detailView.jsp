@@ -504,13 +504,13 @@ else
     <div class="col-sm-4">
         <label>Recent Activity</label>
         <%
-            Map<String, String> m = issue.getRecentTimestampMap(user);
+            Issue.IssueEvent m = issue.getMostRecentEvent(user);
             String lastUpdatedStr = "";
             String lastUpdatedTitleStr = "";
             if (null != m)
             {
-                lastUpdatedStr = m.get("event") + ": " + m.get("date") + " by " + m.get("user");
-                lastUpdatedTitleStr = m.get("fullDateTime");
+                lastUpdatedStr = m.toString();
+                lastUpdatedTitleStr = m.getFullTimestamp();
             }
         %>
         <div class="form-group">
@@ -522,14 +522,14 @@ else
 
             <div id="allTimeStamps" style="display: none;">
                 <%
-                    List<Map<String, String>> mapList = issue.getOrderedTimestampMapArray(user);
+                    ArrayList<Issue.IssueEvent> eventArray = issue.getOrderedEventArray(user);
 
-                    for (int j = 1; j < mapList.size(); j++)
+                    for (int j = 1; j < eventArray.size(); j++)
                     {
-                        Map<String, String> s = mapList.get(j);
-                        String stampString = s.get("event") + ": " + s.get("date") + " by " + s.get("user");
-                %>
-                <div title="<%=h(s.get("fullDateTime"))%>"><%=h(stampString)%></div>
+                        Issue.IssueEvent e = eventArray.get(j);
+                        String stampString = e.toString();
+                    %>
+                    <div title="<%=h(e.getFullTimestamp())%>"><%=h(stampString)%></div>
                 <%
                     }
                 %>
