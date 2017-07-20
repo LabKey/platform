@@ -307,6 +307,7 @@ core/resources/styles/scss/labkey/components/_knitr.scss -text
 core/resources/styles/scss/labkey/components/_menu.scss -text
 core/resources/styles/scss/labkey/components/_navigation.scss -text
 core/resources/styles/scss/labkey/components/_schemaBrowser.scss -text
+core/resources/styles/scss/labkey/components/_search.scss -text
 core/resources/styles/scss/labkey/components/_tabStrip.scss -text
 core/resources/styles/scss/lib/bootstrap/_bootstrap.scss -text
 core/resources/styles/scss/lib/bootstrap/_dropdown.scss -text
@@ -1886,6 +1887,7 @@ search/src/org/labkey/search/view/exportContents.jsp -text
 search/src/org/labkey/search/view/indexerAdmin.jsp -text
 search/src/org/labkey/search/view/indexerStats.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
+search/src/org/labkey/search/view/search2.jsp -text
 search/src/org/labkey/search/view/searchStats.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
 study/gwtsrc/gwt/DatasetDesigner.gwt.xml_old -text

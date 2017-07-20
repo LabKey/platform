@@ -65,7 +65,6 @@
     User user = getUser();
     Path contextPath = Path.parse(ctx.getContextPath());
     SearchService ss = SearchService.get();
-    boolean wideView = true;
     List<String> q = new ArrayList<>(Arrays.asList(form.getQ()));
     SearchResultTemplate template = form.getSearchResultTemplate();
     SearchScope scope = (null == template.getSearchScope() ? form.getSearchScope() : template.getSearchScope());
@@ -74,7 +73,7 @@
 
     SearchController.SearchConfiguration searchConfig = form.getConfig();
 
-    boolean includeNavigationLinks = !form.isWebPart() && searchConfig.includeNavigationLinks() && template.includeNavigationLinks();
+    boolean includeNavigationResults = !form.isWebPart() && searchConfig.includeNavigationLinks() && template.includeNavigationLinks() && scope != SearchScope.Folder;
     boolean showAdvancedUI = !form.isWebPart() && searchConfig.includeAdvancedUI() && template.includeAdvanceUI();
 
     // if login status changes, cookie will change, and we want to not cache this page
@@ -270,7 +269,7 @@
 
             %></div></td><%
 
-            if (wideView && includeNavigationLinks && scope != SearchScope.Folder)
+            if (includeNavigationResults)
             {
                 result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, offset, hitsPerPage);
 
