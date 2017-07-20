@@ -69,6 +69,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     /** Most subclasses should not override this method */
     public ModelAndView getView(Form form, BindException errors) throws Exception
     {
+        // TODO: Do we need Sign action here?
         _form = form;
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {

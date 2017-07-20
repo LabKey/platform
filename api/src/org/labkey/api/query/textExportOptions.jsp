@@ -29,11 +29,12 @@
     QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
 
     String guid = GUID.makeGUID();
-    String delimGUID = "delim_" + guid;
-    String quoteGUID = "quote_" + guid;
-    String headerGUID = "header_" + guid;
-    String exportSelectedId = "exportSelected_" + guid;
-    String exportButtonId = "export_" + guid;
+    String delimGUID = "delim_" + guid + (model.isSignButton() ? "_sign" : "");
+    String quoteGUID = "quote_" + guid + (model.isSignButton() ? "_sign" : "");
+    String headerGUID = "header_" + guid + (model.isSignButton() ? "_sign" : "");
+    String exportSelectedId = "exportSelected_" + guid + (model.isSignButton() ? "_sign" : "");
+    String exportButtonId = "export_" + guid + (model.isSignButton() ? "_sign" : "");
+    String buttonText = model.isSignButton() ? "Sign Text Snapshot" : "Export to Text";
 
     Map<String, String> delimiterMap = new LinkedHashMap<>();
     delimiterMap.put(TSVWriter.DELIM.TAB.name(), TSVWriter.DELIM.TAB.text);
@@ -95,16 +96,20 @@
         <tr>
             <td valign="center" colspan="2">
                 <input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
-                <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>" for="<%=h(exportSelectedId)%>">Export selected rows</label>
+                <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>"
+                       for="<%=h(exportSelectedId)%>"> <%=h(model.isSignButton() ? "Sign selected rows" : "Export selected rows")%>
+                </label>
             </td>
         </tr>
     <% } %>
     <tr>
-        <td colspan="2"><%= button("Export to Text").id(exportButtonId) %></td>
+        <td colspan="2"><%= button(buttonText).id(exportButtonId) %></td>
     </tr>
 </table>
 <script>
     (function($) {
+
+        LABKEY.requiresScript("SignSnapshotPanel.js");
 
         LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
             var delimEl = $("#<%=h(delimGUID)%>"),
@@ -112,6 +117,7 @@
                 exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
                 exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>"),
                 headerEl = $("#<%=h(headerGUID)%>");
+            var isSignButton = <%=model.isSignButton()%>;
 
             var doTsvExport = function() {
                 var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
@@ -131,12 +137,25 @@
                 if (headerEl && headerEl.val())
                     url = url + '&headerType=' + headerEl.val();
 
-                dr.addMessage({
-                    html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',
-                    part: 'excelExport', hideButtonPanel: true, duration:5000
-                });
+                if (!isSignButton) {
+                    dr.addMessage({
+                        html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',
+                        part: 'excelExport', hideButtonPanel: true, duration: 5000
+                    });
+                    window.location = url;
+                }
+                else {
+                    var displaySignaturePanel = function() {
+                        Ext4.onReady(function() {
+                            Ext4.create('LABKEY.Query.SignSnapshotPanel', {
+                                autoShow: true,
+                                url: url
+                            });
+                        });
+                    };
+                    displaySignaturePanel();
+                }
 
-                window.location = url;
                 return false;
             };
 
