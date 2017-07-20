@@ -184,7 +184,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("create a snapshot over a custom view");
         if (IS_BOOTSTRAP_LAYOUT)
         {
-            new ProjectMenu(getDriver()).navigateToSubFolder(getProjectName(), getStudyLabel());
+            new ProjectMenu(getDriver()).navigateToFolder(getProjectName(), getStudyLabel());
         }
         else
         {
@@ -202,7 +202,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("test automatic updates for a joined snapshot view");
         if (IS_BOOTSTRAP_LAYOUT)
         {
-            new ProjectMenu(getDriver()).navigateToSubFolder(getProjectName(), getStudyLabel());
+            new ProjectMenu(getDriver()).navigateToFolder(getProjectName(), getStudyLabel());
         }
         else
         {
@@ -222,7 +222,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         if (IS_BOOTSTRAP_LAYOUT)
         {
-            new ProjectMenu(getDriver()).navigateToSubFolder(getProjectName(), getStudyLabel());
+            new ProjectMenu(getDriver()).navigateToFolder(getProjectName(), getStudyLabel());
         }
         else
         {
