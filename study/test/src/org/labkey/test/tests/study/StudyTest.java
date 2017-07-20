@@ -938,7 +938,7 @@ public class StudyTest extends StudyBaseTest
         DataRegionExportHelper exportHelper = new DataRegionExportHelper(drt);
         exportHelper.exportText();
         scrollIntoView(Locators.ADMIN_MENU);
-        goToAuditLog();
+        goToAdminConsole().clickAuditLog();
         doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("view"), "Query export events"));
 
         DataRegionTable auditTable =  new DataRegionTable("query", this);

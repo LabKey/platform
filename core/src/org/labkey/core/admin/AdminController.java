@@ -292,7 +292,10 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             AdminBean bean = new AdminBean(getUser());
-            return new JspView<>("/org/labkey/core/admin/admin.jsp", bean);
+            if (PageFlowUtil.useExperimentalCoreUI())
+                return new JspView<>("/org/labkey/core/admin/adminConsole.jsp", bean);
+            else // TODO remove the admin.jsp after conversion to new UI
+                return new JspView<>("/org/labkey/core/admin/admin.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2438,9 +2441,11 @@ public class AdminController extends SpringActionController
 
             html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
             html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
-            html.append("<hr size=1>\n");
 
+            html.append("<br/><br/>\n");
             appendStats(html, "Caches", cacheStats);
+
+            html.append("<br/><br/>\n");
             appendStats(html, "Transaction Caches", transactionStats);
 
             return new HtmlView(html.toString());
@@ -2454,7 +2459,7 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.filter(title));
             html.append(" (").append(stats.size()).append(")</b></p>\n");
 
-            html.append("<table class=\"labkey-data-region labkey-show-borders\">\n");
+            html.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
             html.append("<tr><td class=\"labkey-column-header\">Debug Name</td>");
             html.append("<td class=\"labkey-column-header\">Limit</td>");
             html.append("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
@@ -2504,7 +2509,7 @@ public class AdminController extends SpringActionController
             }
 
             double ratio = 0 != gets ? misses / (double)gets : 0;
-            html.append("<tr><td><b>Total</b></td>");
+            html.append("<tr class=\"labkey-row\"><td><b>Total</b></td>");
 
             appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
             appendDoubles(html, ratio);
@@ -5827,7 +5832,7 @@ public class AdminController extends SpringActionController
                 else
                 {
                     out.println("<div>" + _descriptionHtml + "</div><br/>");
-                    out.println("\n<table class=\"labkey-data-region labkey-show-borders\">");
+                    out.println("\n<table class=\"labkey-data-region-legacy labkey-show-borders\">");
                     out.println("<tr><td class=\"labkey-column-header\">Name</td>");
                     out.println("<td class=\"labkey-column-header\">Version</td>");
                     out.println("<td class=\"labkey-column-header\">Class</td>");

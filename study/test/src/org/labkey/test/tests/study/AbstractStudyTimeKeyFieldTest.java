@@ -149,8 +149,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     //Date field should display the time as well if time is specified as an additional key
     protected void testDateFieldDisplaysTimeIfTimeKey()
     {
-        goToAdminConsole();
-        waitAndClickAndWait(Locator.linkWithText("look and feel settings"));
+        goToAdminConsole().clickLookAndFeelSettings();
         LookAndFeelSettingsPage lookAndFeelSettingsPage = new LookAndFeelSettingsPage(getDriver());
         lookAndFeelSettingsPage.setDefaultDateDisplay(DEFAULT_DATE_FORMAT);
         lookAndFeelSettingsPage.setDefaultDateTimeDisplay(DEFAULT_DATETIME_FORMAT);

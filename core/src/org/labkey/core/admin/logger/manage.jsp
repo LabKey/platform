@@ -93,7 +93,7 @@
 </p>
 
 <p>
-<table id='loggerTable' class='labkey-data-region labkey-show-borders' style='margin-left:0.75em;'>
+<table id='loggerTable' class='labkey-data-region-legacy labkey-show-borders' style='margin-left:0.75em;'>
   <thead>
     <tr>
       <td width=80 class='labkey-column-header'>Level</td>

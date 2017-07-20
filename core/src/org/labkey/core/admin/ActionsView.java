@@ -44,15 +44,29 @@ class ActionsView extends HttpView
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 
-        out.print("<table id=\"actions\">");
+        out.print("<table id=\"actions\" class=\"labkey-data-region-legacy labkey-show-borders\">");
 
         if (_summary)
-            out.print("<tr align=left><th>Controller</th><th>Actions</th><th>Invoked</th><th>Coverage</th></tr>");
+        {
+            out.print("<tr><td class=\"labkey-column-header\">Controller</td>");
+            out.print("<td class=\"labkey-column-header\">Actions</td>");
+            out.print("<td class=\"labkey-column-header\">Invoked</td>");
+            out.print("<td class=\"labkey-column-header\">Coverage</td></tr>");
+        }
         else
-            out.print("<tr align=left><th>Controller</th><th>Action</th><th>ActionType</th><th>Invocations</th><th>Cumulative Time</th><th>Average Time</th><th>Max Time</th></tr>");
+        {
+            out.print("<tr><td class=\"labkey-column-header\">Controller</td>");
+            out.print("<td class=\"labkey-column-header\">Action</td>");
+            out.print("<td class=\"labkey-column-header\">ActionType</td>");
+            out.print("<td class=\"labkey-column-header\">Invocations</td>");
+            out.print("<td class=\"labkey-column-header\">Cumulative Time</td>");
+            out.print("<td class=\"labkey-column-header\">Average Time</td>");
+            out.print("<td class=\"labkey-column-header\">Max Time</td></tr>");
+        }
 
         int totalActions = 0;
         int totalInvoked = 0;
+        int rowCount = 0;
 
         for (Map.Entry<String, Map<String, Map<String, SpringActionController.ActionStats>>> module : modules.entrySet())
         {
@@ -64,7 +78,7 @@ class ActionsView extends HttpView
 
                 if (_summary)
                 {
-                    out.print("<tr>");
+                    out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
                     out.print(controllerTd);
                 }
 
@@ -76,7 +90,7 @@ class ActionsView extends HttpView
                 {
                     if (!_summary)
                     {
-                        out.print("<tr>");
+                        out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
                         out.print(controllerTd);
                         controllerTd = "<td>&nbsp;</td>";
                         out.print("<td>");
@@ -103,6 +117,7 @@ class ActionsView extends HttpView
                     renderTd(out, stats.getMaxTime());
 
                     out.print("</tr>");
+                    rowCount++;
                 }
 
                 totalActions += actions.size();
@@ -111,22 +126,30 @@ class ActionsView extends HttpView
                 double coverage = actions.isEmpty() ? 0 : invokedCount / (double)actions.size();
 
                 if (!_summary)
-                    out.print("<tr><td>&nbsp;</td><td>Action Coverage</td>");
+                {
+                    out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
+                    out.print("<td>&nbsp;</td><td colspan=5>Action Coverage</td>");
+                }
                 else
                 {
-                    out.print("<td>");
+                    out.print("<td align=\"right\">");
                     out.print(actions.size());
-                    out.print("</td><td>");
+                    out.print("</td><td align=\"right\">");
                     out.print(invokedCount);
                     out.print("</td>");
                 }
 
-                out.print("<td>");
+                out.print("<td align=\"right\">");
                 out.print(Formats.percent1.format(coverage));
                 out.print("</td></tr>");
+                rowCount++;
 
                 if (!_summary)
-                    out.print("<tr><td colspan=6>&nbsp;</td></tr>");
+                {
+                    out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
+                    out.print("<td colspan=7>&nbsp;</td></tr>");
+                    rowCount++;
+                }
             }
         }
 
@@ -134,18 +157,20 @@ class ActionsView extends HttpView
 
         if (_summary)
         {
-            out.print("<tr><td colspan=4>&nbsp;</td></tr><tr><td>Total</td><td>");
+            out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
+            out.print("<td><b>Total</b></td><td align=\"right\">");
             out.print(totalActions);
-            out.print("</td><td>");
+            out.print("</td><td align=\"right\">");
             out.print(totalInvoked);
             out.print("</td>");
         }
         else
         {
-            out.print("<tr><td colspan=2>Total Action Coverage</td>");
+            out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
+            out.print("<td colspan=6><b>Total Action Coverage</b></td>");
         }
 
-        out.print("<td>");
+        out.print("<td align=\"right\">");
         out.print(Formats.percent1.format(totalCoverage));
         out.print("</td></tr>");
         out.print("</table>");
@@ -154,7 +179,7 @@ class ActionsView extends HttpView
 
     private void renderTd(PrintWriter out, Number d)
     {
-        out.print("<td>");
+        out.print("<td align=\"right\">");
         out.print(Formats.commaf0.format(d));
         out.print("</td>");
     }
