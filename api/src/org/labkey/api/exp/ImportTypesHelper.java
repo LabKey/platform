@@ -72,7 +72,7 @@ public class ImportTypesHelper
         _standardKeys.add("ConditionalFormats");
         _standardKeys.add("FacetingBehaviorType");
         _standardKeys.add("Protected");
-        _standardKeys.add("Phi");
+        //_standardKeys.add("Phi");
         _standardKeys.add("ExcludeFromShifting");
         _standardKeys.add("Scale");
 
