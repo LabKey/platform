@@ -10,6 +10,11 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     bindResize: true,
 
+    // allow this component to resize the height to fit the browser window
+    autoResize: {
+        skipHeight: false
+    },
+
     useHistory: true,
 
     qdpPrefix: 'qdp-', // query details
