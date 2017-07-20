@@ -125,26 +125,35 @@ public class AuthenticationManager
     }
 
     // Called unconditionally on every server startup. At some point, might want to make this bootstrap only.
-    // TODO: SSO logos. Auditing of configuration property changes. Other general "Authentication" properties (auto-create, self-registration, self-service email changes).
+    // TODO: SSO logos. Auditing of configuration property changes.
     public static void populateSettingsWithStartupProps()
     {
-        // Populate the startup properties to configure each authentication provider
+        // Configure each authentication provider with startup properties
         populateProviderProperties(PropertyManager.getNormalStore(), AuthenticationProvider::getPropertyCategories);
         populateProviderProperties(PropertyManager.getEncryptedStore(), AuthenticationProvider::getEncryptedPropertyCategories);
 
-        // Attempt to enable the providers listed in the general authentication startup properties
-        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
-            .filter(p -> p.getName().equals(PROVIDERS_KEY))
-            .flatMap(p -> Arrays.stream(p.getValue().split(":")))
-            .forEach(name ->
-            {
-                try
+        // Handle the general authentication properties: enable all the providers listed and populate the other general
+        // authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
+        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY)
+            .forEach(cp -> {
+                if (cp.getName().equals(PROVIDERS_KEY))
                 {
-                    enableProvider(name, null);
+                    Arrays.stream(cp.getValue().split(":"))
+                        .forEach(name ->
+                        {
+                            try
+                            {
+                                enableProvider(name, null);
+                            }
+                            catch (NotFoundException e)
+                            {
+                                _log.warn("Authentication startup properties attempted to enable an authentication provider (\"" + name + "\") that is not present on this server");
+                            }
+                        });
                 }
-                catch (NotFoundException e)
+                else
                 {
-                    _log.warn("Authentication startup properties attempted to enable an authentication provider (\"" + name + "\") that is not present on this server");
+                    setAuthConfigProperty(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
                 }
             });
     }
