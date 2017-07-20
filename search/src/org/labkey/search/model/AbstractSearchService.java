@@ -1136,8 +1136,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             for (Container key : mmap.keySet())
             {
                 set.add(key);
-                for (Container v : mmap.get(key))
-                    set.add(v);
+                set.addAll(mmap.get(key));
             }
             for (Container i : set)
             {
