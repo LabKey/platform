@@ -1209,9 +1209,12 @@ public class OntologyManager
 
             // update project of any descriptors in folder just moved
             TableInfo pdTable = getTinfoPropertyDescriptor();
-            String sql = "UPDATE " + pdTable + " SET Project = ? WHERE Container = ? AND PropertyUri NOT IN";
+            String sql = "UPDATE " + pdTable + " SET Project = ? WHERE Container = ?";
+
+            // TODO The IN clause is a temporary work around solution to avoid unique key violation error when moving study folders.
             // Issue 30477: exclude project level properties descriptors (such as Study) that already exist
-            sql += "(SELECT PropertyUri FROM " + pdTable + " WHERE Project = ? AND PropertyUri IN (SELECT PropertyUri FROM " + pdTable + " WHERE Container = ?))";
+            sql += " AND PropertyUri NOT IN (SELECT PropertyUri FROM " + pdTable + " WHERE Project = ? AND PropertyUri IN (SELECT PropertyUri FROM " + pdTable + " WHERE Container = ?))";
+
             new SqlExecutor(getExpSchema()).execute(sql, newProject, c, newProject, c);
 
             if (_log.isDebugEnabled())
@@ -1223,9 +1226,12 @@ public class OntologyManager
             }
 
             TableInfo ddTable = getTinfoDomainDescriptor();
-            sql = "UPDATE " + ddTable + " SET Project = ? WHERE Container = ? AND DomainUri NOT IN ";
+            sql = "UPDATE " + ddTable + " SET Project = ? WHERE Container = ?";
+
+            // TODO The IN clause is a temporary work around solution to avoid unique key violation error when moving study folders.
             // Issue 30477: exclude project level domain descriptors (such as Study) that already exist
-            sql += "(SELECT DomainUri FROM " + ddTable + " WHERE Project = ? AND DomainUri IN (SELECT DomainUri FROM " + ddTable + " WHERE Container = ?))";
+            sql += " AND DomainUri NOT IN (SELECT DomainUri FROM " + ddTable + " WHERE Project = ? AND DomainUri IN (SELECT DomainUri FROM " + ddTable + " WHERE Container = ?))";
+
             new SqlExecutor(getExpSchema()).execute(sql, newProject, c, newProject, c);
 
             if (null == oldProject) // if container was a project & demoted I'm done
