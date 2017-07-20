@@ -318,7 +318,7 @@ public class QueryProfiler
                         out.println("  <tr><td>Unique queries with the " + set.getDescription() + " (top " + Formats.commaf0.format(set.size()) + "):</td></tr>");
                         out.println("</table><br>");
 
-                        out.println("<table class=\"labkey-data-region labkey-show-borders\">");
+                        out.println("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
                         QueryTracker.renderRowHeader(out, set, _captionURLFactory);
 
                         int row = 0;
