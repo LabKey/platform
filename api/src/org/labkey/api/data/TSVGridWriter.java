@@ -97,7 +97,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         for (DisplayColumn displayColumn : displayColumns)
         {
-            displayColumn.setHtmlFiltered(false);
+            displayColumn.setRequiresHtmlFiltering(false);
         }
 
         return displayColumns;

@@ -106,7 +106,7 @@ public class ExcelColumn extends RenderColumn
     {
         super();
         _dc = dc;
-        _dc.setHtmlFiltered(false);
+        _dc.setRequiresHtmlFiltering(false);
         _formatters = formatters;
         _workbook = workbook;
         setSimpleType(dc);

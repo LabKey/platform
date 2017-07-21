@@ -61,7 +61,7 @@ public class ContactWebPart extends WebPartView
 
         rgn.setColumns(CoreSchema.getInstance().getTableInfoContacts().getColumns("Name,DisplayName,Email,Phone,UserId"));
         DisplayColumn nameDC = rgn.getDisplayColumn("name");
-        nameDC.setHtmlFiltered(false);
+        nameDC.setRequiresHtmlFiltering(false);
 
         rgn.getDisplayColumn("Email").setURL("mailto:${Email}");
         rgn.getDisplayColumn("UserId").setVisible(false);

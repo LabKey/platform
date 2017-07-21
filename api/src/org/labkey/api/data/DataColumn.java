@@ -492,7 +492,7 @@ public class DataColumn extends DisplayColumn
             {
                 try
                 {
-                    formatted = _format.format(value);
+                    formatted = PageFlowUtil.filter(_format.format(value));
                 }
                 catch (IllegalArgumentException e)
                 {
@@ -500,7 +500,7 @@ public class DataColumn extends DisplayColumn
                     formatted = ConvertUtils.convert(value);
                 }
             }
-            else if (isHtmlFiltered())
+            else if (getRequiresHtmlFiltering())
                 formatted = PageFlowUtil.filter(ConvertUtils.convert(value));
             else
                 formatted = ConvertUtils.convert(value);

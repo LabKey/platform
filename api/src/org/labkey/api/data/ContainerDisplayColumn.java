@@ -182,7 +182,7 @@ public class ContainerDisplayColumn extends DataColumn
     public String getFormattedValue(RenderContext ctx)
     {
         String displayValue = getDisplayValue(ctx).toString();
-        if (isHtmlFiltered())
+        if (getRequiresHtmlFiltering())
             displayValue = PageFlowUtil.filter(displayValue);
         return displayValue;
     }

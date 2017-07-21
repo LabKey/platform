@@ -29,7 +29,7 @@ public class HtmlDisplayColumnFactory implements DisplayColumnFactory
     public DisplayColumn createRenderer(ColumnInfo col)
     {
         DataColumn dc = new HtmlDataColumn(col);
-        dc.setHtmlFiltered(false);
+        dc.setRequiresHtmlFiltering(false);
         return dc;
     }
 
@@ -38,7 +38,7 @@ public class HtmlDisplayColumnFactory implements DisplayColumnFactory
         HtmlDataColumn(ColumnInfo col)
         {
             super(col,false);
-            setHtmlFiltered(false);
+            setRequiresHtmlFiltering(false);
         }
 
         @NotNull

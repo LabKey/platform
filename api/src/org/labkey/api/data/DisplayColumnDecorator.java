@@ -502,15 +502,15 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public boolean isHtmlFiltered()
+    public boolean getRequiresHtmlFiltering()
     {
-        return _column.isHtmlFiltered();
+        return _column.getRequiresHtmlFiltering();
     }
 
     @Override
-    public void setHtmlFiltered(boolean htmlFiltered)
+    public void setRequiresHtmlFiltering(boolean requiresHtmlFiltering)
     {
-        _column.setHtmlFiltered(htmlFiltered);
+        _column.setRequiresHtmlFiltering(requiresHtmlFiltering);
     }
 
     @Override

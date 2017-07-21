@@ -69,7 +69,7 @@ public abstract class DisplayColumn extends RenderColumn
     protected String _gridHeaderClass = "labkey-col-header-filter";
     private String _inputPrefix = "";
     private String _description = null;
-    protected boolean _htmlFiltered = true;
+    protected boolean _requiresHtmlFiltering = true;
     private String _displayClass;
 
     // for URL generation
@@ -1224,14 +1224,14 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public boolean isHtmlFiltered()
+    public boolean getRequiresHtmlFiltering()
     {
-        return _htmlFiltered;
+        return _requiresHtmlFiltering;
     }
 
-    public void setHtmlFiltered(boolean htmlFiltered)
+    public void setRequiresHtmlFiltering(boolean requiresHtmlFiltering)
     {
-        _htmlFiltered = htmlFiltered;
+        _requiresHtmlFiltering = requiresHtmlFiltering;
     }
 
     public void setLinkTarget(String linkTarget)

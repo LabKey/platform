@@ -77,7 +77,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
             Object oorValue = _oorIndicatorColumn.getValue(ctx);
             if (oorValue != null)
             {
-                if (isHtmlFiltered())
+                if (getRequiresHtmlFiltering())
                     result.append(h(oorValue));
                 else
                     result.append(oorValue);
@@ -100,7 +100,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
             if (row == 1)
             {
                 String msg = "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX + ">";
-                if (isHtmlFiltered())
+                if (getRequiresHtmlFiltering())
                     result.append(h(msg));
                 else
                     result.append(msg);
