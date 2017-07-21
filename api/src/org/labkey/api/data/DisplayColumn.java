@@ -1012,9 +1012,9 @@ public abstract class DisplayColumn extends RenderColumn
     {
         if (null == _caption)
             return;
-        if (!strictGrid)
+        if (!PageFlowUtil.useExperimentalCoreUI() || !strictGrid)
             renderDetailsCaptionCell(ctx, out);
-        else if (PageFlowUtil.useExperimentalCoreUI())
+        else
         {
             out.write("<label class=\"col-3\">");
             renderTitle(ctx, out);
