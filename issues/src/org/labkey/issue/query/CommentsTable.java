@@ -108,7 +108,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
                         return "<span>" + inline + "</span>" + html;
                     }
                 };
-                dc.setHtmlFiltered(false);
+                dc.setRequiresHtmlFiltering(false);
                 dc.setPreserveNewlines(false);
 
                 return dc;
