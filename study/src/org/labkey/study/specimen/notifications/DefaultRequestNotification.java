@@ -90,9 +90,9 @@ public class DefaultRequestNotification
                 SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
                 view.setDisableLowVialIndicators(true);
                 if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum())
-                    specimenListFile = view.exportToExcelFile(ExcelWriter.ExcelDocumentType.xls, null);
+                    specimenListFile = view.exportToExcelFile(ExcelWriter.ExcelDocumentType.xls, null, false);
                 else
-                    specimenListFile = view.exportToTsvFile(TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE, ColumnHeaderType.Caption, null);
+                    specimenListFile = view.exportToTsvFile(TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE, ColumnHeaderType.Caption, null, false);
                 if (null != specimenListFile)
                 {
                     List<AttachmentFile> attachments = new ArrayList<>();
