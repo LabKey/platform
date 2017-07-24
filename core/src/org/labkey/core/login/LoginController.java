@@ -313,6 +313,19 @@ public class LoginController extends SpringActionController
 
     private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request)
     {
+        if (request != null)
+        {
+            // 31000: fail login actions if parameters present on URL
+            for (Pair<String, String> param : PageFlowUtil.fromQueryString(request.getQueryString()))
+            {
+                if ("email".equalsIgnoreCase(param.getKey()) || "password".equalsIgnoreCase(param.getKey()))
+                {
+                    errors.reject(ERROR_MSG, "Invalid request. email and/or password are not allowed on the URL.");
+                    return false;
+                }
+            }
+        }
+
         if (null == form.getEmail() || null == form.getPassword())
         {
             errors.reject(ERROR_MSG, "Please sign in using your email address and password");
