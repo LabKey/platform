@@ -2552,7 +2552,7 @@ public class QueryView extends WebPartView<Object>
     }
 
     @Nullable
-    public ByteArrayAttachmentFile exportToExcelFile(ExcelWriter.ExcelDocumentType docType, @Nullable List<Integer> rowsOut) throws Exception
+    public ByteArrayAttachmentFile exportToExcelFile(ExcelWriter.ExcelDocumentType docType, @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -2566,9 +2566,10 @@ public class QueryView extends WebPartView<Object>
                 ew.setShowInsertableColumnsOnly(false);
                 ew.write(stream);
                 stream.flush();
-                String filename = FileUtil.makeFileNameWithTimestamp(
-                        ew.getFilenamePrefix(),
-                        ExcelWriter.ExcelDocumentType.xls.name().equalsIgnoreCase(docType.name()) ? ".xls" : ".xlsx");
+                String extension = ExcelWriter.ExcelDocumentType.xls.name().equalsIgnoreCase(docType.name()) ? ".xls" : ".xlsx";
+                String filename = includeTimestamp ?
+                                    FileUtil.makeFileNameWithTimestamp(ew.getFilenamePrefix(), extension) :
+                                    ew.getFilenamePrefix() + extension;
                 ByteArrayAttachmentFile byteArrayAttachmentFile =
                         new ByteArrayAttachmentFile(filename, byteStream.toByteArray(),
                                                     ExcelWriter.ExcelDocumentType.xls.name().equalsIgnoreCase(docType.name()) ?
@@ -2613,7 +2614,7 @@ public class QueryView extends WebPartView<Object>
     }
 
     @Nullable
-    public ByteArrayAttachmentFile exportToTsvFile(final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @Nullable List<Integer> rowsOut) throws Exception
+    public ByteArrayAttachmentFile exportToTsvFile(final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -2624,7 +2625,10 @@ public class QueryView extends WebPartView<Object>
             tsvWriter.setDelimiterCharacter(delim);
             tsvWriter.setQuoteCharacter(quote);
             tsvWriter.write(tsvBuilder);
-            String filename = tsvWriter.getFilenamePrefix() + (TSVWriter.DELIM.TAB.equals(delim) ? ".tsv" : ".csv");
+            String extension = TSVWriter.DELIM.TAB.equals(delim) ? ".tsv" : ".csv";
+            String filename = includeTimestamp ?
+                    FileUtil.makeFileNameWithTimestamp(tsvWriter.getFilenamePrefix(), extension) :
+                    tsvWriter.getFilenamePrefix() + extension;
             String contentType = TSVWriter.DELIM.TAB.equals(delim) ? "text/tsv" : "text/csv";
             ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(filename, tsvBuilder.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), contentType);
 
