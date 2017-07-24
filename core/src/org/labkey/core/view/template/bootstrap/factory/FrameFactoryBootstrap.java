@@ -316,6 +316,12 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
                 super.renderPortalMenu(out, title);
             }
         }
+
+        @Override
+        public void doEndTag(PrintWriter out)
+        {
+            out.write("</div></div></div><!--/FrameType.PORTAL_FRAMELESS-->");
+        }
     }
 
     @Override
