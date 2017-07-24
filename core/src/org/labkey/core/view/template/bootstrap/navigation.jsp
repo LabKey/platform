@@ -174,7 +174,7 @@
         <div class="lk-nav-tabs-ct">
             <ul class="nav lk-nav-tabs hidden-sm hidden-xs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>">
                 <%
-                    if (tabs.size() > 1)
+                    if (tabs.size() > 1 || isPageAdminMode)
                     {
                         for (NavTree tab : tabs)
                         {
@@ -222,7 +222,7 @@
             <ul class="nav lk-nav-tabs hidden-md hidden-lg pull-right">
                 <%
                     // Generate selected tab
-                    if (tabs.size() > 1)
+                    if (tabs.size() > 1 || isPageAdminMode)
                     {
                         for (NavTree tab : tabs)
                         {
