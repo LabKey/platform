@@ -16,12 +16,11 @@
      */
 %>
 
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
-<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.util.UniqueID"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -33,22 +32,20 @@
 %>
 
 <%
-    JspView<Map<String, Map<String, Object>>> me = (JspView<Map<String, Map<String, Object>>>)HttpView.currentView();
-    Map<String, Map<String, Object>> data = me.getModelBean();
+    JspView<ReportsController.ProgressReportForm> me = (JspView<ReportsController.ProgressReportForm>)HttpView.currentView();
+    ReportsController.ProgressReportForm form = me.getModelBean();
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    ObjectMapper jsonMapper = new ObjectMapper();
 %>
 
+<h1>Create Assay Progress Report</h1>
 <div id=<%=h(renderId)%>></div>
 
 <script type="text/javascript">
     Ext4.onReady(function(){
 
-        new LABKEY.ext4.AssayProgressReport({
-            renderTo        : <%=q(renderId)%>,
-            assayData       : <%=text(jsonMapper.writeValueAsString(data))%>,
-            assays          : <%=text(jsonMapper.writeValueAsString(data.keySet()))%>
+        new LABKEY.ext4.ProgressReportConfig({
+            renderTo    : <%=q(renderId)%>
         });
     });
 </script>
