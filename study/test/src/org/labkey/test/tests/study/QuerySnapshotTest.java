@@ -145,7 +145,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         if (IS_BOOTSTRAP_LAYOUT)
         {
-            table.clickInsertNewRowButton();
+            table.clickInsertNewRow();
         }
         else
         {
@@ -325,7 +325,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         if (IS_BOOTSTRAP_LAYOUT)
         {
-            table.clickInsertNewRowButton();
+            table.clickInsertNewRow();
         }else
         {
             _extHelper.clickInsertNewRow();
@@ -343,7 +343,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         if (IS_BOOTSTRAP_LAYOUT)
         {
-            table.clickInsertNewRowButton();
+            table.clickInsertNewRow();
         }else
         {
             _extHelper.clickInsertNewRow();
