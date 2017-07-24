@@ -949,7 +949,8 @@ public class Portal
                 newBean.pageId = bean.pageId;
                 newBean.location = WebPartFactory.LOCATION_RIGHT;
                 newBean.rightEmpty = true;
-                StringBuilder rightWidget = addWebPartWidget(newBean, viewContext, "", "pull-right");
+                // Add right webpart dropdown should be hidden on extra small screens
+                StringBuilder rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
                 return leftWidget.append(rightWidget).toString();
             }
 
@@ -962,7 +963,8 @@ public class Portal
             newBean.location = WebPartFactory.LOCATION_BODY;
             newBean.rightEmpty = false;
             StringBuilder leftBottomWidget = addWebPartWidget(newBean, viewContext, "visible-xs-inline visible-sm-inline", "pull-left");
-            StringBuilder rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-xs-inline visible-sm-inline", "pull-right");
+            // Add right webpart dropdown should be hidden on extra small screens
+            StringBuilder rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
             StringBuilder rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
 
             return leftBottomWidget.append(rightBottomWidget).append(rightMainWidget).toString();
