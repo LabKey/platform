@@ -29,18 +29,25 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -49,9 +56,11 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by davebradlee on 8/3/16.
@@ -242,4 +251,68 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
 
     public abstract String getDefaultPluralName();
 
+    @Override
+    public boolean canCreateDefinition(User user, Container container)
+    {
+        return container.hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        String name = domain.getName();
+        String providerName = arguments.containsKey("providerName") ? (String)arguments.get("providerName") : null;
+        String itemNoun = arguments.containsKey("itemNoun") ? (String)arguments.get("itemNoun") : "Issue";
+
+        if (name == null)
+            throw new IllegalArgumentException("Issue name must not be null");
+
+        if (providerName == null)
+            throw new IllegalArgumentException("An issue list providerName must be specified");
+
+        int issueDefId;
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        {
+            issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, itemNoun);
+
+            List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+            List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+
+            Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+            if (newDomain != null)
+            {
+                Set<String> reservedNames = getReservedPropertyNames(newDomain);
+                Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
+                Map<DomainProperty, Object> defaultValues = new HashMap<>();
+                Set<String> propertyUris = new HashSet<>();
+
+                for (GWTPropertyDescriptor pd : properties)
+                {
+                    if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
+                    {
+                        throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                    }
+                    DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
+                }
+
+                Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+                for (GWTIndex index : indices)
+                {
+                    PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+                    propertyIndices.add(propIndex);
+                }
+                newDomain.setPropertyIndices(propertyIndices);
+                newDomain.save(user);
+                DefaultValueService.get().setDefaultValues(container, defaultValues);
+            }
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+    }
 }

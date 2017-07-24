@@ -29,4 +29,5 @@ public interface AssaySpecimenConfig
     Integer getPrimaryTypeId();
     Integer getDerivativeTypeId();
     String getTubeType();
+    Integer getDataset();
 }

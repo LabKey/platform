@@ -75,6 +75,15 @@ public interface IssuesListDefService
     Domain getDomainFromIssueDefName(String issueDefName, Container container, User user);
 
     /**
+     * Get the Domain for a specific issue list definition based on the issue list definition id.
+     * @param issueDefId the issue definition row id
+     * @param container the container to look in
+     * @param user the user who made the request
+     * @return Domain
+     */
+    Domain getDomainFromIssueDefId(int issueDefId, Container container, User user);
+
+    /**
      * Register a provider that will add text links to the issue details header link display.
      * @param provider the provider that will determine which links to add based on a given IssueListDef
      */
