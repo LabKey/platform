@@ -110,7 +110,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
         public void render(RenderContext ctx, Writer out) throws IOException
         {
-            renderFormHeader(ctx, out, MODE_INSERT);
+            renderFormBegin(ctx, out, MODE_INSERT);
             renderMainErrors(ctx, out);
             out.write("<table>");
             out.write("<tr><th>Field</th>" +

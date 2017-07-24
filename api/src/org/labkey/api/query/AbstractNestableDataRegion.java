@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -53,14 +52,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         if (_expanded)
         {
             List<DisplayColumn> displayColumnList = getDisplayColumns();
-            for (Iterator<DisplayColumn> i = displayColumnList.iterator(); i.hasNext(); )
-            {
-                DisplayColumn col = i.next();
-                if (col instanceof EmptyDisplayColumn)
-                {
-                    i.remove();
-                }
-            }
+            displayColumnList.removeIf(col -> col instanceof EmptyDisplayColumn);
             displayColumnList.add(new EmptyDisplayColumn());
         }
 

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.query.AggregateRowConfig;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -44,11 +46,13 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -79,9 +83,15 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class DataRegion extends AbstractDataRegion
+public class DataRegion extends DisplayElement
 {
     private static final Logger _log = Logger.getLogger(DataRegion.class);
+
+    private String _name = null;
+    private QuerySettings _settings = null;
+    protected boolean _allowHeaderLock = true; // Set to 'true' to enable header locking.
+    private final String _domId = "lk-region-" + UniqueID.getServerSessionScopedUID(); // TODO: Consider using UniqueID.getRequestScopedUID(request) instead
+
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
     private List<AnalyticsProviderItem> _summaryStatsProviders = null;
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
@@ -141,6 +151,8 @@ public class DataRegion extends AbstractDataRegion
     public static final String DEFAULTDATE = "Date";
     public static final String DEFAULTDATETIME = "DateTime";
 
+    private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = {"RowId", "DisplayName", "Description", "Label", "Caption", "Value"};
+
     private List<ContextAction> _contextActions = new ArrayList<>();
     private List<ContextAction> _viewActions = new ArrayList<>();
     private List<Message> _messages;
@@ -167,7 +179,7 @@ public class DataRegion extends AbstractDataRegion
     }
     private List<GroupTable> _groupTables = new ArrayList<>();
 
-    private class Message
+    protected class Message
     {
         private String _area;
         private String _content;
@@ -201,6 +213,19 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
+    public enum PaginationLocation
+    {
+        TOP,
+        BOTTOM,
+    }
+
+    public enum MessagePart
+    {
+        view,
+        filter,
+        header,
+    }
+
     public enum MessageType
     {
         ERROR,
@@ -208,7 +233,7 @@ public class DataRegion extends AbstractDataRegion
         WARNING
     }
 
-    public void addMessage(Message message)
+    protected void addMessage(Message message)
     {
         if (_messages == null)
             _messages = new ArrayList<>();
@@ -533,6 +558,47 @@ public class DataRegion extends AbstractDataRegion
         _fixedWidthColumns = fixed;
     }
 
+    public void setAllowHeaderLock(boolean allow)
+    {
+        _allowHeaderLock = allow;
+    }
+
+    public boolean getAllowHeaderLock()
+    {
+        return _allowHeaderLock && !PageFlowUtil.useExperimentalCoreUI();
+    }
+
+    public final String getDomId()
+    {
+        return _domId;
+    }
+
+    public final String getFormId()
+    {
+        return getDomId() + "-form";
+    }
+
+    public String getName()
+    {
+        if (null == _name)
+        {
+            if (null != getSettings() && null != getSettings().getDataRegionName())
+                _name = getSettings().getDataRegionName();
+            else if (getTable() != null)
+                _name = getTable().getName();
+        }
+        return _name;
+    }
+
+    /**
+     * Use {@link DataRegion#setSettings(QuerySettings)} to set the name instead.
+     */
+    @Deprecated
+    public void setName(String name)
+    {
+        _name = name;
+    }
+
     public int getMaxRows()
     {
         return getSettings() != null ? getSettings().getMaxRows() : _maxRows;
@@ -565,6 +631,16 @@ public class DataRegion extends AbstractDataRegion
             getSettings().setOffset(offset);
         else
             _offset = offset;
+    }
+
+    public void setSettings(QuerySettings settings)
+    {
+        _settings = settings;
+    }
+
+    public QuerySettings getSettings()
+    {
+        return _settings;
     }
 
     public ShowRows getShowRows()
@@ -649,6 +725,46 @@ public class DataRegion extends AbstractDataRegion
     public void setTable(TableInfo table)
     {
         _table = table;
+    }
+
+    // TODO: Remove after switch over to new UI -- replaced by DataRegion.prepareFilters
+    private String getFilterErrorMessage(RenderContext ctx) throws IOException
+    {
+        StringBuilder buf = new StringBuilder();
+        Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
+        if (!ignoredColumns.isEmpty())
+        {
+            if (ignoredColumns.size() == 1)
+            {
+                FieldKey field = ignoredColumns.iterator().next();
+                buf.append("Ignoring filter/sort on column '").append(field.toDisplayString()).append("' because it does not exist.");
+            }
+            else
+            {
+                String comma = "";
+                buf.append("Ignoring filter/sort on columns ");
+                for (FieldKey field : ignoredColumns)
+                {
+                    buf.append(comma);
+                    comma = ", ";
+                    buf.append("'");
+                    buf.append(field.toDisplayString());
+                    buf.append("'");
+                }
+                buf.append(" because they do not exist.");
+            }
+        }
+        return buf.toString();
+    }
+
+    protected boolean isDefaultView(RenderContext ctx)
+    {
+        return (ctx.getView() == null || StringUtils.isEmpty(ctx.getView().getName()));
+    }
+
+    public @NotNull Map<String, Object> getQueryParameters()
+    {
+        return null == getSettings() ? Collections.emptyMap() : getSettings().getQueryParameters();
     }
 
     /**
@@ -798,12 +914,218 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
+    @Nullable
+    protected SimpleFilter getValidFilter(RenderContext ctx)
+    {
+        SimpleFilter urlFilter = new SimpleFilter(ctx.getViewContext().getActionURL(), getName());
+        for (FieldKey fk : ctx.getIgnoredFilterColumns())
+            urlFilter.deleteConditions(fk);
+        if (urlFilter.getClauses().isEmpty())
+            return null;
+        return urlFilter;
+    }
+
     public class ParameterView extends JspView<ParameterViewBean>
     {
         ParameterView(Collection<QueryService.ParameterDecl> params, Map<String, Object> defaults)
         {
             super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getDomId(), DataRegion.this.getName(), params, defaults));
         }
+    }
+
+    /**
+     * Adds any filter error messages and optionally the filter description that is applied to the current context.
+     *
+     * @param headerMessage         The StringBuilder to append messages to
+     * @param showFilterDescription Specifies whether the filter description should be added
+     */
+    protected void addFilterMessage(StringBuilder headerMessage, RenderContext ctx, boolean showFilterDescription) throws IOException
+    {
+        String filterErrorMsg = getFilterErrorMessage(ctx);
+        String filterDescription = null;
+        if (showFilterDescription)
+        {
+            SimpleFilter urlFilter = getValidFilter(ctx);
+
+            if (urlFilter != null && urlFilter.displayFilterText())
+            {
+                filterDescription = urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
+                {
+                    @Override
+                    public String format(FieldKey fieldKey)
+                    {
+                        String formatted = super.format(fieldKey);
+                        for (String hiddenFilter : HIDDEN_FILTER_COLUMN_SUFFIXES)
+                        {
+                            if (formatted.toLowerCase().endsWith("/" + hiddenFilter.toLowerCase()) ||
+                                    formatted.toLowerCase().endsWith("." + hiddenFilter.toLowerCase()))
+                            {
+                                formatted = formatted.substring(0, formatted.length() - (hiddenFilter.length() + 1));
+                            }
+                        }
+                        int dotIndex = formatted.lastIndexOf('.');
+                        if (dotIndex >= 0)
+                            formatted = formatted.substring(dotIndex + 1);
+                        int slashIndex = formatted.lastIndexOf('/');
+                        if (slashIndex >= 0)
+                            formatted = formatted.substring(slashIndex);
+                        return formatted;
+                    }
+                });
+            }
+        }
+        if (filterErrorMsg != null && filterErrorMsg.length() > 0)
+            headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
+
+        String sectionSeparator = "";
+
+        Map<String, Object> parameters = getQueryParameters();
+        if (!parameters.isEmpty())
+        {
+            headerMessage.append("<span class=\"labkey-strong\">Parameters:</span>&nbsp;");
+            String separator = "";
+            for (Map.Entry<String, Object> entry : parameters.entrySet())
+            {
+                headerMessage.append(separator);
+                separator = ", ";
+                headerMessage.append(PageFlowUtil.filter(entry.getKey()));
+                headerMessage.append("&nbsp;=&nbsp;");
+                headerMessage.append(PageFlowUtil.filter(entry.getValue()));
+            }
+            headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Clear All").href("#")
+                    .onClick("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].clearAllParameters(); return false;"));
+            sectionSeparator = "<br/><br/>";
+        }
+
+        if (filterDescription != null)
+        {
+            headerMessage.append(sectionSeparator);
+            headerMessage.append("<span class=\"labkey-strong\">Filter:</span>&nbsp;");
+            headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
+            headerMessage.append(PageFlowUtil.button("Clear All").href("#")
+                    .onClick("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].clearAllFilters(); return false;"));
+        }
+    }
+
+    protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    {
+    }
+
+    protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    {
+        headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
+        headerMessage.append("<span style='padding:5px 45px 5px 0;'>");
+        if (isDefaultView(ctx))
+            headerMessage.append("default");
+        else
+            headerMessage.append(PageFlowUtil.filter(ctx.getView().getLabel()));
+
+        if (ctx.getView() != null && ctx.getView().isLoadedFromTableTitle())
+        {
+            HelpTopic topic = new HelpTopic("title-loaded-view");
+            headerMessage.append("&nbsp;<span class='labkey-error'>").append(CustomView.TITLE_BOUND_CUSTOM_VIEW_WARNING_HELPLINK).append("</span>&nbsp;");
+            headerMessage.append(topic.getLinkHtml("help"));
+
+            _log.error("Custom View: '" + ctx.getView().getLabel() + "' in folder : " + ctx.getContainer().getPath() + " is being loaded by matching it's table title.");
+        }
+        headerMessage.append("</span>&nbsp;");
+    }
+
+    protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    {
+        renderHeader(ctx, out, renderButtons, 0);
+    }
+
+    private void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException
+    {
+        // TODO: Remove the colCount parameter once new UI is in place
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
+            _renderButtonBarNew(ctx, out, renderButtons);
+            _renderPaginationNew(ctx, out);
+            out.write("</div>");
+            _renderDrawer(ctx, out);
+            _renderContextBar(ctx, out);
+            _renderViewBar(ctx, out);
+        }
+        else
+        {
+            out.write("\n<tr");
+            if (!shouldRenderHeader(renderButtons))
+                out.write(" style=\"display:none\"");
+            out.write(" id=\"" + PageFlowUtil.filter(getDomId() + "-header-row") + "\">");
+
+            out.write("<td colspan=\"");
+            out.write(String.valueOf(colCount));
+            out.write("\" class=\"labkey-data-region-header-container\">\n");
+
+            out.write("<table class=\"labkey-data-region-header\" cellpadding=\"0\" cellspacing=\"0\" id=\"" + PageFlowUtil.filter(getDomId() + "-header") + "\">\n");
+            out.write("<tr><td nowrap>\n");
+            if (renderButtons)
+            {
+                renderButtons(ctx, out);
+            }
+            out.write("</td>");
+
+            out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
+            renderPagination(ctx, out, PaginationLocation.TOP);
+            out.write("</td></tr>\n");
+
+            renderRibbon(ctx, out);
+            renderMessageBox(ctx, out);
+
+            // end table.labkey-data-region-header
+            out.write("</table>\n");
+
+            out.write("\n</td></tr>");
+
+            if (this.getAllowHeaderLock())
+            {
+                out.write("\n<tr");
+                if (!shouldRenderHeader(renderButtons))
+                    out.write(" style=\"display:none\"");
+                out.write(" id=\"" + PageFlowUtil.filter(getDomId() + "-header-row-spacer") + "\" style=\"display: none;\">");
+
+                out.write("<td colspan=\"");
+                out.write(String.valueOf(colCount));
+                out.write("\" class=\"labkey-data-region-header-container\">\n");
+
+                out.write("<table class=\"labkey-data-region-header\">\n");
+                out.write("<tr><td nowrap>\n");
+                out.write("</td>");
+
+                out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
+                renderPagination(ctx, out, PaginationLocation.TOP);
+                out.write("</td></tr>\n");
+
+                renderRibbon(ctx, out);
+                renderMessageBox(ctx, out);
+
+                // end table.labkey-data-region-header
+                out.write("</table>\n");
+
+                out.write("\n</td></tr>");
+            }
+        }
+    }
+
+    protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
+    {
+        JSONObject dataRegionJSON = toJSON(ctx);
+
+        if (messages != null && !messages.isEmpty())
+        {
+            dataRegionJSON.put("messages", messages);
+        }
+
+        StringWriter out = new StringWriter();
+        out.write("<script type=\"text/javascript\">\n");
+        out.write("LABKEY.DataRegion.create(");
+        out.write(dataRegionJSON.toString(2));
+        out.write(");\n");
+        out.write("</script>\n");
+        writer.write(out.toString());
     }
 
     protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
@@ -818,24 +1140,27 @@ public class DataRegion extends AbstractDataRegion
         try
         {
             boolean showParameterForm = false;
-            try
+            if (usesResultSet())
             {
-                TableInfo t = getTable();
-                if (null != t && !t.getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
+                try
+                {
+                    TableInfo t = getTable();
+                    if (null != t && !t.getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
+                        showParameterForm = true;
+                    else
+                        rs = getResultSet(ctx);
+                }
+                catch (QueryService.NamedParameterNotProvided x)
+                {
                     showParameterForm = true;
-                else
-                    rs = getResultSet(ctx);
-            }
-            catch (QueryService.NamedParameterNotProvided x)
-            {
-                showParameterForm = true;
-            }
-            catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
-            {
-                _errorCreatingResults = true;
-                _showPagination = false;
-                _allowHeaderLock = false;
-                addMessage(new Message("<span class=\"labkey-error\">" + PageFlowUtil.filter(x.getMessage()) + "</span><br>", MessageType.ERROR, MessagePart.header));
+                }
+                catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
+                {
+                    _errorCreatingResults = true;
+                    _showPagination = false;
+                    _allowHeaderLock = false;
+                    addMessage(new Message("<span class=\"labkey-error\">" + PageFlowUtil.filter(x.getMessage()) + "</span><br>", MessageType.ERROR, MessagePart.header));
+                }
             }
 
             if (showParameterForm)
@@ -854,6 +1179,25 @@ public class DataRegion extends AbstractDataRegion
         {
             ResultSetUtil.close(rs);
         }
+    }
+
+    private void renderRibbon(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<tr>");
+        out.write("<td colspan=\"2\" class=\"labkey-ribbon\" style=\"display:none;\"></td>");
+        out.write("</tr>\n");
+    }
+
+    private void renderMessageBox(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\" style=\"display:none\">");
+        out.write("<td colspan=\"2\" class=\"labkey-dataregion-msgbox\">");
+        out.write("<span class=\"labkey-dataregion-msg-toggle fa fa-minus\" "
+                + "onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].toggleMessageArea();\" "
+                + "title=\"Collapse message\" alt=\"close\"></span>");
+        out.write("<div></div>");
+        out.write("</td>");
+        out.write("</tr>\n");
     }
 
     private void _renderParameterForm(RenderContext ctx, Writer out) throws IOException
@@ -928,7 +1272,9 @@ public class DataRegion extends AbstractDataRegion
 
         if (!_errorCreatingResults)
         {
-            _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
+            out.write("<tbody>");
+            renderTableContent(ctx, out, showRecordSelectors, renderers, colCount);
+            out.write("</tbody>");
         }
 
         renderFooter(ctx, out, renderButtons, colCount);
@@ -969,7 +1315,7 @@ public class DataRegion extends AbstractDataRegion
         if (showRecordSelectors)
             colCount++;
 
-        if (rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
+        if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
         {
             _rowCount = ((TableResultSet) rs).getSize();
             if (_complete && _totalRows == null)
@@ -978,16 +1324,14 @@ public class DataRegion extends AbstractDataRegion
 
         Map<String, String> messages = prepareMessages(ctx);
 
-        renderFormHeader(ctx, out, ctx.getMode());
+        renderFormBegin(ctx, out, ctx.getMode());
 
         if (shouldRenderHeader(renderButtons))
         {
-            _renderHeaderNew(ctx, out, renderButtons);
-            _renderContextBar(ctx, out);
-            _renderViewBar(ctx, out);
+            renderHeader(ctx, out, renderButtons);
         }
 
-        _renderMessages(ctx, out);
+        renderMessages(ctx, out);
 
         if (!_errorCreatingResults)
             _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
@@ -996,15 +1340,6 @@ public class DataRegion extends AbstractDataRegion
         renderAnalyticsProvidersScripts(ctx, out);
 
         renderFormEnd(ctx, out);
-    }
-
-    private void _renderHeaderNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
-    {
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
-        _renderButtonBarNew(ctx, out, renderButtons);
-        _renderPaginationNew(ctx, out);
-        out.write("</div>");
-        _renderDrawer(ctx, out);
     }
 
     private void _renderButtonBarNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
@@ -1047,7 +1382,7 @@ public class DataRegion extends AbstractDataRegion
         _renderBar(ctx, out, _viewActions, "viewbar");
     }
 
-    private void _renderMessages(RenderContext ctx, Writer out) throws IOException
+    protected void renderMessages(RenderContext ctx, Writer out) throws IOException
     {
         // The container <div> is written regardless of _messages being available
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
@@ -1082,13 +1417,9 @@ public class DataRegion extends AbstractDataRegion
         out.write("</div>");
     }
 
-    private void _renderDataTable(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    protected void renderTableContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
-
-        if (newUI)
-            out.write("<tbody>");
 
         if (_aggregateRowConfig.getAggregateRowFirst())
             renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
@@ -1099,9 +1430,6 @@ public class DataRegion extends AbstractDataRegion
 
         if (_aggregateRowConfig.getAggregateRowLast())
             renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
-
-        if (newUI)
-            out.write("</tbody>");
     }
 
     private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
@@ -1128,7 +1456,7 @@ public class DataRegion extends AbstractDataRegion
         out.write("class=\"" + tableCls + "\">");
 
         // table content
-        _renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
+        renderTableContent(ctx, out, showRecordSelectors, renderers, colCount);
 
         out.write("</table>");
         // end declare table
@@ -1204,7 +1532,7 @@ public class DataRegion extends AbstractDataRegion
     protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         if (renderButtons)
-            renderFormHeader(ctx, out, MODE_GRID);
+            renderFormBegin(ctx, out, MODE_GRID);
         out.write("\n<div class=\"labkey-data-region-wrap\"><table class=\"labkey-data-region");
 
         if (isShowBorders())
@@ -1261,7 +1589,6 @@ public class DataRegion extends AbstractDataRegion
                 || (_showPagination && _buttonBarPosition.atTop() && !isSmallResultSet()));
     }
 
-    @Override
     protected void renderButtons(RenderContext ctx, Writer out) throws IOException
     {
         //adjust position if bbar supplies a position value
@@ -1281,10 +1608,22 @@ public class DataRegion extends AbstractDataRegion
         return getDisplayColumns();
     }
 
-    @Override
     protected JSONObject toJSON(RenderContext ctx)
     {
-        JSONObject dataRegionJSON = super.toJSON(ctx);
+        JSONObject dataRegionJSON = new JSONObject();
+        dataRegionJSON.put("domId", getDomId());
+        dataRegionJSON.put("name", getName());
+
+        if (getSettings() != null)
+        {
+            dataRegionJSON.put("schemaName", getSettings().getSchemaName());
+            dataRegionJSON.put("queryName", getSettings().getQueryName());
+            dataRegionJSON.put("viewName", getSettings().getViewName());
+            dataRegionJSON.put("containerFilter", getSettings().getContainerFilterName());
+        }
+
+        dataRegionJSON.put("allowHeaderLock", getAllowHeaderLock());
+
         User user = ctx.getViewContext().getUser();
 
         if (ctx.getView() != null)
@@ -1835,7 +2174,7 @@ public class DataRegion extends AbstractDataRegion
         return null;
     }
 
-    protected void renderFormHeader(RenderContext ctx, Writer out, int mode) throws IOException
+    protected void renderFormBegin(RenderContext ctx, Writer out, int mode) throws IOException
     {
         out.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
 
@@ -2071,7 +2410,7 @@ public class DataRegion extends AbstractDataRegion
         initDetailsResultSet(ctx);
         List<DisplayColumn> renderers = getDisplayColumns();
 
-        renderFormHeader(ctx, out, MODE_DETAILS);
+        renderFormBegin(ctx, out, MODE_DETAILS);
 
         RowMap rowMap = null;
         int rowIndex = 0;
@@ -2407,7 +2746,7 @@ public class DataRegion extends AbstractDataRegion
         else
             buttonBar = _updateButtonBar;
 
-        renderFormHeader(ctx, out, action);
+        renderFormBegin(ctx, out, action);
         renderMainErrors(ctx, out);
 
         if (!newUI)
@@ -3120,5 +3459,10 @@ public class DataRegion extends AbstractDataRegion
     public void setSelectAllURL(@Nullable ActionURL selectAllURL)
     {
         _selectAllURL = selectAllURL;
+    }
+
+    protected boolean usesResultSet()
+    {
+        return true;
     }
 }
