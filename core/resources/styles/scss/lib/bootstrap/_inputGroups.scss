@@ -46,6 +46,18 @@
   background-color: $lk-input-group-unstyled-bg-color;
 }
 
+@media (min-width: $lk-screen-sm-min) {
+  .input-group-pull-right {
+    float: right !important;
+  }
+}
+
+@media (max-width: $lk-screen-sm-min) {
+  .input-group-disappear-sm {
+    display: none;
+  }
+}
+
 // Sizing options
 //
 // Remix the default form control sizing classes into new ones for easier

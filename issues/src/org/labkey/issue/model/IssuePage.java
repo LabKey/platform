@@ -404,10 +404,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                             writer.append("<div class=\"form-group\">");
 
                         //gross, but necessary to override builder CSS
-                        if (newUI && prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo"))
+                        if (newUI && (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo") ||
+                                        prop.getPropertyDescriptor().getName().equalsIgnoreCase("Resolution")))
+                        {
                             writer.append(renderLargeLabel(prop, context, readOnly));
+                        }
                         else
+                        {
                             writer.append(renderLabel(prop, context, readOnly, false));
+                        }
+
 
                         if (visible)
                             writer.append(renderInput(prop, context, readOnly));
@@ -437,6 +443,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderLabel(DomainProperty prop, ViewContext context, boolean strictGrid, boolean isLarge) throws IOException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
@@ -451,7 +458,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        if (isLarge)
+                        if (newUI && isLarge)
                         {
                             sb.append("<label class=\"col-md-4 col-lg-3 control-label\">");
                             dc.renderTitle(renderContext, writer);
@@ -459,7 +466,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         else
                             dc.renderDetailsCaptionCell(renderContext, writer, strictGrid);
                         sb.append(writer);
-                        if (isLarge)
+                        if (newUI && isLarge)
                         {
                             if (getRequiredFields().contains("assignedto"))
                                 sb.append(" *");
@@ -500,7 +507,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     {
                         if (!newUI)
                             writer.append("<td>");
-                        else if (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo"))
+                        else if (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo") ||
+                                    prop.getPropertyDescriptor().getName().equalsIgnoreCase("Resolution"))
                             writer.append("<div class=\"col-md-8 col-lg-9\" >");
                         else
                             writer.append(readOnly ? "<div class=\"col-9\">" : "<div class=\"col-sm-9 col-lg-10\">");

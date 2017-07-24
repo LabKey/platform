@@ -47,8 +47,10 @@
     </div>
     <div class="col-sm-5">
         <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
-            <labkey:input name="issueId" placeholder="ID # or Search Term"/>
-            <%= button("Search").iconCls("search").submit(true) %>
+            <div class="input-group-pull-right">
+                <labkey:input name="issueId" placeholder="ID # or Search Term"/>
+                <%= button("Search").iconCls("search").submit(true) %>
+            </div>
         </labkey:form>
     </div>
 </div>

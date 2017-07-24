@@ -456,7 +456,7 @@ else
         <div class="col-sm-4" style="margin-bottom: 5px">
             <%if (bean.getHasUpdatePermissions())
             {%>
-            <div class="btn-group" role="group" aria-label="Create New Issue group" style="display: block;">
+            <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
                 <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
                     <%=h("new " + names.singularName.toLowerCase())%>
                 </a>
@@ -464,7 +464,7 @@ else
                     <a class="btn btn-primary" data-toggle="dropdown">
                         <i class="fa fa-caret-down"></i>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-right">
+                    <ul class="dropdown-menu dropdown-menu-left">
                         <li><a onclick="<%=h(relatedIssues.toString())%>">Create Related Issue</a></li>
                     </ul>
                 </span>
@@ -492,7 +492,8 @@ else
 { %>
     <div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div>
 <% } %>
-<div class="row">
+
+<div class="row" style="margin-bottom: 10px">
     <div class="col-sm-1">
         <label><%=text(bean.getLabel("Status", true))%></label>
         <div class="form-group"><%=h(issue.getStatus())%></div>
@@ -501,7 +502,7 @@ else
         <label>Assigned To</label>
         <div class="form-group"><%=h(issue.getAssignedToName(user))%></div>
     </div>
-    <div class="col-sm-4">
+    <div class="col-sm-5">
         <label>Recent Activity</label>
         <%
             Issue.IssueEvent m = issue.getMostRecentEvent(user);
@@ -545,41 +546,61 @@ else
             <div><%=h(name)%></div>
         <%}%>
     </div>
+
     <%}%>
-</div>
-<%
-    if (!issue.getRelatedIssues().isEmpty())
-    {%>
-<div class="row">
-    <div class="col-sm-9">
-       <% RelatedIssuesView view = new RelatedIssuesView(context, issue.getRelatedIssues());
-        include(view, out);
-        %>
-        <a class="btn btn-default btn-xs" id="relatedCommentsToggle" onclick="toggleComments()">Show Related Comments</a>
     </div>
 </div>
-<%}%>
 
 <div class="row">
-    <div class="col-sm-3 col-sm-push-9">
-        <br>
-        <%
-            ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
-            propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
-            for(DomainProperty prop : propertyArr)
-            { %>
-        <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
-        <%}%>
+    <%  String mainContentClassName;
+        if (!bean.getCustomColumnConfiguration().getCustomProperties().isEmpty())
+        {
+            mainContentClassName = "col-sm-10 col-sm-pull-2";
+    %>
+            <div class="col-sm-2 col-sm-push-10"><%
+            if (!issue.getRelatedIssues().isEmpty())
+            //vertical alignment with related boxes
+            {%>
+                <br class="input-group-disappear-sm">
+            <%}%>
+            <div style="word-wrap: break-word">
+                <%
+                    ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
+                    propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
+                    for(DomainProperty prop : propertyArr)
+                    {%>
+                        <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
+                    <%}%>
+            </div>
     </div>
-    <div class="col-sm-9 col-sm-pull-3">
+
+        <%}
+        else
+        {
+            mainContentClassName = "col-sm-12";
+        }
+        %>
+
+    <div class="<%=text(mainContentClassName)%>">
+        <%
+            if (!issue.getRelatedIssues().isEmpty())
+            {
+                RelatedIssuesView view = new RelatedIssuesView(context, issue.getRelatedIssues());
+                include(view, out);
+
+            %>
+        <a class="btn btn-default btn-xs" id="relatedCommentsToggle" onclick="toggleComments()" style="margin-bottom: 10px">Show Related Comments</a>
+
+        <%}%>
+        <labkey:panel className="labkey-portal-container">
+
         <%
         for (Issue.Comment comment : commentLinkedList)
         {
             String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
             String classStr = !issue.getComments().contains(comment) ? "relatedIssue" : "currentIssue";
             %>
-        <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
-            <hr>
+            <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
                 <strong>
                     <%=h(comment.getCreatedByName(user))%>
                 </strong>
@@ -590,14 +611,24 @@ else
                 <%
                 if (!issue.getComments().contains(comment))
                 {%>
-                    <div style="color:blue;font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
+                    <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
                 }%>
                 <%=comment.getComment()%>
                 <%=bean.renderAttachments(context, comment)%>
+                <hr>
             </div>
             <%
-        }%>
+        }
+
+        if (bean.getHasUpdatePermissions())
+        {%>
+
+        <%}%>
+
+            <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
+        </labkey:panel>
     </div>
+
 </div>
 
 <%}%>

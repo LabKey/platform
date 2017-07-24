@@ -108,7 +108,10 @@ public class RelatedIssuesView extends VBox
 
             // NOTE: We could probably use FrameType.TITLE, but it adds too much padding-top
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(issueListDef.lookupContainer(), issueListDef.getName());
-            addView(new HtmlView("<br><b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
+            if (PageFlowUtil.useExperimentalCoreUI())
+                addView(new HtmlView("<b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
+            else
+                addView(new HtmlView("<br><b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
 
             ViewContext ctx = new ViewContext(context);
             ctx.setContainer(issueListDef.lookupContainer());
