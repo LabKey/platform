@@ -97,6 +97,18 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
+    public Domain getDomainFromIssueDefId(int issueDefId, Container container, User user)
+    {
+        IssueListDef issueListDef = IssueManager.getIssueListDef(container, issueDefId);
+        if (issueListDef != null)
+        {
+            return issueListDef.getDomain(user);
+        }
+
+        return null;
+    }
+
+    @Override
     public Map<String, Domain> getDomainsForIssueDefKind(String kind, Container container, User user)
     {
         if (kind != null)

@@ -290,6 +290,22 @@ public class IssuesQuerySchema extends UserSchema
         return customViews;
     }
 
+    @Override
+    public @Nullable String getDomainURI(String queryName)
+    {
+        Container container = getContainer();
+
+        IssueListDef issueListDef = IssueManager.getIssueListDef(container, queryName);
+        if (issueListDef == null)
+            return null;
+
+        Domain domain = issueListDef.getDomain(null);
+        if (domain == null)
+            return null;
+
+        return domain.getTypeURI();
+    }
+
     private static class IssuesBuiltInCustomView implements CustomView
     {
         private QueryDefinition _queryDef;
