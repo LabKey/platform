@@ -153,7 +153,8 @@ public class ExternalSchema extends SimpleUserSchema
         String sourceSchemaName = def.getSourceSchemaName();
         if (sourceSchemaName == null && template != null)
             sourceSchemaName = template.getSourceSchemaName();
-        return scope.getSchema(sourceSchemaName, DbSchemaType.Bare);
+        DbSchemaType type = def.isFastCacheRefresh() ? DbSchemaType.Fast : DbSchemaType.Bare;
+        return scope.getSchema(sourceSchemaName, type);
     }
 
     @Nullable
@@ -321,6 +322,11 @@ public class ExternalSchema extends SimpleUserSchema
     public boolean shouldIndexMetaData()
     {
         return _def instanceof ExternalSchemaDef && _def.isIndexable();
+    }
+
+    public boolean shouldFastCacheRefresh()
+    {
+        return _def instanceof ExternalSchemaDef && _def.isFastCacheRefresh();
     }
 
     @Override

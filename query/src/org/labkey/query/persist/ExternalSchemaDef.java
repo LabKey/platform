@@ -22,6 +22,7 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
 {
     private boolean _editable;
     private boolean _indexable = true;
+    private boolean _fastCacheRefresh;
 
     public DbScope lookupDbScope()
     {
@@ -50,9 +51,20 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
         return _indexable;
     }
 
+    @Override
+    public boolean isFastCacheRefresh()
+    {
+        return _fastCacheRefresh;
+    }
+
     public void setIndexable(boolean indexable)
     {
         _indexable = indexable;
+    }
+
+    public void setFastCacheRefresh(boolean fastCacheRefresh)
+    {
+        _fastCacheRefresh = fastCacheRefresh;
     }
 
     @Override

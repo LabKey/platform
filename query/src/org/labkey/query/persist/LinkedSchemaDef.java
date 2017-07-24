@@ -34,6 +34,12 @@ public class LinkedSchemaDef extends AbstractExternalSchemaDef
     }
 
     @Override
+    public boolean isFastCacheRefresh()
+    {
+        return false;
+    }
+
+    @Override
     public SchemaType getSchemaType()
     {
         return SchemaType.linked;

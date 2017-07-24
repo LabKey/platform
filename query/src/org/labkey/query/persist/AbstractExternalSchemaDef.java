@@ -154,6 +154,8 @@ public abstract class AbstractExternalSchemaDef extends Entity
 
     public abstract boolean isIndexable();
 
+    public abstract boolean isFastCacheRefresh();
+
     public abstract SchemaType getSchemaType();
 
     @Override

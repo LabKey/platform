@@ -83,6 +83,9 @@
             <column columnName="Indexable">
                 <description>Determines whether the schema should be indexed for full-text searching.</description>
             </column>
+            <column columnName="fastCacheRefresh">
+                <description>Determines whether the external schema cache will be refreshed more frequently.</description>
+            </column>
             <column columnName="Tables">
                 <description>Allows exposing selected tables in the schema.</description>
             </column>
