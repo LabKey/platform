@@ -36,7 +36,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -541,7 +540,7 @@ public class QuerySettings
             return Table.NO_ROWS;
         if (_showRows != ShowRows.PAGINATED)
             return Table.ALL_ROWS;
-        return _maxRowsSet ? _maxRows : (PageFlowUtil.useExperimentalCoreUI() ? 20 : 100);
+        return _maxRowsSet ? _maxRows : 100;
     }
 
     /** @param maxRows the maximum number of rows to return, or Table.ALL_ROWS (unlimited) or Table.NO_ROWS (metadata only) */
