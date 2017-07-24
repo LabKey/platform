@@ -81,7 +81,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
@@ -102,7 +101,6 @@ import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -113,7 +111,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1908,7 +1905,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public ModelAndView getView(ProgressReportForm form, BindException errors) throws Exception
         {
-            JspView<ProgressReportForm> view = new JspView<>("/org/labkey/study/view/assayProgressReport.jsp", form, errors);
+            JspView<ProgressReportForm> view = new JspView<>("/org/labkey/study/view/assayProgressReportConfig.jsp", form, errors);
 
             return view;
         }
@@ -1971,7 +1968,5 @@ public class ReportsController extends BaseStudyController
             }
             return report;
         }
-
     }
-
 }

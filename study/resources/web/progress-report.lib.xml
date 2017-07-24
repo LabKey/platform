@@ -2,6 +2,7 @@
     <library compileInProductionMode="true">
         <script path="progress-report/config.js"/>
         <script path="progress-report/config.css"/>
+        <script path="progress-report/progressReport.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4" />

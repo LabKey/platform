@@ -12,3 +12,7 @@ table.assay-summary {
 table.assay-summary td {
     padding: 5px;
 }
+
+table.progress-report th {
+    font-weight: bold;
+}

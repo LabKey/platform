@@ -146,5 +146,5 @@ Enter assay schedule information in the grids below.
         </li>
     </ul>
 </div>
-<div id="assay-configurations-panel"></div>
+<div id="assay-configurations-panel" class="table-responsive"></div>
 <br/>
