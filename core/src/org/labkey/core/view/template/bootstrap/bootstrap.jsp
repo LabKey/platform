@@ -22,7 +22,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
-<%@ page import="org.labkey.api.view.Portal" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable

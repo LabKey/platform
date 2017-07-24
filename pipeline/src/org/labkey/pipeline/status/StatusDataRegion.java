@@ -127,9 +127,4 @@ public class StatusDataRegion extends DataRegion
 
         out.write("</div>");
     }
-
-    public void setReturnURL(ActionURL returnURL)
-    {
-        
-    }
 }
