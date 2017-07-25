@@ -173,11 +173,33 @@ var sourceSchemaCombo = new Ext.form.ComboBox({
 
 if (external)
 {
-    var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>}});
-    var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>}, checked:<%=def.isIndexable()%>});
-    var fastCacheRefreshCheckBox = new LABKEY.ext.Checkbox({name:'fastCacheRefresh', fieldLabel:'Fast Cache Refresh',
-        helpPopup:{title:'Cache Refreshes often and is intended for development use.',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("fastCacheRefresh"))%>}, checked:<%=def.isFastCacheRefresh()%>});
+    var editableCheckBox = new LABKEY.ext.Checkbox({
+        name:'editable',
+        id:'myeditable',
+        fieldLabel:'Editable',
+        helpPopup:{
+            title:'Editable',
+            html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>
+        }
+    });
+    var indexableCheckBox = new LABKEY.ext.Checkbox({
+        name:'indexable',
+        fieldLabel:'Index Schema Meta Data',
+        helpPopup:{
+            title:'Index Schema Meta Data',
+            html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>
+        },
+        checked:<%=def.isIndexable()%>
+    });
+    var fastCacheRefreshCheckBox = new LABKEY.ext.Checkbox({
+        name:'fastCacheRefresh',
+        fieldLabel:'Fast Cache Refresh',
+        helpPopup:{
+            title:'Fast Cache Refresh',
+            html:<%=PageFlowUtil.qh(bean.getHelpHTML("fastCacheRefresh"))%>
+        },
+        checked:<%=def.isFastCacheRefresh()%>
+    });
 }
 
 var metaDataTextArea = new Ext.form.TextArea({

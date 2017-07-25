@@ -64,8 +64,8 @@
             <td><label for="providerName_<%=h(provider.getName())%>"><strong><%= h(provider.getName())%></strong></label></td>
         </tr>
         <tr>
-            <td />
-            <td><label for="providerName_<%=h(provider.getName())%>"><%= text(provider.getDescription()) %></label></td>
+            <td>&nbsp;</td>
+            <td><label for="providerName_<%=h(provider.getName())%>" style="font-weight: normal;"><%= text(provider.getDescription()) %></label></td>
         </tr>
         <% } %>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>

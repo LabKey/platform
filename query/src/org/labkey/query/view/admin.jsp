@@ -29,7 +29,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<h2>External Schemas</h2>
+<h3>External Schemas</h3>
 <p>
     Administrators can define external schemas to make data stored in any PostgreSQL, Microsoft SQL Server, SAS, MySQL,
     or Oracle relational database available for viewing, querying, and editing via LabKey Server. This feature should be
@@ -73,7 +73,7 @@ else
         <%
     } %>
 
-    <table class='labkey-data-region labkey-show-borders'>
+    <table class='labkey-data-region-legacy labkey-show-borders'>
         <tr>
             <td class='labkey-column-header' style='min-width:80px;'>Name</td>
             <td class='labkey-column-header' style='min-width:80px;'>Data Source</td>
@@ -136,7 +136,7 @@ else
     %>
 
 
-<h2>Linked Schemas</h2>
+<h3>Linked Schemas</h3>
 <p>
     Linked schemas can be created by referencing an existing LabKey schema in the current or different folder.
     The linked schema may expose some or all of the tables and queries from the original schema.
@@ -151,7 +151,7 @@ else
 {
     linkedSchemas.sort(Comparator.comparing(LinkedSchemaDef::getUserSchemaName, String.CASE_INSENSITIVE_ORDER)); %>
 
-    <table class='labkey-data-region labkey-show-borders'>
+    <table class='labkey-data-region-legacy labkey-show-borders'>
         <tr>
             <td class='labkey-column-header' style='min-width:80px;'>Name</td>
             <td class='labkey-column-header' style='min-width:80px;'>Schema Template</td>
