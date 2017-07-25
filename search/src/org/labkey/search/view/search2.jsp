@@ -269,9 +269,10 @@
         }
     }
 %>
-<div class="col-md-12">
+<div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
+    <div style="position:relative;">
     <labkey:form id="<%=h(searchFormId)%>" className="lk-search-form" action="<%=h(searchConfig.getPostURL(c))%>">
-        <labkey:input type="text" name="q" placeholder="Search LabKey Server" formGroup="false" value="<%=text(value)%>"/>
+        <labkey:input type="text" name="q" placeholder="<%=text(form.isWebPart() ? \"\" : \"Search LabKey Server\")%>" formGroup="false" value="<%=text(value)%>"/>
         <a class="search-overlay fa fa-search"></a>
         <% if (showAdvancedUI) { %>
         <small>
@@ -298,6 +299,7 @@
                 out.write(hiddenInputs);
         %>
     </labkey:form>
+    </div>
 </div>
 <div id="<%=h(advFormCt)%>" class="col-md-12" <%=text(form.isShowAdvanced() ? "" : "style=\"display:none;\"")%>>
 <div class="panel panel-default">
@@ -604,10 +606,12 @@
                 });
             });
 
+            <% if (!form.isWebPart()) { %>
             var q = form.find('input[name="q"]');
             if (!q.val()) {
                 q.focus();
             }
+            <% } %>
 
             form.find('.search-overlay').click(function() {
                 form.submit();

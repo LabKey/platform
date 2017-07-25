@@ -15,6 +15,7 @@
  */
 package org.labkey.search.view;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.JspView;
 import org.labkey.search.SearchController;
 import org.labkey.search.SearchController.SearchForm;
@@ -28,7 +29,7 @@ public class SearchWebPart extends JspView<SearchController.SearchForm>
 {
     public SearchWebPart(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebPart)
     {
-        super("/org/labkey/search/view/search.jsp", getForm(includeSubfolders, textBoxWidth, includeHelpLink, isWebPart));
+        super(PageFlowUtil.useExperimentalCoreUI() ? "/org/labkey/search/view/search2.jsp" : "/org/labkey/search/view/search.jsp", getForm(includeSubfolders, textBoxWidth, includeHelpLink, isWebPart));
         setTitle("Search");
     }
 
