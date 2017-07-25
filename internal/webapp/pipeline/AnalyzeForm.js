@@ -61,6 +61,7 @@ Ext4.define('LABKEY.pipeline.AnalyzeForm', {
                             '<textarea id="xmlParametersInput" class="protocol-input" style="width: 100%;" name="xmlParameters" cols="150" rows="15"></textarea>',
                         '</td>',
                     '</tr>',
+                    '<tr id="extraSettings" style="display: none;"/>',
                     '<tr>',
                         '<td colspan="2">',
                             '<input type="checkbox" class="protocol-input" disabled id="saveProtocolInput" name="saveProtocol" checked/>',
