@@ -333,7 +333,14 @@ Ext.onReady(function()
     // attach helpPopup as tooltips to field labels
     Ext.each(f.form.items.items, function (item) {
         if (item.rendered && Ext.isDefined(item.helpPopup)) {
-            var labelTxt = item.fieldLabel + ' <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="right" title="' + item.helpPopup.html + '"></i>:';
+            var labelTxt = item.fieldLabel;
+            if (LABKEY.experimental.useExperimentalCoreUI) {
+                labelTxt += ' <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="right" title="' + item.helpPopup.html + '"></i> :';
+            }
+            else {
+                labelTxt += ' <span class="labkey-help-pop-up" title="' + item.helpPopup.html + '">?</span> :'
+            }
+
             var labelEl = item.getEl().up('.x-form-item', 10, true).child('.x-form-item-label');
             if (labelEl) {
                 labelEl.update(labelTxt);
