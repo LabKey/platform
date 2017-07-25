@@ -79,12 +79,6 @@ public enum DbSchemaType
     Fast("fast", CacheManager.SECOND*5 , false)
     {
         @Override
-        long getCacheTimeToLive()
-        {
-            return super.getCacheTimeToLive();
-        }
-
-        @Override
         DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException
         {
             Map<String, SchemaTableInfoFactory> tableInfoFactoryMap = DbSchema.loadTableMetaData(scope, metaDataName);
