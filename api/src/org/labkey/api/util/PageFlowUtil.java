@@ -2753,4 +2753,30 @@ public class PageFlowUtil
             }
         }
     }
+
+    public static String getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
+    {
+        Map<String, String> stringValMap = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : propValueMap.entrySet())
+            stringValMap.put(entry.getKey(), entry.getValue().toString());
+        return getDataRegionHtmlForPropertyValues(stringValMap);
+    }
+
+    public static String getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
+        sb.append("<tr><td class=\"labkey-column-header\">Property</td><td class=\"labkey-column-header\">Value</td></tr>\n");
+        int rowCount = 0;
+        for (Map.Entry<String, String> entry : propValueMap.entrySet())
+        {
+            sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">");
+            sb.append("<td valign=\"top\">").append(entry.getKey()).append("</td>");
+            sb.append("<td valign=\"top\">").append(entry.getValue()).append("</td>");
+            sb.append("</tr>\n");
+            rowCount++;
+        }
+        sb.append("</table>\n");
+        return sb.toString();
+    }
 }

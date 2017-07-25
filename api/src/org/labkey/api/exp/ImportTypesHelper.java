@@ -109,113 +109,116 @@ public class ImportTypesHelper
         List<Map<String, Object>> importMaps = new LinkedList<>();
         RowMapFactory<Object> mapFactory = getRowMapFactory();
 
-        for (ColumnType columnXml : _tableXml.getColumns().getColumnArray())
+        if (_tableXml.getColumns() != null)
         {
-            String columnName = columnXml.getColumnName();
-
-            if (!acceptColumn(columnName, columnXml))
-                continue;
-
-            String dataType = columnXml.getDatatype();
-            PropertyType pt = PropertyType.getFromURI(columnXml.getConceptURI(), columnXml.getRangeURI(), null);
-            if (pt == null && dataType != null)
+            for (ColumnType columnXml : _tableXml.getColumns().getColumnArray())
             {
-                pt = PropertyType.getFromJdbcTypeName(dataType);
+                String columnName = columnXml.getColumnName();
+
+                if (!acceptColumn(columnName, columnXml))
+                    continue;
+
+                String dataType = columnXml.getDatatype();
+                PropertyType pt = PropertyType.getFromURI(columnXml.getConceptURI(), columnXml.getRangeURI(), null);
+                if (pt == null && dataType != null)
+                {
+                    pt = PropertyType.getFromJdbcTypeName(dataType);
+                    if (pt == null)
+                        pt = PropertyType.getFromXarName(dataType, null);
+                }
+
+                if ("entityid".equalsIgnoreCase(dataType))
+                {
+                    // Special case handling for GUID keys
+                    pt = PropertyType.STRING;
+                    columnXml.setScale(100);
+                }
+
                 if (pt == null)
-                    pt = PropertyType.getFromXarName(dataType, null);
+                    throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
+
+                // Assume nullable if not specified
+                boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
+
+                boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
+
+                // These default to being visible if nothing's specified in the XML
+                boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
+                boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
+                boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
+
+                boolean measure;
+                if (columnXml.isSetMeasure())
+                    measure = columnXml.getMeasure();
+                else
+                    measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+
+                boolean dimension;
+                if (columnXml.isSetDimension())
+                    dimension = columnXml.getDimension();
+                else
+                    dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
+
+                boolean recommendedVariable = false;
+                if (columnXml.isSetRecommendedVariable())
+                    recommendedVariable = columnXml.getRecommendedVariable();
+                else if (columnXml.isSetKeyVariable())
+                    recommendedVariable = columnXml.getKeyVariable();
+
+                DefaultScaleType.Enum scaleType = columnXml.getDefaultScale();
+                String defaultScale = scaleType != null ? scaleType.toString() : DefaultScaleType.LINEAR.toString();
+
+                FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
+                String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
+                if (type != null)
+                    facetingBehaviorType = type.toString();
+
+                Set<String> importAliases = new LinkedHashSet<>();
+                if (columnXml.isSetImportAliases())
+                {
+                    importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
+                }
+
+                boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
+                boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
+
+                ColumnType.Fk fk = columnXml.getFk();
+
+                Map<String, Object> map = mapFactory.getRowMap(
+                        _typeColumnValue,
+                        columnName,
+                        columnXml.getPropertyURI(),
+                        columnXml.getColumnTitle(),
+                        columnXml.getDescription(),
+                        pt.getTypeUri(),
+                        notNull,
+                        columnXml.getConceptURI(),
+                        columnXml.getFormatString(),
+                        columnXml.isSetInputType() ? columnXml.getInputType() : null,
+                        columnXml.getIsHidden(),
+                        mvEnabled,
+                        null != fk ? fk.getFkFolderPath() : null,
+                        null != fk ? fk.getFkDbSchema() : null,
+                        null != fk ? fk.getFkTable() : null,
+                        columnXml.getUrl(),
+                        ColumnRenderProperties.convertToString(importAliases),
+                        shownInInsertView,
+                        shownInUpdateView,
+                        shownInDetailsView,
+                        measure,
+                        dimension,
+                        recommendedVariable,
+                        defaultScale,
+                        ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
+                        facetingBehaviorType,
+                        isProtected,
+                        isExcludeFromShifting,
+                        columnXml.isSetScale() ? columnXml.getScale() : null
+
+                );
+
+                importMaps.add(map);
             }
-
-            if ("entityid".equalsIgnoreCase(dataType))
-            {
-                // Special case handling for GUID keys
-                pt = PropertyType.STRING;
-                columnXml.setScale(100);
-            }
-
-            if (pt == null)
-                throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
-
-            // Assume nullable if not specified
-            boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
-
-            boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
-
-            // These default to being visible if nothing's specified in the XML
-            boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
-            boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
-            boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
-
-            boolean measure;
-            if (columnXml.isSetMeasure())
-                measure = columnXml.getMeasure();
-            else
-                measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
-
-            boolean dimension;
-            if (columnXml.isSetDimension())
-                dimension = columnXml.getDimension();
-            else
-                dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
-
-            boolean recommendedVariable = false;
-            if (columnXml.isSetRecommendedVariable())
-                recommendedVariable = columnXml.getRecommendedVariable();
-            else if (columnXml.isSetKeyVariable())
-                recommendedVariable = columnXml.getKeyVariable();
-
-            DefaultScaleType.Enum scaleType = columnXml.getDefaultScale();
-            String defaultScale = scaleType != null ? scaleType.toString() : DefaultScaleType.LINEAR.toString();
-
-            FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
-            String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
-            if (type != null)
-                facetingBehaviorType = type.toString();
-
-            Set<String> importAliases = new LinkedHashSet<>();
-            if (columnXml.isSetImportAliases())
-            {
-                importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
-            }
-
-            boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
-            boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
-
-            ColumnType.Fk fk = columnXml.getFk();
-
-            Map<String, Object> map = mapFactory.getRowMap(
-                    _typeColumnValue,
-                    columnName,
-                    columnXml.getPropertyURI(),
-                    columnXml.getColumnTitle(),
-                    columnXml.getDescription(),
-                    pt.getTypeUri(),
-                    notNull,
-                    columnXml.getConceptURI(),
-                    columnXml.getFormatString(),
-                    columnXml.isSetInputType() ? columnXml.getInputType() : null,
-                    columnXml.getIsHidden(),
-                    mvEnabled,
-                    null != fk ? fk.getFkFolderPath() : null,
-                    null != fk ? fk.getFkDbSchema() : null,
-                    null != fk ? fk.getFkTable() : null,
-                    columnXml.getUrl(),
-                    ColumnRenderProperties.convertToString(importAliases),
-                    shownInInsertView,
-                    shownInUpdateView,
-                    shownInDetailsView,
-                    measure,
-                    dimension,
-                    recommendedVariable,
-                    defaultScale,
-                    ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
-                    facetingBehaviorType,
-                    isProtected,
-                    isExcludeFromShifting,
-                    columnXml.isSetScale() ? columnXml.getScale() : null
-
-            );
-
-            importMaps.add(map);
         }
 
         return importMaps;
