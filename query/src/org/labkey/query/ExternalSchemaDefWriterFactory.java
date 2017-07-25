@@ -86,7 +86,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 
                 defXml.setEditable(def.isEditable());
                 defXml.setIndexable(def.isIndexable());
-                defXml.setIndexable(def.isFastCacheRefresh());
+                defXml.setFastCacheRefresh(def.isFastCacheRefresh());
                 defXml.setDataSource(def.getDataSource());
 
                 addCommonProperties(defXml, def);
