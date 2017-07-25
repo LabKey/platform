@@ -36,6 +36,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext3");
+        dependencies.add("internal/jQuery");
     }
 %>
 <%
@@ -49,14 +50,15 @@
 <style type="text/css">
     .systemSchemaStyleClass{padding-right:5px !important}
     .x-panel-body{background-color: transparent;}
+    .tooltip{opacity: 1; width: 500px;}
+    label{font-weight: normal;}
 </style>
 
 <labkey:errors/>
 <div id="form"></div>
 
 <script type="text/javascript">
-    Ext.QuickTips.init();
-
++function($){
 <%
     int coreIndex = 0;
     int i = 0;
@@ -130,7 +132,6 @@ var dataSourceCombo = new Ext.form.ComboBox({
     hiddenName:'dataSource',
     editable:false,
     triggerAction:'all',
-    helpPopup:{title:'Data Source', html:<%=PageFlowUtil.qh(bean.getHelpHTML("DataSource"))%>},
     value:dataSources[initialDataSourceIndex][0]
 });
 
@@ -196,7 +197,7 @@ if (external)
         fieldLabel:'Fast Cache Refresh',
         helpPopup:{
             title:'Fast Cache Refresh',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("fastCacheRefresh"))%>
+            html:<%=PageFlowUtil.qh(bean.getHelpHTML("FastCacheRefresh"))%>
         },
         checked:<%=def.isFastCacheRefresh()%>
     });
@@ -267,7 +268,7 @@ var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
 
 var f = new LABKEY.ext.FormPanel({
     width:955,
-    labelWidth:150,
+    labelWidth:170 + (!LABKEY.experimental.useExperimentalCoreUI?20:0),
     border:false,
     standardSubmit:true,
     items:[
@@ -328,6 +329,20 @@ Ext.onReady(function()
         loadSchemaTemplateStore(sourceContainerId, templatesStore);
     }
     loadTables();
+
+    // attach helpPopup as tooltips to field labels
+    Ext.each(f.form.items.items, function (item) {
+        if (item.rendered && Ext.isDefined(item.helpPopup)) {
+            var labelTxt = item.fieldLabel + ' <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="right" title="' + item.helpPopup.html + '"></i>:';
+            var labelEl = item.getEl().up('.x-form-item', 10, true).child('.x-form-item-label');
+            if (labelEl) {
+                labelEl.update(labelTxt);
+            }
+        }
+    });
+    if (LABKEY.experimental.useExperimentalCoreUI) {
+        $('[data-toggle="tooltip"]').tooltip();
+    }
 });
 
 // Populate the "Database Schema Name" combo box with new data source's schemas
@@ -552,4 +567,5 @@ function loadSchemaTemplateStore(sourceContainerId, schemaTemplateStore)
     });
 }
 
+}(jQuery);
 </script>
