@@ -395,8 +395,10 @@ else
             </div>
         </div>
         <div class="col-sm-4">
-            <strong>Status:</strong>
-            <span><%=text(issue.getStatus())%></span>
+            <div class="form-group">
+                <label class="col-md-3 control-label">Status</label>
+                <div class="col-md-9"><span><%=text(issue.getStatus())%></span></div>
+            </div>
         </div>
     </div>
     <div class="row">
@@ -406,6 +408,8 @@ else
             {%>
                 <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>
             <%}
+            if (issue.getIssueId() != 0)
+            {
                 Issue.IssueEvent m = issue.getMostRecentEvent(user);
                 String lastUpdatedStr = "";
                 String lastUpdatedTitleStr = "";
@@ -414,7 +418,9 @@ else
                     lastUpdatedStr = m.toString();
                     lastUpdatedTitleStr = m.getFullTimestamp();
                 }
+
             %>
+
             <div style="margin: 10px 0;">
                 <div id="recentTimeStamp" title="<%=h(lastUpdatedTitleStr)%>"><div><strong>Recent Activity</strong></div><%=h(lastUpdatedStr)%>
                     <a id="timestampsToggle" onclick="showMoreTimestamps()">
@@ -437,7 +443,7 @@ else
                     %>
                 </div>
             </div>
-
+            <%}%>
         </div>
         <div class="col-sm-3">
             <div class="form-group">
@@ -501,11 +507,15 @@ else
             }
             }%>
         </div>
-        <div class="col-md-1">
-                <label for="notifyListArea">Notify List</label>
-        </div>
-        <div class="col-sm-3">
-            <labkey:autoCompleteTextArea name="notifyListArea" id="notifyListArea" url="<%=h(completionUrl)%>" rows="4" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+        <div class="col-sm-4">
+            <div class="form-group">
+                <div class="col-md-3">
+                    <label for="notifyListArea">Notify List</label>
+                </div>
+                <div class="col-md-9" style="padding-right: 15px">
+                    <labkey:autoCompleteTextArea name="notifyListArea" id="notifyListArea" url="<%=h(completionUrl)%>" rows="3" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+                </div>
+            </div>
         </div>
     </div>
     <hr>
@@ -518,10 +528,10 @@ else
             if (j % 3 == 0)
             { //begin row div
     %>
-            <div class="form-row">
+            <div class="row form-row">
     <%       }%>
 
-    <div class="col-sm-4">
+    <div class="col-sm-4 form-large-label">
         <%=text(bean.renderColumn(prop, getViewContext()))%>
     </div>
 
@@ -537,22 +547,15 @@ else
     {%>
        </div>
     <%}%>
-    <div class="form-row">
-        <div class="form-group">
-            <label for="commentArea" class="control-label">
-                Comment
-            </label>
-            <div class="col-sm-12">
-                <textarea id="commentArea" class="form-control" name="comment" cols="150" rows="8" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
-            </div>
-        </div>
+    <div class="row" style="padding: 0 15px">
+        <strong>Comment</strong>
+            <textarea id="commentArea" class="form-control" name="comment" cols="150" rows="8" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
     </div>
-
     <table style="display: inline-table">
         <tr><td><table id="filePickerTableHead"></table></td></tr>
         <tr><td><a href="javascript:addFilePicker('filePickerTableHead','filePickerLinked')" id="filePickerLinked"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
-    <div style="float: right; padding-right: 15px; padding-top: 10px; display: inline-table;">
+    <div style="float: right; padding-top: 10px; display: inline-table;">
         <%= button("Cancel").href(cancelURL) %>
         <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
     </div>
@@ -571,36 +574,35 @@ else
     <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/>
     <%
         }%>
-    <div>
-        <%
-            for (Issue.Comment comment : issue.getComments())
-            {
-                String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
-                String classStr = !issue.getComments().contains(comment) ? "relatedIssue" : "currentIssue";
+        <%if (issue.getIssueId() != 0)
+        {
         %>
-        <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
-            <strong>
-                <%=h(comment.getCreatedByName(user))%>
-            </strong>
-            <br>
-            <strong title="<%=h(comment.getCreatedFullString())%>">
-                <%=h(bean.writeDate(comment.getCreated()))%>
-            </strong>
+        <labkey:panel className="labkey-portal-container">
             <%
+                for (Issue.Comment comment : issue.getComments())
+                {
+            %>
+            <div class="currentIssue" style="display: inline">
+                <strong>
+                    <%=h(comment.getCreatedByName(user))%>
+                </strong>
+                <br>
+                <strong title="<%=h(comment.getCreatedFullString())%>">
+                    <%=h(bean.writeDate(comment.getCreated()))%>
+                </strong>
+                <%
                 if (!issue.getComments().contains(comment))
                 {%>
-            <div style="color:blue;font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
-            }%>
-            <%=comment.getComment()%>
-            <%=bean.renderAttachments(context, comment)%>
-        </div>
-        <hr><%
-        }%>
-    </div>
-
-
-<%}%>
-
+                    <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
+                }%>
+                <%=comment.getComment()%>
+                <%=bean.renderAttachments(context, comment)%>
+                <hr>
+            </div>
+            <%}%>
+        </labkey:panel>
+        <%}
+    }%>
 <%
     if (!newUI)
     {

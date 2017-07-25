@@ -616,7 +616,7 @@ input[type="checkbox"] {
   // Quick utility class for applying `.input-lg` and `.input-sm` styles to the
   // inputs and labels within a `.form-group`.
   .form-group-lg {
-    @media (min-width: $screen-sm-min) {
+    @media (min-width: $lk-screen-sm-min) {
       .control-label {
         padding-top: ($padding-large-vertical + 1);
         font-size: $font-size-large;
@@ -624,7 +624,7 @@ input[type="checkbox"] {
     }
   }
   .form-group-sm {
-    @media (min-width: $screen-sm-min) {
+    @media (min-width: $lk-screen-sm-min) {
       .control-label {
         padding-top: ($padding-small-vertical + 1);
         font-size: $font-size-small;
@@ -634,22 +634,19 @@ input[type="checkbox"] {
 }
 
 
-//Form Row
-//
-//Removes L/R padding of form labels so fitting many of them in grid layout looks better
+//Useful for overriding bootstrap padding when working with 3+ column layouts of form inputs
+.form-large-label {
+
+  @media (min-width: $lk-screen-sm-min) {
+      label {
+        padding-left: 0;
+        padding-right: 0;
+      }
+    }
+}
+
 .form-row {
-  label {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  //full-width form-group direct children shouldn't have negative margins
-  > .form-group {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  &.col-sm-12 {
-    padding-left: 0;
+  @media (min-width: $lk-screen-sm-min) {
+      padding-left: 15px;
   }
 }

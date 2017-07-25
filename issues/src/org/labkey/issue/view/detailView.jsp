@@ -622,10 +622,8 @@ else
 
         if (bean.getHasUpdatePermissions())
         {%>
-
-        <%}%>
-
             <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
+        <%}%>
         </labkey:panel>
     </div>
 
