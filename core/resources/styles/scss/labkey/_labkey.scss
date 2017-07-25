@@ -149,9 +149,11 @@ table.labkey-expandable-nav th.labkey-header {
 pre.labkey-log-file
 {
   text-indent: -4em;
-  padding-left: 4em;
+  padding: 0 0 0 4em;
   margin: 2px 0;
   white-space: pre-wrap;
+  background-color: transparent;
+  border: none;
 }
 
 .labkey-expandable-nav-body {

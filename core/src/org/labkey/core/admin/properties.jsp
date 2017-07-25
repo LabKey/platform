@@ -19,19 +19,11 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Map<String, String>> me = (JspView<Map<String, String>>) HttpView.currentView();
     Map<String, String> properties = me.getModelBean();
     Map<String, String> sortedProperties = new CaseInsensitiveTreeMap<>(properties);
 %>
-<table>
-    <% for (Map.Entry<String, String> entry : sortedProperties.entrySet())
-    { %>
-        <tr>
-            <td class='labkey-form-label' valign="top"><%=h(entry.getKey())%></td>
-            <td><%=h(entry.getValue())%></td>
-        </tr>
-    <% }
-    %>
-</table>
+<%=PageFlowUtil.getDataRegionHtmlForPropertyValues(sortedProperties)%>

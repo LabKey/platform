@@ -93,8 +93,13 @@
                 helpLink("importExportStudy", "the study documentation") + ".";
     }
 %>
+<style type="text/css">
+    .lk-import-folder label {
+        font-weight: normal;
+    }
+</style>
 <labkey:form action="" name="import" enctype="multipart/form-data" method="post">
-<table cellpadding=0>
+<table class="lk-import-folder" cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
 
     <tr>

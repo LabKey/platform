@@ -319,6 +319,7 @@ core/resources/styles/scss/lib/bootstrap/_tables.scss -text
 core/resources/styles/scss/lib/bootstrap/_variables.scss -text
 core/resources/styles/scss/lib/ext3/_all.scss -text
 core/resources/styles/scss/lib/ext3/_ext3.scss -text
+core/resources/styles/scss/lib/ext3/_overrides.scss -text
 core/resources/styles/scss/lib/ext4/_all.scss -text
 core/resources/styles/scss/lib/ext4/_ext4.scss -text
 core/resources/styles/scss/lib/ext4/_overrides.scss -text

@@ -304,7 +304,7 @@ for (Module module : allModules)
                value="<%= h(module.getName())%>"
                <%=disabled(!enabled)%><%=checked(active)%>
                onClick="return updateDefaultOptions(this);">
-        <label for="activeModules[<%= i %>]"><%= h(module.getTabName(context)) %></label>
+        <label for="activeModules[<%= i %>]" style="font-weight: normal;"><%= h(module.getTabName(context)) %></label>
         <br>
         <%
         i++;

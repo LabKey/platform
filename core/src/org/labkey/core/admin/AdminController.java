@@ -740,19 +740,17 @@ public class AdminController extends SpringActionController
     public static HtmlView getContainerInfoView(Container c, User currentUser)
     {
         User createdBy = UserManager.getUser(c.getCreatedBy());
-        return new HtmlView(
-            "<table>" +
-            "<tr><td class='labkey-form-label'>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>Name</td><td>" + PageFlowUtil.filter(c.getName()) + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>Displayed Title</td><td>" + PageFlowUtil.filter(c.getTitle()) + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>EntityId</td><td>" + c.getId() + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>RowId</td><td>" + c.getRowId() + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>Created</td><td>" + c.getCreated() + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>Created By</td><td>" + (createdBy != null ? createdBy.getDisplayName(currentUser) : "<" + c.getCreatedBy() + ">") + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>FolderType</td><td>" + PageFlowUtil.filter(c.getFolderType().getName()) + "</td></tr>" +
-            "<tr><td class='labkey-form-label'>Description</td><td>" + PageFlowUtil.filter(c.getDescription()) + "</td></tr>" +
-            "</table>"
-        );
+        Map<String, Object> propValueMap = new LinkedHashMap<>();
+        propValueMap.put("Path", PageFlowUtil.filter(c.getPath()));
+        propValueMap.put("Name", PageFlowUtil.filter(c.getName()));
+        propValueMap.put("Displayed Title", PageFlowUtil.filter(c.getTitle()));
+        propValueMap.put("EntityId", c.getId());
+        propValueMap.put("RowId", c.getRowId());
+        propValueMap.put("Created", c.getCreated());
+        propValueMap.put("Created By", (createdBy != null ? createdBy.getDisplayName(currentUser) : "<" + c.getCreatedBy() + ">"));
+        propValueMap.put("Folder Type", PageFlowUtil.filter(c.getFolderType().getName()));
+        propValueMap.put("Description", PageFlowUtil.filter(c.getDescription()));
+        return new HtmlView(PageFlowUtil.getDataRegionHtmlForPropertyObjects(propValueMap));
     }
 
 
