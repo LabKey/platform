@@ -1394,6 +1394,7 @@ public class DataRegion extends DisplayElement
                 boolean isWarning = MessageType.WARNING.equals(message.getType());
                 boolean isThemed = isError || isWarning;
 
+                // If this is modified, update the client-side renderer in DataRegion.js MsgProto.render()
                 out.write("<div class=\"lk-region-bar" + (isThemed ? " lk-msg-bar" : "") + "\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
 
                 if (isThemed)

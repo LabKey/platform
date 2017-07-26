@@ -4161,44 +4161,87 @@ if (!LABKEY.DataRegions) {
     };
 
     MsgProto.render = function(partToUpdate, appendMsg) {
-        var parentCt = this.getParent().find('.dataregion_msgbox_ct'),
-            hasMsg = false, msgCls = '',
-            partCls, partEl,
+        var hasMsg = false,
             me = this;
 
-        $.each(this.parts, function(part, msg) {
-            partCls = 'labkey-dataregion-msg-part-' + part;
+        if (NEW_UI) {
+            var parent = this.getParent();
 
-            if (msg) {
+            $.each(this.parts, function(part, msg) {
 
-                partEl = parentCt.find('.' + partCls);
-                if (partEl.length === 0) {
-                    msgCls = 'labkey-dataregion-msg ' + partCls + (hasMsg ? ' labkey-dataregion-msg-sep' : '');
-                    parentCt.append('<div class="' + msgCls + '">' + msg + '</div>');
+                if (msg) {
+                    // If this is modified, update the server-side renderer in DataRegion.java renderMessages()
+                    var partEl = parent.find('div[data-msgpart="' + part + '"]');
+                    if (partEl.length === 0) {
+                        parent.append([
+                            '<div class="lk-region-bar" data-msgpart="' + part + '">',
+                            msg,
+                            '</div>'
+                        ].join(''));
+                    }
+                    else if (partToUpdate !== undefined && partToUpdate === part) {
+                        if (appendMsg !== undefined)
+                            partEl.append(appendMsg);
+                        else
+                            partEl.html(msg)
+                    }
+
+                    hasMsg = true;
                 }
-                else if (partToUpdate !== undefined && partToUpdate === part) {
-
-                    if (appendMsg !== undefined)
-                        partEl.append(appendMsg);
-                    else
-                        partEl.html(msg)
+                else {
+                    parent.find('div[data-msgpart="' + part + '"]').remove();
+                    delete me.parts[part];
                 }
+            });
 
-                hasMsg = true;
+            if (hasMsg) {
+                this.show();
+                $(this).trigger('rendermsg', [this, this.parts]);
             }
             else {
-                parentCt.find('.' + partCls).remove();
-                delete me.parts[part];
+                this.hide();
+                parent.html('');
             }
-        });
-
-        if (hasMsg) {
-            this.show();
-            $(this).trigger('rendermsg', [this, this.parts]);
         }
         else {
-            this.hide();
-            parentCt.html('');
+            var parentCt = this.getParent().find('.dataregion_msgbox_ct'),
+                msgCls = '',
+                partCls, partEl;
+
+            $.each(this.parts, function(part, msg) {
+                partCls = 'labkey-dataregion-msg-part-' + part;
+
+                if (msg) {
+
+                    partEl = parentCt.find('.' + partCls);
+                    if (partEl.length === 0) {
+                        msgCls = 'labkey-dataregion-msg ' + partCls + (hasMsg ? ' labkey-dataregion-msg-sep' : '');
+                        parentCt.append('<div class="' + msgCls + '">' + msg + '</div>');
+                    }
+                    else if (partToUpdate !== undefined && partToUpdate === part) {
+
+                        if (appendMsg !== undefined)
+                            partEl.append(appendMsg);
+                        else
+                            partEl.html(msg)
+                    }
+
+                    hasMsg = true;
+                }
+                else {
+                    parentCt.find('.' + partCls).remove();
+                    delete me.parts[part];
+                }
+            });
+
+            if (hasMsg) {
+                this.show();
+                $(this).trigger('rendermsg', [this, this.parts]);
+            }
+            else {
+                this.hide();
+                parentCt.html('');
+            }
         }
     };
 
