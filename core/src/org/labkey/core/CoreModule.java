@@ -353,18 +353,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        // TODO This special code will not be required once we have fully converted to Gradle (where Internal and API become first-class modules)
-        String projectRoot = AppProps.getInstance().getProjectRoot();
-        if (projectRoot != null)
-        {
-            File root = new File(projectRoot);
-            if (root.isDirectory())
-            {
-                ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", "API", root + "/server/api", root + "/build/modules/api");
-                ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", "Internal", root + "/server/internal", root + "/build/modules/internal");
-            }
-        }
-
         AdminConsole.addExperimentalFeatureFlag(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, "Core UI Migration",
                 "Use the templates and styling being built during the core UI migration.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
@@ -879,7 +867,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private static final String LIB_PATH = "/WEB-INF/lib/";
-    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:api|schemas|internal|labkey-client-api).*\\.jar$");
+    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
 
     @Nullable
     @Override
@@ -888,8 +876,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        // TODO incorporate reading of dependencies.txt file here OR (better) don't make this special for Core
-        // and rely on jars.txt in internal and api modules
         //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
         Set<String> filenames = new CaseInsensitiveTreeSet();
