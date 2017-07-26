@@ -804,8 +804,6 @@ public class AdminController extends SpringActionController
             ZonedDateTime now = ZonedDateTime.now();
             try
             {
-                userHealth.put("ActiveUsers", UserManager.getActiveUserCount());
-                userHealth.put("LoginsLast24hrs", UserManager.getRecentLoginCount(Date.from(now.minusDays(1).toInstant())));
                 int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
                 userHealth.put("RegisteredUsers", userCount);
                 overallStatus.put("HasUsers", userCount > 0);
