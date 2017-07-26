@@ -43,11 +43,6 @@ Ext4.define('LABKEY.Query.SignSnapshotPanel', {
     },
 
     getPanel: function(){
-        var divContainer = Ext4.create('Ext.container.Container', {
-            html: "<div>Hi Folks!</div>",
-            margin: '0 0 5px 0'
-        });
-
         this.reason = Ext4.create('Ext.form.field.Text', {
             name: 'reason',
             allowBlank: true,
