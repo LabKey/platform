@@ -60,16 +60,18 @@ public class Option
         sb.append("<option")
                 .append(" value=\"").append(getValue() == null ? "" : PageFlowUtil.filter(getValue())).append("\"");
 
-        if (getLabel() != null && !"".equals(getLabel()))
-            sb.append(" label=\"").append(PageFlowUtil.filter(getLabel())).append("\"");
-
         if (isDisabled())
             sb.append(" disabled");
 
         if (isSelected())
             sb.append(" selected");
 
-        sb.append("></option>");
+        sb.append(">");
+
+        if (getLabel() != null && !"".equals(getLabel()))
+            sb.append(PageFlowUtil.filter(getLabel()));
+
+        sb.append("</option>");
 
         return sb.toString();
     }
