@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
+<%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate.ContentType" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplateService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -137,7 +138,7 @@
             out.write("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
             out.write("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
             out.write("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
-            String formattedValue = param.getFormattedValue(c, null, et.getContentType());
+            String formattedValue = param.getFormattedValue(c, null, ContentType.HTML);
             out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString(formattedValue) + "\n");
             out.write("}");
 
