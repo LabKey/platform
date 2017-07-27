@@ -36,7 +36,7 @@
     {
         if (PageFlowUtil.useExperimentalCoreUI() && bean.bugs.isEmpty())
         {%>
-            <div style="margin-bottom: 8px"> There are no issues in this list.</div>
+            <div style="margin-bottom: 8px">There are no issues in this list.</div>
             <a class="btn btn-default" href="<%=bean.insertURL%>">
                 <%=h("new " + names.singularName.toLowerCase())%>
             </a>
