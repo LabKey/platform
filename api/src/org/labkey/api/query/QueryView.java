@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.RawValueColumn;
@@ -1186,20 +1187,17 @@ public class QueryView extends WebPartView<Object>
     @Nullable
     public PanelButton createSignButton(@Nullable List<String> recordSelectorColumns)
     {
-        if (getContainer().hasActiveModuleByName("compliance"))
+        ComplianceService complianceService = ComplianceService.get();
+        if (null != complianceService && getContainer().hasActiveModuleByName(complianceService.getModuleName()))
         {
-            ActionURL urlSignRowsExcelTemp = urlFor(QueryAction.signRowsExcel);
-            ActionURL urlSignRowsXLSXTemp = urlFor(QueryAction.signRowsXLSX);
-            ActionURL urlSignRowsTsvTemp = urlFor(QueryAction.signRowsTsv);
-            if (null != urlSignRowsExcelTemp && null != urlSignRowsXLSXTemp && null != urlSignRowsTsvTemp)
-            {
-                ActionURL urlSignRowsExcel = new ActionURL("compliance", urlSignRowsExcelTemp.getAction(), getContainer());
-                urlSignRowsExcel.setPropertyValues(urlSignRowsExcelTemp.getPropertyValues());
-                ActionURL urlSignRowsXLSX = new ActionURL("compliance", urlSignRowsXLSXTemp.getAction(), getContainer());
-                urlSignRowsXLSX.setPropertyValues(urlSignRowsXLSXTemp.getPropertyValues());
-                ActionURL urlSignRowsTsv = new ActionURL("compliance", urlSignRowsTsvTemp.getAction(), getContainer());
-                urlSignRowsTsv.setPropertyValues(urlSignRowsTsvTemp.getPropertyValues());
+            // We build a URL using Query's mechanism because it does a lot of work to get the properties right;
+            // Then build our URL to the ComplianceController using those properties. If any fail, just bail on creating button.
+            ActionURL urlSignRowsExcel = complianceService.urlFor(getContainer(), QueryAction.signRowsExcel, urlFor(QueryAction.signRowsExcel));
+            ActionURL urlSignRowsXLSX = complianceService.urlFor(getContainer(), QueryAction.signRowsXLSX, urlFor(QueryAction.signRowsXLSX));
+            ActionURL urlSignRowsTsv = complianceService.urlFor(getContainer(), QueryAction.signRowsTsv, urlFor(QueryAction.signRowsTsv));
 
+            if (null != urlSignRowsExcel && null != urlSignRowsXLSX && null != urlSignRowsTsv)
+            {
                 PanelButton button = new PanelButton("Electronically Sign", getDataRegionName(), 132);
                 return createExportOrSignButton(recordSelectorColumns, button, urlSignRowsExcel, urlSignRowsXLSX,
                                                 urlSignRowsTsv, false, true);
