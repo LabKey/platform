@@ -652,16 +652,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
-
-        // populate look and feel settings and site settings with values read from startup properties as appropriate for bootstrap
-        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(true);
-        WriteableAppProps.populateSiteSettingsWithStartupProps(true);
-        // create users and groups and assign roles with values read from startup properties as appropriate for bootstrap
-        SecurityManager.populateGroupRolesWithStartupProps(true);
-        SecurityManager.populateUserRolesWithStartupProps(true);
-        SecurityManager.populateUserGroupsWithStartupProps(true);
-        // populate script engine definitions with values read from startup properties as appropriate for not bootstrap
-        LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps(true);
     }
 
 
@@ -789,14 +779,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);
-        WriteableAppProps.populateSiteSettingsWithStartupProps(false);
+        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
+        WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
-        SecurityManager.populateGroupRolesWithStartupProps(false);
-        SecurityManager.populateUserRolesWithStartupProps(false);
-        SecurityManager.populateUserGroupsWithStartupProps(false);
+        SecurityManager.populateGroupRolesWithStartupProps();
+        SecurityManager.populateUserRolesWithStartupProps();
+        SecurityManager.populateUserGroupsWithStartupProps();
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
-        LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps(false);
+        LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps();
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();

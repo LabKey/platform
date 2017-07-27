@@ -77,11 +77,13 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
+
 /**
  * User: klum
  * Date: Dec 9, 2009
  */
-public class FileContentServiceImpl implements FileContentService, ContainerManager.ContainerListener, ConfigProperty.ConfigPropertyInitializer
+public class FileContentServiceImpl implements FileContentService, ContainerManager.ContainerListener
 {
     static Logger _log = Logger.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
@@ -815,25 +817,20 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return frag;
     }
 
-    public void setConfigProperties(boolean isBootstrap)
+    public static void populateSiteRootFileWithStartupProps()
     {
-        populateSiteRootFileWithStartupProps(isBootstrap);
-    }
+        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
 
-    public static void populateSiteRootFileWithStartupProps(boolean isBootstrap)
-    {
         // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
         // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
         startupProps.stream()
                 .filter( prop -> prop.getName().equals("siteRootFile"))
+                .filter( prop -> prop.getModifier() != bootstrap || isBootstrap )
                 .forEach(prop -> {
-                    if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                    {
                         File fileRoot = new File(prop.getValue());
                         FileContentServiceImpl.getInstance().setSiteDefaultRoot(fileRoot);
-                    }
                 });
     }
 
@@ -1029,7 +1026,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             prepareTestStartupProperties(testSiteRootFile);
 
             // call the method that makes use of the test startup properties to change the Site Root File settings on the server
-            populateSiteRootFileWithStartupProps(false);
+            populateSiteRootFileWithStartupProps();
 
             // now check that the expected changes occured to the Site Root File settings on the server
             File newSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();

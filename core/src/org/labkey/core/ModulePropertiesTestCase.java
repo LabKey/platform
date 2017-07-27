@@ -139,7 +139,7 @@ public class ModulePropertiesTestCase extends Assert
         String originalSystemDescription = lookAndFeelProps.getDescription();
 
         // call the method that makes use of the test startup properties to change the Look And Feel settings on the server
-        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps(false);
+        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
 
         // now check that the expected changes occured to the Look And Feel settings on the server
         String newSystemDescription = lookAndFeelProps.getDescription();
@@ -165,7 +165,7 @@ public class ModulePropertiesTestCase extends Assert
         int originalMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
 
         // call the method that makes use of the test startup properties to change the Look And Feel settings on the server
-        WriteableAppProps.populateSiteSettingsWithStartupProps(false);
+        WriteableAppProps.populateSiteSettingsWithStartupProps();
 
         // now check that the expected changes occured to the Site Settings settings on the server
         int newMaxBlobSize = siteSettingsProps.getMaxBLOBSize();

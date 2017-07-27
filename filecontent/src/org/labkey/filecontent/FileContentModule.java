@@ -137,20 +137,6 @@ public class FileContentModule extends DefaultModule
 
     }
 
-    @Override
-    public void afterUpdate(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-        {
-            bootstrap();
-        }
-    }
-
-    private void bootstrap()
-    {
-        // populate File Site Root Settings with values read from startup properties as appropriate for bootstrap
-        FileContentServiceImpl.populateSiteRootFileWithStartupProps(true);
-    }
 
     public void doStartup(ModuleContext moduleContext)
     {
@@ -174,8 +160,7 @@ public class FileContentModule extends DefaultModule
         }
 
         // populate File Site Root Settings with values read from startup properties as appropriate for not bootstrap
-        FileContentServiceImpl.populateSiteRootFileWithStartupProps(false);
-
+        FileContentServiceImpl.populateSiteRootFileWithStartupProps();
     }
 
     @Override
