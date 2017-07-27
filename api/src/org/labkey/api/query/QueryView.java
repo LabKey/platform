@@ -1034,7 +1034,7 @@ public class QueryView extends WebPartView<Object>
         {
             ActionButton btnInsert = new ActionButton(urlInsert, "Insert New Row");
             btnInsert.setActionType(ActionButton.Action.LINK);
-            btnInsert.setTooltip("Insert New Row");
+            btnInsert.setTooltip("Insert new row");
             btnInsert.setIconCls("plus");
             return btnInsert;
         }
@@ -1048,7 +1048,7 @@ public class QueryView extends WebPartView<Object>
         {
             ActionButton btnInsert = new ActionButton(urlImport, "Import Bulk Data");
             btnInsert.setActionType(ActionButton.Action.LINK);
-            btnInsert.setTooltip("Import Bulk Data");
+            btnInsert.setTooltip("Import bulk data");
             btnInsert.setIconCls("plus");
             return btnInsert;
         }
