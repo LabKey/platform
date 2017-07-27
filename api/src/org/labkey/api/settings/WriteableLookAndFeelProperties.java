@@ -34,7 +34,7 @@ import static org.labkey.api.settings.LookAndFeelProperties.*;
  */
 
 // Handles all the properties that can be set at the project or site level
-public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties implements ConfigProperty.ConfigPropertyInitializer
+public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
 {
     boolean isRoot;
     WriteableLookAndFeelProperties(Container c)
@@ -155,13 +155,10 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         return true;
     }
 
-    public void setConfigProperties(boolean isBootstrap)
+    public static void populateLookAndFeelWithStartupProps()
     {
-        populateLookAndFeelWithStartupProps(isBootstrap);
-    }
+        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
 
-    public static void populateLookAndFeelWithStartupProps(boolean isBootstrap)
-    {
         // populate look and feel settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: LookAndFeelSettings.systemDescription;startup=Test Server Description
         // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java

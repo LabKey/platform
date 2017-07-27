@@ -54,7 +54,7 @@ import java.util.Map;
 * Date: Dec 12, 2008
 * Time: 12:52:28 PM
 */
-public class LabKeyScriptEngineManager extends ScriptEngineManager implements ConfigProperty.ConfigPropertyInitializer
+public class LabKeyScriptEngineManager extends ScriptEngineManager
 {
     private static final Logger LOG = Logger.getLogger(LabKeyScriptEngineManager.class);
 
@@ -635,13 +635,18 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager implements Co
         }
     }
 
-    public void setConfigProperties(boolean isBootstrap)
+
+    public static void populateScriptEngineDefinitionsWithStartupProps()
     {
-        populateScriptEngineDefinitionsWithStartupProps(isBootstrap);
+        populateScriptEngineDefinitionsWithStartupProps(null);
     }
 
-    public static void populateScriptEngineDefinitionsWithStartupProps(boolean isBootstrap)
+
+    // LabKeyScriptEngineManager.TestCase tests bootstrap property setting, so we need a way to forcre this into new install mode
+    private static void populateScriptEngineDefinitionsWithStartupProps(Boolean startupModeForTest)
     {
+        final boolean isBootstrap = null != startupModeForTest?startupModeForTest : ModuleLoader.getInstance().isNewInstall();
+
         // populate script engine definition with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like:
         //        ScriptEngineDefinition.{name}.external;bootstrap=True

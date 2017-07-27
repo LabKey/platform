@@ -50,7 +50,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
  * User: jeckels
  * Date: Jun 21, 2012
  */
-class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps, ConfigProperty.ConfigPropertyInitializer
+class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 {
     private volatile String _contextPathStr;
     private volatile Path _contextPath = null;
@@ -542,13 +542,10 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps, C
         return trimToNull(s);
     }
 
-    public void setConfigProperties(boolean isBootstrap)
+    public static void populateSiteSettingsWithStartupProps()
     {
-        populateSiteSettingsWithStartupProps(isBootstrap);
-    }
+        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
 
-    public static void populateSiteSettingsWithStartupProps(boolean isBootstrap)
-    {
         // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
         // for a list of recognized site setting properties refer to: AppPropsImpl.java
