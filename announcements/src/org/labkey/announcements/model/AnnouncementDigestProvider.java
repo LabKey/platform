@@ -267,10 +267,12 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                 }
                 else
                 {
-                    sb.append(" responded ");
+                    sb.append(" responded");
                 }
                 sb.append(" at ");
-                sb.append(DateUtil.formatDateTime(dailyDigestBean.c, ann.getCreated()));
+
+                // Always filter formatted dates in HTML, #30986
+                sb.append(PageFlowUtil.filter(DateUtil.formatDateTime(dailyDigestBean.c, ann.getCreated())));
 
                 if (attachmentCount > 0)
                 {
