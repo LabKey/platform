@@ -65,12 +65,6 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
     }
 
     @Override
-    public PipelineTriggerType getPipelineTriggerType()
-    {
-        return PipelineTriggerRegistry.get().getTypeByName(_type);
-    }
-
-    @Override
     public Date getLastChecked()
     {
         return _lastChecked;
@@ -92,5 +86,27 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
     public String getPipelineId()
     {
         return _pipelineId;
+    }
+
+    @Override
+    public PipelineTriggerType getPipelineTriggerType()
+    {
+        return PipelineTriggerRegistry.get().getTypeByName(_type);
+    }
+
+    @Override
+    public void start()
+    {
+        PipelineTriggerType type = getPipelineTriggerType();
+        if (type != null)
+            type.start(this);
+    }
+
+    @Override
+    public void stop()
+    {
+        PipelineTriggerType type = getPipelineTriggerType();
+        if (type != null)
+            type.stop(this);
     }
 }

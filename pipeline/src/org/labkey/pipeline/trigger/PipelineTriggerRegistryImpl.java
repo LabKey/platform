@@ -1,5 +1,6 @@
 package org.labkey.pipeline.trigger;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -27,6 +28,9 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
         if (REGISTERED_TYPES.containsKey(type.getName()))
             throw new IllegalStateException("A pipeline trigger type has already been registered for this name: " + type.getName());
         REGISTERED_TYPES.put(type.getName(), type);
+
+        // see if there are any existing configs for this PipelineTriggerType that need to be started
+        type.startAll();
     }
 
     @Override
@@ -42,7 +46,7 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
     }
 
     @Override
-    public <C extends PipelineTriggerConfig> Collection<C> getConfigs(Container c, PipelineTriggerType<C> type, String name)
+    public <C extends PipelineTriggerConfig> Collection<C> getConfigs(Container c, PipelineTriggerType<C> type, String name, boolean enabledOnly)
     {
         Sort sort = new Sort(FieldKey.fromParts("RowId"));
         SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
@@ -50,6 +54,8 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
             filter.addCondition(FieldKey.fromParts("Type"), type.getName());
         if (name != null)
             filter.addCondition(FieldKey.fromParts("Name"), name);
+        if (enabledOnly)
+            filter.addCondition(FieldKey.fromParts("Enabled"), true);
 
         TableSelector selector = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, sort);
         ArrayList<C> configs = new ArrayList<>();
@@ -64,5 +70,15 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
         });
 
         return Collections.unmodifiableCollection(configs);
+    }
+
+    @Override
+    public <C extends PipelineTriggerConfig> C getConfigByName(@NotNull Container c, String name)
+    {
+        if (name == null)
+            return null;
+
+        Collection<C> configs = getConfigs(c, null, name, false);
+        return configs.size() == 1 ? configs.iterator().next() : null;
     }
 }

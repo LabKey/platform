@@ -18,8 +18,6 @@ public interface PipelineTriggerConfig
 
     String getType();
 
-    PipelineTriggerType getPipelineTriggerType();
-
     Date getLastChecked();
 
     boolean isEnabled();
@@ -47,4 +45,10 @@ public interface PipelineTriggerConfig
     Date getModified();
 
     void setModified(Date modified);
+
+    PipelineTriggerType getPipelineTriggerType();
+
+    void start();
+
+    void stop();
 }

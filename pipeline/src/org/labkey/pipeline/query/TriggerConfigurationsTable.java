@@ -2,6 +2,7 @@ package org.labkey.pipeline.query;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AbstractTableInfo;
@@ -109,28 +110,61 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             validateRow(row);
-            return super.insertRow(user, container, row);
+            Map<String, Object> newRow = super.insertRow(user, container, row);
+            startIfEnabled(container, newRow);
+            return newRow;
         }
 
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             validateRow(row);
-            return super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+            Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+            startIfEnabled(container, newRow);
+            return newRow;
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        {
+            String name = getStringFromRow(oldRowMap, "Name");
+            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
+
+            Map<String, Object> deleteRow = super.deleteRow(user, container, oldRowMap);
+
+            // call the stop() method for this config if it was successfully deleted
+            if (config != null)
+                config.stop();
+
+            return deleteRow;
+        }
+
+        private void startIfEnabled(Container container, Map<String, Object> row)
+        {
+            boolean enabled = Boolean.parseBoolean(row.getOrDefault("Enabled", false).toString());
+            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, getStringFromRow(row, "Name"));
+
+            if (config != null)
+            {
+                if (enabled)
+                    config.start();
+                else
+                    config.stop();
+            }
         }
 
         private void validateRow(Map<String, Object> row) throws ValidationException
         {
             Integer rowId = row.get("RowId") != null ? (Integer) row.get("RowId") : null;
-            String name = row.get("Name") != null ? row.get("Name").toString() : null;
-            String type = row.get("Type") != null ? row.get("Type").toString() : null;
-            String pipelineId = row.get("PipelineId") != null ? row.get("PipelineId").toString() : null;
+            String name = getStringFromRow(row, "Name");
+            String type = getStringFromRow(row, "Type");
+            String pipelineId = getStringFromRow(row, "PipelineId");
             String invalidMsg = "";
 
             // validate that the config name is unique for this container
             if (name != null)
             {
-                Collection<PipelineTriggerConfig> existingConfigs = PipelineTriggerRegistry.get().getConfigs(getContainer(), null, name);
+                Collection<PipelineTriggerConfig> existingConfigs = PipelineTriggerRegistry.get().getConfigs(getContainer(), null, name, false);
                 if (!existingConfigs.isEmpty())
                 {
                     for (PipelineTriggerConfig existingConfig : existingConfigs)
@@ -145,21 +179,23 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             }
 
             // validate that the type is a valid registered PipelineTriggerType
-            if (type == null || PipelineTriggerRegistry.get().getTypeByName(type) == null)
+            PipelineTriggerType triggerType = PipelineTriggerRegistry.get().getTypeByName(type);
+            if (triggerType == null)
                 invalidMsg += "Invalid pipeline trigger type: " + type + ". ";
 
             // validate that the pipelineId is a valid PipelineProvider
-            if (pipelineId == null || PipelineService.get().getPipelineProvider(pipelineId) == null)
+            if (PipelineService.get().getPipelineProvider(pipelineId) == null)
                 invalidMsg += "Invalid pipeline provider: " + pipelineId + ". ";
 
             // validate that the configuration value parses as valid JSON
             Object configuration = row.get("Configuration");
+            JSONObject json = null;
             if (configuration != null)
             {
                 try
                 {
                     ObjectMapper mapper = new ObjectMapper();
-                    mapper.readValue(configuration.toString(), Object.class);
+                    json = mapper.readValue(configuration.toString(), JSONObject.class);
                 }
                 catch (IOException e)
                 {
@@ -167,8 +203,21 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
                 }
             }
 
+            // Finally, give the PipelineTriggerType a chance to validate the configuration JSON object
+            if (triggerType != null)
+            {
+                String typeInvalidMsg = triggerType.validateConfiguration(json);
+                if (typeInvalidMsg != null)
+                    invalidMsg += typeInvalidMsg;
+            }
+
             if (invalidMsg.length() > 0)
                 throw new ValidationException(invalidMsg);
+        }
+
+        private String getStringFromRow(Map<String, Object> row, String key)
+        {
+            return row.get(key) != null ? row.get(key).toString() : null;
         }
     }
 

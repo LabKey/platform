@@ -1,5 +1,6 @@
 package org.labkey.api.pipeline.trigger;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
@@ -25,5 +26,7 @@ public interface PipelineTriggerRegistry
     @Nullable
     PipelineTriggerType getTypeByName(String name);
 
-    <C extends PipelineTriggerConfig> Collection<C> getConfigs(@Nullable Container c, @Nullable PipelineTriggerType<C> type, @Nullable String name);
+    <C extends PipelineTriggerConfig> Collection<C> getConfigs(@Nullable Container c, @Nullable PipelineTriggerType<C> type, @Nullable String name, boolean enabledOnly);
+
+    <C extends PipelineTriggerConfig> C getConfigByName(@NotNull Container c, String name);
 }
