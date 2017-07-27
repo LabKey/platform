@@ -136,12 +136,6 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular)
-    {
-        return createIssueListDef(container, user, providerName, itemNounSingular, itemNounSingular != null ? itemNounSingular + "s" : null);
-    }
-
-    @Override
     public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular, @Nullable String itemNounPlural)
     {
         IssueListDef newDef = IssueManager.createIssueListDef(container, user, providerName, label);
