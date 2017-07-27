@@ -136,11 +136,11 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular)
+    public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular, @Nullable String itemNounPlural)
     {
         IssueListDef newDef = IssueManager.createIssueListDef(container, user, providerName, label);
         if (itemNounSingular != null)
-            IssueManager.saveEntryTypeNames(newDef.getDomainContainer(user), newDef.getName(), itemNounSingular, itemNounSingular + "s");
+            IssueManager.saveEntryTypeNames(newDef.getDomainContainer(user), newDef.getName(), itemNounSingular, itemNounPlural);
 
         return newDef.getRowId();
     }
