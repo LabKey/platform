@@ -36,6 +36,7 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
@@ -73,6 +74,7 @@ import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
+import org.labkey.pipeline.trigger.PipelineTriggerRegistryImpl;
 import org.labkey.pipeline.validators.PipelineSetupValidator;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
@@ -100,7 +102,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public double getVersion()
     {
-        return 17.20;
+        return 17.21;
     }
 
     protected void init()
@@ -125,6 +127,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobFailed.class);
 
         PipelineQuerySchema.register(this);
+
+        PipelineTriggerRegistry.setInstance(new PipelineTriggerRegistryImpl());
     }
 
     @NotNull

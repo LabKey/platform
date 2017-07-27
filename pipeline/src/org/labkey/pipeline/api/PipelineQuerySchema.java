@@ -35,6 +35,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +52,7 @@ public class PipelineQuerySchema extends UserSchema
     public static final String SCHEMA_NAME = "pipeline";
 
     public static final String JOB_TABLE_NAME = "Job";
+    public static final String TRIGGER_CONFIGURATIONS_TABLE_NAME = "TriggerConfigurations";
 
     private static final Set<String> TABLE_NAMES;
 
@@ -58,6 +60,7 @@ public class PipelineQuerySchema extends UserSchema
     {
         Set<String> names = new TreeSet<>();
         names.add(JOB_TABLE_NAME);
+        names.add(TRIGGER_CONFIGURATIONS_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
@@ -174,6 +177,10 @@ public class PipelineQuerySchema extends UserSchema
             table.setDefaultVisibleColumns(defaultCols);
             table.setTitleColumn("Description");
             return table;
+        }
+        else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new TriggerConfigurationsTable(this).init();
         }
         
         return null;

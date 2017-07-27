@@ -110,4 +110,46 @@
       </column>
     </columns>
   </table>
+
+  <table tableName="TriggerConfigurations" tableDbType="TABLE">
+    <titleColumn>Name</titleColumn>
+    <columns>
+      <column columnName="RowId">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Container">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Created">
+        <isHidden>true</isHidden>
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="CreatedBy">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Modified">
+        <isHidden>true</isHidden>
+        <formatString>DateTime</formatString>
+      </column>
+      <column columnName="ModifiedBy">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Name"/>
+      <column columnName="Description"/>
+      <column columnName="Type"/>
+      <column columnName="Enabled"/>
+      <column columnName="Configuration">
+        <displayColumnFactory>
+          <className>org.labkey.api.data.JsonPrettyPrintDisplayColumnFactory</className>
+        </displayColumnFactory>
+      </column>
+      <column columnName="PipelineId"/>
+      <column columnName="LastChecked">
+        <formatString>DateTime</formatString>
+        <shownInInsertView>false</shownInInsertView>
+        <shownInUpdateView>false</shownInUpdateView>
+      </column>
+    </columns>
+  </table>
+
 </tables>

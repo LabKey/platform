@@ -1301,6 +1301,10 @@ mothership/test/src/org/labkey/test/pages/mothership/StackTraceDetailsPage.java 
 mothership/test/src/org/labkey/test/tests/mothership/MothershipReportTest.java -text
 mothership/test/src/org/labkey/test/tests/mothership/MothershipTest.java -text
 mothership/test/src/org/labkey/test/util/mothership/MothershipHelper.java -text
+pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerConfig.java -text
+pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerConfigImpl.java -text
+pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerRegistry.java -text
+pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerType.java -text
 pipeline/build.gradle -text
 pipeline/gradle.properties -text
 pipeline/module.properties -text
@@ -1313,6 +1317,7 @@ pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-15.30-15.31.sq
 pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-15.31-15.32.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-0.00-14.20.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-15.30-16.10.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.20-17.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-10.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-10.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-14.10-14.11.sql -text
@@ -1321,6 +1326,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-15.30-15.31.sql
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-15.31-15.32.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-14.20.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-15.30-16.10.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.20-17.21.sql -text
 pipeline/schemas/pipelineTasks.xsd -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
@@ -1419,6 +1425,7 @@ pipeline/src/org/labkey/pipeline/mule/transformers/NoOpTransformer.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/PipelineJobToJMSMessage.java -text
 pipeline/src/org/labkey/pipeline/permission.jsp -text
 pipeline/src/org/labkey/pipeline/pipelineStatus.jsp -text
+pipeline/src/org/labkey/pipeline/query/TriggerConfigurationsTable.java -text
 pipeline/src/org/labkey/pipeline/setup.jsp -text
 pipeline/src/org/labkey/pipeline/startPipelineImport.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
@@ -1432,6 +1439,7 @@ pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
 pipeline/src/org/labkey/pipeline/status/deleteStatus.jsp -text
 pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
 pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
+pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerRegistryImpl.java -text
 pipeline/src/org/labkey/pipeline/validators/PipelineSetupValidator.java -text
 pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
