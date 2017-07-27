@@ -772,6 +772,9 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
+            if (!ModuleLoader.getInstance().isStartupComplete())
+                return new ApiSimpleResponse("healthy", false);
+
             Map<String, Object> healthValues = new HashMap<>();
             //Hold overall status
             Map<String, Boolean> overallStatus = new HashMap<>();
