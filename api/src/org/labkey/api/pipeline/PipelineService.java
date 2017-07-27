@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
@@ -138,6 +139,9 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     @NotNull
     String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewContext viewContext) throws IOException, PipelineValidationException;
+
+    @NotNull
+    String startFileAnalysis(AnalyzeForm form, @Nullable Map<String, String> variableMap, ViewBackgroundInfo context) throws IOException, PipelineValidationException;
 
     /** Configurations for the pipeline job webpart ButtonBar */
     enum PipelineButtonOption { Minimal, Assay, Standard }
