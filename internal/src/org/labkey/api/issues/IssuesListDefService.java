@@ -110,9 +110,10 @@ public interface IssuesListDefService
      * @param providerName The name of the IssuesListDefProvider
      * @param label The label to give to the IssueListDef
      * @param itemNounSingular The singular item name to use for this IssueListDef
+     * @param itemNounPlural The plural item name to use for this IssueListDef
      * @return int RowId for the newly created IssueListDef
      */
-    int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular);
+    int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular, @Nullable String itemNounPlural);
 
     /**
      * Create a new Issue in the IssueListDef for the specified container and user.

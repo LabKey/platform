@@ -262,18 +262,19 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     {
         String name = domain.getName();
         String providerName = arguments.containsKey("providerName") ? (String)arguments.get("providerName") : null;
-        String itemNoun = arguments.containsKey("itemNoun") ? (String)arguments.get("itemNoun") : "Issue";
+        String singularNoun = arguments.containsKey("singularNoun") ? (String)arguments.get("singularNoun") : getDefaultSingularName();
+        String pluralNoun = arguments.containsKey("pluralNoun") ? (String)arguments.get("pluralNoun") : getDefaultPluralName();
 
         if (name == null)
             throw new IllegalArgumentException("Issue name must not be null");
 
         if (providerName == null)
-            throw new IllegalArgumentException("An issue list providerName must be specified");
+            providerName = getKindName();
 
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, itemNoun);
+            issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
 
             List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
             List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -304,7 +305,13 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                 }
                 newDomain.setPropertyIndices(propertyIndices);
                 newDomain.save(user);
-                DefaultValueService.get().setDefaultValues(container, defaultValues);
+
+                // Add additional default values to those previously added from the base property set
+                if (!defaultValues.isEmpty())
+                {
+                    defaultValues.putAll(DefaultValueService.get().getDefaultValues(container, newDomain));
+                    DefaultValueService.get().setDefaultValues(container, defaultValues);
+                }
             }
             transaction.commit();
         }
