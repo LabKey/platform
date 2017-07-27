@@ -24,7 +24,7 @@ dependencies {
     external("dom4j:dom4j:${dom4jVersion}")
         {
             // dom4j and jaxen don't play well together for tomcat versions higher than 7.0.33 apparently 
-            // (but seem OK for tomcat8).  We excluee jaxen since that doesn't seem to be required for our purposes
+            // (but seem OK for tomcat8).  We exclude jaxen since that doesn't seem to be required for our purposes
             // Another possibility here would be to upgrade to jaxen-1.1.6 and dom4j-1.6.1
             exclude group:"jaxen", module: "jaxen"
         }
