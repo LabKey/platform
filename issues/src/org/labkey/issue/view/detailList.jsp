@@ -36,6 +36,15 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.apache.commons.lang3.math.NumberUtils" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.issue.view.RelatedIssuesView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.issues.IssuesListDefService" %>
+<%@ page import="org.labkey.api.issues.IssueDetailHeaderLinkProvider" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.function.Function" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -55,6 +64,8 @@
 
     if (!bean.isPrint())
     {
+        if (!PageFlowUtil.useExperimentalCoreUI())
+        {
 %>
 <labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
     <table><tr>
@@ -65,6 +76,32 @@
     </tr></table>
 </labkey:form>
 <%
+        }
+        else
+        {%>
+<div class="row">
+    <div class="col-sm-3" style="margin-bottom: 5px">
+        <a class="btn btn-default" style="margin-bottom: 8px;" href="<%=context.cloneActionURL().replaceParameter("_print", "1")%>">Print</a>
+    </div>
+    <div class="col-sm-4" style="margin-bottom: 5px">
+        <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
+            <labkey:input name="issueId" placeholder="ID # or Search Term"/>
+            <%= button("Search").iconCls("search").submit(true) %>
+        </labkey:form>
+    </div>
+    <div class="col-sm-5" style="margin-bottom: 5px">
+        <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
+            <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
+                <%=h("new " + names.singularName.toLowerCase())%>
+            </a>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    var toggleRelatedFns = {};
+    var toggleTimestampFns = {};
+</script>
+        <%}
     }
 
     for (String issueId : issueIds )
@@ -74,7 +111,7 @@
             issue = IssueManager.getIssue(getContainer(), getUser(), Integer.parseInt(issueId));
 
         if (issue == null)
-            continue;;
+            continue;
 
         boolean hasReadPermission = ContainerManager.getForId(issue.getContainerId()).hasPermission(getUser(), ReadPermission.class);
 
@@ -82,7 +119,7 @@
             continue;
 
         bean.setIssue(issue);
-
+        List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
         // create collections for additional custom columns and distribute them evenly in the form
         List<DomainProperty> column1Props = new ArrayList<>();
         List<DomainProperty> column2Props = new ArrayList<>();
@@ -95,7 +132,240 @@
             else
                 column2Props.add(prop);
         }
+    if (PageFlowUtil.useExperimentalCoreUI())
+    {
+        List<DomainProperty> propertiesList = new ArrayList<>(bean.getCustomColumnConfiguration().getCustomProperties());
+        Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
+
+        propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
+                .filter(propertyMap::containsKey)
+                .map((Function<String, DomainProperty>) propertyMap::get)
+                .collect(Collectors.toList()));
+
+
+        List<NavTree> additionalHeaderLinks = new ArrayList<>();
+        for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
+        {
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
+            if (issueListDef != null)
+            {
+                boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
+                additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
+            }
+        }
+
+    String recentTimeStampId = "recentTimeStamp" + issueId;
+    String timestampsToggleId = "timestampsToggle" + issueId;
+    String stampExpandIconId = "stampExpandIcon" + issueId;
+    String allTimeStampsId = "allTimeStamps" + issueId;
+    String relatedCommentsToggleId = "relatedCommentsToggle" + issueId;
+    String relatedCommentsDivClassName = "relatedIssue" + issueId;
 %>
+<script type="text/javascript">
+    var hidden = true;
+    var showLess = true;
+
+    /**
+     * Toggle the hidden flag, set the hide button text to reflect state, and show or hide all related comments.
+     */
+    toggleRelatedFns[<%=h(issueId)%>] = function() {
+        // change the button text
+        var toggle = document.getElementById("<%=h(relatedCommentsToggleId)%>");
+        if (!hidden)
+            toggle.innerText = 'Show Related Comments';
+        else
+            toggle.innerText = 'Hide Related Comments';
+
+        // show/hide comment elements
+        var commentDivs = document.getElementsByClassName("<%=h(relatedCommentsDivClassName)%>");
+        for (var i = 0; i < commentDivs.length; i++) {
+            console.log(commentDivs);
+            console.log(hidden);
+            if (hidden)
+                commentDivs[i].style.display = 'inline';
+            else
+                commentDivs[i].style.display = 'none';
+        }
+        hidden = !hidden;
+    };
+
+    toggleTimestampFns[<%=h(issueId)%>] = function () {
+        var toggle = document.getElementById("<%=h(timestampsToggleId)%>");
+        var allStampsDiv = document.getElementById("<%=h(allTimeStampsId)%>");
+        var stampExpandIcon = document.getElementById("<%=h(stampExpandIconId)%>");
+
+        if (showLess) {
+            stampExpandIcon.className = 'fa fa-caret-up';
+            allStampsDiv.style.display = "block";
+        } else {
+            stampExpandIcon.className = 'fa fa-caret-down';
+            allStampsDiv.style.display = "none";
+        }
+
+        showLess = !showLess;
+    };
+</script>
+<h3><%=h(issueId)%> : <%=h(issue.getTitle())%></h3>
+<div class="row" style="margin-bottom: 10px">
+    <div class="col-md-1">
+        <label class="control-label"><%=text(bean.getLabel("Status", true))%></label>
+        <div class="form-group"><%=h(issue.getStatus())%></div>
+    </div>
+    <%if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
+    {%>
+    <div class="col-md-1">
+        <label class="control-label"><%=text(bean.getLabel("Resolution", true))%></label>
+        <div class="form-group">
+            <%=h(issue.getResolution())%>
+            <%if (issue.getResolution().equalsIgnoreCase("duplicate") && issue.getDuplicate() != null)
+            {%>
+            of&nbsp;<%=bean.renderDuplicate(issue.getDuplicate())%>
+            <%}%>
+        </div>
+    </div>
+    <%}%>
+    <div class="col-md-2">
+        <label class="control-label">Assigned To</label>
+        <div class="form-group"><%=h(issue.getAssignedToName(user))%></div>
+    </div>
+    <div class="col-md-4">
+        <label class="control-label">Recent Activity</label>
+        <%
+            Issue.IssueEvent m = issue.getMostRecentEvent(user);
+            String lastUpdatedStr = "";
+            String lastUpdatedTitleStr = "";
+            if (null != m)
+            {
+                lastUpdatedStr = m.toString();
+                lastUpdatedTitleStr = m.getFullTimestamp();
+            }
+        %>
+        <div class="form-group">
+
+            <div id="<%=h(recentTimeStampId)%>" title="<%=h(lastUpdatedTitleStr)%>"><%=h(lastUpdatedStr)%>
+                <a id="<%=h(timestampsToggleId)%>" onclick="toggleTimestampFns[<%=h(issueId)%>]()">
+                    <i id="<%=h(stampExpandIconId)%>" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
+                </a>
+            </div>
+
+            <div id="<%=h(allTimeStampsId)%>" style="display: none;">
+                <%
+                    ArrayList<Issue.IssueEvent> eventArray = issue.getOrderedEventArray(user);
+
+                    for (int j = 1; j < eventArray.size(); j++)
+                    {
+                        Issue.IssueEvent e = eventArray.get(j);
+                        String stampString = e.toString();
+                %>
+                <div title="<%=h(e.getFullTimestamp())%>"><%=h(stampString)%></div>
+                <%
+                    }
+                %>
+            </div>
+        </div>
+    </div>
+    <% if (!bean.getNotifyListCollection(false).isEmpty())
+    {%>
+    <div class="col-sm-4">
+        <label>Notify List</label>
+        <%for (String name : bean.getNotifyListCollection(false))
+        {%>
+        <div><%=h(name)%></div>
+        <%}%>
+    </div>
+    <%}%>
+</div>
+
+<div class="row">
+    <%  String mainContentClassName;
+        if (!bean.getCustomColumnConfiguration().getCustomProperties().isEmpty() ||
+                (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty()))
+        {
+            mainContentClassName = "col-sm-10 col-sm-pull-2";
+    %>
+    <div class="col-sm-2 col-sm-push-10"><%
+        if (!issue.getRelatedIssues().isEmpty())
+        //vertical alignment with related boxes
+        {%>
+        <br class="input-group-disappear-sm">
+        <%}%>
+        <div style="word-wrap: break-word">
+            <%if (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty())
+            {%>
+            <div class="form-group">
+                <label class="col-3 control-label">Duplicates</label>
+                <div class="col-9">
+                    <%=bean.renderDuplicates(issue.getDuplicates())%>
+                </div>
+            </div>
+
+            <%}%>
+            <%
+                ArrayList<DomainProperty> propertyArr = new ArrayList<>();
+                propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
+                for(DomainProperty prop : propertyArr)
+                {%>
+            <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
+            <%}%>
+        </div>
+    </div>
+
+    <%}
+    else
+    {
+        mainContentClassName = "col-sm-12";
+    }
+    %>
+
+    <div class="<%=text(mainContentClassName)%>">
+        <%
+            if (!issue.getRelatedIssues().isEmpty())
+            {
+                RelatedIssuesView view = new RelatedIssuesView(context, issue.getRelatedIssues());
+                include(view, out);
+
+        %>
+        <button class="btn btn-default btn-xs" id="<%=h(relatedCommentsToggleId)%>" onclick="toggleRelatedFns[<%=h(issueId)%>]()" style="margin-bottom: 10px">Show Related Comments</button>
+
+        <%}%>
+        <labkey:panel className="labkey-portal-container">
+
+            <%
+                for (Issue.Comment comment : commentLinkedList)
+                {
+                    String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
+                    String classStr = !issue.getComments().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
+            %>
+            <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
+                <strong class=".comment-created-by">
+                    <%=h(comment.getCreatedByName(user))%>
+                </strong>
+                <br>
+                <strong class=".comment-created" title="<%=h(comment.getCreatedFullString())%>">
+                    <%=h(bean.writeDate(comment.getCreated()))%>
+                </strong>
+                <%
+                    if (!issue.getComments().contains(comment))
+                    {%>
+                <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
+                }%>
+                <%=comment.getComment()%>
+                <%=bean.renderAttachments(context, comment)%>
+                <hr>
+            </div>
+            <%
+                }
+
+                if (bean.getHasUpdatePermissions())
+                {%>
+            <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
+            <%}%>
+        </labkey:panel>
+    </div>
+</div>
+<%}
+else
+{%>
 <table width=640>
     <tr><td colspan="3"><h3><%=h(issueId)%> : <%=h(issue.getTitle())%></h3></td></tr>
     <tr>
@@ -163,3 +433,4 @@
 <%
     }
 %>
+<%}%>

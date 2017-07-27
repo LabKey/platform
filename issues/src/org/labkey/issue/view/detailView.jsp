@@ -364,16 +364,20 @@ else
         }).show();
     }
 
+    function moveIssue() {
+        Issues.window.MoveIssue.create(<%=PageFlowUtil.jsString(issueId)%>, <%=PageFlowUtil.jsString(issueDef.getName())%>);
+    }
+
     /**
      * Toggle the hidden flag, set the hide button text to reflect state, and show or hide all related comments.
      */
     function toggleComments() {
         // change the button text
         var toggle = document.getElementById('relatedCommentsToggle');
-        if (!hidden)
-            toggle.text = 'Show Related Comments';
+        if (hidden)
+            toggle.innerText = 'Hide Related Comments';
         else
-            toggle.text = 'Hide Related Comments';
+            toggle.innerText = 'Show Related Comments';
 
         // show/hide comment elements
         var commentDivs = document.getElementsByClassName('relatedIssue');
@@ -391,7 +395,7 @@ else
         var allStampsDiv = document.getElementById("allTimeStamps");
         var stampExpandIcon = document.getElementById("stampExpandIcon");
 
-        if (!showLess) {
+        if (showLess) {
             stampExpandIcon.className = 'fa fa-caret-up';
             allStampsDiv.style.display = "block";
         } else {
@@ -406,7 +410,7 @@ else
     <%if (bean.getHasUpdatePermissions())
     {%>
     <div class="row">
-        <div class="col-sm-4" style="margin-bottom: 5px">
+        <div class="col-sm-5" style="margin-bottom: 5px">
             <div class="btn-group" role="group" aria-label="Action Group" style="display: block;">
                 <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
                 <% if (issue.getStatus().equals(Issue.statusOPEN))
@@ -427,7 +431,7 @@ else
             &nbsp;
             &nbsp;
             <span id="moreMenuToggle" class="lk-menu-drop dropdown">
-                <a data-toggle="dropdown" class="btn btn-default">More</a>
+                <button data-toggle="dropdown" class="btn btn-default">More</button>
                 <ul class="dropdown-menu dropdown-menu-left">
                     <%if (!getUser().isGuest())
                     {%>
@@ -435,7 +439,7 @@ else
                     <%}
                         if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
                         {%>
-                        <li><a>Move</a></li>
+                        <li><a onclick="moveIssue()">Move</a></li>
                     <%}%>
                     <li><a href="<%=context.cloneActionURL().replaceParameter("_print", "1")%>">Print</a></li>
                     <%
@@ -453,7 +457,7 @@ else
                 <%= button("Search").iconCls("search").submit(true) %>
             </labkey:form>
         </div>
-        <div class="col-sm-4" style="margin-bottom: 5px">
+        <div class="col-sm-3" style="margin-bottom: 5px">
             <%if (bean.getHasUpdatePermissions())
             {%>
             <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
@@ -489,21 +493,34 @@ else
     <%}%>
 <%}
 else
-{ %>
+{%>
     <div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div>
-<% } %>
+<%}%>
 
 <div class="row" style="margin-bottom: 10px">
-    <div class="col-sm-1">
-        <label><%=text(bean.getLabel("Status", true))%></label>
+    <div class="col-md-1">
+        <label class="control-label"><%=text(bean.getLabel("Status", true))%></label>
         <div class="form-group"><%=h(issue.getStatus())%></div>
     </div>
-    <div class="col-sm-2">
-        <label>Assigned To</label>
+    <%if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
+    {%>
+    <div class="col-md-1">
+        <label class="control-label"><%=text(bean.getLabel("Resolution", true))%></label>
+        <div class="form-group">
+            <%=h(issue.getResolution())%>
+            <%if (issue.getResolution().equalsIgnoreCase("duplicate") && issue.getDuplicate() != null)
+                {%>
+                    of&nbsp;<%=bean.renderDuplicate(issue.getDuplicate())%>
+            <%}%>
+        </div>
+    </div>
+    <%}%>
+    <div class="col-md-2">
+        <label class="control-label">Assigned To</label>
         <div class="form-group"><%=h(issue.getAssignedToName(user))%></div>
     </div>
-    <div class="col-sm-5">
-        <label>Recent Activity</label>
+    <div class="col-md-4">
+        <label class="control-label">Recent Activity</label>
         <%
             Issue.IssueEvent m = issue.getMostRecentEvent(user);
             String lastUpdatedStr = "";
@@ -546,14 +563,14 @@ else
             <div><%=h(name)%></div>
         <%}%>
     </div>
-
     <%}%>
     </div>
 </div>
 
 <div class="row">
     <%  String mainContentClassName;
-        if (!bean.getCustomColumnConfiguration().getCustomProperties().isEmpty())
+        if (!bean.getCustomColumnConfiguration().getCustomProperties().isEmpty() ||
+                (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty()))
         {
             mainContentClassName = "col-sm-10 col-sm-pull-2";
     %>
@@ -564,6 +581,16 @@ else
                 <br class="input-group-disappear-sm">
             <%}%>
             <div style="word-wrap: break-word">
+                <%if (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty())
+                {%>
+                <div class="form-group">
+                    <label class="col-3 control-label">Duplicates</label>
+                    <div class="col-9">
+                        <%=bean.renderDuplicates(issue.getDuplicates())%>
+                    </div>
+                </div>
+
+                <%}%>
                 <%
                     ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
                     propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
@@ -589,7 +616,7 @@ else
                 include(view, out);
 
             %>
-        <a class="btn btn-default btn-xs" id="relatedCommentsToggle" onclick="toggleComments()" style="margin-bottom: 10px">Show Related Comments</a>
+        <button class="btn btn-default btn-xs" id="relatedCommentsToggle" onclick="toggleComments()" style="margin-bottom: 10px">Show Related Comments</button>
 
         <%}%>
         <labkey:panel className="labkey-portal-container">
@@ -601,11 +628,11 @@ else
             String classStr = !issue.getComments().contains(comment) ? "relatedIssue" : "currentIssue";
             %>
             <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
-                <strong>
+                <strong class="comment-created-by">
                     <%=h(comment.getCreatedByName(user))%>
                 </strong>
                 <br>
-                <strong title="<%=h(comment.getCreatedFullString())%>">
+                <strong class="comment-created" title="<%=h(comment.getCreatedFullString())%>">
                     <%=h(bean.writeDate(comment.getCreated()))%>
                 </strong>
                 <%
@@ -626,12 +653,9 @@ else
         <%}%>
         </labkey:panel>
     </div>
-
 </div>
 
 <%}%>
-
-
 <%
     if (bean.getCallbackURL() != null)
     {%>

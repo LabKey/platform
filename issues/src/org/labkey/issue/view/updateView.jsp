@@ -91,9 +91,6 @@
     List<DomainProperty> column2Props = new ArrayList<>();
     List<DomainProperty> extraColumns = new ArrayList<>();
 
-    //IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
-//    if (issueListDef == null)
-//        issueListDef = IssueManager.getIssueListDef(issue);
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c, issueListDef.getName()));
 
     // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
@@ -164,7 +161,40 @@
 
         showLess = !showLess;
     }
+</script>
+<% if (newUI) {%>
+<script type="text/javascript">
+    (function($){
 
+        var extraFields = [];
+
+        <%
+        ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
+        propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
+        for (DomainProperty prop : propertyArr)
+        {%>
+            extraFields.push(<%=q(prop.getName().toLowerCase())%>);
+        <%}%>
+
+        $(function() {
+            $("input[name='title']").attr("tabindex", "1");
+            $("select[name='assignedTo']").attr("tabindex", "2");
+            $("input[name='related']").attr("tabindex", "3");
+            $("textarea[name='notifyListArea']").attr("tabindex", "4");
+
+            for (var i=5; i < extraFields.length; i++){
+                var e = $("[name=" + extraFields[i] + "]");
+                if (e) {
+                    e.attr("tabindex", i);
+                }
+            }
+        });
+    })(jQuery);
+</script>
+<%}
+else
+{%>
+<script type="text/javascript">
     (function($){
 
         var column1 = [];
@@ -175,11 +205,11 @@
         <%
             for (DomainProperty prop : column1Props)
             {%>
-            column1.push(<%=q(prop.getName().toLowerCase())%>);<%
+        column1.push(<%=q(prop.getName().toLowerCase())%>);<%
             }
             for (DomainProperty prop : column2Props)
             {%>
-            column2.push(<%=q(prop.getName().toLowerCase())%>);<%
+        column2.push(<%=q(prop.getName().toLowerCase())%>);<%
             }
         %>
 
@@ -205,6 +235,7 @@
         });
     })(jQuery);
 </script>
+<%}%>
 <labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" layout="horizontal">
     <% if (!newUI) {%>
 
@@ -373,13 +404,13 @@ else
         {
             for (ObjectError e : errors.getAllErrors())
             {%>
-        <tr><td colspan=3><span class="labkey-error"><%=h(context.getMessage(e))%></span></td></tr><%
-                }
+                <tr><td colspan=3><span class="labkey-error"><%=h(context.getMessage(e))%></span></td></tr><%
             }
-            if (!bean.getRequiredFields().isEmpty())
-            {%>
-        <tr><td class="help-block">Fields marked with an asterisk * are required.</td></tr><%
-            }
+        }
+        if (!bean.getRequiredFields().isEmpty())
+        {%>
+            <tr><td class="help-block">Fields marked with an asterisk * are required.</td></tr><%
+        }
         %>
     </table>
     <br>
@@ -397,7 +428,7 @@ else
         <div class="col-sm-4">
             <div class="form-group">
                 <label class="col-md-3 control-label">Status</label>
-                <div class="col-md-9"><span><%=text(issue.getStatus())%></span></div>
+                <div class="col-md-9"  style="padding-top: 5px"><span><%=text(issue.getStatus())%></span></div>
             </div>
         </div>
     </div>
@@ -509,11 +540,9 @@ else
         </div>
         <div class="col-sm-4">
             <div class="form-group">
-                <div class="col-md-3">
-                    <label for="notifyListArea">Notify List</label>
-                </div>
+                <label for="notifyList" class="control-label col-md-3">Notify List</label>
                 <div class="col-md-9" style="padding-right: 15px">
-                    <labkey:autoCompleteTextArea name="notifyListArea" id="notifyListArea" url="<%=h(completionUrl)%>" rows="3" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+                    <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="3" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
                 </div>
             </div>
         </div>
@@ -548,8 +577,10 @@ else
        </div>
     <%}%>
     <div class="row" style="padding: 0 15px">
-        <strong>Comment</strong>
+        <label class="control-label" for="commentArea">Comment</label>
+        <div>
             <textarea id="commentArea" class="form-control" name="comment" cols="150" rows="8" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
+        </div>
     </div>
     <table style="display: inline-table">
         <tr><td><table id="filePickerTableHead"></table></td></tr>
@@ -559,7 +590,9 @@ else
         <%= button("Cancel").href(cancelURL) %>
         <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
     </div>
-    <hr>
+    <% if (!issue.getComments().isEmpty()) {%>
+        <hr>
+    <%}%>
     <%
         if (bean.getCallbackURL() != null)
         {
@@ -574,7 +607,7 @@ else
     <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/>
     <%
         }%>
-        <%if (issue.getIssueId() != 0)
+        <%if (issue.getIssueId() != 0 && !issue.getComments().isEmpty())
         {
         %>
         <labkey:panel className="labkey-portal-container">
@@ -583,11 +616,11 @@ else
                 {
             %>
             <div class="currentIssue" style="display: inline">
-                <strong>
+                <strong class=".comment-created-by">
                     <%=h(comment.getCreatedByName(user))%>
                 </strong>
                 <br>
-                <strong title="<%=h(comment.getCreatedFullString())%>">
+                <strong class=".comment-created" title="<%=h(comment.getCreatedFullString())%>">
                     <%=h(bean.writeDate(comment.getCreated()))%>
                 </strong>
                 <%
