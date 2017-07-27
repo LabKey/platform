@@ -33,6 +33,7 @@
     String xlsGUID = "xls_" + guid + (model.isSignButton() ? "_sign" : "");
     String iqyGUID = "iqy_" + guid;
     String headerGUID = "header_" + guid + (model.isSignButton() ? "_sign" : "");
+    String headerType = "xls_header_type" + (model.isSignButton() ? "_sign" : "");
     String exportSelectedId = "exportSelected_" + guid + (model.isSignButton() ? "_sign" : "");
     String exportButtonId = "export_" + guid + (model.isSignButton() ? "_sign" : "");
     String buttonText = model.isSignButton() ? "Sign Excel Snapshot" : "Export to Excel";
@@ -75,7 +76,7 @@
     <% } %>
     <tr>
         <td colspan="2"><label>Column headers:<%= PageFlowUtil.helpPopup("Column Header Options", sb.toString(), true) %></label>
-            <select id="<%=text(headerGUID)%>" name="xls_header_type">
+            <select id="<%=text(headerGUID)%>" name="<%=text(headerType)%>">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>

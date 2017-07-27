@@ -32,6 +32,9 @@
     String delimGUID = "delim_" + guid + (model.isSignButton() ? "_sign" : "");
     String quoteGUID = "quote_" + guid + (model.isSignButton() ? "_sign" : "");
     String headerGUID = "header_" + guid + (model.isSignButton() ? "_sign" : "");
+    String headerType = "txt_header_type" + (model.isSignButton() ? "_sign" : "");
+    String delim = "delim" + (model.isSignButton() ? "_sign" : "");
+    String quote = "quote" + (model.isSignButton() ? "_sign" : "");
     String exportSelectedId = "exportSelected_" + guid + (model.isSignButton() ? "_sign" : "");
     String exportButtonId = "export_" + guid + (model.isSignButton() ? "_sign" : "");
     String buttonText = model.isSignButton() ? "Sign Text Snapshot" : "Export to Text";
@@ -70,7 +73,7 @@
     <tr>
         <td><label for="<%=text(delimGUID)%>">Separator:</label></td>
         <td>
-            <select id="<%=text(delimGUID)%>" name="delim">
+            <select id="<%=text(delimGUID)%>" name="<%=text(delim)%>">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
             </select>
         </td>
@@ -78,7 +81,7 @@
     <tr>
         <td><label for="<%=text(quoteGUID)%>">Quote:</label></td>
         <td>
-            <select id="<%=text(quoteGUID)%>" name="quote">
+            <select id="<%=text(quoteGUID)%>" name="<%=text(quote)%>">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
             </select>
         </td>
@@ -86,7 +89,7 @@
     <tr>
         <td><label>Column headers:<%= PageFlowUtil.helpPopup("Column Header Options", sb.toString(), true) %></label></td>
         <td>
-            <select id="<%=text(headerGUID)%>" name="txt_header_type">
+            <select id="<%=text(headerGUID)%>" name="<%=text(headerType)%>">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
