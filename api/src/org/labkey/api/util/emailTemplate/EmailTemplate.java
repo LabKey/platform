@@ -372,8 +372,8 @@ public abstract class EmailTemplate
                 {
                     // This may not be quite right, but seems OK given all of our current parameters
                     // We format just the value itself, not any surrounding text, but we can only safely do
-                    // this for String values. That is the overwhelming majority of values, and the non-strings
-                    // are Dates which are unlikely to be rendered using a format that needs encoding.
+                    // this for String values. That is the overwhelming majority of values. Other formatted
+                    // values (dates, values with inline format strings) are encoded properly below.
                     value = emailFormat.format((String) value, getContentType());
                 }
 
@@ -383,7 +383,8 @@ public abstract class EmailTemplate
                     {
                         Formatter formatter = new Formatter();
                         formatter.format(templateFormat, value);
-                        formattedValue = formatter.toString();
+                        // Always encode formatted values in HTML, #30986.
+                        formattedValue = emailFormat.format(formatter.toString(), ContentType.Plain);
                     }
                     catch (MissingFormatArgumentException e)
                     {
@@ -393,7 +394,9 @@ public abstract class EmailTemplate
                 }
                 else if (value instanceof Date)
                 {
-                    formattedValue = DateUtil.formatDateTime(c, (Date)value);
+                    // Always encode formatted dates if we're rendering to HTML, #30986. Hard-code sourceType to Plain
+                    // since we're transforming the value.
+                    formattedValue = emailFormat.format(DateUtil.formatDateTime(c, (Date)value), ContentType.Plain);
                 }
                 else
                 {
