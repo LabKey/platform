@@ -170,7 +170,7 @@
                     <span class="hidden-sm hidden-md hidden-lg">
                         <i class="fa fa-comments"></i>
                     </span>
-                    <span class="hidden-xs">Give Feedback</span>
+                    <span class="hidden-xs">Give feedback</span>
                 </a>
             </li>
 <% } %>
