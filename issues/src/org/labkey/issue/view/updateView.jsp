@@ -433,10 +433,10 @@ else
     </div>
     <div class="row">
         <div class="col-sm-5">
-            <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
+            <%=text(bean.renderLargeInputColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
             <%if (bean.isVisible("resolution"))
             {%>
-                <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>
+                <%=text(bean.renderLargeInputColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>
             <%}
             if (issue.getIssueId() != 0)
             {

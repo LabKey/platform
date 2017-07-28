@@ -586,7 +586,7 @@ else
                     propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
                     for(DomainProperty prop : propertyArr)
                     {%>
-                        <%=text(bean.renderColumn(prop, getViewContext(), true, true, true))%>
+                        <%=text(bean.renderColumn(prop, getViewContext(), true, true, true, false))%>
                     <%}%>
             </div>
     </div>
