@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.message.settings.MessageConfigService" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -39,28 +38,30 @@
 <div id="<%=h(panelDiv)%>"></div>
 <script type="text/javascript">
 
-    Ext4.onReady(function(){
-        var emailDefaultCombo;
-
-        var defaultOptionsStore = Ext4.create('Ext.data.JsonStore', {
-            fields: ['id', 'label'],
-            autoLoad: true,
-            proxy: ({
-                type: 'ajax',
-                reader: {
-                    type: 'json',
-                    root: 'options',
-                    idProperty: 'id'
-                },
-                url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions'),
-                extraParams: {type: '<%=h(bean.getType())%>', isDefault: true}})
-        });
-        defaultOptionsStore.on('load', function(){emailDefaultCombo.setValue(<%=bean.getDefaultEmailOption()%>);});
-
-        emailDefaultCombo = Ext4.create('Ext.form.field.ComboBox', {
+    Ext4.onReady(function() {
+        var emailDefaultCombo = Ext4.create('Ext.form.field.ComboBox', {
             hiddenName:'<%=h(bean.getType())%>_defaultEmailOption',
-            fieldLabel:'Default Setting For <%=h(StringUtils.capitalize(bean.getType()))%>',
-            store: defaultOptionsStore,
+            fieldLabel:'Default setting for <%=h(bean.getType().toLowerCase())%>',
+            store: Ext4.create('Ext.data.JsonStore', {
+                fields: ['id', 'label'],
+                autoLoad: true,
+                proxy: ({
+                    type: 'ajax',
+                    url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions'),
+                    extraParams: {
+                        type: '<%=h(bean.getType())%>',
+                        isDefault: true
+                    },
+                    reader: {
+                        type: 'json',
+                        root: 'options',
+                        idProperty: 'id'
+                    }
+                }),
+                listeners: {
+                    load: function() { emailDefaultCombo.setValue(<%=bean.getDefaultEmailOption()%>); }
+                }
+            }),
             forceSelection:true,
             allowBlank: false,
             triggerAction:'all',
@@ -72,35 +73,6 @@
             emptyText:'Choose a folder default...'
         });
 
-        // buttons
-        var folderDefaultBtn = Ext4.create('Ext.button.Button', {text:'Update',
-            tooltip: 'Sets the default notification option for this folder',
-            handler: function(b,e){
-                Ext4.Ajax.request({
-                    url: '<%=h(bean.getSetDefaultPrefURL())%>',
-                    method: 'POST',
-                    timeout: 30000,
-                    params: {defaultEmailOption: emailDefaultCombo.getValue()},
-                    success: function(response, opts){
-                        var o = eval('var $=' + response.responseText + ';$;');
-                        if (o && o.success)
-                        {
-                            Ext4.MessageBox.show({
-                                title: 'Update complete',
-                                animEl: folderDefaultBtn.getEl(),
-                                msg: o.message
-                            });
-                            setTimeout(function(){
-                                Ext4.MessageBox.hide();
-                                LABKEY.Utils.signalWebDriverTest('notificationSettingUpdate');
-                            }, 1500);
-                        }
-                    },
-                    failure: function(response, opts) {
-                        LABKEY.Utils.displayAjaxErrorResponse(response, opts);
-                    }
-                });}
-        });
         Ext4.create('Ext.form.FormPanel', {
             renderTo: '<%=h(panelDiv)%>',
             width: 800,
@@ -109,36 +81,65 @@
             labelPad: 15,
             border: false,
             items: [{
-                xtype : 'fieldcontainer',
-                layout : {
-                    type : 'hbox',
-                    defaultMargins : '2 25 2 0'
-                }, items: [emailDefaultCombo, folderDefaultBtn]}]
+                xtype: 'fieldcontainer',
+                layout: {
+                    type: 'hbox',
+                    defaultMargins: '2 25 2 0'
+                },
+                items: [emailDefaultCombo, {
+                    xtype: 'button',
+                    text: 'Update',
+                    tooltip: 'Sets the default notification option for this folder',
+                    handler: function(btn) {
+                        Ext4.Ajax.request({
+                            url: '<%=h(bean.getSetDefaultPrefURL())%>',
+                            method: 'POST',
+                            timeout: 30000,
+                            params: {defaultEmailOption: emailDefaultCombo.getValue()},
+                            success: function(response) {
+                                var o = eval('var $=' + response.responseText + ';$;');
+                                if (o && o.success) {
+                                    Ext4.MessageBox.show({
+                                        title: 'Update complete',
+                                        animEl: btn.getEl(),
+                                        msg: o.message
+                                    });
+                                    setTimeout(function(){
+                                        Ext4.MessageBox.hide();
+                                        LABKEY.Utils.signalWebDriverTest('notificationSettingUpdate');
+                                    }, 1500);
+                                }
+                            },
+                            failure: function(response, opts) {
+                                LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+                            }
+                        });
+                    }
+                }]
+            }]
         });
-
     });
 
     var userSettings_<%=h(bean.getType())%> = function(selectionCount)
     {
-        var optionsStore = Ext4.create('Ext.data.JsonStore', {
-            fields: ['id', 'label'],
-            proxy: ({
-                type: 'ajax',
-                reader: {
-                    type: 'json',
-                    root: 'options',
-                    idProperty: 'id'
-                },
-                url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions'),
-                extraParams: {type: '<%=h(bean.getType())%>'}})
-        });
-
         var idBulkEditBtn = Ext4.id();
 
         var emailCombo = Ext4.create('Ext.form.field.ComboBox',{
             hiddenName: '<%=h(bean.getType())%>EmailOption',
-            fieldLabel: 'New Setting',
-            store: optionsStore,
+            fieldLabel: 'New setting',
+            store: Ext4.create('Ext.data.JsonStore', {
+                fields: ['id', 'label'],
+                proxy: ({
+                    type: 'ajax',
+                    reader: {
+                        type: 'json',
+                        root: 'options',
+                        idProperty: 'id'
+                    },
+                    url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions'),
+                    extraParams: {type: '<%=h(bean.getType())%>'}
+                })
+            }),
             forceSelection: true,
             allowBlank: false,
             triggerAction: 'all',
@@ -146,19 +147,17 @@
             displayField: 'label',
             width: 350,
             labelAlign: 'left',
-            emptyText: 'Choose a setting...'
+            emptyText: 'Choose a setting...',
+            listeners: {
+                select: function(combo) {
+                    Ext4.getCmp(idBulkEditBtn).setDisabled(!combo.isValid(true));
+                }
+            }
         });
-        emailCombo.on('select', function (cmp, record, idx)
-        {
-            Ext4.getCmp(idBulkEditBtn).setDisabled(!cmp.isValid(true));
-        });
-
 
         // buttons
-        var bulkEditHandler = function (btn)
-        {
-            if (!emailCombo.validate())
-            {
+        var bulkEditHandler = function() {
+            if (!emailCombo.validate()) {
                 Ext4.MessageBox.alert('Error', 'Please select a notification setting from the drop down list.');
                 return;
             }
@@ -171,54 +170,35 @@
             else
                 confirmMsg += 'the selected user?';
 
-            Ext4.MessageBox.confirm('Update Selected Users',
-                    confirmMsg,
-                    function (btn)
-                    {
-                        if (btn == 'yes')
-                        {
-                            Ext4.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL('announcements', 'setBulkEmailOptions'),
-                                method: 'POST',
-                                timeout: 30000,
-                                params: {
-                                    type: '<%=h(bean.getType())%>',
-                                    individualEmailOption: emailCombo.getValue(),
-                                    dataRegionSelectionKey: '<%=h(bean.getDataRegionSelectionKey())%>',
-                                    returnUrl: <%=q(bean.getReturnUrl())%>
-                                },
-                                success: function (response, opts)
-                                {
-                                    var o = eval('var $=' + response.responseText + ';$;');
-                                    if (o && o.success)
-                                        window.location = <%=q(bean.getReturnUrl())%>;
-                                    else
-                                        Ext4.MessageBox.alert('Error', o.message);
-                                },
-                                failure: function (response, opts)
-                                {
-                                    LABKEY.Utils.displayAjaxErrorResponse(response, opts);
-                                }
-                            });
+            Ext4.MessageBox.confirm('Update selected users', confirmMsg, function (btn) {
+                if (btn === 'yes') {
+                    Ext4.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('announcements', 'setBulkEmailOptions'),
+                        method: 'POST',
+                        timeout: 30000,
+                        params: {
+                            type: '<%=h(bean.getType())%>',
+                            individualEmailOption: emailCombo.getValue(),
+                            dataRegionSelectionKey: '<%=h(bean.getDataRegionSelectionKey())%>',
+                            returnUrl: <%=q(bean.getReturnUrl())%>
+                        },
+                        success: function (response, opts) {
+                            var o = eval('var $=' + response.responseText + ';$;');
+                            if (o && o.success)
+                                window.location = <%=q(bean.getReturnUrl())%>;
+                            else
+                                Ext4.MessageBox.alert('Error', o.message);
+                        },
+                        failure: function (response, opts) {
+                            LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                         }
                     });
+                }
+            });
         };
 
-        var btnText = 'Update Settings For ' + selectionCount + ' User';
-        if (selectionCount > 1)
-            btnText += 's';
-
-        var bulkEditBtn = Ext4.create('Ext.button.Button',{
-            disabled: true,
-            id: idBulkEditBtn,
-            itemId: idBulkEditBtn,
-            text: btnText,
-            tooltip: 'Sets the notification option for all selected users',
-            handler: bulkEditHandler
-        });
-
         var userSettingsPopup = Ext4.create('Ext.window.Window', {
-            title: 'Update User Settings For <%=h(StringUtils.capitalize(bean.getType()))%>',
+            title: 'Update user settings for <%=h(bean.getType().toLowerCase())%>',
             modal: true,
             border : false,
             scope: this,
@@ -228,14 +208,19 @@
             bodyStyle : 'padding: 15px;',
             labelPad: 10,
             items: [emailCombo],
-            buttons: [bulkEditBtn, {
+            autoShow: true,
+            buttons: [{
+                disabled: true,
+                id: idBulkEditBtn,
+                itemId: idBulkEditBtn,
+                text: 'Update settings for ' + selectionCount + ' user' + (selectionCount > 1 ? 's' : ''),
+                tooltip: 'Sets the notification option for all selected users',
+                handler: bulkEditHandler
+            },{
                 text: 'Cancel',
                 scope: this,
                 handler: function() { userSettingsPopup.close(); }
             }]
         });
-
-        userSettingsPopup.show();
     };
-
 </script>

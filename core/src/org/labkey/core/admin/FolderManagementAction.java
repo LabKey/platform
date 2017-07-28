@@ -83,7 +83,6 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
@@ -294,7 +293,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private void validateConceptPost(FolderManagementForm form, Errors errors)
     {
-        // validate that the required input fields are provied
+        // validate that the required input fields are provided
         String missingRequired = "", sep = "";
         if (form.getConceptURI() == null)
         {
@@ -1442,10 +1441,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     try
                     {
                         // add the provider configuration menu items to the admin panel button
-                        MenuButton adminButton = new MenuButton("Update User Settings");
+                        MenuButton adminButton = new MenuButton("Update user settings");
                         adminButton.setRequiresSelection(true);
                         for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
-                            adminButton.addMenuItem("For " + StringUtils.capitalize(provider.getName()), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
+                            adminButton.addMenuItem("For " + provider.getName().toLowerCase(), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
 
                         bar.add(adminButton);
                         super.populateButtonBar(dataView, bar);
@@ -1466,7 +1465,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
             VBox defaultsView = new VBox(
                 new HtmlView(
-                    "<div class=\"labkey-announcement-title\"><span>Default Settings</span></div><div class=\"labkey-title-area-line\"></div>" +
+                    "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
                     "You can change this folder's default settings for email notifications here.")
             );
 
@@ -1481,11 +1480,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 defaultsView,
                 new VBox(
                     new HtmlView(
-                        "<div class='labkey-announcement-title'><span>User Settings</span></div><div class='labkey-title-area-line'></div>" +
+                        "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
                         "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
                         "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
                         "visible in the appropriately named column.<br/><br/>" +
-                        "To bulk edit individual settings: select one or more users, click the 'Update User Settings' menu, and select the notification type."),
+                        "To bulk edit individual settings: select one or more users, click the 'Update user settings' menu, and select the notification type."),
                     queryView
                 )
             );
@@ -1523,7 +1522,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 }
                 out.write(sb.toString());
             }
-            //super.renderGridCellContents(ctx, out);  
         }
     }
 
