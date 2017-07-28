@@ -1380,7 +1380,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Container protocolContainer = protocol.getContainer();
         Container contextContainer = context.getContainer();
 
-        NavTree manageMenu = new NavTree("manage assay design");
+        NavTree manageMenu = new NavTree("Manage assay design");
 
         if (allowUpdate(context, protocol))
         {
@@ -1392,28 +1392,28 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     editLink = "javascript: if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
                 }
-                manageMenu.addChild("edit assay design", editLink);
+                manageMenu.addChild("Edit assay design", editLink);
             }
 
             ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(protocol, protocolContainer);
             if (copyURL != null)
-                manageMenu.addChild("copy assay design", copyURL.toString());
+                manageMenu.addChild("Copy assay design", copyURL.toString());
         }
 
         if (allowDelete(context, protocol))
         {
-            manageMenu.addChild("delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(contextContainer)));
+            manageMenu.addChild("Delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(contextContainer)));
         }
 
         ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(protocolContainer, protocol);
-        manageMenu.addChild("export assay design", exportURL.toString());
+        manageMenu.addChild("Export assay design", exportURL.toString());
 
         if (contextContainer.hasPermission(context.getUser(), AdminPermission.class))
         {
             List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = getDomains(protocol);
             if (!domainInfos.isEmpty())
             {
-                NavTree setDefaultsTree = new NavTree("set default values");
+                NavTree setDefaultsTree = new NavTree("Set default values");
                 ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, contextContainer);
                 baseEditUrl.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
                 baseEditUrl.addParameter("providerName", getName());
