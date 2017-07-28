@@ -1,24 +1,30 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.collections4.ListValuedMap;
+import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.labkey.api.data.SQLFragment;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.AssaySpecimenConfigImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,8 +42,87 @@ public class AssayProgressReport extends AbstractReport
     public static final String TYPE = "ReportService.AssayProgressReport";
     private static final String PARTICIPANTS = "participants";
     private static final String VISITS = "visits";
+    private static final String VISITS_LABELS = "visitLabels";
+    private static final String HEAT_MAP = "heatMap";
+    private static final String LEGEND = "legend";
 
+    public static final String SPECIMEN_EXPECTED = "expected";
+    public static final String SPECIMEN_COLLECTED = "collected";
+    public static final String SPECIMEN_NOT_COLLECTED = "not-collected";
+    public static final String SPECIMEN_UNUSABLE = "unusable";
+    public static final String SPECIMEN_AVAILABLE = "available";
+    public static final String SPECIMEN_INVALID = "invalid";
+
+    private SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
     private Map<String, Map<String, Object>> _assayData = new HashMap<>();
+
+    public enum SpecimenStatus
+    {
+        EXPECTED("expected", "Expected", "Expected", "fa fa-circle-o"),
+        COLLECTED("collected", "Collected", "Collected", "fa fa-user-o"),
+        NOT_COLLECTED("not-collected", "Not collected", "Not collected", "fa fa-ban"),
+        UNUSABLE("unusable", "Unusable", "Unusable", "fa fa-trash-o"),
+        AVAILABLE("available", "Results available", "Results available", "fa fa-check-circle"),
+        INVALID("invalid", "Invalid", "Invalid", "fa fa-warning");
+
+        private String _name;
+        private String _lable;
+        private String _iconClass;
+        private String _description;
+
+        SpecimenStatus(String name, String label, String description, String iconClass)
+        {
+            _name = name;
+            _lable = label;
+            _description = description;
+            _iconClass = iconClass;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getLabel()
+        {
+            return _lable;
+        }
+
+        public String getIconClass()
+        {
+            return _iconClass;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        @Nullable
+        public static SpecimenStatus getForName(String name)
+        {
+            for (SpecimenStatus status : SpecimenStatus.values())
+            {
+                if (status.getName().equals(name))
+                    return status;
+            }
+            return null;
+        }
+
+        public static List<Map<String, String>> serialize()
+        {
+            List<Map<String, String>> data = new ArrayList<>();
+
+            for (SpecimenStatus status : SpecimenStatus.values())
+            {
+                data.add(PageFlowUtil.map("name", status.getName(),
+                        "label", status.getLabel(),
+                        "description", status.getDescription(),
+                        "icon-class", status.getIconClass()));
+            }
+            return data;
+        }
+    }
 
     @Override
     public String getType()
@@ -54,14 +139,14 @@ public class AssayProgressReport extends AbstractReport
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        getAssayData(context);
+        getAssayReportData(context);
 
         JspView<Map<String, Map<String, Object>>> view = new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", _assayData);
 
         return view;
     }
 
-    private void getAssayData(ViewContext context)
+    private void getAssayReportData(ViewContext context)
     {
         Study study = StudyService.get().getStudy(context.getContainer());
 
@@ -98,36 +183,67 @@ public class AssayProgressReport extends AbstractReport
             assay.setExpectedVisits(assayVisits);
         }
 
-        for (AssayExpectation assay : assayExpectations)
+        try
         {
-            getStandardAssayData(assay, context);
+            for (AssayExpectation assay : assayExpectations)
+            {
+                AssayData assaySource = createAssayDataSource(study, assay);
+                Map<String, Object> data = new HashMap<>();
 
-            //getCustomAssayData(assay, context);
+                getDatasetData(assay, study, context);
+
+                List<Integer> visits = assaySource.getVisits(context).stream()
+                        .map(Visit::getId)
+                        .collect(Collectors.toList());
+                List<String> visitLabels = assaySource.getVisits(context).stream()
+                        .map(Visit::getLabel)
+                        .collect(Collectors.toList());
+
+                data.put(VISITS, visits);
+                data.put(VISITS_LABELS, visitLabels);
+                data.put(PARTICIPANTS, assaySource.getParticipants(context));
+
+                // create the heat map data
+                data.put(HEAT_MAP, createHeatMapData(context, assay, assaySource));
+
+                _assayData.put(assay.getAssayName(), data);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
-    private void getStandardAssayData(AssayExpectation assayExpectation, ViewContext context)
+    AssayData createAssayDataSource(Study study, AssayExpectation expectation)
     {
-        Study study = StudyService.get().getStudy(context.getContainer());
+        return new DefaultAssayProgressSource(expectation, study);
+    }
 
-        // get participants
-        SQLFragment sql = new SQLFragment();
+    Map<String, Map<String, String>> createHeatMapData(ViewContext context, AssayExpectation assay, AssayData assayData)
+    {
+        Map<String, Map<String, String>> heatmap = new HashMap<>();
 
-        sql.append("SELECT DISTINCT(ParticipantId) FROM study.").append(StudyService.get().getSubjectTableName(context.getContainer()));
-        sql.append(" WHERE ParticipantId IS NOT NULL AND Container = ?");
-        sql.add(context.getContainer());
+        for (Pair<ParticipantVisit, String> status : assayData.getSpecimenStatus(context))
+        {
+            SpecimenStatus specimenStatus = SpecimenStatus.getForName(status.getValue());
+            if (specimenStatus != null)
+            {
+                heatmap.put(status.getKey().getKey(), PageFlowUtil.map("iconcls", specimenStatus.getIconClass(),
+                        "tooltip", specimenStatus.getDescription()));
+            }
+            else
+                throw new IllegalStateException("Specimen status : " + status.getValue() + " is not a valid status code");
+        }
 
-        List<String>  participants = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(String.class);
-
-        Map<String, Object> data = new HashMap<>();
-        List<String> visits = assayExpectation.getExpectedVisits().stream()
-                .map(Visit::getLabel)
-                .collect(Collectors.toList());
-
-        data.put(VISITS, visits);
-        data.put(PARTICIPANTS, participants);
-
-        _assayData.put(assayExpectation.getAssayName(), data);
+        // results available (copied to study)
+        SpecimenStatus available = SpecimenStatus.getForName(SPECIMEN_AVAILABLE);
+        for (ParticipantVisit visit : _copiedToStudyData.get(assay.getAssayName()))
+        {
+            heatmap.put(visit.getKey(), PageFlowUtil.map("iconcls", available.getIconClass(),
+                    "tooltip", available.getDescription()));
+        }
+        return heatmap;
     }
 
     private void getCustomAssayData(AssayExpectation assay, ViewContext context)
@@ -162,6 +278,40 @@ public class AssayProgressReport extends AbstractReport
         });
     }
 
+    private void getDatasetData(AssayExpectation assay, Study study, ViewContext context)
+    {
+        if (assay.getDataset() != null)
+        {
+            Dataset dataset = study.getDataset(assay.getDataset());
+            if (dataset != null)
+            {
+                UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), StudySchema.getInstance().getSchemaName());
+                if (schema == null)
+                    throw new NotFoundException("Schema not found");
+
+                TableInfo tableInfo = schema.getTable(dataset.getName());
+                if (tableInfo != null)
+                {
+                    new TableSelector(tableInfo, PageFlowUtil.set("ParticipantId", "SpecimenId", "VisitRowId")).forEachResults(rs -> {
+
+                        String ptid = rs.getString(FieldKey.fromParts("participantId"));
+                        //String specimenId = rs.getString(FieldKey.fromParts("specimenId"));
+                        Integer visitId = rs.getInt(FieldKey.fromParts("visitRowId"));
+
+                        if (ptid != null && visitId != 0)
+                        {
+                            Visit visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
+                            if (visit != null)
+                            {
+                                _copiedToStudyData.put(assay.getAssayName(), new ParticipantVisit(ptid, visitId));
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
     public static class AssayExpectation extends AssaySpecimenConfigImpl
     {
         private List<Visit> _expectedVisits;
@@ -174,6 +324,54 @@ public class AssayProgressReport extends AbstractReport
         public void setExpectedVisits(List<Visit> expectedVisits)
         {
             _expectedVisits = expectedVisits;
+        }
+    }
+
+    /**
+     * Represents the information about an assay that would be required to generate the assay
+     * specific progress report.
+     */
+    public interface AssayData
+    {
+        List<String> getParticipants(ViewContext context);
+        List<Visit> getVisits(ViewContext context);
+        List<Pair<ParticipantVisit, String>> getSpecimenStatus(ViewContext context);
+    }
+
+    public static class ParticipantVisit
+    {
+        private String _ptid;
+        private int _visitId;
+
+        public ParticipantVisit(String ptid, int visitId)
+        {
+            _ptid = ptid;
+            _visitId = visitId;
+        }
+
+        public String getKey()
+        {
+            return _ptid + "|" + _visitId;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ParticipantVisit that = (ParticipantVisit) o;
+
+            if (_visitId != that._visitId) return false;
+            return _ptid != null ? _ptid.equals(that._ptid) : that._ptid == null;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = _ptid != null ? _ptid.hashCode() : 0;
+            result = 31 * result + _visitId;
+            return result;
         }
     }
 }

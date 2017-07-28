@@ -6,6 +6,7 @@
 /**
  * Main panel for the NAb QC interface.
  */
+Ext4.QuickTips.init();
 
 Ext4.define('LABKEY.ext4.AssayStatusPanel', {
 
@@ -45,6 +46,13 @@ Ext4.define('LABKEY.ext4.AssayStatusPanel', {
                     participants : this.participants
                 }
             });
+
+            this.visitLabelMap = {};
+            var i=0;
+            Ext4.each(this.visits, function(visit){
+
+                this.visitLabelMap[visit] = this.visitLables[i++];
+            }, this);
         }
         return this.statusPanel;
     },
@@ -52,50 +60,42 @@ Ext4.define('LABKEY.ext4.AssayStatusPanel', {
     getTemplate : function () {
 
         var tpl = new Ext4.XTemplate(
-                '<div><h3>{name}</h3></div>',
+                '<div><h3>{name}</div>',
                 '<div class="table-responsive"><table class="table progress-report" id="ProgressReport"><tr>',
                 '<th>Participant</th>',
                 '<tpl for="visits">',
-                    '<th>{.}</th>',
+                    '{[this.getVisitLabel(this, values)]}',
                 '</tpl>',
                 '</tr>',
                 '<tpl for="participants">',
                     '<tr class="{[xindex % 2 === 1 ? "labkey-alternate-row" : "labkey-row"]}">',
                     '<td>{.}</td>',
                     '<tpl for="parent.visits">',
-                        '{[this.renderCellValue(parent, values)]}',
+                        '{[this.renderCellValue(this, parent, values)]}',
                     '</tpl>',
                     '</tr>',
                 '</tpl>',
                 '</table></div>',
                 {
-                    renderCellValue : function(ptid, visit)
+                    getVisitLabel : function(cmp, visit){
+                        var me = cmp.initialConfig.me;
+                        return '<th>' + me.visitLabelMap[visit] + '</th>';
+                    },
+                    renderCellValue : function(cmp, ptid, visit)
                     {
-                        var msg = null;
-                        var color = null;
-                        var className = null;
+                        var me = cmp.initialConfig.me;
+                        var className = 'fa fa-circle-o';
+                        var key = ptid + '|' + visit;
 
-/*
-                        // most visits will numeric, but some are strings (i.e. SR1, SR2, PT1)
-                        var cell = this.data.heatMap[ptid + '|' + visit.value];
-                        if (!cell)
-                            cell = this.data.heatMap[ptid + '|' + visit.label]
-
-                        if (cell)
-                        {
-                            className = cell.className;
-                            color = cell.color;
-                            if (cell.queryMsg)
-                                msg = cell.queryMsg;
-                            if (cell.flagMsg)
-                            {
-                                className = 'invalid';
-                                msg = (msg != null ? msg + ' ' : '') + cell.flagMsg;
-                            }
+                        var mapCell = me.heatMap[key];
+                        var tooltip = '';
+                        if (mapCell){
+                            className = mapCell['iconcls'];
+                            tooltip = mapCell['tooltip'];
                         }
-*/
-                        return '<td><span height="16px" class="fa fa-ban"></span></td>';
-                    }
+                        return '<td><span height="16px" data-qtip="' + tooltip + '" class="' + className + '"></span></td>';
+                    },
+                    me : this
                 }
         );
         return tpl;
@@ -139,7 +139,9 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                     itemId  : id,
                     name    : assay,
                     visits  : data['visits'],
-                    participants : data['participants']
+                    visitLables : data['visitLabels'],
+                    participants : data['participants'],
+                    heatMap : data['heatMap']
                 });
             }
         }, this);
@@ -181,9 +183,37 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
             }]
         });
 
+        this.items.push(this.getLegendPanel());
+
         // add the assays
         this.items = this.items.concat(assaysReports);
         this.callParent(arguments);
+    },
+
+    getLegendPanel : function(){
+
+        if (!this.legendPanel){
+
+            var tpl = new Ext4.XTemplate(
+                    '<div><h4>Legend</h4></div>',
+                    '<table class="legend">',
+                    '<tpl for=".">',
+                        '<tpl if="xindex % 2 === 1"><tr></tpl>',
+                        '<td><span height="16px" class="{icon-class}"></span></td><td>&nbsp;{label}</td>',
+                        '<tpl if="xindex % 2 != 1"></tr></tpl>',
+                    '</tpl>',
+                    '</table>'
+            );
+
+            this.legendPanel = Ext4.create('Ext.panel.Panel', {
+                border  : false,
+                frame   : false,
+                flex    : 1.2,
+                tpl     : tpl,
+                data    : this.legend
+            });
+        }
+        return this.legendPanel;
     }
 });
 

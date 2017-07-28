@@ -2488,11 +2488,13 @@ study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/ChartReportView.java -text
+study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
 study/src/org/labkey/study/reports/EnrollmentReport.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text
+study/src/org/labkey/study/reports/QueryAssayProgressSource.java -text
 study/src/org/labkey/study/reports/ReportManager.java -text
 study/src/org/labkey/study/reports/ReportQueryViewFactory.java -text
 study/src/org/labkey/study/reports/ReportViewProvider.java -text

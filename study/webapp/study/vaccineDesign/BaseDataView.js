@@ -89,6 +89,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         {
             this.dataView = Ext4.create('Ext.view.View', {
                 tpl: this.getDataViewTpl(),
+                cls: 'table-responsive',
                 store: this.getStore(),
                 itemSelector: 'tr.data-row',
                 disableSelection: true,
@@ -113,7 +114,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             tplArr = [],
             columns = this.getColumnConfigs();
 
-        tplArr.push('<table class="outer">');
+        tplArr.push('<table class="table outer">');
         tplArr = tplArr.concat(this.getTableHeaderRowTpl(columns));
 
         // data rows
