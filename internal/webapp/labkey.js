@@ -720,7 +720,9 @@ if (typeof LABKEY == "undefined")
 
         var requiresVisualization = function(callback, scope)
         {
-            requiresLib('vis/vis', callback, scope);
+            requiresExt4Sandbox(function() {
+                requiresLib('vis/vis', callback, scope);
+            }, scope);
         };
 
         var setDirty = function (dirty)
