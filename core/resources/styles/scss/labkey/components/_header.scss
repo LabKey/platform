@@ -21,6 +21,7 @@
 
   .navbar-header {
     float: left;
+    white-space: nowrap;
 
     i:hover, i:focus {
       color: $lk-webpart-color;
