@@ -24,6 +24,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.BVT;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.html.ProjectMenu;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.DataRegionTable;
@@ -41,6 +42,7 @@ import static org.labkey.test.util.ListHelper.ListColumnType;
 @Category({BVT.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
 {
+    private boolean foo = setIsBootstrapWhitelisted(true);
     private final PortalHelper portalHelper = new PortalHelper(this);
 
     protected static final String TEST_ASSAY = "Test" + TRICKY_CHARACTERS + "Assay1";
@@ -124,10 +126,10 @@ public class AssayTest extends AbstractAssayTest
      */
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        deleteProject(TEST_ASSAY_PRJ_SECURITY, afterTest); //should also delete the groups
+        //should also delete the groups
+        _containerHelper.deleteProject(getProjectName(), afterTest);
 
-        //delete user accounts
-        deleteUsersIfPresent(TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
+        _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
     }
 
     /**
@@ -141,7 +143,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Starting Assay security scenario tests");
         setupEnvironment();
-        setupPipeline(TEST_ASSAY_PRJ_SECURITY);
+        setupPipeline(getProjectName());
         SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"), new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
         importer.importAndWaitForComplete();
         defineAssay();
@@ -162,12 +164,11 @@ public class AssayTest extends AbstractAssayTest
     @LogMethod
     private void verifyRunDeletionRecallsDatasetRows()
     {
-        clickProject(getProjectName());
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         DataRegionTable assayRuns = new DataRegionTable("Runs", this);
         assayRuns.checkCheckbox(0);
-        clickButton("Delete");
+        assayRuns.clickHeaderButton("Delete");
         // Make sure that it shows that the data is part of study datasets
         assertTextPresent(TEST_RUN3, "2 dataset(s)", TEST_ASSAY);
         assertTextNotPresent("FirstRun");
@@ -179,7 +180,7 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("3 row(s) were recalled to the assay: ");
 
         // Verify that the deleted run data is gone from the dataset
-        clickFolder(TEST_ASSAY_FLDR_STUDY2);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
         clickAndWait(Locator.linkWithText("1 dataset"));
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         assertTextPresent("AAA07XMC-04", TEST_RUN1);
@@ -190,22 +191,22 @@ public class AssayTest extends AbstractAssayTest
     private void verifyWebdavTree()
     {
         beginAt("_webdav");
-        _fileBrowserHelper.selectFileBrowserItem(TEST_ASSAY_PRJ_SECURITY + "/Studies/Study 1");
+        _fileBrowserHelper.selectFileBrowserItem(getProjectName() + "/Studies/Study 1");
         assertTextPresent("@pipeline", 2);
         Locator.XPathLocator l = Locator.xpath("//span[text()='@pipeline']");
         assertElementPresent(l,  1);
-
     }
 
     @LogMethod
     private void editResults()
     {
         // Verify that the results aren't editable by default
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        new ProjectMenu(getDriver()).navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
-        assertElementNotPresent(Locator.linkWithText("edit"));
-        assertButtonNotPresent("Delete");
+        DataRegionTable table = new DataRegionTable("Data", getDriver());
+        assertEquals("No rows should be editable", 0, DataRegionTable.updateLinkLocator().findElements(table.getComponentElement()).size());
+        assertElementNotPresent(Locator.button("Delete"));
 
         // Edit the design to make them editable
         _assayHelper.clickEditAssayDesign(true);
@@ -214,11 +215,12 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Save & Close");
 
         // Try an edit
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 10);
-        clickAndWait(Locator.linkWithText("edit"));
+        DataRegionTable dataTable = new DataRegionTable("Data", getDriver());
+        assertEquals("Incorrect number of results shown.", 10, table.getDataRowCount());
+        doAndWaitForPageToLoad(() -> dataTable.updateLink(dataTable.getRowIndex("Specimen ID", "AAA07XK5-05")).click());
         setFormElement(Locator.name("quf_SpecimenID"), "EditedSpecimenID");
         setFormElement(Locator.name("quf_VisitID"), "601.5");
         setFormElement(Locator.name("quf_testAssayDataProp5"), "notAnumber");
@@ -232,18 +234,16 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
 
         // Try a delete
-        checkCheckbox(Locator.checkboxByName(".select"));
+        dataTable.checkCheckbox(table.getRowIndex("Specimen ID", "EditedSpecimenID"));
         doAndWaitForPageToLoad(() ->
         {
-            clickButton("Delete", 0);
+            dataTable.clickHeaderButton("Delete");
             assertAlert("Are you sure you want to delete the selected row?");
         });
 
         // Verify that the edit was audited
-        goToModule("Query");
-        selectQuery("auditLog", "ExperimentAuditEvent");
-        waitForElement(Locator.linkWithText("view data"), WAIT_FOR_JAVASCRIPT);
-        clickAndWait(Locator.linkWithText("view data"));
+        goToSchemaBrowser();
+        viewQueryData("auditLog", "ExperimentAuditEvent");
         assertTextPresent(
                 "Data row, id ",
                 ", edited in " + TEST_ASSAY + ".",
@@ -251,8 +251,6 @@ public class AssayTest extends AbstractAssayTest
                 "Visit ID changed from '601.0' to '601.5",
                 "testAssayDataProp5 changed from blank to '514801'",
                 "Deleted data row.");
-
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
     }
 
     /**
@@ -264,7 +262,7 @@ public class AssayTest extends AbstractAssayTest
         log("Defining a test assay at the project level");
         //define a new assay at the project level
         //the pipeline must already be setup
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
+        clickProject(getProjectName());
         portalHelper.addWebPart("Assay List");
 
         //copied from old test
@@ -312,7 +310,6 @@ public class AssayTest extends AbstractAssayTest
         sleep(1000);
         clickButton("Save", 0);
         waitForText(20000, "Save successful.");
-
     }
 
     /**
@@ -324,7 +321,7 @@ public class AssayTest extends AbstractAssayTest
     {
         //the format used in the drop down is:
         // /<project>/<studies>/<study1> (<study> Study)
-        return "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" +
+        return "/" + getProjectName() + "/" + TEST_ASSAY_FLDR_STUDIES + "/" +
                     studyName + " (" + studyName + " Study)";
     }
 
@@ -337,8 +334,7 @@ public class AssayTest extends AbstractAssayTest
     private void uploadRuns(String folder, String asUser)
     {
         log("Uploading runs into folder " + folder + " as user " + asUser);
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
-        clickFolder(folder);
+        navigateToFolder(getProjectName(), folder);
         impersonate(asUser);
 
         clickAndWait(Locator.linkWithText("Assay List"));
@@ -508,17 +504,7 @@ public class AssayTest extends AbstractAssayTest
         totalFalses = getElementCount(falseLocator);
         assertEquals(0, totalFalses);
 
-        //Check to see that the bad specimen report includes the bad assay results and not the good ones
-        //The report doesn't have top level UI (use a wiki) so just jump there.
-        beginAt("specimencheck/" + TEST_ASSAY_PRJ_SECURITY + "/assayReport.view");
-        waitForText(10000, "Global Specimen ID");
-        waitForElement(Locator.linkWithText("BAQ00051-09"), 10000);
-        assertElementPresent(Locator.linkWithText("BAQ00051-09"));
-        assertElementPresent(Locator.linkWithText("BAQ00051-08"));
-        assertElementPresent(Locator.linkWithText("BAQ00051-11"));
-        assertElementNotPresent(Locator.linkContainingText("AAA"));
         stopImpersonating();
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
     }
 
     /**
@@ -530,7 +516,7 @@ public class AssayTest extends AbstractAssayTest
     private void publishData()
     {
         log("Prepare visit map to check PTID counts in study navigator.");
-        clickFolder(TEST_ASSAY_FLDR_STUDY1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -543,16 +529,14 @@ public class AssayTest extends AbstractAssayTest
 
         //impersonate the PI
         impersonate(TEST_ASSAY_USR_PI1);
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
-
-        //select the Lab1 folder and view all the data for the test assay
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 
         //select all the data rows and click publish
-        (new DataRegionTable("Data", this)).checkAllOnPage();
-        clickButton("Copy to Study");
+        DataRegionTable table = new DataRegionTable("Data", this);
+        table.checkAllOnPage();
+        table.clickHeaderButton("Copy to Study");
 
         //the target study selected before was Study2, but the PI is not an editor there
         //so ensure that system has correctly caught this fact and now asks the PI to
@@ -583,7 +567,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Verifying that the data was published");
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn("QCState", "QC State");
+        _customizeViewsHelper.addColumn("QCState", "QC State");
         _customizeViewsHelper.applyCustomView();
         assertTextPresent(
                 "Pending Review",
@@ -620,18 +604,20 @@ public class AssayTest extends AbstractAssayTest
                 "18");
 
         // test recall
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view copy-to-study history"));
 
         // Set a filter so that we know we're recalling SecondRun
         DataRegionTable region = new DataRegionTable("query", this);
         region.setFilter("Comment", "Starts With", "3 row(s) were copied to a study from the assay");
-        clickAndWait(Locator.linkWithText("details"));
-        checkCheckbox(Locator.checkboxByName(".toggle"));
+        doAndWaitForPageToLoad(() -> region.detailsLink(region.getRowIndex("Assay/Protocol", TEST_ASSAY)).click());
+
+        DataRegionTable copyStudy = new DataRegionTable("Dataset", this);
+        copyStudy.checkAll();
         doAndWaitForPageToLoad(() ->
         {
-            clickButton("Recall Rows", 0);
+            copyStudy.clickHeaderButton("Recall Rows");
             acceptAlert();
         });
         assertTextPresent("row(s) were recalled to the assay: " + TEST_ASSAY);
@@ -640,7 +626,7 @@ public class AssayTest extends AbstractAssayTest
         region.setFilter("Comment", "Starts With", "3 row(s) were copied to a study from the assay");
 
         // verify audit entry was adjusted
-        clickAndWait(Locator.linkWithText("details"));
+        doAndWaitForPageToLoad(() -> region.detailsLink(region.getRowIndex("Assay/Protocol", TEST_ASSAY)).click());
         assertTextPresent("All rows that were previously copied in this event have been recalled");
 
         stopImpersonating();
@@ -657,8 +643,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Prepare visit map to check PTID counts in study navigator.");
 
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
-        clickFolder(TEST_ASSAY_FLDR_STUDY3);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY3);
 
         clickAndWait(Locator.linkWithText("Manage"));
         clickAndWait(Locator.linkWithText("Manage Timepoints"));
@@ -669,16 +654,17 @@ public class AssayTest extends AbstractAssayTest
         selectOptionByText(Locator.name("typeCode"), "Screening");
 
         clickButton("Save");
-        assertElementPresent(Locator.linkWithText("edit"), 1);
+        assertElementPresent(Locator.tagWithAttribute("a", "data-original-title", "edit"), 1);
 
         //select the Lab1 folder and view all the data for the test assay
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 
         //select all the data rows and click publish
-        checkAllOnPage("Data");
-        clickButton("Copy to Study");
+        DataRegionTable table = new DataRegionTable("Data", getDriver());
+        table.checkAll();
+        table.clickHeaderButton("Copy to Study");
 
         checkCheckbox(Locator.xpath("//td//input[@type='checkbox']"));
 
@@ -702,7 +688,8 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[3]"), "new3");
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
-        clickButton("Re-Validate");
+        DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
+        copyStudy.clickHeaderButton("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
@@ -714,7 +701,8 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='Day 0 - 7' and following-sibling::td/a[text()='BAQ00051-09'] and following-sibling::td[text()='7.0']]"));
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
         assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
-        clickButton("Copy to Study");
+
+        copyStudy.clickHeaderButton("Copy to Study");
 
         log("Verifying that the data was published");
         assertTextPresent(
@@ -756,8 +744,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Prepare visit map to check PTID counts in study navigator.");
 
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
-        clickFolder(TEST_ASSAY_FLDR_STUDY2);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
 
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
@@ -771,13 +758,14 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Import");
 
         //select the Lab1 folder and view all the data for the test assay
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 
         //select all the data rows and click publish
-        checkAllOnPage("Data");
-        clickButton("Copy to Study");
+        DataRegionTable table = new DataRegionTable("Data", getDriver());
+        table.checkAll();
+        table.clickHeaderButton("Copy to Study");
 
         checkCheckbox(Locator.xpath("//td//input[@type='checkbox']"));
 
@@ -801,7 +789,8 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[3]"), "new3");
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
-        clickButton("Re-Validate");
+        DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
+        copyStudy.clickHeaderButton("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td/a[text()='AAA07XMC-02']]"));
@@ -814,7 +803,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-08']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-11']]"));
 
-        clickButton("Copy to Study");
+        copyStudy.clickHeaderButton("Copy to Study");
 
         log("Verifying that the data was published");
         assertTextPresent(
@@ -852,7 +841,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Testing edit and delete and assay definition");
 
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
+        clickProject(getProjectName());
 
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         _assayHelper.clickEditAssayDesign();
@@ -864,21 +853,21 @@ public class AssayTest extends AbstractAssayTest
         waitForText(WAIT_FOR_JAVASCRIPT, "Save successful.");
 
         //ensure that label has changed in run data in Lab 1 folder
-        clickFolder(TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText(TEST_RUN1));
         assertTextPresent(TEST_ASSAY_DATA_PROP_NAME + "edit");
         assertTextNotPresent(TEST_ASSAY_DATA_PROP_NAME + 4);
 
         AuditLogTest.verifyAuditEvent(this, AuditLogTest.ASSAY_AUDIT_EVENT, AuditLogTest.COMMENT_COLUMN, "were copied to a study from the assay: " + TEST_ASSAY, 5);
-    } //editAssay()
+    }
 
     @LogMethod
     private void viewCrossFolderData()
     {
         log("Testing cross-folder data");
 
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
+        clickProject(getProjectName());
 
         portalHelper.addWebPart("Assay Runs");
         selectOptionByText(Locator.name("viewProtocolId"), "General: " + TEST_ASSAY);
@@ -887,7 +876,7 @@ public class AssayTest extends AbstractAssayTest
 
         // Set the container filter to include subfolders
         DataRegionTable assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
-        assayRuns.clickHeaderMenu("Grid Views", "Folder Filter", "Current folder and subfolders");
+        assayRuns.setContainerFilter(DataRegionTable.ContainerFilterType.CURRENT_AND_SUBFOLDERS);
 
         assertTextPresent(TEST_RUN1, TEST_RUN2);
 
@@ -906,7 +895,7 @@ public class AssayTest extends AbstractAssayTest
         verifySpecimensPresent(3, 2, 3);
 
         log("Testing clicking on a run");
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
+        clickProject(getProjectName());
         clickAndWait(Locator.linkWithText(TEST_RUN1));
         verifySpecimensPresent(3, 2, 0);
 
@@ -916,7 +905,7 @@ public class AssayTest extends AbstractAssayTest
         verifySpecimensPresent(3, 2, 3);
 
         log("Testing assay-study linkage");
-        clickFolder(TEST_ASSAY_FLDR_STUDY1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
         portalHelper.addWebPart("Datasets");
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickButton("View Source Assay", defaultWaitForPage);
@@ -935,24 +924,23 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("Copied to Study 1 Study");
 
         log("Testing copy to study availability");
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
+        clickProject(getProjectName());
         clickAndWait(Locator.linkWithText(TEST_RUN3));
 
-        checkAllOnPage("Data");
-        clickButton("Copy to Study", defaultWaitForPage);
-        clickButton("Next", defaultWaitForPage);
+        region = new DataRegionTable("Data", this);
+        region.checkAll();
+        region.clickHeaderButton("Copy to Study");
+        clickButton("Next");
 
         verifySpecimensPresent(0, 0, 3);
 
-        clickButton("Cancel", defaultWaitForPage);
-
-        clickProject(TEST_ASSAY_PRJ_SECURITY);
+        clickButton("Cancel");
     }
 
     @LogMethod
     private void verifyStudyList()
     {
-        clickFolder(TEST_ASSAY_FLDR_STUDIES);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDIES);
         portalHelper.addWebPart("Study List");
         assertElementPresent(Locator.linkWithText(TEST_ASSAY_FLDR_STUDY1 + " Study"));
         assertElementPresent(Locator.linkWithText(TEST_ASSAY_FLDR_STUDY2 + " Study"));
@@ -974,7 +962,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Submit");
 
         //verify study properties (grid view)
-        clickFolder(TEST_ASSAY_FLDR_STUDIES);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDIES);
         DataRegionTable table = new DataRegionTable("qwpStudies", this);
         assertEquals("Studies not sorted correctly.", TEST_ASSAY_FLDR_STUDY1 + " Study", table.getDataAsText(0, "Label"));
         assertEquals("Failed to set study investigator.", INVESTIGATOR, table.getDataAsText(0, "Investigator"));
