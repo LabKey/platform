@@ -78,7 +78,6 @@
     Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
     if (newUI)
     {
-
         propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
                 .filter(propertyMap::containsKey)
                 .map((Function<String, DomainProperty>) propertyMap::get)
@@ -413,18 +412,17 @@ else
         <div class="col-sm-5" style="margin-bottom: 5px">
             <div class="btn-group" role="group" aria-label="Action Group" style="display: block;">
                 <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
-                <% if (issue.getStatus().equals(Issue.statusOPEN))
-                {%>
-                <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.ResolveAction.class).addParameter("issueId", issueId)%>">Resolve</a>
+                <% if (issue.getStatus().equals(Issue.statusOPEN)) {%>
+                    <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.ResolveAction.class).addParameter("issueId", issueId)%>">Resolve</a>
                 <%}
                 else if (issue.getStatus().equals(Issue.statusRESOLVED))
                 {%>
-                <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.CloseAction.class).addParameter("issueId", issueId)%>">Close</a>
-                <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)%>">Reopen</a>
+                    <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.CloseAction.class).addParameter("issueId", issueId)%>">Close</a>
+                    <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)%>">Reopen</a>
                 <%}
                 else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
                 {%>
-                <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)%>">Reopen</a>
+                    <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)%>">Reopen</a>
                 <%}%>
 
             </div>
@@ -433,12 +431,10 @@ else
             <span id="moreMenuToggle" class="lk-menu-drop dropdown">
                 <button data-toggle="dropdown" class="btn btn-default">More</button>
                 <ul class="dropdown-menu dropdown-menu-left">
-                    <%if (!getUser().isGuest())
-                    {%>
+                    <%if (!getUser().isGuest()) {%>
                         <li><a href="<%=IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId)%>">Email Preferences</a></li>
                     <%}
-                        if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
-                        {%>
+                    if (bean.getHasAdminPermissions() && bean.hasMoveDestinations()) {%>
                         <li><a onclick="moveIssue()">Move</a></li>
                     <%}%>
                     <li><a href="<%=context.cloneActionURL().replaceParameter("_print", "1")%>">Print</a></li>
@@ -458,8 +454,7 @@ else
             </labkey:form>
         </div>
         <div class="col-sm-3" style="margin-bottom: 5px">
-            <%if (bean.getHasUpdatePermissions())
-            {%>
+            <%if (bean.getHasUpdatePermissions()) {%>
             <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
                 <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
                     <%=h("new " + names.singularName.toLowerCase())%>
@@ -502,18 +497,16 @@ else
         <label class="control-label"><%=text(bean.getLabel("Status", true))%></label>
         <div class="form-group"><%=h(issue.getStatus())%></div>
     </div>
-    <%if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
-    {%>
-    <div class="col-md-1">
-        <label class="control-label"><%=text(bean.getLabel("Resolution", true))%></label>
-        <div class="form-group">
-            <%=h(issue.getResolution())%>
-            <%if (issue.getResolution().equalsIgnoreCase("duplicate") && issue.getDuplicate() != null)
-                {%>
-                    of&nbsp;<%=bean.renderDuplicate(issue.getDuplicate())%>
-            <%}%>
+    <%if (bean.isVisible("resolution") || !"open".equals(issue.getStatus())) {%>
+        <div class="col-md-1">
+            <label class="control-label"><%=text(bean.getLabel("Resolution", true))%></label>
+            <div class="form-group">
+                <%=h(issue.getResolution())%>
+                <%if (issue.getResolution().equalsIgnoreCase("duplicate") && issue.getDuplicate() != null) {%>
+                        of&nbsp;<%=bean.renderDuplicate(issue.getDuplicate())%>
+                <%}%>
+            </div>
         </div>
-    </div>
     <%}%>
     <div class="col-md-2">
         <label class="control-label">Assigned To</label>
@@ -554,15 +547,14 @@ else
             </div>
         </div>
     </div>
-    <% if (!bean.getNotifyListCollection(false).isEmpty())
-    {%>
-    <div class="col-sm-4">
-        <label>Notify List</label>
-        <%for (String name : bean.getNotifyListCollection(false))
-        {%>
-            <div><%=h(name)%></div>
-        <%}%>
-    </div>
+    <% if (!bean.getNotifyListCollection(false).isEmpty()) {%>
+        <div class="col-sm-4">
+            <label>Notify List</label>
+            <%for (String name : bean.getNotifyListCollection(false))
+            {%>
+                <div><%=h(name)%></div>
+            <%}%>
+        </div>
     <%}%>
     </div>
 </div>
@@ -581,22 +573,20 @@ else
                 <br class="input-group-disappear-sm">
             <%}%>
             <div style="word-wrap: break-word">
-                <%if (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty())
-                {%>
-                <div class="form-group">
-                    <label class="col-3 control-label">Duplicates</label>
-                    <div class="col-9">
-                        <%=bean.renderDuplicates(issue.getDuplicates())%>
+                <%if (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty()) {%>
+                    <div class="form-group">
+                        <label class="col-3 control-label">Duplicates</label>
+                        <div class="col-9">
+                            <%=bean.renderDuplicates(issue.getDuplicates())%>
+                        </div>
                     </div>
-                </div>
-
                 <%}%>
                 <%
                     ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
                     propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
                     for(DomainProperty prop : propertyArr)
                     {%>
-                        <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
+                        <%=text(bean.renderColumn(prop, getViewContext(), true, true, true))%>
                     <%}%>
             </div>
     </div>
@@ -636,8 +626,7 @@ else
                     <%=h(bean.writeDate(comment.getCreated()))%>
                 </strong>
                 <%
-                if (!issue.getComments().contains(comment))
-                {%>
+                if (!issue.getComments().contains(comment)) {%>
                     <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
                 }%>
                 <%=comment.getComment()%>
@@ -647,8 +636,7 @@ else
             <%
         }
 
-        if (bean.getHasUpdatePermissions())
-        {%>
+        if (bean.getHasUpdatePermissions()) {%>
             <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
         <%}%>
         </labkey:panel>
@@ -657,9 +645,8 @@ else
 
 <%}%>
 <%
-    if (bean.getCallbackURL() != null)
-    {%>
-<input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/>
-  <%}%>
+if (bean.getCallbackURL() != null) {%>
+    <input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/>
+<%}%>
 
 

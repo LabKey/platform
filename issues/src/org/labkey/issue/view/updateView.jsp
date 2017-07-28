@@ -67,7 +67,6 @@
         issueListDef = IssueManager.getIssueListDef(issue);
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef.getName());
 
-
     BindException errors = bean.getErrors();
     String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
     ActionURL cancelURL;
@@ -528,14 +527,11 @@ else
                     resolutionSelect.addEventListener('change', updateDuplicateInput, false);
                 else if (window.attachEvent)
                     resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-            </script><%
-            }
-            else
-            {
-            if(issue.getDuplicate() != null)
-            {%>
-            <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a><%
-            }
+            </script>
+            <%}
+            else if(issue.getDuplicate() != null) {%>
+                <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a><%
+
             }%>
         </div>
         <div class="col-sm-4">
@@ -607,33 +603,28 @@ else
     <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/>
     <%
         }%>
-        <%if (issue.getIssueId() != 0 && !issue.getComments().isEmpty())
-        {
-        %>
-        <labkey:panel className="labkey-portal-container">
-            <%
-                for (Issue.Comment comment : issue.getComments())
-                {
-            %>
-            <div class="currentIssue" style="display: inline">
-                <strong class=".comment-created-by">
-                    <%=h(comment.getCreatedByName(user))%>
-                </strong>
-                <br>
-                <strong class=".comment-created" title="<%=h(comment.getCreatedFullString())%>">
-                    <%=h(bean.writeDate(comment.getCreated()))%>
-                </strong>
-                <%
-                if (!issue.getComments().contains(comment))
-                {%>
-                    <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
-                }%>
-                <%=comment.getComment()%>
-                <%=bean.renderAttachments(context, comment)%>
-                <hr>
-            </div>
-            <%}%>
-        </labkey:panel>
+        <%if (issue.getIssueId() != 0 && !issue.getComments().isEmpty()) {%>
+            <labkey:panel className="labkey-portal-container">
+                <%for (Issue.Comment comment : issue.getComments())
+                    {%>
+                    <div class="currentIssue" style="display: inline">
+                        <strong class="comment-created-by">
+                            <%=h(comment.getCreatedByName(user))%>
+                        </strong>
+                        <br>
+                        <strong class="ccomment-created" title="<%=h(comment.getCreatedFullString())%>">
+                            <%=h(bean.writeDate(comment.getCreated()))%>
+                        </strong>
+                        <%
+                        if (!issue.getComments().contains(comment)) {%>
+                            <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
+                        }%>
+                        <%=comment.getComment()%>
+                        <%=bean.renderAttachments(context, comment)%>
+                        <hr>
+                    </div>
+                <%}%>
+            </labkey:panel>
         <%}
     }%>
 <%

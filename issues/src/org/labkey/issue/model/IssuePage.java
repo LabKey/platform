@@ -380,10 +380,15 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderColumn(DomainProperty prop, ViewContext context) throws IOException
     {
-        return renderColumn(prop, context, true, false);
+        return renderColumn(prop, context, true, false, false);
     }
 
     public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
+    {
+        return renderColumn(prop, context, visible, readOnly, false);
+    }
+
+    public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly, boolean isLabelStacked) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
@@ -407,13 +412,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         if (newUI && (prop.getPropertyDescriptor().getName().equalsIgnoreCase("AssignedTo") ||
                                         prop.getPropertyDescriptor().getName().equalsIgnoreCase("Resolution")))
                         {
-                            writer.append(renderLargeLabel(prop, context, readOnly));
+                            writer.append(renderLargeLabel(prop, context, false));
                         }
                         else
                         {
-                            writer.append(renderLabel(prop, context, readOnly, false));
+                            writer.append(renderLabel(prop, context, isLabelStacked, false));
                         }
-
 
                         if (visible)
                             writer.append(renderInput(prop, context, readOnly));
@@ -432,8 +436,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
-    public String renderLargeLabel(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException {
-        return renderLabel(prop, context, readOnly, true);
+    public String renderLargeLabel(DomainProperty prop, ViewContext context, boolean isLabelStacked) throws IOException {
+        return renderLabel(prop, context, isLabelStacked, true);
     }
 
     public String renderLabel(DomainProperty prop, ViewContext context)  throws IOException
@@ -441,7 +445,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return renderLabel(prop, context, false, false);
     }
 
-    public String renderLabel(DomainProperty prop, ViewContext context, boolean strictGrid, boolean isLarge) throws IOException
+    public String renderLabel(DomainProperty prop, ViewContext context, boolean isLabelStacked, boolean isLarge) throws IOException
     {
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
@@ -462,15 +466,22 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         {
                             sb.append("<label class=\"col-md-4 col-lg-3 control-label\">");
                             dc.renderTitle(renderContext, writer);
-                        }
-                        else
-                            dc.renderDetailsCaptionCell(renderContext, writer, strictGrid);
-                        sb.append(writer);
-                        if (newUI && isLarge)
-                        {
+                            sb.append(writer);
                             if (getRequiredFields().contains("assignedto"))
                                 sb.append(" *");
                             sb.append("</label>");
+                        }
+                        else if (isLabelStacked)
+                        {
+                            sb.append("<label class=\"control-label\">");
+                            dc.renderTitle(renderContext, writer);
+                            sb.append(writer);
+                            sb.append("</label>");
+                        }
+                        else
+                        {
+                            dc.renderDetailsCaptionCell(renderContext, writer);
+                            sb.append(writer);
                         }
                     }
                     return sb.toString();
