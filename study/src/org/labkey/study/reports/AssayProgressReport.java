@@ -12,6 +12,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -40,11 +41,11 @@ import java.util.stream.Collectors;
 public class AssayProgressReport extends AbstractReport
 {
     public static final String TYPE = "ReportService.AssayProgressReport";
-    private static final String PARTICIPANTS = "participants";
-    private static final String VISITS = "visits";
-    private static final String VISITS_LABELS = "visitLabels";
-    private static final String HEAT_MAP = "heatMap";
-    private static final String LEGEND = "legend";
+    public static final String PARTICIPANTS = "participants";
+    public static final String VISITS = "visits";
+    public static final String VISITS_LABELS = "visitLabels";
+    public static final String HEAT_MAP = "heatMap";
+    public static final String LEGEND = "legend";
 
     public static final String SPECIMEN_EXPECTED = "expected";
     public static final String SPECIMEN_COLLECTED = "collected";
@@ -141,12 +142,10 @@ public class AssayProgressReport extends AbstractReport
     {
         getAssayReportData(context);
 
-        JspView<Map<String, Map<String, Object>>> view = new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", _assayData);
-
-        return view;
+        return new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", new AssayReportBean(getReportId(), _assayData));
     }
 
-    private void getAssayReportData(ViewContext context)
+    public Map<String, Map<String, Object>> getAssayReportData(ViewContext context)
     {
         Study study = StudyService.get().getStudy(context.getContainer());
 
@@ -208,6 +207,7 @@ public class AssayProgressReport extends AbstractReport
 
                 _assayData.put(assay.getAssayName(), data);
             }
+            return _assayData;
         }
         catch (Exception e)
         {
@@ -230,7 +230,8 @@ public class AssayProgressReport extends AbstractReport
             if (specimenStatus != null)
             {
                 heatmap.put(status.getKey().getKey(), PageFlowUtil.map("iconcls", specimenStatus.getIconClass(),
-                        "tooltip", specimenStatus.getDescription()));
+                        "tooltip", specimenStatus.getDescription(),
+                        "status", specimenStatus.getName()));
             }
             else
                 throw new IllegalStateException("Specimen status : " + status.getValue() + " is not a valid status code");
@@ -241,7 +242,8 @@ public class AssayProgressReport extends AbstractReport
         for (ParticipantVisit visit : _copiedToStudyData.get(assay.getAssayName()))
         {
             heatmap.put(visit.getKey(), PageFlowUtil.map("iconcls", available.getIconClass(),
-                    "tooltip", available.getDescription()));
+                    "tooltip", available.getDescription(),
+                    "status", available.getName()));
         }
         return heatmap;
     }
@@ -312,6 +314,28 @@ public class AssayProgressReport extends AbstractReport
         }
     }
 
+    public static class AssayReportBean
+    {
+        private ReportIdentifier _id;
+        private Map<String, Map<String, Object>> _assayData = new HashMap<>();
+
+        public AssayReportBean(ReportIdentifier id, Map<String, Map<String, Object>> assayData)
+        {
+            _id = id;
+            _assayData = assayData;
+        }
+
+        public ReportIdentifier getId()
+        {
+            return _id;
+        }
+
+        public Map<String, Map<String, Object>> getAssayData()
+        {
+            return _assayData;
+        }
+    }
+
     public static class AssayExpectation extends AssaySpecimenConfigImpl
     {
         private List<Visit> _expectedVisits;
@@ -351,7 +375,12 @@ public class AssayProgressReport extends AbstractReport
 
         public String getKey()
         {
-            return _ptid + "|" + _visitId;
+            return getKey(_ptid, _visitId);
+        }
+
+        public static String getKey(String ptid, int visitId)
+        {
+            return ptid + "|" + visitId;
         }
 
         @Override

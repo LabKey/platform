@@ -20,3 +20,7 @@ table.progress-report th {
 table.legend td {
     padding: 2px 5px 5px 10px;
 }
+
+table.legend {
+    margin-bottom: 10px;
+}

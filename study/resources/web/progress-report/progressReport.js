@@ -120,6 +120,14 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
         this.callParent([config]);
     },
 
+    componentIdFromAssay : function(assayname){
+        return assayname + '-report';
+    },
+
+    assayFromComponentId : function(component){
+        return component.substring(0, component.length - '-report'.length);
+    },
+
     initComponent: function ()
     {
         this.items = [];
@@ -131,7 +139,7 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
             var data = this.assayData[assay];
 
             if (data){
-                var id = assay + '-report';
+                var id = this.componentIdFromAssay(assay);
                 this.reports.push(id);
                 storeData.push({name : assay, componentId : id})
                 assaysReports.push({
@@ -170,12 +178,15 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                 listeners : {
                     scope   : this,
                     change  : function(cmp, newValue) {
-
+                        var exportBtn = this.getComponent('export-btn');
+                        if (exportBtn)
+                            exportBtn.setDisabled(newValue === 'all');
+                        this.selectedAssay = newValue;
                         Ext4.each(this.reports, function(report){
 
                             var panel = this.getComponent(report);
                             if (panel){
-                                panel.setVisible(newValue == 'all' || newValue == report);
+                                panel.setVisible(newValue === 'all' || newValue === report);
                             }
                         }, this);
                     }
@@ -184,6 +195,14 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
         });
 
         this.items.push(this.getLegendPanel());
+        this.items.push({
+            xtype   : 'button',
+            text    : 'Export to Excel',
+            itemId  : 'export-btn',
+            disabled : true,
+            handler : this.exportAssays,
+            scope   : this
+        });
 
         // add the assays
         this.items = this.items.concat(assaysReports);
@@ -214,6 +233,10 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
             });
         }
         return this.legendPanel;
+    },
+
+    exportAssays : function(){
+        window.location = LABKEY.ActionURL.buildURL('study-reports', 'exportAssayProgressReport.view', null, {reportId: this.reportId, assayName : this.assayFromComponentId(this.selectedAssay)});
     }
 });
 

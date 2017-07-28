@@ -27,6 +27,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -46,6 +47,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -90,6 +92,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -108,9 +111,11 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1896,6 +1901,17 @@ public class ReportsController extends BaseStudyController
 
     public static class ProgressReportForm extends ReportUtil.JsonReportForm
     {
+        private String _assayName;
+
+        public String getAssayName()
+        {
+            return _assayName;
+        }
+
+        public void setAssayName(String assayName)
+        {
+            _assayName = assayName;
+        }
     }
 
     @RequiresLogin
@@ -1968,7 +1984,71 @@ public class ReportsController extends BaseStudyController
             }
             return report;
         }
-
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class ExportAssayProgressReportAction extends ExportAction<ProgressReportForm>
+    {
+        public void export(ProgressReportForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            ReportIdentifier identifier = form.getReportId();
+            if (identifier != null)
+            {
+                Report report = identifier.getReport(getViewContext());
+                if (report instanceof AssayProgressReport)
+                {
+                    AssayProgressReport progressReport = (AssayProgressReport)report;
+
+                    Map<String, Map<String, Object>> allAssayData = progressReport.getAssayReportData(getViewContext());
+                    Map<String, Object> assayData = allAssayData.get(form.getAssayName());
+
+                    if (assayData != null)
+                    {
+                        List<Integer> visits = (List<Integer>)assayData.get(AssayProgressReport.VISITS);
+                        List<String> visitLabels = (List<String>)assayData.get(AssayProgressReport.VISITS_LABELS);
+                        List<String> participants = (List<String>)assayData.get(AssayProgressReport.PARTICIPANTS);
+                        Map<String, Map<String, String>> heatMap = (Map<String, Map<String, String>>)assayData.get(AssayProgressReport.HEAT_MAP);
+                        Map<Integer, String> visitLabelMap = new HashMap<>();
+
+                        int idx = 0;
+                        for (Integer visit : visits)
+                        {
+                            visitLabelMap.put(visit, visitLabels.get(idx++));
+                        }
+
+                        // create the columns
+                        List<ColumnDescriptor> cols = new ArrayList<>();
+                        cols.add(new ColumnDescriptor("ParticipantId", String.class));
+                        for (String visit : visitLabels)
+                        {
+                            cols.add(new ColumnDescriptor(visit, String.class));
+                        }
+
+                        // populate the data
+                        List<Map<String,Object>> rows = new ArrayList<>();
+                        for (String ptid : participants)
+                        {
+                            Map<String, Object> row = new HashMap<>();
+
+                            row.put("ParticipantId", ptid);
+                            for (Integer visit : visits)
+                            {
+                                String key = AssayProgressReport.ParticipantVisit.getKey(ptid, visit);
+                                Map<String, String> cell = heatMap.get(key);
+                                if (cell != null)
+                                {
+                                    row.put(visitLabelMap.get(visit), cell.get("status"));
+                                }
+                            }
+                            rows.add(row);
+                        }
+
+                        MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(rows, cols.toArray(new ColumnDescriptor[cols.size()]));
+                        xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + form.getAssayName(), "#"));
+                        xlWriter.write(response);
+                    }
+                }
+            }
+        }
+    }
 }

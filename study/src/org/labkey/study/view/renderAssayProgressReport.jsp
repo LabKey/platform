@@ -35,22 +35,23 @@
 %>
 
 <%
-    JspView<Map<String, Map<String, Object>>> me = (JspView<Map<String, Map<String, Object>>>)HttpView.currentView();
-    Map<String, Map<String, Object>> data = me.getModelBean();
+    JspView<AssayProgressReport.AssayReportBean> me = (JspView<AssayProgressReport.AssayReportBean>)HttpView.currentView();
+    AssayProgressReport.AssayReportBean form = me.getModelBean();
     List<Map<String, String>> legend = AssayProgressReport.SpecimenStatus.serialize();
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     ObjectMapper jsonMapper = new ObjectMapper();
 %>
-
-<div id=<%=h(renderId)%>></div>
-
+<labkey:panel>
+    <div id=<%=h(renderId)%>></div>
+</labkey:panel>
 <script type="text/javascript">
     Ext4.onReady(function(){
 
         new LABKEY.ext4.AssayProgressReport({
             renderTo        : <%=q(renderId)%>,
-            assayData       : <%=text(jsonMapper.writeValueAsString(data))%>,
-            assays          : <%=text(jsonMapper.writeValueAsString(data.keySet()))%>,
+            reportId        : <%=q(form.getId().toString())%>,
+            assayData       : <%=text(jsonMapper.writeValueAsString(form.getAssayData()))%>,
+            assays          : <%=text(jsonMapper.writeValueAsString(form.getAssayData().keySet()))%>,
             legend          : <%=text(jsonMapper.writeValueAsString(legend))%>
         });
     });
