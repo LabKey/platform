@@ -120,6 +120,9 @@ public class QueryView extends WebPartView<Object>
     private static final Logger _log = Logger.getLogger(QueryView.class);
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentSkipListMap<>();
 
+    protected static final String INSERT_DATA_TEXT = "Insert data";
+    protected static final String INSERT_ROW_TEXT = "Insert new row";
+
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
     private ButtonBarConfig _buttonBarConfig = null;
     private boolean _showDetailsColumn = true;
@@ -995,7 +998,7 @@ public class QueryView extends WebPartView<Object>
     public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
     {
         MenuButton button = new MenuButton("Insert");
-        button.setTooltip("Insert data");
+        button.setTooltip(INSERT_DATA_TEXT);
         button.setIconCls("plus");
         boolean hasInsertNewOption = false;
         boolean hasImportDataOption = false;
@@ -1005,7 +1008,7 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
             if (urlInsert != null)
             {
-                NavTree insertNew = new NavTree("Insert New Row", urlInsert);
+                NavTree insertNew = new NavTree(INSERT_ROW_TEXT, urlInsert);
                 insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
                 button.addMenuItem(insertNew);
                 hasInsertNewOption = true;
@@ -1032,9 +1035,9 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
         if (urlInsert != null)
         {
-            ActionButton btnInsert = new ActionButton(urlInsert, "Insert New Row");
+            ActionButton btnInsert = new ActionButton(urlInsert, INSERT_ROW_TEXT);
             btnInsert.setActionType(ActionButton.Action.LINK);
-            btnInsert.setTooltip("Insert new row");
+            btnInsert.setTooltip(INSERT_ROW_TEXT);
             btnInsert.setIconCls("plus");
             return btnInsert;
         }
