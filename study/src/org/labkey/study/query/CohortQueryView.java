@@ -66,7 +66,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         if (allowEditing() && canEditDelete)
         {
             ActionURL insertURL = new ActionURL(CohortController.InsertAction.class, getSchema().getContainer());
-            ActionButton insertButton = new ActionButton(insertURL, INSERT_ROW_TEXT);
+            ActionButton insertButton = new ActionButton(insertURL, getInsertButtonText(INSERT_ROW_TEXT));
             insertButton.setActionType(ActionButton.Action.GET); // the target is a form handler, so we need to start with a GET
             bar.add(insertButton);
 
