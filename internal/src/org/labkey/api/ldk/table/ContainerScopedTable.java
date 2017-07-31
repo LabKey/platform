@@ -115,13 +115,18 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
         return super.persistRows(data, context);
     }
 
-    private class UpdateService extends SimpleQueryUpdateService
+    protected class UpdateService extends SimpleQueryUpdateService
     {
         private KeyManager _keyManager = new KeyManager();
 
         public UpdateService(SimpleUserSchema.SimpleTable ti)
         {
             super(ti, ti.getRealTable());
+        }
+
+        public UpdateService(SimpleUserSchema.SimpleTable simpleTable, TableInfo table, DomainUpdateHelper helper)
+        {
+            super(simpleTable, table, helper);
         }
 
         private ColumnInfo getPkCol()
