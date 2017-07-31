@@ -40,6 +40,7 @@ import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJEC
 @Category({DailyB.class})
 public class MothershipReportTest extends BaseWebDriverTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private MothershipHelper _mothershipHelper;
 
     @Override

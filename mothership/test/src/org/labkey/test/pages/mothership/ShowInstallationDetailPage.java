@@ -16,6 +16,7 @@
 package org.labkey.test.pages.mothership;
 
 import org.apache.commons.lang3.text.WordUtils;
+import org.labkey.test.LabKeySiteWrapper;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
@@ -49,12 +50,18 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
 
     public String getDistributionName()
     {
-        return getInstallationValue("distribution");
+        return getInstallationValue("Distribution");
     }
 
     public String getInstallationValue(String labelText)
     {
-        return Locator.lkLabel(WordUtils.capitalize(labelText)).followingSibling("td").findElement(getDriver()).getText();
+        if (LabKeySiteWrapper.IS_BOOTSTRAP_LAYOUT)
+            return Locator.tagWithClassContaining("label", "control-label")
+                    .withText(WordUtils.capitalize(labelText))
+                    .followingSibling("div")
+                    .childTag("p").findElement(getDriver()).getText();
+        else
+            return Locator.lkLabel(WordUtils.capitalize(labelText)).followingSibling("td").findElement(getDriver()).getText();
     }
 
     @Override

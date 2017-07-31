@@ -157,7 +157,7 @@ public class MothershipHelper
     {
         // Find the current server GUID
         test.goToAdmin();
-        String serverGUID = test.getText(Locator.lkLabel("Server GUID").followingSibling("td"));
+        String serverGUID = test.getText(Locator.tagWithText("td", "Server GUID").followingSibling("td"));
 
         Connection connection = driver.createDefaultConnection(true);
         // Find the corresponding serverInstallationId
