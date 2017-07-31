@@ -120,8 +120,9 @@ public class QueryView extends WebPartView<Object>
     private static final Logger _log = Logger.getLogger(QueryView.class);
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentSkipListMap<>();
 
-    protected static final String INSERT_DATA_TEXT = "Insert data";
-    protected static final String INSERT_ROW_TEXT = "Insert new row";
+    protected static final String INSERT_DATA_TEXT = "Insert Data";
+    protected static final String INSERT_ROW_TEXT = "Insert New Row";
+    protected static final String IMPORT_BULK_DATA_TEXT = "Import Bulk Data";
 
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
     private ButtonBarConfig _buttonBarConfig = null;
@@ -998,7 +999,7 @@ public class QueryView extends WebPartView<Object>
     public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
     {
         MenuButton button = new MenuButton("Insert");
-        button.setTooltip(INSERT_DATA_TEXT);
+        button.setTooltip(getInsertButtonText(INSERT_DATA_TEXT));
         button.setIconCls("plus");
         boolean hasInsertNewOption = false;
         boolean hasImportDataOption = false;
@@ -1008,7 +1009,7 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
             if (urlInsert != null)
             {
-                NavTree insertNew = new NavTree(INSERT_ROW_TEXT, urlInsert);
+                NavTree insertNew = new NavTree(getInsertButtonText(getInsertButtonText(INSERT_ROW_TEXT)), urlInsert);
                 insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
                 button.addMenuItem(insertNew);
                 hasInsertNewOption = true;
@@ -1020,7 +1021,7 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlImport = overrideImportUrl == null ? urlFor(QueryAction.importData) : overrideImportUrl;
             if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
             {
-                NavTree importData = new NavTree("Import Bulk Data", urlImport);
+                NavTree importData = new NavTree(getInsertButtonText(IMPORT_BULK_DATA_TEXT), urlImport);
                 importData.setId(getBaseMenuId() + ":Insert:Import");
                 button.addMenuItem(importData);
                 hasImportDataOption = true;
@@ -1035,9 +1036,9 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
         if (urlInsert != null)
         {
-            ActionButton btnInsert = new ActionButton(urlInsert, INSERT_ROW_TEXT);
+            ActionButton btnInsert = new ActionButton(urlInsert, getInsertButtonText(INSERT_ROW_TEXT));
             btnInsert.setActionType(ActionButton.Action.LINK);
-            btnInsert.setTooltip(INSERT_ROW_TEXT);
+            btnInsert.setTooltip(getInsertButtonText(INSERT_ROW_TEXT));
             btnInsert.setIconCls("plus");
             return btnInsert;
         }
@@ -1049,13 +1050,21 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlImport = urlFor(QueryAction.importData);
         if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
         {
-            ActionButton btnInsert = new ActionButton(urlImport, "Import Bulk Data");
+            ActionButton btnInsert = new ActionButton(urlImport, getInsertButtonText(IMPORT_BULK_DATA_TEXT));
             btnInsert.setActionType(ActionButton.Action.LINK);
-            btnInsert.setTooltip("Import bulk data");
+            btnInsert.setTooltip(getInsertButtonText(IMPORT_BULK_DATA_TEXT));
             btnInsert.setIconCls("plus");
             return btnInsert;
         }
         return null;
+    }
+
+    protected String getInsertButtonText(String btnTxt)
+    {
+        if (PageFlowUtil.useExperimentalCoreUI())
+            return StringUtils.capitalize(btnTxt.toLowerCase());
+        else
+            return btnTxt;
     }
 
     @Nullable
