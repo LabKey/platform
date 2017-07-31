@@ -17,11 +17,11 @@ package org.labkey.api.pipeline.file;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.AbstractTaskFactory;
-import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.pipeline.cmd.FileImportTaskFactorySettings;
 import org.labkey.api.util.FileType;
 
 import java.util.Collections;
@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
 {
-    private static final String ROLE = "File Import";
+//    private static final String ROLE = "File Import";
 
     private FileImportTask(Factory factory, PipelineJob job)
     {
@@ -50,14 +50,14 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
         RecordedActionSet records = new RecordedActionSet();
         getJob().getJobSupport(FileAnalysisJobSupport.class).getInputFiles().forEach(file ->
                 {
-                    RecordedAction action = new RecordedAction(ROLE);
-                    action.addOutput(file, ROLE, false);
+                    RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
+                    action.addOutput(file, _factory.getProtocolActionName(), false);
                     records.add(action);
                 });
         return records;
     }
 
-    public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, FileImportTask.Factory>
+    public static class Factory extends AbstractTaskFactory<FileImportTaskFactorySettings, FileImportTask.Factory>
     {
         public Factory()
         {
@@ -79,7 +79,7 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
         @Override
         public List<String> getProtocolActionNames()
         {
-            return Collections.singletonList(ROLE);
+            return Collections.singletonList(getProtocolActionName());
         }
 
         @Override
@@ -92,6 +92,11 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
         public boolean isJobComplete(PipelineJob job)
         {
             return false;
+        }
+
+        public String getProtocolActionName()
+        {
+            return getId().getName();
         }
     }
 }
