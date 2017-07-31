@@ -189,7 +189,6 @@ public class PopupMenuView extends HttpView<PopupMenu>
     private static void renderMenuFilterInput(String menuFilterItemCls, Writer out) throws IOException
     {
         out.write("<li class=\"menu-filter-input\">");
-        out.write("<i class=\"fa fa-filter\"></i>");
         out.write("<input type=\"text\" placeholder=\"Filter\" class=\"dropdown-menu-filter\" data-filter-item=\"" + menuFilterItemCls + "\"/>");
         out.write("</li>");
     }
