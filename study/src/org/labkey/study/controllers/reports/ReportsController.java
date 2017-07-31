@@ -1902,6 +1902,7 @@ public class ReportsController extends BaseStudyController
     public static class ProgressReportForm extends ReportUtil.JsonReportForm
     {
         private String _assayName;
+        private String _jsonData;
 
         public String getAssayName()
         {
@@ -1911,6 +1912,24 @@ public class ReportsController extends BaseStudyController
         public void setAssayName(String assayName)
         {
             _assayName = assayName;
+        }
+
+        public String getJsonData()
+        {
+            return _jsonData;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            super.bindProperties(props);
+
+            // used for export to excel
+            _assayName = (String)props.get("assayName");
+
+            Object json = props.get("jsonData");
+            if (json != null)
+                _jsonData = json.toString();
         }
     }
 
@@ -1936,15 +1955,15 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class SaveAssayProgressReportAction extends MutatingApiAction<ReportUtil.JsonReportForm>
+    public class SaveAssayProgressReportAction extends MutatingApiAction<ProgressReportForm>
     {
         @Override
-        public void validateForm(ReportUtil.JsonReportForm form, Errors errors)
+        public void validateForm(ProgressReportForm form, Errors errors)
         {
         }
 
         @Override
-        public ApiResponse execute(ReportUtil.JsonReportForm form, BindException errors) throws Exception
+        public ApiResponse execute(ProgressReportForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String key = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), null);
@@ -1959,7 +1978,7 @@ public class ReportsController extends BaseStudyController
             return response;
         }
 
-        private Report getReport(ReportUtil.JsonReportForm form) throws Exception
+        private Report getReport(ProgressReportForm form) throws Exception
         {
             Report report;
 
@@ -1977,6 +1996,8 @@ public class ReportsController extends BaseStudyController
                     descriptor.setReportName(form.getName());
                 if (form.getDescription() != null)
                     descriptor.setReportDescription(form.getDescription());
+                if (form.getJsonData() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.json, form.getJsonData());
                 if (!form.isPublic())
                     descriptor.setOwner(getUser().getUserId());
                 else

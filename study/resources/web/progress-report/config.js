@@ -26,6 +26,10 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
 
     initComponent: function ()
     {
+        // grab the json encoded assay config (if we are editing an existing report)
+        if (this.reportConfig.json)
+            this.reportConfig.assayConfig = Ext4.JSON.decode(this.reportConfig.json);
+
         this.items = [];
         this.items.push(this.getReportPanel());
         this.items.push(this.getAssayPanel());
@@ -37,7 +41,14 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 handler : this.saveReport
             },{
                 xtype   : 'button',
-                text    : 'Cancel'
+                text    : 'Cancel',
+                scope   : this,
+                handler : function(){
+                    if (this.returnUrl)
+                        window.location = this.returnUrl;
+                    else
+                        window.history.back();
+                }
         }];
 
         this.callParent(arguments);
@@ -54,58 +65,41 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 labelWidth : 120,
                 width      : 400,
                 fieldLabel : 'Name',
-//                value      : this.data.name
+                value      : this.reportConfig.reportName,
                 listeners: {
                     scope : this,
                     change: function(cmp, newVal){
-                        this.name = newVal;
+                        this.reportConfig.reportName = newVal;
                     }
                 }
             },{
                 xtype      : 'textarea',
                 fieldLabel : 'Description',
                 name       : 'description',
-//                value      : this.data.description,
+                value      : this.reportConfig.reportDescription,
                 labelWidth : 120,
                 width      : 400,
                 listeners: {
                     scope  : this,
                     change : function(cmp, newVal){
-                        this.description = newVal;
+                        this.reportConfig.reportDescription = newVal;
                     }
                 }
             }];
 
-            var sharedName = "shared";
-            if (this.disableShared) {
-                // be sure to roundtrip the original shared value
-                // since we are disabling the checkbox
-                properties.push({
-                    xtype : 'hidden',
-                    name  : "shared",
-//                    value : this.data.shared,
-                    labelWidth : 120,
-                    width      : 400
-                });
-
-                // rename the disabled checkbox
-                sharedName = "hiddenShared";
-            }
-
             properties.push({
                 xtype   : 'checkbox',
-//                inputValue  : this.data.shared,
-//                checked     : this.data.shared,
+                checked     : this.reportConfig.shared,
                 boxLabel    : 'Share this report with all users?',
-                name        : sharedName,
+                name        : 'shared',
                 fieldLabel  : "Shared",
-                disabled    : this.disableShared,
                 uncheckedValue : false,
                 labelWidth : 120,
                 width      : 400,
                 listeners: {
+                    scope  : this,
                     change: function(cmp, newVal, oldVal){
-                        cmp.inputValue = newVal;
+                        this.reportConfig.shared = newVal;
                     }
                 }
             });
@@ -193,8 +187,6 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
     },
 
     saveReport : function(){
-        console.log('save report');
-
         var form = this.reportPanel.getForm();
         if (form.isValid()){
 
@@ -202,12 +194,33 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 url: LABKEY.ActionURL.buildURL('study-reports', 'saveAssayProgressReport.api'),
                 method: 'POST',
                 jsonData: {
-                    name    : this.name,
-                    description : this.description
+                    name    : this.reportConfig.reportName,
+                    description : this.reportConfig.reportDescription,
+                    shared      : this.reportConfig.shared,
+                    reportId    : this.reportConfig.reportId
+/*
+                    jsonData : [
+                        {
+                            name : 'flow',
+                            folder : 'home',
+                            schemaName : 'lists',
+                            queryName : 'customQuery1'
+                        },{
+                            name : 'Specimen Registry',
+                            folder : 'home',
+                            schemaName : 'lists',
+                            queryName : 'specimenProgressReport'
+                        }
+                    ]
+*/
                 },
                 success: function (response) {
+                    var o = Ext4.JSON.decode(response.responseText);
                     if (this.returnUrl)
                         window.location = this.returnUrl;
+                    else if (o.reportId){
+                        window.location = LABKEY.ActionURL.buildURL('reports', 'runReport.view', null, {reportId : o.reportId});
+                    }
                 },
                 failure: this.failureHandler,
                 scope: this

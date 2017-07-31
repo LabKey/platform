@@ -21,6 +21,12 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
+<%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -36,16 +42,32 @@
     ReportsController.ProgressReportForm form = me.getModelBean();
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    ObjectMapper jsonMapper = new ObjectMapper();
+
+    Map<String, Object> reportConfig = new HashMap<>();
+    ReportIdentifier reportIdentifier = form.getReportId();
+    if (reportIdentifier != null)
+    {
+        Report report = reportIdentifier.getReport(getViewContext());
+        ReportDescriptor descriptor = report.getDescriptor();
+
+        reportConfig.putAll(descriptor.getProperties());
+        reportConfig.put("shared", descriptor.isShared());
+    }
 %>
 
 <h1>Create Assay Progress Report</h1>
-<div id=<%=h(renderId)%>></div>
+<labkey:panel>
+    <div id=<%=h(renderId)%>></div>
+</labkey:panel>
 
 <script type="text/javascript">
     Ext4.onReady(function(){
 
         new LABKEY.ext4.ProgressReportConfig({
-            renderTo    : <%=q(renderId)%>
+            renderTo    : <%=q(renderId)%>,
+            reportConfig: <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
+            returnUrl   : <%=q(form.getReturnUrl())%>
         });
     });
 </script>

@@ -5,6 +5,10 @@ import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -12,6 +16,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -19,11 +24,13 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.AssaySpecimenConfigImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -50,21 +57,23 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_EXPECTED = "expected";
     public static final String SPECIMEN_COLLECTED = "collected";
     public static final String SPECIMEN_NOT_COLLECTED = "not-collected";
-    public static final String SPECIMEN_UNUSABLE = "unusable";
+    public static final String SPECIMEN_NOT_RECEIVED = "not-received";
     public static final String SPECIMEN_AVAILABLE = "available";
-    public static final String SPECIMEN_INVALID = "invalid";
+    public static final String SPECIMEN_NOT_AVAILABLE = "not-available";
+    public static final String SPECIMEN_UNUSABLE = "unusable";
 
     private SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
     private Map<String, Map<String, Object>> _assayData = new HashMap<>();
 
     public enum SpecimenStatus
     {
-        EXPECTED("expected", "Expected", "Expected", "fa fa-circle-o"),
-        COLLECTED("collected", "Collected", "Collected", "fa fa-user-o"),
-        NOT_COLLECTED("not-collected", "Not collected", "Not collected", "fa fa-ban"),
-        UNUSABLE("unusable", "Unusable", "Unusable", "fa fa-trash-o"),
-        AVAILABLE("available", "Results available", "Results available", "fa fa-check-circle"),
-        INVALID("invalid", "Invalid", "Invalid", "fa fa-warning");
+        EXPECTED(SPECIMEN_EXPECTED, "Expected", "Expected", "fa fa-circle-o"),
+        COLLECTED(SPECIMEN_COLLECTED, "Collected", "Collected", "fa fa-user-o"),
+        NOT_COLLECTED(SPECIMEN_NOT_COLLECTED, "Not collected", "Specimen not collected", "fa fa-ban"),
+        NOT_RECIEVED(SPECIMEN_NOT_RECEIVED, "Not received", "Specimen collected but not received", "fa fa-exclamation"),
+        AVAILABLE(SPECIMEN_AVAILABLE, "Results available", "Results available", "fa fa-check-circle"),
+        INVALID(SPECIMEN_NOT_AVAILABLE, "Results unavailable", "Collected and received but no data", "fa fa-warning"),
+        UNUSABLE(SPECIMEN_UNUSABLE, "Unusable", "Unusable", "fa fa-trash-o");
 
         private String _name;
         private String _lable;
@@ -169,6 +178,26 @@ public class AssayProgressReport extends AbstractReport
             scheduledVisits.put(specimenId, visitId);
         });
 
+        // get the saved assay configs, includes the query to source the specimen status information
+        String jsonData = getDescriptor().getProperty(ReportDescriptor.Prop.json);
+        Map<String, JSONObject> assayConfigMap = new HashMap<>();
+        if (jsonData != null)
+        {
+            JSONArray assays = new JSONArray(jsonData);
+            if (assays != null)
+            {
+                for (JSONObject assay : assays.toJSONObjectArray())
+                {
+                    String assayName = assay.getString("name");
+                    String schemaName = assay.getString("schemaName");
+                    String queryName = assay.getString("queryName");
+
+                    if (assayName != null && schemaName != null && queryName != null)
+                        assayConfigMap.put(assayName, assay);
+                }
+            }
+        }
+
         for (AssayExpectation assay : assayExpectations)
         {
             List<Visit> assayVisits = new ArrayList<>();
@@ -180,6 +209,21 @@ public class AssayProgressReport extends AbstractReport
 
             assayVisits.sort((o1, o2) -> (int) (o1.getSequenceNumMin() - o2.getSequenceNumMin()));
             assay.setExpectedVisits(assayVisits);
+
+            if (assayConfigMap.containsKey(assay.getAssayName()))
+            {
+                JSONObject assayConfig = assayConfigMap.get(assay.getAssayName());
+
+                String folder = assayConfig.getString("folder");
+                if (folder != null)
+                {
+                    Container container = ContainerManager.getForId(folder);
+                    if (container != null)
+                        assay.setQueryFolder(container);
+                }
+                assay.setSchemaName(assayConfig.getString("schemaName"));
+                assay.setQueryName(assayConfig.getString("queryName"));
+            }
         }
 
         try
@@ -217,7 +261,10 @@ public class AssayProgressReport extends AbstractReport
 
     AssayData createAssayDataSource(Study study, AssayExpectation expectation)
     {
-        return new DefaultAssayProgressSource(expectation, study);
+        if (expectation.getSchemaName() != null && expectation.getQueryName() != null)
+            return new QueryAssayProgressSource(expectation, study);
+        else
+            return new DefaultAssayProgressSource(expectation, study);
     }
 
     Map<String, Map<String, String>> createHeatMapData(ViewContext context, AssayExpectation assay, AssayData assayData)
@@ -314,6 +361,16 @@ public class AssayProgressReport extends AbstractReport
         }
     }
 
+    @Nullable
+    @Override
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        ActionURL url = new ActionURL(ReportsController.AssayProgressReportAction.class, context.getContainer());
+        url.addParameter("reportId", getReportId().toString());
+
+        return url;
+    }
+
     public static class AssayReportBean
     {
         private ReportIdentifier _id;
@@ -339,6 +396,9 @@ public class AssayProgressReport extends AbstractReport
     public static class AssayExpectation extends AssaySpecimenConfigImpl
     {
         private List<Visit> _expectedVisits;
+        private Container _queryFolder;
+        private String _schemaName;
+        private String _queryName;
 
         public List<Visit> getExpectedVisits()
         {
@@ -348,6 +408,36 @@ public class AssayProgressReport extends AbstractReport
         public void setExpectedVisits(List<Visit> expectedVisits)
         {
             _expectedVisits = expectedVisits;
+        }
+
+        public Container getQueryFolder()
+        {
+            return _queryFolder;
+        }
+
+        public void setQueryFolder(Container queryFolder)
+        {
+            _queryFolder = queryFolder;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
         }
     }
 

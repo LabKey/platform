@@ -70,6 +70,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(EnrollmentReport.TYPE, "/reports/enrollment.png");
+        _typeToIconMap.put(AssayProgressReport.TYPE, "/reports/grid.png");
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
@@ -82,6 +83,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 //      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
 //      _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconClsMap.put(EnrollmentReport.TYPE, "fa fa-check");
+        _typeToIconClsMap.put(AssayProgressReport.TYPE, "fa fa-calendar");
     }
 
     private static final ReportService.ItemFilter _filter = new ReportService.ItemFilter(){

@@ -32,6 +32,7 @@ public class DefaultAssayProgressSource implements AssayProgressReport.AssayData
     public DefaultAssayProgressSource(AssayProgressReport.AssayExpectation expectation, Study study)
     {
         _expectation = expectation;
+        _study = study;
     }
 
     @Override
