@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -626,7 +627,7 @@ public class ReportUtil
     /**
      * Generic form that can be used for serializing report information via json
      */
-    public static class JsonReportForm implements CustomApiForm
+    public static class JsonReportForm extends ReturnUrlForm implements CustomApiForm
     {
         private String _name;
         private String _description;
@@ -725,7 +726,11 @@ public class ReportUtil
             _schemaName = (String)props.get("schemaName");
             _queryName = (String)props.get("queryName");
             _viewName = (String)props.get("viewName");
-            _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
+
+            if (props.containsKey("public"))
+                _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
+            else
+                _public = BooleanUtils.toBoolean((Boolean)props.get("shared"));
 
             Object reportId = props.get("reportId");
             if (reportId != null)
@@ -745,6 +750,7 @@ public class ReportUtil
 
             json.put("editable", report.canEdit(user, container));
             json.put("public", descriptor.isShared());
+            json.put("shared", descriptor.isShared());
 
             return json;
         }
