@@ -39,17 +39,10 @@
 
 .dropdown-menu {
   .menu-filter-input {
-    padding: 3px 28px 3px 0;
+    padding: 3px 28px;
 
     input {
       padding: 2px 3px;
     }
-  }
-
-  i.fa {
-    display: inline;
-    color: $lk-dropdown-link-color;
-    font-size: $lk-font-size-base;
-    padding: 0 8px;
   }
 }

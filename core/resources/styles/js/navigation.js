@@ -270,7 +270,7 @@
         // hide this link and its direct parent sibling list elements
         el.css('display', 'none');
         el.siblings('a').css('display', 'none');
-        el.parent().siblings('li').css('display', 'none');
+        el.parent().siblings('li').css('display', 'none').trigger('subMenuExpand');
 
         // toggle the sibling ul element to show the nested list
         el.next('ul').toggleClass('open');
@@ -285,6 +285,7 @@
 
         // toggle the element class
         menu.toggleClass('open');
+        menu.children('li').trigger('subMenuCollapse');
 
         // show the parent link and its direct parent sibling list elements
         var menuLink = menu.prev('a.subexpand');
@@ -448,7 +449,10 @@
                 if (filterInput.attr('data-filter-item')) {
                     menuFilterInputs.push(filterInput);
                     filterInput.on('keyup', attachMenuFilterKeyup);
-                    // TODO need to clear the filterInput when it is hidden via submenu click
+
+                    // add listener to the parent to know when the item is hidden so it can be reset
+                    filterInput.parent().on('subMenuCollapse', function() { resetMenuFilteringInput(filterInput, 'list-item'); });
+                    filterInput.parent().on('subMenuExpand', function() { resetMenuFilteringInput(filterInput); });
                 }
             });
         }
@@ -478,16 +482,22 @@
     function resetMenuFiltering(e) {
         if (menuFilterInputs.length > 0) {
             for (var i = 0; i < menuFilterInputs.length; i++) {
-                // reshow any hidden menu filter items
-                getMatchingMenuFilterItems(menuFilterInputs[i]).each(function(index, filterItemEl) {
-                    $(filterItemEl).css('display', 'list-item');
-                });
-
-                // reset the filter input value and remove the keyup listener
-                menuFilterInputs[i].val(null);
+                resetMenuFilteringInput(menuFilterInputs[i], 'list-item');
                 menuFilterInputs[i].off('keyup', attachMenuFilterKeyup);
             }
         }
+    }
+
+    function resetMenuFilteringInput(inputEl, displayVal) {
+        // reshow any hidden menu filter items
+        if (displayVal) {
+            getMatchingMenuFilterItems(inputEl).each(function(index, filterItemEl) {
+                $(filterItemEl).css('display', displayVal);
+            });
+        }
+
+        // reset the filter input value
+        inputEl.val(null);
     }
 
     $(document).on('show.bs.dropdown', attachMenuFiltering);
