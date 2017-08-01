@@ -192,7 +192,7 @@ public class QueryHelper
         }
 
         map = qs.getColumns(ti, fieldKeys);
-        Set<ColumnInfo> cols = new HashSet<>(map.values());     // Use Set to remove dups causes by aliases
+        Set<ColumnInfo> cols = new LinkedHashSet<>(map.values());     // Use Set to remove dups causes by aliases
 
         //add filter.  view filter + extra filters are merged
         if(filter == null)

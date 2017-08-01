@@ -114,6 +114,7 @@ public interface IssuesListDefService
      * @return int RowId for the newly created IssueListDef
      */
     int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular, @Nullable String itemNounPlural);
+    int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular);
 
     /**
      * Create a new Issue in the IssueListDef for the specified container and user.

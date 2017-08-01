@@ -15,8 +15,10 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.List;
 
 /*
@@ -30,6 +32,9 @@ public interface ExpProtocolOutput extends ExpObject
 
     /** Convenience and NPE-avoiding method for getSourceApplication().getProtocol() */
     ExpProtocol getSourceProtocol();
+
+    @NotNull
+    Collection<String> getAliases();
 
     /** @return the ExpRun that claims this object as an output. That is, the one that created it. */
     @Nullable

@@ -196,7 +196,13 @@ public class AuditTypeEvent
     public Map<String, Object> getAuditLogMessageElements()
     {
         Map<String, Object> elements = new LinkedHashMap<>();
-        elements.put(CREATED_BY_KEY,  getCreatedBy().getEmail() + " (" + getCreatedBy().getUserId() + ")");
+        User createdBy = getCreatedBy();
+        if (createdBy != null)
+        {
+            String message = createdBy.getEmail() != null ? createdBy.getEmail() : "";
+            message += " (" + createdBy.getUserId() + ")";
+            elements.put(CREATED_BY_KEY, message);
+        }
         Integer impersonatorId = getImpersonatedBy();
         if (impersonatorId != null)
             elements.put(IMPERSONATED_BY_KEY, getUserMessageElement(impersonatorId));
@@ -215,7 +221,7 @@ public class AuditTypeEvent
     public String getAuditLogMessage()
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(getEventType() + " - ");
+        builder.append(getEventType()).append(" - ");
 
 
         Map<String, Object> messageElements = getAuditLogMessageElements();

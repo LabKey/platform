@@ -1,9 +1,7 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <script path="dropzone/dropzone.js" mode="dev"/>
-        <script path="dropzone/dropzone.min.js" mode="production"/>
-        <script path="dropzone/basic.css" mode="dev"/>
-        <script path="dropzone/basic.min.css" mode="production"/>
+        <script path="dropzone/dropzone.js"/>
+        <script path="dropzone/basic.css"/>
     </library>
 </libraries>
 
