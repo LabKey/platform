@@ -220,7 +220,6 @@ import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
 import javax.servlet.ServletContext;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -230,7 +229,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -242,7 +240,7 @@ import java.util.regex.Pattern;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
-    public static final Logger LOG = Logger.getLogger(CoreModule.class);
+    private static final Logger LOG = Logger.getLogger(CoreModule.class);
 
     // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
@@ -360,7 +358,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
-        // authentication provider implementations
+        // test authentication provider implementations... dev mode only
         if (AppProps.getInstance().isDevMode())
         {
             addController("testsecondary", TestSecondaryController.class);
@@ -1061,12 +1059,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Collection<String> getSchemaNames()
     {
         return Arrays.asList
-                (
-                        CoreSchema.getInstance().getSchemaName(),       // core
-                        PropertySchema.getInstance().getSchemaName(),   // prop
-                        TestSchema.getInstance().getSchemaName(),       // test
-                        DbSchema.TEMP_SCHEMA_NAME                       // temp
-                );
+        (
+            CoreSchema.getInstance().getSchemaName(),       // core
+            PropertySchema.getInstance().getSchemaName(),   // prop
+            TestSchema.getInstance().getSchemaName(),       // test
+            DbSchema.TEMP_SCHEMA_NAME                       // temp
+        );
     }
 
     @NotNull
@@ -1090,22 +1088,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         return result;
-    }
-
-    @NotNull
-    @Override
-    public List<File> getStaticFileDirectories()
-    {
-        List<File> dirs = super.getStaticFileDirectories();
-        if (AppProps.getInstance().isDevMode())
-        {
-            if (null != getSourcePath() && !getSourcePath().isEmpty())
-            {
-                dirs.add(0, new File(AppProps.getInstance().getProjectRoot(), "server/internal/webapp"));
-                dirs.add(0, new File(AppProps.getInstance().getProjectRoot(), "server/api/webapp"));
-            }
-        }
-        return dirs;
     }
 
     @Override
@@ -1207,6 +1189,4 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new FrameFactoryClassic().registerFrames();
         }
     }
-
-
 }
