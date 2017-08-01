@@ -33,6 +33,7 @@
 <%@ page import="java.util.Collection"%>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -97,7 +98,7 @@
             <tr class="labkey-alternate-row"><td>OS</td><td><%=h(bean.osName)%></td></tr>
             <tr class="labkey-row"><td>Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
             <tr class="labkey-alternate-row"><td>Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
-            <tr class="labkey-row"><td>Server Time</td><td><%=h(DateUtil.formatDateTime(c))%></td></tr>
+            <tr class="labkey-row"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
         </table>
     </labkey:panel>
 

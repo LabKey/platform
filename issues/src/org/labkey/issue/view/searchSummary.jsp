@@ -16,23 +16,18 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.util.DateUtil"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.issue.model.Issue" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.util.regex.Pattern" %>
+<%@ page import="org.labkey.issue.model.Issue"%>
 <%@ page import="java.util.regex.Matcher" %>
+<%@ page import="java.util.regex.Pattern" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Issue> me = (JspView<Issue>) HttpView.currentView();
     final Issue issue = me.getModelBean();
-    ViewContext context = getViewContext();
-    final Container c = context.getContainer();
     final User user = getUser();
 %>
 <table><tr><td valign="top" >
@@ -42,9 +37,9 @@
             <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"closed")) { %>
             <tr><td><label>Assigned&nbsp;To</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
             <% } %>
-            <tr><td><label>Opened</label></td><td style="white-space: nowrap;"><%=h(DateUtil.formatDate(c,issue.getCreated()))%></td></tr>
+            <tr><td><label>Opened</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
             <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"open")) { %>
-            <tr><td><label>Resolved</label></td><td style="white-space: nowrap;"><%=h(DateUtil.formatDate(c, issue.getResolved()))%></td></tr>
+            <tr><td><label>Resolved</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
             <% } %>
         </table>
 </td><td>&nbsp;</td><td>&nbsp;</td><td valign="top">
@@ -86,9 +81,9 @@
         <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"closed")) { %>
         <tr><td class="labkey-form-label" style="white-space: nowrap;">Assigned&nbsp;To</td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
         <% } %>
-        <tr><td class="labkey-form-label" style="white-space: nowrap;">Opened</td><td style="white-space: nowrap;"><%=h(DateUtil.formatDate(c,issue.getCreated()))%></td></tr>
+        <tr><td class="labkey-form-label" style="white-space: nowrap;">Opened</td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
         <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"open")) { %>
-        <tr><td class="labkey-form-label" style="white-space: nowrap;">Resolved</td><td style="white-space: nowrap;"><%=h(DateUtil.formatDate(c, issue.getResolved()))%></td></tr>
+        <tr><td class="labkey-form-label" style="white-space: nowrap;">Resolved</td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
         <% } %>
     </table>
 

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
+<%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiController.PrintAllBean> me = (JspView<WikiController.PrintAllBean>) HttpView.currentView();
@@ -35,7 +36,7 @@
     <table width="100%">
         <tr>
             <td align=left><h3 class="labkey-header-large">Table of Contents</h3></td>
-            <td align=right><%=h(bean.displayName)%><br><%=h(DateUtil.formatDate(c))%></td>
+            <td align=right><%=h(bean.displayName)%><br><%=formatDate(new Date())%></td>
         </tr>
     </table>
 

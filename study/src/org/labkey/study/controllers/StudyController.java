@@ -941,7 +941,7 @@ public class StudyController extends BaseStudyController
                 Object refreshDate = (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
                 if (refreshDate instanceof Date)
                 {
-                    sb.append(DateUtil.formatDateTime((Date)refreshDate, DateUtil.getDateFormatString(getContainer())));
+                    sb.append(filter(DateUtil.formatDateTime(getContainer(), (Date)refreshDate)));
                 }
                 else
                 {

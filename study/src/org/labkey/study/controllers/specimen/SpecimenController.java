@@ -354,7 +354,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     if (pd.getSequenceNum() == null)
                     {
-                        ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), null));
+                        ptidVisits.add(new Pair<>(pd.getParticipantId(), null));
                     }
                     else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
                     {

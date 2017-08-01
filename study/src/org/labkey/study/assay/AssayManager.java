@@ -615,6 +615,7 @@ public class AssayManager implements AssayService
     {
         if (name == null)
         {
+            // TODO: Better to use ISO here? Note that display formats are unsafe, which could lead to an unsafe name. #30986.
             name = DateUtil.formatDate(container) + " batch";
         }
 

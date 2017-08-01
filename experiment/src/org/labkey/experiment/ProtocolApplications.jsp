@@ -79,9 +79,9 @@
             <td valign="top">
                 <a href="<%=ExperimentController.ExperimentUrlsImpl.get().getProtocolDetailsURL(protocolApplication.getProtocol())%>"><%=h(protocolApplication.getProtocol().getName())%></a>
             </td>
-            <td valign="top"><%=h(DateUtil.formatDate(c, protocolApplication.getActivityDate()))%></td>
-            <td valign="top"><%=h(DateUtil.formatDate(c, protocolApplication.getStartTime()))%></td>
-            <td valign="top"><%=h(DateUtil.formatDate(c, protocolApplication.getEndTime()))%></td>
+            <td valign="top"><%=formatDate(protocolApplication.getActivityDate())%></td>
+            <td valign="top"><%=formatDate(protocolApplication.getStartTime())%></td>
+            <td valign="top"><%=formatDate(protocolApplication.getEndTime())%></td>
             <td valign="top"><%=h(Objects.toString(protocolApplication.getRecordCount(), " "))%></td>
             <td valign="top">
                 <% if (!props.isEmpty()) out.write(h(new JSONObject(props).toString(2))); %>

@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
@@ -36,7 +36,7 @@
             <table width="100%">
                 <tr>
                     <td align=left><h3 class="labkey-header-large"><%=h(wiki.getLatestVersion().getTitle())%></h3></td>
-                    <td align=right><%=h(DateUtil.formatDate(c))%></td>
+                    <td align=right><%=formatDate(new Date())%></td>
                 </tr>
             </table>
             <hr>
