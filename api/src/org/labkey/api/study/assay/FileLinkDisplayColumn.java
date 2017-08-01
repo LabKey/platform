@@ -46,6 +46,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
@@ -235,9 +236,14 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         Object value = getValue(ctx);
         if (value != null)
         {
-            File f = new File(value.toString());
+            String s = value.toString();
+            File f;
+            if (s.startsWith("file:"))
+                f = new File(URI.create(s));
+            else
+                f = new File(s);
 
-            if(!f.exists())
+            if (!f.exists())
             {
                 String fullPath = PipelineService.get().findPipelineRoot(_container).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value.toString();
                 f = new File(fullPath);
