@@ -29,6 +29,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.study.StudyModule;
 
@@ -183,7 +184,8 @@ public abstract class AbstractStudyEntity<T>
             {
                 sb.append(separator);
                 separator = ", ";
-                sb.append(SecurityManager.getPrincipal(removedAssignment.getUserId()).getName());
+                UserPrincipal removedPrincipal = SecurityManager.getPrincipal(removedAssignment.getUserId());
+                sb.append(removedPrincipal == null ? "<deleted principal - #" + removedAssignment.getUserId() + ">" : removedPrincipal.getName());
                 sb.append(" - ");
                 sb.append(removedAssignment.getRole().getName());
             }

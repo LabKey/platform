@@ -16,9 +16,13 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -43,6 +47,8 @@ import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -133,6 +139,21 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
     {
         String result = _object.getCpasType();
         return result == null ? "Material" : result;
+    }
+
+    @Override
+    @NotNull
+    public Collection<String> getAliases()
+    {
+        TableInfo mapTi = ExperimentService.get().getTinfoMaterialAliasMap();
+        TableInfo ti = ExperimentService.get().getTinfoAlias();
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT a.name FROM ").append(mapTi, "m")
+                .append(" JOIN ").append(ti, "a")
+                .append(" ON m.alias = a.RowId WHERE m.lsid = ? ");
+        sql.add(getLSID());
+        ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
+        return Collections.unmodifiableList(aliases);
     }
 
     public void save(User user)

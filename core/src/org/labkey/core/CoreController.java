@@ -241,7 +241,7 @@ public class CoreController extends SpringActionController
         @Override
         public String getFeedbackURL()
         {
-            return "https://labkey.org/UX Refresh Feedback/core-feedback.view";
+            return "https://www.labkey.org/UX Refresh Feedback/core-feedback.view";
         }
 
         @Override

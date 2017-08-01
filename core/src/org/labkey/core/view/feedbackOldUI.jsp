@@ -105,12 +105,12 @@
         var form = getForm().getForm();
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('login', 'loginAPI.api', null, {
-                email: form.findField("email").getValue(),
-                password: form.findField("password").getValue()
-            }),
+            url: LABKEY.ActionURL.buildURL('login', 'loginAPI.api'),
             method: 'POST',
-            form: new FormData(document.getElementById('loginForm')),
+            params: {
+                email: form.findField('email').getValue(),
+                password: form.findField('password').getValue()
+            },
             success: function()
             {
                 loginWin.hide();

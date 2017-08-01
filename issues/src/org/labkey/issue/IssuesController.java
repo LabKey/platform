@@ -37,6 +37,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -763,15 +764,25 @@ public class IssuesController extends SpringActionController
                         newIssues.add(issue);
                         newIssueIds.add(issue.getIssueId());
 
-                        // handle attachments
-                        String attachmentName = (String)issuesForm.get("attachment");
-                        if (attachmentName != null && attachmentMap.containsKey(attachmentName))
+                        // handle attachments, the attachment value is a | delimited array of file names
+                        String attachments = (String)issuesForm.get("attachment");
+                        if (!StringUtils.isBlank(attachments))
                         {
-                            MultipartFile file = attachmentMap.get(attachmentName);
-                            if (!file.isEmpty())
+                            List<AttachmentFile> attachmentFiles = new ArrayList<>();
+                            for (String name : attachments.split("\\|"))
                             {
-                                AttachmentService.get().addAttachments(changeSummary.getComment(), Collections.singletonList(new SpringAttachmentFile(file)), getUser());
+                                if (attachmentMap.containsKey(name.trim()))
+                                {
+                                    MultipartFile file = attachmentMap.get(name.trim());
+                                    if (!file.isEmpty())
+                                    {
+                                        attachmentFiles.add(new SpringAttachmentFile(file));
+                                    }
+                                }
                             }
+
+                            if (!attachmentFiles.isEmpty())
+                                AttachmentService.get().addAttachments(changeSummary.getComment(), attachmentFiles, getUser());
                         }
                     }
                 }

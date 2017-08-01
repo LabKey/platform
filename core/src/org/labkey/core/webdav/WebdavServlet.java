@@ -99,7 +99,7 @@ public class WebdavServlet extends HttpServlet
             }
         }
 
-        if ("POST".equals(request.getMethod()) || "POST".equals(method))
+        if (("POST".equals(request.getMethod()) || "POST".equals(method)) && "POST".equals(AppProps.getInstance().getCSRFCheck()))
         {
             CSRFUtil.validate(request, response);
         }
