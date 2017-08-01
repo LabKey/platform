@@ -38,6 +38,17 @@ LABKEY.vis.GenericChartHelper = new function(){
                 ],
                 layoutOptions: {point: true, box: true, line: true, opacity: true, axisBased: true}
             },
+            // {
+            //     name: 'line_plot',
+            //     title: 'Line',
+            //     imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
+            //     fields: [
+            //         {name: 'x', label: 'X Axis', required: true, numericOnly: true},
+            //         {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+            //         {name: 'series', label: 'Series', required: true, nonNumericOnly: true}
+            //     ],
+            //     layoutOptions: {point: true, opacity: true, axisBased: true, line: true}
+            // },
             {
                 name: 'pie_chart',
                 title: 'Pie',
@@ -85,7 +96,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getChartType = function(renderType, xAxisType)
     {
         if (renderType === 'time_chart' || renderType === "bar_chart" || renderType === "pie_chart"
-            || renderType === "box_plot" || renderType === "scatter_plot")
+            || renderType === "box_plot" || renderType === "scatter_plot" || renderType === "line_plot")
         {
             return renderType;
         }
@@ -492,10 +503,11 @@ LABKEY.vis.GenericChartHelper = new function(){
             aes.y = generateContinuousAcc(yMeasureName);
         }
 
-        if (chartType === "scatter_plot")
+        if (chartType === "scatter_plot" || chartType === "line_plot")
         {
             aes.hoverText = generatePointHover(measures);
         }
+
         if (chartType === "box_plot")
         {
             if (measures.color) {
@@ -521,7 +533,6 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
-
         // color/shape aes are not dependent on chart type. If we have a box plot with all points enabled, then we
         // create a second layer for points. So we'll need this no matter what.
         if (measures.color) {
@@ -530,6 +541,12 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (measures.shape) {
             aes.shape = generateGroupingAcc(measures.shape.name);
+        }
+
+        // also add the color and shape for the line plot series.
+        if (measures.series) {
+            aes.color = generateGroupingAcc(measures.series.name);
+            aes.shape = generateGroupingAcc(measures.series.name);
         }
 
         if (measures.pointClickFn) {
@@ -792,7 +809,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generateGeom = function(chartType, chartOptions) {
         if (chartType == "box_plot")
             return generateBoxplotGeom(chartOptions);
-        else if (chartType == "scatter_plot")
+        else if (chartType == "scatter_plot" || chartType == "line_plot")
             return chartOptions.binned ? generateBinGeom(chartOptions) : generatePointGeom(chartOptions);
         else if (chartType == "bar_chart")
             return generateBarGeom(chartOptions);
@@ -854,6 +871,31 @@ LABKEY.vis.GenericChartHelper = new function(){
                     data: data,
                     geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
                     aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
+                })
+            );
+        }
+        else if (renderType == 'line_plot' && chartConfig.measures.series) {
+            layers.push(
+                new LABKEY.vis.Layer({
+                    geom: new LABKEY.vis.Geom.Path({}),
+                    aes: {
+                        pathColor: function(rows)
+                        {
+                            var value = null;
+                            if (Ext4.isArray(rows) && rows.length > 0) {
+                                value = _getRowValue(rows[0], chartConfig.measures.series.name);
+                            }
+                            else {
+                                value = _getRowValue(row, chartConfig.measures.series.name);
+                            }
+
+                            if (value === null || value === undefined)
+                                value = "n/a";
+
+                            return value;
+                        },
+                        group: generateGroupingAcc(chartConfig.measures.series.name)
+                    }
                 })
             );
         }
@@ -1021,7 +1063,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             return {success: false, message: message};
         }
 
-        if ((chartType == 'scatter_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
+        if ((chartType == 'scatter_plot' || chartType == 'line_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
         {
             message = 'All data values for ' + chartConfig.measures[measureName].label + ' are null. Please choose a different measure.';
             return {success: false, message: message};
@@ -1125,13 +1167,13 @@ LABKEY.vis.GenericChartHelper = new function(){
                 configMeasure = chartConfig.measures[measureName];
                 Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
 
-                var isColorOrShape = measureName === 'color' || measureName === 'shape';
+                var isGroupingMeasure = measureName === 'color' || measureName === 'shape' || measureName === 'series';
                 var isXAxis = measureName === 'x' || measureName === 'xSub';
-                var isScatter = renderType === 'scatter_plot';
+                var isScatterOrLine = renderType === 'scatter_plot' || renderType === 'line_plot';
                 var isBarYCount = renderType === 'bar_chart' && configMeasure.aggregate && (configMeasure.aggregate === 'COUNT' || configMeasure.aggregate.value === 'COUNT');
 
-                if (configMeasure.measure && !isColorOrShape && !isBarYCount
-                        && ((!isXAxis && measureRestrictions.numericOnly ) || isScatter) && !isNumericType(configMeasure.type)) {
+                if (configMeasure.measure && !isGroupingMeasure && !isBarYCount
+                        && ((!isXAxis && measureRestrictions.numericOnly ) || isScatterOrLine) && !isNumericType(configMeasure.type)) {
                     measuresForProcessing[measureName] = {};
                     measuresForProcessing[measureName].name = configMeasure.name;
                     measuresForProcessing[measureName].convertedName = configMeasure.name + "_converted";

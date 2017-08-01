@@ -216,6 +216,10 @@
     color: #000000;
 }
 
+.chart-layout-panel .revert-label-button {
+    padding: 2px;
+}
+
 .chart-layout-panel .revert-label-button .x4-btn-icon-el {
     font-size: 14px;
     padding-top: 1px;

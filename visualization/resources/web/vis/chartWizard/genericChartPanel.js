@@ -1157,6 +1157,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.measures.color = chartConfig.measures.color;
                 if (chartConfig.measures.shape)
                     this.measures.shape = chartConfig.measures.shape;
+                if (chartConfig.measures.series)
+                    this.measures.series = chartConfig.measures.series;
             }
         }
     },
@@ -1436,6 +1438,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         "The number of individual points exceeds 10,000. The data is now grouped by density, which overrides some layout options."
                 );
             }
+        }
+        else if (chartType == 'line_plot' && data.length > 10000) {
+            // TODO hide data points and just show series lines
+            this.addWarningText("The number of individual points exceeds 10,000. TODO hiding data points and only showing series lines.");
         }
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
