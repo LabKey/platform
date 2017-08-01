@@ -467,7 +467,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
-            return DateUtil.formatDate(result);
+            return DateUtil.formatDateISO8601(result);
         }
 
         public Container getUserTargetStudy(RenderContext ctx) throws IOException

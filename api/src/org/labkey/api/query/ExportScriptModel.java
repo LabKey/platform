@@ -63,6 +63,7 @@ public abstract class ExportScriptModel
 
     public String getCreatedOn()
     {
+        // Note: Rendering as text, not HTML
         return DateUtil.formatDateTime(_view.getContainer());
     }
 

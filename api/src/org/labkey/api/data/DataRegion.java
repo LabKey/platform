@@ -2075,7 +2075,7 @@ public class DataRegion extends DisplayElement
 
                             out.write("<div>");
                             out.write("<span class=\"summary-stat-label\">" + statLabel + statDescr + ":</span>&nbsp;");
-                            out.write(r.getFormattedValue(renderer, ctx.getContainer()));
+                            out.write(PageFlowUtil.filter(r.getFormattedValue(renderer, ctx.getContainer())));
                             out.write("</div>");
                         }
                     }

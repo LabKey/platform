@@ -58,7 +58,7 @@ public class Formats
     /** Format number using folder-specified default pattern */
     public static String formatNumber(Container c, Number n)
     {
-        String formatString = FolderSettingsCache.getDefaultNumberFormat(c);
+        String formatString = getNumberFormatString(c);
 
         if (null != formatString)
             return new DecimalFormat(formatString).format(n);

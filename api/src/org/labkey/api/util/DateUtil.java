@@ -104,11 +104,6 @@ public class DateUtil
     }
 
 
-    public static Calendar newCalendar(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec)
-    {
-        return new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, 0);
-    }
-
     // disallow date overflow arithmetic
     public static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec)
     {
@@ -323,13 +318,13 @@ public class DateUtil
     }
 
 
-    private static long parseDateTimeUS(String s, DateTimeOption option, boolean strict)
+    private static long parseDateTimeUS(String s, DateTimeOption option)
     {
-        return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY, strict);
+        return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY);
     }
 
 
-    private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md, boolean strict)
+    private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md)
     {
         Month month = null; // set if month is specified using name
         int year = -1;
@@ -633,11 +628,9 @@ validNum:       {
 
         if (option == DateTimeOption.TimeOnly)
         {
-            if (strict)
-            {
-                if (hour >= 24 || min >= 60 || sec >= 60)
-                    throw new ConversionException(s);
-            }
+            if (hour >= 24 || min >= 60 || sec >= 60)
+                throw new ConversionException(s);
+
             return 1000L * (hour * (60*60) + (min * 60) + sec);
         }
         
@@ -670,9 +663,7 @@ validNum:       {
 
         try
         {
-            Calendar cal = strict ?
-                    newCalendarStrict(tz, year, mon, mday, hour, min, sec) :
-                    newCalendar(tz, year, mon, mday, hour, min, sec);
+            Calendar cal = newCalendarStrict(tz, year, mon, mday, hour, min, sec);
 
             return cal.getTimeInMillis();
         }
@@ -811,7 +802,7 @@ validNum:       {
                 s = s.substring(0, period);
             }
 
-            long time = parseDateTimeEN(s, DateTimeOption.DateTime, md, true);
+            long time = parseDateTimeEN(s, DateTimeOption.DateTime, md);
             return time + ms;
         }
         catch (ConversionException ignored) {}
@@ -850,7 +841,7 @@ validNum:       {
 
         try
         {
-            return parseDateTimeEN(s, DateTimeOption.DateOnly, md, true);
+            return parseDateTimeEN(s, DateTimeOption.DateOnly, md);
         }
         catch (ConversionException e)
         {
@@ -921,7 +912,7 @@ validNum:       {
                 ms *= 10;
             s = s.substring(0, period);
         }
-        long time = parseDateTimeUS(s, DateTimeOption.TimeOnly, true);
+        long time = parseDateTimeUS(s, DateTimeOption.TimeOnly);
         return time + ms;
     }
 
@@ -944,14 +935,6 @@ validNum:       {
         // MAB: I think this is better, shouldn't use text month in json format
         // strangely yyyy/MM/dd parses in more browsers than yyyy-MM-dd
         return "yyyy/MM/dd HH:mm:ss";
-    }
-
-
-    // Format date using hard-coded date pattern
-    @Deprecated
-    public static String formatDate(Date date)
-    {
-        return formatDateTime(date, ISO_DATE_FORMAT_STRING);
     }
 
 
@@ -987,55 +970,44 @@ validNum:       {
     }
 
 
-    /** Format current date using folder-specified default pattern */
+    /**
+     * Format current date using folder-specified default pattern
+     *
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
+     */
     public static String formatDate(Container c)
     {
         return formatDate(c, new Date());
     }
 
 
-    /** Format date using folder-specified default pattern */
+    /**
+     * Format specific date using folder-specified default pattern
+     *
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
+     */
     public static String formatDate(Container c, Date date)
     {
         return formatDateTime(date, getDateFormatString(c));
     }
 
 
-    /** Format date, inferring the appropriate folder-specified default pattern (date vs. date-time) based on class of date */
-    public static String formatDateInfer(Container c, Date date)
-    {
-        return formatDateTime(date, date instanceof java.sql.Date ? getDateFormatString(c) : getDateTimeFormatString(c));
-    }
-
-
-    /** Get the default date format string to use in this Container */
-    public static String getDateFormatString(Container c)
-    {
-        return FolderSettingsCache.getDefaultDateFormat(c);
-    }
-
-
-    /** Format current date & time using folder-specified default date/time pattern */
+    /**
+     * Format current date & time using folder-specified default date/time pattern
+     *
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
+     */
     public static String formatDateTime(Container c)
     {
         return formatDateTime(c, new Date());
     }
 
 
-    /** Get the default date/time format string set in this Container (or one of its parents) */
-    public static String getDateTimeFormatString(Container c)
-    {
-        return FolderSettingsCache.getDefaultDateTimeFormat(c);
-    }
-
-
-    public static String getTimeFormatString(Container c)
-    {
-        return LONG_TIME_FORMAT_STRING;
-    }
-
-
-    /** Format date & time using folder-specified default date pattern plus standard time format */
+    /**
+     * Format date & time using folder-specified default date pattern plus standard time format
+     *
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
+     */
     public static String formatDateTime(Container c, Date date)
     {
         return formatDateTime(date, getDateTimeFormatString(c));
@@ -1043,13 +1015,13 @@ validNum:       {
 
 
     /**
-     * Test a date format string to determine if it matches one of LabKey's special named date formats (Date, DateTime, Time)
-     * @param dateFormat Format string to test
-     * @return True if the dateFormat matches one of LabKey's special named date formats, otherwise False
+     * Format date, inferring the appropriate folder-specified default pattern (date vs. date-time) based on class of date
+     *
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
-    public static boolean isSpecialNamedFormat(String dateFormat)
+    public static String formatDateInfer(Container c, Date date)
     {
-        return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
+        return formatDateTime(date, date instanceof java.sql.Date ? getDateFormatString(c) : getDateTimeFormatString(c));
     }
 
 
@@ -1063,6 +1035,47 @@ validNum:       {
             return null;
         else
             return FastDateFormat.getInstance(pattern).format(date);
+    }
+
+
+    /**
+     * Get the default date format string to use in this Container
+     *
+     * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
+     * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     */
+    public static String getDateFormatString(Container c)
+    {
+        return FolderSettingsCache.getDefaultDateFormat(c);
+    }
+
+
+    /**
+     * Get the default date/time format string set in this Container (or one of its parents)
+     *
+     * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
+     * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
+     */
+    public static String getDateTimeFormatString(Container c)
+    {
+        return FolderSettingsCache.getDefaultDateTimeFormat(c);
+    }
+
+
+    public static String getTimeFormatString(Container c)
+    {
+        return LONG_TIME_FORMAT_STRING;
+    }
+
+
+    /**
+     * Test a date format string to determine if it matches one of LabKey's special named date formats (Date, DateTime, Time)
+     * @param dateFormat Format string to test
+     * @return True if the dateFormat matches one of LabKey's special named date formats, otherwise False
+     */
+    public static boolean isSpecialNamedFormat(String dateFormat)
+    {
+        return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
     }
 
 
@@ -1514,10 +1527,10 @@ Parse:
             assertEquals(parseDateTime("2014-07-31 15:00 PDT"), parseDateTime("Fri Aug 01 00:00:00 CEST 2014"));
 
             // check that parseDateTimeUS handles ISO
-            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
-            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime, true));
-            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime, true));
-            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
+            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime));
+            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime));
+            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime));
+            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime));
 
             assertIllegalDateTime("20131113_Guide Set plate 1.xls");
         }
@@ -1630,10 +1643,10 @@ Parse:
             assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001", MonthDayOption.DAY_MONTH));
 
             // check that parseDateTimeUS handles ISO
-            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03 04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
-            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03T04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
-            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03 04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
-            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03T04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03 04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03T04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03 04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03T04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
         }
 
 

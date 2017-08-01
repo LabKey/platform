@@ -941,7 +941,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setModified(Date modified)
     {
-        setProperty(Prop.modified, DateUtil.formatDate(modified));
+        setProperty(Prop.modified, DateUtil.formatDateISO8601(modified));
         if (null != modified)
         {
             super.setModified(modified);
