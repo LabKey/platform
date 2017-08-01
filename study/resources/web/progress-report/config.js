@@ -50,7 +50,6 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                         window.history.back();
                 }
         }];
-
         this.callParent(arguments);
     },
 
@@ -110,7 +109,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 flex    : 1.2,
                 items   : properties
             });
-        }
+         }
         return this.reportPanel;
     },
 
@@ -143,35 +142,159 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             scope: this,
             success: function(result)
             {
-                this.getAssayPanel().getEl().unmask();
-                this.getAssayPanel().removeAll();
-                this.getAssayPanel().add({
+                this.assayData = result;
+                this.innerAssayPanel = {
+                    id: 'innerAssay',
                     xtype : 'panel',
                     border: false,
                     tpl   : this.getConfigTpl(),
-                    data  : result
-                });
-            }
+                    data  : this.assayData,
+                    listeners: {
+                        scope: this,
+                        render: function(cmp)
+                        {
+                            var el = cmp.getEl();
+                            var icon = el.query('span.fa.fa-pencil');
+                            this.registerClickHandlers(el, icon);
+                        }
+                    }
+                };
+
+                this.getAssayPanel().getEl().unmask();
+                this.getAssayPanel().removeAll();
+                this.getAssayPanel().add(this.innerAssayPanel);
+        }
         });
     },
 
-    /**
-     * Generate the template for the run summary section
-     * @returns {Array.<*>}
-     */
     getConfigTpl : function(){
 
         return new Ext4.XTemplate('<table class="assay-summary">',
                 '<tr><th></th><th>Name</th><th>Query</th></tr>',
                 '<tpl for="rows">',
                     '<tr>',
-                    '<td><span height="16px" class="fa fa-pencil"></span></td>',
+                    '<td><span dataindex="{[xindex]}" height="16px" class="fa fa-pencil"></span></td>',
                     '<td>{AssayName}</td>',
-                    '<td>Add the Query Summary here</td>',
+                    '<td>{Query}</td>',
                     '</tr>',
                 '</tpl>',
                 '</table>'
         );
+    },
+
+    registerClickHandlers : function(el, icon) {
+        var me = this;
+        var data = this.assayData;
+
+        var status = [];
+        for(var i = 0; i<icon.length; i++){
+            status.push(false);
+            (function(i){
+                Ext4.get(icon[i]).on('click', function() {
+                    status[i] = true;
+                });
+            })(i);
+        }
+
+        //set up combo boxes
+        var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
+        var containerComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeContainerComboConfig({
+            name: 'Folder',
+            labelWidth: 150,
+            fieldLabel: 'Folder name',
+            editable: false,
+            width: 400,
+            padding: '10px 0 0 0',
+            allowBlank: true,
+        }));
+        var schemaComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig( {
+            name: 'Schema',
+            labelWidth: 150,
+            allowBlank: false,
+            fieldLabel: 'Schema name',
+            editable: false,
+            disabled: false,
+            width: 400,
+            padding: '10px 0 0 0',
+        }));
+
+        var queryComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+            name: 'listTable',
+            forceSelection: true,
+            fieldLabel: 'Query name',
+            labelWidth: 150,
+            allowBlank: false,
+            width: 400,
+            padding: '10px 0 0 0',
+        }));
+
+        //add click listeners to create edit window pop up
+        for (var i=0; i<icon.length; i++){
+            Ext4.get(icon[i])
+                    .addListener('click', function (event) {
+                        var window = Ext4.create('Ext.window.Window', {
+                            id: 'selectWindow',
+                            title : 'Choose source query for status information',
+                            autoShow : true,
+                            width: 500,
+                            maxWidth: 500,
+                            closeAction: 'destroy',
+                            //layout: 'fit',
+                            modal: true,
+                            items: [
+                                {
+                                    html: 'Choose the source query that will provide status information for this dataset.'
+                                },
+                                containerComboField,
+                                schemaComboField,
+                                queryComboField
+                                ],
+                            buttons: [{
+                                text: 'Submit',
+                                handler:  function() {
+
+                                        var data = this.assayData;
+                                        var folderSelect = containerComboField.value;
+
+                                    if(folderSelect == undefined){
+                                        folderSelect = "";
+                                    }
+                                        var schemaSelect = schemaComboField.value;
+                                        var querySelect = queryComboField.value;
+                                        var fullPath = folderSelect + '/' + schemaSelect + '/' + querySelect;
+
+                                    var itr = 0;
+                                    var data = this.assayData;
+                                    while(itr <data.rows.length){
+                                        if(status[itr] == true){
+                                            data.rows[itr].Query = fullPath;
+                                        }
+                                        itr++;
+                                    }
+
+                                    if(schemaComboField.isValid() && queryComboField.isValid()){
+                                        me.getAssayPanel().items.items[0].update(data);
+                                        window.close();
+                                    }else{
+                                        Ext4.Msg.alert('Error', 'Schema and query are required');
+                                    }
+
+                                    // re-register click handlers
+                                    var delayClickRegister = new Ext4.util.DelayedTask(function(){
+                                        var el = this.getEl();
+                                        var icon = el.query('span.fa.fa-pencil');
+                                        this.registerClickHandlers(el, icon);
+                                    }, this);
+
+                                    delayClickRegister.delay(1500);
+                                },
+                                    scope: this
+                            }],
+                            buttonAlign: 'right',
+                            scope: this
+                        });
+                    }, this);
+        }
     },
 
     failureHandler : function(response)

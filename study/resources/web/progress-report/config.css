@@ -10,7 +10,11 @@ table.assay-summary {
 }
 
 table.assay-summary td {
-    padding: 5px;
+padding: 5px;
+}
+
+span.fa.fa-pencil{
+    cursor: pointer;
 }
 
 table.progress-report th {
