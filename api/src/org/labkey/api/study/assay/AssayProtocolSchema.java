@@ -58,7 +58,6 @@ import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -584,7 +583,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
     @Override
-    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, boolean alwaysUseTitlesForLoadingCustomViews)
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
         List<CustomView> result = new ArrayList<>();
 
@@ -593,25 +592,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getName()));
         result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName(), getProvider().getDeclaringModule()));
 
-        // Also look using label, if different
-        // TODO qd.getTitle() calls getTable() which can cause QueryParseException, can we avoid the getTable() call?
-        // qd.getTitle() ends up calling calling TableQueryDefinition.createTable() which takes a long time, just use gq.getName() unless directed otherwise by alwaysUseTitlesForLoadingCustomViews
-        if (alwaysUseTitlesForLoadingCustomViews)
-        {
-            try
-            {
-                if (!qd.getName().equals(qd.getTitle()))
-                {
-                    Path providerLabelPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getTitle()));
-                    result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerLabelPath, qd.getTitle()));
-                }
-            }
-            catch (QueryParseException qpe)
-            {
-                // move along, nothing to see here...
-            }
-        }
-
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
         String legacyQueryName = _protocol.getName() + " " + qd.getName();
         String legacySchemaName = AssaySchema.NAME;
@@ -619,10 +599,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
         result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, legacyPath, qd.getName()));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
-        result.addAll(QueryService.get().getCustomViews(getUser(), container, getUser(), legacySchemaName, legacyQueryName, true, alwaysUseTitlesForLoadingCustomViews));
+        result.addAll(QueryService.get().getCustomViews(getUser(), container, getUser(), legacySchemaName, legacyQueryName, true));
 
         // Look in the standard location (based on the assay design name) for additional custom views
-        result.addAll(super.getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews));
+        result.addAll(super.getModuleCustomViews(container, qd));
         return result;
     }
 

@@ -29,7 +29,6 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.query.AggregateRowConfig;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -46,7 +45,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -1020,14 +1018,6 @@ public class DataRegion extends DisplayElement
         else
             headerMessage.append(PageFlowUtil.filter(ctx.getView().getLabel()));
 
-        if (ctx.getView() != null && ctx.getView().isLoadedFromTableTitle())
-        {
-            HelpTopic topic = new HelpTopic("title-loaded-view");
-            headerMessage.append("&nbsp;<span class='labkey-error'>").append(CustomView.TITLE_BOUND_CUSTOM_VIEW_WARNING_HELPLINK).append("</span>&nbsp;");
-            headerMessage.append(topic.getLinkHtml("help"));
-
-            _log.error("Custom View: '" + ctx.getView().getLabel() + "' in folder : " + ctx.getContainer().getPath() + " is being loaded by matching it's table title.");
-        }
         headerMessage.append("</span>&nbsp;");
     }
 

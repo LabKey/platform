@@ -546,45 +546,22 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      */
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
-        return getModuleCustomViews(container, qd, true);
-    }
-
-    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, boolean alwaysUseTitlesForLoadingCustomViews)
-    {
         // Look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_NAME> for custom views (.qview.xml) files
         // Also look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_LABEL>, if different
 
         List<String> parts = new ArrayList<>();
-        List<String> partsLabel = null;
 
         String qdName = qd.getName();
-        String qdTitle = !alwaysUseTitlesForLoadingCustomViews ? qdName : qd.getTitle();
-
-        if (!qd.getName().equals(qdTitle))
-        {
-            partsLabel = new ArrayList<>();
-        }
 
         parts.add(QueryService.MODULE_QUERIES_DIRECTORY);
-        if (null != partsLabel)
-            partsLabel.add(QueryService.MODULE_QUERIES_DIRECTORY);
         for (String schemaPart : getSchemaPath().getParts())
         {
             String legalName = FileUtil.makeLegalName(schemaPart);
             parts.add(legalName);
-            if (null != partsLabel)
-                partsLabel.add(legalName);
         }
-
         parts.add(FileUtil.makeLegalName(qdName));
-        if (null != partsLabel)
-            partsLabel.add(FileUtil.makeLegalName(qdTitle));
 
-        List<CustomView> views = QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts), qdName);
-        if (null != partsLabel)
-            views.addAll(QueryService.get().getFileBasedCustomViews(container, qd, new Path(partsLabel), qdTitle));
-
-        return views;
+        return QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts), qdName);
     }
 
 

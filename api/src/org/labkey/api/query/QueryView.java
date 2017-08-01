@@ -1759,8 +1759,6 @@ public class QueryView extends WebPartView<Object>
             else
             {
                 String label = view.getLabel();
-                if (view.isLoadedFromTableTitle())
-                    label = label + " (deprecated)";
 
                 item = new NavTree(label, (String) null);
                 item.setScript(getChangeViewScript(name));

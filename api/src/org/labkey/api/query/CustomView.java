@@ -23,20 +23,16 @@ import org.labkey.api.writer.VirtualFile;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
 
 /**
  * Additional information about a custom view beyond what's exposed in {@link CustomViewInfo}.
  */
 public interface CustomView extends CustomViewInfo
 {
-    public static final String TITLE_BOUND_CUSTOM_VIEW_WARNING_HELPLINK = "Warning: this view was loaded by matching the table title. In 17.3 this behaviour will no longer be supported. ";
-    public static final String TITLE_BOUND_CUSTOM_VIEW_WARNING = "Error: this view was loaded by matching the table title. In 17.3 this behaviour will no longer be supported, for more information refer to the help documentation on labkey.org.";
-    public static final String EXPERIMENTAL_DISABLE_TITLE_LOADED_CUSTOM_VIEWS = "disable-title-loaded-customviews";
-
     QueryDefinition getQueryDefinition();
     void setName(String name);
     void setQueryName(String queryName);
@@ -57,6 +53,4 @@ public interface CustomView extends CustomViewInfo
     boolean serialize(VirtualFile dir) throws IOException;
 
     Collection<String> getDependents(User user);
-
-    boolean isLoadedFromTableTitle();
 }
