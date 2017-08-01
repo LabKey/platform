@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
 {
-//    private static final String ROLE = "File Import";
+    private static final String ROLE = "File Import";
 
     private FileImportTask(Factory factory, PipelineJob job)
     {
@@ -96,7 +96,7 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
 
         public String getProtocolActionName()
         {
-            return getId().getName();
+            return getId().getName() == null ? ROLE : getId().getName();
         }
     }
 }
