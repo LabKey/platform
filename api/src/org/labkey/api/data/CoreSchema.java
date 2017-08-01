@@ -156,4 +156,9 @@ public class CoreSchema
     {
         return getSchema().getTable("Notifications");
     }
+
+    public TableInfo getTableInfoQCState()
+    {
+        return getSchema().getTable("QCState");
+    }
 }
