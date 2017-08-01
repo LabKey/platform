@@ -87,13 +87,6 @@ public class DatasetViewProvider implements DataViewProvider
     @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
-        return getViews(context,true);
-    }
-
-
-    @Override
-    public List<DataViewInfo> getViews(ViewContext context, boolean alwaysUseTitlesForLoadingCustomViews) throws Exception
-    {
         List<DataViewInfo> datasets = new ArrayList<>();
         Container container = context.getContainer();
         User user = context.getUser();

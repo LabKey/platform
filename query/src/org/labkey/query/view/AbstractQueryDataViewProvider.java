@@ -54,16 +54,10 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
     @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
-        return getViews(context, true);
-    }
-
-    @Override
-    public List<DataViewInfo> getViews(ViewContext context, boolean alwaysUseTitlesForLoadingCustomViews) throws Exception
-    {
         List<DataViewInfo> dataViews = new ArrayList<>();
         Container ctxContainer = context.getContainer();
 
-        for (CustomView view : getCustomViews(context, alwaysUseTitlesForLoadingCustomViews))
+        for (CustomView view : getCustomViews(context))
         {
             Container viewContainer = view.getContainer();
             DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getLabel(), null != viewContainer ? viewContainer : ctxContainer);
@@ -126,20 +120,15 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
         return dataViews;
     }
 
-    protected List<CustomView> getCustomViews(ViewContext context)
-    {
-        return getCustomViews(context, true);
-    }
-
     protected boolean includeInheritable() {
         return false;
     }
 
-    protected List<CustomView> getCustomViews(ViewContext context, boolean alwaysUseTitlesForLoadingCustomViews)
+    protected List<CustomView> getCustomViews(ViewContext context)
     {
         List<CustomView> views = new ArrayList<>();
 
-        for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, includeInheritable(), alwaysUseTitlesForLoadingCustomViews))
+        for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, includeInheritable()))
         {
             // issue : 21711 add the ability to hide module custom views from data views
             if (view instanceof ModuleCustomView)

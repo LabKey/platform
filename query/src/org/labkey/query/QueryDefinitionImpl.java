@@ -251,7 +251,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         else
         {
-            map = QueryServiceImpl.get().getCustomViewMap(getUser(), getContainer(), owner, this, true, sharedOnly, true);
+            map = QueryServiceImpl.get().getCustomViewMap(getUser(), getContainer(), owner, this, true, sharedOnly);
             if (!sharedOnly)
                 _customViewMap = map;
         }

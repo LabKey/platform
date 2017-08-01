@@ -254,7 +254,7 @@ public class IssuesQuerySchema extends UserSchema
      * Add the built in custom views for : all, open, resolved and mine.
      */
     @Override
-    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, boolean alwaysUseTitlesForLoadingCustomViews)
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
         List<CustomView> customViews = new ArrayList<>();
         String queryName = qd.getName();
@@ -620,12 +620,6 @@ public class IssuesQuerySchema extends UserSchema
         public Collection<String> getDependents(User user)
         {
             return Collections.emptyList();
-        }
-
-        @Override
-        public boolean isLoadedFromTableTitle()
-        {
-            return false;
         }
     }
 }

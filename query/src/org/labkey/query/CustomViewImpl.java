@@ -566,10 +566,4 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
     {
         return this;
     }
-
-    @Override
-    public boolean isLoadedFromTableTitle()
-    {
-        return false;
-    }
 }
