@@ -702,27 +702,11 @@
         <fk>
           <fkColumnName>RowId</fkColumnName>
           <fkTable>QCState</fkTable>
-          <fkDbSchema>study</fkDbSchema>
+          <fkDbSchema>core</fkDbSchema>
         </fk>
         <datatype>int</datatype>
       </column>
     </columns>
-  </table>
-  <table tableName="QCState" tableDbType="TABLE">
-    <description>Contains one row per study quality control state.</description>
-      <columns>
-        <column columnName="RowId"/>
-        <column columnName="Label">
-        <description>The short label of each quality control state.</description>
-      </column>
-        <column columnName="Description">
-        <description>The full description of each quality control state.</description>
-      </column>
-        <column columnName="Container"/>
-        <column columnName="PublicData">
-        <description>Whether data in each quality control state is considered public.  Public data is displayed by default to all users with read permissions to the study.  Non-public states can be used to hide suspect or pre-QC data from some users.</description>
-      </column>
-      </columns>
   </table>
   <table tableName="SampleRequestSpecimen" tableDbType="TABLE">
     <description>Contains one row per specimen request/vial combination, used for mapping vials to requests.</description>

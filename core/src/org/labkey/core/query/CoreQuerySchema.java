@@ -70,6 +70,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String CONTAINERS_TABLE_NAME = "Containers";
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String FILES_TABLE_NAME = "Files";
+    public static final String QCSTATE_TABLE_NAME = "QCState";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
@@ -90,7 +91,7 @@ public class CoreQuerySchema extends UserSchema
                 USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
                 MODULES_TABLE_NAME,
                 MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME,
-                CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
+                CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME);
     }
 
 
@@ -119,6 +120,8 @@ public class CoreQuerySchema extends UserSchema
         // Files table is not visible
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
             return getFilesTable();
+        if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
+            return getQCStateTable();
         return null;
     }
 
@@ -573,6 +576,11 @@ public class CoreQuerySchema extends UserSchema
     protected TableInfo getFilesTable()
     {
         return new FileListTableInfo(this);
+    }
+
+    protected TableInfo getQCStateTable()
+    {
+        return new QCStateTableInfo(this);
     }
 
     protected void addNullSetFilter(FilteredTable table)

@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -240,7 +241,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             else if (name.equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
                 ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
-                qcStateColumn.setFk(new QueryForeignKey(_userSchema, null, StudyQuerySchema.QCSTATE_TABLE_NAME, "RowId", null));
+                qcStateColumn.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoQCState(), null, "RowId", null));
                 qcStateColumn.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)

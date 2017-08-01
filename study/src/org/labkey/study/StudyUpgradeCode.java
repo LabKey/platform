@@ -15,29 +15,25 @@
  */
 package org.labkey.study;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
@@ -45,7 +41,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudySnapshotType;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DoseAndRoute;
@@ -57,8 +52,6 @@ import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -373,6 +366,82 @@ public class StudyUpgradeCode implements UpgradeCode
                 }
                 transaction.commit();
             }
+        }
+    }
+
+    @DeferredUpgrade
+    public void moveQCStateToCore(final ModuleContext context) throws Exception
+    {
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            SQLFragment sqlFrag;
+            String sql = "ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultAssayQCState";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            sql = "ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultDirectEntryQCState";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            sql = "ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultPipelineQCState";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            sql = "SELECT * FROM study.QCState";  // No longer have a tableinfo for this table
+            SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
+
+            TableResultSet resultSet = selector.getResultSet();
+            if (null != resultSet)
+            {
+                Map<String, Object> newRowMap;
+                String updateSql;
+
+                while (resultSet.next())
+                {
+                    Map<String, Object> rowMap = resultSet.getRowMap();
+
+                    Integer oldRowId = (Integer)rowMap.get("RowId");
+                    newRowMap = new HashMap<>();
+                    newRowMap.put("Label", rowMap.get("Label"));
+                    newRowMap.put("Description", rowMap.get("Description"));
+                    newRowMap.put("Container", rowMap.get("Container"));
+                    newRowMap.put("PublicData", rowMap.get("PublicData"));
+
+                    newRowMap = Table.insert(context.getUpgradeUser(), StudySchema.getInstance().getTableInfoQCState(), newRowMap);
+                    Integer newRowId = (Integer)newRowMap.get("RowId");
+
+                    updateSql = "UPDATE study.Study SET DefaultPipelineQCState = " + newRowId + " WHERE DefaultPipelineQCState = " + oldRowId;
+                    sqlFrag = new SQLFragment(updateSql);
+                    new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+                    updateSql = "UPDATE study.Study SET DefaultAssayQCState = " + newRowId + " WHERE DefaultAssayQCState = " + oldRowId;
+                    sqlFrag = new SQLFragment(updateSql);
+                    new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+                    updateSql = "UPDATE study.Study SET DefaultDirectEntryQCState = " + newRowId + " WHERE DefaultDirectEntryQCState = " + oldRowId;
+                    sqlFrag = new SQLFragment(updateSql);
+                    new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+                }
+                resultSet.close();
+            }
+            sql = "ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.QCState (RowId)";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            sql = "ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.QCState (RowId)";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            sql = "ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.QCState (RowId)";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            sql = "DROP TABLE study.QCState";
+            sqlFrag = new SQLFragment(sql);
+            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+
+            transaction.commit();
         }
     }
 }

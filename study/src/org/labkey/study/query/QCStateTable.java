@@ -15,9 +15,8 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.study.StudySchema;
 
 /**
  * User: brittp
@@ -27,15 +26,6 @@ public class QCStateTable extends FilteredTable<StudyQuerySchema>
 {
     public QCStateTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoQCState(), schema);
-        for (ColumnInfo baseColumn : _rootTable.getColumns())
-        {
-            String name = baseColumn.getName();
-            if ("Container".equalsIgnoreCase(name))
-                continue;
-            ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
-            if ("RowId".equalsIgnoreCase(name))
-                wrappedColumn.setHidden(true);
-        }
+        super(CoreSchema.getInstance().getTableInfoQCState(), schema);
     }
 }
