@@ -51,6 +51,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.domainTemplate.DataClassOptionsType;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
+import org.labkey.data.xml.domainTemplate.EHRTemplateType;
 import org.labkey.data.xml.domainTemplate.IndexType;
 import org.labkey.data.xml.domainTemplate.InitialDataType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -173,6 +174,7 @@ public class DomainTemplate
         return (template instanceof ListTemplateType) ? getListDomainKind(templateName, (ListTemplateType)template, properties) :
                (template instanceof SampleSetTemplateType) ? "SampleSet" :
                (template instanceof DataClassTemplateType) ? "DataClass" :
+               (template instanceof EHRTemplateType) ? "EHR" :
                null;
     }
 
