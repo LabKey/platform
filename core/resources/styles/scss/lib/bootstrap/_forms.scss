@@ -633,10 +633,8 @@ input[type="checkbox"] {
   }
 }
 
-
 //Useful for overriding bootstrap padding when working with 3+ column layouts of form inputs
 .form-large-label {
-
   @media (min-width: $lk-screen-sm-min) {
       label {
         padding-left: 0;
@@ -645,6 +643,7 @@ input[type="checkbox"] {
     }
 }
 
+//Should be used in conjunction with the standard row class e.g. <div class="row form-row">
 .form-row {
   @media (min-width: $lk-screen-sm-min) {
       padding-left: 15px;

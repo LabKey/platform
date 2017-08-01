@@ -119,7 +119,6 @@
             continue;
 
         bean.setIssue(issue);
-        List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
         // create collections for additional custom columns and distribute them evenly in the form
         List<DomainProperty> column1Props = new ArrayList<>();
         List<DomainProperty> column2Props = new ArrayList<>();
@@ -132,34 +131,34 @@
             else
                 column2Props.add(prop);
         }
-    if (PageFlowUtil.useExperimentalCoreUI())
-    {
-        List<DomainProperty> propertiesList = new ArrayList<>(bean.getCustomColumnConfiguration().getCustomProperties());
-        Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
-
-        propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
-                .filter(propertyMap::containsKey)
-                .map((Function<String, DomainProperty>) propertyMap::get)
-                .collect(Collectors.toList()));
-
-
-        List<NavTree> additionalHeaderLinks = new ArrayList<>();
-        for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
+        if (PageFlowUtil.useExperimentalCoreUI())
         {
-            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
-            if (issueListDef != null)
-            {
-                boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
-                additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
-            }
-        }
+            List<DomainProperty> propertiesList = new ArrayList<>(bean.getCustomColumnConfiguration().getCustomProperties());
+            Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
 
-    String recentTimeStampId = "recentTimeStamp" + issueId;
-    String timestampsToggleId = "timestampsToggle" + issueId;
-    String stampExpandIconId = "stampExpandIcon" + issueId;
-    String allTimeStampsId = "allTimeStamps" + issueId;
-    String relatedCommentsToggleId = "relatedCommentsToggle" + issueId;
-    String relatedCommentsDivClassName = "relatedIssue" + issueId;
+            propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
+                    .filter(propertyMap::containsKey)
+                    .map((Function<String, DomainProperty>) propertyMap::get)
+                    .collect(Collectors.toList()));
+
+
+            List<NavTree> additionalHeaderLinks = new ArrayList<>();
+            for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
+            {
+                IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
+                if (issueListDef != null)
+                {
+                    boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
+                    additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
+                }
+            }
+
+            String recentTimeStampId = "recentTimeStamp" + issueId;
+            String timestampsToggleId = "timestampsToggle" + issueId;
+            String stampExpandIconId = "stampExpandIcon" + issueId;
+            String allTimeStampsId = "allTimeStamps" + issueId;
+            String relatedCommentsToggleId = "relatedCommentsToggle" + issueId;
+            String relatedCommentsDivClassName = "relatedIssue" + issueId;
 %>
 <script type="text/javascript">
     var hidden = true;
@@ -331,7 +330,7 @@
         <labkey:panel className="labkey-portal-container">
 
             <%
-                for (Issue.Comment comment : commentLinkedList)
+                for (Issue.Comment comment : IssueManager.getCommentsForRelatedIssues(issue, user))
                 {
                     String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
                     String classStr = !issue.getComments().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
