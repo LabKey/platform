@@ -114,6 +114,44 @@ public abstract class GenericChartReport extends AbstractReport
                 return true;
             }
         },
+        LINE_PLOT()
+        {
+            @Override
+            public String getId()
+            {
+                return "line_plot";
+            }
+            @Override
+            public String getName()
+            {
+                return "Line Plot";
+            }
+            @Override
+            public String getDescription()
+            {
+                return "XY Series Line Plot";
+            }
+            @Override
+            public String getIconPath()
+            {
+                return "/visualization/report/timechart.gif";
+            }
+            @Override
+            public String getThumbnailName()
+            {
+                return "timechart.png";
+            }
+            @Override
+            public String getIconCls()
+            {
+                return "fa fa-line-chart";
+            }
+            @Override
+            public boolean isActive()
+            {
+                return true;
+            }
+        },
         PIE_CHART()
         {
             @Override
