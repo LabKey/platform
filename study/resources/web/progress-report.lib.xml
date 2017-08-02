@@ -6,5 +6,6 @@
     </library>
     <dependencies>
         <dependency path="Ext4" />
+        <dependency path="sqv" />
     </dependencies>
 </libraries>

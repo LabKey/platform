@@ -27,8 +27,20 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
     initComponent: function ()
     {
         // grab the json encoded assay config (if we are editing an existing report)
-        if (this.reportConfig.json)
-            this.reportConfig.assayConfig = Ext4.JSON.decode(this.reportConfig.json);
+        if (this.reportConfig.json){
+
+            var jsonData = Ext4.JSON.decode(this.reportConfig.json);
+            this.assayConfig = {};
+            Ext4.each(jsonData, function(row){
+
+                this.assayConfig[row.AssayName] = {
+                    folderName  : row.folderName,
+                    folderId    : row.folderId,
+                    schemaName  : row.schemaName,
+                    queryName   : row.queryName
+                };
+            }, this);
+        }
 
         this.items = [];
         this.items.push(this.getReportPanel());
@@ -117,11 +129,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
 
         if (!this.configPanel){
             this.configPanel = Ext4.create('Ext.panel.Panel', {
-                itemId : 'configpanel',
-                items : [{
-                    xtype : 'panel',
-                    height : 200
-                }],
+                tpl     : this.getConfigTpl(),
                 listeners : {
                     scope   : this,
                     render  : function(cmp) {
@@ -140,161 +148,171 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             schemaName: 'study',
             queryName: 'AssaySpecimen',
             scope: this,
-            success: function(result)
-            {
-                this.assayData = result;
-                this.innerAssayPanel = {
-                    id: 'innerAssay',
-                    xtype : 'panel',
-                    border: false,
-                    tpl   : this.getConfigTpl(),
-                    data  : this.assayData,
-                    listeners: {
-                        scope: this,
-                        render: function(cmp)
-                        {
-                            var el = cmp.getEl();
-                            var icon = el.query('span.fa.fa-pencil');
-                            this.registerClickHandlers(el, icon);
-                        }
-                    }
-                };
-
+            success: function(result){
+                this.assayData = result.rows;
                 this.getAssayPanel().getEl().unmask();
-                this.getAssayPanel().removeAll();
-                this.getAssayPanel().add(this.innerAssayPanel);
-        }
+
+                // merge any saved information
+                if (this.assayConfig){
+
+                    Ext4.each(this.assayData, function(row){
+
+                        var cfg = this.assayConfig[row.AssayName];
+                        if (cfg){
+                            row.folderName = cfg.folderName;
+                            row.folderId = cfg.folderId;
+                            row.schemaName = cfg.schemaName;
+                            row.queryName = cfg.queryName;
+                        }
+                    }, this);
+                }
+                this.getAssayPanel().update(this.assayData);
+                this.registerClickHandlers();
+            }
         });
     },
 
     getConfigTpl : function(){
 
         return new Ext4.XTemplate('<table class="assay-summary">',
-                '<tr><th></th><th>Name</th><th>Query</th></tr>',
-                '<tpl for="rows">',
+                '<tr><th></th><th>Assay</th><th>Folder</th><th>Schema</th><th>Query</th></tr>',
+                '<tpl for=".">',
                     '<tr>',
-                    '<td><span dataindex="{[xindex]}" height="16px" class="fa fa-pencil"></span></td>',
+                    '<td><span dataindex="{[xindex-1]}" height="16px" class="fa fa-pencil"></span></td>',
                     '<td>{AssayName}</td>',
-                    '<td>{Query}</td>',
+                    '<td>{folderName}</td>',
+                    '<td>{schemaName}</td>',
+                    '<td>{queryName}</td>',
                     '</tr>',
                 '</tpl>',
                 '</table>'
         );
     },
 
-    registerClickHandlers : function(el, icon) {
-        var me = this;
-        var data = this.assayData;
+    registerClickHandlers : function() {
+        var el = this.configPanel.getEl();
+        if (el){
+            var icons = el.query('span.fa.fa-pencil');
+            if (icons && icons.length){
 
-        var status = [];
-        for(var i = 0; i<icon.length; i++){
-            status.push(false);
-            (function(i){
-                Ext4.get(icon[i]).on('click', function() {
-                    status[i] = true;
-                });
-            })(i);
+                Ext4.each(icons, function(icon) {
+
+                    Ext4.get(icon).addListener('click', this.onEdit, this);
+                }, this);
+            }
         }
+    },
 
-        //set up combo boxes
+    onEdit : function(e, cmp){
+
+        var dataIdx = cmp.getAttribute('dataindex');
+        var items = [{html: 'Choose the source query that will provide status information for this assay.', border : false}];
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
-        var containerComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeContainerComboConfig({
-            name: 'Folder',
-            labelWidth: 150,
-            fieldLabel: 'Folder name',
-            editable: false,
-            width: 400,
-            padding: '10px 0 0 0',
-            allowBlank: true,
-        }));
-        var schemaComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig( {
-            name: 'Schema',
-            labelWidth: 150,
-            allowBlank: false,
-            fieldLabel: 'Schema name',
-            editable: false,
-            disabled: false,
-            width: 400,
-            padding: '10px 0 0 0',
-        }));
 
-        var queryComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
-            name: 'listTable',
-            forceSelection: true,
-            fieldLabel: 'Query name',
-            labelWidth: 150,
-            allowBlank: false,
-            width: 400,
-            padding: '10px 0 0 0',
-        }));
+        var folderField = Ext4.create('Ext.form.field.ComboBox',
+            sqvModel.makeContainerComboConfig({
+                name: 'Folder',
+                value : this.assayData[dataIdx].folderId,
+                labelWidth: 150,
+                fieldLabel: 'Folder name',
+                editable: false,
+                width: 400,
+                padding: '10px 0 0 0',
+                allowBlank: true
+            })
+        );
+        var schemaField = Ext4.create('Ext.form.field.ComboBox',
+            sqvModel.makeSchemaComboConfig({
+                name: 'Schema',
+                initialValue : this.assayData[dataIdx].schemaName,
+                labelWidth: 150,
+                allowBlank: false,
+                fieldLabel: 'Schema name',
+                editable: false,
+                disabled: false,
+                width: 400,
+                padding: '10px 0 0 0'
+            })
+        );
+        var queryField = Ext4.create('Ext.form.field.ComboBox',
+            sqvModel.makeQueryComboConfig({
+                name: 'listTable',
+                initialValue : this.assayData[dataIdx].queryName,
+                forceSelection: true,
+                fieldLabel: 'Query name',
+                labelWidth: 150,
+                allowBlank: false,
+                width: 400,
+                padding: '10px 0 0 0'
+            })
+        );
+        items.push(folderField, schemaField, queryField);
 
-        //add click listeners to create edit window pop up
-        for (var i=0; i<icon.length; i++){
-            Ext4.get(icon[i])
-                    .addListener('click', function (event) {
-                        var window = Ext4.create('Ext.window.Window', {
-                            id: 'selectWindow',
-                            title : 'Choose source query for status information',
-                            autoShow : true,
-                            width: 500,
-                            maxWidth: 500,
-                            closeAction: 'destroy',
-                            //layout: 'fit',
-                            modal: true,
-                            items: [
-                                {
-                                    html: 'Choose the source query that will provide status information for this dataset.'
-                                },
-                                containerComboField,
-                                schemaComboField,
-                                queryComboField
-                                ],
-                            buttons: [{
-                                text: 'Submit',
-                                handler:  function() {
+        var window = Ext4.create('Ext.window.Window', {
+            title   : 'Choose source query for status information',
+            width   : 500,
+            modal   : true,
+            items   : [{
+                xtype   : 'form',
+                border  : false,
+                items   : items,
+                padding : 10
+            }],
+            buttons: [{
+                text: 'Submit',
+                handler:  function() {
 
-                                        var data = this.assayData;
-                                        var folderSelect = containerComboField.value;
+                    var form = window.down('form').getForm();
+                    if (form.isValid()){
 
-                                    if(folderSelect == undefined){
-                                        folderSelect = "";
-                                    }
-                                        var schemaSelect = schemaComboField.value;
-                                        var querySelect = queryComboField.value;
-                                        var fullPath = folderSelect + '/' + schemaSelect + '/' + querySelect;
+                        var folderName, folderId, schemaName, queryName;
 
-                                    var itr = 0;
-                                    var data = this.assayData;
-                                    while(itr <data.rows.length){
-                                        if(status[itr] == true){
-                                            data.rows[itr].Query = fullPath;
-                                        }
-                                        itr++;
-                                    }
+                        // get the folder info
+                        var folder = folderField.getValue();
+                        if (folder){
+                            var rec = folderField.findRecordByValue(folder);
+                            if (rec){
+                                folderName = rec.get('Name');
+                                folderId = folder;
+                            }
+                        }
 
-                                    if(schemaComboField.isValid() && queryComboField.isValid()){
-                                        me.getAssayPanel().items.items[0].update(data);
-                                        window.close();
-                                    }else{
-                                        Ext4.Msg.alert('Error', 'Schema and query are required');
-                                    }
+                        schemaName = schemaField.getValue();
+                        queryName = queryField.getValue();
 
-                                    // re-register click handlers
-                                    var delayClickRegister = new Ext4.util.DelayedTask(function(){
-                                        var el = this.getEl();
-                                        var icon = el.query('span.fa.fa-pencil');
-                                        this.registerClickHandlers(el, icon);
-                                    }, this);
+                        if (dataIdx){
+                            var assayRec = this.assayData[dataIdx];
 
-                                    delayClickRegister.delay(1500);
-                                },
-                                    scope: this
-                            }],
-                            buttonAlign: 'right',
-                            scope: this
+                            if (folderName)
+                                assayRec.folderName = folderName;
+                            if (folderId)
+                                assayRec.folderId = folderId;
+                            if (schemaName)
+                                assayRec.schemaName = schemaName;
+                            if (queryName)
+                                assayRec.queryName = queryName;
+
+                            this.getAssayPanel().update(this.assayData);
+                            this.registerClickHandlers();
+                        }
+                        window.close();
+                    }
+                    else
+                    {
+                        Ext4.Msg.show({
+                            title: "Error",
+                            msg: 'All required fields must be specified.',
+                            buttons: Ext4.MessageBox.OK,
+                            icon: Ext4.MessageBox.ERROR
                         });
-                    }, this);
-        }
+                    }
+                },
+                scope: this
+            }],
+            buttonAlign: 'right',
+            scope: this
+        });
+        window.show();
     },
 
     failureHandler : function(response)
@@ -313,6 +331,17 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
         var form = this.reportPanel.getForm();
         if (form.isValid()){
 
+            var data = [];
+            Ext4.each(this.assayData, function(row){
+
+                data.push({AssayName : row.AssayName,
+                    folderName  : row.folderName,
+                    folderId    : row.folderId,
+                    schemaName  : row.schemaName,
+                    queryName   : row.queryName
+                })
+            }, this);
+
             Ext4.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('study-reports', 'saveAssayProgressReport.api'),
                 method: 'POST',
@@ -320,22 +349,8 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                     name    : this.reportConfig.reportName,
                     description : this.reportConfig.reportDescription,
                     shared      : this.reportConfig.shared,
-                    reportId    : this.reportConfig.reportId
-/*
-                    jsonData : [
-                        {
-                            name : 'flow',
-                            folder : 'home',
-                            schemaName : 'lists',
-                            queryName : 'customQuery1'
-                        },{
-                            name : 'Specimen Registry',
-                            folder : 'home',
-                            schemaName : 'lists',
-                            queryName : 'specimenProgressReport'
-                        }
-                    ]
-*/
+                    reportId    : this.reportConfig.reportId,
+                    jsonData    : data
                 },
                 success: function (response) {
                     var o = Ext4.JSON.decode(response.responseText);
