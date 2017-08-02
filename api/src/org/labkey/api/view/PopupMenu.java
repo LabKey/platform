@@ -133,7 +133,7 @@ public class PopupMenu extends DisplayElement
 
         if (usingNewUI)
         {
-            out.append("<span class=\"lk-menu-drop dropdown\" >");
+            out.append("<div class=\"lk-menu-drop dropdown\">");
             attributes.put("data-toggle", "dropdown");
         }
         else
@@ -196,7 +196,7 @@ public class PopupMenu extends DisplayElement
 
         if (usingNewUI)
         {
-            out.append("<ul class=\"dropdown-menu dropdown-menu-left \" >");
+            out.append("<ul class=\"dropdown-menu dropdown-menu-left\">");
             try
             {
                 PopupMenuView.renderTree(_navTree, out);
@@ -206,7 +206,7 @@ public class PopupMenu extends DisplayElement
                 throw new RuntimeException(e);
             }
             out.append("</ul>");
-            out.append("</span>");
+            out.append("</div>");
         }
     }
 
