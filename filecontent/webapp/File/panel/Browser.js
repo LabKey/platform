@@ -40,7 +40,10 @@ Ext4.define('File.panel.Browser', {
     /**
      * @cfg {Ext4.util.Format.dateRenderer} dateRenderer
      */
-    dateRenderer : Ext4.util.Format.dateRenderer(LABKEY.extDefaultDateTimeFormat || "Y-m-d H:i:s"),
+    dateRenderer : function(value) {
+        var formattedVal = Ext4.util.Format.date(value, LABKEY.extDefaultDateTimeFormat || 'Y-m-d H:i:s');
+        return LABKEY.Utils.encodeHtml(formattedVal);
+    },
 
     /**
      * Size renderer used in the details panel.

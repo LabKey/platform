@@ -496,7 +496,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this._useDynamicHeight = (json.webpart.useDynamicHeight === 'true');
         }
         this.dateFormat = LABKEY.extDefaultDateFormat;
-        this.dateRenderer = Ext4.util.Format.dateRenderer(this.dateFormat);
+        this.dateRenderer = function(value) {
+            var formattedVal = Ext4.util.Format.date(value, LABKEY.extDefaultDateFormat);
+            return LABKEY.Utils.encodeHtml(formattedVal);
+        };
         this.editInfo = json.editInfo;
         this.sortOrder = json.sortOrder;
 
