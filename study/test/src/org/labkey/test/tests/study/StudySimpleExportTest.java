@@ -495,13 +495,13 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Cohorts"));
-        clickButton("Insert new row");
+        new DataRegionTable("Cohort", this).clickInsertNewRow();
         waitForElement(Locator.name("quf_label"));
         setFormElement(Locator.name("quf_label"), cohort1label);
         setFormElement(Locator.name("quf_subjectCount"), cohort1count);
         setFormElement(Locator.name("quf_description"), cohort1description);
         clickButton("Submit");
-        clickButton("Insert new row");
+        new DataRegionTable("Cohort", this).clickInsertNewRow();
         waitForElement(Locator.name("quf_label"));
         setFormElement(Locator.name("quf_label"), cohort2label);
         setFormElement(Locator.name("quf_subjectCount"), cohort2count);
