@@ -1580,12 +1580,6 @@ public class QueryView extends WebPartView<Object>
             print.setTarget("_blank");
 
             moreMenu.addMenuItem(print);
-
-            if (view.getDataRegion().getShowPagination())
-            {
-                moreMenu.addSeparator();
-                moreMenu.addMenuItem(createPageSizeMenuButton().getNavTree());
-            }
         }
 
         return moreMenu;

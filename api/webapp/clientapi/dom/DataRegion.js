@@ -1551,10 +1551,55 @@ if (!LABKEY.DataRegions) {
                         if (this.rowCount === null || this.rowCount < 1) {
                             high = this.totalRows;
                         }
-                        ct.html('<span>' + low + ' - ' + high + ofTotal + '</span>').css('visibility', 'visible');
+
+                        var showFirstElem = this.offset ?
+                                '<li><a onclick=\'LABKEY.DataRegions[\"query\"].setPageOffset(0)\' tabindex="0">Show first</a></li>'
+                                : '<li aria-disabled="true" class="disabled"><a>Show first</a></li>';
+
+                        var lastPageOffset = this.totalRows - (this.totalRows % this.rowCount);
+                        var showLastElem = !(low === 1 && high === this.totalRows) && (this.offset + this.maxRows <= this.totalRows) ?
+                                '<li><a onclick=\'LABKEY.DataRegions[\"query\"].setPageOffset(' + lastPageOffset + ')\' tabindex="0">Show last</a></li>'
+                                : '<li aria-disabled="true" class="disabled"><a>Show last</a></li>';
+
+                        var pagingId = LABKEY.Utils.id();
+                        var elems = [
+                            '<span id="'+ pagingId + '" class="lk-menu-drop dropdown paging-widget">',
+                                '<a data-toggle="dropdown" class="unselectable">'+ low + ' - ' + high + ofTotal + '</a>',
+                                '<ul class="dropdown-menu dropdown-menu-left">',
+                                showFirstElem,
+                                showLastElem,
+                                '<li class="dropdown-submenu"><a class="subexpand subexpand-icon" tabindex="0">Paging<i class="fa fa-chevron-right"></i></a>',
+                                    '<ul class="dropdown-layer-menu">',
+                                        '<li><a class="subcollapse" tabindex="3"><i class="fa fa-chevron-left"></i>Paging</a></li>',
+                                        '<li class="divider"></li>'
+                        ];
+
+                        var offsets = [20, 40, 100, 250];
+                        if (offsets.indexOf(this.maxRows) === -1) {
+                            offsets.push(this.maxRows);
+                            offsets = offsets.sort(function (a, b) { return a - b; });
+                        }
+
+                        for (var i = 0; i < offsets.length; i++) {
+                            if (this.maxRows === offsets[i]) {
+                                elems.push('<li><a onclick=\'LABKEY.DataRegions[\"query\"].setMaxRows(' + offsets[i] + ')\' tabindex="0" style="padding-left: 0;"><i class="fa fa-check-square-o"></i>' + offsets[i] +' per page</a></li>')
+                            }
+                            else {
+                                elems.push('<li><a onclick=\'LABKEY.DataRegions[\"query\"].setMaxRows(' + offsets[i] + ')\' tabindex="0">' + offsets[i] +' per page</a></li>');
+                            }
+                        }
+
+                        elems.push.apply(elems, [
+                                    '</ul>',
+                                '</ul>',
+                            '</span>'
+                        ]);
+
+                        ct.append(elems.join(''));
 
                         // only display buttons if all the results are not shown
                         if (low === 1 && high === this.totalRows) {
+                            $('#' + pagingId).css("top", "4px");
                             return;
                         }
 
