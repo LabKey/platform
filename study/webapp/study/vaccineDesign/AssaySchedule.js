@@ -10,8 +10,6 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
 
     bodyStyle : 'background-color: transparent;',
 
-    width: 750,
-
     disableEdit : true,
 
     dirty : false,
@@ -253,8 +251,6 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
     cls : 'study-vaccine-design vaccine-design-assays',
 
     mainTitle : 'Assay Schedule',
-
-    width : 420,
 
     studyDesignQueryNames : ['StudyDesignAssays', 'StudyDesignLabs', 'StudyDesignSampleTypes', 'StudyDesignUnits', 'Location'],
 
@@ -499,15 +495,6 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
             }
 
             var visitConfigs = this.getVisitColumnConfigs();
-
-            // update the width based on the number of visit columns
-            var width = 450 + (Math.max(2, visitConfigs.length) * 75) + (this.useAlternateLookupFields ? 400 : 560);
-            this.setWidth(width);
-
-            // update the outer panel width if necessary
-            var outerPanel = this.up('panel');
-            if (outerPanel != null)
-                outerPanel.setWidth(Math.max(width, 750));
 
             this.columnConfigs = columnConfigs.concat(visitConfigs);
         }

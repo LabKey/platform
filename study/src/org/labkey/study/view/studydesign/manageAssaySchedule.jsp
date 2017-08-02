@@ -123,7 +123,7 @@
 </script>
 
 Enter assay schedule information in the grids below.
-<div style="width: 900px;">
+<div>
     <ul>
         <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
             Configure dropdown options for assays, labs, sample types, and units at the project
