@@ -7002,6 +7002,7 @@ internal/src/org/labkey/api/message/settings/MessageConfigService.java -text
 internal/src/org/labkey/api/pipeline/AbstractSpecimenTransformTask.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
+internal/src/org/labkey/api/query/ExtendedTableDomainKind.java -text
 internal/src/org/labkey/api/query/ExtendedTableUpdateService.java -text
 internal/src/org/labkey/api/query/SimpleQueryUpdateService.java -text
 internal/src/org/labkey/api/query/SimpleTableDomainKind.java -text
