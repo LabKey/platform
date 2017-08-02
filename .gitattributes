@@ -136,6 +136,7 @@ api/src/org/labkey/api/attachments/AttachmentParent.java -text
 api/src/org/labkey/api/attachments/AttachmentParentFactory.java -text
 api/src/org/labkey/api/attachments/AttachmentParentImpl.java -text
 api/src/org/labkey/api/attachments/AttachmentService.java -text
+api/src/org/labkey/api/attachments/AttachmentType.java -text
 api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
 api/src/org/labkey/api/attachments/DocumentConversionService.java -text
 api/src/org/labkey/api/attachments/DocumentWriter.java -text
@@ -383,6 +384,7 @@ api/src/org/labkey/api/data/ResultSetMetaDataImpl.java -text
 api/src/org/labkey/api/data/ResultSetMetaDataWrapper.java -text
 api/src/org/labkey/api/data/ResultSetSelector.java -text
 api/src/org/labkey/api/data/ResultSetSelectorTestCase.java -text
+api/src/org/labkey/api/data/ResultSetView.java -text
 api/src/org/labkey/api/data/Results.java -text
 api/src/org/labkey/api/data/ResultsImpl.java -text
 api/src/org/labkey/api/data/RowTrackingResultSetWrapper.java -text
@@ -1097,6 +1099,7 @@ api/src/org/labkey/api/reports/report/ReportNameContext.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnail.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailLarge.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailSmall.java -text
+api/src/org/labkey/api/reports/report/ReportType.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/ScriptOutput.java -text

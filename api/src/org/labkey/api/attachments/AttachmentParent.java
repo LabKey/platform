@@ -30,4 +30,9 @@ public interface AttachmentParent
     String getContainerId();
     String getDownloadURL(ViewContext context, String name);
     SecurityPolicy getSecurityPolicy();
+
+    default AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
+    }
 }

@@ -27,7 +27,7 @@ import org.labkey.api.data.TableInfo;
 public class CommSchema
 {
     private static final CommSchema instance = new CommSchema();
-    private static String SCHEMA_NAME = "comm";
+    private static final String SCHEMA_NAME = "comm";
 
     public static CommSchema getInstance()
     {

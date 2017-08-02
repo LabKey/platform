@@ -21,6 +21,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -307,6 +308,12 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     public String getDownloadURL(ViewContext context, String name)
     {
         return null;
+    }
+
+    @Override
+    public AttachmentType getAttachmentType()
+    {
+        return ReportType.get();
     }
 
     @Override

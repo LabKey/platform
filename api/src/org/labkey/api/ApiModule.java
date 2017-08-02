@@ -17,10 +17,12 @@ package org.labkey.api;
 
 import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
@@ -35,6 +37,7 @@ public class ApiModule extends CodeOnlyModule
     @Override
     protected void init()
     {
+        AttachmentService.get().registerAttachmentType(ReportType.get());
     }
 
     @NotNull

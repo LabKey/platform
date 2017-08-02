@@ -120,6 +120,10 @@ public interface AttachmentService
 
     void deleteAttachmentIndex(AttachmentParent parent);
 
+    void registerAttachmentType(AttachmentType type);
+
+    HttpView getAttachmentAdminView(ActionURL currentUrl);
+
     class DuplicateFilenameException extends IOException
     {
         private List<String> _errors = new ArrayList<>();
