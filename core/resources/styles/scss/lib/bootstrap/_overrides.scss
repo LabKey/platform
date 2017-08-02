@@ -3,6 +3,10 @@
   font-weight: $btn-font-weight;
   letter-spacing: $lk-button-letter-spacing;
   text-transform: $lk-button-text-transform;
+
+  &.btn-square {
+    border-radius: 0;
+  }
 }
 
 .btn-default {
