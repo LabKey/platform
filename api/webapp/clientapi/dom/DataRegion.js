@@ -1546,6 +1546,11 @@ if (!LABKEY.DataRegions) {
 
                     if (low <= this.totalRows && high <= this.totalRows) {
                         ofTotal = ' of ' + this.totalRows;
+
+                        // user has opted to show all rows
+                        if (this.rowCount === null || this.rowCount < 1) {
+                            high = this.totalRows;
+                        }
                         ct.html('<span>' + low + ' - ' + high + ofTotal + '</span>').css('visibility', 'visible');
 
                         // only display buttons if all the results are not shown
@@ -1560,8 +1565,8 @@ if (!LABKEY.DataRegions) {
 
                         ct.append([
                             '<div class="btn-group" style="padding-left: 5px;">',
-                            '<button id="' + prevId + '" class="btn btn-default"><i class="fa fa-chevron-left"></i></button>',
-                            '<button id="' + nextId + '" class="btn btn-default"><i class="fa fa-chevron-right"></i></button>',
+                            '<button id="' + prevId + '" class="btn btn-default btn-square"><i class="fa fa-chevron-left"></i></button>',
+                            '<button id="' + nextId + '" class="btn btn-default btn-square"><i class="fa fa-chevron-right"></i></button>',
                             '</div>'
                         ].join(''));
 
