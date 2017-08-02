@@ -1230,7 +1230,7 @@ public class SqlParser
 				break;
 //			case ESCAPE:
 //				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
-//				 return null;                                                  å
+//              return null;
             case DECLARATION:
                 return new QUnknownNode();
 			default:
