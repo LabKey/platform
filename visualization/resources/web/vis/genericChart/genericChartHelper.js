@@ -38,17 +38,17 @@ LABKEY.vis.GenericChartHelper = new function(){
                 ],
                 layoutOptions: {point: true, box: true, line: true, opacity: true, axisBased: true}
             },
-            // {
-            //     name: 'line_plot',
-            //     title: 'Line',
-            //     imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
-            //     fields: [
-            //         {name: 'x', label: 'X Axis', required: true, numericOnly: true},
-            //         {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
-            //         {name: 'series', label: 'Series', required: true, nonNumericOnly: true}
-            //     ],
-            //     layoutOptions: {point: true, opacity: true, axisBased: true, line: true}
-            // },
+            {
+                name: 'line_plot',
+                title: 'Line',
+                imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
+                fields: [
+                    {name: 'x', label: 'X Axis', required: true, numericOnly: true},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+                    {name: 'series', label: 'Series', required: true, nonNumericOnly: true}
+                ],
+                layoutOptions: {point: true, opacity: true, axisBased: true, line: true}
+            },
             {
                 name: 'pie_chart',
                 title: 'Pie',
@@ -187,7 +187,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 includeParticipantCategory : true
             },
             success : function(response){
-                var columnList = Ext4.decode(response.responseText);
+                var columnList = LABKEY.Utils.decode(response.responseText);
                 _queryColumnMetadata(queryConfig, columnList, successCallback, callbackScope)
             },
             scope   : this
@@ -569,20 +569,16 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generatePointHover = function(measures)
     {
         return function(row) {
-            var hover = '', sep = '';
+            var hover = '', sep = '', distinctNames = [];
 
-            if (measures.x)
-            {
-                hover += sep + measures.x.label + ': ' + _getRowValue(row, measures.x.name);
-                sep = ', \n';
-            }
-            hover += sep + measures.y.label + ': ' + _getRowValue(row, measures.y.name);
-            sep = ', \n';
+            Ext4.Object.each(measures, function(key, measure) {
+                if (Ext4.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
+                    hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
+                    sep = ', \n';
 
-            if (measures.color)
-                hover += sep + measures.color.label + ': ' + _getRowValue(row, measures.color.name);
-            if(measures.shape && !(measures.color && measures.color.name == measures.shape.name))
-                hover += sep + measures.shape.label + ': ' + _getRowValue(row, measures.shape.name);
+                    distinctNames.push(measure.name);
+                }
+            });
 
             return hover;
         };
@@ -681,7 +677,14 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         return function(row)
         {
-            var value = _getRowValue(row, measureName);
+            var value = null;
+            if (Ext4.isArray(row) && row.length > 0) {
+                value = _getRowValue(row[0], measureName);
+            }
+            else {
+                value = _getRowValue(row, measureName);
+            }
+
             if (value === null || value === undefined)
                 value = "n/a";
 
@@ -720,10 +723,11 @@ LABKEY.vis.GenericChartHelper = new function(){
             measureInfo.yAxis = measures.y.name;
         if (measures.x)
             measureInfo.xAxis = measures.x.name;
-        if (measures.shape)
-            measureInfo.shapeName = measures.shape.name;
-        if (measures.color)
-            measureInfo.pointName = measures.color.name;
+        Ext4.each(['color', 'shape', 'series'], function(name) {
+            if (measures[name]) {
+                measureInfo[name + 'Name'] = measures[name].name;
+            }
+        }, this);
 
         // using new Function is quicker than eval(), even in IE.
         var pointClickFn = new Function('return ' + fnString)();
@@ -879,21 +883,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 new LABKEY.vis.Layer({
                     geom: new LABKEY.vis.Geom.Path({}),
                     aes: {
-                        pathColor: function(rows)
-                        {
-                            var value = null;
-                            if (Ext4.isArray(rows) && rows.length > 0) {
-                                value = _getRowValue(rows[0], chartConfig.measures.series.name);
-                            }
-                            else {
-                                value = _getRowValue(row, chartConfig.measures.series.name);
-                            }
-
-                            if (value === null || value === undefined)
-                                value = "n/a";
-
-                            return value;
-                        },
+                        pathColor: generateGroupingAcc(chartConfig.measures.series.name),
                         group: generateGroupingAcc(chartConfig.measures.series.name)
                     }
                 })

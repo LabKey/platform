@@ -837,11 +837,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (this.autoColumnName)
                 columns.push(this.autoColumnName.toString());
 
-            if (measures.color)
-                this.addMeasureForColumnQuery(columns, measures.color);
-
-            if (measures.shape)
-                this.addMeasureForColumnQuery(columns, measures.shape);
+            Ext4.each(['color', 'shape', 'series'], function(name) {
+                if (measures[name]) {
+                    this.addMeasureForColumnQuery(columns, measures[name]);
+                }
+            }, this);
         }
         else
         {
@@ -1149,16 +1149,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             if (Ext4.isObject(chartConfig.measures))
             {
-                this.measures.x = chartConfig.measures.x;
-                this.measures.y = chartConfig.measures.y;
-                if (chartConfig.measures.xSub)
-                    this.measures.xSub = chartConfig.measures.xSub;
-                if (chartConfig.measures.color)
-                    this.measures.color = chartConfig.measures.color;
-                if (chartConfig.measures.shape)
-                    this.measures.shape = chartConfig.measures.shape;
-                if (chartConfig.measures.series)
-                    this.measures.series = chartConfig.measures.series;
+                Ext4.each(['x', 'y', 'xSub', 'color', 'shape', 'series'], function(name) {
+                    if (chartConfig.measures[name]) {
+                        this.measures[name] = chartConfig.measures[name];
+                    }
+                }, this);
             }
         }
     },
@@ -1841,14 +1836,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Only push the required columns.
         queryConfig.columns = [];
 
-        if (chartConfig.measures.x)
-            queryConfig.columns.push(chartConfig.measures.x.name);
-        if (chartConfig.measures.y)
-            queryConfig.columns.push(chartConfig.measures.y.name);
-        if (chartConfig.measures.color)
-            queryConfig.columns.push(chartConfig.measures.color.name);
-        if (chartConfig.measures.shape)
-            queryConfig.columns.push(chartConfig.measures.shape.name);
+        Ext4.each(['x', 'y', 'color', 'shape', 'series'], function(name) {
+            if (chartConfig.measures[name]) {
+                queryConfig.columns.push(chartConfig.measures[name].name);
+            }
+        }, this);
 
         var templateConfig = {
             chartConfig: chartConfig,
