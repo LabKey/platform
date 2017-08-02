@@ -56,6 +56,7 @@ import org.labkey.data.xml.domainTemplate.IndexType;
 import org.labkey.data.xml.domainTemplate.InitialDataType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
+import org.labkey.data.xml.domainTemplate.SNDTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetOptionsType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
@@ -174,6 +175,7 @@ public class DomainTemplate
         return (template instanceof ListTemplateType) ? getListDomainKind(templateName, (ListTemplateType)template, properties) :
                (template instanceof SampleSetTemplateType) ? "SampleSet" :
                (template instanceof DataClassTemplateType) ? "DataClass" :
+               (template instanceof SNDTemplateType) ? "SND" :
                (template instanceof EHRTemplateType) ? "EHR" :
                null;
     }
@@ -204,11 +206,15 @@ public class DomainTemplate
     {
         Map<String, GWTPropertyDescriptor> properties = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
-        for (ColumnType columnType : template.getTable().getColumns().getColumnArray())
+        TableType.Columns columns = template.getTable().getColumns();
+        if (null != columns)
         {
-            GWTPropertyDescriptor pd = DomainUtil.getPropertyDescriptor(columnType);
-            if (null != properties.put(pd.getName(), pd))
-                throw new IllegalArgumentException("Duplicate column name '" + pd.getName() + "' in template '" + templateName + "'");
+            for (ColumnType columnType : columns.getColumnArray())
+            {
+                GWTPropertyDescriptor pd = DomainUtil.getPropertyDescriptor(columnType);
+                if (null != properties.put(pd.getName(), pd))
+                    throw new IllegalArgumentException("Duplicate column name '" + pd.getName() + "' in template '" + templateName + "'");
+            }
         }
 
         return Collections.unmodifiableList(new ArrayList<>(properties.values()));
