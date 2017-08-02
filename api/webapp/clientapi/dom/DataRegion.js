@@ -2588,6 +2588,7 @@ if (!LABKEY.DataRegions) {
                 else if (info.views.length == 1) {
                     this.view = info.views[0];
                     _initCustomViews.call(this);
+                    this.showContext();
                 }
             }
         });
