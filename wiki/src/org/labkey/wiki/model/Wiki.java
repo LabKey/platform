@@ -18,6 +18,7 @@ package org.labkey.wiki.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
@@ -103,6 +104,12 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return urlDownload.getLocalURIString();
     }
 
+
+    @Override
+    public AttachmentType getAttachmentType()
+    {
+        return WikiType.get();
+    }
 
     public int getRowId()
     {

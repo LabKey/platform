@@ -26,24 +26,29 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.SecureDocumentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ResultSetView;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.files.FileContentService;
@@ -80,11 +85,11 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
-import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.CoreModule;
@@ -129,6 +134,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 {
     private static final MimeMap _mimeMap = new MimeMap();
     private static final String UPLOAD_LOG = ".upload.log";
+    private static final Map<String, AttachmentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
 
     public AttachmentServiceImpl()
     {
@@ -715,6 +721,73 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return attachment;
     }
 
+
+    @Override
+    public void registerAttachmentType(AttachmentType type)
+    {
+        ATTACHMENT_TYPE_MAP.put(type.getUniqueName(), type);
+    }
+
+    @Override
+    public HttpView getAttachmentAdminView(ActionURL currentUrl)
+    {
+        String requestedType = currentUrl.getParameter("type");
+        AttachmentType attachmentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
+
+        if (null == attachmentType)
+        {
+            StringBuilder unionSql = new StringBuilder();
+            String union = "";
+            int alias = 0;
+
+            for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
+            {
+                if (AttachmentType.UNKNOWN != type)
+                {
+                    unionSql.append(union)
+                            .append("SELECT CAST('").append(type.getUniqueName()).append("' AS Text) AS Type, ID FROM (")
+                            .append(type.getSelectSqlForIds())
+                            .append(") AS a").append(alias).append("\n");
+                    union = "UNION\n";
+                    alias++;
+                }
+            }
+
+            StringBuilder allSql = new StringBuilder("SELECT Type, COUNT(*) FROM core.Documents d LEFT JOIN\n(\n");
+            allSql.append(unionSql);
+            allSql.append(") p\nON p.ID = d.Parent\nGROUP BY Type\nORDER BY Type");
+            String link = currentUrl.clone().deleteParameters().getLocalURIString() + "type=";
+
+            StringBuilder unknownSql = new StringBuilder("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d LEFT JOIN\n(\n");
+            unknownSql.append(unionSql);
+            unknownSql.append(") p\nON p.ID = d.Parent\nINNER JOIN core.Containers c ON c.EntityId = d.Container\nWHERE p.ID IS NULL\nORDER BY Container, Parent, DocumentName");
+
+            return new VBox(getResultSetView(allSql, "Attachment Types and Counts", link), getResultSetView(unknownSql, "Unknown Attachments", null));
+        }
+        else
+        {
+            StringBuilder oneTypeSql = new StringBuilder("SELECT d.Parent, d.DocumentName FROM core.Documents d INNER JOIN\n(");
+            oneTypeSql.append(attachmentType.getSelectSqlForIds());
+            oneTypeSql.append(") p\nON p.ID = d.Parent");
+
+            return getResultSetView(oneTypeSql, attachmentType.getUniqueName() + " Attachments", null);
+        }
+    }
+
+    private HttpView getResultSetView(StringBuilder sql, String title, @Nullable String link)
+    {
+        SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
+        ResultSet rs = selector.getResultSet();
+
+        try
+        {
+            return null != link ? new ResultSetView(rs, title, 1, link) : new ResultSetView(rs, title);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
     {

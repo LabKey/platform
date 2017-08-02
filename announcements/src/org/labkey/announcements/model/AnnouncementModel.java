@@ -22,6 +22,7 @@ import org.labkey.announcements.AnnouncementsController.DownloadAction;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
@@ -441,6 +442,12 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
             // thread tries to access parent, a sequence that can happen in the tests)
             return null != parent ? parent.getDiscussionSrcIdentifier() : null;
         }
+    }
+
+    @Override
+    public AttachmentType getAttachmentType()
+    {
+        return AnnouncementType.get();
     }
 }
 

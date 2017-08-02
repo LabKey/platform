@@ -20,10 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.wiki.model.WikiType;
 import org.labkey.wiki.renderer.MarkdownServiceImpl;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderType;
@@ -95,6 +97,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             _log.error(e);
         }
 
+        AttachmentService.get().registerAttachmentType(WikiType.get());
     }
 
     @NotNull

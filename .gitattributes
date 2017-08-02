@@ -62,6 +62,7 @@ announcements/src/org/labkey/announcements/insert.jsp -text
 announcements/src/org/labkey/announcements/model/AnnouncementDigestProvider.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementModel.java -text
+announcements/src/org/labkey/announcements/model/AnnouncementType.java -text
 announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text
 announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text
@@ -1167,6 +1168,7 @@ issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
 issues/src/org/labkey/issue/model/CustomColumn.java -text
 issues/src/org/labkey/issue/model/GeneralIssuesListDefProvider.java -text
 issues/src/org/labkey/issue/model/Issue.java -text
+issues/src/org/labkey/issue/model/IssueCommentType.java -text
 issues/src/org/labkey/issue/model/IssueListDef.java -text
 issues/src/org/labkey/issue/model/IssueListDefCache.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
@@ -3541,6 +3543,7 @@ wiki/src/org/labkey/wiki/model/RadeoxMacroProxy.java -text
 wiki/src/org/labkey/wiki/model/Wiki.java -text
 wiki/src/org/labkey/wiki/model/WikiEditModel.java -text
 wiki/src/org/labkey/wiki/model/WikiTree.java -text
+wiki/src/org/labkey/wiki/model/WikiType.java -text
 wiki/src/org/labkey/wiki/model/WikiVersion.java -text
 wiki/src/org/labkey/wiki/model/WikiVersionsGrid.java -text
 wiki/src/org/labkey/wiki/model/WikiView.java -text

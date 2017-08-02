@@ -2742,6 +2742,23 @@ public class AdminController extends SpringActionController
     }
 
 
+    @RequiresSiteAdmin
+    public class AttachmentsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return AttachmentService.get().getAttachmentAdminView(getViewContext().getActionURL());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Attachments", getClass());
+        }
+    }
+
+
     public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
     {
         ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());

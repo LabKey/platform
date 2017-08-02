@@ -22,6 +22,7 @@ import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.config.MessageConfigServiceImpl;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
+import org.labkey.announcements.model.AnnouncementType;
 import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.DiscussionWebPartFactory;
 import org.labkey.announcements.model.InsertMessagePermission;
@@ -34,6 +35,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.TourService;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
@@ -115,6 +117,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         DiscussionService.register(new DiscussionServiceImpl());
         EmailTemplateService.get().registerTemplate(AnnouncementManager.NotificationEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(AnnouncementDigestProvider.DailyDigestEmailTemplate.class);
+
+        AttachmentService.get().registerAttachmentType(AnnouncementType.get());
     }
 
     @NotNull

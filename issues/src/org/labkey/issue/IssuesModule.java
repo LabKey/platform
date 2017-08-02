@@ -18,6 +18,7 @@ package org.labkey.issue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
@@ -48,6 +49,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.GeneralIssuesListDefProvider;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueCommentType;
 import org.labkey.issue.model.IssuesListDefServiceImpl;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -92,6 +94,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
 
         NotificationService.get().registerNotificationType(Issue.class.getName(), "Issues", "fa-bug");
+        AttachmentService.get().registerAttachmentType(IssueCommentType.get());
     }
 
     @NotNull
