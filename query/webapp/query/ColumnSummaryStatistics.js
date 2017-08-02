@@ -88,8 +88,8 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
             padding: 10,
             items: [
                 '->',
-                this.getApplyButton(),
-                this.getCancelButton()
+                this.getCancelButton(),
+                this.getApplyButton()
             ]
         });
 
