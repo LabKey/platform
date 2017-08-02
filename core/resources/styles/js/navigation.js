@@ -337,7 +337,7 @@
 
     SubMenu.prototype.viewportAlign = function() {
         var menu =  $(this).children('ul.dropdown-menu');
-        if (menu.length == 0) {
+        if (menu.length === 0) {
             return;
         }
         

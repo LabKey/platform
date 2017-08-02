@@ -426,7 +426,7 @@ else
             </div>
             &nbsp;
             &nbsp;
-            <span id="moreMenuToggle" class="lk-menu-drop dropdown">
+            <div id="moreMenuToggle" class="lk-menu-drop dropdown">
                 <button data-toggle="dropdown" class="btn btn-default">More</button>
                 <ul class="dropdown-menu dropdown-menu-left">
                     <%if (!getUser().isGuest()) {%>
@@ -443,7 +443,7 @@ else
                         <li class="<%=text(isDisabled)%>"><a href="<%=h(headerLink.getHref())%>"></a></li>
                     <%}%>
                 </ul>
-            </span>
+            </div>
         </div>
         <div class="col-sm-4" style="margin-bottom: 5px">
             <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
@@ -457,14 +457,14 @@ else
                 <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
                     <%=h("new " + names.singularName.toLowerCase())%>
                 </a>
-                <span class="lk-menu-drop dropdown">
+                <div class="lk-menu-drop dropdown">
                     <a class="btn btn-primary" data-toggle="dropdown">
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-left">
                         <li><a onclick="<%=h(relatedIssues.toString())%>">Create Related Issue</a></li>
                     </ul>
-                </span>
+                </div>
             </div>
             <%}%>
         </div>

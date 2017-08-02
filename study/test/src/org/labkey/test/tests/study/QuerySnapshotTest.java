@@ -256,7 +256,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         if (IS_BOOTSTRAP_LAYOUT)
         {
             new BootstrapMenu(getDriver(),
-                    Locator.tagWithClassContaining("span", "lk-menu-drop")
+                    Locator.tagWithClassContaining("div", "lk-menu-drop")
                             .waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).clickMenuButton(true, false, "Grid View");
         }else
         {
