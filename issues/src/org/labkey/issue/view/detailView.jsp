@@ -1,27 +1,27 @@
 <%
-    /*
-     * Copyright (c) 2006-2017 LabKey Corporation
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (c) 2006-2017 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
-
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.exp.property.DomainProperty"%>
 <%@ page import="org.labkey.api.issues.IssueDetailHeaderLinkProvider" %>
 <%@ page import="org.labkey.api.issues.IssuesListDefService" %>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
@@ -38,10 +38,8 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -79,9 +77,9 @@
     if (newUI)
     {
         propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
-                .filter(propertyMap::containsKey)
-                .map((Function<String, DomainProperty>) propertyMap::get)
-                .collect(Collectors.toList()));
+            .filter(propertyMap::containsKey)
+            .map(propertyMap::get)
+            .collect(Collectors.toList()));
     }
     else
     {
@@ -92,9 +90,9 @@
         propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
         // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
         extraColumns.addAll(Stream.of("assignedto", "type", "area", "priority", "milestone")
-                .filter(propertyMap::containsKey)
-                .map((Function<String, DomainProperty>) propertyMap::get)
-                .collect(Collectors.toList()));
+            .filter(propertyMap::containsKey)
+            .map(propertyMap::get)
+            .collect(Collectors.toList()));
 
         for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
         {
@@ -113,7 +111,7 @@
     for (Issue.Comment comment : commentLinkedList)
     {
         // Determine if the comment has attachments
-        hasAttachments = hasAttachments ? true : !bean.renderAttachments(context, comment).isEmpty();
+        hasAttachments = hasAttachments || !bean.renderAttachments(context, comment).isEmpty();
     }
 
     String commentTextStr="The related issue has " + commentCount;
@@ -134,8 +132,8 @@
     relatedIssues.append(", body :").append(q(commentTextStr));
     relatedIssues.append(", title :").append(q(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
-    relatedIssues.append(", assignedTo :").append(issue.getAssignedTo() == null ? null : issue.getAssignedTo());
-    relatedIssues.append(", priority :").append(issue.getPriority() == null ? null : issue.getPriority());
+    relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
+    relatedIssues.append(", priority :").append(issue.getPriority());
     relatedIssues.append(", related :").append(issue.getIssueId());
     relatedIssues.append("})");
 
@@ -265,7 +263,7 @@
             <%=text(bean.renderAdditionalDetailInfo())%>
         </table></td>
         <td valign="top"><table>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", false))%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", false))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", false))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolution", false))%></td><td><%=h(issue.getResolution())%></td></tr><%
