@@ -336,3 +336,22 @@ td.labkey-blank-cell, th.labkey-blank-cell {
     vertical-align: top;
   }
 }
+
+.unselectable {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.paging-widget {
+  top: 1px;
+  > a {
+    padding: 4px 3px;
+    color: $black;
+    border: 1px solid transparent;
+    &:hover {
+      border: 1px solid lightgray;
+      cursor: pointer;
+    }
+  }
+}
