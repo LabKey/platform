@@ -174,6 +174,8 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write(" target=\"" + item.getTarget() + "\"");
         if (null != item.getDescription())
             out.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
+        if (item.isDisabled())
+            out.write(" disabled");
         out.write(" tabindex=\"0\"");
         out.write(" style=\"" + styleStr + "\"");
         out.write(">");
