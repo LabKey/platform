@@ -1304,6 +1304,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.isChartConfigValid(chartType, chartConfig, aes, scales))
             return;
 
+        if (chartType == 'scatter_plot' && this.getMeasureStoreRecords().length > chartConfig.geomOptions.binThreshold)
+        {
+            chartConfig.geomOptions.binned = true;
+            if (chartConfig.geomOptions.binThreshold == 10000) {
+                this.addWarningText(
+                        "The number of individual points exceeds 10,000. The data is now grouped by density, which overrides some layout options."
+                );
+            }
+        }
+        else if (chartType == 'line_plot' && this.getMeasureStoreRecords().length > 10000)
+        {
+            this.addWarningText("The number of individual points exceeds 10,000. Data points will not be shown on this line plot.");
+        }
+
         this.beforeRenderPlotComplete();
 
         if (!Ext4.isDefined(chartConfig.width) || chartConfig.width == null)
@@ -1425,21 +1439,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var plotConfig, geom, labels, data = this.getMeasureStoreRecords(), me = this;
 
-        if (chartType == 'scatter_plot' && data.length > chartConfig.geomOptions.binThreshold)
-        {
-            chartConfig.geomOptions.binned = true;
-            if (chartConfig.geomOptions.binThreshold == 10000) {
-                this.addWarningText(
-                        "The number of individual points exceeds 10,000. The data is now grouped by density, which overrides some layout options."
-                );
-            }
-        }
-        else if (chartType == 'line_plot' && data.length > 10000) {
-            // TODO hide data points and just show series lines
-            this.addWarningText("The number of individual points exceeds 10,000. TODO hiding data points and only showing series lines.");
-        }
 
-        geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
+        if(chartType == 'line_plot' && (chartConfig.geomOptions.hideDataPoints || data.length > 10000)){
+            geom = null;
+        }else {
+            geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
+        }
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);
 
         if (chartType == 'bar_chart' || chartType == 'pie_chart')

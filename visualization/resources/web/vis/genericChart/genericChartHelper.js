@@ -47,7 +47,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
                     {name: 'series', label: 'Series', required: true, nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, opacity: true, axisBased: true, line: true}
+                layoutOptions: {opacity: true, axisBased: true, series: true}
             },
             {
                 name: 'pie_chart',
@@ -881,7 +881,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         else if (renderType == 'line_plot' && chartConfig.measures.series) {
             layers.push(
                 new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.Path({}),
+                    geom: new LABKEY.vis.Geom.Path({
+                        size:chartConfig.geomOptions.lineWidth,
+                        opacity:chartConfig.geomOptions.opacity
+                    }),
                     aes: {
                         pathColor: generateGroupingAcc(chartConfig.measures.series.name),
                         group: generateGroupingAcc(chartConfig.measures.series.name)

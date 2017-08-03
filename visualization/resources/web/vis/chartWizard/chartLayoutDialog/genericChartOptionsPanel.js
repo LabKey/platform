@@ -103,7 +103,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             width: 275,
             padding: '0 0 10px 0',
             enableKeyEvents: true,
-            layoutOptions: ['line', 'point', 'box', 'pie']
+            layoutOptions: ['line', 'point', 'box', 'pie', 'series']
         });
         this.subtitleBox.addListener('keyup', function(){
             this.userEditedSubtitle = this.subtitleBox.getValue() != '';
@@ -186,7 +186,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fieldLabel: 'Line Width',
             width: 270,
             padding: '0 0 10px 0',
-            layoutOptions: ['line', 'time'],
+            layoutOptions: ['line', 'time', 'series'],
             value: this.defaultLineWidth || 1,
             increment: 1,
             minValue: 1,
@@ -213,7 +213,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fieldLabel: 'Point Size',
             width: 270,
             padding: '0 0 10px 0',
-            layoutOptions: 'point',
+            layoutOptions: ['point', 'series'],
             value: 5,
             increment: 1,
             minValue: 1,
@@ -454,7 +454,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fieldLabel: 'Hide Data Points',
             labelWidth: 135,
             padding: '0 0 10px 0',
-            layoutOptions: 'time',
+            layoutOptions: ['time', 'series'],
             value: false
         });
 

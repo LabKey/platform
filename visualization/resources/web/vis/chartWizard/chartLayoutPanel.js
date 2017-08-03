@@ -113,7 +113,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     name: 'developer',
                     label: 'Developer',
                     cardId: 'card-5',
-                    layoutOptions: ['point', 'time'],
+                    layoutOptions: ['point', 'time', 'series'],
                     cardClass: 'LABKEY.vis.DeveloperOptionsPanel',
                     config: {
                         isDeveloper: this.isDeveloper,
