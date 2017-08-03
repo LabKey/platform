@@ -809,6 +809,14 @@ public class PipelineServiceImpl implements PipelineService
         return job.getJobGUID();
     }
 
+    @Override
+    public boolean isProtocolDefined(AnalyzeForm form)
+    {
+        FileAnalysisProperties props = getFileAnalysisProperties(form.getContainer(), form.getTaskId(), form.getPath());
+        AbstractFileAnalysisProtocolFactory factory = props.getFactory();
+        return factory.getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false) != null;
+    }
+
     @Nullable
     @Override
     public File getProtocolParametersFile(ExpRun expRun)

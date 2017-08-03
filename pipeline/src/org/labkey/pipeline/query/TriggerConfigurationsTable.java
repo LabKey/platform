@@ -10,8 +10,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
@@ -28,6 +29,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.labkey.pipeline.api.PipelineSchema;
 
@@ -60,7 +62,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         type.setInputType("select");
 
         ColumnInfo pipelineId = getColumn("PipelineId");
-        pipelineId.setFk(new PipelineProviderForeignKey());
+        pipelineId.setFk(new TaskPipelineForeignKey());
         pipelineId.setInputType("select");
 
         return this;
@@ -87,14 +89,15 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
     }
 
-    private class PipelineProviderForeignKey extends AbstractSelectListForeignKey
+    private class TaskPipelineForeignKey extends AbstractSelectListForeignKey
     {
-        PipelineProviderForeignKey()
+        TaskPipelineForeignKey()
         {
-            for (PipelineProvider pipelineProvider : PipelineService.get().getPipelineProviders())
+            for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
             {
-                // TODO further filter this list to known providers that work in this scenario
-                addListItem(pipelineProvider.getName(), pipelineProvider.getName());
+                // TODO further filter this list to known TaskPipelines that work in this scenario
+                if (taskPipeline instanceof FileAnalysisTaskPipeline)
+                    addListItem(taskPipeline.getId().toString(), taskPipeline.getDescription());
             }
         }
     }
@@ -183,9 +186,15 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             if (triggerType == null)
                 invalidMsg += "Invalid pipeline trigger type: " + type + ". ";
 
-            // validate that the pipelineId is a valid PipelineProvider
-            if (PipelineService.get().getPipelineProvider(pipelineId) == null)
-                invalidMsg += "Invalid pipeline provider: " + pipelineId + ". ";
+            // validate that the pipelineId is a valid TaskPipeline
+            try
+            {
+                PipelineJobService.get().getTaskPipeline(pipelineId);
+            }
+            catch(NotFoundException e)
+            {
+                invalidMsg += "Invalid pipeline task id: " + pipelineId + ". ";
+            }
 
             // validate that the configuration value parses as valid JSON
             Object configuration = row.get("Configuration");
