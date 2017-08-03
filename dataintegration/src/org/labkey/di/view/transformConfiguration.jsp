@@ -117,8 +117,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 
     function transform_runNow(transformId)
     {
-        var params = {'transformId': transformId};
-        transform_runWithParams(params);
+        transform_runWithParams({'transformId': transformId});
     }
 
     function transform_runWithParams(params)
@@ -137,9 +136,13 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                 if ("pipelineURL" in json && json.pipelineURL)
                     window.location = json.pipelineURL;
                 else
-                    Ext4.MessageBox.alert("Success", json.status || "No work to do.");
+                    Ext4.Msg.alert("Success", json.status || "No work to do.");
             },
-            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:params['transformId']}), window, true)
+            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({
+                failure: function(response) {
+                    Ext4.Msg.alert('Error', Ext4.htmlEncode(response.exception));
+                }
+            }), window, true)
         });
     }
 
@@ -153,7 +156,11 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
             success : function(response)
             {
             },
-            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({transformId:transformId}), window, true)
+            failure : LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure({
+                failure: function(response) {
+                    Ext4.Msg.alert('Error', Ext4.htmlEncode(response.exception));
+                }
+            }), window, true)
         });
     }
 
