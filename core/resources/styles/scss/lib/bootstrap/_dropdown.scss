@@ -74,4 +74,24 @@
     visibility: visible;
     left: 0;
   }
+
+  & > .disabled > a {
+    // https://stackoverflow.com/questions/10276133/how-to-disable-html-links
+    pointer-events: none;
+
+    &,
+    &:hover,
+    &:focus {
+      color: $dropdown-link-disabled-color;
+    }
+
+    &:hover,
+    &:focus {
+      text-decoration: none;
+      background-color: transparent;
+      background-image: none; // Remove CSS gradient
+      @include reset-filter;
+      cursor: $cursor-disabled;
+    }
+  }
 }
