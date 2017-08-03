@@ -651,7 +651,7 @@ public class DataRegion extends DisplayElement
         if (getSettings() != null && getSettings().getSelectionKey() != null)
             return getSettings().getSelectionKey();
         if (getTable() != null && getTable().getSchema() != null)
-            DataRegionSelection.getSelectionKey(getTable().getSchema().getName(), getTable().getName(), null, getName());
+            return DataRegionSelection.getSelectionKey(getTable().getSchema().getName(), getTable().getName(), null, getName());
         return null;
     }
 
