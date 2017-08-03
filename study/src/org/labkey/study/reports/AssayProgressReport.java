@@ -188,7 +188,7 @@ public class AssayProgressReport extends AbstractReport
             {
                 for (JSONObject assay : assays.toJSONObjectArray())
                 {
-                    String assayName = assay.getString("name");
+                    String assayName = assay.getString("AssayName");
                     String schemaName = assay.getString("schemaName");
                     String queryName = assay.getString("queryName");
 
@@ -214,7 +214,7 @@ public class AssayProgressReport extends AbstractReport
             {
                 JSONObject assayConfig = assayConfigMap.get(assay.getAssayName());
 
-                String folder = assayConfig.getString("folder");
+                String folder = assayConfig.getString("folderId");
                 if (folder != null)
                 {
                     Container container = ContainerManager.getForId(folder);

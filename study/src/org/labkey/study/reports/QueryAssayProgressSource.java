@@ -58,40 +58,44 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
     {
         if (_participants.isEmpty())
         {
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _expectation.getSchemaName());
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), _expectation.getQueryFolder() != null ? _expectation.getQueryFolder() : context.getContainer(),
+                    _expectation.getSchemaName());
             if (schema != null)
             {
                 Set<String> participants = new HashSet<>();
                 Set<Integer> visits = new HashSet<>();
 
                 TableInfo tableInfo = schema.getTable(_expectation.getQueryName());
-                new TableSelector(tableInfo).forEach(rs ->
+                if (tableInfo != null)
                 {
-                    String ptid = rs.getString("ParticipantId");
-                    Integer visitId = rs.getInt("VisitId");
-                    String status = rs.getString("Status");
-
-                    if (ptid != null && visitId != null && status != null)
+                    new TableSelector(tableInfo).forEach(rs ->
                     {
-                        participants.add(ptid);
-                        visits.add(visitId);
+                        String ptid = rs.getString("ParticipantId");
+                        Integer visitId = rs.getInt("VisitId");
+                        String status = rs.getString("Status");
 
-                        _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visitId), status));
+                        if (ptid != null && visitId != null && status != null)
+                        {
+                            participants.add(ptid);
+                            visits.add(visitId);
+
+                            _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visitId), status));
+                        }
+                    });
+                    _participants.addAll(participants);
+                    _participants.sort(String::compareTo);
+
+                    Map<Integer, Visit> visitMap = new HashMap<>();
+                    for (Visit visit : _study.getVisits(Visit.Order.DISPLAY))
+                    {
+                        visitMap.put(visit.getId(), visit);
                     }
-                });
-                _participants.addAll(participants);
-                _participants.sort(String::compareTo);
 
-                Map<Integer, Visit> visitMap = new HashMap<>();
-                for (Visit visit : _study.getVisits(Visit.Order.DISPLAY))
-                {
-                    visitMap.put(visit.getId(), visit);
-                }
-
-                for (Integer visitId : visits)
-                {
-                    if (visitMap.containsKey(visitId))
-                        _visits.add(visitMap.get(visitId));
+                    for (Integer visitId : visits)
+                    {
+                        if (visitMap.containsKey(visitId))
+                            _visits.add(visitMap.get(visitId));
+                    }
                 }
             }
         }
