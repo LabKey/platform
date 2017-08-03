@@ -15,8 +15,10 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
@@ -48,6 +50,17 @@ public class AnalyzeForm extends PipelinePathForm
     private boolean allowProtocolRedefinition = false;
 
     private static final String UNKNOWN_STATUS = "UNKNOWN";
+
+    public AnalyzeForm()
+    {}
+
+    public AnalyzeForm(Container container, User user, String taskId, String protocolName)
+    {
+        setContainer(container);
+        setUser(user);
+        setTaskId(taskId);
+        setProtocolName(protocolName);
+    }
 
     public void initStatus(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis)
     {
@@ -211,5 +224,10 @@ public class AnalyzeForm extends PipelinePathForm
     public void setAllowProtocolRedefinition(boolean allowProtocolRedefinition)
     {
         this.allowProtocolRedefinition = allowProtocolRedefinition;
+    }
+
+    public static String getDefaultXMLParameters()
+    {
+        return "<?xml version=\"1.0\"?><bioml/>";
     }
 }

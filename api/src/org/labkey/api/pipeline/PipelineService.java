@@ -208,6 +208,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
         }
     }
 
+    boolean isProtocolDefined(AnalyzeForm form);
+
     @Nullable
     File getProtocolParametersFile(ExpRun expRun);
 
