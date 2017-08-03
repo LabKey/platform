@@ -333,9 +333,9 @@
                 },
                 listeners: {
                     render: function(dr) {
-                        var prevPageLink = $('a[title="Previous Page"]');
-                        if (PAGE_OFFSET == 4) {
-                            var firstPageLink = $('a[title="First Page"]');
+                        var prevPageLink = $('button:not(.disabled)').has('i[class="fa fa-chevron-left"]');
+                        if (PAGE_OFFSET === 4) {
+                            var firstPageLink = $('li').has('a:contains("Show first")');
                             if (!firstPageLink || firstPageLink.length == 0 || !prevPageLink || prevPageLink.length == 0) {
                                 alert('Failed to set Offset to 4 and MaxRows to 2 with config');
                             }
@@ -346,8 +346,8 @@
                         }
                         else if (!PAGE_OFFSET_SKIPP) {
                             PAGE_OFFSET_SKIPP = true;
-                            var nextPageLink = $('a[title="Next Page"]');
-                            if (prevPageLink.length == 0 && nextPageLink.length > 0) {
+                            var nextPageLink = $('button:not(.disabled)').has('i[class="fa fa-chevron-right"]');
+                            if (prevPageLink.length === 0 && nextPageLink.length > 0) {
                                 LABKEY.Utils.signalWebDriverTest("testPageOffset");
                             }
                             else {
