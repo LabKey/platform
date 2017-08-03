@@ -87,7 +87,10 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 
         Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(c, FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
-        {            
+        {
+            if (tp.getDefaultDisplayState() != null && PipelineActionConfig.displayState.hidden.equals(tp.getDefaultDisplayState()))
+                continue;
+
             String path = directory.cloneHref().getParameter(Params.path.toString());
             String actionId = createActionId(this.getClass(), tp.getDescription()); // XXX: use task id instead so it's unique?
             addAction(actionId, tp.getAnalyzeURL(c, path), tp.getDescription(),
@@ -102,7 +105,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         Collection<FileAnalysisTaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(container, FileAnalysisTaskPipeline.class);
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {
-            if (tp.getDefaultDisplayState() != null)
+            if (tp.getDefaultDisplayState() != null && !PipelineActionConfig.displayState.hidden.equals(tp.getDefaultDisplayState()))
             {
                 String actionId = createActionId(this.getClass(), tp.getDescription());
                 result.add(new PipelineActionConfig(actionId, tp.getDefaultDisplayState(), tp.getDescription(), true));

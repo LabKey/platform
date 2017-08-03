@@ -73,6 +73,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private Map<FileType, List<FileType>> _typeHierarchy;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
+    private boolean _allowForTriggerConfiguration = false;
     private boolean _splittable = true;
     private boolean _writeJobInfoFile = false;
 
@@ -147,12 +148,22 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             _defaultDisplayState = settings.getDefaultDisplayState();
         }
 
+        if (settings.isAllowForTriggerConfiguration())
+        {
+            _allowForTriggerConfiguration = true;
+        }
+
         return this;
     }
 
     public PipelineActionConfig.displayState getDefaultDisplayState()
     {
         return _defaultDisplayState;
+    }
+
+    public boolean isAllowForTriggerConfiguration()
+    {
+        return _allowForTriggerConfiguration;
     }
 
     public String getDescription()

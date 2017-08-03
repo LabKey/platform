@@ -95,9 +95,12 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         {
             for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
             {
-                // TODO further filter this list to known TaskPipelines that work in this scenario
                 if (taskPipeline instanceof FileAnalysisTaskPipeline)
-                    addListItem(taskPipeline.getId().toString(), taskPipeline.getDescription());
+                {
+                    FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline) taskPipeline;
+                    if (fatp.isAllowForTriggerConfiguration())
+                        addListItem(taskPipeline.getId().toString(), taskPipeline.getDescription());
+                }
             }
         }
     }
