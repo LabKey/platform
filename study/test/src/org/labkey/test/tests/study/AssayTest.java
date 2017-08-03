@@ -203,7 +203,7 @@ public class AssayTest extends AbstractAssayTest
         // Verify that the results aren't editable by default
         new ProjectMenu(getDriver()).navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
-        clickAndWait(Locator.linkWithText("view results"));
+        waitAndClickAndWait(Locator.linkWithText("view results"));
         DataRegionTable table = new DataRegionTable("Data", getDriver());
         assertEquals("No rows should be editable", 0, DataRegionTable.updateLinkLocator().findElements(table.getComponentElement()).size());
         assertElementNotPresent(Locator.button("Delete"));
