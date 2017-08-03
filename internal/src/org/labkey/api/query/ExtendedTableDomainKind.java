@@ -65,7 +65,11 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
             GWTDomain updatedDomain = new GWTDomain(existingDomain);
             updatedDomain.setFields(gwtDomain.getFields());
 
-            updateDomain(existingDomain, updatedDomain, container, user);
+            List<String> errors = updateDomain(existingDomain, updatedDomain, container, user);
+            if(errors.size() > 0)
+            {
+                throw new RuntimeException(errors.get(0));
+            }
         }
         else
         {

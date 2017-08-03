@@ -684,6 +684,7 @@ public class DomainUtil
             String msg = "Unrecognized type '" + from.getRangeURI() + "' for property '" + from.getName() + "'";
             if (errors == null)
                 throw new IllegalArgumentException(msg);
+            errors.add(msg);
             return;
         }
 
