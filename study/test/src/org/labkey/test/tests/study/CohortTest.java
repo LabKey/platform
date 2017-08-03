@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.Locators;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
@@ -40,9 +41,6 @@ public class CohortTest extends BaseWebDriverTest
 {
     private static final String PROJECT_NAME = "Cohort Test Project";
     private static final File COHORT_STUDY_ZIP = TestFileUtils.getSampleData("studies/CohortStudy.zip");
-    private static final String XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE = "//td[@id='bodypanel']/div[2]/div[1]/table";
-    private static final String XPATH_SPECIMEN_REPORT_TABLE_POSITIVE = "//td[@id='bodypanel']/div[2]/div[2]/table";
-    private static final String XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED = "//td[@id='bodypanel']/div[2]/div[3]/table";
     private static final String TABLE_NEGATIVE = "tableNegative";
     private static final String TABLE_POSITIVE = "tablePositive";
     private static final String TABLE_UNASSIGNED = "tableUnassigned";
@@ -87,6 +85,10 @@ public class CohortTest extends BaseWebDriverTest
     @LogMethod
     private void cohortTest()
     {
+        final Locator XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE = Locators.bodyPanel().append("/div[2]/div[1]/table");
+        final Locator XPATH_SPECIMEN_REPORT_TABLE_POSITIVE = Locators.bodyPanel().append("/div[2]/div[2]/table");
+        final Locator XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED = Locators.bodyPanel().append("/div[2]/div[3]/table");
+        
         waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
         DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
@@ -113,9 +115,9 @@ public class CohortTest extends BaseWebDriverTest
         assertTextPresent("Specimen Report: Type by Cohort");
         checkCheckbox(Locator.checkboxByName("viewPtidList"));
         clickButton("Refresh");
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE), TABLE_NEGATIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE), TABLE_POSITIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED), TABLE_UNASSIGNED);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE, TABLE_NEGATIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE, TABLE_POSITIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED, TABLE_UNASSIGNED);
         assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_2, INFECTED_3, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_3, INFECTED_4);
@@ -147,9 +149,9 @@ public class CohortTest extends BaseWebDriverTest
 
         selectOptionByText(Locator.name("cohortFilterType"), AdvancedCohortType.INITIAL.toString());
         clickButton("Refresh");
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE), TABLE_NEGATIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE), TABLE_POSITIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED), TABLE_UNASSIGNED);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE, TABLE_NEGATIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE, TABLE_POSITIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED, TABLE_UNASSIGNED);
         assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
@@ -174,9 +176,9 @@ public class CohortTest extends BaseWebDriverTest
 
         selectOptionByText(Locator.name("cohortFilterType"), AdvancedCohortType.CURRENT.toString());
         clickButton("Refresh");
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE), TABLE_NEGATIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE), TABLE_POSITIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED), TABLE_UNASSIGNED);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE, TABLE_NEGATIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE, TABLE_POSITIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED, TABLE_UNASSIGNED);
         assertTableCellContains(TABLE_NEGATIVE, 2, 0, "No data to show.");
         assertTableCellContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
         assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
@@ -219,8 +221,8 @@ public class CohortTest extends BaseWebDriverTest
         clickButtonByIndex("View", 2);
         checkCheckbox(Locator.checkboxByName("viewPtidList"));
         clickButton("Refresh");
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE), TABLE_NEGATIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE), TABLE_POSITIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE, TABLE_NEGATIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE, TABLE_POSITIVE);
         assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
         assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_3, UNASSIGNED_1);
@@ -302,9 +304,9 @@ public class CohortTest extends BaseWebDriverTest
         clickButton("Refresh");
 
         // Basic cohorts should be determined only by the most recent cohort assignment.
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE), TABLE_NEGATIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE), TABLE_POSITIVE);
-        assignId(Locator.xpath(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED), TABLE_UNASSIGNED);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_NEGATIVE, TABLE_NEGATIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_POSITIVE, TABLE_POSITIVE);
+        assignId(XPATH_SPECIMEN_REPORT_TABLE_UNASSIGNED, TABLE_UNASSIGNED);
         assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_4);
         assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_4);
