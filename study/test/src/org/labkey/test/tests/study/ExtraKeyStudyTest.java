@@ -32,6 +32,8 @@ import static org.junit.Assert.assertTrue;
 @Category({DailyC.class})
 public class ExtraKeyStudyTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     private static final File studyFolder = TestFileUtils.getSampleData("studies/ExtraKeyStudy");
 
     String[] datasets = {

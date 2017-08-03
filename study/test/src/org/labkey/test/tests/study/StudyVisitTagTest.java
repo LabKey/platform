@@ -34,6 +34,8 @@ import static org.junit.Assert.assertEquals;
 @Category({DailyC.class})
 public class StudyVisitTagTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     protected final String PARENT_FOLDER_STUDY = "VisitTagsStarter";
     protected final String STUDY_TEMPLATE = "StudyAxistTestTemplate";
     protected final String DATE_FOLDER_STUDY1 = "StudyAxisTest1";

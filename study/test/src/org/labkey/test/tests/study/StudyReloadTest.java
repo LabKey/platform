@@ -30,6 +30,8 @@ import static org.junit.Assert.assertEquals;
 @Category({DailyC.class})
 public class StudyReloadTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     @Override
     //disabled for 14569
     @LogMethod

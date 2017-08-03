@@ -42,6 +42,8 @@ import static org.junit.Assert.assertEquals;
 @Category({DailyC.class})
 public class StudyDataspaceTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     protected final String FOLDER_STUDY1 = "Study 1";
     protected final String FOLDER_STUDY2 = "Study 2";
     protected final String FOLDER_STUDY5 = "Study 5";

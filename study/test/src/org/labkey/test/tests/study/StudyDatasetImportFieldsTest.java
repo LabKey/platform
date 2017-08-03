@@ -24,6 +24,8 @@ import org.labkey.test.util.DataRegionTable;
 @Category(DailyC.class)
 public class StudyDatasetImportFieldsTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     private static final String PROJECT_NAME =  "Dataset Import Fields Test Project";
     private static final String STUDY_NAME = "Dataset Import Fields Test Study";
     private static final String FOLDER_NAME =  "Dataset Import Fields Test Folder";

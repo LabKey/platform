@@ -37,6 +37,8 @@ import static org.junit.Assert.*;
 @Category({DailyB.class, Assays.class})
 public class TargetStudyTest extends AbstractAssayTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     private static final String ASSAY_NAME = "Assay";
     private static final String STUDY1_LABEL = "AwesomeStudy1";
     private static final String STUDY2_LABEL = "AwesomeStudy2";
