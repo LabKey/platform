@@ -373,7 +373,7 @@ public abstract class EmailTemplate
                     // This may not be quite right, but seems OK given all of our current parameters
                     // We format just the value itself, not any surrounding text, but we can only safely do
                     // this for String values. That is the overwhelming majority of values. Other formatted
-                    // values (dates, values with inline format strings) are encoded properly below.
+                    // values (e.g., dates) are encoded properly below.
                     value = emailFormat.format((String) value, getContentType());
                 }
 
@@ -381,10 +381,10 @@ public abstract class EmailTemplate
                 {
                     try
                     {
+                        // Don't encode formattedValue; template might include HTML (e.g., specimen request notification)
                         Formatter formatter = new Formatter();
                         formatter.format(templateFormat, value);
-                        // Always encode formatted values in HTML, #30986.
-                        formattedValue = emailFormat.format(formatter.toString(), ContentType.Plain);
+                        formattedValue = formatter.toString();
                     }
                     catch (MissingFormatArgumentException e)
                     {
