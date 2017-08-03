@@ -16,6 +16,7 @@
 
 package org.labkey.api.attachments;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.view.ViewContext;
 
@@ -31,7 +32,7 @@ public interface AttachmentParent
     String getDownloadURL(ViewContext context, String name);
     SecurityPolicy getSecurityPolicy();
 
-    default AttachmentType getAttachmentType()
+    default @NotNull AttachmentType getAttachmentType()
     {
         return AttachmentType.UNKNOWN;
     }

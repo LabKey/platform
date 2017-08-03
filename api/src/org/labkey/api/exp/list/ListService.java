@@ -52,5 +52,4 @@ public interface ListService
     UserSchema getUserSchema(User user, Container container);
 
     void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception;
-
 }

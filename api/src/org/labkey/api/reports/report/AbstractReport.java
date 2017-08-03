@@ -310,6 +310,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return null;
     }
 
+    @NotNull
     @Override
     public AttachmentType getAttachmentType()
     {

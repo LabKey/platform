@@ -1,6 +1,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface AttachmentType
 {
@@ -27,5 +28,5 @@ public interface AttachmentType
     }
 
     @NotNull String getUniqueName();
-    @NotNull String getSelectSqlForIds();
+    @Nullable String getSelectSqlForIds();
 }
