@@ -18,6 +18,7 @@ package org.labkey.list;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
@@ -49,6 +50,7 @@ import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.VarcharListDomainKind;
+import org.labkey.list.view.ListItemType;
 import org.labkey.list.view.ListsWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 
@@ -98,6 +100,8 @@ public class ListModule extends DefaultModule
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
 
         RoleManager.registerPermission(new DesignListPermission());
+
+        AttachmentService.get().registerAttachmentType(ListItemType.get());
     }
 
     public void doStartup(ModuleContext moduleContext)

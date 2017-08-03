@@ -44,7 +44,6 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ResultSetView;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -102,7 +101,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
@@ -629,13 +627,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         //OK, make sure that the list really reflects what is in the file system.
         List<Attachment> attList = new ArrayList<>();
 
-        File[] fileList = parentDir.listFiles(new FileFilter()
-        {
-            public boolean accept(File file)
-            {
-                return !file.isDirectory() && !(file.getName().charAt(0) == '.') && !file.isHidden();
-            }
-        });
+        File[] fileList = parentDir.listFiles(file -> !file.isDirectory() && !(file.getName().charAt(0) == '.') && !file.isHidden());
 
         Set<String> attachmentNames = new CaseInsensitiveHashSet();
 
@@ -670,19 +662,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         new TableSelector(coreTables().getTableInfoDocuments(),
                     PageFlowUtil.set("Parent", "DocumentName", "LastIndexed"),
                     filter,
-                    new Sort("+Created")).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String parent = rs.getString(1);
-                String name = rs.getString(2);
-                java.util.Date last = rs.getTimestamp(3);
-                if (last != null && last.getTime() == SearchService.failDate.getTime())
-                    return;
-                ret.add(new Pair<>(parent, name));
-            }
-        });
+                    new Sort("+Created")).forEach(rs -> {
+                        String parent = rs.getString(1);
+                        String name = rs.getString(2);
+                        Date last = rs.getTimestamp(3);
+                        if (last != null && last.getTime() == SearchService.failDate.getTime())
+                            return;
+                        ret.add(new Pair<>(parent, name));
+                    });
 
         return ret;
     }
@@ -744,16 +731,21 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             {
                 if (AttachmentType.UNKNOWN != type)
                 {
-                    unionSql.append(union)
-                            .append("SELECT CAST('").append(type.getUniqueName()).append("' AS Text) AS Type, ID FROM (")
-                            .append(type.getSelectSqlForIds())
-                            .append(") AS a").append(alias).append("\n");
-                    union = "UNION\n";
-                    alias++;
+                    String selectSql = type.getSelectSqlForIds();
+
+                    if (null != selectSql)
+                    {
+                        unionSql.append(union)
+                                .append("SELECT CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type, ID FROM (")
+                                .append(selectSql)
+                                .append(") AS a").append(alias).append("\n");
+                        union = "UNION\n";
+                        alias++;
+                    }
                 }
             }
 
-            StringBuilder allSql = new StringBuilder("SELECT Type, COUNT(*) FROM core.Documents d LEFT JOIN\n(\n");
+            StringBuilder allSql = new StringBuilder("SELECT Type, COUNT(*) AS Count FROM core.Documents d LEFT JOIN\n(\n");
             allSql.append(unionSql);
             allSql.append(") p\nON p.ID = d.Parent\nGROUP BY Type\nORDER BY Type");
             String link = currentUrl.clone().deleteParameters().getLocalURIString() + "type=";
@@ -766,9 +758,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
         else
         {
-            StringBuilder oneTypeSql = new StringBuilder("SELECT d.Parent, d.DocumentName FROM core.Documents d INNER JOIN\n(");
+            StringBuilder oneTypeSql = new StringBuilder("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d INNER JOIN (");
             oneTypeSql.append(attachmentType.getSelectSqlForIds());
-            oneTypeSql.append(") p\nON p.ID = d.Parent");
+            oneTypeSql.append(") p\nON p.ID = d.Parent\nINNER JOIN core.Containers c ON c.EntityId = d.Container\nORDER BY Container, Parent, DocumentName");
 
             return getResultSetView(oneTypeSql, attachmentType.getUniqueName() + " Attachments", null);
         }

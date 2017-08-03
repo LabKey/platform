@@ -444,6 +444,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         }
     }
 
+    @NotNull
     @Override
     public AttachmentType getAttachmentType()
     {

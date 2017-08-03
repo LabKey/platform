@@ -723,6 +723,7 @@ public class Issue extends Entity implements Serializable, Cloneable
             return super.getContainerId();
         }
 
+        @NotNull
         @Override
         public AttachmentType getAttachmentType()
         {

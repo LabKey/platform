@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -105,6 +106,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
+    @NotNull
     @Override
     public AttachmentType getAttachmentType()
     {

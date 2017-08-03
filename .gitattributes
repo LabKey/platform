@@ -1240,6 +1240,7 @@ list/src/org/labkey/list/model/VarcharListDomainKind.java -text
 list/src/org/labkey/list/view/ListDefinitionForm.java -text
 list/src/org/labkey/list/view/ListImportServiceImpl.java -text
 list/src/org/labkey/list/view/ListItemAttachmentParent.java -text
+list/src/org/labkey/list/view/ListItemType.java -text
 list/src/org/labkey/list/view/ListQueryForm.java -text
 list/src/org/labkey/list/view/ListQueryView.java -text
 list/src/org/labkey/list/view/ListsWebPart.java -text
