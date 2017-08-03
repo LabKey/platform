@@ -40,6 +40,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -426,22 +427,18 @@ else
             </div>
             &nbsp;
             &nbsp;
-            <div id="moreMenuToggle" class="lk-menu-drop dropdown">
+            <div style="display: inline" class="dropdown">
                 <button data-toggle="dropdown" class="btn btn-default">More</button>
                 <ul class="dropdown-menu dropdown-menu-left">
-                    <%if (!getUser().isGuest()) {%>
-                        <li><a href="<%=IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId)%>">Email Preferences</a></li>
-                    <%}
-                    if (bean.getHasAdminPermissions() && bean.hasMoveDestinations()) {%>
-                        <li><a onclick="moveIssue()">Move</a></li>
-                    <%}%>
-                    <li><a href="<%=context.cloneActionURL().replaceParameter("_print", "1")%>">Print</a></li>
-                    <%
-                        for (NavTree headerLink : additionalHeaderLinks)
-                        {
-                            String isDisabled = headerLink.isDisabled() ? "disabled" : ""; %>
-                        <li class="<%=text(isDisabled)%>"><a href="<%=h(headerLink.getHref())%>"></a></li>
-                    <%}%>
+                <% NavTree navTree = new NavTree();
+                    navTree.addChild("Create Related Issue", relatedIssues.toString());
+                    if (!getUser().isGuest())
+                        navTree.addChild("Email Preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
+                    if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
+                        navTree.addChild("Move", "javascript:moveIssue()");
+                    navTree.addChild("Print", context.cloneActionURL().replaceParameter("_print", "1"));
+                    navTree.addChildren(additionalHeaderLinks);
+                    PopupMenuView.renderTree(navTree, out); %>
                 </ul>
             </div>
         </div>
@@ -451,20 +448,20 @@ else
                 <%= button("Search").iconCls("search").submit(true) %>
             </labkey:form>
         </div>
-        <div class="col-sm-3" style="margin-bottom: 5px">
+        <div class="col-sm-3" style="margin-bottom: 15px">
             <%if (bean.getHasUpdatePermissions()) {%>
             <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
-                <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
+                <a class="btn btn-primary" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
                     <%=h("new " + names.singularName.toLowerCase())%>
                 </a>
-                <div class="lk-menu-drop dropdown">
-                    <a class="btn btn-primary" data-toggle="dropdown">
-                        <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-left">
-                        <li><a onclick="<%=h(relatedIssues.toString())%>">Create Related Issue</a></li>
-                    </ul>
-                </div>
+                <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-caret-down"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-left">
+                    <% NavTree tree = new NavTree();
+                        tree.addChild("Create Related Issue", relatedIssues.toString());
+                        PopupMenuView.renderTree(tree, out); %>
+                </ul>
             </div>
             <%}%>
         </div>
