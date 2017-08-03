@@ -41,6 +41,7 @@ public class PipelineActionConfig
         disabled,
         toolbar,
         admin,
+        hidden
     }
 
     public PipelineActionConfig(String id, String state, String label)

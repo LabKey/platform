@@ -80,6 +80,8 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private String _analyzeURL;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
+    /** Set to true to allow this FileAnalysisTaskPipeline to be used with pipeline.TriggerConfigurations */
+    private boolean _allowForTriggerConfiguration;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -165,5 +167,15 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setDefaultDisplayState(PipelineActionConfig.displayState defaultDisplayState)
     {
         _defaultDisplayState = defaultDisplayState;
+    }
+
+    public boolean isAllowForTriggerConfiguration()
+    {
+        return _allowForTriggerConfiguration;
+    }
+
+    public void setAllowForTriggerConfiguration(boolean allowForTriggerConfiguration)
+    {
+        _allowForTriggerConfiguration = allowForTriggerConfiguration;
     }
 }

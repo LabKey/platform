@@ -67,6 +67,8 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     @Nullable
     PipelineActionConfig.displayState getDefaultDisplayState();
 
+    boolean isAllowForTriggerConfiguration();
+
     /**
      * Write out the job info as a tsv file similar to the R transformation runProperties format.
      * This is a info file for an entire job (or split job) that command line or script tasks may use
