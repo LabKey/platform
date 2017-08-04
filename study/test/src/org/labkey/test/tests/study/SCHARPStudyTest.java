@@ -33,6 +33,8 @@ import static org.junit.Assert.*;
 @Category({DailyA.class})
 public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     public static final String PROJECT_NAME="SCHARP Study Test";
 
     private String _labkeyRoot = TestFileUtils.getLabKeyRoot();
