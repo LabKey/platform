@@ -44,12 +44,12 @@ public class ListItemType implements AttachmentType
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
                 {
-                    sql.append("SELECT EntityId AS ID FROM list.").append(domain.getStorageTableName());
-                    sql.append("\nUNION\n");
+                    sql.append("\n    SELECT EntityId AS ID FROM list.").append(domain.getStorageTableName());
+                    sql.append("\n    UNION");
                 }
             });
         });
 
-        return sql.length() > 0 ? sql.delete(sql.length() - 7, sql.length()).toString() : null;
+        return sql.length() > 0 ? sql.delete(sql.length() - 9, sql.length()).toString() : null;
     }
 }

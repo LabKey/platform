@@ -213,37 +213,38 @@ public class AdminController extends SpringActionController
         Container root = ContainerManager.getRoot();
 
         // Configuration
-        AdminConsole.addLink(SettingsLinkType.Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
-        AdminConsole.addLink(SettingsLinkType.Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
+        AdminConsole.addLink(SettingsLinkType.Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
 
         // Diagnostics
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "attachments", new ActionURL(AttachmentsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "caches", new ActionURL(CachesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", getQueriesURL(null));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "caches", new ActionURL(CachesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
     }
 
     public AdminController()
