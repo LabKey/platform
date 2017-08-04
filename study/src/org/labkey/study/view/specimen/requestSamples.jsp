@@ -36,8 +36,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        // TODO: --Ext3-- This should be declared as part of the included views
-        dependencies.add("clientapi/ext3");
+        dependencies.add("Ext4");
     }
 %>
 <%
