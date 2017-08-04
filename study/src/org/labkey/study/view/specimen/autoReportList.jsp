@@ -48,7 +48,7 @@
     List<CohortImpl> cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
-    String optionLabelStyle = "text-align:right";
+    String optionLabelStyle = "text-align: left; padding: 5px 5px 0 5px;";
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 
     List<ParticipantCategoryImpl> categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
@@ -107,18 +107,23 @@ This folder does not contain a study.
             {
         %>
             <div class="<%=rowClass%>">
-                <div style="text-align:right"><span class="labkey-strong"><%= h(factory.getLabel())%></span>
-                    <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
-                    <%= button("View").submit(true) %>
-                </div>
+                <table style="width: 100%;">
+                    <tr>
+                        <td style="padding-right: 10px;"><%= h(factory.getLabel())%></td>
+                        <td style="text-align: right;">
+                            <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
+                            <%= button("View").submit(true) %>
+                        </td>
+                    </tr>
+                </table>
             </div>
         <%
             }
         %>
         <div class="<%=rowClass%>">
             <div>
-                <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>">
-                    <table>
+                <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
+                <table>
                 <%
                     if (showCohorts && factory.allowsCohortFilter())
                     {

@@ -618,9 +618,9 @@ public class JunitController extends SpringActionController
             else
                 out.print("<h2 class=ms-error>FAILURE</h2>");
 
-            out.print("<br><table><tr><td class=labkey-form-label>Tests</td><td align=right>");
+            out.print("<br><table><tr><td style=\"padding-right: 10px; font-weight: bold;\">Tests:</td><td align=right>");
             out.print(_runCount);
-            out.print("</td></tr><tr><td class=labkey-form-label>Failures</td><td align=right>");
+            out.print("</td></tr><tr><td style=\"padding-right: 10px; font-weight: bold;\">Failures:</td><td align=right>");
             out.print(_failureCount);
             out.print("</td></tr></table>");
 

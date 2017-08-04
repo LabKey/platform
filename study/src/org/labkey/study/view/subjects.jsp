@@ -829,7 +829,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 </script>
 
 <div style="">
-    <table id=<%= q(divId) %>>
+    <table id=<%= q(divId) %> class="lk-participants-list-table">
         <tr>
             <% if (bean.getWide()) { %>
             <td style="margin: 5px;" valign=top>
