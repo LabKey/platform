@@ -1410,7 +1410,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         if (this.allowableTypes == null)
         {
             var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
-                nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'];
+                nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
+                numericAndDateTypes = numericTypes.concat(['date','DATE']);
 
             if (this.field.altSelectionOnly)
                 this.allowableTypes = [];
@@ -1418,6 +1419,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 this.allowableTypes = numericTypes;
             else if (this.field.nonNumericOnly)
                 this.allowableTypes = nonNumericTypes;
+            else if (this.field.numericOrDateOnly)
+                this.allowableTypes = numericAndDateTypes;
             else
                 this.allowableTypes = numericTypes.concat(nonNumericTypes);
         }

@@ -43,7 +43,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Line',
                 imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
                 fields: [
-                    {name: 'x', label: 'X Axis', required: true, numericOnly: true},
+                    {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
                     {name: 'series', label: 'Series', required: true, nonNumericOnly: true}
                 ],
@@ -879,15 +879,26 @@ LABKEY.vis.GenericChartHelper = new function(){
             );
         }
         else if (renderType == 'line_plot' && chartConfig.measures.series) {
+            var seriesName = chartConfig.measures.series.name,
+                xName = chartConfig.measures.x.name,
+                isDate = isDateType(getMeasureType(chartConfig.measures.x));
             layers.push(
                 new LABKEY.vis.Layer({
                     geom: new LABKEY.vis.Geom.Path({
-                        size:chartConfig.geomOptions.lineWidth,
+                        size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
                         opacity:chartConfig.geomOptions.opacity
                     }),
                     aes: {
-                        pathColor: generateGroupingAcc(chartConfig.measures.series.name),
-                        group: generateGroupingAcc(chartConfig.measures.series.name)
+                        pathColor: generateGroupingAcc(seriesName),
+                        group: generateGroupingAcc(seriesName),
+                        sortFn: function(a, b) {
+                            // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
+                            // not currently included in this plot.
+                            if (isDate){
+                                return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
+                            }
+                            return a.getValue(xName) - b.getValue(xName);
+                        }
                     }
                 })
             );
@@ -1102,6 +1113,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var t = Ext4.isString(type) ? type.toLowerCase() : null;
         return t == 'int' || t == 'integer' || t == 'float' || t == 'double';
+    };
+
+    var isDateType = function(type)
+    {
+        var t = Ext4.isString(type) ? type.toLowerCase() : null;
+        return t == 'date';
     };
 
     var _getStudySubjectInfo = function()
