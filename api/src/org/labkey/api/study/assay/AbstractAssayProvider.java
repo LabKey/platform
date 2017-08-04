@@ -146,6 +146,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String ASSAY_SPECIMEN_MATCH_COLUMN_NAME = "AssayMatch";
 
     public static final String IMPORT_DATA_LINK_NAME = "Import Data";
+    public static final String MANAGE_ASSAY_DESIGN_LINK = "Manage assay design";
+    public static final String SET_DEFAULT_VALUES_LINK = "Set default values";
 
     public static final FieldKey BATCH_ROWID_FROM_RUN = FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, "RowId");
 
@@ -1380,7 +1382,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Container protocolContainer = protocol.getContainer();
         Container contextContainer = context.getContainer();
 
-        NavTree manageMenu = new NavTree("Manage assay design");
+        NavTree manageMenu = new NavTree(MANAGE_ASSAY_DESIGN_LINK);
 
         if (allowUpdate(context, protocol))
         {
@@ -1413,7 +1415,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = getDomains(protocol);
             if (!domainInfos.isEmpty())
             {
-                NavTree setDefaultsTree = new NavTree("Set default values");
+                NavTree setDefaultsTree = new NavTree(SET_DEFAULT_VALUES_LINK);
                 ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, contextContainer);
                 baseEditUrl.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
                 baseEditUrl.addParameter("providerName", getName());
