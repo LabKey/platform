@@ -255,6 +255,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
     }
 
     this.groupAes = layerAes.group ? layerAes.group : parentAes.group;
+    this.sortFnAes = layerAes.sortFn ? layerAes.sortFn : parentAes.sortFn;
     this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
     this.pathColorAes = layerAes.pathColor ? layerAes.pathColor : parentAes.pathColor;
     this.sizeScale = scales.size;

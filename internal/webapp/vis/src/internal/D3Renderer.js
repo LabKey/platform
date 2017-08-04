@@ -2436,6 +2436,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             renderableData = [{group: null, data: data}];
         }
 
+        if (geom.sortFnAes) {
+            for (var i = 0; i < renderableData.length; i++) {
+                var rows = renderableData[i].data;
+                rows.sort(geom.sortFnAes.getValue);
+            }
+        }
+
         layer.call(renderPaths, renderableData, geom);
 
         if (plot.clipRect) {
