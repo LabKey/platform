@@ -1,8 +1,8 @@
 package org.labkey.api.pipeline.trigger;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 
+import java.nio.file.Path;
 import java.util.Date;
 
 /**
@@ -51,4 +51,6 @@ public interface PipelineTriggerConfig
     void start();
 
     void stop();
+
+    boolean matches(Path directory, Path entry);
 }

@@ -70,6 +70,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _analyzeURL;
     private boolean _initialFileTypesFromTask;
     private List<FileType> _initialFileTypes;
+    private FileFilter _initialInputFileFilter;
     private Map<FileType, List<FileType>> _typeHierarchy;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
@@ -121,8 +122,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             _initialFileTypes = factory.getInputTypes();
         }
 
+        if (settings.getInitialInputFileFilter() != null)
+            _initialInputFileFilter = settings.getInitialInputFileFilter();
+
         // Misconfiguration: the user will never be able to start this pipeline
-        if (_initialFileTypes == null || _initialFileTypes.isEmpty())
+        if ((_initialFileTypes == null || _initialFileTypes.isEmpty()) && _initialInputFileFilter == null)
             throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
 
         // Convert any input extension hierarchy into file types.
@@ -144,14 +148,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
 
         if (settings.getDefaultDisplayState() != null)
-        {
             _defaultDisplayState = settings.getDefaultDisplayState();
-        }
 
         if (settings.isAllowForTriggerConfiguration())
-        {
             _allowForTriggerConfiguration = true;
-        }
 
         return this;
     }
@@ -185,7 +185,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     @NotNull
     public FileFilter getInitialFileTypeFilter()
     {
-        return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
+        if (_initialInputFileFilter != null)
+            return _initialInputFileFilter;
+        else
+            return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
     }
 
     @NotNull

@@ -126,6 +126,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         {
             validateRow(row);
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+            // TODO need to also handle the start/stop for a change to type or pipelineId
             startIfEnabled(container, newRow);
             return newRow;
         }

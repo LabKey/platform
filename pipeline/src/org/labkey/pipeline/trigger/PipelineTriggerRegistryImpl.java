@@ -28,9 +28,6 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
         if (REGISTERED_TYPES.containsKey(type.getName()))
             throw new IllegalStateException("A pipeline trigger type has already been registered for this name: " + type.getName());
         REGISTERED_TYPES.put(type.getName(), type);
-
-        // see if there are any existing configs for this PipelineTriggerType that need to be started
-        type.startAll();
     }
 
     @Override

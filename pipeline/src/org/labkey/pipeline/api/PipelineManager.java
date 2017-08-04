@@ -195,6 +195,8 @@ public class PipelineManager
         {
             CACHE.remove(getCacheKey(container, null));
         }
+
+        ContainerUtil.purgeTable(pipeline.getTableInfoTriggerConfigurations(), container, "Container");
     }
 
     static void setPipelineProperty(Container container, String name, String value)

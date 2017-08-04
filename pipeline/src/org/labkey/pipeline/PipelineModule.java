@@ -37,6 +37,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
+import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
@@ -309,6 +310,12 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                     locations.remove(engine.getConfig().getLocation());
                 }
                 new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), locations, null).performRequest();
+            }
+
+            // TODO: is this the correct spot to start all of the trigger configs?
+            for (PipelineTriggerType triggerType : PipelineTriggerRegistry.get().getTypes())
+            {
+                triggerType.startAll();
             }
         }
 
