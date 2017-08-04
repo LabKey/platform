@@ -56,6 +56,8 @@ import static org.junit.Assert.*;
 @Category({DailyB.class})
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
+    {setIsBootstrapWhitelisted(true);}
+
     private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");
     // Cohorts: defined in study archive
     private static final String[] COHORTS = {"Positive", "Negative"};
