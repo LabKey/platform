@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.util.FileType;
 
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,11 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
      * when initiating the pipeline.
      */
     private List<FileType> _initialInputExts;
+
+    /**
+     * Filter for files that match for the given pipeline.
+     */
+    private FileFilter _initialInputFileFilter;
 
     /**
      * Maps the extension for a specific input/output file type to the list of
@@ -137,6 +143,16 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     {
         _initialInputExts = new ArrayList<>();
         _initialInputExts.add(fileType);
+    }
+
+    public FileFilter getInitialInputFileFilter()
+    {
+        return _initialInputFileFilter;
+    }
+
+    public void setInitialInputFileFilter(FileFilter initialInputFileFilter)
+    {
+        _initialInputFileFilter = initialInputFileFilter;
     }
 
     public Map<FileType, List<FileType>> getFileExtHierarchy()
