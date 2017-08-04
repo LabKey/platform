@@ -1642,6 +1642,8 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("maxRows", getMaxRows());
         dataRegionJSON.put("totalRows", _totalRows);
         dataRegionJSON.put("rowCount", _rowCount);
+        dataRegionJSON.put("showPagination", getShowPagination());
+        dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
         dataRegionJSON.put("showRows", getShowRows().toString().toLowerCase());
         dataRegionJSON.put("showRecordSelectors", true);
         dataRegionJSON.put("showSelectMessage", _showSelectMessage);
@@ -3318,6 +3320,11 @@ public class DataRegion extends DisplayElement
     public boolean getShowPagination()
     {
         return _showPagination;
+    }
+
+    public boolean getShowPaginationCount()
+    {
+        return _showPaginationCount;
     }
 
     public void setShowPagination(boolean showPagination)
