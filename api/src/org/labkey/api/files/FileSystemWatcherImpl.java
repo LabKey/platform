@@ -93,7 +93,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     public void removeListener(Path directory, FileSystemDirectoryListener listener)
     {
-        throw new UnsupportedOperationException();
+        PathListenerManager plm = _listenerMap.get(directory);
+        if (plm != null)
+        {
+            plm.removeListener(listener);
+            LOG.debug("Removed a file listener on " + directory.toString());
+        }
     }
 
 
@@ -192,6 +197,15 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             _list.add(new ListenerContext(listener, events));
         }
 
+        private void removeListener(FileSystemDirectoryListener listener)
+        {
+            for (ListenerContext listenerContext : _list)
+            {
+                if (listenerContext.getListener().equals(listener))
+                    _list.remove(listenerContext);
+            }
+        }
+
         private void fireEvents(WatchEvent<Path> event, Path watchedPath)
         {
             Kind<Path> kind = event.kind();
@@ -244,6 +258,11 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         private void fireOverflow()
         {
             _listener.overflow();
+        }
+
+        public FileSystemDirectoryListener getListener()
+        {
+            return _listener;
         }
     }
 }
