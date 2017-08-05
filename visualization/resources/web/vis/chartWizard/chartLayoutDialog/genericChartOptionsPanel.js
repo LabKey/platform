@@ -11,10 +11,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     defaultLabelWidth: 95,
     pointType: 'outliers',
-    defaultOpacity: 50,
+    defaultOpacity: null,
     defaultChartLabel: null,
     defaultColorPaletteScale: 'ColorDiscrete',
-    defaultLineWidth: 1,
+    defaultLineWidth: null,
     userEditedLabel: false,
     userEditedSubtitle: false,
     userEditedFooter: false,
@@ -187,7 +187,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             width: 270,
             padding: '0 0 10px 0',
             layoutOptions: ['line', 'time', 'series'],
-            value: this.defaultLineWidth,
+            value: this.defaultLineWidth || 1,
             increment: 1,
             minValue: 1,
             maxValue: 10
@@ -268,7 +268,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             width: 270,
             padding: '0 0 10px 0',
             layoutOptions: 'opacity',
-            value: this.defaultOpacity,
+            value: this.defaultOpacity || 50,
             increment: 5,
             minValue: 10,
             maxValue: 100
