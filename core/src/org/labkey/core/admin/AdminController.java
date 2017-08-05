@@ -47,6 +47,7 @@ import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
@@ -56,7 +57,6 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -1096,7 +1096,7 @@ public class AdminController extends SpringActionController
 
     static void deleteExistingLogo(Container c, User user) throws SQLException
     {
-        ContainerParent parent = new ContainerParent(c);
+        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
         for (Attachment attachment : attachments)
         {
@@ -1124,7 +1124,7 @@ public class AdminController extends SpringActionController
 
     static void deleteExistingFavicon(Container c, User user) throws SQLException
     {
-        ContainerParent parent = new ContainerParent(c);
+        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME, user);
         AttachmentCache.clearFavIconCache();
     }
@@ -1144,7 +1144,7 @@ public class AdminController extends SpringActionController
 
     static void deleteExistingCustomStylesheet(Container c, User user) throws SQLException
     {
-        ContainerParent parent = new ContainerParent(c);
+        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME, user);
 
         // This custom stylesheet is still cached in CoreController, but look & feel revision checking should ensure

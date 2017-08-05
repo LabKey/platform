@@ -47,12 +47,12 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
@@ -597,7 +597,7 @@ public class CoreController extends SpringActionController
 
         if (null == content || !dependsOn.equals(content.dependencies))
         {
-            AttachmentParent parent = new ContainerParent(c);
+            AttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
             Attachment cssAttachment = AttachmentCache.lookupCustomStylesheetAttachment(parent);
 
             if (null == cssAttachment)

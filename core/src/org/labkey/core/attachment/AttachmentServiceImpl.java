@@ -58,6 +58,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.AuthenticationLogoAttachmentParent;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -1692,12 +1693,11 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         private void testFileAttachmentFiles(File file1, File file2, User user) throws IOException, SQLException
         {
-
             AttachmentFile aFile1 = new FileAttachmentFile(file1);
             AttachmentFile aFile2 = new FileAttachmentFile(file2);
 
             AttachmentService service = AttachmentService.get();
-            AttachmentParent root = ContainerManager.RootContainer.get();
+            AttachmentParent root = AuthenticationLogoAttachmentParent.get();
 			service.deleteAttachment(root, file1.getName(), user);
             service.deleteAttachment(root, file2.getName(), user);
 

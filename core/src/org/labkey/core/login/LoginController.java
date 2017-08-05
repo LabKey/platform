@@ -43,31 +43,14 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.PasswordExpiration;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.TokenAuthenticationManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -2578,7 +2561,7 @@ public class LoginController extends SpringActionController
                 throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
 
             AttachmentFile aFile = new SpringAttachmentFile(file, prefix + providerName);
-            AttachmentService.get().addAttachments(ContainerManager.RootContainer.get(), Collections.singletonList(aFile), getUser());
+            AttachmentService.get().addAttachments(AuthenticationLogoAttachmentParent.get(), Collections.singletonList(aFile), getUser());
 
             return true;
         }
@@ -2592,7 +2575,7 @@ public class LoginController extends SpringActionController
                 return false;
 
             for (String logoName : deletedLogos)
-                AttachmentService.get().deleteAttachment(ContainerManager.RootContainer.get(), logoName, getUser());
+                AttachmentService.get().deleteAttachment(AuthenticationLogoAttachmentParent.get(), logoName, getUser());
 
             return true;
         }

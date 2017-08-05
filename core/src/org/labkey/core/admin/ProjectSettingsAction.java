@@ -25,6 +25,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -364,7 +365,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             throw new ServletException("No file extension on the uploaded image");
         }
 
-        ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
+        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         // Get rid of any existing logo
         AdminController.deleteExistingLogo(c, user);
 
@@ -385,7 +386,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         AdminController.deleteExistingFavicon(c, user);
 
-        ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
+        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.FAVICON_FILE_NAME);
         AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
         AttachmentCache.clearFavIconCache();
@@ -397,7 +398,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         AdminController.deleteExistingCustomStylesheet(c, user);
 
-        ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
+        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.STYLESHEET_FILE_NAME);
         AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
 
@@ -549,8 +550,8 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         private LookAndFeelResourcesBean(Container c)
         {
             customLogo = AttachmentCache.lookupLogoAttachment(c);
-            customFavIcon = AttachmentCache.lookupFavIconAttachment(new ContainerManager.ContainerParent(c));
-            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new ContainerManager.ContainerParent(c));
+            customFavIcon = AttachmentCache.lookupFavIconAttachment(new LookAndFeelResourceAttachmentParent(c));
+            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new LookAndFeelResourceAttachmentParent(c));
         }
     }
 
