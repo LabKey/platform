@@ -38,15 +38,13 @@ public class CrosstabDataRegion extends DataRegion
 {
     private static final Logger _log = Logger.getLogger(CrosstabDataRegion.class);
     private CrosstabSettings _settings = null;
-    private CrosstabTableInfo _table = null;
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
     private int _numMemberMeasures = 0;
 
-    public CrosstabDataRegion(CrosstabTableInfo table, int numRowAxisCols, int numMeasures, int numMemberMeasures)
+    public CrosstabDataRegion(CrosstabSettings settings, int numRowAxisCols, int numMeasures, int numMemberMeasures)
     {
-        _settings = table.getSettings();
-        _table = table;
+        _settings = settings;
         _numMeasures = numMeasures;
         _numMemberMeasures = numMemberMeasures;
         _numRowAxisCols = numRowAxisCols;
@@ -114,7 +112,7 @@ public class CrosstabDataRegion extends DataRegion
 
         //call the base class to finish rendering the headers
         super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
-    } //renderGridHeaders()
+    }
 
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)
     {
@@ -133,14 +131,12 @@ public class CrosstabDataRegion extends DataRegion
             ret.append("<a href=\"");
             ret.append(url);
             ret.append("\">");
-            ret.append(caption);
+            ret.append(PageFlowUtil.filter(caption));
             ret.append("</a>");
             return ret.toString();
         }
-        else
-        {
-            return PageFlowUtil.filter(caption);
-        }
+
+        return PageFlowUtil.filter(caption);
     }
 
     protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out) throws IOException
@@ -150,7 +146,7 @@ public class CrosstabDataRegion extends DataRegion
 
     protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out, int groupHeight, boolean alternate) throws IOException
     {
-        if(groupWidth <= 0)
+        if (groupWidth <= 0)
             return;
 
         out.write("<td align=\"center\" colspan=\"");
@@ -163,8 +159,7 @@ public class CrosstabDataRegion extends DataRegion
         if (isShowBorders())
             out.write(" labkey-show-borders");
         out.write("\">\n");
-        out.write(caption == null ? "" : caption);
+        out.write(caption == null ? "" : PageFlowUtil.filter(caption));
         out.write("</td>\n");
     }
-
-} //CrosstabDatRegion
+}

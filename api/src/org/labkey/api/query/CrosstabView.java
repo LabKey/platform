@@ -91,22 +91,22 @@ public class CrosstabView extends QueryView
 
     protected DataRegion createDataRegion()
     {
-        if(getTable() instanceof CrosstabTableInfo)
+        if (getTable() instanceof CrosstabTableInfo)
         {
             CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
             //get the display columns
             //this will also adjust _numRowAxisCols and _numMeasures based on
             //the selected display columns
-            List<DisplayColumn> displayCols = getDisplayColumns();
+            getDisplayColumns();
 
-            CrosstabDataRegion rgn = new CrosstabDataRegion(table, _numRowAxisCols, _numMeasures, _numMemberMeasures);
+            CrosstabDataRegion rgn = new CrosstabDataRegion(table.getSettings(), _numRowAxisCols, _numMeasures, _numMemberMeasures);
             configureDataRegion(rgn);
 
             return rgn;
         }
-        else
-            return super.createDataRegion();
+
+        return super.createDataRegion();
     }
 
     public List<DisplayColumn> getDisplayColumns()
@@ -116,7 +116,7 @@ public class CrosstabView extends QueryView
 
         List<FieldKey> selectedFieldKeys = null;
 
-        // First check if something has explictly overridden the columns
+        // First check if something has explicitly overridden the columns
         if (_columns != null)
         {
             selectedFieldKeys = _columns;
@@ -219,7 +219,7 @@ public class CrosstabView extends QueryView
                 sort.appendSortColumn(sortField);
         view.getRenderContext().setBaseSort(sort);
 
-        if(null != view.getRenderContext().getBaseFilter())
+        if (null != view.getRenderContext().getBaseFilter())
         {
             //separate the filter clauses that apply to aggregate columns
             //from those applying to the row dimensions and hand the agg
@@ -227,19 +227,19 @@ public class CrosstabView extends QueryView
             SimpleFilter aggFilter = new SimpleFilter();
             SimpleFilter rowDimFilter = new SimpleFilter();
             assert view.getRenderContext().getBaseFilter() instanceof SimpleFilter;
-            for(SimpleFilter.FilterClause clause : ((SimpleFilter)(view.getRenderContext().getBaseFilter())).getClauses())
+            for (SimpleFilter.FilterClause clause : ((SimpleFilter)(view.getRenderContext().getBaseFilter())).getClauses())
             {
                 boolean aggClause = false;
-                for(String colName : clause.getColumnNames())
+                for (String colName : clause.getColumnNames())
                     aggClause |= colName.startsWith(AggregateColumnInfo.NAME_PREFIX);
 
-                if(aggClause)
+                if (aggClause)
                     aggFilter.addClause(clause);
                 else
                     rowDimFilter.addClause(clause);
             }
 
-            if(aggFilter.getClauses().size() > 0)
+            if (aggFilter.getClauses().size() > 0)
                 table.setAggregateFilter(aggFilter);
             view.getRenderContext().setBaseFilter(rowDimFilter);
         }

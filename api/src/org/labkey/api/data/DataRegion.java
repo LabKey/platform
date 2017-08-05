@@ -646,6 +646,7 @@ public class DataRegion extends DisplayElement
         return getSettings() != null ? getSettings().getShowRows() : ShowRows.PAGINATED;
     }
 
+    @Nullable
     public String getSelectionKey()
     {
         if (getSettings() != null && getSettings().getSelectionKey() != null)
