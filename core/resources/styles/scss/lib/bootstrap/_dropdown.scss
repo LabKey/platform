@@ -76,9 +76,6 @@
   }
 
   & > .disabled > a {
-    // https://stackoverflow.com/questions/10276133/how-to-disable-html-links
-    pointer-events: none;
-
     &,
     &:hover,
     &:focus {
@@ -93,5 +90,13 @@
       @include reset-filter;
       cursor: $cursor-disabled;
     }
+  }
+}
+
+.dropdown-menu,
+.dropdown-layer-menu {
+  & > .disabled > a {
+    // https://stackoverflow.com/questions/10276133/how-to-disable-html-links
+    pointer-events: none;
   }
 }
