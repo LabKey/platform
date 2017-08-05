@@ -143,7 +143,9 @@
           <className>org.labkey.api.data.JsonPrettyPrintDisplayColumnFactory</className>
         </displayColumnFactory>
       </column>
-      <column columnName="PipelineId"/>
+      <column columnName="PipelineId">
+          <columnTitle>Pipeline Task</columnTitle>
+      </column>
       <column columnName="LastChecked">
         <formatString>DateTime</formatString>
         <shownInInsertView>false</shownInInsertView>
