@@ -1012,12 +1012,12 @@ public class ContainerManager
     }
 
 
-    // Used for attaching system resources (favorite icon, logo) to the root container
-    public static class ContainerParent implements AttachmentParent
+    // Abstract base class used for attaching system resources (favorite icons, logos, stylesheets, sso auth logos) to folders and projects
+    public static abstract class ContainerParent implements AttachmentParent
     {
-        Container _c;
+        private final Container _c;
 
-        public ContainerParent(Container c)
+        protected ContainerParent(Container c)
         {
             _c = c;
         }
@@ -1047,26 +1047,6 @@ public class ContainerManager
         public SecurityPolicy getSecurityPolicy()
         {
             return null;
-        }
-    }
-
-
-    // Used for attaching system resources (favorite icon, logo) to the root container
-    public static class RootContainer extends ContainerParent
-    {
-        private RootContainer(Container c)
-        {
-            super(c);
-        }
-
-        public static RootContainer get()
-        {
-            Container root = getRoot();
-
-            if (null == root)
-                return null;
-            else
-                return new RootContainer(root);
         }
     }
 

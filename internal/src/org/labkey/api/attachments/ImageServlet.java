@@ -17,7 +17,7 @@
 package org.labkey.api.attachments;
 
 import org.labkey.api.data.CacheableWriter;
-import org.labkey.api.data.ContainerManager.RootContainer;
+import org.labkey.api.security.AuthenticationLogoAttachmentParent;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.util.ExceptionUtil;
@@ -103,7 +103,7 @@ public class ImageServlet extends HttpServlet
             writer = CacheableWriter.noDocument;
 
             // rootContainer will be null if the database isn't bootstrapped yet
-            RootContainer rootContainer = RootContainer.get();
+            AuthenticationLogoAttachmentParent rootContainer = AuthenticationLogoAttachmentParent.get();
             if (rootContainer != null)
             {
                 Attachment attachment = AttachmentCache.lookupAttachment(rootContainer, name);

@@ -19,7 +19,6 @@ package org.labkey.api.attachments;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager.ContainerParent;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,7 +86,7 @@ public class AttachmentCache
     @Nullable
     private static Attachment getLogoAttachment(Container c, String prefix)
     {
-        for (Attachment attachment : AttachmentService.get().getAttachments(new ContainerParent(c)))
+        for (Attachment attachment : AttachmentService.get().getAttachments(new LookAndFeelResourceAttachmentParent(c)))
         {
             if (attachment.getName().startsWith(prefix))
             {

@@ -18,10 +18,10 @@ package org.labkey.api.settings;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NotFoundException;
@@ -66,7 +66,7 @@ public enum TemplateResourceHandler
 
                 if (c != null)
                 {
-                    ContainerParent parent = new ContainerParent(c);
+                    LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
                     Attachment attachment = AttachmentCache.lookupLogoAttachment(c);
                     if (attachment != null)
                     {
@@ -107,7 +107,7 @@ public enum TemplateResourceHandler
 
                 if (c != null)
                 {
-                    ContainerParent parent = new ContainerParent(c);
+                    LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
                     Attachment attachment = AttachmentCache.lookupMobileLogoAttachment(c);
                     if (attachment != null)
                     {
@@ -144,7 +144,7 @@ public enum TemplateResourceHandler
 
                 if (c != null)
                 {
-                    ContainerParent parent = new ContainerParent(c);
+                    LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
                     Attachment attachment = AttachmentCache.lookupFavIconAttachment(parent);
                     if (attachment != null)
                     {

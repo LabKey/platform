@@ -1362,7 +1362,7 @@ public class AuthenticationManager
         {
             try
             {
-                Attachment logo = AttachmentService.get().getAttachment(ContainerManager.RootContainer.get(), prefix + _providerName);
+                Attachment logo = AttachmentService.get().getAttachment(AuthenticationLogoAttachmentParent.get(), prefix + _providerName);
 
                 if (null != logo)
                 {
