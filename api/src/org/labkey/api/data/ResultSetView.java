@@ -68,16 +68,18 @@ public class ResultSetView extends WebPartView
 
                     out.print("<td>");
 
-                    if (null != _link && _linkColumn == i && shouldLink(_rs))
+                    boolean createLink = null != _link && _linkColumn == i && null != val && shouldLink(_rs);
+
+                    if (createLink)
                     {
                         out.print("<a href=\"");
-                        out.print(null == val ? "&nbsp;" : PageFlowUtil.filter(_link + val.toString()));
+                        out.print(PageFlowUtil.filter(_link + val.toString()));
                         out.print("\">");
                     }
 
                     out.print(null == val ? "&nbsp;" : PageFlowUtil.filter(val));
 
-                    if (null != _link && _linkColumn == i)
+                    if (createLink)
                         out.print("</a>");
 
                     out.print("</td>");
