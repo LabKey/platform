@@ -2018,6 +2018,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         availablePublishOptions.push(['Remove Protected Columns',
             'Exclude all dataset, list, and specimen columns that have been tagged as protected',
             'removeProtectedColumns']);
+        availablePublishOptions.push(['Remove PHI Protected Columns',
+            'Exclude all dataset, list, and specimen columns that are tagged at a certain PHI level or higher (see below)',
+            'removePhiColumns']);
         availablePublishOptions.push(['Mask Clinic Names',
             'Replace clinic labels with a generic label ("Clinic")',
             'maskClinic']);
@@ -2043,7 +2046,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             viewConfig: {forceFit: true},
             columns: [
                 selectionModel,
-                {header: 'Name', width: 220, sortable: true, dataIndex: 'name', name: 'name'},
+                {header: 'Name', width: 220, sortable: true, dataIndex: 'name', name: 'name', renderer: columnWrap},
                 {header: 'Description', width: 380, sortable: true, dataIndex: 'description', name: 'description', renderer: columnWrap}
             ],
             loadMask: {msg:"Loading, please wait..."},
@@ -2055,7 +2058,27 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             tbarCfg: [{hidden:true}]
         });
 
+        this.publishPhiRadioGroup = new Ext.form.RadioGroup({xtype: 'radioGroup', columns: 1, hideLabel: false,
+            items: [
+                {boxLabel: 'Limited PHI', inputValue: 'Limited', name: 'exportPhiLevel', checked: true},
+                {boxLabel: 'Full PHI', inputValue: 'PHI', name: 'exportPhiLevel'},
+                {boxLabel: 'Restricted', inputValue: 'Restricted', name: 'exportPhiLevel'}
+            ]
+        });
+
+        var phiPanel = new Ext.form.FormPanel({
+            width: 100, height: 150,
+            border: true,
+            name : 'PHI Options',
+            layout: 'auto',
+            layoutConfig: {
+                align: 'left'
+            },
+            items: [new Ext.form.Label({html: '<strong>PHI Level For Publishing:</strong>'}), this.publishPhiRadioGroup]
+        });
+
         items.push(grid);
+        items.push(phiPanel);
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
@@ -2064,9 +2087,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 var publishOptions = {};
                 publishOptions['maskClinic'] = this.settings.maskClinic;
                 publishOptions['removeProtectedColumns'] = this.settings.removeProtectedColumns;
+                publishOptions['removePhiColumns'] = this.settings.removePhiColumns;
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
-                if (this.settings.maskClinic && this.settings.removeProtectedColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
+                if (this.settings.maskClinic && this.settings.removeProtectedColumns && this.settings.removePhiColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
                     this.gridSelectAll(grid);
                 else
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
@@ -2145,6 +2169,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     params[this.selectedPublishOptions[i].get('option')] = true;
             params.includeSpecimens = this.includeSpecimensCheckBox.getValue();
             params.specimenRefresh = eval(this.specimenRefreshRadioGroup.getValue().inputValue);
+            params.exportPhiLevel = this.publishPhiRadioGroup.getValue().inputValue;
         }
 
         var hiddenFields = [];

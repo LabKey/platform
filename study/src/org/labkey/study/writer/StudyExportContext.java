@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.study.model.DatasetDefinition;
@@ -40,6 +41,8 @@ public class StudyExportContext extends AbstractContext
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
     private final boolean _removeProtected;
+    private final boolean _removePhi;
+    private final PHI _phiLevel;
     private final boolean _maskClinic;
     private final ParticipantMapper _participantMapper;
     private Set<Integer> _visitIds = null;
@@ -48,19 +51,21 @@ public class StudyExportContext extends AbstractContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, false, new ParticipantMapper(study, false, false), false, logger);
+        this(study, user, c, dataTypes, false, false, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
     }
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, false, new ParticipantMapper(study, false, false), false, logger);
+        this(study, user, c, dataTypes, false, false, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
         setDatasets(initDatasets);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, boolean removePhi, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), dataTypes, logger, null);
         _removeProtected = removeProtected;
+        _removePhi = removePhi;
+        _phiLevel = phiLevel;
         _participantMapper = participantMapper;
         _maskClinic = maskClinic;
 
@@ -68,9 +73,9 @@ public class StudyExportContext extends AbstractContext
             initializeDatasets(study);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, boolean removePhi, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, removeProtected, participantMapper, maskClinic, logger);
+        this(study, user, c, dataTypes, removeProtected, removePhi, phiLevel, participantMapper, maskClinic, logger);
         setDatasets(initDatasets);
     }
 
@@ -78,6 +83,18 @@ public class StudyExportContext extends AbstractContext
     public boolean isRemoveProtected()
     {
         return _removeProtected;
+    }
+
+    @Override
+    public boolean isRemovePhi()
+    {
+        return _removePhi;
+    }
+
+    @Override
+    public PHI getPhiLevel()
+    {
+        return _phiLevel;
     }
 
     @Override

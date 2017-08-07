@@ -22,17 +22,13 @@ import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -59,10 +55,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: davebradlee
@@ -85,9 +79,6 @@ public class TableWriter
         if (null == schemas || schemas.size() == 0)
         {
             // TBD
-//            // If no form, get all user queries in container
-//            for (QueryDefinition queryDef : queryService.getQueryDefs(user, c))
-//                queries.add(Pair.<QueryDefinition, CustomView>of(queryDef, null));
         }
         else
         {
@@ -182,60 +173,6 @@ public class TableWriter
         }
     }
 
-    private Collection<ColumnInfo> getColumns(TableInfo tinfo, CustomView view)
-    {
-        List<FieldKey> fields = view == null ? tinfo.getDefaultVisibleColumns() : view.getColumns();
-        Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, fields);
-        return Collections.unmodifiableCollection(colMap.values());
-    }
-
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, Collection<ColumnInfo> columns, boolean metaData, boolean removeProtected)
-    {
-        Set<ColumnInfo> pks = new HashSet<>(tinfo.getPkColumns());
-
-        List<ColumnInfo> ret = new ArrayList<>(columns.size());
-        for (ColumnInfo column : columns)
-        {
-            /*
-                We export:
-
-                - All user-editable columns (meta data & values)
-                - All primary keys, including the values of auto-increment key columns (meta data & values)
-                - Other key columns (meta data only)
-             */
-            if ((column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField())))
-            {
-                // Exclude columns marked as Protected, if removeProtected is true (except key columns marked as protected, those must be exported)
-                if (removeProtected && column.isProtected() && !pks.contains(column) && !column.isKeyField())
-                    continue;
-
-                ret.add(column);
-
-                // If the column is MV enabled, export the data in the indicator column as well
-                if (!metaData && column.isMvEnabled())
-                    ret.add(tinfo.getColumn(column.getMvColumnName()));
-            }
-        }
-
-        return ret;
-    }
-
-
-    // We just want the underlying value, not the lookup
-    private static class ExportDataColumn extends DataColumn
-    {
-        private ExportDataColumn(ColumnInfo col)
-        {
-            super(col);
-        }
-
-        @Override
-        public Object getDisplayValue(RenderContext ctx)
-        {
-            return getValue(ctx);
-        }
-    }
-
     private static class TableTableInfoWriter extends TableInfoWriter
     {
         private final TableInfo _tableInfo;
@@ -268,22 +205,11 @@ public class TableWriter
                 if (column.isAutoIncrement())
                     columnXml.setIsAutoInc(true);
             }
-            else
-            {
-//                PropertyType propType = _properties.get(columnName).getPropertyDescriptor().getPropertyType();
-
-//                if (propType == PropertyType.ATTACHMENT)
-//                    columnXml.setDatatype(propType.getXmlName());
-            }
         }
 
         @Override  // TODO: Update this to match Dataset version?
         protected String getPropertyURI(ColumnInfo column)
         {
-            //String propertyURI = column.getPropertyURI();
-            //if (propertyURI != null && !propertyURI.startsWith(_domain.getTypeURI()) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
-            //    return propertyURI;
-
             return null;
         }
     }

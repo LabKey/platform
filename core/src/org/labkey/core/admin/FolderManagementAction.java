@@ -37,6 +37,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
@@ -460,7 +461,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         FolderWriterImpl writer = new FolderWriterImpl();
         FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
-                form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isShiftDates(),
+                form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isRemovePhi(), form.getExportPhiLevel(), form.isShiftDates(),
                 form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
 
         switch(form.getLocation())
@@ -590,7 +591,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             // the source template folder so that the zip file can be passed to the pipeline processes.
             FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                     getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
-                    false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                    false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
             FolderWriterImpl writer = new FolderWriterImpl();
             String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
             try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
@@ -784,6 +785,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private String exportType;
         private boolean includeSubfolders;
         private boolean removeProtected;
+        private boolean removePhi;
+        private PHI exportPhiLevel;
         private boolean shiftDates;
         private boolean alternateIds;
         private boolean maskClinic;
@@ -1028,6 +1031,26 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setRemoveProtected(boolean removeProtected)
         {
             this.removeProtected = removeProtected;
+        }
+
+        public boolean isRemovePhi()
+        {
+            return removePhi;
+        }
+
+        public void setRemovePhi(boolean removePhi)
+        {
+            this.removePhi = removePhi;
+        }
+
+        public PHI getExportPhiLevel()
+        {
+            return exportPhiLevel;
+        }
+
+        public void setExportPhiLevel(PHI exportPhiLevel)
+        {
+            this.exportPhiLevel = exportPhiLevel;
         }
 
         public boolean isIncludeSubfolders()

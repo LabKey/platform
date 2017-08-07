@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -123,7 +124,9 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 }
 
                 // don't export values for columns set as Protected in the XML metadata override
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn))
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn)
+                // also don't export values for columns set at or above the PHI export level
+                        || shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
                 {
                     col = "NULL AS " + ci.getSelectName();
                 }
@@ -254,6 +257,17 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         if (isRemoveProtected && !column.isKeyColumn())
         {
             if (queryColumn != null && queryColumn.isProtected())
+                return true;
+        }
+
+        return false;
+    }
+
+    private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, SpecimenColumn column, ColumnInfo queryColumn)
+    {
+        if (isRemovePhi && !column.isKeyColumn())
+        {
+            if ((queryColumn != null) && !(queryColumn.getPHI().isExportLevelAllowed(exportPhiLevel)))
                 return true;
         }
 

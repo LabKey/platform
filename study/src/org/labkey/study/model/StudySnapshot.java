@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PHI;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryService;
@@ -234,6 +235,8 @@ public class StudySnapshot
         private List<String> folderObjects = new ArrayList<>();
         /* Publish Options */
         private boolean removeProtectedColumns;
+        private boolean removePhiColumns;
+        private PHI phiLevel;
         private boolean shiftDates;
         private boolean useAlternateParticipantIds;
         private boolean maskClinic;
@@ -406,6 +409,8 @@ public class StudySnapshot
         private void loadPublishOptions(StudyExportContext ctx)
         {
             removeProtectedColumns = ctx.isRemoveProtected();
+            removePhiColumns = ctx.isRemovePhi();
+            phiLevel = ctx.getPhiLevel();
             shiftDates = ctx.isShiftDates();
             useAlternateParticipantIds = ctx.isAlternateIds();
             maskClinic = ctx.isMaskClinic();
@@ -424,6 +429,16 @@ public class StudySnapshot
         public boolean isRemoveProtectedColumns()
         {
             return removeProtectedColumns;
+        }
+
+        public boolean isRemovePhiColumns()
+        {
+            return removePhiColumns;
+        }
+
+        public PHI getPhiLevel()
+        {
+            return phiLevel;
         }
 
         public boolean isShiftDates()

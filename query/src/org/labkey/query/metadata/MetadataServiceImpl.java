@@ -16,7 +16,6 @@
 
 package org.labkey.query.metadata;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -41,6 +40,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
+import org.labkey.data.xml.PhiType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -116,6 +116,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setRecommendedVariable(columnInfo.isRecommendedVariable());
             gwtColumnInfo.setDefaultScale(columnInfo.getDefaultScale().name());
             gwtColumnInfo.setProtected(columnInfo.isProtected());
+            gwtColumnInfo.setPHI(columnInfo.getPHI().name());
             gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
@@ -245,7 +246,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         }
                         if (column.isSetPhi())
                         {
-                            gwtColumnInfo.setPhi(column.getPhi().toString());
+                            gwtColumnInfo.setPHI(column.getPhi().toString());
                         }
                         if (column.isSetExcludeFromShifting())
                         {
@@ -543,6 +544,15 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             if (gwtColumnInfo.isProtected() != rawColumnInfo.isProtected())
             {
                 xmlColumn.setProtected(gwtColumnInfo.isProtected());
+            }
+            else if (xmlColumn.isSetProtected())
+            {
+                xmlColumn.unsetProtected();
+            }
+
+            if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
+            {
+                xmlColumn.setPhi(PhiType.Enum.forString(gwtColumnInfo.getPHI()));
             }
             else if (xmlColumn.isSetProtected())
             {

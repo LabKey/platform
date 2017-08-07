@@ -25,6 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.IndexInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
@@ -93,7 +94,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 continue;
 
             TableInfo ti = schema.getTable(def.getName());
-            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemoveProtected());
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemoveProtected(), ctx.isRemovePhi(), ctx.getPhiLevel());
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
@@ -210,13 +211,14 @@ public class DatasetDataWriter implements InternalStudyWriter
         return sql;
     }
 
-    private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removeProtected, boolean isKeyProperty)
+    private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removeProtected, boolean removePhi, PHI exportPhiLevel, boolean isKeyProperty)
     {
         return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DatasetDefinition.getQCStateURI()))) &&
-                !(column.getFk() instanceof ContainerForeignKey) && (!removeProtected || !column.isProtected() || isKeyProperty);
+                !(column.getFk() instanceof ContainerForeignKey) && (!removeProtected || !column.isProtected() || isKeyProperty)
+                && (!removePhi || (column.getPHI().isExportLevelAllowed(exportPhiLevel)) || isKeyProperty);
     }
 
-    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, boolean removeProtected)
+    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, boolean removeProtected, boolean removePhi, PHI exportPhiLevel)
     {
         // tinfo can be null if the dataset is a Placeholder
         if (tinfo == null)
@@ -275,7 +277,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         for (ColumnInfo in : inColumns)
         {
             boolean isKeyProperty = in.getName().equals(def.getKeyPropertyName()) || (in.isUserEditable() && (in.equals(ptidColumn) || in.equals(sequenceColumn) || in.getName().toLowerCase().equals("date")));
-            if (shouldExport(in, metaData, removeProtected, isKeyProperty) || (metaData && isKeyProperty))
+            if (shouldExport(in, metaData, removeProtected, removePhi, exportPhiLevel, isKeyProperty) || (metaData && isKeyProperty))
             {
                 if ("visit".equalsIgnoreCase(in.getName()) && !in.equals(sequenceColumn))
                     continue;
@@ -501,30 +503,30 @@ public class DatasetDataWriter implements InternalStudyWriter
         {
             // true cases
             ColumnInfo ci = new ColumnInfo("test");
-            assertTrue(shouldExport(ci, true, true, true));
-            assertTrue(shouldExport(ci, true, true, false));
-            assertTrue(shouldExport(ci, true, false, true));
-            assertTrue(shouldExport(ci, false, true, true));
-            assertTrue(shouldExport(ci, true, false, false));
-            assertTrue(shouldExport(ci, false, true, false));
-            assertTrue(shouldExport(ci, false, false, true));
-            assertTrue(shouldExport(ci, false, false, false));
+            assertTrue(shouldExport(ci, true, true, false, PHI.NotPHI, true));
+            assertTrue(shouldExport(ci, true, true, false, PHI.NotPHI, false));
+            assertTrue(shouldExport(ci, true, false, false, PHI.NotPHI, true));
+            assertTrue(shouldExport(ci, false, true, false, PHI.NotPHI, true));
+            assertTrue(shouldExport(ci, true, false, false, PHI.NotPHI, false));
+            assertTrue(shouldExport(ci, false, true, false, PHI.NotPHI, false));
+            assertTrue(shouldExport(ci, false, false, false, PHI.NotPHI, true));
+            assertTrue(shouldExport(ci, false, false, false, PHI.NotPHI, false));
 
             ci.setProtected(true);
-            assertTrue(shouldExport(ci, true, true, true));
+            assertTrue(shouldExport(ci, true, true, false, PHI.NotPHI, true));
 
             // false cases
             ci = new ColumnInfo("test");
             ci.setUserEditable(false);
-            assertFalse(shouldExport(ci, true, false, false));
+            assertFalse(shouldExport(ci, true, false, false, PHI.NotPHI, false));
 
             ci = new ColumnInfo("test");
             ci.setFk(new ContainerForeignKey(null, null));
-            assertFalse(shouldExport(ci, true, false, false));
+            assertFalse(shouldExport(ci, true, false, false, PHI.NotPHI, false));
 
             ci = new ColumnInfo("test");
             ci.setProtected(true);
-            assertFalse(shouldExport(ci, true, true, false));
+            assertFalse(shouldExport(ci, true, true, false, PHI.NotPHI, false));
         }
     }
 }

@@ -30,6 +30,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
@@ -290,8 +291,14 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (optionsId != null)
             snapshot = StudyManager.getInstance().getRefreshStudySnapshot(optionsId);
 
-        boolean  removeProtected = (snapshot != null) && snapshot.getSnapshotSettings().isRemoveProtectedColumns();
-        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, removeProtected);
+        boolean removeProtected = (snapshot != null) && snapshot.getSnapshotSettings().isRemoveProtectedColumns();
+        boolean removePhi = (snapshot != null) && snapshot.getSnapshotSettings().isRemovePhiColumns();
+        PHI snapshotPhiLevel;
+        if (snapshot != null)
+            snapshotPhiLevel = snapshot.getSnapshotSettings().getPhiLevel();
+        else
+            snapshotPhiLevel = PHI.NotPHI;
+        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, removeProtected, removePhi, snapshotPhiLevel);
 
         if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())
         {

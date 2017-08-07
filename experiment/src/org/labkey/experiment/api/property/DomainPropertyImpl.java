@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PHI;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -42,7 +43,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -184,9 +184,9 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isProtected();
     }
 
-    public PhiType getPhi()
+    public PHI getPHI()
     {
-        return _pd.getPhi();
+        return _pd.getPHI();
     }
 
     @Override
@@ -357,11 +357,11 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public void setPhi(PhiType phi)
+    public void setPhi(PHI phi)
     {
-        if (!isEdited() && getPhi() == phi)
+        if (!isEdited() && getPHI() == phi)
             return;
-        edit().setPhi(phi);
+        edit().setPHI(phi);
     }
 
     @Override
@@ -715,7 +715,7 @@ public class DomainPropertyImpl implements DomainProperty
         setFacetingBehavior(propSrc.getFacetingBehavior());
         setImportAliasSet(propSrc.getImportAliasSet());
         setProtected(propSrc.isProtected());
-        setPhi(propSrc.getPhi());
+        setPhi(propSrc.getPHI());
         setURL(propSrc.getURL());
         setHidden(propSrc.isHidden());
         setShownInDetailsView(propSrc.isShownInDetailsView());
@@ -994,7 +994,7 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setLookupQuery("lkQuery");
             pd.setFacetingBehaviorType(FacetingBehaviorType.AUTOMATIC);
             pd.setProtected(false);
-            pd.setPhi(PhiType.NotPHI);
+            pd.setPHI(PHI.NotPHI);
             pd.setExcludeFromShifting(false);
             return pd;
         }

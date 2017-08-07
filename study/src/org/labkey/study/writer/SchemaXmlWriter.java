@@ -18,6 +18,7 @@ package org.labkey.study.writer;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.IndexInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -90,7 +91,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
             else
             {
                 TableInfo ti = schema.getTable(def.getName());
-                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, ctx.isRemoveProtected());
+                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, ctx.isRemoveProtected(), ctx.isRemovePhi(), ctx.getPhiLevel());
                 w.writeTable(tableXml);
             }
         }
@@ -123,9 +124,9 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
         private final DatasetDefinition _def;
         private final Collection<IndexInfo> _indices;
 
-        private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, boolean removeProtected)
+        private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, boolean removeProtected, boolean removePhi, PHI exportPhiLevel)
         {
-            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, removeProtected));
+            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, removeProtected, removePhi, exportPhiLevel));
             _def = def;
             _indices = DatasetDataWriter.getIndicesToExport(ti);
         }

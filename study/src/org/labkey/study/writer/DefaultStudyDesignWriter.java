@@ -116,6 +116,8 @@ public abstract class DefaultStudyDesignWriter
                 continue;
             if (ctx.isRemoveProtected() && col.isProtected())
                 continue;
+            if (ctx.isRemovePhi() && !(col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())))
+                continue;
 
             columns.add(col);
         }
@@ -147,7 +149,8 @@ public abstract class DefaultStudyDesignWriter
                 {
                     if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
                     {
-                        if (!ctx.isRemoveProtected() || !col.isProtected())
+                        if (!ctx.isRemoveProtected() || !col.isProtected()
+                                && (!ctx.isRemovePhi() || col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())))
                             columns.add(col);
                     }
                 }
