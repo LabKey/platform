@@ -16,10 +16,12 @@
 
 package org.labkey.filecontent;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
@@ -215,5 +217,11 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     public SecurityPolicy getSecurityPolicy()
     {
         return null;
+    }
+
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
     }
 }

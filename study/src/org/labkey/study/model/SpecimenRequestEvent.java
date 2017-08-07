@@ -16,7 +16,9 @@
 
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.view.ViewContext;
@@ -159,5 +161,11 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
     public SecurityPolicy getSecurityPolicy()
     {
         return null;
+    }
+
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
     }
 }

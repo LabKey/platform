@@ -724,50 +724,71 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         if (null == attachmentType)
         {
-            StringBuilder unionSql = new StringBuilder();
+            // The first query lists all the attachment types and the attachment counts for each. A separate select from
+            // core.Documents for each type is needed to associate the Type values with the associated rows.
+            SQLFragment unionSql = new SQLFragment();
             String union = "";
-            int alias = 0;
 
             for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
             {
                 if (AttachmentType.UNKNOWN != type)
                 {
-                    String selectSql = type.getSelectSqlForIds();
-
-                    if (null != selectSql)
-                    {
-                        unionSql.append(union)
-                                .append("SELECT CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type, ID FROM (")
-                                .append(selectSql)
-                                .append(") AS a").append(alias).append("\n");
-                        union = "UNION\n";
-                        alias++;
-                    }
+                    unionSql.append(union)
+                            // Adding unique column RowId ensures we get the proper count
+                            .append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
+                            .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
+                            .append(" WHERE ");
+                    type.addWhereSql(unionSql, "d.Parent", "d.DocumentName");
+                    unionSql.append("\n");
+                    union = "UNION\n";
                 }
             }
 
-            StringBuilder allSql = new StringBuilder("SELECT Type, COUNT(*) AS Count FROM core.Documents d LEFT JOIN\n(\n");
+            SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
             allSql.append(unionSql);
-            allSql.append(") p\nON p.ID = d.Parent\nGROUP BY Type\nORDER BY Type");
+            allSql.append(") u\nGROUP BY Type\nORDER BY Type");
             String link = currentUrl.clone().deleteParameters().getLocalURIString() + "type=";
 
-            StringBuilder unknownSql = new StringBuilder("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d LEFT JOIN\n(\n");
-            unknownSql.append(unionSql);
-            unknownSql.append(") p\nON p.ID = d.Parent\nINNER JOIN core.Containers c ON c.EntityId = d.Container\nWHERE p.ID IS NULL\nORDER BY Container, Parent, DocumentName");
+            // The second query shows all attachments that we can't associate with a type. We just need to assemble a big
+            // WHERE NOT clause that ORs the conditions from every registered type.
+            SQLFragment whereSql = new SQLFragment();
+            String sep = "";
+
+            for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
+            {
+                if (AttachmentType.UNKNOWN != type)
+                {
+                    whereSql.append(sep);
+                    sep = " OR";
+                    whereSql.append("\n(");
+                    type.addWhereSql(whereSql, "d.Parent", "d.DocumentName");
+                    whereSql.append(")");
+                }
+            }
+
+            SQLFragment unknownSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n");
+            unknownSql.append("INNER JOIN core.Containers c ON c.EntityId = d.Container\n");
+            unknownSql.append("WHERE NOT (");
+            unknownSql.append(whereSql);
+            unknownSql.append(")\n");
+            unknownSql.append("ORDER BY Container, Parent, DocumentName");
 
             return new VBox(getResultSetView(allSql, "Attachment Types and Counts", link), getResultSetView(unknownSql, "Unknown Attachments", null));
         }
         else
         {
-            StringBuilder oneTypeSql = new StringBuilder("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d INNER JOIN (");
-            oneTypeSql.append(attachmentType.getSelectSqlForIds());
-            oneTypeSql.append(") p\nON p.ID = d.Parent\nINNER JOIN core.Containers c ON c.EntityId = d.Container\nORDER BY Container, Parent, DocumentName");
+            // This query lists all the documents associated with a single type.
+            SQLFragment oneTypeSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n" +
+                "INNER JOIN core.Containers c ON c.EntityId = d.Container\n" +
+                "WHERE ");
+            attachmentType.addWhereSql(oneTypeSql, "d.Parent", "d.DocumentName");
+            oneTypeSql.append("\nORDER BY Container, Parent, DocumentName");
 
             return getResultSetView(oneTypeSql, attachmentType.getUniqueName() + " Attachments", null);
         }
     }
 
-    private HttpView getResultSetView(StringBuilder sql, String title, @Nullable String link)
+    private HttpView getResultSetView(SQLFragment sql, String title, @Nullable String link)
     {
         SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
         ResultSet rs = selector.getResultSet();

@@ -76,6 +76,7 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
@@ -871,7 +872,7 @@ public class UserController extends SpringActionController
                 throw new IllegalArgumentException("Unable to download user attachment");
             }
 
-            AttachmentService.get().download(getViewContext().getResponse(), user, form.getName());
+            AttachmentService.get().download(getViewContext().getResponse(), new AvatarThumbnailProvider(user), form.getName());
             return null;
         }
 
@@ -1144,7 +1145,7 @@ public class UserController extends SpringActionController
                 // check if there is a request to delete the existing avatar
                 if (_deletedAttachments != null && UserAvatarDisplayColumnFactory.FIELD_KEY.equalsIgnoreCase(_deletedAttachments.getValue().toString()))
                 {
-                    svc.deleteThumbnail(user, imageType);
+                    svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
                 }
 
                 // add any new avatars by using the ThumbnailService to generate and attach to the User's entityid
@@ -1153,7 +1154,7 @@ public class UserController extends SpringActionController
                 {
                     try (InputStream is = file.openInputStream())
                     {
-                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType, true);
+                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(new AvatarThumbnailProvider(user), is, file.getContentType(), imageType, true);
                         svc.replaceThumbnail(wrapper, imageType, null, getViewContext());
                     }
                 }

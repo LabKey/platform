@@ -2,6 +2,7 @@ package org.labkey.issue.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.issues.IssuesSchema;
 
 public class IssueCommentType implements AttachmentType
@@ -24,8 +25,8 @@ public class IssueCommentType implements AttachmentType
     }
 
     @Override
-    public @NotNull String getSelectSqlForIds()
+    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
-        return "SELECT EntityId AS ID FROM " + IssuesSchema.getInstance().getTableInfoComments().getSelectName();
+        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "comments").append(")");
     }
 }

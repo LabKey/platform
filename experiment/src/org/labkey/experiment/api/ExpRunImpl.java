@@ -18,8 +18,10 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -878,5 +880,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public SecurityPolicy getSecurityPolicy()
     {
         return null;
+    }
+
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
     }
 }

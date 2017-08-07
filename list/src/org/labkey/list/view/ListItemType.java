@@ -1,9 +1,9 @@
 package org.labkey.list.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -31,9 +31,9 @@ public class ListItemType implements AttachmentType
     }
 
     @Override
-    public @Nullable String getSelectSqlForIds()
+    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
-        StringBuilder sql = new StringBuilder();
+        StringBuilder unionSql = new StringBuilder();
         ListService svc = ListService.get();
 
         assert null != svc;
@@ -44,12 +44,17 @@ public class ListItemType implements AttachmentType
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
                 {
-                    sql.append("\n    SELECT EntityId AS ID FROM list.").append(domain.getStorageTableName());
-                    sql.append("\n    UNION");
+                    unionSql.append("\n    SELECT EntityId AS ID FROM list.").append(domain.getStorageTableName());
+                    unionSql.append("\n    UNION");
                 }
             });
         });
 
-        return sql.length() > 0 ? sql.delete(sql.length() - 9, sql.length()).toString() : null;
+        if (unionSql.length() > 0)
+        {
+            sql.append(parentColumn).append(" IN (");
+            sql.append(unionSql.delete(unionSql.length() - 9, unionSql.length()));
+            sql.append(")");
+        }
     }
 }

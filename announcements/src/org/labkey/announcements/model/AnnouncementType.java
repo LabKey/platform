@@ -3,6 +3,7 @@ package org.labkey.announcements.model;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.data.SQLFragment;
 
 public class AnnouncementType implements AttachmentType
 {
@@ -24,8 +25,8 @@ public class AnnouncementType implements AttachmentType
     }
 
     @Override
-    public @NotNull String getSelectSqlForIds()
+    public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
-        return "SELECT EntityId AS ID FROM " + CommSchema.getInstance().getTableInfoAnnouncements().getSelectName();
+        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CommSchema.getInstance().getTableInfoAnnouncements(), "ann").append(")");
     }
 }
