@@ -397,10 +397,10 @@ public abstract class SearchTest extends StudyTest
         _fileBrowserHelper.uploadFile(htmlFile);
         File MLfile = TestFileUtils.getSampleData("mzxml/test_nocompression.mzXML");
         _fileBrowserHelper.uploadFile(MLfile);
-        File pdfFile = TestFileUtils.getSampleData("fileTypes/docx_sample.docx");
-        _fileBrowserHelper.uploadFile(pdfFile);
-        File docFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
+        File docFile = TestFileUtils.getSampleData("fileTypes/docx_sample.docx");
         _fileBrowserHelper.uploadFile(docFile);
+        File pdfFile = TestFileUtils.getSampleData("fileTypes/pdf_sample.pdf");
+        _fileBrowserHelper.uploadFile(pdfFile);
 
         _searchHelper.enqueueSearchItem("antidisestablishmentarianism", true, Locator.linkWithText(htmlFile.getName()));
         _searchHelper.enqueueSearchItem("ThermoFinnigan", true, Locator.linkWithText(MLfile.getName()));
