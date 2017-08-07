@@ -138,4 +138,9 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
         return SecurityPolicyManager.getPolicy(this);
     }
 
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
+    }
 }

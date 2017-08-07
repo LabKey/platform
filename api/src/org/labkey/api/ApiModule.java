@@ -25,6 +25,7 @@ import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.AuthenticationLogoType;
+import org.labkey.api.security.AvatarType;
 import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
@@ -42,6 +43,7 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(ReportType.get());
         AttachmentService.get().registerAttachmentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
+        AttachmentService.get().registerAttachmentType(AvatarType.get());
     }
 
     @NotNull

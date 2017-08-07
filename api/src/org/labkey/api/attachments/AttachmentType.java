@@ -1,7 +1,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.SQLFragment;
 
 public interface AttachmentType
 {
@@ -14,19 +14,13 @@ public interface AttachmentType
             return "UnknownAttachmentType";
         }
 
-        @NotNull
         @Override
-        public String getSelectSqlForIds()
+        public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
         {
-            throw new IllegalStateException();
         }
     };
 
-    static AttachmentType getUnknown()
-    {
-        return UNKNOWN;
-    }
-
     @NotNull String getUniqueName();
-    @Nullable String getSelectSqlForIds();
+
+    void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn);
 }

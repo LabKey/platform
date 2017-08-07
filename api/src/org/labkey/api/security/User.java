@@ -24,7 +24,6 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -37,14 +36,10 @@ import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -58,7 +53,7 @@ import java.util.Set;
  * Represents a user in the LabKey system, typically tied to a specific individual, but see {@link GuestUser} for a
  * catch-all implementaton representing anonymous users.
  */
-public class User extends UserPrincipal implements Serializable, Cloneable, ThumbnailProvider
+public class User extends UserPrincipal implements Serializable, Cloneable
 {
     private String _firstName = null;
     private String _lastName = null;
@@ -464,7 +459,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
         if (_avatarUrl == null && getGUID() != null)
         {
             ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
-            Attachment attachment = AttachmentService.get().getAttachment(this, imageType.getFilename());
+            Attachment attachment = AttachmentService.get().getAttachment(new AvatarThumbnailProvider(this), imageType.getFilename());
             if (attachment != null)
             {
                 _avatarUrl = PageFlowUtil.urlProvider(UserUrls.class).getUserAttachmentDownloadURL(this, imageType.getFilename());
@@ -476,7 +471,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
 
     public String getAvatarThumbnailPath()
     {
-        return getAvatarUrl() != null ? getAvatarUrl().toString() : getStaticThumbnailPath();
+        return getAvatarUrl() != null ? getAvatarUrl().toString() : AvatarThumbnailProvider.THUMBNAIL_PATH;
     }
 
     public static JSONObject getUserProps(User user, @Nullable Container container)
@@ -504,58 +499,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
 
         return props;
     }
-
-    @Override
-    public String getContainerId()
-    {
-        // Note: a container is required for the AttachmentService
-        return ContainerManager.getRoot().getId();
-    }
-
-    @Override
-    public String getThumbnailCacheKey()
-    {
-        return "User: " + getEntityId();
-    }
-
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public Thumbnail generateThumbnail(@Nullable ViewContext context)
-    {
-        return null;
-    }
-
-    @Override
-    public String getStaticThumbnailPath()
-    {
-        return AppProps.getInstance().getContextPath() + "/_images/defaultavatar.png";
-    }
-
-    @Override
-    public boolean supportsDynamicThumbnail()
-    {
-        return false;
-    }
-
-    @Override
-    public void afterThumbnailDelete(ThumbnailService.ImageType imageType)
-    {}
-
-    @Override
-    public void afterThumbnailSave(ThumbnailService.ImageType imageType, DataViewProvider.EditInfo.ThumbnailType thumbnailType)
-    {}
 
     public Date getExpirationDate()
     {

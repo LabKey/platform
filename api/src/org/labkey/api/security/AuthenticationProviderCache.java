@@ -68,7 +68,7 @@ public class AuthenticationProviderCache
             List<AuthenticationProvider> allProviders = AuthenticationManager.getAllProviders();
             Set<String> activeNames = AuthenticationManager.getActiveProviderNamesFromProperties();
 
-            // For now, auth providers are always handled in order of registration: LDAP, OpenSSO, DB. TODO: Provide admin with mechanism for ordering
+            // For now, auth providers are always handled in order of registration. TODO: Provide admin with mechanism for ordering
             for (AuthenticationProvider provider : allProviders)
             {
                 addToMap(_allMap, provider);

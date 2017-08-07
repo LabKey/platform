@@ -30,10 +30,10 @@ import java.io.IOException;
  */
 public interface AttachmentDirectory extends AttachmentParent
 {
-    public String getLabel();
-    public String getName(); 
-    public File getFileSystemDirectory() throws MissingRootDirectoryException;
+    String getLabel();
+    String getName();
+    File getFileSystemDirectory() throws MissingRootDirectoryException;
 
-    public void addAttachment(User user, AttachmentFile attachment) throws IOException;
-    public void deleteAttachment(User user, @Nullable String name);
+    void addAttachment(User user, AttachmentFile attachment) throws IOException;
+    void deleteAttachment(User user, @Nullable String name);
 }

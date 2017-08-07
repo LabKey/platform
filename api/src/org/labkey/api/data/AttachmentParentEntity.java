@@ -16,7 +16,9 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.view.ViewContext;
 
@@ -37,5 +39,11 @@ public class AttachmentParentEntity extends Entity implements AttachmentParent
     public SecurityPolicy getSecurityPolicy()
     {
         return null;
+    }
+
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
     }
 }
