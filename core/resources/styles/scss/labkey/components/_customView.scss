@@ -34,10 +34,8 @@
   cursor: move;
 }
 
-/** Unfortunately, gtheme doesn't include some of the x-tool-* styles, so I'm redefining them here. */
-
 .labkey-tool {
-  background: url('#{$ext3-images-dir}/default/panel/tool-sprites.gif');
+  background: url('#{$internal-images-dir}/tool-sprites.gif');
   width: 15px;
   height: 15px;
 }

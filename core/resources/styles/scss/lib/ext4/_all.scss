@@ -1,3 +1,8 @@
+$ext4-resources-dir: '#{$api-webapp-dir}/ext-4.2.1/resources';
+$ext4-images-gray-dir: '#{$ext4-resources-dir}/themes/images/gray';
+$ext4-images-classic-dir: '#{$ext4-resources-dir}/ext-theme-classic-sandbox/images';
+$ext4-images-dir: $ext4-images-gray-dir;
+
 @mixin border-radius($radius) {
   -webkit-border-radius: $radius;
   -moz-border-radius: $radius;

@@ -6,10 +6,6 @@
 //
 $api-webapp-dir: '../..';
 $internal-webapp-dir: '../..';
-$ext3-images-dir: '#{$api-webapp-dir}/ext-3.4.1/resources/images';
-$ext4-images-gray-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/themes/images/gray';
-$ext4-images-classic-dir: '#{$api-webapp-dir}/ext-4.2.1/resources/ext-theme-classic-sandbox/images';
-$ext4-images-dir: $ext4-images-gray-dir;
 $api-images-dir: '#{$api-webapp-dir}/_images';
 $internal-images-dir: '#{$internal-webapp-dir}/_images';
 
@@ -33,7 +29,6 @@ $lk-panel-base-color: #DFE8F6 !default;
 $lk-text-color: $black !default;
 $lk-grid-color: #E7EFF4 !default;
 $lk-primary-bg-color: #F8F8F8 !default;
-$lk-secondary-bg-color: $white !default;
 $lk-border-title-color: #676767 !default;
 $lk-webpart-color: #E0E6EA !default;
 
@@ -237,12 +232,13 @@ $lk-text-link-color-hover: $black !default;
 //== Navigation
 //
 $lk-page-nav-bg-color: $lk-secondary-brand-color !default;
+$lk-page-nav-bg-color-active: $white !default;
+// TODO: This should try to declare a shared color tone or use an adjusted brand color
+$lk-page-nav-bg-color-inactive: #73b6e0 !default;
 $lk-page-nav-color: $white !default;
+$lk-page-nav-color-active: $lk-brand-color !default;
 $lk-page-nav-font-weight: bold !default;
 $lk-page-nav-height: 36px !default;
-$lk-page-nav-bg-color-active: $white !default;
-$lk-page-nav-color-inactive: #73b6e0 !default;
-$lk-page-nav-color-active: $lk-brand-color !default;
 
 //== Pills
 //

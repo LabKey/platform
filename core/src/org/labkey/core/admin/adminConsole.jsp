@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -55,10 +54,11 @@
     String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
 %>
 <style type="text/css">
+    body { overflow-y: scroll; }
     .lk-admin-section { display: none; }
 </style>
-
-<div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+<div class="row">
+<div class="col-sm-12 col-md-3">
     <div id="lk-admin-nav" class="list-group">
         <a href="#info" class="list-group-item">Server Information</a>
         <a href="#links" class="list-group-item">Admin Console Links</a>
@@ -66,8 +66,7 @@
         <a href="#users" class="list-group-item">Active Users</a>
     </div>
 </div>
-
-<div class="col-xs-12 col-sm-12 col-md-9 col-lg-9">
+<div class="col-sm-12 col-md-9">
     <labkey:panel id="info" className="lk-admin-section">
         <h3 class="page-header">Server Information</h3>
         <h4>Core Database Configuration</h4>
@@ -101,7 +100,6 @@
             <tr class="labkey-row"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
         </table>
     </labkey:panel>
-
     <labkey:panel id="links" className="lk-admin-section">
         <h3 class="page-header">Admin Console Links</h3>
         <%
@@ -122,7 +120,6 @@
             }
         } %>
     </labkey:panel>
-
     <labkey:panel id="modules" className="lk-admin-section">
         <h3 class="page-header">Module Information</h3>
         <%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%>
@@ -210,7 +207,6 @@
                 }%>
         </table>
     </labkey:panel>
-
     <labkey:panel id="users" className="lk-admin-section">
         <h3 class="page-header">Active Users in the Last Hour</h3>
         <table class="labkey-data-region-legacy labkey-show-borders">
@@ -227,7 +223,7 @@
         </table>
     </labkey:panel>
 </div>
-
+</div>
 <script type="text/javascript">
     +function($) {
 
