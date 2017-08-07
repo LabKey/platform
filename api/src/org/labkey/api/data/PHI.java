@@ -50,7 +50,14 @@ public enum PHI
     public int getRank() {
         return rank;
     }
-    public boolean isLevelAllowed(PHI level) { return this.rank <= level.getRank(); }
+    public boolean isLevelAllowed(PHI level)
+    {
+        return this.rank <= level.getRank();
+    }
+    public boolean isExportLevelAllowed(PHI level)
+    {
+        return this.rank < level.getRank();
+    }
 
     @Nullable
     public Class<? extends Permission> getRequiredPermission()

@@ -17,6 +17,7 @@ package org.labkey.api.admin;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.data.PHI;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
@@ -36,6 +37,8 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     String getFormat();
     boolean isIncludeSubfolders();
     boolean isRemoveProtected();
+    boolean isRemovePhi();
+    PHI getPhiLevel();
     boolean isShiftDates();
     boolean isAlternateIds();
     boolean isMaskClinic();

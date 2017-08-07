@@ -20,12 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.PHI;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PhiType;
 
 import java.util.List;
 import java.util.Set;
@@ -52,7 +52,7 @@ public interface DomainProperty extends ImportAliasable
     boolean isRecommendedVariable();
     DefaultScaleType getDefaultScale();
     boolean isProtected();
-    PhiType getPhi();
+    PHI getPHI();
     boolean isExcludeFromShifting();
     boolean isMvEnabledForDrop();
 
@@ -79,7 +79,7 @@ public interface DomainProperty extends ImportAliasable
     void setRecommendedVariable(boolean isRecommendedVariable);
     void setDefaultScale(DefaultScaleType defaultScale);
     void setProtected(boolean isProtected);
-    void setPhi(PhiType phi);
+    void setPhi(PHI phi);
     void setExcludeFromShifting(boolean isExcludeFromShifting);
     void setScale(int scale);
 

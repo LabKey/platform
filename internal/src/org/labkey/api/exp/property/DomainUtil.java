@@ -29,6 +29,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -42,7 +43,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -248,7 +248,7 @@ public class DomainUtil
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
         gwtProp.setProtected(prop.isProtected());
-        gwtProp.setPhi(prop.getPhi().name());
+        gwtProp.setPHI(prop.getPHI().name());
         gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
@@ -753,9 +753,9 @@ public class DomainUtil
         if (from.isProtected())
             to.setProtected(from.isProtected());
 
-        if (from.getPhi() != null)
+        if (from.getPHI() != null)
         {
-            PhiType type = PhiType.valueOf(from.getPhi());
+            PHI type = PHI.valueOf(from.getPHI());
             to.setPhi(type);
         }
 

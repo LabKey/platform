@@ -19,13 +19,13 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -161,6 +161,18 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public boolean isRemoveProtected()
     {
         return false;
+    }
+
+    @Override
+    public boolean isRemovePhi()
+    {
+        return false;
+    }
+
+    @Override
+    public PHI getPhiLevel()
+    {
+        return PHI.NotPHI;
     }
 
     @Override

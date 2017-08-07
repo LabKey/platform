@@ -21,7 +21,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
@@ -80,7 +79,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected Boolean isProtected = false;
-    protected PhiType phi = PhiType.NotPHI;
+    protected PHI phi = PHI.NotPHI;
     protected Boolean isExcludeFromShifting = false;
 
     protected FieldKey crosstabColumnDimension;
@@ -691,12 +690,12 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         this.isProtected = isProtected;
     }
 
-    public void setPhi(PhiType type)
+    public void setPHI(PHI phi)
     {
-        phi = type;
+        this.phi = phi;
     }
 
-    public PhiType getPhi()
+    public PHI getPHI()
     {
         return phi;
     }

@@ -24,7 +24,7 @@ import org.labkey.api.gwt.client.ui.PropertyPane;
 
 public class PhiItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
-    private HelpPopup _helpPopup = new HelpPopup("Default Value Types", "");
+    private HelpPopup _helpPopup = new HelpPopup("PHI Level", "Protected Health Information level for this field.");
     private FlexTable _phiTable;
     private InlineHTML _phiLabel;
 
@@ -43,7 +43,7 @@ public class PhiItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
                 _phiTypes.addItem(t.getLabel(), t.name());
         }
 
-        String phi = field.getPhi();
+        String phi = field.getPHI();
 
         for (int i = 0; i < _phiTypes.getItemCount(); i++)
         {
@@ -61,7 +61,7 @@ public class PhiItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
     public int addToTable(FlexTable flexTable, int row)
     {
         FlowPanel labelPanel = new FlowPanel();
-        _phiLabel = new InlineHTML("Default&nbsp;Type");
+        _phiLabel = new InlineHTML("PHI&nbsp;Level");
         labelPanel.add(_phiLabel);
         labelPanel.add(_helpPopup);
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
@@ -80,9 +80,9 @@ public class PhiItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
     {
         String type = _phiTypes.getValue(_phiTypes.getSelectedIndex());
 
-        boolean changed = !type.equals(field.getPhi());
+        boolean changed = !type.equals(field.getPHI());
         if (changed)
-            field.setPhi(type);
+            field.setPHI(type);
         return changed;
     }
 

@@ -43,7 +43,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PhiType;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
@@ -1551,7 +1550,7 @@ public class OntologyManager
         // modified
         sql.add(pd.getFacetingBehaviorType());
         sql.add(pd.isProtected());
-        sql.add(pd.getPhi());
+        sql.add(pd.getPHI());
         sql.add(pd.isExcludeFromShifting());
         // WHERE
         sql.add(pd.getPropertyURI());
@@ -2800,12 +2799,12 @@ public class OntologyManager
             }
 
             boolean isProtected = m.get("Protected") != null && ((Boolean) m.get("Protected")).booleanValue();
-            PhiType phi = PhiType.NotPHI;
+            PHI phi = PHI.NotPHI;
             if (m.get("Phi") != null)
             {
-                PhiType type = PhiType.valueOf(m.get("Phi").toString());
-                if (type != null)
-                    phi = type;
+                PHI phiParsed = PHI.valueOf(m.get("Phi").toString());
+                if (phiParsed != null)
+                    phi = phiParsed;
             }
             boolean isExcludeFromShifting = m.get("ExcludeFromShifting") != null && ((Boolean) m.get("ExcludeFromShifting")).booleanValue();
 
@@ -2884,7 +2883,7 @@ public class OntologyManager
             pd.setLookupQuery(lookupQuery);
             pd.setFacetingBehaviorType(facetingBehavior);
             pd.setProtected(isProtected);
-            pd.setPhi(phi);
+            pd.setPHI(phi);
             pd.setExcludeFromShifting(isExcludeFromShifting);
         }
         return pd;

@@ -129,7 +129,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setURL(s.getURL());
         setFacetingBehaviorType(s.getFacetingBehaviorType());
         setProtected(s.isProtected());
-        setPhi(s.getPhi());
+        setPHI(s.getPHI());
         setExcludeFromShifting(s.isExcludeFromShifting());
         setPreventReordering(s.getPreventReordering());
         setDisableEditing(s.getDisableEditing());
@@ -477,12 +477,12 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.isProtected.setBool(isProtected);
     }
 
-    public String getPhi()
+    public String getPHI()
     {
         return phi.getString();
     }
 
-    public void setPhi(String phi)
+    public void setPHI(String phi)
     {
         this.phi.set(phi);
     }
@@ -580,7 +580,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (!StringUtils.equals(getDefaultScale(), that.getDefaultScale())) return false;
         if (!StringUtils.equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
         if (isProtected() != that.isProtected()) return false;
-        if (getPhi() != null ? !getPhi().equals(that.getPhi()) : that.getPhi() != null) return false;
+        if (getPHI() != null ? !getPHI().equals(that.getPHI()) : that.getPHI() != null) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 
         if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;

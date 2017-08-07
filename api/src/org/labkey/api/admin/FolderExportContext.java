@@ -16,6 +16,7 @@
 package org.labkey.api.admin;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -34,6 +35,8 @@ public class FolderExportContext extends AbstractFolderContext
     private String _format = "new";
     private boolean _includeSubfolders = false;
     private boolean _removeProtected = false;
+    private boolean _removePhi = false;
+    private PHI _phiLevel = null;
     private boolean _shiftDates = false;
     private boolean _alternateIds = false;
     private boolean _maskClinic = false;
@@ -43,10 +46,10 @@ public class FolderExportContext extends AbstractFolderContext
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
-        this(user, c, dataTypes, format, false, false, false, false, false, logger);
+        this(user, c, dataTypes, format, false, false, false, PHI.NotPHI,false, false, false, logger);
     }
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean removePhi, PHI phiLevel, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, getFolderDocument(), dataTypes, logger, null);
 
@@ -62,6 +65,8 @@ public class FolderExportContext extends AbstractFolderContext
         _format = format;
         _includeSubfolders = includeSubfolders;
         _removeProtected = removeProtected;
+        _removePhi = removePhi;
+        _phiLevel = phiLevel;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
         _maskClinic = maskClinic;
@@ -85,6 +90,16 @@ public class FolderExportContext extends AbstractFolderContext
     public boolean isRemoveProtected()
     {
         return _removeProtected;
+    }
+
+    public boolean isRemovePhi()
+    {
+        return _removePhi;
+    }
+
+    public PHI getPhiLevel()
+    {
+        return _phiLevel;
     }
 
     public boolean isShiftDates()
