@@ -50,6 +50,7 @@ import java.util.Set;
 @Category({DailyA.class})
 public class SharedStudyTest extends BaseWebDriverTest
 {
+    private static final String NON_DATASPACE_PROJECT = "Non Dataspace Project";
     private static final String STUDY1 = "Study001";
     private static final String STUDY2 = "Study002";
     private static final String SHARED_DEMOGRAPHICS = "P_One_Shared";
@@ -99,17 +100,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
     private void doSetup()
     {
-        _containerHelper.createProject(getProjectName(), "Study");
-
-        // Create a study with shared visits
-        clickButton("Create Study");
-        setFormElement(Locator.name("subjectNounSingular"), PARTICIPANT_NOUN_SINGULAR);
-        setFormElement(Locator.name("subjectNounPlural"), PARTICIPANT_NOUN_PLURAL);
-        setFormElement(Locator.name("subjectColumnName"), "PandaId");
-        checkRadioButton(Locator.radioButtonByNameAndValue("shareDatasets", "true"));
-        checkRadioButton(Locator.radioButtonByNameAndValue("shareVisits", "true"));
-        clickButton("Create Study");
-        _containerHelper.setFolderType("Dataspace");
+        createDataspaceProject(getProjectName(), PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","VISIT", true, true);
 
         DatasetDesignerPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
         datasetDomainEditor.checkDemographicData();
@@ -198,6 +189,113 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         String title = getDriver().getTitle();
         Assert.assertTrue("Expected title to start with 'Manage Shared Timepoints', got:" + title, title.startsWith("Manage Shared Visits"));
+    }
+
+    @Test
+    public void testDataspacePublishButtonVisibility()
+    {
+        log("Verify dataspace publish button");
+        Assert.assertTrue("Dataspace of timepoint style visit with shared datasets and shared visits should be shown", isDataspacePublishButtonShown(getProjectName()));
+
+        String dataSpaceDateVisit = "Dataspace Date Visit";
+        createDataspaceProject(dataSpaceDateVisit, PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","DATE", true, true);
+        Assert.assertFalse("Dataspace of timepoint style DATE should not be shown", isDataspacePublishButtonShown(dataSpaceDateVisit));
+        _containerHelper.deleteProject(dataSpaceDateVisit);
+
+        String dataSpaceDatasetNotShared = "Dataspace Dataset Not Shared";
+        createDataspaceProject(dataSpaceDatasetNotShared, PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","VISIT", false, true);
+        Assert.assertFalse("Dataspace without shared datasets should not be shown", isDataspacePublishButtonShown(dataSpaceDatasetNotShared));
+        _containerHelper.deleteProject(dataSpaceDatasetNotShared);
+
+        String dataSpaceVisitNotShared = "Dataspace Visit Not Shared";
+        createDataspaceProject(dataSpaceVisitNotShared, PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","VISIT", true, false);
+        Assert.assertFalse("Dataspace without shared visits should not be shown", isDataspacePublishButtonShown(dataSpaceVisitNotShared));
+        _containerHelper.deleteProject(dataSpaceVisitNotShared);
+    }
+
+    @Test
+    public void testDataspacePublishWizard()
+    {
+        String nonDataspaceProject = "Non Dataspace Project";
+        String studyPublishedFromDataspace = "Study Published From Dataspace";
+        List<String> allPtids = new ArrayList<>(Arrays.asList(ArrayUtils.addAll(STUDY1_PTIDS, STUDY2_PTIDS)));
+
+        _containerHelper.createProject(nonDataspaceProject, "None");
+
+        goToProjectHome(getProjectName());
+        goToManageStudy();
+
+        clickButton("Publish Study", 0);
+        _extHelper.waitForExtDialog("Publish Study");
+
+        // Wizard page 1 : General Setup
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'General Setup']"));
+        setFormElement(Locator.name("studyName"), studyPublishedFromDataspace);
+        clickButton("Change", 0);
+        sleep(1000); // sleep while the tree expands
+        Locator projectTreeNode = Locator.tagWithClass("a", "x-tree-node-anchor").withDescendant(Locator.tagWithText("span", NON_DATASPACE_PROJECT));
+        doubleClick(projectTreeNode);
+        clickButton("Next", 0);
+
+        // Wizard page 2 : Mice
+        clickButton("Next", 0);
+
+        // Wizard page 3 : Datasets
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Datasets']"));
+        waitForElement(Locator.css(".studyWizardDatasetList"));
+        click(Locator.css(".studyWizardDatasetList .x-grid3-hd-checker  div"));
+        clickButton("Next", 0);
+
+        // Wizard page 4 : Visits
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Visits']"));
+        waitForElement(Locator.css(".studyWizardVisitList"));
+        clickButton("Next", 0);
+        _extHelper.waitForExtDialog("Error");
+        assertTextPresent("You must select at least one visit.");
+        _extHelper.clickExtButton("Error", "OK", 0);
+        click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
+        clickButton("Next", 0);
+
+        // Wizard page 5 : Specimens
+        clickButton("Next", 0);
+
+        // Wizard Page 6 : Study Objects
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
+        click(Locator.css(".studyObjects .x-grid3-hd-checker  div"));
+        clickButton("Next", 0);
+
+        // Wizard page 7 : Lists
+        clickButton("Next", 0);
+
+        // Wizard page 8 : Grid Views
+        clickButton("Next", 0);
+
+        // Wizard Page 9 : Reports and Charts
+        clickButton("Next", 0);
+
+        // Wizard page 10 : Folder Objects
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
+        click(Locator.css(".folderObjects .x-grid3-hd-checker  div"));
+        clickButton("Next", 0);
+
+        // Wizard page 11 : Publish Options
+        clickButton("Finish");
+        waitForPipelineJobsToComplete(1, "Publish Study", false);
+
+        //verfiy that published study description has correct number visits, and number participants
+        beginAt("/" + nonDataspaceProject + "/" + studyPublishedFromDataspace + "/project-begin.view?");
+        assertTextPresent(String.format("over 6 visits. Data is present for 6 Pandas."));
+
+        // verfiy that published study description has correct dataset
+        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
+
+        // verify dataset has correct participants
+        DataRegionTable dataset = new DataRegionTable("Dataset", this);
+        List actualPtids = dataset.getColumnDataAsText("PandaId");
+        Assert.assertEquals("Published study does not have the expected participants", allPtids, actualPtids);
+
+        _containerHelper.deleteProject(nonDataspaceProject);
     }
 
     @Test
@@ -464,5 +562,33 @@ public class SharedStudyTest extends BaseWebDriverTest
         pandaWebPart = new ParticipantListWebPart(this, PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL);
         ptids = pandaWebPart.getParticipants();
         Assert.assertEquals("Wrong ptids in subfolder participant webpart", Arrays.asList(STUDY1_PTIDS), ptids);
+    }
+
+    private void createDataspaceProject(String projectName, String subjectNounSingular, String subjectNounPlural, String subjectColumnName,
+                                        String timepointStyle, boolean sharedDatasets, boolean sharedVisits)
+    {
+        // The project of folder type Dataspace gets created with no sharing by default. To create shared datasets and shared visits
+        // first create a Study with specified timepointStyle and sharing, then change the folder type from Study to Dataspace.
+        _containerHelper.createProject(projectName, "Study");
+
+        // Create a study with shared visits
+        clickButton("Create Study");
+        setFormElement(Locator.name("subjectNounSingular"), subjectNounSingular);
+        setFormElement(Locator.name("subjectNounPlural"), subjectNounPlural);
+        setFormElement(Locator.name("subjectColumnName"), subjectColumnName);
+        checkRadioButton(Locator.radioButtonByNameAndValue("timepointType", timepointStyle));
+        checkRadioButton(Locator.radioButtonByNameAndValue("shareDatasets", Boolean.toString(sharedDatasets)));
+        checkRadioButton(Locator.radioButtonByNameAndValue("shareVisits", Boolean.toString(sharedVisits)));
+        clickButton("Create Study");
+
+        // Change the folder type from Study to Dataspace
+        _containerHelper.setFolderType("Dataspace");
+    }
+
+    private boolean isDataspacePublishButtonShown(String projectName)
+    {
+        clickProject(projectName);
+        goToManageStudy();
+        return isElementPresent(Locator.lkButton("Publish Study"));
     }
 }
