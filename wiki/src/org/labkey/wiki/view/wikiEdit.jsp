@@ -97,16 +97,16 @@
 <table width=99%;>
     <tr>
         <td width="50%" align="left" style="white-space: nowrap;">
-            <%= button("Save & Close").submit(true).onClick("LABKEY._wiki.onFinish();").attributes("id='wiki-button-finish'") %>
-            <%= button("Save").submit(true).onClick("LABKEY._wiki.onSave();").attributes("id='wiki-button-save'") %>
+            <%= button("Save & Close").submit(true).onClick("LABKEY._wiki.onFinish();").id("wiki-button-finish") %>
+            <%= button("Save").submit(true).onClick("LABKEY._wiki.onSave();").id("wiki-button-save") %>
             <%= button("Cancel").submit(true).onClick("LABKEY._wiki.onCancel();") %>
         </td>
         <td width="50%" align="right" style="white-space: nowrap;">
             <% if (model.canUserDelete()) { %>
-                <%= button("Delete Page").submit(true).onClick("return false;").attributes("id=\"" + ID_PREFIX + "button-delete\"").enabled(false) %>
+                <%= button("Delete Page").submit(true).onClick("return false;").id(ID_PREFIX + "button-delete").enabled(false) %>
             <% } %>
-            <%= button("Convert To...").submit(true).onClick("LABKEY._wiki.showConvertWindow()").attributes("id=\"" + ID_PREFIX + "button-change-format\"") %>
-            <%= button("Show Page Tree").submit(true).onClick("LABKEY._wiki.showHideToc()").attributes("id=\"" + ID_PREFIX + "button-toc\"") %>
+            <%= button("Convert To...").submit(true).onClick("LABKEY._wiki.showConvertWindow()").id(ID_PREFIX + "button-change-format") %>
+            <%= button("Show Page Tree").submit(true).onClick("LABKEY._wiki.showHideToc()").id(ID_PREFIX + "button-toc") %>
         </td>
     </tr>
 </table>
@@ -117,19 +117,19 @@
                 <tr>
                     <td class="labkey-form-label" style="white-space: nowrap;">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" maxlength="255"/>
+                        <input type="text" name="name" id="<%=h(ID_PREFIX)%>name" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
                     <td class="labkey-form-label">Title</td>
                     <td width="99%">
-                        <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" maxlength="255"/>
+                        <input type="text" name="title" id="<%=h(ID_PREFIX)%>title" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
                     <td class="labkey-form-label" style="white-space: nowrap;">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
                     <td width="99%">
-                        <input type="checkbox" name="shouldIndex" id="<%=ID_PREFIX%>shouldIndex"/>
+                        <input type="checkbox" name="shouldIndex" id="<%=h(ID_PREFIX)%>shouldIndex"/>
                     </td>
                 </tr>
                 <tr>

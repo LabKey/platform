@@ -220,11 +220,12 @@ function tinyMceHandleEvent(evt) {
 
     var enableDeleteButton = function(enable) {
         var btn = $(_idSel + 'button-delete');
+        var NEW_UI = LABKEY.experimental.useExperimentalCoreUI === true;
         if (enable) {
             btn.bind("click", onDeletePage).attr('class', 'labkey-button');
         }
         else {
-            btn.unbind("click", onDeletePage).attr('class', 'labkey-disabled-button');
+            btn.unbind("click", onDeletePage).attr('class', (NEW_UI ? 'labkey-button ' : '')  + 'labkey-disabled-button');
         }
     };
 
