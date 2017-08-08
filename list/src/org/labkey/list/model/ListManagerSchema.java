@@ -138,9 +138,6 @@ public class ListManagerSchema extends UserSchema
                     bar.add(createDeleteButton());
                     List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
                     bar.add(super.createExportButton(recordSelectorColumns));
-                    PanelButton signButton = createSignButton(recordSelectorColumns);
-                    if (null != signButton)
-                        bar.add(signButton);
                     bar.add(createImportListArchiveButton());
                     bar.add(createExportArchiveButton());
                 }

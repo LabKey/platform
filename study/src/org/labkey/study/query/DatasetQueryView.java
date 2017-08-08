@@ -373,9 +373,6 @@ public class DatasetQueryView extends StudyQueryView
 
         List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
         bar.add(createExportButton(recordSelectorColumns));
-        PanelButton signButton = createSignButton(recordSelectorColumns);
-        if (null != signButton)
-            bar.add(signButton);
 
         if (!PageFlowUtil.useExperimentalCoreUI())
         {
