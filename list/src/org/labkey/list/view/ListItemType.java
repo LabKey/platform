@@ -56,5 +56,9 @@ public class ListItemType implements AttachmentType
             sql.append(unionSql.delete(unionSql.length() - 9, unionSql.length()));
             sql.append(")");
         }
+        else
+        {
+            sql.append("1 = 0");   // No lists with attachment columns
+        }
     }
 }
