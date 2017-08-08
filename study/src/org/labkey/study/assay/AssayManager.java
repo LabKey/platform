@@ -615,7 +615,8 @@ public class AssayManager implements AssayService
     {
         if (name == null)
         {
-            // TODO: Better to use ISO here? Note that display formats are unsafe, which could lead to an unsafe name. #30986.
+            // Formats the current date using the default display format. This is intentional and name rendering code paths
+            // have been reviewed for encoding. See #31076.
             name = DateUtil.formatDate(container) + " batch";
         }
 
