@@ -394,9 +394,11 @@
 +function($) {
     'use strict';
 
-    $(function () {
-        $('[data-tt="tooltip"]').tooltip();
-    })
+    $(function() {
+        $(document.body).tooltip({
+            selector: '[data-tt="tooltip"]'
+        });
+    });
 }(jQuery);
 
 // Data Region column dropdown
