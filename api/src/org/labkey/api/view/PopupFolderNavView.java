@@ -45,6 +45,7 @@ public class PopupFolderNavView extends PopupMenuView
         if (tree == null)
             return;
 
+        // TODO: This should use PopupMenuView.renderTree
         Container container = _context.getContainer();
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(container);
         String pattern = startURL.getLocalURIString();
