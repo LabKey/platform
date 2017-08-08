@@ -186,22 +186,21 @@
                 %>
                 <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
                     <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText()).replace(" ", "")%>Tab">
-                        <% if (tab.isDisabled()) { %><i class="fa fa-eye-slash"></i><% } %>
+                        <% if (tab.isDisabled()) { %>
+                        <i class="fa fa-eye-slash"></i>
+                        <% } %>
                         <%=h(tab.getText())%>
-                        <%
-                            if (isPageAdminMode && tab.getChildren().length == 1)
-                            {
-                        %>
+                    </a>
+                    <% if (isPageAdminMode && tab.getChildren().length == 1) { %>
+                    <div class="dropdown lk-menu-drop skip-align">
                         <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                             <i class="fa fa-caret-down"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-right">
                             <% PopupMenuView.renderTree(tab.getChildren()[0], out); %>
                         </ul>
-                        <%
-                            }
-                        %>
-                    </a>
+                    </div>
+                    <% } %>
                 </li>
                 <%
                             }

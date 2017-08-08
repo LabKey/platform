@@ -75,7 +75,7 @@
                     if (PageFlowUtil.useExperimentalCoreUI())
                     {
                         out.write("<td class=\"lk-menu-drop dropdown\"> ");
-                        out.write("<a data-toggle=\"dropdown\" style=\"color:#333333;\" class=\"dropdown-toggle fa fa-caret-down\"> &nbsp; </a>");
+                        out.write("<a href=\"#\" data-toggle=\"dropdown\" style=\"color:#333333;\" class=\"dropdown-toggle fa fa-caret-down\"> &nbsp; </a>");
                         out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
                         PopupMenuView.renderTree(links, out);
                         out.write("</ul>");

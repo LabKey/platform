@@ -328,15 +328,17 @@
         menu.find('.subexpand').css('display', '');
         menu.find('.subexpand-link').css('display', '');
         menu.find('.dropdown-layer-menu.open').toggleClass('open');
-
-        if (!$(this).hasClass('dropdown-rollup')) {
-            $(this).removeClass('dropup').addClass('dropdown');
-            menu.removeClass('dropdown-menu-right').addClass('dropdown-menu-left');
-        }
     };
 
     SubMenu.prototype.viewportAlign = function() {
-        var menu =  $(this).children('ul.dropdown-menu');
+        var me = $(this);
+
+        // menu may opt-out of aligning to viewport
+        if (me.hasClass('skip-align')) {
+            return;
+        }
+
+        var menu = me.children('ul.dropdown-menu');
         if (menu.length === 0) {
             return;
         }
@@ -344,14 +346,17 @@
         var offset = menu.offset();
         var win = $(window);
 
+        // distance between menu's bottom edge and bottom of window
         var spaceDown = win.scrollTop() + win.height() - (offset.top + menu.height());
+
+        // distance between menu's right edge and right side of the window
         var spaceRight = win.scrollLeft() + win.width() - (offset.left + menu.width());
 
         if (spaceDown < 0) {
-            $(this).removeClass('dropdown').addClass('dropup');
+            me.removeClass('dropdown').addClass('dropup');
         }
         else {
-            $(this).removeClass('dropup').addClass('dropdown');
+            me.removeClass('dropup').addClass('dropdown');
         }
 
         if (spaceRight < 0) {
@@ -378,8 +383,7 @@
             .on(evt + '.bs.submenu.data-api', 'a.subcollapse', SubMenu.prototype.collapse)
             .on('keydown.bs.submenu.data-api', 'a.subexpand', SubMenu.prototype.keydown)
             // note: the two bindings to unfurl. rollups are treated differently from common lk-menu-drop
-            .on('hide.bs.dropdown.data-api', '.dropdown-rollup', SubMenu.prototype.unfurl)
-            .on('hide.bs.dropdown.data-api', '.lk-menu-drop', SubMenu.prototype.unfurl)
+            .on('hide.bs.dropdown.data-api', '.dropdown-rollup, .lk-menu-drop', SubMenu.prototype.unfurl)
             .on('shown.bs.dropdown.data-api', '.lk-menu-drop', SubMenu.prototype.viewportAlign);
 
     $(function() {

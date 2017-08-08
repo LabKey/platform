@@ -54,11 +54,14 @@
         border-radius: 3px 3px 0 0;
         padding: 6px 15px 7px 15px;
       }
-    }
 
-    & > li.active > a {
-      color: $lk-page-nav-color-active;
-      background-color: $lk-body-bg-color;
+      &.active {
+        background-color: $lk-body-bg-color;
+
+        & > a {
+          color: $lk-page-nav-color-active;
+        }
+      }
     }
 
     @media (max-width: $lk-screen-sm-min) {
@@ -98,14 +101,19 @@
   }
 
   .lk-nav-tabs-admin {
-    & > li > a:first-of-type {
-      padding: 6px 6px 7px 15px;
-      border-radius: 3px 0 0 0;
+    & > li > a {
+      &#addTab {
+        padding: 6px 6px 7px 6px;
+      }
+
+      &:first-of-type {
+        padding: 6px 6px 7px 15px;
+      }
     }
 
-    & > li > a:last-of-type {
+    .dropdown > a {
       padding: 6px 6px 7px 6px;
-      border-radius: 0 3px 0 0;
+      background-color: transparent;
     }
   }
 }
