@@ -395,6 +395,10 @@
     'use strict';
 
     $(function() {
+        // initial bind
+        $('[data-tt="tooltip"]').tooltip();
+
+        // bind subsequent DOM updates
         $(document.body).tooltip({
             selector: '[data-tt="tooltip"]'
         });
