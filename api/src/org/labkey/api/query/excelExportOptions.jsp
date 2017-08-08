@@ -37,15 +37,17 @@
     QueryView.ExcelExportOptionsBean model = (QueryView.ExcelExportOptionsBean) HttpView.currentModel();
 
     String guid = GUID.makeGUID();
-    String xlsxGUID = "xlsx_" + guid + (model.isSignButton() ? "_sign" : "");
-    String xlsGUID = "xls_" + guid + (model.isSignButton() ? "_sign" : "");
+    String xlsxGUID = "xlsx_" + guid;
+    String xlsGUID = "xls_" + guid;
     String iqyGUID = "iqy_" + guid;
-    String headerGUID = "header_" + guid + (model.isSignButton() ? "_sign" : "");
-    String headerType = "xls_header_type" + (model.isSignButton() ? "_sign" : "");
-    String exportSelectedId = "exportSelected_" + guid + (model.isSignButton() ? "_sign" : "");
-    String exportButtonId = "export_" + guid + (model.isSignButton() ? "_sign" : "");
-    String buttonText = model.isSignButton() ? "Sign Excel Snapshot" : "Export to Excel";
-    String checkboxGroupName = model.isSignButton() ? "excelSignType" : "excelExportType";
+    String headerGUID = "header_" + guid;
+    String headerType = "xls_header_type";
+    String exportSelectedId = "exportSelected_";
+    String exportButtonId = "export_" + guid;
+    String signButtonId = "sign_" + guid;
+    String exportButtonText = "Export";
+    String signButtonText = "Sign Data";
+    String checkboxGroupName = "excelExportType";
 
     Map<ColumnHeaderType, String> headerMap = new LinkedHashMap<>();
     StringBuilder sb = new StringBuilder();
@@ -98,13 +100,16 @@
         </td>
         <td valign="center">
             <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>"
-                   for="<%=h(exportSelectedId)%>"> <%=h(model.isSignButton() ? "Sign selected rows" : "Export selected rows")%>
+                   for="<%=h(exportSelectedId)%>"> <%=h(model.isIncludeSignButton() ? "Export/Sign selected rows" : "Export selected rows")%>
             </label>
         </td>
     </tr>
     <% } %>
     <tr>
-        <td colspan="2"><%= button(buttonText).id(exportButtonId) %></td>
+        <td colspan="2">
+            <%= button(exportButtonText).id(exportButtonId) %>
+            <%= model.isIncludeSignButton() ? button(signButtonText).id(signButtonId) : " "%>
+        </td>
     </tr>
 </table>
 <script type="text/javascript">
@@ -117,21 +122,33 @@
             var xlsxExportEl = $("#<%=h(xlsxGUID)%>");
             var iqyExportEl = $("#<%=h(iqyGUID)%>");
             var headerEl = $("#<%=h(headerGUID)%>");
-            var isSignButton = <%=model.isSignButton()%>;
+            var includeSignButton = <%=model.isIncludeSignButton()%>;
 
             var exportSelectedEl = $("#<%=h(exportSelectedId)%>");
             var exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>");
 
-            var doExcelExport = function() {
+            var doExcelExport = function(isSign) {
                 var exportUrl, exportParams, exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
 
                 if (xlsxExportEl.is(':checked')) {
-                    exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getPath(false))%>;
-                    exportParams = <%=text( new JSONObject(model.getXlsxURL().getParameterMap()).toString(2) )%>;
+                    if (isSign) {
+                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsxURL().getPath(false))%>;
+                        exportParams = <%=text( new JSONObject(model.getSignXlsxURL().getParameterMap()).toString(2) )%>;
+                    }
+                    else {
+                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getPath(false))%>;
+                        exportParams = <%=text( new JSONObject(model.getXlsxURL().getParameterMap()).toString(2) )%>;
+                    }
                 }
                 else if (xlsExportEl.is(':checked')) {
-                    exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getPath(false))%>;
-                    exportParams = <%=text( new JSONObject(model.getXlsURL().getParameterMap()).toString(2) )%>;
+                    if (isSign) {
+                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsURL().getPath(false))%>;
+                        exportParams = <%=text( new JSONObject(model.getSignXlsURL().getParameterMap()).toString(2) )%>;
+                    }
+                    else {
+                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getPath(false))%>;
+                        exportParams = <%=text( new JSONObject(model.getXlsURL().getParameterMap()).toString(2) )%>;
+                    }
                 <% if (model.getIqyURL() != null) { %>
                 }
                 else if (iqyExportEl.is(':checked')) {
@@ -150,7 +167,7 @@
                 if (headerEl && headerEl.val())
                     exportParams['headerType'] = headerEl.val();
 
-                if (!isSignButton) {
+                if (!isSign) {
                     dr.addMessage({
                         html: '<div class="labkey-message"><strong>Excel export started.</strong></div>',
                         part: 'excelExport', hideButtonPanel: true, duration: 5000
@@ -162,7 +179,9 @@
                             Ext4.create('LABKEY.Query.SignSnapshotPanel', {
                                 autoShow: true,
                                 url: exportUrl,
-                                params: exportParams
+                                params: exportParams,
+                                emailInput: '<%=h(model.getEmail())%>',
+                                'X-LABKEY-CSRF': LABKEY.CSRF
                             });
                         });
                     };
@@ -270,16 +289,14 @@
             };
 
             var enableExportSelected = function (enabled) {
-                if (enabled)
-                {
+                if (enabled) {
                     if (exportSelectedEl.is(':disabled')) {
                         exportSelectedEl.prop('checked', true);
                         exportSelectedEl.prop('disabled', false);
                         exportSelectedLabelEl.removeClass();
                     }
                 }
-                else
-                {
+                else {
                     exportSelectedEl.prop('checked', false);
                     exportSelectedEl.prop('disabled', true);
                     exportSelectedLabelEl.addClass('labkey-disabled');
@@ -287,7 +304,17 @@
             };
 
             var exportButtonEl = $("#<%=h(exportButtonId)%>");
-            exportButtonEl.click(doExcelExport);
+            exportButtonEl.click(function() {
+                doExcelExport(false);
+            });
+
+            var signButtonEl;
+            if (includeSignButton) {
+                signButtonEl = $("#<%=h(signButtonId)%>");
+                signButtonEl.click(function() {
+                    doExcelExport(true);
+                });
+            }
 
             dr.on('selectchange', function(dr, selectedCount) {
                 if (!iqyExportEl.is(':checked'))
@@ -295,6 +322,8 @@
             });
 
             var changeHandler = function (e) {
+                if (signButtonEl)
+                    signButtonEl.prop('hidden', false);
                 var target = $(e.target);
                 dr.getSelected({
                     success: function (d) {
@@ -308,7 +337,11 @@
                  When iqy is chosen, diable the "export selected" checkbox. --%>
             xlsExportEl.change(changeHandler);
             xlsxExportEl.change(changeHandler);
-            iqyExportEl.change(function () { enableExportSelected(false); });
+            iqyExportEl.change(function () {
+                enableExportSelected(false);
+                if (signButtonEl)
+                    signButtonEl.prop('hidden', true);
+            });
 
         });
 

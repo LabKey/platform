@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.apache.poi.POIXMLProperties;
+import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JRuntimeException;
@@ -32,6 +34,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.hpsf.CustomProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -92,6 +95,24 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             {
                 return HSSFCell.LAST_COLUMN_NUMBER + 1;
             }
+
+            @Override
+            public void setMetadata(Workbook workbook, Map<String, String> metadata)
+            {
+                if (!metadata.isEmpty())
+                {
+                    HSSFWorkbook hssfWorkbook = (HSSFWorkbook) workbook;
+                    hssfWorkbook.createInformationProperties();
+                    DocumentSummaryInformation summaryInformation = hssfWorkbook.getDocumentSummaryInformation();
+                    if (null == summaryInformation)
+                        throw new IllegalStateException("Expected createInformationProperties to succeed.");
+                    CustomProperties props = (null != summaryInformation.getCustomProperties() ?
+                            summaryInformation.getCustomProperties() :
+                            new CustomProperties());
+                    metadata.forEach((name, value) -> props.put(name, value));
+                    hssfWorkbook.getDocumentSummaryInformation().setCustomProperties(props);
+                }
+            }
         },
         xlsx
         {
@@ -121,6 +142,17 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             {
                 return SpreadsheetVersion.EXCEL2007.getLastColumnIndex() + 1;
             }
+
+            @Override
+            public void setMetadata(Workbook workbook, Map<String, String> metadata)
+            {
+                if (!metadata.isEmpty())
+                {
+                    SXSSFWorkbook sxssfWorkbook = (SXSSFWorkbook) workbook;
+                    POIXMLProperties.CustomProperties props = sxssfWorkbook.getXSSFWorkbook().getProperties().getCustomProperties();
+                    metadata.forEach((name, value) -> props.addProperty(name, value));
+                }
+            }
         };
 
         public abstract Workbook createWorkbook();
@@ -128,6 +160,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         /** @return the maximum number of rows to SELECT, which is one less than the document's maximum */
         public abstract int getMaxRows();
         public abstract int getMaxColumns();
+        public abstract void setMetadata(Workbook workbook, Map<String, String> metadata);
     }
 
     public static final int MAX_ROWS_EXCEL_97 = 65535;
@@ -152,6 +185,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private List<ExcelColumn> _columns = new ArrayList<>();
     private boolean _captionRowFrozen = true;
     private boolean _captionRowVisible = true;
+    private Map<String, String> _metadata = Collections.emptyMap();
 
     // Careful: these can't be static.  As a cell format is added to a workbook, it gets assigned an internal index number, so each workbook must have a new one.
     private CellStyle _boldFormat = null;
@@ -478,14 +512,17 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             _column.setAutoSize(autoSize);
     }
 
+    public void setMetadata(@NotNull Map<String, String> metadata)
+    {
+        _metadata = metadata;
+    }
+
     // Write the spreadsheet to the file system.
     public void write(OutputStream stream)
     {
         try
         {
-            renderNewSheet();
-            _workbook.write(stream);
-            stream.flush();
+            _write(stream);
         }
         catch (IOException e)
         {
@@ -503,16 +540,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     {
         ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType);
 
-        // The workbook will be streamed to the outputstream
-        renderNewSheet();
-
         try
         {
-            _workbook.write(outputStream);
-
-            // Flush the outpustream
-            outputStream.flush();
-            // Finally, close the outputstream
+            _write(outputStream);
             outputStream.close();
         }
         catch (IOException e)
@@ -529,6 +559,15 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 throw e;
             }
         }
+    }
+
+    // Should be called within a try/catch
+    private void _write(OutputStream stream) throws IOException
+    {
+        _docType.setMetadata(_workbook, _metadata);
+        renderNewSheet();
+        _workbook.write(stream);
+        stream.flush();
     }
 
     // Create a ServletOutputStream to stream an Excel workbook to the browser.

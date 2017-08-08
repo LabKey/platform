@@ -76,6 +76,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
@@ -902,10 +903,6 @@ public class QueryView extends WebPartView<Object>
                 bar.add(b);
             }
 
-            PanelButton signButton = createSignButton(recordSelectorColumns);
-            if (null != signButton)
-                bar.add(signButton);
-
             if (!newUI)
                 bar.add(createPrintButton());
         }
@@ -1092,15 +1089,18 @@ public class QueryView extends WebPartView<Object>
         private final String _exportRegionName;
         private final String _selectionKey;
         private final ColumnHeaderType _headerType;
-        private final boolean _isSignButton;
+        private final boolean _includeSignButton;
+        private final String _email;
 
-        protected ExportOptionsBean(String dataRegionName, String exportRegionName, @Nullable String selectionKey, ColumnHeaderType headerType, boolean isSignButton)
+        protected ExportOptionsBean(String dataRegionName, String exportRegionName, @Nullable String selectionKey,
+                                    ColumnHeaderType headerType, boolean includeSignButton, @Nullable String email)
         {
             _dataRegionName = dataRegionName;
             _exportRegionName = exportRegionName;
             _selectionKey = selectionKey;
             _headerType = headerType;
-            _isSignButton = isSignButton;
+            _includeSignButton = includeSignButton;
+            _email = email;
         }
 
         public String getDataRegionName()
@@ -1140,9 +1140,14 @@ public class QueryView extends WebPartView<Object>
             return _headerType;
         }
 
-        public boolean isSignButton()
+        public boolean isIncludeSignButton()
         {
-            return _isSignButton;
+            return _includeSignButton;
+        }
+
+        public String getEmail()
+        {
+            return _email;
         }
     }
 
@@ -1151,17 +1156,22 @@ public class QueryView extends WebPartView<Object>
         private final ActionURL _xlsURL;
         private final ActionURL _xlsxURL;
         private final ActionURL _iqyURL;
+        private final ActionURL _signXlsURL;
+        private final ActionURL _signXlsxURL;
 
         public ExcelExportOptionsBean(
                 String dataRegionName, String exportRegionName, @Nullable String selectionKey, ColumnHeaderType headerType,
-                ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL, boolean isSignButton)
+                ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL, ActionURL signXlsURL, ActionURL signXlsxURL, @Nullable String email)
         {
-            super(dataRegionName, exportRegionName, selectionKey, headerType, isSignButton);
+            super(dataRegionName, exportRegionName, selectionKey, headerType, (null != signXlsURL && null != signXlsxURL), email);
             _xlsURL = xlsURL;
             _xlsxURL = xlsxURL;
             _iqyURL = iqyURL;
+            _signXlsURL = null != signXlsURL ? signXlsURL : new ActionURL();
+            _signXlsxURL = null != signXlsxURL ? signXlsxURL : new ActionURL();
         }
 
+        @NotNull
         public ActionURL getXlsxURL()
         {
             return _xlsxURL;
@@ -1172,68 +1182,80 @@ public class QueryView extends WebPartView<Object>
             return _iqyURL;
         }
 
+        @NotNull
         public ActionURL getXlsURL()
         {
             return _xlsURL;
+        }
+
+        @NotNull
+        public ActionURL getSignXlsURL()
+        {
+            return _signXlsURL;
+        }
+
+        @NotNull
+        public ActionURL getSignXlsxURL()
+        {
+            return _signXlsxURL;
         }
     }
 
     public static class TextExportOptionsBean extends ExportOptionsBean
     {
         private final ActionURL _tsvURL;
+        private final ActionURL _signTsvURL;
 
         public TextExportOptionsBean(
                 String dataRegionName, String exportRegionName, @Nullable String selectionKey, ColumnHeaderType headerType,
-                ActionURL tsvURL, boolean isSignButton)
+                ActionURL tsvURL, ActionURL signTsvURL, @Nullable String email)
         {
-            super(dataRegionName, exportRegionName, selectionKey, headerType, isSignButton);
+            super(dataRegionName, exportRegionName, selectionKey, headerType, (null != signTsvURL), email);
             _tsvURL = tsvURL;
+            _signTsvURL = null != signTsvURL ? signTsvURL : new ActionURL();
         }
 
+        @NotNull
         public ActionURL getTsvURL()
         {
             return _tsvURL;
         }
-    }
 
-    @Nullable
-    public PanelButton createSignButton(@Nullable List<String> recordSelectorColumns)
-    {
-        ComplianceService complianceService = ComplianceService.get();
-        if (null != complianceService && getContainer().hasActiveModuleByName(complianceService.getModuleName()))
+        @NotNull
+        public ActionURL getSignTsvURL()
         {
-            // We build a URL using Query's mechanism because it does a lot of work to get the properties right;
-            // Then build our URL to the ComplianceController using those properties. If any fail, just bail on creating button.
-            ActionURL urlSignRowsExcel = complianceService.urlFor(getContainer(), QueryAction.signRowsExcel, urlFor(QueryAction.signRowsExcel));
-            ActionURL urlSignRowsXLSX = complianceService.urlFor(getContainer(), QueryAction.signRowsXLSX, urlFor(QueryAction.signRowsXLSX));
-            ActionURL urlSignRowsTsv = complianceService.urlFor(getContainer(), QueryAction.signRowsTsv, urlFor(QueryAction.signRowsTsv));
-
-            if (null != urlSignRowsExcel && null != urlSignRowsXLSX && null != urlSignRowsTsv)
-            {
-                PanelButton button = new PanelButton("Electronically Sign", getDataRegionName(), 132);
-                return createExportOrSignButton(recordSelectorColumns, button, urlSignRowsExcel, urlSignRowsXLSX,
-                                                urlSignRowsTsv, false, true);
-            }
+            return _signTsvURL;
         }
-        return null;
     }
 
     @NotNull
     public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
     {
         PanelButton button = new PanelButton("Export", getDataRegionName(), 132);
-        return createExportOrSignButton(recordSelectorColumns, button, urlFor(QueryAction.exportRowsExcel), urlFor(QueryAction.exportRowsXLSX),
-                                        urlFor(QueryAction.exportRowsTsv), _allowExportExternalQuery, false);
-    }
+        ActionURL xlsURL = urlFor(QueryAction.exportRowsExcel);
+        ActionURL xlsxURL = urlFor(QueryAction.exportRowsXLSX);
+        ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
 
-    @NotNull
-    private PanelButton createExportOrSignButton(@Nullable List<String> recordSelectorColumns, PanelButton button, ActionURL xlsURL,
-                                                 ActionURL xlsxURL, ActionURL tsvURL, boolean exportExternalQuery, boolean isSignButton)
-    {
         button.setIconCls("download");
         button.setTabAlignTop(true);
         boolean hasRecordSelectors = (recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) ||
                                      (getTable() != null && !getTable().getPkColumns().isEmpty());
+
+        ActionURL signRowsXlsURL = null;
+        ActionURL signRowsXlsxURL = null;
+        ActionURL signRowsTsvURL = null;
+        ComplianceService complianceService = ComplianceService.get();
+        if (null != complianceService && getContainer().hasActiveModuleByName(complianceService.getModuleName()) &&
+                complianceService.hasElecSignPermission(getContainer(), getUser()) &&
+                !getUser().isImpersonated())
+        {
+            // We build a URL using Query's mechanism because it does a lot of work to get the properties right;
+            // Then build our URL to the ComplianceController using those properties. If any fail, just bail on creating button.
+            signRowsXlsURL = complianceService.urlFor(getContainer(), QueryAction.signRowsExcel, urlFor(QueryAction.signRowsExcel));
+            signRowsXlsxURL = complianceService.urlFor(getContainer(), QueryAction.signRowsXLSX, urlFor(QueryAction.signRowsXLSX));
+            signRowsTsvURL = complianceService.urlFor(getContainer(), QueryAction.signRowsTsv, urlFor(QueryAction.signRowsTsv));
+
+        }
 
         if (xlsURL != null && xlsxURL != null)
         {
@@ -1244,8 +1266,10 @@ public class QueryView extends WebPartView<Object>
                     getColumnHeaderType(),
                     xlsURL,
                     xlsxURL,
-                    exportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null,
-                    isSignButton
+                    _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null,
+                    signRowsXlsURL,
+                    signRowsXlsxURL,
+                    getUser().getEmail()
             );
             button.addSubPanel("Excel", new JspView<>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
         }
@@ -1258,12 +1282,13 @@ public class QueryView extends WebPartView<Object>
                     hasRecordSelectors ? getSettings().getSelectionKey() : null,
                     getColumnHeaderType(),
                     tsvURL,
-                    isSignButton
+                    signRowsTsvURL,
+                    getUser().getEmail()
             );
             button.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
         }
 
-        if (exportExternalQuery)
+        if (_allowExportExternalQuery)
         {
             addExportScriptItems(button);
             addExportRStudio(button, hasRecordSelectors ? getSettings().getSelectionKey() : null);
@@ -1281,7 +1306,8 @@ public class QueryView extends WebPartView<Object>
         if (null == getExportScriptFactory("r"))
             return;
         ActionURL exportUrl = urlFor(QueryAction.exportScript).replaceParameter("scriptType","r");
-        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey, getColumnHeaderType(), exportUrl, false);
+        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey,
+                                                                   getColumnHeaderType(), exportUrl, null, null);
         exportButton.addSubPanel("RStudio", new JspView<>("/org/labkey/api/query/rstudioExport.jsp", textBean));
     }
 
@@ -2558,7 +2584,8 @@ public class QueryView extends WebPartView<Object>
     }
 
     @Nullable
-    public ByteArrayAttachmentFile exportToExcelFile(ExcelWriter.ExcelDocumentType docType, @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
+    public ByteArrayAttachmentFile exportToExcelFile(ExcelWriter.ExcelDocumentType docType, @Nullable Map<String, String> metadata,
+                                                     @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -2570,6 +2597,7 @@ public class QueryView extends WebPartView<Object>
                 ExcelWriter ew = getExcelWriter(docType);
                 ew.setCaptionType(getColumnHeaderType());
                 ew.setShowInsertableColumnsOnly(false);
+                ew.setMetadata(metadata);
                 ew.write(stream);
                 stream.flush();
                 String extension = ExcelWriter.ExcelDocumentType.xls.name().equalsIgnoreCase(docType.name()) ? "xls" : "xlsx";
@@ -2620,7 +2648,8 @@ public class QueryView extends WebPartView<Object>
     }
 
     @Nullable
-    public ByteArrayAttachmentFile exportToTsvFile(final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
+    public ByteArrayAttachmentFile exportToTsvFile(final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType,
+                                                   @Nullable List<String> commentLines, @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -2630,6 +2659,8 @@ public class QueryView extends WebPartView<Object>
             TSVGridWriter tsvWriter = getTsvWriter(headerType);
             tsvWriter.setDelimiterCharacter(delim);
             tsvWriter.setQuoteCharacter(quote);
+            if (null != commentLines)
+                tsvWriter.setFileHeader(commentLines);
             tsvWriter.write(tsvBuilder);
             String extension = TSVWriter.DELIM.TAB.equals(delim) ? "tsv" : "csv";
             String filename = includeTimestamp ?

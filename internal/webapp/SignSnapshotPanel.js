@@ -43,9 +43,28 @@ Ext4.define('LABKEY.Query.SignSnapshotPanel', {
     },
 
     getPanel: function(){
+        this.errorMsg = Ext4.create('Ext.form.Label', {
+            name: 'errorMsg',
+            disabled: true,
+            cls: 'labkey-error'
+        });
+        this.email = Ext4.create('Ext.form.field.Text', {
+            name: 'email',
+            allowBlank: false,
+            fieldLabel: 'Email',
+            value: this.emailInput,
+            labelWidth: 70
+        });
+        this.password = Ext4.create('Ext.form.field.Text', {
+            name: 'password',
+            allowBlank: false,
+            inputType: 'password',
+            fieldLabel: 'Password',
+            labelWidth: 70
+        });
         this.reason = Ext4.create('Ext.form.field.Text', {
             name: 'reason',
-            allowBlank: true,
+            allowBlank: false,
             fieldLabel: 'Reason',
             labelWidth: 70
         });
@@ -55,23 +74,41 @@ Ext4.define('LABKEY.Query.SignSnapshotPanel', {
             padding: 10,
             border: false,
             layout: 'form',
-            items: [this.reason]
-        };
-    },
-
-    getRequestValues: function(){
-        return {
-            reason: this.reason.getValue()
+            items: [
+                this.errorMsg,
+                this.email,
+                this.password,
+                this.reason
+            ]
         };
     },
 
     handleSave: function(){
-        if (this.params)
-            this.url += '?' + Ext4.Object.toQueryString(this.params);
-        var requestObj = this.getRequestValues();
-        this.url += '&' + Ext4.Object.toQueryString(requestObj);
-        window.location = this.url;
-        this.close();
+        var params = this.params ? this.params : {};
+        params.reason = this.reason.getValue();
+        params.email = this.email.getValue();
+        params.password = this.password.getValue();
+        params['X-LABKEY-CSRF'] = this['X-LABKEY-CSRF'];
+//                urlHash: document.getElementById('urlhash'),
+
+        LABKEY.Ajax.request({
+            url: this.url,
+            method: 'POST',
+            params: params,
+            success: LABKEY.Utils.getCallbackWrapper(function (response) {
+                this.close();
+                window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', this.containerPath, {
+                    schemaName: 'compliance',
+                    queryName: 'SignedSnapshot'
+                });
+            }, this),
+            failure: LABKEY.Utils.getCallbackWrapper(function (response) {
+                if(response && response.exception){
+                    this.errorMsg.setText(response.exception, true);
+                    this.errorMsg.enable();
+                }
+            }, this)
+        });
     },
 
     handleCancel: function(){
