@@ -45,7 +45,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 fields: [
                     {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
-                    {name: 'series', label: 'Series', required: true, nonNumericOnly: true}
+                    {name: 'series', label: 'Series', nonNumericOnly: true}
                 ],
                 layoutOptions: {opacity: true, axisBased: true, series: true}
             },
@@ -878,8 +878,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 })
             );
         }
-        else if (renderType == 'line_plot' && chartConfig.measures.series) {
-            var seriesName = chartConfig.measures.series.name,
+        else if (renderType == 'line_plot') {
+            var seriesName = chartConfig.measures.series?chartConfig.measures.series.name:undefined,
                 xName = chartConfig.measures.x.name,
                 isDate = isDateType(getMeasureType(chartConfig.measures.x));
             layers.push(

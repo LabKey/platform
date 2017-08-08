@@ -227,7 +227,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             value: '3366FF',  // initial selected color
             width: 175,
             padding: '0 0 10px 0',
-            layoutOptions: 'point'
+            layoutOptions: ['point','series']
         });
     },
 
