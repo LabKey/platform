@@ -26,8 +26,10 @@
     PageConfig pageConfig = me.getModelBean();
 %>
 <div class="container lk-body-ct">
-    <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
-    <div class="well">
-        <% me.include(me.getBody(), out); %>
+    <div class="row">
+        <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
+        <div class="well">
+            <% me.include(me.getBody(), out); %>
+        </div>
     </div>
 </div>

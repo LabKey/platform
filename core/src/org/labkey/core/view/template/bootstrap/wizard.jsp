@@ -27,6 +27,7 @@
     PageConfig pageConfig = me.getModelBean();
 %>
 <div class="container lk-body-ct">
+    <div class="row">
     <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <div class="labkey-wizard-container">
         <div class="well">
@@ -67,5 +68,6 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>

@@ -79,20 +79,24 @@
            if (trail != null || pageTitle != null)
            {
     %>
-    <div class="col-md-12 lk-body-title">
-        <% if (trail != null) { %><%= text(trail) %><% } %>
-        <% if (pageTitle != null) { %><h3><%= h(pageTitle)%></h3><% } %>
+    <div class="row">
+        <div class="col-md-12 lk-body-title">
+            <% if (trail != null) { %><%= text(trail) %><% } %>
+            <% if (pageTitle != null) { %><h3><%= h(pageTitle)%></h3><% } %>
+        </div>
     </div>
     <%
             }
        }
     %>
-    <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">
-        <% me.include(me.getBody(), out); %>
+    <div class="row">
+        <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">
+            <% me.include(me.getBody(), out); %>
+        </div>
+        <% if (showRight) { %>
+        <div class="col-md-3">
+            <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
+        </div>
+        <% } %>
     </div>
-    <% if (showRight) { %>
-    <div class="col-md-3">
-        <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
-    </div>
-    <% } %>
 </div>
