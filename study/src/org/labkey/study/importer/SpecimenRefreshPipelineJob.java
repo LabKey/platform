@@ -84,7 +84,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
             Set<String> dataTypes = PageFlowUtil.set(StudyWriterFactory.DATA_TYPE, "Specimens");  // TODO: Define a constant for specimens
 
             FolderExportContext ctx = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false,
-                    _settings.isRemoveProtectedColumns(), false, _settings.getPhiLevel(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(),
+                    _settings.isRemoveProtectedColumns(), _settings.isRemovePhiColumns(), _settings.getPhiLevel(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(),
                     _settings.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
             Set<DatasetDefinition> datasets = Collections.emptySet();

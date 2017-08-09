@@ -89,11 +89,7 @@ public class ListWriter
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
         boolean removeProtected = ctx != null && ctx.isRemoveProtected();
         boolean removePhi = ctx != null && ctx.isRemovePhi();
-        PHI exportPhiLevel;
-        if (ctx != null)
-            exportPhiLevel = ctx.getPhiLevel();
-        else
-            exportPhiLevel = PHI.NotPHI;
+        PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
         {

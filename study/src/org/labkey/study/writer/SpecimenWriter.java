@@ -124,8 +124,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 }
 
                 // don't export values for columns set as Protected in the XML metadata override
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn)
                 // also don't export values for columns set at or above the PHI export level
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn)
                         || shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
                 {
                     col = "NULL AS " + ci.getSelectName();
@@ -137,7 +137,9 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 col = column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias();
 
                 // don't export values for columns set as Protected in the XML metadata override
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn))
+                // also don't export values for columns set at or above the PHI export level
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn)
+                        || shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
                 {
                     col = "NULL AS " + dc.getDisplayColumn().getAlias();
                 }

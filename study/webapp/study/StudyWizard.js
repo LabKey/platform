@@ -2055,7 +2055,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             tbarCfg: [{hidden:true}]
         });
 
-        this.publishPhiRadioGroup = new Ext.form.RadioGroup({xtype: 'radioGroup', columns: 1, hideLabel: false,
+        this.publishPhiRadioGroup = new Ext.form.RadioGroup({
+            xtype: 'radioGroup',
+            columns: 1,
+            hideLabel: false,
             items: [
                 {boxLabel: 'Limited PHI', inputValue: 'Limited', name: 'exportPhiLevel', checked: true},
                 {boxLabel: 'Full PHI', inputValue: 'PHI', name: 'exportPhiLevel'},

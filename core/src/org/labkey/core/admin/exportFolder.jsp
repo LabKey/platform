@@ -132,7 +132,7 @@ Ext.onReady(function(){
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'container', layout: 'hbox', items:[
-            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove PHI Protected Columns At Or Above:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset, list, and specimen columns that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions'},
+            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove PHI Protected Columns At Or Above:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions'},
             {xtype: 'combo', triggerAction: 'all', mode: 'local', name: 'exportPhiLevel', itemId: 'exportPhiLevelCombo', allowBlank: false, displayField: 'name', valueField: 'value', value: 'Limited', editable: false, validateOnBlur: false, width: 100,
                 store: new Ext.data.ArrayStore({
                     fields: ['value', 'name'],

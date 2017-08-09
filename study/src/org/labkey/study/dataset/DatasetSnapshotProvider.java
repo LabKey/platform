@@ -293,11 +293,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         boolean removeProtected = (snapshot != null) && snapshot.getSnapshotSettings().isRemoveProtectedColumns();
         boolean removePhi = (snapshot != null) && snapshot.getSnapshotSettings().isRemovePhiColumns();
-        PHI snapshotPhiLevel;
-        if (snapshot != null)
-            snapshotPhiLevel = snapshot.getSnapshotSettings().getPhiLevel();
-        else
-            snapshotPhiLevel = PHI.NotPHI;
+        PHI snapshotPhiLevel = (snapshot != null) ? snapshot.getSnapshotSettings().getPhiLevel() : PHI.NotPHI;
         Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, removeProtected, removePhi, snapshotPhiLevel);
 
         if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())
