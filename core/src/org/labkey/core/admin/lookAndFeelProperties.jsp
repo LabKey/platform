@@ -88,8 +88,8 @@
     <td class="labkey-form-label">Theme (new experimental themes)</td>
     <td>
         <select name="themeName">
+            <option value="Overcast" <%=selected("Overcast".equalsIgnoreCase(themeName))%>>Overcast (Seattle Alt)</option>
             <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(themeName))%>>Seattle</option>
-            <option value="SeattleLight" <%=selected("SeattleLight".equalsIgnoreCase(themeName))%>>Seattle (Light)</option>
         </select>
     </td>
 </tr>

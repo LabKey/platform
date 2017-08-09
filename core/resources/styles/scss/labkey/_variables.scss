@@ -199,9 +199,9 @@ $lk-grid-row-select-color-hover: $white !default;
 
 //== Header
 //
-$lk-page-header-bg-color: $lk-brand-color !default;
-$lk-page-header-brand-link-color: $white !default;
-$lk-page-header-color: $white !default;
+$lk-page-header-bg-color: $white !default;
+$lk-page-header-brand-link-color: #333333 !default;
+$lk-page-header-color: $lk-brand-color !default;
 $lk-page-header-font-color: #ADD4ED !default;
 $lk-page-header-icon-size: 20px !default;
 $lk-page-header-padding: 12px 0 !default;
@@ -232,7 +232,7 @@ $lk-text-link-color-hover: $black !default;
 
 //== Navigation
 //
-$lk-page-nav-bg-color: $lk-secondary-brand-color !default;
+$lk-page-nav-bg-color: $lk-brand-color !default;
 $lk-page-nav-bg-color-active: $white !default;
 // TODO: This should try to declare a shared color tone or use an adjusted brand color
 $lk-page-nav-bg-color-inactive: #73b6e0 !default;
