@@ -8,6 +8,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,15 +72,20 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                     new TableSelector(tableInfo).forEach(rs ->
                     {
                         String ptid = rs.getString("ParticipantId");
-                        Integer visitId = rs.getInt("VisitId");
+                        Double sequenceNum = rs.getDouble("SequenceNum");
                         String status = rs.getString("Status");
 
-                        if (ptid != null && visitId != null && status != null)
+                        if (ptid != null && sequenceNum != null && status != null)
                         {
-                            participants.add(ptid);
-                            visits.add(visitId);
+                            // find the visit associated with the sequence number
+                            Visit visit = StudyManager.getInstance().getVisitForSequence(_study, sequenceNum);
+                            if (visit != null)
+                            {
+                                participants.add(ptid);
+                                visits.add(visit.getId());
 
-                            _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visitId), status));
+                                _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visit.getId()), status));
+                            }
                         }
                     });
                     _participants.addAll(participants);

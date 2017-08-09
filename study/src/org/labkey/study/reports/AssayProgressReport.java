@@ -158,6 +158,9 @@ public class AssayProgressReport extends AbstractReport
     {
         Study study = StudyService.get().getStudy(context.getContainer());
 
+        _assayData.clear();
+        _copiedToStudyData.clear();
+
         // assay expectations from the assay schedule
         List<AssayExpectation> assayExpectations = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), TableSelector.ALL_COLUMNS, SimpleFilter.createContainerFilter(context.getContainer()), null).getArrayList(AssayExpectation.class);
 
