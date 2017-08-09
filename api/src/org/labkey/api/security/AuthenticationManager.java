@@ -25,6 +25,7 @@ import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -1043,7 +1044,17 @@ public class AuthenticationManager
             provider.logout(request);
 
         if (!user.isGuest())
+        {
+            // notify websocket clients associated with this http session, the user has logged out
+            HttpSession session = request.getSession(false);
+            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.LoggedOut);
+
+            // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
+            if (session != null)
+                NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
+
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
+        }
     }
 
 
@@ -1268,6 +1279,12 @@ public class AuthenticationManager
 
         // Prep the new session and set the user attribute
         session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
+
+        if (session.isNew() && !primaryAuthUser.isGuest())
+        {
+            // notify the websocket clients a new http session for the user has been started
+            NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+        }
 
         // Set the authentication validators into the new session
         AuthenticationValidator primaryValidator = primaryAuthResult.getResponse().getValidator();

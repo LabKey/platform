@@ -24,6 +24,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MailHelper;
 
 import javax.mail.MessagingException;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
@@ -127,4 +128,9 @@ public interface NotificationService
      * send event to browser
      */
     void sendServerEvent(int userId, Enum e);
+    /**
+     * cleanly close any websockets associated with the userId
+     * If session is provided, only WebSockets associated with the HttpSession will close.
+     */
+    void closeServerEvents(int userId, @Nullable HttpSession session, Enum e);
 }
