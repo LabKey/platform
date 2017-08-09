@@ -30,6 +30,7 @@ public class WebTheme
 
     // Experimental feature flag implemented by the Bootstrap Module
     public static final String EXPERIMENTAL_MIGRATE_BOOTSTRAP = "migrate-bootstrap";
+    public static final String EXPERIMENTAL_DEFAULT_THEME_NAME = "overcast";
 
     private final String _friendlyName;
     private final String _stylesheet;

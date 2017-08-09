@@ -7123,8 +7123,8 @@ internal/webapp/_icons/xltm.gif -text
 internal/webapp/_icons/xltx.gif -text
 internal/webapp/_icons/xml.gif -text
 internal/webapp/_icons/zip.gif -text
+internal/webapp/_images/LK-noTAG-overcast.svg -text
 internal/webapp/_images/LK-noTAG-seattle.svg -text
-internal/webapp/_images/LK-noTAG-seattlelight.svg -text
 internal/webapp/_images/ajax-loading-green.gif -text
 internal/webapp/_images/ajax-loading-red.gif -text
 internal/webapp/_images/ajax-loading.gif -text
@@ -7205,8 +7205,8 @@ internal/webapp/_images/message.png -text
 internal/webapp/_images/milestone_no.png -text
 internal/webapp/_images/milestone_yes.png -text
 internal/webapp/_images/minus.gif -text
+internal/webapp/_images/mobile-logo-overcast.svg -text
 internal/webapp/_images/mobile-logo-seattle.svg -text
-internal/webapp/_images/mobile-logo-seattlelight.svg -text
 internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
 internal/webapp/_images/one.png -text
