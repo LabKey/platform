@@ -49,6 +49,7 @@ import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
+import org.labkey.list.model.ListWriter;
 import org.labkey.list.model.VarcharListDomainKind;
 import org.labkey.list.view.ListItemType;
 import org.labkey.list.view.ListsWebPart;
@@ -180,7 +181,8 @@ public class ListModule extends DefaultModule
     public Set<Class> getUnitTests()
     {
         return new HashSet<>(Arrays.asList(
-            ListManager.TestCase.class
+            ListManager.TestCase.class,
+            ListWriter.TestCase.class
         ));
     }
 }

@@ -16,6 +16,8 @@
 
 package org.labkey.list.model;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
@@ -242,7 +244,7 @@ public class ListWriter
 
                 // Don't export files associated with protected file attachment columns if protected columns are being skipped. See #28035.
                 // Also don't export columns at or above the export PHI level is PHI columns are being skipped
-                if ((removeProtected && column.isProtected()) || (removePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel))))
+                if (shouldRemoveProtected(removeProtected, column) || shouldRemovePhi(removePhi, exportPhiLevel, column))
                     continue;
 
                 attachmentColumns.add(column);
@@ -317,7 +319,7 @@ public class ListWriter
             {
                 // Exclude columns marked as Protected, if removeProtected is true (except key columns marked as protected, those must be exported)
                 // Same with PHI level of the column being at or above the export PHI level
-                if (((removeProtected && column.isProtected()) || (removePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel))))
+                if ((shouldRemoveProtected(removeProtected, column) || shouldRemovePhi(removePhi, exportPhiLevel, column))
                         && !pks.contains(column) && !column.isKeyField())
                     continue;
 
@@ -339,6 +341,62 @@ public class ListWriter
         return columns;
     }
 
+    private static boolean shouldRemoveProtected(boolean isRemoveProtected, ColumnInfo column)
+    {
+        return isRemoveProtected && column.isProtected();
+    }
+
+    private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
+    {
+        return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testShouldRemoveProtected()
+        {
+            ColumnInfo ciProtected = new ColumnInfo("test");
+            ciProtected.setProtected(true);
+            ColumnInfo ciNotProtected = new ColumnInfo("test");
+            ciNotProtected.setProtected(false);
+
+            // shouldn't remove if isRemoveProtected is false
+            assertFalse(shouldRemoveProtected(false, ciProtected));
+
+            // should remove if it is protected
+            assertTrue(shouldRemoveProtected(true, ciProtected));
+        }
+
+        @Test
+        public void testShouldRemovePhi()
+        {
+            ColumnInfo ciNotPhi = new ColumnInfo("test");
+            ciNotPhi.setPHI(PHI.NotPHI);
+            ColumnInfo ciLimitedPhi = new ColumnInfo("test");
+            ciLimitedPhi.setPHI(PHI.Limited);
+            ColumnInfo ciPhi = new ColumnInfo("test");
+            ciPhi.setPHI(PHI.PHI);
+            ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
+            ciRestrictedPhi.setPHI(PHI.Restricted);
+
+            // should remove if it is at or above PHI export level
+            assertTrue(shouldRemovePhi(true, PHI.Restricted, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.PHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.PHI, ciPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, ciPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, ciLimitedPhi));
+
+            // shouldn't remove if it is not at or above PHI export level
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(true, PHI.PHI, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciNotPhi));
+            assertFalse(shouldRemovePhi(true, PHI.PHI, ciNotPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Limited, ciNotPhi));
+        }
+    }
 
     // We just want the underlying value, not the lookup
     private static class ListExportDataColumn extends DataColumn

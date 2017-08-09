@@ -512,6 +512,37 @@ public class DatasetDataWriter implements InternalStudyWriter
             assertTrue(shouldExport(ci, false, false, false, PHI.NotPHI, true));
             assertTrue(shouldExport(ci, false, false, false, PHI.NotPHI, false));
 
+            ci.setPHI(PHI.PHI);
+            assertTrue(shouldExport(ci, false, false, true, PHI.Restricted, false));
+            ci.setPHI(PHI.Limited);
+            assertTrue(shouldExport(ci, false, false, true, PHI.Restricted, false));
+            assertTrue(shouldExport(ci, false, false, true, PHI.PHI, false));
+            ci.setPHI(PHI.NotPHI);
+            assertTrue(shouldExport(ci, false, false, true, PHI.Restricted, false));
+            assertTrue(shouldExport(ci, false, false, true, PHI.PHI, false));
+            assertTrue(shouldExport(ci, false, false, true, PHI.Limited, false));
+
+            ci.setPHI(PHI.Restricted);
+            assertTrue(shouldExport(ci, false, false, false, PHI.Restricted, false));
+            assertTrue(shouldExport(ci, false, false, false, PHI.PHI, false));
+            assertTrue(shouldExport(ci, false, false, false, PHI.Limited, false));
+            ci.setPHI(PHI.PHI);
+            assertTrue(shouldExport(ci, false, false, false, PHI.PHI, false));
+            assertTrue(shouldExport(ci, false, false, false, PHI.Limited, false));
+            ci.setPHI(PHI.Limited);
+            assertTrue(shouldExport(ci, false, false, false, PHI.Limited, false));
+
+            ci.setPHI(PHI.Restricted);
+            assertTrue(shouldExport(ci, false, false, true, PHI.Restricted, true));
+            assertTrue(shouldExport(ci, false, false, true, PHI.PHI, true));
+            assertTrue(shouldExport(ci, false, false, true, PHI.Limited, true));
+            ci.setPHI(PHI.PHI);
+            assertTrue(shouldExport(ci, false, false, true, PHI.PHI, true));
+            assertTrue(shouldExport(ci, false, false, true, PHI.Limited, true));
+            ci.setPHI(PHI.Limited);
+            assertTrue(shouldExport(ci, false, false, true, PHI.Limited, true));
+
+
             ci.setProtected(true);
             assertTrue(shouldExport(ci, true, true, false, PHI.NotPHI, true));
 
@@ -527,6 +558,20 @@ public class DatasetDataWriter implements InternalStudyWriter
             ci = new ColumnInfo("test");
             ci.setProtected(true);
             assertFalse(shouldExport(ci, true, true, false, PHI.NotPHI, false));
+
+            ci = new ColumnInfo("test");
+            ci.setPHI(PHI.Restricted);
+            assertFalse(shouldExport(ci, false, false, true, PHI.Restricted, false));
+            assertFalse(shouldExport(ci, false, false, true, PHI.PHI, false));
+            assertFalse(shouldExport(ci, false, false, true, PHI.Limited, false));
+            ci.setPHI(PHI.PHI);
+            assertFalse(shouldExport(ci, false, false, true, PHI.PHI, false));
+            assertFalse(shouldExport(ci, false, false, true, PHI.Limited, false));
+            ci.setPHI(PHI.Limited);
+            assertFalse(shouldExport(ci, false, false, true, PHI.Limited, false));
+            ci.setProtected(true);
+            assertFalse(shouldExport(ci, false, true, false, PHI.Limited, false));
+            assertFalse(shouldExport(ci, false, true, true, PHI.Limited, false));
         }
     }
 }

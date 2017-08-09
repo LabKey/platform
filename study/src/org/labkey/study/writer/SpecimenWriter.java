@@ -334,5 +334,53 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             // should remove if not a key column and it is protected
             assertTrue(shouldRemoveProtected(true, notKeyCol, ciProtected));
         }
+
+        @Test
+        public void testShouldRemovePhi()
+        {
+            ColumnInfo ciNotPhi = new ColumnInfo("test");
+            ciNotPhi.setPHI(PHI.NotPHI);
+            ColumnInfo ciLimitedPhi = new ColumnInfo("test");
+            ciLimitedPhi.setPHI(PHI.Limited);
+            ColumnInfo ciPhi = new ColumnInfo("test");
+            ciPhi.setPHI(PHI.PHI);
+            ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
+            ciRestrictedPhi.setPHI(PHI.Restricted);
+
+            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
+
+            // should remove if not a key column and it is at or above PHI export level
+            assertTrue(shouldRemovePhi(true, PHI.Restricted, notKeyCol, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.PHI, notKeyCol, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, notKeyCol, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.PHI, notKeyCol, ciPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, notKeyCol, ciPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, notKeyCol, ciLimitedPhi));
+
+            // shouldn't remove if not a key column and it is not at or above PHI export level
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, notKeyCol, ciPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, notKeyCol, ciLimitedPhi));
+            assertFalse(shouldRemovePhi( true, PHI.PHI, notKeyCol, ciLimitedPhi));
+            assertFalse(shouldRemovePhi( true, PHI.Restricted, notKeyCol, ciNotPhi));
+            assertFalse(shouldRemovePhi( true, PHI.PHI, notKeyCol, ciNotPhi));
+            assertFalse(shouldRemovePhi( true, PHI.Limited, notKeyCol, ciNotPhi));
+
+            // shouldn't remove if not a key column and isRemovePhi is not true
+            assertFalse(shouldRemovePhi( false, PHI.Restricted, notKeyCol, ciRestrictedPhi));
+            assertFalse(shouldRemovePhi( false, PHI.PHI, notKeyCol, ciRestrictedPhi));
+            assertFalse(shouldRemovePhi( false, PHI.Limited, notKeyCol, ciRestrictedPhi));
+            assertFalse(shouldRemovePhi( false, PHI.PHI, notKeyCol, ciPhi));
+            assertFalse(shouldRemovePhi( false, PHI.Limited, notKeyCol, ciPhi));
+            assertFalse(shouldRemovePhi( false, PHI.Limited, notKeyCol, ciLimitedPhi));
+
+            // shouldn't remove if it is a key column
+            assertFalse(shouldRemovePhi( true, PHI.Restricted, keyCol, ciRestrictedPhi));
+            assertFalse(shouldRemovePhi( true, PHI.PHI, keyCol, ciRestrictedPhi));
+            assertFalse(shouldRemovePhi( true, PHI.Limited, keyCol, ciRestrictedPhi));
+            assertFalse(shouldRemovePhi( true, PHI.PHI, keyCol, ciPhi));
+            assertFalse(shouldRemovePhi( true, PHI.Limited, keyCol, ciPhi));
+            assertFalse(shouldRemovePhi( true, PHI.Limited, keyCol, ciLimitedPhi));
+        }
     }
 }

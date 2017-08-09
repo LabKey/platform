@@ -16,6 +16,8 @@
 package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -23,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -149,8 +152,8 @@ public abstract class DefaultStudyDesignWriter
                 {
                     if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
                     {
-                        if (!ctx.isRemoveProtected() || !col.isProtected()
-                                && (!ctx.isRemovePhi() || col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())))
+                        if (!shouldRemoveProtected(ctx.isRemoveProtected(), col)
+                                && !(shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col)))
                             columns.add(col);
                     }
                 }
@@ -159,6 +162,63 @@ public abstract class DefaultStudyDesignWriter
             }
         }
         vf.saveXmlBean(schemaFileName, tablesDoc);
+    }
+
+    private static boolean shouldRemoveProtected(boolean isRemoveProtected, ColumnInfo column)
+    {
+        return isRemoveProtected && column.isProtected();
+    }
+
+    private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
+    {
+        return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testShouldRemoveProtected()
+        {
+            ColumnInfo ciProtected = new ColumnInfo("test");
+            ciProtected.setProtected(true);
+            ColumnInfo ciNotProtected = new ColumnInfo("test");
+            ciNotProtected.setProtected(false);
+
+            // shouldn't remove if isRemoveProtected is false
+            assertFalse(shouldRemoveProtected(false, ciProtected));
+
+            // should remove if it is protected
+            assertTrue(shouldRemoveProtected(true, ciProtected));
+        }
+
+        @Test
+        public void testShouldRemovePhi()
+        {
+            ColumnInfo ciNotPhi = new ColumnInfo("test");
+            ciNotPhi.setPHI(PHI.NotPHI);
+            ColumnInfo ciLimitedPhi = new ColumnInfo("test");
+            ciLimitedPhi.setPHI(PHI.Limited);
+            ColumnInfo ciPhi = new ColumnInfo("test");
+            ciPhi.setPHI(PHI.PHI);
+            ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
+            ciRestrictedPhi.setPHI(PHI.Restricted);
+
+            // should remove if it is at or above PHI export level
+            assertTrue(shouldRemovePhi(true, PHI.Restricted, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.PHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(true, PHI.PHI, ciPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, ciPhi));
+            assertTrue(shouldRemovePhi(true, PHI.Limited, ciLimitedPhi));
+
+            // shouldn't remove if it is not at or above PHI export level
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(true, PHI.PHI, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciNotPhi));
+            assertFalse(shouldRemovePhi(true, PHI.PHI, ciNotPhi));
+            assertFalse(shouldRemovePhi(true, PHI.Limited, ciNotPhi));
+        }
     }
 
     private static class PropertyTableWriter extends TableInfoWriter
