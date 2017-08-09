@@ -113,6 +113,7 @@
 
   <table tableName="TriggerConfigurations" tableDbType="TABLE">
     <titleColumn>Name</titleColumn>
+    <description>Contains one row for each pipeline trigger configuration.</description>
     <columns>
       <column columnName="RowId">
         <isHidden>true</isHidden>
