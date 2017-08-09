@@ -110,14 +110,12 @@ public class DisplayColumnGroup
         }
         out.write("  }\n");
         out.write("}\n");
-        // Do this in an onReady() in case other elements are being manipulated in an onReady() as well and won't be
-        // present immediately, like a LABKEY.element.AutoCompletionField which swaps in an <input> into the DOM
-        // as part of its initialization
-        out.write("LABKEY.Utils.onReady(function() {\n");
-        out.write("  var e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0];\n");
-        out.write("  e.onchange=" + groupName + "Updated;\n");
-        out.write("  e.onkeyup=" + groupName + "Updated;\n");
-        out.write("});\n");
+
+        out.write("var e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "');\n");
+        out.write("if (e.length > 0) {");
+        out.write("  e[0].onchange=" + groupName + "Updated;\n");
+        out.write("  e[0].onkeyup=" + groupName + "Updated;\n");
+        out.write("}");
     }
 
     public void writeCopyableOnChangeHandler(RenderContext ctx, Writer out) throws IOException
@@ -125,25 +123,6 @@ public class DisplayColumnGroup
         if (isCopyable())
         {
             out.write("document.getElementById('" + getGroupFormFieldName(ctx) + "CheckBox').checked = this.checked; document.getElementById('" + getGroupFormFieldName(ctx) + "CheckBox').onchange();");
-        }
-    }
-
-    public void writeCopyableExtJavaScript(RenderContext ctx, Writer out) throws IOException
-    {
-        if (isCopyable())
-        {
-            String groupFormFieldName = getGroupFormFieldName(ctx);
-            out.write("function " + groupFormFieldName + "Updated()\n{");
-            out.write("if (document.getElementById('" + groupFormFieldName + "CheckBox') != null && document.getElementById('" + groupFormFieldName + "CheckBox').checked) {");
-            out.write("v = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0].value;");
-            for (int i = 1; i < getColumns().size(); i++)
-            {
-                out.write("document.getElementsByName('" + getColumns().get(i).getFormFieldName(ctx) + "')[0].value = v;");
-            }
-            out.write("}}\n");
-            out.write("e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0];\n");
-            out.write("e.onchange=" + groupFormFieldName + "Updated;");
-            out.write("e.onkeyup=" + groupFormFieldName + "Updated;");
         }
     }
 }
