@@ -17,9 +17,10 @@ package org.labkey.core.notification;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.MemTrackerListener;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.CloseReason;
@@ -32,8 +33,9 @@ import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 /**
  * WebSocket endpoint for simple browser notification/alerting
@@ -42,10 +44,12 @@ import java.util.Set;
 @ServerEndpoint(value="/_websocket/notifications", configurator=NotificationEndpoint.Configurator.class)
 public class NotificationEndpoint extends Endpoint
 {
+    static final Logger LOG = Logger.getLogger(NotificationEndpoint.class);
     static final MultiValuedMap<Integer,NotificationEndpoint> endpointsMap = new ArrayListValuedHashMap<>();
 
     private Session session;
     private int userId;
+    private HttpSession httpSession;
 
     public NotificationEndpoint()
     {
@@ -55,8 +59,12 @@ public class NotificationEndpoint extends Endpoint
     public void onOpen(Session session, EndpointConfig endpointConfig)
     {
         this.session = session;
+        this.httpSession = (HttpSession)endpointConfig.getUserProperties().get("httpSession");
+
         Integer id = (Integer)endpointConfig.getUserProperties().get("userId");
         this.userId = null==id ? 0 : id;
+
+        LOG.debug(this.toString() + " onOpen");
         synchronized (endpointsMap)
         {
             if (this.userId > 0)
@@ -77,6 +85,7 @@ public class NotificationEndpoint extends Endpoint
     @Override
     public void onClose(Session session, CloseReason closeReason)
     {
+        LOG.debug(this.toString() + " onClose: " + closeReason.toString());
         synchronized (endpointsMap)
         {
             endpointsMap.removeMapping(this.userId, this);
@@ -88,9 +97,15 @@ public class NotificationEndpoint extends Endpoint
     @Override
     public void onError(Session session, Throwable throwable)
     {
+        LOG.debug(this.toString() + " onError: " + throwable.getMessage());
         super.onError(session, throwable);
     }
 
+    @Override
+    public String toString()
+    {
+        return "[WebSocket userId=" + this.userId + "]";
+    }
 
     public static class Configurator extends ServerEndpointConfig.Configurator
     {
@@ -98,13 +113,28 @@ public class NotificationEndpoint extends Endpoint
         @Override
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response)
         {
-            User user = org.labkey.api.security.SecurityManager.getSessionUser((HttpSession) request.getHttpSession());
+            HttpSession session = (HttpSession) request.getHttpSession();
+            User user = org.labkey.api.security.SecurityManager.getSessionUser(session);
+            config.getUserProperties().put("httpSession", session);
             config.getUserProperties().put("userId", null==user ? 0 : user.getUserId());
         }
     }
 
+    private boolean isSameHttpSession(HttpSession session)
+    {
+        if (session == null)
+            return false;
 
-    private static void sendEvent(int userId, String eventName)
+        HttpSession boundSession = (HttpSession)this.session.getUserProperties().get("httpSession");
+        return boundSession != null && boundSession.getId().equals(session.getId());
+    }
+
+    interface Fn
+    {
+        void apply() throws IOException, IllegalStateException;
+    }
+
+    private static List<NotificationEndpoint> endpoints(int userId)
     {
         NotificationEndpoint[] arr;
         synchronized (endpointsMap)
@@ -112,24 +142,62 @@ public class NotificationEndpoint extends Endpoint
             Collection<NotificationEndpoint> coll = endpointsMap.get(userId);
             arr = coll.toArray(new NotificationEndpoint[coll.size()]);
         }
-        for (NotificationEndpoint endpoint : arr)
+        return Arrays.asList(arr);
+    }
+
+    // execute function in try/catch and close session on exception
+    private boolean safely(Fn fn)
+    {
+        try
         {
-            try
+            synchronized (this)
             {
-                synchronized (endpoint)
-                {
-                    endpoint.session.getBasicRemote().sendText("{\"event\":\"" + eventName + "\"}");
-                }
-            }
-            catch (IOException|IllegalStateException x)
-            {
-                synchronized (endpointsMap)
-                {
-                    endpointsMap.removeMapping(userId, endpoint);
-                    try { endpoint.session.close(); } catch (IOException ex){}
-                }
+                fn.apply();
+                return true;
             }
         }
+        catch (Exception x)
+        {
+            LOG.debug(toString() + ": " + x.getMessage());
+            synchronized (endpointsMap)
+            {
+                endpointsMap.removeMapping(this.userId, this);
+                try { this.session.close(); } catch (IOException ex){}
+            }
+        }
+        return false;
+    }
+
+    private static void doClose(int userId, @Nullable HttpSession httpSession, String message)
+    {
+        // Close WebSockets for the user AND httpSession
+        final CloseReason reason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, message);
+        long count = endpoints(userId)
+                .stream()
+                .filter(e -> e.isSameHttpSession(httpSession))
+                .map(e -> e.safely(() -> {
+                    e.session.close(reason);
+                }))
+                .count();
+
+        if (count == 0)
+            LOG.debug("WebSocket: no sessions to close for " + userId + " (" + (httpSession != null ? httpSession.getId() : "all sessions") + "): " + message);
+    }
+
+
+    private static void sendEvent(int userId, String eventName)
+    {
+        final String data = "{\"event\":\"" + eventName + "\"}";
+        long count = endpoints(userId)
+                .stream()
+                .map(e -> e.safely(() -> {
+                    e.session.getBasicRemote().sendText(data);
+                    LOG.debug(e.toString() + " sendText: " + eventName);
+                }))
+                .count();
+
+        if (count == 0)
+            LOG.debug("WebSocket: no sessions to send for " + userId + ": " + eventName);
     }
 
     public static void sendEvent(int userId, Enum e)
@@ -140,6 +208,11 @@ public class NotificationEndpoint extends Endpoint
     public static void sendEvent(int userId, Class clazz)
     {
         sendEvent(userId, clazz.getCanonicalName());
+    }
+
+    public static void close(int userId, @Nullable HttpSession session, String message)
+    {
+        doClose(userId, session, message);
     }
 
     static

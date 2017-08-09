@@ -385,23 +385,83 @@
             }
         };
 
+        function showDisconnectedMessage() {
+            //LABKEY.Utils.alert("Disconnected", "The server is unavailable");
+            console.warn("The server is unavailable");
+
+            // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
+            // CONSIDER: Once reconnected, reload the page unless page is dirty -- LABKEY.isDirty()
+        }
 
         var _websocket = null;
         var _callbacks = {};
 
+        function openWebsocket() {
+            _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
+            _websocket.onmessage = websocketOnMessage;
+            _websocket.onclose = websocketOnclose;
+        }
+
+        var websocketOnMessage = function (evt) {
+            var json = JSON.parse(evt.data);
+            var event = json.event;
+            console.info("websocket.onmessage", event);
+
+            if (event === "org.labkey.api.security.AuthNotify#LoggedIn") {
+                console.log("You have logged in elsewhere");
+            }
+            else if (event === "org.labkey.api.security.AuthNotify#LoggedOut") {
+                console.log("You have logged out elsewhere");
+            }
+
+            var list = _callbacks[event] || [];
+            list.forEach(function(cb){cb(json)});
+        };
+
+        var websocketOnclose = function (evt) {
+            console.info("websocket.onclose", evt);
+
+            if (evt.wasClean)
+            {
+                if (evt.code === 1000 || evt.code === 1003) {
+                    // normal close
+                    if (evt.reason === "org.labkey.api.security.AuthNotify#LoggedOut") {
+                        console.log("You have logged out");
+                    }
+                }
+                else if (evt.code === 1001 || evt.code === 1006) {
+                    // 1001 sent when server is shutdown normally (or on page reload in FireFox?)
+                    // 1006 abnormal close (e.g, server process died)
+                    setTimeout(showDisconnectedMessage, 1000);
+                }
+                else if (evt.code === 1008) {
+                    // Tomcat closes the websocket with "1008 Policy Violation" code when the session has expired.
+                    // evt.reason === "This connection was established under an authenticated HTTP session that has ended."
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
+                        success: function (data) {
+                            if (LABKEY.user.id !== data.id) {
+                                LABKEY.Utils.alert("Session expired", "Your session has expired. Reload the page to refresh your session.");
+                            }
+                        },
+                        failure: function (data) {
+                            setTimeout(showDisconnectedMessage, 1000);
+                        }
+                    });
+                }
+            }
+        };
+
         /** Add a general purpose listener for server events */
         var addServerEventListener = function(event, cb)
         {
-            if (LABKEY.user.id && null === _websocket && 'WebSocket' in window)
+            if (LABKEY.user.id && 'WebSocket' in window)
             {
-                _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
-                _websocket.onmessage = function(evt)
+                if (null === _websocket)
                 {
-                    var json = JSON.parse(evt.data);
-                    var event = json.event;
-                    var list = _callbacks[event] || [];
-                    list.forEach(function(cb){cb(json)});
-                };
+                    openWebsocket();
+                }
+
                 var list = _callbacks[event] || [];
                 list.push(cb);
                 _callbacks[event] = list;

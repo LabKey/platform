@@ -47,6 +47,7 @@ import org.labkey.api.util.TestContext;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
@@ -336,6 +337,12 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     public void sendServerEvent(int userId, Enum e)
     {
         NotificationEndpoint.sendEvent(userId, e);
+    }
+
+    @Override
+    public void closeServerEvents(int userId, @Nullable HttpSession session, Enum e)
+    {
+        NotificationEndpoint.close(userId, session, e.getClass().getCanonicalName() + "#" + e.name());
     }
 
 
