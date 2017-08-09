@@ -2010,7 +2010,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ExportAssayProgressReportAction extends ExportAction<ProgressReportForm>
     {
-        public void export(ProgressReportForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(ProgressReportForm form, HttpServletResponse response, BindException errors)
         {
             ReportIdentifier identifier = form.getReportId();
             if (identifier != null)
@@ -2020,7 +2020,7 @@ public class ReportsController extends BaseStudyController
                 {
                     AssayProgressReport progressReport = (AssayProgressReport)report;
 
-                    Map<String, Map<String, Object>> allAssayData = progressReport.getAssayReportData(getViewContext());
+                    Map<String, Map<String, Object>> allAssayData = progressReport.getAssayReportData(getViewContext(), errors);
                     Map<String, Object> assayData = allAssayData.get(form.getAssayName());
 
                     if (assayData != null)

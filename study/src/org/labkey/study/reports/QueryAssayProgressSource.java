@@ -2,8 +2,10 @@ package org.labkey.study.reports;
 
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.Pair;
@@ -69,6 +71,14 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                 TableInfo tableInfo = schema.getTable(_expectation.getQueryName());
                 if (tableInfo != null)
                 {
+                    final String format = "%s is a required field from the source query: %s/%s";
+                    if (tableInfo.getColumn(FieldKey.fromParts("ParticipantId")) == null)
+                        throw new RuntimeException(String.format(format, "ParticipantId", _expectation.getSchemaName(), _expectation.getQueryName()));
+                    if (tableInfo.getColumn(FieldKey.fromParts("SequenceNum")) == null)
+                        throw new RuntimeException(String.format(format, "SequenceNum", _expectation.getSchemaName(), _expectation.getQueryName()));
+                    if (tableInfo.getColumn(FieldKey.fromParts("Status")) == null)
+                        throw new RuntimeException(String.format(format, "Status", _expectation.getSchemaName(), _expectation.getQueryName()));
+
                     new TableSelector(tableInfo).forEach(rs ->
                     {
                         String ptid = rs.getString("ParticipantId");

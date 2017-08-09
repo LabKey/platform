@@ -7,6 +7,8 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -33,6 +35,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.AssaySpecimenConfigImpl;
 import org.labkey.study.model.StudyManager;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,6 +64,7 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_AVAILABLE = "available";
     public static final String SPECIMEN_NOT_AVAILABLE = "not-available";
     public static final String SPECIMEN_UNUSABLE = "unusable";
+    public static final String SPECIMEN_RESULTS_UNEXPECTED = "unexpected";
 
     private SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
     private Map<String, Map<String, Object>> _assayData = new HashMap<>();
@@ -68,12 +72,13 @@ public class AssayProgressReport extends AbstractReport
     public enum SpecimenStatus
     {
         EXPECTED(SPECIMEN_EXPECTED, "Expected", "Expected", "fa fa-circle-o"),
-        COLLECTED(SPECIMEN_COLLECTED, "Collected", "Collected", "fa fa-user-o"),
+        COLLECTED(SPECIMEN_COLLECTED, "Collected", "Collected", "fa fa-flask"),
         NOT_COLLECTED(SPECIMEN_NOT_COLLECTED, "Not collected", "Specimen not collected", "fa fa-ban"),
         NOT_RECIEVED(SPECIMEN_NOT_RECEIVED, "Not received", "Specimen collected but not received", "fa fa-exclamation"),
         AVAILABLE(SPECIMEN_AVAILABLE, "Results available", "Results available", "fa fa-check-circle"),
         INVALID(SPECIMEN_NOT_AVAILABLE, "Results unavailable", "Collected and received but no data", "fa fa-warning"),
-        UNUSABLE(SPECIMEN_UNUSABLE, "Unusable", "Unusable", "fa fa-trash-o");
+        UNUSABLE(SPECIMEN_UNUSABLE, "Unusable", "Unusable", "fa fa-trash-o"),
+        UNEXPECTED(SPECIMEN_RESULTS_UNEXPECTED, "Unexpected results", "Needs QC Check", "fa fa-flag");
 
         private String _name;
         private String _lable;
@@ -149,12 +154,13 @@ public class AssayProgressReport extends AbstractReport
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        getAssayReportData(context);
+        BindException errors = new NullSafeBindException(this, "form");
+        getAssayReportData(context, errors);
 
-        return new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", new AssayReportBean(getReportId(), _assayData));
+        return new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", new AssayReportBean(getReportId(), _assayData), errors);
     }
 
-    public Map<String, Map<String, Object>> getAssayReportData(ViewContext context)
+    public Map<String, Map<String, Object>> getAssayReportData(ViewContext context, BindException errors)
     {
         Study study = StudyService.get().getStudy(context.getContainer());
 
@@ -252,12 +258,12 @@ public class AssayProgressReport extends AbstractReport
 
                 _assayData.put(assay.getAssayName(), data);
             }
-            return _assayData;
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            errors.addError(new LabKeyError(e));
         }
+        return _assayData;
     }
 
     AssayData createAssayDataSource(Study study, AssayExpectation expectation)

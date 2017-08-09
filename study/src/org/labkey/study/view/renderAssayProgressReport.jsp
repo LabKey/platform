@@ -41,6 +41,7 @@
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     ObjectMapper jsonMapper = new ObjectMapper();
 %>
+<labkey:errors/>
 <labkey:panel>
     <div id=<%=h(renderId)%>></div>
 </labkey:panel>

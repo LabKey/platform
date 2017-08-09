@@ -62,7 +62,7 @@ public class DefaultAssayProgressSource implements AssayProgressReport.AssayData
         {
             for (String participant : getParticipants(context))
             {
-                status.add(new Pair<>(new AssayProgressReport.ParticipantVisit(participant, visit.getId()), AssayProgressReport.SPECIMEN_COLLECTED));
+                status.add(new Pair<>(new AssayProgressReport.ParticipantVisit(participant, visit.getId()), AssayProgressReport.SPECIMEN_EXPECTED));
             }
         }
         return status;
