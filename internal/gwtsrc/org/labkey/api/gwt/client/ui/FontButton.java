@@ -15,7 +15,6 @@
  */
 package org.labkey.api.gwt.client.ui;
 
-import com.extjs.gxt.ui.client.widget.Html;
 import com.google.gwt.user.client.ui.HTML;
 
 /**

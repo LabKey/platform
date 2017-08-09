@@ -125,8 +125,9 @@ public class ImageButton extends ButtonBase implements ClickListener
 
     public void refreshState()
     {
-        setHTML("<a class='" + (isEnabled() ? "labkey-button" : "labkey-disabled-button")
-                + "' style='display: inline-block'><span>" + _text + "</span></a>");
+        // TODO: This should try to use Button.ButtonBuilder
+        setHTML("<a class=\"labkey-button" + (isEnabled() ? "" : " labkey-disabled-button")
+                + "\"><span>" + _text + "</span></a>");
     }
 
     public void setText(String text)
