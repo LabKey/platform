@@ -315,6 +315,7 @@ public class CoreController extends SpringActionController
     }
 
 
+    // TODO: Remove this action and all associated code once new UI is enabled
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade

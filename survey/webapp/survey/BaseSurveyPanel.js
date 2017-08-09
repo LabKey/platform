@@ -634,7 +634,6 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 name: 'sidebar',
                 width: sidebarWidth,
                 border: false,
-                cls: 'extContainer',
                 tpl: [
                     '<div class="labkey-ancillary-wizard-background">',
                     '<ol class="labkey-ancillary-wizard-steps">',

@@ -7495,3 +7495,17 @@ ul.x-tab-strip-top li {
 .x-form-check-wrap label {
   margin-bottom: 0 !important;
 }
+
+/** Ext.ux.dd.GridDragDropRowOrder.js */
+
+.grid-row-insertion {
+  background: darkblue;
+  height: 3px;
+  opacity: 0.8;
+  filter:alpha(opacity=60);
+  z-index: 1000;
+}
+
+.grid-row-insertion-invalid {
+  background: gray;
+}

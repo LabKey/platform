@@ -526,6 +526,7 @@ public class ExperimentController extends SpringActionController
                     ActionButton deleteMaterial = new ActionButton(deleteMaterialUrl, "Delete");
                     deleteMaterial.setActionType(ActionButton.Action.POST);
                     deleteMaterial.setDisplayPermission(DeletePermission.class);
+                    deleteMaterial.setIconCls("trash");
                     deleteMaterial.setRequiresSelection(true);
                     return deleteMaterial;
                 }

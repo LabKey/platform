@@ -22,6 +22,21 @@ th {
   color: #000000;
 }
 
+fieldset {
+  border: 1px solid #b4b4b4;
+  padding: 8px;
+}
+
+legend {
+  border: 1px solid #999999;
+  padding: 0 5px 2px 5px;
+  background-color: #999999;
+  color: #FFFFFF;
+  margin-top: 8px;
+}
+
+// TODO: (Nick) consider removing this now that "row" pattern is in use
+// removal can cause misalignment with header/nav
 .lk-body-ct {
   padding: 0;
 }
@@ -59,28 +74,12 @@ li.labkey-ancillary-wizard-active-step {
   }
 }
 
-fieldset
-{
-  border: 1px solid #b4b4b4;
-  padding: 8px;
-}
-
-legend
-{
-  border: 1px solid #999999;
-  padding: 0 5px 2px 5px;
-  background-color: #999999;
-  color: #FFFFFF;
-  margin-top: 8px;
-}
-
 /* General */
 
 /* labkey-header is used for small headers, but it's most important use is in
  expandable menus where it is used by the javascript to properly expand and collapse
  lists*/
-.labkey-header
-{
+.labkey-header {
   color: $lk-link-color;
   text-align: left;
   text-decoration: none;
@@ -491,20 +490,6 @@ table.wiki-table td, table.wiki-table th
 }
 
 @import "components/customView";
-
-/** Ext.ux.dd.GridDragDropRowOrder.js */
-
-.grid-row-insertion {
-  background: darkblue;
-  height: 3px;
-  opacity: 0.8;
-  filter:alpha(opacity=60);
-  z-index: 1000;
-}
-
-.grid-row-insertion-invalid {
-  background: gray;
-}
 
 /* Help pop ups */
 #helpDiv
