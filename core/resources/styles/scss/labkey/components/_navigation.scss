@@ -199,7 +199,7 @@
       border: 0;
       border-radius: 0;
       padding: 10px;
-      background-color: white;
+      background-color: $lk-dropdown-bg-color; //background color of mobile projects dropdown
       font-size: $lk-font-size-large;
 
       a.subexpand-link {

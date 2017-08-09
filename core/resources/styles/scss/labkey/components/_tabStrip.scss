@@ -13,9 +13,9 @@ table.labkey-tab-strip
 /* This tab has no bottom border so it looks like it is forward */
 td.labkey-tab-selected, .labkey-tab-selected {
   padding: 4px 7px;
-  border: 1px solid #b4b4b4;
-  border-bottom-color: #ffffff;
-  background-color: #fff;
+  border: 1px solid $lk-tabstrip-border-color;
+  border-bottom-color: #FFFFFF;
+  background-color: #FFFFFF;
   color: #000000;
   font-weight: bold;
   white-space: nowrap;
@@ -23,9 +23,9 @@ td.labkey-tab-selected, .labkey-tab-selected {
 
 .labkey-tab-selected a {
   padding: 4px 7px;
-  border-top: solid 1px #b4b4b4;
-  border-bottom: solid 1px #ffffff;
-  background-color: #fff;
+  border-top: solid 1px $lk-tabstrip-border-color;
+  border-bottom: solid 1px #FFFFFF;
+  background-color: #FFFFFF;
   color: #000000;
   font-weight: bold;
   white-space: nowrap;
@@ -34,7 +34,7 @@ td.labkey-tab-selected, .labkey-tab-selected {
 /* This tab has a bottom border so it looks like it is back */
 td.labkey-tab, .labkey-tab {
   padding: 4px 7px;
-  border: solid 1px #b4b4b4;
+  border: solid 1px $lk-tabstrip-border-color;
   background-color: #f4f4f4;
   color: $lk-link-color;
   text-decoration: none;
@@ -68,7 +68,7 @@ td.labkey-tab, .labkey-tab {
 /* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
 td.labkey-tab-inactive {
   padding: 4px 7px;
-  border:solid 1px #b4b4b4;
+  border:solid 1px $lk-tabstrip-border-color;
   text-decoration: none;
   color: #444444;
   background-color: #f4f4f4;
@@ -77,10 +77,10 @@ td.labkey-tab-inactive {
 .labkey-tab-content,
 td.labkey-tab-content {
   padding: 4px 7px;
-  border-left: solid 1px #b4b4b4;
-  border-right: solid 1px #b4b4b4;
-  border-bottom: solid 1px #b4b4b4;
-  background-color:#ffffff;
+  border-left: solid 1px $lk-tabstrip-border-color;
+  border-right: solid 1px $lk-tabstrip-border-color;
+  border-bottom: solid 1px $lk-tabstrip-border-color;
+  background-color:#FFFFFF;
   vertical-align:bottom;
 }
 
@@ -96,13 +96,13 @@ td.labkey-tab-space
   border-top: 0;
   border-left: 0;
   border-right: 0;
-  border-bottom: 1px solid #b4b4b4;
+  border-bottom: 1px solid $lk-tabstrip-border-color;
 }
 
 /* styles used for TabStripView tabs */
 ul.labkey-tab-strip
 {
-  border-bottom : 1px solid #b4b4b4;
+  border-bottom : 1px solid $lk-tabstrip-border-color;
   margin : 0;
   padding-left : 10px;
 
@@ -122,9 +122,9 @@ ul.labkey-tab-strip
   }
 
   a {
-    border-top: 1px solid #b4b4b4;
-    border-right: 1px solid #b4b4b4;
-    border-left: 1px solid #b4b4b4;
+    border-top: 1px solid $lk-tabstrip-border-color;
+    border-right: 1px solid $lk-tabstrip-border-color;
+    border-left: 1px solid $lk-tabstrip-border-color;
     border-bottom: none;
     float: left;
     line-height: 1;
@@ -134,9 +134,9 @@ ul.labkey-tab-strip
     margin-right: 2px;
     padding: 6px 9px;
 
-    -moz-box-shadow: 0 -2px 2px #ddd;
-    -webkit-box-shadow: 0 -2px 2px #ddd;
-    box-shadow: 0 -2px 2px #ddd;
+    -moz-box-shadow: 0 -2px 2px #DDDDDD;
+    -webkit-box-shadow: 0 -2px 2px #DDDDDD;
+    box-shadow: 0 -2px 2px #DDDDDD;
   }
 }
 
@@ -155,15 +155,15 @@ li.labkey-tab-inactive a {
 .labkey-tab-strip-spacer {
   height: 4px;
   background-color: $lk-active-tab-bg-color;
-  border-left: 1px solid #b4b4b4;
-  border-right: 1px solid #b4b4b4;
-  border-bottom: 1px solid #fff;
+  border-left: 1px solid $lk-tabstrip-border-color;
+  border-right: 1px solid $lk-tabstrip-border-color;
+  border-bottom: 1px solid #FFFFFF;
   line-height:1;
 }
 
 .labkey-tab-strip-content {
   background: $lk-active-tab-body-bg-color;
-  border: 1px solid #b4b4b4;
+  border: 1px solid $lk-tabstrip-border-color;
   border-top: none;
   clear: both;
   margin: 0;

@@ -28,11 +28,6 @@
   }
 }
 
-.labkey-data-region-auth {
-  display: inline-block;
-  border: 1px solid #DDDDDD;
-}
-
 /* Within the wrap do not outline the Data Region */
 .labkey-data-region-wrap table.labkey-show-borders {
   border-right-width: 0;
@@ -212,8 +207,8 @@ table.labkey-fixed-width-columns {
 }
 
 .labkey-has-row-totals col, .labkey-has-col-totals col {
-  border-right: solid 1px #DDDDDD;
-  border-left: solid 1px #DDDDDD;
+  border-right: solid 1px $lk-grid-inner-border-color;
+  border-left: solid 1px $lk-grid-inner-border-color;
 }
 
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
@@ -228,12 +223,12 @@ table.labkey-fixed-width-columns {
 
 /* Used for the shaded alternate columns (for pivot queries) */
 .labkey-alternate-col td, .labkey-alternate-col th, tr.labkey-alternate-col, td.labkey-alternate-col, th.labkey-alternate-col {
-  background: #F6F6F6;
+  background: #F6F6F6; //$lk-grid-col-alt-bg-color
 }
 
 /* Used for the shaded alternate rows and alternate columns (for pivot queries) */
 .labkey-alternate-row .labkey-alternate-col td, .labkey-alternate-row .labkey-alternate-col th, tr.labkey-alternate-row .labkey-alternate-col, td.labkey-alternate-row .labkey-alternate-col, th.labkey-alternate-row .labkey-alternate-col {
-  background: #F0F0F0;
+  background: #F0F0F0; //$lk-grid-row-alt-col-alt-bg-color
 }
 
 .labkey-col-header-filter {
@@ -247,13 +242,13 @@ table.labkey-fixed-width-columns {
 
 /* Used to highlight cells with a darker color, limited use right now */
 td.labkey-highlight-cell, th.labkey-highlight-cell {
-  background: #AAAAAA;
+  background: #AAAAAA; // $lk-grid-highlight-cell-color
   font-weight:bold;
 }
 
 /* Used for blank cells in the data region such as when the main row headers have sub row headers */
 td.labkey-blank-cell, th.labkey-blank-cell {
-  background: #FFFFFF;
+  background: #FFFFFF; // $lk-grid-blank-cell-color
   border: 0;
 }
 
@@ -317,14 +312,14 @@ td.labkey-blank-cell, th.labkey-blank-cell {
   background-color: #FFFFFF;
 
   &.labkey-show-borders {
-    border: 1px solid #DDDDDD;
+    border: 1px solid $lk-grid-outer-border-color;
   }
 
   &.labkey-show-borders td, &.labkey-show-borders th {
     border-top: 0;
     border-left: 0;
-    border-right: solid 1px #DDDDDD;
-    border-bottom: solid 1px #DDDDDD;
+    border-right: solid 1px $lk-grid-inner-border-color;
+    border-bottom: solid 1px $lk-grid-inner-border-color;
   }
 
   th, .labkey-column-header, .labkey-row td, .labkey-alternate-row td {

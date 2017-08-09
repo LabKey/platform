@@ -13,9 +13,9 @@ $internal-images-dir: '#{$internal-webapp-dir}/_images';
 //
 // # Imported "labkey-theme" colors
 // TODO: Integrate these with bootstrap
-$black: #000;
-$gray-dark: #333;
-$white: #FFF;
+$black: #000000;
+$gray-dark: #333333;
+$white: #FFFFFF;
 
 $lk-brand-color: #116596 !default;
 $lk-secondary-brand-color: #3495D2 !default;
@@ -194,7 +194,7 @@ $lk-grid-msgbox-bg-color: #F4F4F4 !default;
 $lk-grid-row-bg-color: $white !default;
 $lk-grid-row-alt-bg-color: #F4F4F4 !default;
 $lk-grid-row-color-hover: #e2e2e2 !default;
-$lk-grid-row-select-color: #FFC !default;
+$lk-grid-row-select-color: #FFFFCC !default;
 $lk-grid-row-select-color-hover: $white !default;
 
 //== Header
@@ -202,6 +202,7 @@ $lk-grid-row-select-color-hover: $white !default;
 $lk-page-header-bg-color: $lk-brand-color !default;
 $lk-page-header-brand-link-color: $white !default;
 $lk-page-header-color: $white !default;
+$lk-page-header-font-color: #ADD4ED !default;
 $lk-page-header-icon-size: 20px !default;
 $lk-page-header-padding: 12px 0 !default;
 $lk-page-header-navbar-nav-color: $lk-page-header-color !default;
@@ -254,7 +255,7 @@ $lk-panel-footer-padding: $lk-panel-heading-padding !default;
 $lk-panel-title-font-weight: bold !default;
 
 $lk-panel-default-text: $gray-dark !default;
-$lk-panel-default-border: #ddd !default;
+$lk-panel-default-border: #DDDDDD !default;
 $lk-panel-default-heading-bg: #f5f5f5 !default;
 
 $lk-panel-primary-text: $white !default;
@@ -293,6 +294,7 @@ $lk-active-tab-bg-color: $white !default;
 $lk-active-tab-body-bg-color: $lk-active-tab-bg-color !default;
 $lk-inactive-tab-color: $black !default;
 $lk-inactive-tab-bg-color: #f4f4f4 !default;
+$lk-tabstrip-border-color: #b4b4b4 !default;
 
 //== Tooltips
 //

@@ -6,6 +6,7 @@
 (function ($) {
 
     var ID_COUNTER = 0;
+    var NEW_UI = LABKEY.experimental.useExperimentalCoreUI === true;
 
     function InlineEditor(config)
     {
@@ -84,7 +85,7 @@
                 '<textarea id="' + this.editFieldId + '" style="width: 100%; height: ' + height + 'px;">',
                     this.originalValue,
                 '</textarea>',
-                '<div id="' + msgboxId + '" class="labkey-dataregion-msgbox" style="display: none;"></div>',
+                '<div id="' + msgboxId + '" class="' + (NEW_UI ? "labkey-wiki-msgbox" : "labkey-dataregion-msgbox")  + '" style="display: none;"></div>',
                 '<p>',
                     '<a class="labkey-button" name="save"><span>Save</span></a>',
                     '<a class="labkey-button" name="cancel"><span>Cancel</span></a>',
