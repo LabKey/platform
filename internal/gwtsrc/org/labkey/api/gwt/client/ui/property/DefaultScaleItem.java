@@ -84,7 +84,7 @@ public class DefaultScaleItem<DomainType extends GWTDomain<FieldType>, FieldType
         _scaleTypes.addClickHandler(createClickHandler());
         _scaleTypes.addKeyUpHandler(createKeyUpHandler());
 
-        return ++row;
+        return row + 1;
     }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
