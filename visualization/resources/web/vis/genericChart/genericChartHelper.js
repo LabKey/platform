@@ -879,27 +879,32 @@ LABKEY.vis.GenericChartHelper = new function(){
             );
         }
         else if (renderType == 'line_plot') {
-            var seriesName = chartConfig.measures.series?chartConfig.measures.series.name:undefined,
-                xName = chartConfig.measures.x.name,
-                isDate = isDateType(getMeasureType(chartConfig.measures.x));
+            var xName = chartConfig.measures.x.name,
+                isDate = isDateType(getMeasureType(chartConfig.measures.x)),
+                    pathAes = {};
+
+            pathAes.sortFn = function(a, b) {
+                // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
+                // not currently included in this plot.
+                if (isDate){
+                    return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
+                }
+                return a.getValue(xName) - b.getValue(xName);
+            };
+
+            if (chartConfig.measures.series) {
+                pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
+                pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
+            }
+
             layers.push(
                 new LABKEY.vis.Layer({
                     geom: new LABKEY.vis.Geom.Path({
+                        color: '#' + chartConfig.geomOptions.pointFillColor,
                         size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
                         opacity:chartConfig.geomOptions.opacity
                     }),
-                    aes: {
-                        pathColor: generateGroupingAcc(seriesName),
-                        group: generateGroupingAcc(seriesName),
-                        sortFn: function(a, b) {
-                            // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
-                            // not currently included in this plot.
-                            if (isDate){
-                                return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
-                            }
-                            return a.getValue(xName) - b.getValue(xName);
-                        }
-                    }
+                    aes: pathAes
                 })
             );
         }
