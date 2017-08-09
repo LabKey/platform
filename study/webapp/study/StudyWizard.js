@@ -627,7 +627,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var changeFolderBtn = new Ext.Button({
             name:"changeFolderBtn",
             text: "Change",
-            cls: "labkey-button",
             handler: browseFolders
         });
 
@@ -659,7 +658,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             gtip : protocolTip,
             height: 24,
             buttonText: 'Browse',
-            buttonCfg: { cls: "labkey-button"},
             listeners: {
                 "fileselected": function (fb, v) {
                     this.info.protocolDoc = v;
@@ -703,7 +701,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 dblclick: onDblClick,
                 scope:this
             },
-            cls : 'folder-management-tree', // used by selenium helper
+            cls : 'extContainer folder-management-tree', // used by selenium helper
             header:false,
             style: "margin-left: 130px;", //Line up the folder tree with the rest of the form elements.
             rootVisible: true,
@@ -734,7 +732,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var cancelBtn = new Ext.Button({
             name: "cancelBtn",
             text: "cancel",
-            cls: "labkey-button",
             handler: function(){
                 treeWin.hide();
             },

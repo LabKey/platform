@@ -6,7 +6,21 @@ $ext3-images-dir: '#{$api-webapp-dir}/ext-3.4.1/resources/images/default';
  * licensing@sencha.com
  * http://www.sencha.com/license
  */
+.x-window {
+  box-sizing: content-box !important;
+
+  * {
+    box-sizing: content-box !important;
+  }
+}
+
 .extContainer {
+  box-sizing: content-box !important;
+
+  * {
+    box-sizing: content-box !important;
+  }
+
   blockquote, body, dd, div, dl, dt, fieldset, form, h1, h2, h3, h4, h5, h6, html, input, li, ol, p, pre, td, th, ul {
     margin: 0;
     padding: 0;
@@ -4020,21 +4034,21 @@ td.x-date-mp-sep {
   opacity:.65;
   -moz-opacity:.65;
   filter:alpha(opacity=65);
-}
 
-.x-panel-ghost ul {
-  margin:0;
-  padding:0;
-  overflow:hidden;
-  font-size:0;
-  line-height:0;
-  border:1px solid;
-  border-top:0 none;
-  display:block;
-}
+  ul {
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    font-size:0;
+    line-height:0;
+    border:1px solid;
+    border-top:0 none;
+    display:block;
+  }
 
-.x-panel-ghost * {
-  cursor:move !important;
+  * {
+    cursor:move !important;
+  }
 }
 
 .x-panel-dd-spacer {
@@ -4045,46 +4059,52 @@ td.x-date-mp-sep {
 .x-panel-btns {
   padding:5px;
   overflow:hidden;
-}
 
-.x-panel-btns td.x-toolbar-cell{
-  padding:3px;
-}
+  td.x-toolbar-cell {
+    padding: 3px;
+  }
 
-.x-panel-btns .x-btn-focus .x-btn-left{
-  background-position:0 -147px;
-}
+  .x-btn-focus {
+    .x-btn-left {
+      background-position:0 -147px;
+    }
 
-.x-panel-btns .x-btn-focus .x-btn-right{
-  background-position:0 -168px;
-}
+    .x-btn-right {
+      background-position:0 -168px;
+    }
 
-.x-panel-btns .x-btn-focus .x-btn-center{
-  background-position:0 -189px;
-}
+    .x-btn-center {
+      background-position:0 -189px;
+    }
+  }
 
-.x-panel-btns .x-btn-over .x-btn-left{
-  background-position:0 -63px;
-}
+  .x-btn-over {
+    .x-btn-left {
+      background-position:0 -63px;
+    }
 
-.x-panel-btns .x-btn-over .x-btn-right{
-  background-position:0 -84px;
-}
+    .x-btn-right {
+      background-position:0 -84px;
+    }
 
-.x-panel-btns .x-btn-over .x-btn-center{
-  background-position:0 -105px;
-}
+    .x-btn-center {
+      background-position:0 -105px;
+    }
+  }
 
-.x-panel-btns .x-btn-click .x-btn-center{
-  background-position:0 -126px;
-}
+  .x-btn-click {
+    .x-btn-left {
+      background-position:0 -63px;
+    }
 
-.x-panel-btns .x-btn-click  .x-btn-right{
-  background-position:0 -84px;
-}
+    .x-btn-right {
+      background-position:0 -84px;
+    }
 
-.x-panel-btns .x-btn-click .x-btn-left{
-  background-position:0 -63px;
+    .x-btn-center {
+      background-position:0 -126px;
+    }
+  }
 }
 
 .x-panel-fbar td,.x-panel-fbar span,.x-panel-fbar input,.x-panel-fbar div,.x-panel-fbar select,.x-panel-fbar label{
@@ -4500,9 +4520,7 @@ td.x-date-mp-sep {
 
 .x-html-editor-tb .x-toolbar {
   position:static !important;
-}.x-panel-noborder .x-panel-body-noborder {
-   border-width:0;
- }
+}
 
 .x-panel-noborder .x-panel-header-noborder {
   border-width:0 0 1px;
@@ -6960,7 +6978,7 @@ li.x-menu-item-active a.x-menu-item {
     outline: 0 none;
     overflow: visible;
     // TODO: use $lk-button-padding and determine if adjustment can be made to look centered
-    padding: 2px 3px 3px 3px;
+    //padding: 2px 3px 3px 3px;
     text-transform: $lk-button-text-transform;
     width: auto;
   }
