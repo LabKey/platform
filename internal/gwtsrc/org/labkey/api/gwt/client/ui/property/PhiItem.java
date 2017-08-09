@@ -33,6 +33,7 @@ public class PhiItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
     public PhiItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
+        _phiTypes.setName("phiLevel");
     }
 
     private void updateEnabledState(FieldType field)

@@ -55,6 +55,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     {
         super(propertyPane);
         _owner = owner;
+        _defaultValueTypes.setName("defaultValue");
     }
 
     private boolean supportsDefaultValues(GWTDomain d)
