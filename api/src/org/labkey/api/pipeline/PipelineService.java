@@ -46,6 +46,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 {
     String MODULE_NAME = "Pipeline";
     String UNZIP_DIR = "unzip";
+    String EXPORT_DIR = "export";
+    String CACHE_DIR = "cache";
 
     static PipelineService get()
     {
