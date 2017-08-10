@@ -473,7 +473,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 {
                     throw new NotFoundException("No valid pipeline root found");
                 }
-                File exportDir = root.resolvePath("export");
+                File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
                 try
                 {
                     writer.write(container, ctx, new FileSystemFile(exportDir));
@@ -492,7 +492,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 {
                     throw new NotFoundException("No valid pipeline root found");
                 }
-                File exportDir = root.resolvePath("export");
+                File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
                 exportDir.mkdir();
                 try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
                 {

@@ -366,11 +366,6 @@ public class DatasetQueryView extends StudyQueryView
 
         populateChartsReports(bar);
 
-        bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
-
-        if (StudyManager.getInstance().showQCStates(getContainer()))
-            bar.add(createQCStateButton(_qcStateSet));
-
         List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
         bar.add(createExportButton(recordSelectorColumns));
 
@@ -398,16 +393,6 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (!isAssayDataset) // admins always get the import and manage buttons
             {
-                if (canManage)
-                {
-                    // manage dataset
-                    ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage");
-                    manageButton.setDisplayModes(DataRegion.MODE_GRID);
-                    manageButton.setActionType(ActionButton.Action.LINK);
-                    manageButton.setDisplayPermission(InsertPermission.class);
-                    bar.add(manageButton);
-                }
-
                 if (canWrite)
                 {
                     // insert menu button contain Insert New and Bulk import, or button for either option
@@ -437,6 +422,16 @@ public class DatasetQueryView extends StudyQueryView
                         bar.add(deleteRows);
                     }
                 }
+
+                if (canManage)
+                {
+                    // manage dataset
+                    ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage");
+                    manageButton.setDisplayModes(DataRegion.MODE_GRID);
+                    manageButton.setActionType(ActionButton.Action.LINK);
+                    manageButton.setDisplayPermission(InsertPermission.class);
+                    bar.add(manageButton);
+                }
             }
             else
             {
@@ -454,6 +449,11 @@ public class DatasetQueryView extends StudyQueryView
                 }
             }
         }
+
+        bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
+
+        if (StudyManager.getInstance().showQCStates(getContainer()))
+            bar.add(createQCStateButton(_qcStateSet));
 
         ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());
         ActionButton viewSamples = new ActionButton(viewSamplesURL, "View Specimens");

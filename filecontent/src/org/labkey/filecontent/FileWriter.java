@@ -23,6 +23,7 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
@@ -33,6 +34,8 @@ import org.labkey.folder.xml.FolderDocument;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Writes the content of the webdav file root to the archive.
@@ -74,11 +77,14 @@ public class FileWriter extends BaseFolderWriter
             VirtualFile virtualRoot = vf.getDir(DIR_NAME);
 
             // In-line first level of recursion to be able to exclude the "./export" directory, as we may be writing into it right now
+            // also exclude the "./cache" and "./unzip" directories as those are LabKey created as well
+            List<String> dirsToExclude = Arrays.asList(PipelineService.EXPORT_DIR, PipelineService.UNZIP_DIR, PipelineService.CACHE_DIR);
+
             for (WebdavResource child : resource.list())
             {
                 if (child.isCollection())
                 {
-                    if (!child.getName().equalsIgnoreCase("export"))
+                    if (dirsToExclude.stream().noneMatch(child.getName()::equalsIgnoreCase))
                     {
                         virtualRoot.getDir(child.getName()).saveWebdavTree(child, ctx.getUser());
                     }

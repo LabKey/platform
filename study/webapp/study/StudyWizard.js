@@ -102,12 +102,18 @@ LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
                         });
 
                         // populate the previous studies, mapping the container name where applicable
-                        config.previousStudies = [];
+                        var previousStudies = [];
                         Ext.each(data.rows, function(row)
                         {
                             row.Destination = containerNameMap[row.Destination] || null;
-                            config.previousStudies.push(row);
+                            if (row.Destination) {
+                                previousStudies.push(row);
+                            }
                         });
+
+                        if (previousStudies.length > 0) {
+                            config.previousStudies = previousStudies;
+                        }
 
                         var wizard = new LABKEY.study.CreateStudyWizard(config);
                         wizard.show();
@@ -386,7 +392,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             title: title,
             resizable: false,
             width: 875,
-            height: LABKEY.experimental.useExperimentalCoreUI ? 630: 600,
+            height: 630,
             autoScroll: false,
             closeAction:'close',
             border: false,
@@ -617,7 +623,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
             name: 'studyFolder',
-            flex: LABKEY.experimental.useExperimentalCoreUI ? undefined: 1,
+            flex: 1,
             readOnly: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
@@ -898,7 +904,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var radioGroup = new Ext.form.RadioGroup({
             columns: 2,
             fieldLabel: '',
-            style: LABKEY.experimental.useExperimentalCoreUI ? '' : "padding-bottom: 10px;",
+            style: 'padding-bottom: 10px;',
             labelWidth: 5,
             items: [
                 this.existingGroupRadio,
@@ -1128,7 +1134,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     }
                 }
             }),
-            style: LABKEY.experimental.useExperimentalCoreUI ? '' : 'padding-top: 10px;',
+            style: 'padding-top: 10px;',
             title : 'Hidden Datasets',
             viewConfig: {forceFit: true},
             loadMask:{msg:"Loading, please wait..."},
@@ -1202,7 +1208,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             '</div>';
 
         var radioGroup = new Ext.form.RadioGroup({
-            fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, defaults: {style:"margin: 0 0 2px 2px"},
+            fieldLabel: 'Data Refresh',
+            gtip : syncTip,
+            columns: 1,
+            width: 300,
+            defaults: {style:"margin: 0 0 2px 2px"},
             items: [
                 {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode != 'ancillary', hidden: this.mode == 'ancillary'},
                 {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode == 'ancillary'},
@@ -1222,16 +1232,17 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         radioGroup.on('afterrender', afterRenderFunc, this);
 
-        if(this.allowRefresh)
+        if (this.allowRefresh)
         {
             this.snapshotOptions = new Ext.form.FormPanel({
                 items: [radioGroup],
-                padding: LABKEY.experimental.useExperimentalCoreUI ? '0 0 0 0' : '10px 0 0 0',
+                padding: 0,
                 border: false,
                 height: 85,
                 width : 300
             });
 
+            items.push(new Ext.BoxComponent({height: 10})); // spacer
             items.push(this.snapshotOptions);
         }
 
@@ -1668,7 +1679,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var optionsPanel = new Ext.form.FormPanel({
             defaults: {labelSeparator: ''},
-            padding: LABKEY.experimental.useExperimentalCoreUI ? '' : '10px 0px',
             border: false,
             labelWidth: 120,
             height: 200,
@@ -2056,9 +2066,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         this.publishPhiRadioGroup = new Ext.form.RadioGroup({
-            xtype: 'radioGroup',
             columns: 1,
-            hideLabel: false,
             items: [
                 {boxLabel: 'Limited PHI', inputValue: 'Limited', name: 'exportPhiLevel', checked: true},
                 {boxLabel: 'Full PHI', inputValue: 'PHI', name: 'exportPhiLevel'},
@@ -2067,14 +2075,19 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var phiPanel = new Ext.form.FormPanel({
-            width: 100, height: 150,
-            border: true,
+            border: false,
+            width: 100,
+            height: 150,
+            padding: '10px 0 0 0',
             name : 'PHI Options',
             layout: 'auto',
             layoutConfig: {
                 align: 'left'
             },
-            items: [new Ext.form.Label({html: '<strong>PHI Level For Publishing:</strong>'}), this.publishPhiRadioGroup]
+            items: [
+                new Ext.form.Label({html: 'PHI Level For Publishing:'}),
+                this.publishPhiRadioGroup
+            ]
         });
 
         items.push(grid);
