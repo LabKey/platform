@@ -68,7 +68,7 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         assertElementPresent(Locator.tagWithText("td", "Staff Code").append("/../td/input[last()][@checked]"));     // MV
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][not(@checked)]"));  // MV
 
-        clickButtonContainingText("Edit Definition");
+        mashButton("Edit Definition");
         waitForElement(Locator.name("description"), WAIT_FOR_JAVASCRIPT);
         assertNotChecked(Locator.checkboxByName("demographicData"));
 
@@ -85,7 +85,7 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         assertTextNotPresent("StaffCode", "DoubleNum");
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][@checked]"));  // MV
 
-        clickButtonContainingText("Edit Definition");
+        mashButton("Edit Definition");
         waitForElement(Locator.name("description"), WAIT_FOR_JAVASCRIPT);
         assertChecked(Locator.checkboxByName("demographicData"));
     }
