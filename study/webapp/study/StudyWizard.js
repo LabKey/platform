@@ -90,7 +90,7 @@ LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
 
                 LABKEY.Security.getContainers({
                     container: containerIds,
-                    includeEffectivePermissions: false,
+                    includeEffectivePermissions: true,
                     success: function(info)
                     {
                         // only keep track of the id->name mapping for containers the user has permissions to
