@@ -514,7 +514,7 @@ public class SqlScriptController extends SpringActionController
                 html.append("<br>\n");
 
                 ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), _fromVersion, _toVersion, _includeSingleScripts);
-                html.append("<a class='labkey-button' href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\"><span>").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</span></a><br><br>\n"); //RE_CHECK
+                html.append(PageFlowUtil.button((1 == consolidator.getScripts().size() ? "copy" : "consolidate") + " to " + filename).href(consolidateURL)).append("<br><br>\n");
             }
 
             if (0 == html.length())
