@@ -444,9 +444,8 @@ public class QuerySnapshotTest extends StudyBaseTest
     private void changeDatasetName(@LoggedParam String datasetName, @LoggedParam String newName)
     {
         _studyHelper.goToManageDatasets();
-        waitAndClick(Locator.linkContainingText(datasetName));
-        waitForText("Edit Definition");
-        clickButton("Edit Definition");
+        waitAndClickAndWait(Locator.linkContainingText(datasetName));
+        mashButton("Edit Definition");
         waitForElement(Locator.xpath("//input[@name='dsName']"));
         setFormElement(Locator.xpath("//input[@name='dsName']"), newName);
         clickButton("Save");
