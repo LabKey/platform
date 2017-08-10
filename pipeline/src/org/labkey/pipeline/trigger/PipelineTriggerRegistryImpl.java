@@ -5,8 +5,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
+import org.labkey.api.pipeline.trigger.PipelineTriggerConfigImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.query.FieldKey;
@@ -45,12 +47,19 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
     @Override
     public <C extends PipelineTriggerConfig> Collection<C> getConfigs(Container c, PipelineTriggerType<C> type, String name, boolean enabledOnly)
     {
+        return getConfigs(c, type, name, null, enabledOnly);
+    }
+
+    private <C extends PipelineTriggerConfig> Collection<C> getConfigs(Container c, PipelineTriggerType<C> type, String name, Integer rowId, boolean enabledOnly)
+    {
         Sort sort = new Sort(FieldKey.fromParts("RowId"));
         SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
         if (type != null)
             filter.addCondition(FieldKey.fromParts("Type"), type.getName());
         if (name != null)
             filter.addCondition(FieldKey.fromParts("Name"), name);
+        if (rowId != null)
+            filter.addCondition(FieldKey.fromParts("RowId"), rowId);
         if (enabledOnly)
             filter.addCondition(FieldKey.fromParts("Enabled"), true);
 
@@ -77,5 +86,23 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
 
         Collection<C> configs = getConfigs(c, null, name, false);
         return configs.size() == 1 ? configs.iterator().next() : null;
+    }
+
+    @Override
+    public <C extends PipelineTriggerConfig> C getConfigById(int rowId)
+    {
+        Collection<C> configs = getConfigs(null, null, null, rowId, false);
+        return configs.size() == 1 ? configs.iterator().next() : null;
+    }
+
+    @Override
+    public void updateConfigLastChecked(int rowId)
+    {
+        PipelineTriggerConfigImpl config = getConfigById(rowId);
+        if (config != null)
+        {
+            config.setLastChecked(new java.sql.Timestamp(System.currentTimeMillis()));
+            Table.update(null, PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), config, rowId);
+        }
     }
 }

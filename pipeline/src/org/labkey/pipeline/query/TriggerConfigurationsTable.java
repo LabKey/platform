@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.AbstractValueTransformingDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
@@ -16,8 +17,10 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -35,7 +38,9 @@ import org.labkey.pipeline.api.PipelineSchema;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<PipelineQuerySchema>
@@ -65,7 +70,38 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         pipelineId.setFk(new TaskPipelineForeignKey());
         pipelineId.setInputType("select");
 
+        ColumnInfo pipelineTaskCol = new AliasedColumn("PipelineTask", getColumn("PipelineId"));
+        pipelineTaskCol.setDisplayColumnFactory(PipelineTaskDisplayColumn::new);
+        pipelineTaskCol.setReadOnly(true);
+        pipelineTaskCol.setShownInInsertView(false);
+        pipelineTaskCol.setShownInUpdateView(false);
+        pipelineTaskCol.setTextAlign("left");
+        addColumn(pipelineTaskCol);
+
+        ColumnInfo statusCol = new AliasedColumn("Status", getColumn("RowId"));
+        statusCol.setDisplayColumnFactory(StatusDisplayColumn::new);
+        statusCol.setReadOnly(true);
+        statusCol.setShownInInsertView(false);
+        statusCol.setShownInUpdateView(false);
+        statusCol.setTextAlign("left");
+        addColumn(statusCol);
+
         return this;
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        List<FieldKey> cols = new ArrayList<>();
+        cols.add(FieldKey.fromParts("Name"));
+        cols.add(FieldKey.fromParts("Description"));
+        cols.add(FieldKey.fromParts("Enabled"));
+        cols.add(FieldKey.fromParts("LastChecked"));
+        cols.add(FieldKey.fromParts("Status"));
+        cols.add(FieldKey.fromParts("Type"));
+        cols.add(FieldKey.fromParts("PipelineTask"));
+        cols.add(FieldKey.fromParts("Configuration"));
+        return cols;
     }
 
     @Override
@@ -86,6 +122,51 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         {
             for (PipelineTriggerType pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
                addListItem(pipelineTriggerType.getName(), pipelineTriggerType.getName());
+        }
+    }
+
+    private class PipelineTaskDisplayColumn extends AbstractValueTransformingDisplayColumn<String, String>
+    {
+        public PipelineTaskDisplayColumn(ColumnInfo pipelineIdCol)
+        {
+            super(pipelineIdCol, String.class);
+        }
+
+        @Override
+        protected String transformValue(String pipelineIdStr)
+        {
+            if (pipelineIdStr != null)
+            {
+                try
+                {
+                    TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(pipelineIdStr);
+                    return taskPipeline.getDescription();
+                }
+                catch (NotFoundException e)
+                {
+                    return "Invalid pipeline task id: " + pipelineIdStr + ". ";
+                }
+            }
+            
+            return null;
+        }
+    }
+
+    private class StatusDisplayColumn extends AbstractValueTransformingDisplayColumn<Integer, String>
+    {
+        public StatusDisplayColumn(ColumnInfo rowIdCol)
+        {
+            super(rowIdCol, String.class);
+        }
+
+        @Override
+        protected String transformValue(Integer rowId)
+        {
+            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigById(rowId);
+            if (config != null)
+                return config.getStatus();
+
+            return null;
         }
     }
 
@@ -166,6 +247,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String name = getStringFromRow(row, "Name");
             String type = getStringFromRow(row, "Type");
             String pipelineId = getStringFromRow(row, "PipelineId");
+            boolean isEnabled = Boolean.parseBoolean(row.get("Enabled").toString());
             String invalidMsg = "";
 
             // validate that the config name is unique for this container
@@ -219,7 +301,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             // Finally, give the PipelineTriggerType a chance to validate the configuration JSON object
             if (triggerType != null)
             {
-                String typeInvalidMsg = triggerType.validateConfiguration(json);
+                String typeInvalidMsg = triggerType.validateConfiguration(isEnabled, json);
                 if (typeInvalidMsg != null)
                     invalidMsg += typeInvalidMsg;
             }

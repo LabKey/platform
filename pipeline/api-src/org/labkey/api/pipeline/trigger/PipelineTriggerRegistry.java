@@ -29,4 +29,8 @@ public interface PipelineTriggerRegistry
     <C extends PipelineTriggerConfig> Collection<C> getConfigs(@Nullable Container c, @Nullable PipelineTriggerType<C> type, @Nullable String name, boolean enabledOnly);
 
     <C extends PipelineTriggerConfig> C getConfigByName(@NotNull Container c, String name);
+
+    <C extends PipelineTriggerConfig> C getConfigById(int rowId);
+
+    void updateConfigLastChecked(int rowId);
 }

@@ -29,10 +29,11 @@ public interface PipelineTriggerType<C extends PipelineTriggerConfig>
 
     /**
      * Allows the trigger type a chance to validate the configuration string on insert/update.
+     * @param isEnabled Whether or not the configuration is set to enabled.
      * @param json The configuration (JSON) object
      * @return A message about why the configuration is invalid for the given trigger type. Default null.
      */
-    default String validateConfiguration(JSONObject json)
+    default String validateConfiguration(boolean isEnabled, JSONObject json)
     {
         return null;
     }

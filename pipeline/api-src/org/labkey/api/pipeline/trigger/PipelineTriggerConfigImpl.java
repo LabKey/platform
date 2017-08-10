@@ -2,21 +2,21 @@ package org.labkey.api.pipeline.trigger;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Entity;
-import org.labkey.api.security.User;
 
 import java.util.Date;
 import java.util.Map;
 
 public abstract class PipelineTriggerConfigImpl extends Entity implements PipelineTriggerConfig, Cloneable
 {
-    private final int _rowId;
-    private final String _name;
-    private final String _description;
-    private final String _type;
-    private final boolean _enabled;
-    private final Map<String, Object> _configuration;
-    private final String _pipelineId;
-    private final Date _lastChecked;
+    private int _rowId;
+    private String _name;
+    private String _description;
+    private String _type;
+    private boolean _enabled;
+    private String _configuration;
+    private Map<String, Object> _configMap;
+    private String _pipelineId;
+    private Date _lastChecked;
 
     protected PipelineTriggerConfigImpl(int rowId, String containerId, Date created, int createdBy,
             Date modified, int modifiedBy, String name, String description, String type, boolean enabled,
@@ -27,9 +27,9 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
         _description = description;
         _type = type;
         _enabled = enabled;
-        _configuration = configuration;
         _pipelineId = pipelineId;
         _lastChecked = lastChecked;
+        setConfiguration(configuration);
 
         setContainer(containerId);
         if (created != null)
@@ -46,10 +46,20 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
         return _rowId;
     }
 
+    public void setRowId(int rowId)
+    {
+        _rowId = rowId;
+    }
+
     @Override
     public String getName()
     {
         return _name;
+    }
+
+    public void setName(String name)
+    {
+        _name = name;
     }
 
     @Override
@@ -58,10 +68,20 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
         return _description;
     }
 
+    public void setDescription(String description)
+    {
+        _description = description;
+    }
+
     @Override
     public String getType()
     {
         return _type;
+    }
+
+    public void setType(String type)
+    {
+        _type = type;
     }
 
     @Override
@@ -70,22 +90,49 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
         return _lastChecked;
     }
 
+    public void setLastChecked(Date lastChecked)
+    {
+        _lastChecked = lastChecked;
+    }
+
     @Override
     public boolean isEnabled()
     {
         return _enabled;
     }
 
+    public void setEnabled(boolean enabled)
+    {
+        _enabled = enabled;
+    }
+
     @Override
     public String getConfiguration()
     {
-        return new JSONObject(_configuration).toString();
+        return _configuration;
+    }
+
+    public void setConfiguration(String configuration)
+    {
+        _configuration = configuration;
+        _configMap = new JSONObject(configuration);
+    }
+
+    public void setConfiguration(Map<String, Object> configMap)
+    {
+        _configMap = configMap;
+        _configuration = new JSONObject(configMap).toString();
     }
 
     @Override
     public String getPipelineId()
     {
         return _pipelineId;
+    }
+
+    public void setPipelineId(String pipelineId)
+    {
+        _pipelineId = pipelineId;
     }
 
     @Override

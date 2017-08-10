@@ -26,25 +26,7 @@ public interface PipelineTriggerConfig
 
     String getPipelineId();
 
-    String getContainerId();
-
     Container lookupContainer();
-
-    int getCreatedBy();
-
-    void setCreatedBy(int createdBy);
-
-    Date getCreated();
-
-    void setCreated(Date created);
-
-    int getModifiedBy();
-
-    void setModifiedBy(int modifiedBy);
-
-    Date getModified();
-
-    void setModified(Date modified);
 
     PipelineTriggerType getPipelineTriggerType();
 
@@ -53,4 +35,6 @@ public interface PipelineTriggerConfig
     void stop();
 
     boolean matches(Path directory, Path entry);
+
+    String getStatus();
 }
