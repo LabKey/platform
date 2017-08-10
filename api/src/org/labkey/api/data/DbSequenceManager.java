@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
-import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
@@ -31,7 +30,6 @@ import org.labkey.api.util.JunitUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -46,20 +44,6 @@ public class DbSequenceManager
     private static final ResultSetHandler<Integer> INTEGER_RETURNING_RESULTSET_HANDLER = (rs, conn) -> {
         rs.next();
         return rs.getInt(1);
-    };
-
-    // Statement handler for the multiple statement case
-    private static final StatementHandler<Integer> INTEGER_RETURNING_STATEMENT_HANDLER = (stmt, conn) -> {
-        stmt.execute();
-
-        // Skip and close the first ResultSet
-        stmt.getMoreResults();
-
-        try (ResultSet rs = stmt.getResultSet())
-        {
-            rs.next();
-            return rs.getInt(1);
-        }
     };
 
     public static DbSequence get(Container c, String name)
@@ -192,7 +176,7 @@ public class DbSequenceManager
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ");
 
-        boolean multiline = addValueSql(sql, tinfo, sequence);
+        addValueSql(sql, tinfo, sequence);
 
         sql.append(" + 1 WHERE Container = ? AND RowId = ?");
         sql.add(sequence.getContainer());
@@ -204,7 +188,7 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        return multiline ? executeMultipleStatementsAndReturnInteger(tinfo, sql) : executeAndReturnInt(tinfo, sql, Level.WARN);
+        return executeAndReturnInt(tinfo, sql, Level.WARN);
     }
 
 
@@ -215,10 +199,9 @@ public class DbSequenceManager
     }
 
 
-    private static boolean addValueSql(SQLFragment sql, TableInfo tinfo, DbSequence sequence)
+    private static void addValueSql(SQLFragment sql, TableInfo tinfo, DbSequence sequence)
     {
         SqlDialect dialect = tinfo.getSqlDialect();
-        boolean multiline = false;
 
         if (dialect.isPostgreSQL())
         {
@@ -226,27 +209,12 @@ public class DbSequenceManager
             SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE");
             selectForUpdate.add(sequence.getContainer());
             selectForUpdate.add(sequence.getRowId());
-
-            // Using FOR UPDATE inside a sub-select is cleaner, but doesn't work on PostgreSQL 8.4, so implement multi-line version on 8.4
-            if (dialect.getDatabaseVersion() < 90)
-            {
-                sql.append("Value");
-
-                selectForUpdate.append(";\n");
-                sql.prepend(selectForUpdate);
-                multiline = true;
-            }
-            else
-            {
-                sql.append("(").append(selectForUpdate).append(")");
-            }
+            sql.append("(").append(selectForUpdate).append(")");
         }
         else
         {
             sql.append("Value");
         }
-
-        return multiline;
     }
 
 
@@ -260,8 +228,6 @@ public class DbSequenceManager
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
-        // We don't care about the ResultSet(s) that are returned from the statement, which means we execute single- and
-        // multi-line statements the same way, which means we can ignore the return value
         addValueSql(sql, tinfo, sequence);
 
         sql.append(" < ?");
@@ -281,13 +247,13 @@ public class DbSequenceManager
 
 
     // Executes in a separate connection that does NOT participate in the current transaction
-    private static int execute(TableInfo tinfo, SQLFragment sql)
+    private static void execute(TableInfo tinfo, SQLFragment sql)
     {
         DbScope scope = tinfo.getSchema().getScope();
 
         try (Connection conn = scope.getPooledConnection())
         {
-            return new SqlExecutor(scope, conn).execute(sql);
+            new SqlExecutor(scope, conn).execute(sql);
         }
         catch (SQLException e)
         {
@@ -320,23 +286,6 @@ public class DbSequenceManager
         try (Connection conn = scope.getPooledConnection())
         {
             return new SqlExecutor(scope, conn).setLogLevel(level).executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
-
-    //
-    // Executes in a separate connection that does NOT participate in the current transaction
-    private static int executeMultipleStatementsAndReturnInteger(TableInfo tinfo, SQLFragment sql)
-    {
-        DbScope scope = tinfo.getSchema().getScope();
-
-        try (Connection conn = scope.getPooledConnection())
-        {
-            return new SqlExecutor(scope, conn).executeWithMultipleResults(sql, INTEGER_RETURNING_STATEMENT_HANDLER);
         }
         catch (SQLException e)
         {
