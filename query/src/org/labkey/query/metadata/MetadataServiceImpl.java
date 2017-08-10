@@ -40,7 +40,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
-import org.labkey.data.xml.PhiType;
+import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -552,7 +552,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
             if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
             {
-                xmlColumn.setPhi(PhiType.Enum.forString(gwtColumnInfo.getPHI()));
+                xmlColumn.setPhi(PHIType.Enum.forString(gwtColumnInfo.getPHI()));
             }
             else if (xmlColumn.isSetProtected())
             {

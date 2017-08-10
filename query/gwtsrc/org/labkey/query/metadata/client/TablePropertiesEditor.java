@@ -27,7 +27,7 @@ import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
 import org.labkey.api.gwt.client.ui.property.ExcludeFromShiftingItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
-import org.labkey.api.gwt.client.ui.property.PhiItem;
+import org.labkey.api.gwt.client.ui.property.PHIItem;
 import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.ProtectedItem;
@@ -184,7 +184,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         propertyPane.addItem(new URLItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new VisibilityItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new ProtectedItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
-        propertyPane.addItem(new PhiItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        propertyPane.addItem(new PHIItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new ExcludeFromShiftingItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
         addChangeHandler(propertyPane.getChangeListener());
