@@ -97,9 +97,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             }
 
             @Override
-            public void setMetadata(Workbook workbook, Map<String, String> metadata)
+            public void setMetadata(Workbook workbook, @Nullable Map<String, String> metadata)
             {
-                if (!metadata.isEmpty())
+                if (null != metadata && !metadata.isEmpty())
                 {
                     HSSFWorkbook hssfWorkbook = (HSSFWorkbook) workbook;
                     hssfWorkbook.createInformationProperties();
@@ -144,9 +144,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             }
 
             @Override
-            public void setMetadata(Workbook workbook, Map<String, String> metadata)
+            public void setMetadata(Workbook workbook, @Nullable Map<String, String> metadata)
             {
-                if (!metadata.isEmpty())
+                if (null != metadata && !metadata.isEmpty())
                 {
                     SXSSFWorkbook sxssfWorkbook = (SXSSFWorkbook) workbook;
                     POIXMLProperties.CustomProperties props = sxssfWorkbook.getXSSFWorkbook().getProperties().getCustomProperties();
