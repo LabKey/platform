@@ -1426,4 +1426,10 @@ public class StudyQuerySchema extends UserSchema
             return _tableNames;
         }
     }
+
+    @Override
+    public boolean hasRegisteredSchemaLinks()
+    {
+        return true;
+    }
 }
