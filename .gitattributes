@@ -6787,6 +6787,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/FacetingBehaviorType.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/PHIType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/PhiType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
@@ -6881,6 +6882,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ImportAliasesItem.java -te
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MaxLengthItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MeasureItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MvEnabledItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PHIItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PhiItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ProtectedItem.java -text

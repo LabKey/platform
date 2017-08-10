@@ -19,7 +19,7 @@ package org.labkey.api.gwt.client.model;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.PhiType;
+import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
@@ -71,7 +71,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
     private StringProperty facetingBehaviorType = new StringProperty();
     private BooleanProperty isProtected = new BooleanProperty();
-    private StringProperty phi = new StringProperty(PhiType.NotPHI.name());
+    private StringProperty phi = new StringProperty(PHIType.NotPHI.name());
     private BooleanProperty isExcludeFromShifting = new BooleanProperty();
     private BooleanProperty isPreventReordering = new BooleanProperty();
     private BooleanProperty isDisableEditing = new BooleanProperty();

@@ -21,7 +21,7 @@ import org.labkey.api.exp.property.Type;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
-import org.labkey.data.xml.PhiType;
+import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
@@ -199,7 +199,7 @@ public class TableInfoWriter
             columnXml.setExcludeFromShifting(true);
 
         if (PHI.NotPHI != column.getPHI())
-            columnXml.setPhi(PhiType.Enum.forString(column.getPHI().toString()));
+            columnXml.setPhi(PHIType.Enum.forString(column.getPHI().toString()));
 
         //Only export scale if column is a string
         if (column.isStringType())
