@@ -3098,6 +3098,7 @@ if (!LABKEY.DataRegions) {
         $(region).trigger('selectchange', [region, region.selectedCount]);
         _updateRequiresSelectionButtons(region, region.selectedCount);
         LABKEY.Utils.signalWebDriverTest('dataRegionUpdate', region.selectedCount);
+        LABKEY.Utils.signalWebDriverTest('dataRegionUpdate-' + region.name, region.selectedCount);
     };
 
     var _onViewSave = function(region, designer, savedViewsInfo, urlParameters) {
