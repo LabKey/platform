@@ -17,9 +17,9 @@ package org.labkey.api.gwt.client;
 
 public enum PHIType
 {
-    NotPHI("Not Phi"),
-    Limited("Limited Phi"),
-    PHI("Full Phi"),
+    NotPHI("Not PHI"),
+    Limited("Limited PHI"),
+    PHI("Full PHI"),
     Restricted("Restricted");
 
     private String _label;
