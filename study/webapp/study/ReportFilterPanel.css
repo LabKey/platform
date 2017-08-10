@@ -60,6 +60,7 @@
 .rpf .x4-grid-group-hd
 {
     padding: 0;
+    border-style: none;
 }
 
 .rpf table
@@ -76,12 +77,14 @@
 .rpf .x4-grid-group-hd-collapsible .x4-grid-group-title
 {
     background: none;
-    padding: 0;
+    padding: 0 0 0 3px;
+    color: inherit;
 }
 
 .rpf .category-label
 {
     font-size: 14px;
+    padding-left: 9px;
 }
 
 /* Used by ReportFilterPanel to make the category label include a checkbox */

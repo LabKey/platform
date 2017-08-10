@@ -30,11 +30,6 @@ Ext4.define('LABKEY.ext4.BaseChartWizardPanel', {
     autoColumnXName: null,
     restrictColumnsEnabled: false,
 
-    // allow this component to resize the height to fit the browser window
-    autoResize: {
-        skipHeight: false
-    },
-
     initComponent: function()
     {
         this.items = [];

@@ -2890,6 +2890,7 @@ study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilter.lib.xml -text
 study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
+study/webapp/study/ParticipantList.css -text
 study/webapp/study/ParticipantReport.js -text
 study/webapp/study/ParticipantReport.lib.xml -text
 study/webapp/study/ReportFilterPanel.css -text

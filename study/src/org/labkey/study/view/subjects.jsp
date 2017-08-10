@@ -55,6 +55,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("study/ParticipantFilter");
+        dependencies.add("study/ParticipantList.css");
     }
 %>
 <%
@@ -89,66 +90,7 @@
     String viewObject = "subjectHandler" + bean.getIndex();
     WebTheme theme    = WebThemeManager.getTheme(container);
 %>
-<style type="text/css">
-    ul.subjectlist li
-    {
-        list-style-type: none;
-    }
 
-    ul.subjectlist
-    {
-        padding-left: 0em;
-        padding-right: 1em;
-    }
-
-    li.ptid a.highlight
-    {
-    }
-
-    li.ptid a.unhighlight
-    {
-        color:#dddddd;
-    }
-
-    div.lk-filter-panel-label.highlight
-    {
-    }
-
-    div.lk-filter-panel-label.unhighlight
-    {
-        color:#dddddd;
-    }
-
-    .themed-panel .filter-description {
-        font-size: 14px;
-    }
-
-    .themed-panel div.x4-panel-header {
-        background-color: #E0E6EA;
-        background-image: none;
-        color: black;
-    }
-
-    .themed-panel div.x4-panel-default,
-    .themed-panel div.x4-panel-header-default,
-    .themed-panel div.x4-panel-body-default {
-        border-color: #d3d3d3;
-        box-shadow: none;
-    }
-
-    .themed-panel span.x4-panel-header-text-default {
-        color: black;
-    }
-
-    .themed-panel .x4-grid-row-over div:hover {
-        cursor: pointer;
-    }
-
-    .themed-panel .x4-grid-cell-inner {
-        padding: 3px 3px;
-    }
-
-</style>
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
@@ -832,13 +774,13 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
     <table id=<%= q(divId) %> class="lk-participants-list-table">
         <tr>
             <% if (bean.getWide()) { %>
-            <td style="margin: 5px;" valign=top>
+            <td valign=top>
                 <div id=<%=q(groupsDivId)%>></div>
             </td>
             <% } %>
-            <td style="margin: 5px;" valign=top class="iScroll">
+            <td style="padding-left: 10px;" valign=top class="iScroll">
                 <table><tr>
-                    <td><div style="" >Filter&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
+                    <td><div style="" >Filter:&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
                     <%--<td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>--%>
                 </tr></table>
                 <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">

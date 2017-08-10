@@ -114,6 +114,9 @@
             return;
         }
 
+        // only allow auto resize for the height this for chart wizard action (i.e. this is the only component on the page)
+        var autoResizeSkipHeight = LABKEY.ActionURL.getAction() != 'runReport' && LABKEY.ActionURL.getAction() != 'genericChartWizard';
+
         Ext4.create('LABKEY.ext4.BaseChartWizardPanel', {
             renderTo: renderTo,
             savedReportInfo: savedReportInfo,
@@ -135,7 +138,11 @@
             autoColumnName  : <%=q(form.getAutoColumnName() != null ? form.getAutoColumnName() : null) %>,
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
-            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>
+            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
+
+            autoResize: {
+                skipHeight: autoResizeSkipHeight
+            }
         });
     };
 
