@@ -1593,6 +1593,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
     @Nullable
     protected MenuButton populateMoreMenu(DataView view)
     {
@@ -2198,7 +2199,9 @@ public class QueryView extends WebPartView<Object>
         {
             ButtonBar bb = new ButtonBar();
             populateButtonBar(ret, bb);
-            bb.add(populateMoreMenu(ret));
+            // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
+            bb.add(createPrintButton());
+//            bb.add(populateMoreMenu(ret));
             rgn.setButtonBar(bb);
         }
 
