@@ -6788,7 +6788,6 @@ internal/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/FacetingBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/PHIType.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/PhiType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
