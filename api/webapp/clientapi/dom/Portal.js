@@ -275,7 +275,10 @@
                         }]
                     });
 
-                    editTabWindow.show(false, function(){nameTextField.focus();}, this);
+                    // TODO: Until async CSS load blocking is complete give style a moment to load
+                    setTimeout(function() {
+                        editTabWindow.show(false, function(){nameTextField.focus();}, this);
+                    }, 100);
                 });
             });
         };
@@ -616,8 +619,8 @@
                             if (jsonResp && jsonResp.errors)
                                 errorMsg = jsonResp.errors[0].message;
                             else
-                                errorMsg = 'An unknown error occured. Please contact your administrator.';
-                            alert(errorMsg);
+                                errorMsg = 'An unknown error occurred. Please contact your administrator.';
+                            Ext4.Msg.alert(errorMsg);
                         }
                     });
                 };
@@ -693,7 +696,7 @@
                                     errorMsg = jsonResp.errors[0].message;
                                 else
                                     errorMsg = 'An unknown error occured. Please contact your administrator.';
-                                LABKEY.Utils.alert('Oops', errorMsg);
+                                Ext4.Msg.alert('Oops', errorMsg);
                             }
                         });
                     };
