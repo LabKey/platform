@@ -53,8 +53,7 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
     @Override
     public List<Visit> getVisits(ViewContext context)
     {
-        ensureResults(context);
-        return _visits;
+        return _expectation.getExpectedVisits();
     }
 
     private void ensureResults(ViewContext context)
@@ -85,16 +84,18 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                         Double sequenceNum = rs.getDouble("SequenceNum");
                         String status = rs.getString("Status");
 
-                        if (ptid != null && sequenceNum != null && status != null)
+                        if (ptid != null)
                         {
-                            // find the visit associated with the sequence number
-                            Visit visit = StudyManager.getInstance().getVisitForSequence(_study, sequenceNum);
-                            if (visit != null)
+                            participants.add(ptid);
+                            if (sequenceNum != null && status != null)
                             {
-                                participants.add(ptid);
-                                visits.add(visit.getId());
-
-                                _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visit.getId()), status));
+                                // find the visit associated with the sequence number
+                                Visit visit = StudyManager.getInstance().getVisitForSequence(_study, sequenceNum);
+                                if (visit != null)
+                                {
+                                    visits.add(visit.getId());
+                                    _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visit.getId()), status));
+                                }
                             }
                         }
                     });
