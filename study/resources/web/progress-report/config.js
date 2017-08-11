@@ -118,6 +118,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             this.reportPanel = Ext4.create('Ext.form.Panel', {
                 border  : false,
                 frame   : false,
+                cls     : 'labkey-report-config',
                 flex    : 1.2,
                 items   : properties
             });
@@ -252,6 +253,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             title   : 'Choose source query for status information',
             width   : 500,
             modal   : true,
+            cls     : 'labkey-assay-config',
             items   : [{
                 xtype   : 'form',
                 border  : false,

@@ -2840,7 +2840,9 @@ study/test/sampledata/study/commondata/TYP.tsv -text
 study/test/sampledata/study/commondata/URF-1.tsv -text
 study/test/sampledata/study/commondata/URS-1.tsv -text
 study/test/sampledata/study/commondata/VAC-1.tsv -text
+study/test/src/org/labkey/test/pages/AssayQueryConfig.java -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
+study/test/src/org/labkey/test/pages/ProgressReportConfigPage.java -text
 study/test/src/org/labkey/test/tests/search/DataClassSearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestDefault.java -text
@@ -2852,6 +2854,7 @@ study/test/src/org/labkey/test/tests/study/AncillaryStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/AssayTest.java -text
 study/test/src/org/labkey/test/tests/study/CohortTest.java -text
 study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
+study/test/src/org/labkey/test/tests/study/ProgressReportTest.java -text
 study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
 study/test/src/org/labkey/test/tests/study/SCHARPStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/SampleMindedImportTest.java -text

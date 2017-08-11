@@ -252,23 +252,23 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
 
         // add the first assay and define the properties for it
         assaySchedulePage.addNewAssayRow(NEW_ASSAYS[0] + " Label", null, 0);
-        assaySchedulePage.setBaseProperties(LABS[0] + " Label", null, null, null, 0);
+        assaySchedulePage.setBaseProperties(LABS[0] + " Label", null, null, null, null, 0);
         assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(0), NEW_VISITS.get(0)), 0);
 
         // add the second assay and define the properties for it
         assaySchedulePage.addNewAssayRow(NEW_ASSAYS[1] + " Label", null, 1);
-        assaySchedulePage.setBaseProperties(LABS[1] + " Label", null, null, null, 1);
+        assaySchedulePage.setBaseProperties(LABS[1] + " Label", null, null, null, null, 1);
         assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(1), NEW_VISITS.get(1)), 1);
 
 
         // add the third assay and define the properties for it
         assaySchedulePage.addNewAssayRow(NEW_ASSAYS[2] + " Label", null, 2);
-        assaySchedulePage.setBaseProperties(LABS[2] + " Label", null, null, null, 2);
+        assaySchedulePage.setBaseProperties(LABS[2] + " Label", null, null, null, null, 2);
         assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(2)), 2);
 
         // add the third assay, again, and define it with different properties
         assaySchedulePage.addNewAssayRow(NEW_ASSAYS[2] + " Label", null, 3);
-        assaySchedulePage.setBaseProperties(LABS[3] + " Label", null, null, null, 3);
+        assaySchedulePage.setBaseProperties(LABS[3] + " Label", null, null, null, null, 3);
 
         // set the assay plan value
         assaySchedulePage.setAssayPlan("Do some exciting science!");
