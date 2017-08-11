@@ -7,6 +7,8 @@ const path = require('path');
 const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
+var inProduction = process.env.NODE_ENV === 'production';
+
 module.exports = function(env) {
     var entry = {};
     var baseJsDir = './resources/styles/js/';
@@ -65,6 +67,7 @@ module.exports = function(env) {
                         use: [{
                             loader: 'css-loader',
                             options: {
+                                minimize: inProduction,
                                 sourceMap: true,
                                 url: false
                             }
@@ -76,7 +79,6 @@ module.exports = function(env) {
                         },{
                             loader: 'sass-loader',
                             options: {
-                                debug: true,
                                 sourceMap: true
                             }
                         }],
