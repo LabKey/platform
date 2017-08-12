@@ -27,6 +27,7 @@ import java.io.File;
 @Category({DailyA.class, Specimen.class})
 public class SpecimenReplaceTest extends SpecimenMergeTest
 {
+    {setIsBootstrapWhitelisted(true);}
     protected static final String LAB_EDITED_SPECIMENS = "/sampledata/study/specimens/lab19edit.specimens";
     protected static final String LAB15_SPECIMENS = "/sampledata/study/specimens/lab15.specimens";
     protected static final String LAB20_SPECIMENS = "/sampledata/study/specimens/lab20.specimens";
