@@ -1,8 +1,6 @@
 package org.labkey.api.query;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -14,8 +12,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.writer.ContainerUser;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,19 +31,6 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
-    }
-
-    @Override
-    public SQLFragment sqlObjectIdsInDomain(Domain domain)
-    {
-        return null;
-    }
-
-    @Override
-    public
-    @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
-    {
-        return null;
     }
 
     @Override
