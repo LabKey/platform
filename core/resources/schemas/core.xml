@@ -652,7 +652,7 @@
   </table>
 
   <table tableName="QCState" tableDbType="TABLE">
-    <description>Contains one row per study quality control state.</description>
+    <description>Contains one row per quality control state.</description>
     <columns>
       <column columnName="RowId"/>
       <column columnName="Label">
