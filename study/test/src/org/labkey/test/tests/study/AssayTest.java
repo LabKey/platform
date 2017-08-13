@@ -606,7 +606,7 @@ public class AssayTest extends AbstractAssayTest
         // test recall
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
-        clickAndWait(Locator.linkWithText("view copy-to-study history"));
+        waitAndClickAndWait(Locator.linkWithText("view copy-to-study history"));
 
         // Set a filter so that we know we're recalling SecondRun
         DataRegionTable region = new DataRegionTable("query", this);
