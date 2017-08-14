@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.api.util.Pair;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
@@ -46,6 +47,7 @@ import static org.junit.Assert.*;
 @Category({DailyC.class, Study.class})
 public class StudyVisitManagementTest extends BaseWebDriverTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private final File INITIAL_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement.folder.zip");
     private final File DATASETS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Datasets.folder.zip");
     private final File SPECIMENS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Specimens.folder.zip");
@@ -288,7 +290,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false, true);
         importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
         importPage.clickStartImport();
-        waitForElement(Locator.tagWithClass("span", "labkey-nav-page-header").withText("Data Pipeline"));
+        waitForElement(Locators.bodyTitle("Data Pipeline"));
         waitForPipelineJobsToComplete(expectedCompleted, "Folder import", expectedError);
     }
 
