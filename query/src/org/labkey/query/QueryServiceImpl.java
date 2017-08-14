@@ -134,6 +134,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
+
 
 public class QueryServiceImpl implements QueryService
 {
@@ -2643,6 +2645,25 @@ public class QueryServiceImpl implements QueryService
         event.setDetailsUrl(detailsURL.toString());
 
         AuditLogService.get().addEvent(user, event);
+    }
+
+
+    @Override
+    public void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount)
+    {
+        if (table.supportsAuditTracking())
+        {
+            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
+            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
+
+            if (auditType == SUMMARY)
+            {
+                String comment = String.format(action.getCommentSummary(), dataRowCount);
+                AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, null);
+
+                AuditLogService.get().addEvent(user, event);
+            }
+        }
     }
 
     @Override
