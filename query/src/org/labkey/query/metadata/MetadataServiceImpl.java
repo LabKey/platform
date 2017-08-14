@@ -554,9 +554,9 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             {
                 xmlColumn.setPhi(PHIType.Enum.forString(gwtColumnInfo.getPHI()));
             }
-            else if (xmlColumn.isSetProtected())
+            else if (xmlColumn.isSetPhi())
             {
-                xmlColumn.unsetProtected();
+                xmlColumn.unsetPhi();
             }
 
             if (gwtColumnInfo.isExcludeFromShifting() != rawColumnInfo.isExcludeFromShifting())
