@@ -32,6 +32,7 @@ import static org.junit.Assert.*;
 @Category({DailyC.class})
 public class StudyProtectedExportTest extends StudyExportTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private String idPreface = "P!@#$%^&*(";
     private int idLength = 7;
     private Map<String,String> _originalFirstMouseStats;
@@ -87,9 +88,10 @@ public class StudyProtectedExportTest extends StudyExportTest
         clickAndWait(Locator.linkContainingText("LLS-2"));
         DataRegionTable drt = new DataRegionTable( "Dataset", this);
         assertEquals("unexpected number of rows on initial viewing", 5, drt.getDataRowCount());
-        _extHelper.clickMenuButton("Groups", "Cohorts", "Group 1");
+        drt.clickHeaderMenu("Groups", true, "Cohorts", "Group 1");
+
         assertEquals("unexpected number of rows for group 1", 3, drt.getDataRowCount());
-        _extHelper.clickMenuButton("Groups", "Cohorts", "Group 2");
+        drt.clickHeaderMenu("Groups", true, "Cohorts", "Group 2");
         assertEquals("unexpected number of rows for cohort 2", 2, drt.getDataRowCount());
     }
 
