@@ -62,15 +62,18 @@ public abstract class StudyManualTest extends StudyTest
 
         // change study label
         clickAndWait(Locator.linkWithText("Change Study Properties"));
+
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), getStudyLabel());
         clickButton("Submit");
+        clickTab("Overview");
         assertTextPresent(getStudyLabel());
 
         // import visit map
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"), TestFileUtils.getFileContents(VISIT_MAP));
         clickButton("Import");
+
 
         // import custom visit mapping
         importCustomVisitMappingAndVerify();
@@ -202,7 +205,7 @@ public abstract class StudyManualTest extends StudyTest
         {
             if (labels.contains(currentLabel))
             {
-                clickAndWait(Locator.linkWithText("edit").index(row - 2));   // Zero-based, plus the header row doesn't have an edit link
+                clickAndWait(Locator.tag("a").withAttribute("data-original-title","edit").index(row - 2));
                 uncheckCheckbox(Locator.name("showByDefault"));
                 clickButton("Save");
                 labels.remove(currentLabel);
@@ -253,8 +256,8 @@ public abstract class StudyManualTest extends StudyTest
         clickButton("Save");
         waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
         clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
 
+        new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         setFormElement(Locator.name("text"), _tsv + "\n" + errorRow);
         _listHelper.submitImportTsv_error("Could not convert 'badvisitd'");

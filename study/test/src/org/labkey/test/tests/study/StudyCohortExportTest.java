@@ -22,6 +22,7 @@ import org.labkey.test.util.DataRegionTable;
 @Category({DailyC.class})
 public class StudyCohortExportTest extends StudyExportTest
 {
+    {setIsBootstrapWhitelisted(true);}
     @Override
     protected void doCohortCreateSteps()
     {
