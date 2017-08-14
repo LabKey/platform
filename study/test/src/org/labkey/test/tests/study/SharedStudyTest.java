@@ -50,6 +50,7 @@ import java.util.Set;
 @Category({DailyA.class})
 public class SharedStudyTest extends BaseWebDriverTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String NON_DATASPACE_PROJECT = "Non Dataspace Project";
     private static final String STUDY1 = "Study001";
     private static final String STUDY2 = "Study002";
@@ -360,7 +361,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
         assertElementNotPresent(Locator.linkWithText(insertedPtid));
 
-        _extHelper.clickInsertNewRow();
+        new DataRegionTable("Dataset", getDriver()).clickInsertNewRow();
         new DatasetInsertPage(this, SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", insertedPtid));
 
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", STUDY2_DATASET_ID)));
@@ -462,7 +463,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
         assertElementNotPresent(Locator.linkWithText(overlappingParticipant));
 
-        _extHelper.clickInsertNewRow();
+        new DataRegionTable("Dataset", getDriver()).clickInsertNewRow();
         new DatasetInsertPage(this, SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", overlappingParticipant));
 
         assertElementPresent(Locators.labkeyError.containing("Duplicate: Panda = " + overlappingParticipant));
