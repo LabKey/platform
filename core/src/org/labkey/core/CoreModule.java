@@ -650,6 +650,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
+
+        enableNewUI();
     }
 
 
@@ -846,6 +848,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         PropertyService.get().registerDomainKind(new TestDomainKind());
 
         AuthenticationManager.populateSettingsWithStartupProps();
+
+        enableNewUI();
     }
 
     @Override
@@ -1187,6 +1191,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             new TemplateFactoryClassic().registerTemplates();
             new FrameFactoryClassic().registerFrames();
+        }
+    }
+
+    // TODO: Can be removed once the new UI has been enabled
+    private static void enableNewUI()
+    {
+        // enable the new UI by default any time a devMode server is started
+        if (AppProps.getInstance().isDevMode())
+        {
+            ExperimentalFeatureService expFeatureSvc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+            if (expFeatureSvc != null)
+            {
+                expFeatureSvc.setFeatureEnabled(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, true);
+            }
         }
     }
 }
