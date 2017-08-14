@@ -29,6 +29,7 @@ import java.io.File;
 @Category(DailyC.class)
 public class StudyMergeParticipantsTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String PROJECT_NAME =  "Merge Participants Test Project";
     private static final String STUDY_NAME = "Merge Participants Test Study";
     private static final String FOLDER_NAME =  "Merge Participants Test Folder";
@@ -163,7 +164,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         selectOptionByValue(Locator.id("list_dataField"), SOURCE_COLUMN);
         clickButton("Save", "View Data");
         clickButton("View Data", DataRegionTable.getImportBulkDataText());
-        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
+        DataRegionTable.findDataRegion(this).clickImportBulkData();
         setFormElement(Locator.name("text"), "participantId\tdate\t" + ALIAS_COLUMN + "\t" + SOURCE_COLUMN + "\n" + PTID_WITH_ALIAS + "\t1/3/2014\tabc123\t" + ALIAS_SOURCE_1);
         clickButton("Submit", "Dataset: " + ALIAS_DATASET + ", All Visits");
 
