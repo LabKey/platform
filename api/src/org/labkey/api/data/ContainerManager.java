@@ -1948,7 +1948,7 @@ public class ContainerManager
             {
                 LOG.error("fireDeleteContainer for " + l.getClass().getName(), e);
 
-                // We now fail fast (first Throwable aborts iteration), #17560
+                // Fail fast (first Throwable aborts iteration), #17560
                 throw e;
             }
         }

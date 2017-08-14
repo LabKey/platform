@@ -142,7 +142,7 @@ public class DbSequenceManager
 
 
     // Used by container delete
-    // TODO: Currently called after all container listeners have successfully deleted... should this be transacted instead?
+    // TODO: Currently called after all container listener delete methods have executed successfully... should this be transacted instead?
     public static void deleteAll(Container c)
     {
         TableInfo tinfo = getTableInfo();
