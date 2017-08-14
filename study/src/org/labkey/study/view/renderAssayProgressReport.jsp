@@ -51,7 +51,6 @@
         new LABKEY.ext4.AssayProgressReport({
             renderTo        : <%=q(renderId)%>,
             reportId        : <%=q(form.getId().toString())%>,
-            assayData       : <%=text(jsonMapper.writeValueAsString(form.getAssayData()))%>,
             assays          : <%=text(jsonMapper.writeValueAsString(form.getAssayData().keySet()))%>,
             legend          : <%=text(jsonMapper.writeValueAsString(legend))%>
         });

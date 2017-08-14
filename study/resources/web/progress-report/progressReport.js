@@ -60,7 +60,7 @@ Ext4.define('LABKEY.ext4.AssayStatusPanel', {
     getTemplate : function () {
 
         var tpl = new Ext4.XTemplate(
-                '<div><h3>{name}</div>',
+                '<div><h3>{name:htmlEncode}</div>',
                 '<div class="table-responsive"><table class="table progress-report" id="ProgressReport"><tr>',
                 '<th>Participant</th>',
                 '<tpl for="visits">',
@@ -131,32 +131,28 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
     initComponent: function ()
     {
         this.items = [];
-        var assaysReports = [];
         var storeData = [{name : 'All', componentId : 'all'}];
 
         Ext4.each(this.assays, function(assay){
 
-            var data = this.assayData[assay];
-
-            if (data){
-                var id = this.componentIdFromAssay(assay);
-                this.reports.push(id);
-                storeData.push({name : assay, componentId : id})
-                assaysReports.push({
-                    xtype   : 'labkey-assay-status',
-                    itemId  : id,
-                    name    : assay,
-                    visits  : data['visits'],
-                    visitLables : data['visitLabels'],
-                    participants : data['participants'],
-                    heatMap : data['heatMap']
-                });
-            }
+            var id = this.componentIdFromAssay(assay);
+            this.reports.push(id);
+            storeData.push({name : Ext4.String.htmlEncode(assay), componentId : id})
         }, this);
 
         var assayStore = Ext4.create('Ext.data.Store', {
             fields  : ['name', 'componentId'],
             data : storeData
+        });
+
+        this.items.push({
+            xtype   : 'button',
+            text    : 'Export to Excel',
+            itemId  : 'export-btn',
+            disabled : true,
+            handler : this.exportAssays,
+            margin  : '0 0, 10, 0',
+            scope   : this
         });
 
         // legend and assay selector
@@ -195,18 +191,57 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
         });
 
         this.items.push(this.getLegendPanel());
-        this.items.push({
-            xtype   : 'button',
-            text    : 'Export to Excel',
-            itemId  : 'export-btn',
-            disabled : true,
-            handler : this.exportAssays,
-            scope   : this
-        });
 
         // add the assays
-        this.items = this.items.concat(assaysReports);
+        this.on('render', this.createAssayReports, this);
         this.callParent(arguments);
+    },
+
+    createAssayReports : function(){
+
+        this.getEl().mask("Generating Assay Reports...");
+        LABKEY.Ajax.request({
+            url    : LABKEY.ActionURL.buildURL('study-reports', 'getAssayReportData.api'),
+            method  : 'POST',
+            jsonData  : {
+                reportId : this.reportId
+            },
+            success : function(response){
+                var o = Ext4.decode(response.responseText);
+                this.getEl().unmask();
+
+                if (o.success) {
+                    var items = [];
+                    this.assayData = o.assayData;
+                    Ext4.each(this.assays, function(assay){
+
+                        var data = this.assayData[assay];
+
+                        if (data){
+                            var id = this.componentIdFromAssay(assay);
+                            this.reports.push(id);
+                            items.push({
+                                xtype   : 'labkey-assay-status',
+                                itemId  : id,
+                                name    : assay,
+                                visits  : data['visits'],
+                                visitLables : data['visitLabels'],
+                                participants : data['participants'],
+                                heatMap : data['heatMap']
+                            });
+                        }
+                    }, this);
+
+                    if (items.length > 0)
+                        this.add(items);
+                }
+            },
+            failure : function(response){
+                this.getEl().unmask();
+                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+            },
+            scope : this
+        });
     },
 
     getLegendPanel : function(){

@@ -114,6 +114,14 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                             _visits.add(visitMap.get(visitId));
                     }
                 }
+                else
+                {
+                    throw new RuntimeException("Unable to access the configured query: " + _expectation.getQueryName());
+                }
+            }
+            else
+            {
+                throw new RuntimeException("Unable to access the configured schema schema: " + _expectation.getSchemaName());
             }
         }
     }

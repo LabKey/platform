@@ -1958,11 +1958,6 @@ public class ReportsController extends BaseStudyController
     public class SaveAssayProgressReportAction extends MutatingApiAction<ProgressReportForm>
     {
         @Override
-        public void validateForm(ProgressReportForm form, Errors errors)
-        {
-        }
-
-        @Override
         public ApiResponse execute(ProgressReportForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -2070,6 +2065,32 @@ public class ReportsController extends BaseStudyController
                     }
                 }
             }
+        }
+    }
+
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public class GetAssayReportDataAction extends ApiAction<ProgressReportForm>
+    {
+        @Override
+        public ApiResponse execute(ProgressReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            ReportIdentifier reportIdentifier = form.getReportId();
+            if (reportIdentifier != null)
+            {
+                Report report = reportIdentifier.getReport(getViewContext());
+                if (report instanceof AssayProgressReport)
+                {
+                    Map<String, Map<String, Object>> assayData = ((AssayProgressReport)report).getAssayReportData(getViewContext(), errors);
+                    if (!errors.hasErrors())
+                    {
+                        response.put("success", true);
+                        response.put("assayData", assayData);
+                    }
+                }
+            }
+            return response;
         }
     }
 }

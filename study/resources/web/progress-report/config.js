@@ -48,11 +48,6 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
 
         this.buttons = [{
                 xtype   : 'button',
-                text    : 'Save',
-                scope   : this,
-                handler : this.saveReport
-            },{
-                xtype   : 'button',
                 text    : 'Cancel',
                 scope   : this,
                 handler : function(){
@@ -61,7 +56,12 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                     else
                         window.history.back();
                 }
-        }];
+            },{
+                xtype   : 'button',
+                text    : 'Save',
+                scope   : this,
+                handler : this.saveReport
+            }];
         this.callParent(arguments);
     },
 
@@ -180,7 +180,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 '<tpl for=".">',
                     '<tr>',
                     '<td><span dataindex="{[xindex-1]}" height="16px" class="fa fa-pencil"></span></td>',
-                    '<td>{AssayName}</td>',
+                    '<td>{AssayName:htmlEncode}</td>',
                     '<td>{folderName}</td>',
                     '<td>{schemaName}</td>',
                     '<td>{queryName}</td>',

@@ -12,6 +12,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
@@ -39,6 +40,7 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +69,7 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_RESULTS_UNEXPECTED = "unexpected";
 
     private SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
-    private Map<String, Map<String, Object>> _assayData = new HashMap<>();
+    private Map<String, Map<String, Object>> _assayData = new LinkedHashMap<>();
 
     public enum SpecimenStatus
     {
@@ -168,7 +170,7 @@ public class AssayProgressReport extends AbstractReport
         _copiedToStudyData.clear();
 
         // assay expectations from the assay schedule
-        List<AssayExpectation> assayExpectations = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), TableSelector.ALL_COLUMNS, SimpleFilter.createContainerFilter(context.getContainer()), null).getArrayList(AssayExpectation.class);
+        List<AssayExpectation> assayExpectations = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), TableSelector.ALL_COLUMNS, SimpleFilter.createContainerFilter(context.getContainer()), new Sort(FieldKey.fromParts("AssayName"))).getArrayList(AssayExpectation.class);
 
         // get all current visits in the study
         Map<Integer, Visit> visitMap = study.getVisits(Visit.Order.CHRONOLOGICAL)
