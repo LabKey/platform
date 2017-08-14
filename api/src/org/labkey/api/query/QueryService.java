@@ -404,6 +404,7 @@ public interface QueryService
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>>... params);
+    void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount);
 
     /**
      * Returns a URL for the audit history for the table.

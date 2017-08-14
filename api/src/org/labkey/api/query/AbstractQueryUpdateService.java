@@ -35,6 +35,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -137,6 +138,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption() == InsertOption.IMPORT ? getAttachmentDirectory(): null, container, getAttachmentParentFactory());
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, QueryService.AuditAction.INSERT, user, container);
 
         return dib;
     }
@@ -210,7 +212,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setMaxRowErrors(Math.max(context.getMaxRowErrors(),1000));
         }
         int count = _pump(out, outputRows, context);
-        return context.getErrors().hasErrors() ? 0 : count;
+
+        if (context.getErrors().hasErrors())
+            return 0;
+        else
+        {
+            QueryService.get().addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count);
+            return count;
+        }
     }
 
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
