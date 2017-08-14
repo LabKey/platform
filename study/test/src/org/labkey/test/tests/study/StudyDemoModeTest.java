@@ -31,6 +31,7 @@ import static org.junit.Assert.assertFalse;
 @Category({DailyC.class})
 public class StudyDemoModeTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     @Override
     protected BrowserType bestBrowser()
     {
