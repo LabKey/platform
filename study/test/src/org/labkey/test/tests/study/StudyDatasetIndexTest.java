@@ -28,6 +28,7 @@ import java.io.File;
 @Category({DailyC.class})
 public class StudyDatasetIndexTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final File STUDY_WITH_DATASET_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetIndex.folder.zip");
     private static final File STUDY_WITH_DATASET_SHARED_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetSharedIndex.folder.zip");
     private static final String METADATA = "Table Meta Data";
