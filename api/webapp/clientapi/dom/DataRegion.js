@@ -3541,6 +3541,7 @@ if (!LABKEY.DataRegions) {
                 'showViewPanel',
                 'timeout',
                 {name: 'disableAnalytics', prefix: true},
+                {name: 'columns', prefix: true},
                 {name: 'maxRows', prefix: true, check: function(v) { return v > 0; }},
                 {name: 'showRows', prefix: true},
                 {name: 'offset', prefix: true, check: function(v) { return v !== 0; }},
@@ -4487,6 +4488,8 @@ if (!LABKEY.DataRegions) {
      *      </ul>
      *  </li>
      * </ul>
+     * @param {String} [config.columns] Comma-separated list of column names to be shown in the grid, overriding
+     * whatever might be set in a custom view.
      * @param {String} [config.sort] A base sort order to use. This is a comma-separated list of column names, each of
      * which may have a - prefix to indicate a descending sort. It will be treated as the final sort, after any that the user
      * has defined in a custom view or through interacting with the grid column headers.
