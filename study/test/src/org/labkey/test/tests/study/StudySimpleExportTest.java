@@ -55,6 +55,7 @@ import static org.junit.Assert.*;
 @BaseWebDriverTest.ClassTimeout(minutes = 60)
 public class StudySimpleExportTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String TEST_DATASET_NAME = "TestDataset";
     public static final String NOTIFICATION_EMAIL = "specimen-test@simpleexport.test";
     private final String FOLDER_SCOPE = "folder";
@@ -89,8 +90,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         initTest.initializeFolder();
         initTest.setPipelineRoot(initTest.getPipelinePath());
 
+        initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
-        initTest.clickTab("Overview");
         initTest.clickButton("Create Study");
         // use all of the default study settings
         initTest.clickButton("Create Study");
@@ -109,13 +110,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         super.initializeFolder();
 
         clickProject(getProjectName());
-        goToFolderManagement();
-        clickAndWait(Locator.linkWithText("Folder Type"));
+        goToFolderManagement().goToFolderTypePane();
         checkCheckbox(Locator.radioButtonByNameAndValue("folderType", "Study"));
         clickButton("Update Folder");
 
         // click button to create manual study
-        clickTab("Overview");
         clickButton("Create Study");
         // use all of the default study settings
         clickButton("Create Study");
@@ -141,7 +140,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _listHelper.addField("Dataset Fields", "TestDateTime", "TestDateTime", ListHelper.ListColumnType.DateTime);
         clickButton("Save");
         clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
+        DataRegionTable.findDataRegion(this).clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
@@ -352,7 +351,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Visit Properties: add dataset record using new visit");
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
-        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
+        DataRegionTable.findDataRegion(this).clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t" + visitSeqNumMin);
         clickButton("Submit");
@@ -380,8 +379,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickTab("Overview");
         waitAndClickAndWait(Locator.linkWithText("Study Navigator"));
         waitForText(visitLabel);
-        click(Locator.css(".labkey-help-pop-up"));
-        waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
+
+        // header hover-item does not render in UX UI.
+        // TODO: re-enable this when issue is resolved: https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=31200
+//        click(Locator.css(".labkey-help-pop-up"));
+//        waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
 
         log("Visit Properties: verify visit description in dataset visit column hover");
         clickTab("Clinical and Assay Data");
@@ -522,13 +524,14 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Cohorts"));
         waitForText(cohort1label);
-        clickAndWait(Locator.linkWithText("edit").index(0));
+        DataRegionTable dt = new DataRegionTable("Cohort", getDriver());
+        dt.clickEditRow(0);
         waitForText("Update Cohort: " + cohort1label);
         assertFormElementEquals(Locator.name("quf_subjectCount"), cohort1count);
         assertFormElementEquals(Locator.name("quf_description"), cohort1description);
         clickButton("Cancel");
         waitForText(cohort2label);
-        clickAndWait(Locator.linkWithText("edit").index(1));
+        dt.clickEditRow(1);
         waitForText("Update Cohort: " + cohort2label);
         assertFormElementEquals(Locator.name("quf_subjectCount"), cohort2count);
         assertFormElementEquals(Locator.name("quf_description"), cohort2description);
@@ -712,11 +715,13 @@ public class StudySimpleExportTest extends StudyBaseTest
         // delete all of the project level data, and import into a new folder, both project and
         // folder data should appear
         clickProject(getProjectName());
+
         for (Map.Entry<String, List<Map>> entry : tableData.entrySet())
         {
             beginAt("/query/" + getProjectName() + "/executeQuery.view?schemaName=study&query.queryName=" + entry.getKey());
             checkCheckbox(Locator.checkboxByName(".select"));
-            clickButton("Delete", 0);
+            DataRegionTable dt = new DataRegionTable("query", getDriver());
+            dt.clickHeaderButton("Delete");
             assertAlert("Are you sure you want to delete the selected row?");
         }
 
