@@ -19,6 +19,8 @@ package org.labkey.api.exp.api;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -51,6 +53,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
@@ -477,4 +480,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
+
+    GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException;
+    GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException;
 }
