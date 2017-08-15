@@ -43,6 +43,8 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="gwt.client.org.labkey.study.dataset.client.model.GWTDataset" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
@@ -141,7 +143,9 @@ if (!pipelineSet)
 }
 %>
 
-<% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Dataset Properties", null, "100%", null);
+%>
 <table id="details" width="600px">
     <tr>
         <td class=labkey-form-label>Name</td>
@@ -194,7 +198,9 @@ if (!pipelineSet)
         <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
     </tr>
 </table>
-<% WebPartView.endTitleFrame(out); %>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
 <p>
 <%
     JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
@@ -204,7 +210,9 @@ if (!pipelineSet)
 %>
 
 <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-<% WebPartView.startTitleFrame(out, "Visit Associations", null, "100%", null); %>
+<%
+        FrameFactoryClassic.startTitleFrame(out,"Visit Associations",null,"100%",null);
+    %>
 <table><%
     List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
     HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
@@ -229,7 +237,9 @@ if (!pipelineSet)
     %><tr><td><i>This dataset isn't explicitly associated with any visits.</i></td></tr><%
     }
 %></table>
-<% WebPartView.endTitleFrame(out); %>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
 <% } %>
 
 <script type="text/javascript">

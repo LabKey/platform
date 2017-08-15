@@ -35,6 +35,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -162,7 +163,8 @@
     {
         if (!bean.getAdminView())
         {
-            WebPartView.startTitleFrame(out, title, null, "100%", null, countSection==0?0:30);
+            int paddingTop = countSection==0?0:30;
+            FrameFactoryClassic.startTitleFrame(out, title, null, "100%", null,paddingTop);
             out.write("<table>");
         }
         else
@@ -184,7 +186,7 @@
         if (!bean.getAdminView())
         {
             out.write("</table>");
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
         }
     }
 %>

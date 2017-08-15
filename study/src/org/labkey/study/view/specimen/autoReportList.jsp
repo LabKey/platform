@@ -36,6 +36,8 @@
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -89,7 +91,7 @@ This folder does not contain a study.
         categoryIndex++;
 %>
 <% if (bean.isListView())
-    WebPartView.startTitleFrame(out, category, null, "100%", null); %>
+    FrameFactoryClassic.startTitleFrame(out, category, null, "100%", null); %>
 <table cellspacing="0" cellpadding="3">
 <%
         int formRowIndex = 0;
@@ -324,7 +326,7 @@ This folder does not contain a study.
 </table>
 <%
         if (bean.isListView())
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
     }
     }
 %>

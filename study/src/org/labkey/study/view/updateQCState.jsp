@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -44,7 +46,7 @@
     List<QCState> states = StudyManager.getInstance().getQCStates(container);
 %>
 <%
-    WebPartView.startTitleFrame(out, "QC State Change", null, null, null);
+    FrameFactoryClassic.startTitleFrame(out, "QC State Change", null, null, null);
 %>
 <labkey:errors/>
 <labkey:form action="<%=h(buildURL(StudyController.UpdateQCStateAction.class))%>" method="POST">
@@ -84,10 +86,10 @@
     </table>
 </labkey:form>
 <%
-    WebPartView.endTitleFrame(out);
-    WebPartView.startTitleFrame(out, "Selected Data Rows", null, null, null);
+    FrameFactoryClassic.endTitleFrame(out);
+    FrameFactoryClassic.startTitleFrame(out, "Selected Data Rows", null, null, null);
 %>
 <% me.include(bean.getQueryView(), out); %>
 <%
-    WebPartView.endTitleFrame(out);
+    FrameFactoryClassic.endTitleFrame(out);
 %>

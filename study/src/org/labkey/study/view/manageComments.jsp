@@ -31,6 +31,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -94,7 +96,7 @@
     <input type="hidden" name="reshow" value="true">
 
     <%
-        WebPartView.startTitleFrame(out, subjectNounSingle + " Comment Assignment");
+        FrameFactoryClassic.startTitleFrame(out, subjectNounSingle + " Comment Assignment");
     %>
     <table>
         <tr>
@@ -146,8 +148,8 @@
         </tr>
     </table>
     <%
-        WebPartView.endTitleFrame(out);
-        WebPartView.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
+        FrameFactoryClassic.endTitleFrame(out);
+        FrameFactoryClassic.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
 
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
@@ -218,7 +220,7 @@
         </tr>
     </table>
     <%
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
         }
     %>
 </labkey:form>

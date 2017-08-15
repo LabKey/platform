@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -65,7 +67,9 @@
     </tr>
 </table>
 
-<%WebPartView.startTitleFrame(out, "Timepoint Configuration", null, "600", null);%>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Timepoint Configuration", null, "600", null);
+%>
 <labkey:form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
    Data in this study is grouped using date-based timepoints rather than visit ids.
     <ul>
@@ -112,10 +116,14 @@
     <%= button("Update").submit(true) %>
     <%= generateBackButton() %>
 </labkey:form>
-<%WebPartView.endTitleFrame(out);%>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
 
 <% if (timepoints.size() > 0) { %>
-<%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Timepoints", null, "900", null);
+%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
 <table class="labkey-data-region-legacy labkey-show-borders">
@@ -162,5 +170,7 @@ assign dataset data to the correct timepoints.</p>
 <%  }
 %>
 </table>
-<%WebPartView.endTitleFrame(out);%>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
 <% } %>

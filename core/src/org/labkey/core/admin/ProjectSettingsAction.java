@@ -63,6 +63,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
+import org.labkey.api.view.template.FrameFactoryClassic;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -485,7 +486,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         {
                             protected void renderInternal(Object model, PrintWriter out) throws Exception
                             {
-                                WebPartView.startTitleFrame(out, "Configure Data Processing Pipeline");
+                                FrameFactoryClassic.startTitleFrame(out, "Configure Data Processing Pipeline");
                             }
                         });
 
@@ -504,7 +505,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         {
                             protected void renderInternal(Object model, PrintWriter out) throws Exception
                             {
-                                WebPartView.endTitleFrame(out);
+                                FrameFactoryClassic.endTitleFrame(out);
                             }
                         });
                     }

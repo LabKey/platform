@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -47,7 +49,9 @@ Before you export, you can select the source location or locations using the "Lo
 </ul>
 </div>
 <% if (isAdmin)
-{ %><%    WebPartView.startTitleFrame(out, "Administrative Options", null, "600", null);%>
+{ %><%
+    FrameFactoryClassic.startTitleFrame(out, "Administrative Options", null, "600", null);
+%>
 As an administrator you can export via the "Export" button or save a view definition to the server via the "Save" button.<br><br>
 When you save the view definition, it will be listed in the reports and views web part. Each time a user clicks on the view, the current data will be downloaded.
 The saved view can also be secured so that only a subset of users (e.g. users from the particular location) can see it.<br><br>
@@ -57,11 +61,14 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
     <li>You must have imported a Specimen Archive in order for the "Locations" dropdown to list locations. The Specimen Archive defines a list of locations for your Study. </li>
     <li>You must associate ParticipantIDs with CurrentSiteIds via a "Participant Dataset". This step allows participant data records to be mapped to locations.</li>
     </ol> See the <%=helpLink("exportExcel", "help page")%> for more information.
-<% WebPartView.endTitleFrame(out);
-}
+<%
+        FrameFactoryClassic.endTitleFrame(out);
+    }
 
 %>
-<%    WebPartView.startTitleFrame(out, "Configure", null, "600", null);%>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Configure", null, "600", null);
+%>
     <labkey:form action="<%=h(buildURL(ReportsController.ExportExcelAction.class))%>" method="GET">
     <table><tr><th class="labkey-form-label">Site</th><td><select <%= text(isAdmin ? "onChange='siteId_onChange(this)'" : "")%> id=locationId name=locationId><option value="0">ALL</option>
 <%
@@ -114,7 +121,7 @@ for (LocationImpl location : locations)
 </labkey:form>
 <%
 
-    WebPartView.endTitleFrame(out);
+    FrameFactoryClassic.endTitleFrame(out);
 %>
 
 

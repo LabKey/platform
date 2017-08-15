@@ -32,6 +32,8 @@
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -144,8 +146,8 @@ if (!bean.group.isDevelopers())
 <%
 }
 
-WebPartView.startTitleFrame(out, "Group members", null, "100%", null);
-if (bean.members.size() <= 0)
+    FrameFactoryClassic.startTitleFrame(out, "Group members", null, "100%", null);
+    if (bean.members.size() <= 0)
 {
     %><p>This group currently has no members.</p><%
 }
@@ -296,5 +298,5 @@ if (!bean.isSystemGroup)
     %></div><%
 }
 
-    WebPartView.endTitleFrame(out);
+    FrameFactoryClassic.endTitleFrame(out);
 %>

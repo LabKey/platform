@@ -39,6 +39,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -118,7 +120,9 @@
         <td><%= textLink("Create New Dataset", createURL)%></td>
     </tr>
 </table>
-<% WebPartView.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null); %>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null);
+%>
 <labkey:errors/>
 <%
     AdminUrls urls = urlProvider(AdminUrls.class);
@@ -132,9 +136,13 @@
         <tr><td colspan="2"><br>Default formats can be changed via the <%=textLink(name + " settings page", url)%></td></tr>
     </table>
 </labkey:form>
-<% WebPartView.endTitleFrame(out); %>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
 
-<% WebPartView.startTitleFrame(out, "Datasets", null, null, "datasets"); %>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Datasets", null, null, "datasets");
+%>
 <br/>
 <table id="dataregion_datasets" class="labkey-data-region-legacy labkey-show-borders">
     <tr>
@@ -186,5 +194,5 @@
     %></ul></p><%
 }
 
-    WebPartView.endTitleFrame(out);
+    FrameFactoryClassic.endTitleFrame(out);
 %>

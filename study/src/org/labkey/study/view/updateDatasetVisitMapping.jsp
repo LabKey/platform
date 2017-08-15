@@ -33,6 +33,8 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -59,7 +61,9 @@
 
 <labkey:form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
 <%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())).toString()) %>
-<% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Dataset Properties", null, "100%", null);
+%>
     <table>
         <tr>
             <td class="labkey-form-label">Id</td>
@@ -117,8 +121,12 @@
             </td>
         </tr>
         </table>
-<% WebPartView.endTitleFrame(out); %>
-<% WebPartView.startTitleFrame(out, "Associated " + visitManager.getPluralLabel(), null, "100%", null); %>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
+<%
+    FrameFactoryClassic.startTitleFrame(out, "Associated " + visitManager.getPluralLabel(), null, "100%", null);
+%>
 <table>
         <tr>
             <td>
@@ -149,6 +157,8 @@
             </td>
         </tr>
     </table>
-<% WebPartView.endTitleFrame(out); %>
+<%
+    FrameFactoryClassic.endTitleFrame(out);
+%>
 <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())) %>
 </labkey:form>

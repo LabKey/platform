@@ -33,6 +33,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -58,7 +60,7 @@
 <%
     if (SpecimenManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
     {
-        WebPartView.startTitleFrame(out, "Quality Control Flags", null, null, null);
+        FrameFactoryClassic.startTitleFrame(out, "Quality Control Flags", null, null, null);
         if (bean.isMixedFlagState())
         {
 %>
@@ -83,9 +85,9 @@
             <input type="radio" name="qualityControlFlag" value="false"> Remove quality control flag<p>
 <%
         }
-        WebPartView.endTitleFrame(out);
+        FrameFactoryClassic.endTitleFrame(out);
     }
-    WebPartView.startTitleFrame(out, "Comments", null, null, null);
+    FrameFactoryClassic.startTitleFrame(out, "Comments", null, null, null);
 %>
 <labkey:errors/>
     <%
@@ -140,12 +142,12 @@
     </table>
 </labkey:form>
 <%
-    WebPartView.endTitleFrame(out);
-    WebPartView.startTitleFrame(out, "Selected Vials", null, null, null);
+    FrameFactoryClassic.endTitleFrame(out);
+    FrameFactoryClassic.startTitleFrame(out, "Selected Vials", null, null, null);
 %>
 <% me.include(bean.getSpecimenQueryView(), out); %>
 <%
-    WebPartView.endTitleFrame(out);
+    FrameFactoryClassic.endTitleFrame(out);
 %>
 
 <%!

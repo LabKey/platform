@@ -714,8 +714,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return AdminController.appendAdminNavTrail(root, "Admin Console", AdminController.ShowAdminAction.class, container);
 
         if (container.isContainerTab())
-            root.addChild(container.getParent().getName());
-        root.addChild(container.getName());
+            root.addChild(container.getParent().getName(), getContainer().getParent().getStartURL(getUser()));
+        root.addChild(container.getName(), getContainer().getStartURL(getUser()));
         root.addChild("Folder Management");
         return root;
     }

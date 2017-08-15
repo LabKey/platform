@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -40,7 +42,7 @@
     <tr>
         <td>
     <%
-        WebPartView.startTitleFrame(out, "Currently Defined Dataset QC States", null, "100%", null);
+        FrameFactoryClassic.startTitleFrame(out, "Currently Defined Dataset QC States", null, "100%", null);
     %>
         <table>
             <tr>
@@ -103,8 +105,8 @@
             </tr>
         </table>
         <%
-            WebPartView.endTitleFrame(out);
-            WebPartView.startTitleFrame(out, "Default states for dataset data", null, "100%", null);
+            FrameFactoryClassic.endTitleFrame(out);
+            FrameFactoryClassic.startTitleFrame(out, "Default states for dataset data", null, "100%", null);
         %>
         <table width="100%" cellspacing="4">
             <tr>
@@ -168,8 +170,8 @@
             </tr>
         </table>
         <%
-            WebPartView.endTitleFrame(out);
-            WebPartView.startTitleFrame(out, "Data visibility", null, "100%", null);
+            FrameFactoryClassic.endTitleFrame(out);
+            FrameFactoryClassic.startTitleFrame(out, "Data visibility", null, "100%", null);
         %>
     <table width="100%" cellspacing="4">
         <tr>
@@ -188,7 +190,7 @@
     </table>
 
         <%
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
         %>
         </td>
     </tr>

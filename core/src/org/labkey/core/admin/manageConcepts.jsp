@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
@@ -57,7 +59,7 @@
     }
 </style>
 <%
-    WebPartView.startTitleFrame(out, "Insert/Update Mapping");
+    FrameFactoryClassic.startTitleFrame(out, "Insert/Update Mapping");
 %>
 <labkey:errors/>
 <labkey:form action="" method="POST">
@@ -67,11 +69,11 @@
     </div>
 </labkey:form>
 <%
-    WebPartView.endTitleFrame(out);
+    FrameFactoryClassic.endTitleFrame(out);
 
     if (conceptURIs.size() > 0)
     {
-        WebPartView.startTitleFrame(out, "Existing Mappings");
+        FrameFactoryClassic.startTitleFrame(out, "Existing Mappings");
 
         for (String uri : conceptURIs.keySet())
         {
@@ -90,7 +92,7 @@
 <%
         }
 
-        WebPartView.endTitleFrame(out);
+        FrameFactoryClassic.endTitleFrame(out);
     }
 %>
 

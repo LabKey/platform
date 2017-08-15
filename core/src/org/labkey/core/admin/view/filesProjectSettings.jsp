@@ -33,6 +33,8 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -80,7 +82,7 @@
 
 <labkey:form action="" method="post">
     <%
-        WebPartView.startTitleFrame(out, "Configure File Root ");
+        FrameFactoryClassic.startTitleFrame(out, "Configure File Root ");
     %>
 
     <table>
@@ -93,23 +95,21 @@
         <tr>
             <td>
                 <table>
-                    <tr><td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
+                    <tr style="height: 1.75em"><td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
                         Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td></tr>
-                    <tr>
+                    <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
-                            Use a default based on the site-level root</td>
-                        <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
+                            Use a default based on the site-level root <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
-                    <tr>
+                    <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
                                    <%=checked(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
                                    onclick="updateSelection();">
-                            Use a <%=text(getContainer().getContainerNoun())%>-level file root</td>
-                        <td><input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
+                            Use a <%=text(getContainer().getContainerNoun())%>-level file root <input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                 </table>
             </td>
@@ -124,13 +124,13 @@
     </table>
 
     <%
-        WebPartView.endTitleFrame(out);
+        FrameFactoryClassic.endTitleFrame(out);
     %>
 
     <%
         if (cloud != null)
         {
-            WebPartView.startTitleFrame(out, "Enable Cloud Stores ");
+            FrameFactoryClassic.startTitleFrame(out, "Enable Cloud Stores ");
     %>
 
     <table>
@@ -173,7 +173,7 @@
 
     </table>
     <%
-        WebPartView.endTitleFrame(out);
+        FrameFactoryClassic.endTitleFrame(out);
     %>
     <% } %>
 

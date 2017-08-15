@@ -32,6 +32,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -238,7 +240,9 @@ function validate()
     <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>
-            <td valign="top"><%WebPartView.startTitleFrame(out, "Folder Type", null, "100%", null);%>
+            <td valign="top"><%
+                FrameFactoryClassic.startTitleFrame(out, "Folder Type", null, "100%", null);
+            %>
                 <table>
     <%
         int radioIndex = 0;
@@ -264,11 +268,15 @@ function validate()
                 </table>
                 <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
                 <div id="UpdateFolderButtonDiv"></div>
-    <%WebPartView.endTitleFrame(out);%>
+    <%
+        FrameFactoryClassic.endTitleFrame(out);
+    %>
     </td>
     <td width="30%" valign="top">
         <div id="defaultTabDiv" style="display:<%=text("None".equals(h(folderType.getName())) ? "" : "none")%>">
-            <%WebPartView.startTitleFrame(out, "Default Tab", null, "100%", null);%>
+            <%
+                FrameFactoryClassic.startTitleFrame(out, "Default Tab", null, "100%", null);
+            %>
             <select name="defaultModule" value="<%=h(defaultModule.getName())%>">
             <%
                     for (Module module : allModules)
@@ -282,10 +290,14 @@ function validate()
                         }
             %>
             </select>
-            <%WebPartView.endTitleFrame(out);%>
+            <%
+                FrameFactoryClassic.endTitleFrame(out);
+            %>
         </div>
 
-        <%WebPartView.startTitleFrame(out, "Modules", null, "100%", null);%>
+        <%
+            FrameFactoryClassic.startTitleFrame(out, "Modules", null, "100%", null);
+        %>
 
 <%
 int i = 0;
@@ -311,7 +323,9 @@ for (Module module : allModules)
     }
 }
 %>
-    <%WebPartView.endTitleFrame(out);%>
+    <%
+        FrameFactoryClassic.endTitleFrame(out);
+    %>
 </td></tr>
 </table>
 </labkey:form>

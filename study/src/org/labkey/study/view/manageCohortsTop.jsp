@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.io.Writer" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -46,7 +48,7 @@
         // do advanced cohort calculations for continuous studies.  This support could be added in the future.
         if (study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            WebPartView.startTitleFrame(out, "Assignment Mode", null, "100%", null);
+            FrameFactoryClassic.startTitleFrame(out, "Assignment Mode", null, "100%", null);
     %>
     <script type="text/javascript">
         function setAdvanced(advanced)
@@ -82,12 +84,12 @@
     change cohorts mid-study. Note that advanced cohort management requires automatic assignment via a study
     dataset.<br>
     <%
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
         }
 
         if (!study.isAdvancedCohorts())
         {
-            WebPartView.startTitleFrame(out, "Assignment Type", null, "100%", null);
+            FrameFactoryClassic.startTitleFrame(out, "Assignment Type", null, "100%", null);
     %>
     <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
            id="manualCohortAssignmentDisabled"
@@ -99,11 +101,11 @@
     by hand.
 
     <%
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
         }
         if (!study.isManualCohortAssignment())
         { // If it's automatic, we need to include the dataset selection widgets
-            WebPartView.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
+            FrameFactoryClassic.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
     %>
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
     <table>
@@ -173,7 +175,7 @@
         </tr>
     </table>
     <%
-            WebPartView.endTitleFrame(out);
+            FrameFactoryClassic.endTitleFrame(out);
         }
     %>
 
