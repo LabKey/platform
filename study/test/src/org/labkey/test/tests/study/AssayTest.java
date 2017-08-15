@@ -843,7 +843,7 @@ public class AssayTest extends AbstractAssayTest
 
         clickProject(getProjectName());
 
-        clickAndWait(Locator.linkWithText(TEST_ASSAY));
+        waitAndClickAndWait(Locator.linkWithText(TEST_ASSAY));
         _assayHelper.clickEditAssayDesign();
         waitForElement(Locator.xpath(getPropertyXPathContains("Data Fields") + "//td//input[@name='ff_name5']"), WAIT_FOR_JAVASCRIPT);
         _listHelper.setColumnName(getPropertyXPathContains("Data Fields"), 5, TEST_ASSAY_DATA_PROP_NAME + "edit");
