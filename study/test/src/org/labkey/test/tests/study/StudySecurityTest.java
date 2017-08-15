@@ -26,6 +26,7 @@ import org.labkey.test.util.DataRegionTable;
 @Category({DailyC.class})
 public class StudySecurityTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     protected static final String READER = "dsreader@studysecurity.test";
     protected static final String EDITOR = "dseditor@studysecurity.test";
     protected static final String LIMITED = "dslimited@studysecurity.test";
@@ -186,10 +187,11 @@ public class StudySecurityTest extends StudyBaseTest
             assertElementPresent(Locator.linkWithText(dsName));
             clickAndWait(Locator.linkWithText(dsName));
             assertTextPresent(dsName);
-            assertElementPresent(Locator.linkWithText("edit"));
-            _extHelper.clickMenuButton(false, "Insert");
+            assertElementPresent(DataRegionTable.updateLinkLocator());
+            DataRegionTable dt = new DataRegionTable("Dataset", getDriver());
+            dt.clickHeaderButton("Insert data");    // expand the menu
             assertTextPresent(DataRegionTable.getInsertNewButtonText(), DataRegionTable.getImportBulkDataText());
-            _extHelper.clickMenuButton(false, "Insert");
+            dt.clickHeaderButton("Insert data");     //collapse it
             clickFolder(getFolderName());
         }
 
@@ -199,8 +201,8 @@ public class StudySecurityTest extends StudyBaseTest
             {
                 clickAndWait(Locator.linkWithText(dsName));
                 assertTextPresent(dsName);
-                assertElementNotPresent(Locator.linkWithText("edit"));
-                assertElementNotPresent(Locator.linkWithText("Insert"));
+                assertElementNotPresent(DataRegionTable.updateLinkLocator());
+                assertElementNotPresent(Locator.lkButton("Insert data"));
                 clickFolder(getFolderName());
             }
         }
@@ -217,7 +219,7 @@ public class StudySecurityTest extends StudyBaseTest
         waitForElement(Locator.name("securityString"));
         selectOptionByValue(Locator.name("securityString"), "ADVANCED_WRITE");
         clickAndWait(Locator.lkButton("Update Type"));
-        waitForElements(Locator.tagWithName("table", "webpart"), 3);
+        waitForElements(Locator.tagWithName("div", "webpart"), 3);
 
         //the radio buttons are named "group.<id>" and since we don't know the
         //group ids, we need to find them by name
