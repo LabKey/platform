@@ -88,9 +88,9 @@ public class TruncationTest extends BaseWebDriverTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(LIST_NAME));
         click(Locator.linkContainingText("Delete All Rows"));
-        click(Ext4Helper.Locators.ext4Button("Yes"));
+        waitAndClick(Ext4Helper.Locators.ext4Button("Yes"));
         waitForText("2 rows deleted");
-        clickAndWait(Ext4Helper.Locators.ext4Button("OK"));
+        waitAndClickAndWait(Ext4Helper.Locators.ext4Button("OK"));
         waitForText("No data to show.");
     }
 
