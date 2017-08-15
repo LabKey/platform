@@ -166,7 +166,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("manage lists"));
 
         ListHelper.ListColumn valueColumn = new ListHelper.ListColumn("Value", "Value", ListHelper.ListColumnType.String, "Vaccine Value");
-        _listHelper.createList(STUDY_FOLDER, LIST_NAME, ListHelper.ListColumnType.Integer, "Key", valueColumn);
+        _listHelper.createList(getProjectName() + "/" + FOLDER_NAME + "/" + STUDY_FOLDER, LIST_NAME, ListHelper.ListColumnType.Integer, "Key", valueColumn);
         clickButton("Done");
 
         clickAndWait(Locator.linkWithText(LIST_NAME));
