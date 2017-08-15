@@ -123,6 +123,9 @@
         <% } %>
     </table>
 
+    <%
+        WebPartView.endTitleFrame(out);
+    %>
 
     <%
         if (cloud != null)
@@ -169,13 +172,13 @@
         %>
 
     </table>
-    <% } %>
-
-    <tr><td><%= button("Save").submit(true) %></td></tr>
-
     <%
         WebPartView.endTitleFrame(out);
     %>
+    <% } %>
+
+    <%= button("Save").submit(true) %>
+
 </labkey:form>
 
 <script type="text/javascript">
