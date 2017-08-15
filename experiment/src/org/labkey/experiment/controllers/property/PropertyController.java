@@ -19,7 +19,6 @@ package org.labkey.experiment.controllers.property;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiAction;
@@ -34,10 +33,10 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
@@ -47,7 +46,6 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
@@ -259,7 +257,7 @@ public class PropertyController extends SpringActionController
             }
             else if (kindName != null)
             {
-                newDomain = convertJsonToDomain(jsonObj);
+                newDomain = ExperimentService.get().convertJsonToDomain(jsonObj);
                 JSONObject jsOptions = jsonObj.optJSONObject("options");
                 if (jsOptions == null)
                     jsOptions = new JSONObject();
@@ -330,7 +328,7 @@ public class PropertyController extends SpringActionController
             String schema = jsonObj.getString("schemaName");
             String query = jsonObj.getString("queryName");
 
-            GWTDomain newDomain = convertJsonToDomain(jsonObj);
+            GWTDomain newDomain = ExperimentService.get().convertJsonToDomain(jsonObj);
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
                 throw new IllegalArgumentException("Domain id and URI are required");
 
@@ -732,101 +730,6 @@ public class PropertyController extends SpringActionController
             throw UnexpectedException.wrap(e);
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private static GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException
-    {
-        GWTDomain domain = new GWTDomain();
-        JSONObject jsonDomain = obj.getJSONObject("domainDesign");
-
-        domain.set_Ts(jsonDomain.optString("ts"));
-        domain.setDomainId(jsonDomain.optInt("domainId", -1));
-
-        domain.setName(jsonDomain.getString("name"));
-        domain.setDomainURI(jsonDomain.optString("domainURI", null));
-        domain.setContainer(jsonDomain.getString("container"));
-
-        // Description can be null
-        domain.setDescription(jsonDomain.optString("description", null));
-
-        JSONArray jsonFields = jsonDomain.getJSONArray("fields");
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        for (int i=0; i<jsonFields.length(); i++)
-        {
-            JSONObject jsonProp = jsonFields.getJSONObject(i);
-            GWTPropertyDescriptor prop = convertJsonToPropertyDescriptor(jsonProp);
-            props.add(prop);
-        }
-
-        domain.setFields(props);
-
-        JSONArray jsonIndices = jsonDomain.optJSONArray("indices");
-        if (jsonIndices != null)
-        {
-            List<GWTIndex> indices = new ArrayList<>();
-            for (JSONObject jsonIndex : jsonIndices.toJSONObjectArray())
-            {
-                List<String> columnNames = new ArrayList<>();
-                for (Object o : jsonIndex.getJSONArray("columns").toArray())
-                    columnNames.add(String.valueOf(o));
-
-                // Only unique is supported currently
-                boolean unique = TableInfo.IndexType.Unique.name().equalsIgnoreCase(jsonIndex.optString("type"));
-                GWTIndex index = new GWTIndex(columnNames, unique);
-                indices.add(index);
-            }
-            domain.setIndices(indices);
-        }
-
-        return domain;
-    }
-
-    private static GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException
-    {
-        GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-        prop.setName(obj.getString("name"));
-        prop.setRangeURI(obj.getString("rangeURI"));
-
-        // Other fields can be null
-        Integer propId = (Integer)obj.get("propertyId");
-        if (propId != null)
-            prop.setPropertyId(propId.intValue());
-
-        Boolean required = (Boolean)obj.get("required");
-        if (required != null)
-            prop.setRequired(required.booleanValue());
-
-        Boolean shownInInsertView = (Boolean)obj.get("shownInInsertView");
-        if (shownInInsertView != null)
-            prop.setShownInInsertView(shownInInsertView);
-
-        Boolean shownInUpdateView = (Boolean)obj.get("shownInUpdateView");
-        if (shownInUpdateView != null)
-            prop.setShownInUpdateView(shownInUpdateView);
-
-        Boolean shownInDetailsView = (Boolean)obj.get("shownInDetailsView");
-        if (shownInDetailsView != null)
-            prop.setShownInDetailsView(shownInDetailsView);
-
-        prop.setPropertyURI((String)obj.get("propertyURI"));
-        prop.setOntologyURI((String)obj.get("ontologyURI"));
-        prop.setDescription((String)obj.get("description"));
-        prop.setConceptURI((String)obj.get("conceptURI"));
-        prop.setLabel((String)obj.get("label"));
-        prop.setSearchTerms((String)obj.get("searchTerms"));
-        prop.setSemanticType((String)obj.get("semanticType"));
-        prop.setFormat((String)obj.get("format"));
-        prop.setLookupContainer((String)obj.get("lookupContainer"));
-        prop.setLookupSchema((String)obj.get("lookupSchema"));
-        prop.setLookupQuery((String)obj.get("lookupQuery"));
-        prop.setImportAliases((String)obj.get("importAliases"));
-        prop.setURL((String)obj.get("url"));
-        if (obj.has("scale"))
-            prop.setScale((Integer)obj.get("scale"));
-
-        return prop;
-    }
-
 
     public static class CompareWithTemplateModel
     {
