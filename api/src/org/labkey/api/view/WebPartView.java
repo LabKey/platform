@@ -511,26 +511,4 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     {
         _frameConfig._hidePageTitle = hidePageTitle;
     }
-
-
-    @Deprecated
-    public static void startTitleFrame(Writer out, String title)
-    {
-        FrameFactoryClassic.startTitleFrame(out,title);
-    }
-    @Deprecated
-    public static void startTitleFrame(Writer out, String title, String href, String width, String className)
-    {
-        FrameFactoryClassic.startTitleFrame(out,title,href,width,className);
-    }
-    @Deprecated
-    public static void startTitleFrame(Writer out, String title, String href, String width, String className, int paddingTop)
-    {
-        FrameFactoryClassic.startTitleFrame(out,title,href,width,className,paddingTop);
-    }
-    @Deprecated
-    public static void endTitleFrame(Writer out)
-    {
-        FrameFactoryClassic.endTitleFrame(out);
-    }
 }
