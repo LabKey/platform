@@ -182,7 +182,8 @@ public class SequenceVisitManager extends VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
         Container container = getStudy().getContainer();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        StudyUnionTableInfo tableStudyData = (StudyUnionTableInfo)StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
+        StudyUnionTableInfo tableStudyData = (StudyUnionTableInfo)StudySchema.getInstance()
+                .getTableInfoStudyDataFiltered(getStudy(), Collections.singleton(ds), user);
 
         //
         // populate ParticipantVisit
