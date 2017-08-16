@@ -44,7 +44,7 @@ pdfbox-2.0.4.jar|Apache PDFBox®|2.0.4|{link:PDFBox|https://pdfbox.apache.org/}|
 picard-2.2.4.jar|Picard Tools Lib|2.2.4|{link:PicardTools|https://github.com/broadinstitute/picard}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|bbimber|Manipulating Sequence Data
 poi-3.15.jar|Apache POI|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
 poi-ooxml-3.15.jar|Apache POI OOXML|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
-pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|jim|Provide polling file watcher for cifs file systems
+pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|jimp|Provide polling file watcher for cifs file systems
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rome-1.7.1.jar|ROME|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
