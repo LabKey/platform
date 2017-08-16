@@ -354,7 +354,7 @@ public abstract class SearchTest extends StudyTest
         selectOptionByText(Locator.name("type"), "UFO");
         selectOptionByText(Locator.name("area"), "Area51");
         selectOptionByText(Locator.name("priority"), "1");
-        setFormElement(Locator.id("comment"), ISSUE_BODY);
+        setFormElement(Locator.id("commentArea"), ISSUE_BODY);
         selectOptionByText(Locator.name("assignedTo"), displayNameFromEmail(USER1));
         click(Locator.linkWithText("Attach a file"));
         File file = TestFileUtils.getSampleData("fileTypes/tsv_sample.tsv");

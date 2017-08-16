@@ -23,6 +23,7 @@ import org.labkey.test.util.search.SearchAdminAPIHelper;
 @Category({Search.class, DailyC.class})
 public class SearchTestDefault extends SearchTest
 {
+    {setIsBootstrapWhitelisted(true);}
     @Override
     public SearchAdminAPIHelper.DirectoryType directoryType()
     {
