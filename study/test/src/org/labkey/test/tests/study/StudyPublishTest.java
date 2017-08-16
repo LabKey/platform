@@ -35,7 +35,9 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
+import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.TimeChartWizard;
+import org.labkey.test.pages.search.SearchResultsPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -63,6 +65,7 @@ import static org.junit.Assert.fail;
 @BaseWebDriverTest.ClassTimeout(minutes = 30)
 public class StudyPublishTest extends StudyProtectedExportTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private final String ID_PREFIX = "PUBLISHED-";
     private final int ID_DIGITS = 8;
     private final File PROTOCOL_DOC = TestFileUtils.getSampleData("study/Protocol.txt");
@@ -286,29 +289,27 @@ public class StudyPublishTest extends StudyProtectedExportTest
                                         final boolean removeProtected, final boolean shiftDates, final boolean alternateIDs, final boolean maskClinicNames)
     {
         // Verify alternate IDs (or lack thereof)
-        new SearchHelper(this).searchForSubjects(String.join(" ", ptids));
-        String searchResults = getText(Locator.id("searchResults"));
+        SearchResultsPage searchResultsPage = new SiteNavBar(getDriver())
+                .search(String.join(" ", ptids));
+        searchResultsPage.setSearchCategories("Subject");
+        searchResultsPage.searchForm().searchFor(String.join(" ", ptids));
+        List<WebElement> searchResults = searchResultsPage.getResults();
 
         for (String ptid : ptids)
         {
             if (alternateIDs)
-                assertFalse("Published study contains non-alternate ID: " + ptid, searchResults.contains(name));
+                assertFalse("Published study contains non-alternate ID: " + ptid, searchResults
+                        .stream().anyMatch((a)-> a.getText().contains(name)));
             else
-                assertTrue("Published study doesn't contain ID: " + ptid, searchResults.contains(name));
+                assertTrue("Published study doesn't contain ID: " + ptid, searchResults
+                        .stream().anyMatch((a)-> a.getText().contains(name)));
         }
 
         // Go to published study
-        openProjectMenu();
-        if (isElementPresent(Locator.linkWithText(name)))
-            clickProject(name);
-        else
-        {
-            clickProject(getProjectName());
-            clickFolder(name);
-        }
+        projectMenu().navigateToFolder(projectName, name);
 
         //Assert webparts/wikis are present
-        waitForElement(Locator.xpath("//table[@name='webpart']"));
+        waitForElement(Locator.xpath("//div[@name='webpart']"));
         List<String> expectedWebParts = Arrays.asList(
                 "Study Overview",
                 "Data Pipeline",
@@ -323,10 +324,10 @@ public class StudyPublishTest extends StudyProtectedExportTest
         Assert.assertEquals("Wrong webparts", expectedWebParts, webPartTitles);
 
         //assert the added module is present
-        _ext4Helper.clickExt4MenuButton(false, Locators.ADMIN_MENU, true, "Go To Module", "List");
+       goToModule("List");
 
         // Verify published participant count
-        clickAndWait(Locator.linkWithText("Mice"));
+        clickTab("Mice");
         waitForElement(Locator.xpath("//*[contains(@class, 'lk-filter-panel-label') and text()='All']"));
         _ext4Helper.deselectAllParticipantFilter();
         waitForText("No matching");
@@ -645,8 +646,9 @@ public class StudyPublishTest extends StudyProtectedExportTest
         {
             for (String group : groups)
             {
-                _extHelper.clickMenuButton(true, "Groups", group);
                 DataRegionTable datasetTable = new DataRegionTable("Dataset", this);
+                datasetTable.clickHeaderButton("Groups");       //TODO: understand why using regular clickHeaderMenu/bootstrapMenu.clickSubMenu
+                clickAndWait(Locator.linkWithText(group));                  // times out waiting for the group menuItem to become clickable
                 unshiftedDates.addAll(datasetTable.getColumnDataAsText(UNSHIFTED_DATE_FIELD.getValue()));
                 preshiftedDates.addAll(datasetTable.getColumnDataAsText(SHIFTED_DATE_FIELD.getValue()));
             }
@@ -937,7 +939,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
     private void createMouseReport(String reportName, String[]... datasetMeasurePairs)
     {
         goToManageViews();
-        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Report"), "Mouse Report");
+        clickMenuButton(true, Locator.linkContainingText("Add Report").findElement(getDriver()), false,"Mouse Report");
         clickButton("Choose Measures", 0);
         _extHelper.waitForExtDialog(ADD_MEASURE_TITLE);
         _extHelper.waitForLoadingMaskToDisappear(WAIT_FOR_JAVASCRIPT);
@@ -1127,7 +1129,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
         verifyDataRegion(colsToCheck);
 
         // change the container filter to include subfolders
-        _extHelper.clickMenuButton("Grid Views", "Folder Filter", "Current folder and subfolders");
+        DataRegionTable dt = new DataRegionTable("query", getDriver());
+        dt.goToView("Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon", "PublishedSubStudy"});
         colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
 
@@ -1171,7 +1174,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
         // change the container filter to include subfolders the impersonated user should not be able to see the
         // study published from the sub folder because they don't have admin permissions to the subfolder
-        _extHelper.clickMenuButton("Grid Views", "Folder Filter", "Current folder and subfolders");
+        dt.goToView("Folder Filter", "Current folder and subfolders");
         verifyDataRegion(colsToCheck);
 
         stopImpersonating();
@@ -1193,7 +1196,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         colsToCheck.put("Refresh", new String[0]);
         verifyDataRegion(colsToCheck);
 
-        _extHelper.clickMenuButton("Grid Views", "Folder Filter", "Current folder and subfolders");
+        dt.goToView( "Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
         colsToCheck.put("Refresh", new String[]{"false"});
         verifyDataRegion(colsToCheck);
