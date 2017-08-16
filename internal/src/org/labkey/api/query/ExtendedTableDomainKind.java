@@ -33,6 +33,24 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         return domain.getName();
     }
 
+    public Domain updateDomain(Container container, User user, GWTDomain<GWTPropertyDescriptor> gwtDomain)
+    {
+        String domainURI = generateDomainURI(getSchemaName(), gwtDomain.getName(), container, user);
+
+        GWTDomain<GWTPropertyDescriptor> existingDomain = DomainUtil.getDomainDescriptor(user, domainURI, container);
+        GWTDomain<GWTPropertyDescriptor> updatedDomain = new GWTDomain<>(existingDomain);
+        updatedDomain.setFields(gwtDomain.getFields());
+        updatedDomain.setName(gwtDomain.getName());
+
+        List<String> errors = updateDomain(existingDomain, updatedDomain, container, user);
+        if(errors.size() > 0)
+        {
+            throw new RuntimeException(errors.get(0));
+        }
+
+        return PropertyService.get().getDomain(container, domainURI);
+    }
+
     @Override
     public Domain createDomain(GWTDomain gwtDomain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
     {
@@ -42,17 +60,10 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         String domainURI = generateDomainURI(getSchemaName(), gwtDomain.getName(), container, user);
         Domain domain = PropertyService.get().getDomain(container, domainURI);
 
+        // First check if this should be an update
         if( null != domain )
         {
-            GWTDomain existingDomain = DomainUtil.getDomainDescriptor(user, domainURI, container);
-            GWTDomain updatedDomain = new GWTDomain(existingDomain);
-            updatedDomain.setFields(gwtDomain.getFields());
-
-            List<String> errors = updateDomain(existingDomain, updatedDomain, container, user);
-            if(errors.size() > 0)
-            {
-                throw new RuntimeException(errors.get(0));
-            }
+            updateDomain(container, user, gwtDomain);
         }
         else
         {
@@ -74,7 +85,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
                 throw new RuntimeException(e);
             }
         }
-        return domain;
+        return PropertyService.get().getDomain(container, domainURI);
     }
 
     @Override

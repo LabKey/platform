@@ -128,7 +128,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         }
     }
 
-    private static Container getDomainContainer(Container c)
+    protected static Container getDomainContainer(Container c)
     {
         return c.isWorkbook() ? c.getParent() : c;
     }
@@ -147,7 +147,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         }
     }
 
-    private static XarContext getXarContext(String schemaName, String tableName, Container c, User u)
+    protected static XarContext getXarContext(String schemaName, String tableName, Container c, User u)
     {
         // XXX: need to escape '-' (and '.' ?) in the schema and table names
         XarContext xc = new XarContext("Domains", c, u);
