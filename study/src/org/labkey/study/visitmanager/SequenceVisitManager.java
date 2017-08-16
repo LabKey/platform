@@ -201,6 +201,11 @@ public class SequenceVisitManager extends VisitManager
         sqlSelect.append("\nEXCEPT\n");
         sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container = ?");
         sqlSelect.add(container);
+        if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty() && potentiallyAddedParticipants.size() < 450)
+        {
+            sqlSelect.append(" AND PV.ParticipantId ");
+            schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants);
+        }
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlSelect.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
@@ -469,7 +474,7 @@ public class SequenceVisitManager extends VisitManager
             sqlUpdateVisitRowId.append(
                 "UPDATE PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM study.ParticipantVisit PV WITH (INDEX(IX_PV_SequenceNum)), seqnum2visit\n"+
+                "        FROM study.ParticipantVisit PV WITH (INDEX(ix_participantvisit_sequencenum)), seqnum2visit\n"+
                 "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
             sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
