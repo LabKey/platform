@@ -56,6 +56,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -481,6 +482,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
 
+    GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException;
     GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException;
     GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException;
 }
