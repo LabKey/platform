@@ -32,6 +32,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -187,10 +188,12 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         csrfChecking:
         {
-            boolean requiresAdmin = permissionsRequired.contains(AdminPermission.class);
             CSRF.Method csrfCheck = CSRF.Method.POST;
             if ("ADMINONLY".equals(AppProps.getInstance().getCSRFCheck()))
-                csrfCheck = (requiresSiteAdmin || requiresAdmin) ? CSRF.Method.POST : CSRF.Method.NONE;
+            {
+                boolean requiresAdmin = requiresSiteAdmin || permissionsRequired.contains(AdminPermission.class) || permissionsRequired.contains(AdminOperationsPermission.class);
+                csrfCheck = requiresAdmin ? CSRF.Method.POST : CSRF.Method.NONE;
+            }
 
             if (actionClass.isAnnotationPresent(CSRF.class))
             {
