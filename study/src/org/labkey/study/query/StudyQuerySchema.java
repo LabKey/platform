@@ -338,8 +338,6 @@ public class StudyQuerySchema extends UserSchema
                 if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                     names.add("Cohort");
 
-                names.add("QCState");
-
                 // Subject category/group tables:
                 names.add(studyService.getSubjectCategoryTableName(getContainer()));
                 names.add(studyService.getSubjectGroupTableName(getContainer()));
@@ -653,6 +651,7 @@ public class StudyQuerySchema extends UserSchema
         }
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
         {
+            // Moved to core but kept here for backwards compatibility
             return new QCStateTable(this);
         }
         if (SPECIMEN_ADDITIVE_TABLE_NAME.equalsIgnoreCase(name))

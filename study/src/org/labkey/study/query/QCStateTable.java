@@ -27,5 +27,6 @@ public class QCStateTable extends FilteredTable<StudyQuerySchema>
     public QCStateTable(StudyQuerySchema schema)
     {
         super(CoreSchema.getInstance().getTableInfoQCState(), schema);
+        wrapAllColumns(true);
     }
 }
