@@ -41,6 +41,7 @@
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -61,6 +62,7 @@
     final User user = getUser();
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
+    final boolean hasInsertPerms = c.hasPermission(getUser(), InsertPermission.class);
     final boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
     List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
@@ -194,7 +196,7 @@
 
 <labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
     <table><tr><%
-        if (bean.getHasUpdatePermissions())
+        if (bean.getHasUpdatePermissions() && hasInsertPerms)
         {%>
             <td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())))%></td><%
         }%>
@@ -431,7 +433,8 @@ else
                 <button data-toggle="dropdown" class="btn btn-default">More</button>
                 <ul class="dropdown-menu dropdown-menu-left">
                 <% NavTree navTree = new NavTree();
-                    navTree.addChild("Create Related Issue", relatedIssues.toString());
+                    if (hasInsertPerms)
+                        navTree.addChild("Create Related Issue", relatedIssues.toString());
                     if (!getUser().isGuest())
                         navTree.addChild("Email Preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
                     if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
@@ -449,7 +452,7 @@ else
             </labkey:form>
         </div>
         <div class="col-sm-3" style="margin-bottom: 15px">
-            <%if (bean.getHasUpdatePermissions()) {%>
+            <%if (bean.getHasUpdatePermissions() && hasInsertPerms) {%>
             <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
                 <a class="btn btn-primary" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
                     <%=h("new " + names.singularName.toLowerCase())%>
@@ -507,6 +510,7 @@ else
         <label class="control-label">Assigned To</label>
         <div class="form-group"><%=h(issue.getAssignedToName(user))%></div>
     </div>
+    <% if (!bean.isPrint()) {%>
     <div class="col-md-4">
         <label class="control-label">Recent Activity</label>
         <%
@@ -542,6 +546,7 @@ else
             </div>
         </div>
     </div>
+    <%}%>
     <% if (!bean.getNotifyListCollection(false).isEmpty()) {%>
         <div class="col-sm-4">
             <label>Notify List</label>
@@ -626,12 +631,15 @@ else
                 }%>
                 <%=comment.getComment()%>
                 <%=bean.renderAttachments(context, comment)%>
-                <hr>
+                <%if (commentLinkedList.indexOf(comment) < commentLinkedList.size() - 1) {
+                %><hr><%
+                }%>
             </div>
             <%
         }
 
-        if (bean.getHasUpdatePermissions()) {%>
+        if (bean.getHasUpdatePermissions() && !bean.isPrint()) {%>
+            <hr>
             <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
         <%}%>
         </labkey:panel>
