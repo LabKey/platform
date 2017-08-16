@@ -37,6 +37,7 @@ import static org.junit.Assert.*;
 @Category({DailyB.class, Specimen.class})
 public class SampleMindedImportTest extends BaseWebDriverTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String PROJECT_NAME = "SampleMindedImportTest";
 
     private static final String FILE = "SampleMindedExport.xlsx";
@@ -93,7 +94,8 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Overview"));
         clickAndWait(Locator.linkWithText("manage files"));
         setPipelineRoot(TestFileUtils.getLabKeyRoot() + "/sampledata/study");
-        clickAndWait(Locator.linkWithText(PROJECT_NAME + " Study"));
+        clickFolder(PROJECT_NAME);
+        clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
 
         clickButton("Process and Import Data");
