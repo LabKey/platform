@@ -51,7 +51,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model.getClientDependencies()) %>
     <% } %>
 </head>
-<body onload="<%=h(onLoad)%>" class="<%=h(BootstrapTemplate.getTemplatePrefix(model) + "-template-body")%>">
+<body onload="<%=h(onLoad)%>">
 <%
     if (me.includeGWT()) {
 %>
@@ -62,10 +62,16 @@
 <%
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {
+%>
+<div class="header-container">
+<%
         me.include(me.getView("header"), out);
 
         if (null != me.getView("navigation"))
             me.include(me.getView("navigation"),out);
+%>
+</div>
+<%
     }
 %>
 <% me.include(me.getView("bodyTemplate"), out); %>

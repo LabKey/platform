@@ -149,7 +149,7 @@
 
 .lk-region-context-action {
   background-color: $white;
-  border: 1px solid $lk-accent-color;
+  border: 1px solid $lk-grid-filter-border-color;
   border-radius: 14px;
   float: left;
   padding: 2px 7px;
@@ -163,7 +163,7 @@
   text-overflow: ellipsis;
 
   i.fa {
-    color: $lk-accent-color;
+    color: $lk-grid-filter-icon-color;
     padding-right: 5px;
   }
 
@@ -223,12 +223,12 @@ table.labkey-fixed-width-columns {
 
 /* Used for the shaded alternate columns (for pivot queries) */
 .labkey-alternate-col td, .labkey-alternate-col th, tr.labkey-alternate-col, td.labkey-alternate-col, th.labkey-alternate-col {
-  background: #F6F6F6; //$lk-grid-col-alt-bg-color
+  background: #F6F6F6;
 }
 
 /* Used for the shaded alternate rows and alternate columns (for pivot queries) */
 .labkey-alternate-row .labkey-alternate-col td, .labkey-alternate-row .labkey-alternate-col th, tr.labkey-alternate-row .labkey-alternate-col, td.labkey-alternate-row .labkey-alternate-col, th.labkey-alternate-row .labkey-alternate-col {
-  background: #F0F0F0; //$lk-grid-row-alt-col-alt-bg-color
+  background: #F0F0F0;
 }
 
 .labkey-col-header-filter {
@@ -242,13 +242,13 @@ table.labkey-fixed-width-columns {
 
 /* Used to highlight cells with a darker color, limited use right now */
 td.labkey-highlight-cell, th.labkey-highlight-cell {
-  background: #AAAAAA; // $lk-grid-highlight-cell-color
+  background: #AAAAAA;
   font-weight:bold;
 }
 
 /* Used for blank cells in the data region such as when the main row headers have sub row headers */
 td.labkey-blank-cell, th.labkey-blank-cell {
-  background: #FFFFFF; // $lk-grid-blank-cell-color
+  background: #FFFFFF;
   border: 0;
 }
 
@@ -267,7 +267,7 @@ td.labkey-blank-cell, th.labkey-blank-cell {
     padding-left: 5px;
 
     &.fa-chevron-circle-down {
-      color: lightgray;
+      color: $lk-grid-sort-icon-color;
       display: inline;
       float: right;
     }

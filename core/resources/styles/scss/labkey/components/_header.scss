@@ -1,5 +1,4 @@
 .labkey-page-header {
-  color: $lk-page-header-color;
   background-color: $lk-page-header-bg-color;
   padding: $lk-page-header-padding;
 
@@ -10,13 +9,6 @@
 
   .fa {
     font-size: $lk-page-header-icon-size;
-  }
-
-  .nav > li > a {
-    &:hover, &:focus {
-      color: $lk-page-header-font-color;
-      background-color: $lk-page-header-bg-color;
-    }
   }
 
   .navbar-header {
@@ -41,7 +33,7 @@
       margin: 0;
 
       & > a {
-        color: $lk-page-header-color;
+        color: $lk-page-header-text-color;
       }
     }
   }
@@ -122,14 +114,23 @@
     & > li {
       float: left;
 
-      & > a {
+      & > a, & > span {
         display: block;
-        color: $lk-page-header-color;
+        color: $lk-page-header-text-color; // currently this conflicts with "stop impersonating" and "exit page admin mode" button text color.
         padding: $lk-page-header-navbar-nav-padding;
 
         &:hover,
         &:focus {
-          color: $lk-page-header-navbar-nav-hover-color;
+          color: $lk-page-header-font-hover-color;
+        }
+      }
+
+      & > a.fa, & > a > i.fa {
+        color: $lk-page-header-icon-color;
+
+        &:hover,
+        &:focus {
+          color: $lk-page-header-icon-hover-color;
         }
       }
     }
@@ -206,7 +207,7 @@
 
 .labkey-notification-panel,
 .labkey-notification-footer {
-  background-color: $lk-page-header-notification-bg-color;
+  background-color: $lk-notification-bg-color;
 }
 
 .lk-body-title {
@@ -223,21 +224,6 @@
   }
 }
 
-.default-template-alert {
-  margin: 0 0 15px 0;
-}
-
-/* Default pages show the header & navigation */
-.default-template-body {
-  .labkey-page-nav {
-    margin-bottom: 20px;
-  }
-}
-
-/* Dialog/Wizard pages show just the header */
-.dialog-template-body,
-.wizard-template-body {
-  .labkey-page-header {
-    margin-bottom: 20px;
-  }
+.header-container {
+  margin-bottom: 20px;
 }

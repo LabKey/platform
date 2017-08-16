@@ -23,7 +23,7 @@ Ext4.define('File.panel.Upload', {
 
     header : false,
 
-    bodyStyle: 'background-color:#f0f0f0;',
+    bodyCls: 'lk-file-upload-panel',
 
     constructor : function(config) {
 
@@ -330,44 +330,6 @@ Ext4.define('File.panel.Upload', {
 
     getOuterPanel : function() {
         /**
-         * This panel contains the radio buttons to select single/multi
-         */
-        var radioPanel = {
-            xtype   : 'panel',
-            layout  : 'form',
-            width: 110,
-            border : false,
-            margins: '0 0 0 30',
-            bodyStyle: this.bodyStyle,
-            items : [{
-                xtype     : 'radiogroup',
-                width     : 110,
-                columns   : 1,
-                hideLabel : true,
-                items     : [{
-                    boxLabel : 'Single file',
-                    name     : 'rb-file-upload-type',
-                    checked  : true,
-                    handler  : function(cmp, checked) {
-                        if (checked) {
-                            uploadsPanel.getLayout().setActiveItem(this.getSingleUpload());
-                        }
-                    },
-                    scope    : this
-                },{
-                    boxLabel : 'Multiple files',
-                    name     : 'rb-file-upload-type',
-                    handler  : function(cmp, checked) {
-                        if (checked) {
-                            uploadsPanel.getLayout().setActiveItem(this.getMultiUpload());
-                        }
-                    },
-                    scope    : this
-                }]
-            }]
-        };
-
-        /**
          * This panel contains the single/multiple upload panels
          */
         var uploadsPanel = Ext4.create('Ext.panel.Panel', {
@@ -452,7 +414,7 @@ Ext4.define('File.panel.Upload', {
         this.singleUpload = Ext4.create('Ext.form.Panel', {
             border : false,
             frame : false,
-            bodyStyle: this.bodyStyle,
+            cls: this.bodyCls,
             items  : [{
                 xtype: 'container',
                 width: 525,
@@ -510,7 +472,7 @@ Ext4.define('File.panel.Upload', {
 
         this.multiUpload = Ext4.create('Ext.panel.Panel', {
             border: false,
-            bodyStyle: this.bodyStyle,
+            cls: this.bodyCls,
             items: [{
                 xtype: 'container',
                 html: html + "<p>" + helpLinkHtml

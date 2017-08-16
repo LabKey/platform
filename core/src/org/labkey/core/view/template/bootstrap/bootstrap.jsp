@@ -54,31 +54,35 @@
             && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
 %>
 <div class="container lk-body-ct">
-    <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
-    <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
-       {
-           String trail = renderTrail(pageConfig.getAppBar().getNavTrail());
-           String pageTitle = pageConfig.getAppBar().getPageTitle();
-
-           if (pageTitle == null)
-           {
-               pageTitle = pageConfig.getAppBar().getFolderTitle();
-
-               if (pageTitle != null)
+    <div class="row">
+        <div class="col-md-12">
+            <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
+            <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
                {
-                   String folder = null;
-                   if (getContainer().isProject())
-                       folder = getContainer().getName();
-                   else if (getContainer().getProject() != null)
-                       folder = getContainer().getProject().getName();
-                   if (folder != null && pageTitle.equalsIgnoreCase(folder))
-                       pageTitle = null;
-               }
-           }
+                   String trail = renderTrail(pageConfig.getAppBar().getNavTrail());
+                   String pageTitle = pageConfig.getAppBar().getPageTitle();
 
-           if (trail != null || pageTitle != null)
-           {
-    %>
+                   if (pageTitle == null)
+                   {
+                       pageTitle = pageConfig.getAppBar().getFolderTitle();
+
+                       if (pageTitle != null)
+                       {
+                           String folder = null;
+                           if (getContainer().isProject())
+                               folder = getContainer().getName();
+                           else if (getContainer().getProject() != null)
+                               folder = getContainer().getProject().getName();
+                           if (folder != null && pageTitle.equalsIgnoreCase(folder))
+                               pageTitle = null;
+                       }
+                   }
+
+                   if (trail != null || pageTitle != null)
+                   {
+            %>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-12 lk-body-title">
             <% if (trail != null) { %><%= text(trail) %><% } %>

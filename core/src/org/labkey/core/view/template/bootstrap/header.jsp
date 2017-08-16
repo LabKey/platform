@@ -161,7 +161,9 @@
 <% } %>
 <% if (!isRealUser && pageConfig.shouldIncludeLoginLink()) { %>
             <li>
-                <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign In</a>
+                <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">
+                    <span>Sign In</span>
+                </a>
             </li>
 <% } %>
 <% if (isRealUser)

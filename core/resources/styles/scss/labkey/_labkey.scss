@@ -1102,18 +1102,18 @@ div.note {
     border: none;
     width: 64px;
     height: 64px;
-    background: rgb(18, 100, 149); /* no RGBa */
-    background: rgba(18, 100, 149, 0.7); /* FF, Safari, Chrome, IE9 */
+    background: $lk-tool-icon-color; /* no RGBa */
+    background: rgba($lk-tool-icon-color, 0.7); /* FF, Safari, Chrome, IE9 */
   }
 
   &:hover {
     a, a:visited {
-      color: #000000;
+      color: $lk-text-link-color-hover;
     }
 
     img {
       cursor: pointer;
-      background: rgba(18, 100, 149, 1.0); /* FF, Safari, Chrome, IE9 */
+      background: rgba($lk-tool-icon-color, 1.0); /* FF, Safari, Chrome, IE9 */
     }
   }
 }
@@ -1463,7 +1463,7 @@ div span.labkey-main-menu-icon {
 
 .labkey-anchor-disabled
 {
-  color: $lk-text-color !important;
+  color: $lk-webpart-title-color !important;
   cursor: default;
 }
 
@@ -1481,6 +1481,39 @@ div span.labkey-main-menu-icon {
 .padding-0 {
   padding-left: 0;
   padding-right: 0;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid $lk-nav-tab-border-color;
+  > li {
+    > a {
+      color: $lk-nav-tab-secondary-text-color;
+      background-color: $lk-nav-tab-secondary-bg-color;
+      border-bottom: 1px solid $lk-nav-tab-border-color;
+      &:hover {
+        background-color: $lk-nav-tab-secondary-hover-bg-color;
+        color: $lk-nav-tab-secondary-hover-text-color;
+        border-color: $lk-nav-tab-secondary-hover-bg-color $lk-nav-tab-secondary-hover-bg-color $lk-nav-tab-border-color;
+      }
+    }
+
+    // Active state, and its :hover to override normal :hover
+    &.active > a {
+      &,
+      &:hover,
+      &:focus {
+        color: $lk-nav-tab-primary-text-color;
+        background-color: $lk-nav-tab-primary-bg-color;
+        border: 1px solid $lk-nav-tab-border-color;
+        border-bottom-color: transparent;
+      }
+    }
+  }
+}
+
+.lk-file-upload-panel,
+.lk-file-upload-panel > .x4-panel-body-default  {
+  background-color: $lk-dark-content-bar-color;
 }
 
 @import "components/header";
