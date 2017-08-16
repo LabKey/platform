@@ -93,7 +93,8 @@ List others = [
         "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
         "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
-        "xerces:xercesImpl:${xercesImplVersion}"
+        "xerces:xercesImpl:${xercesImplVersion}",
+        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}"
 ]
 
 List javax = [
