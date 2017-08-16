@@ -305,8 +305,10 @@ public class ContainerManager
                 SecurityManager.setInheritPermissions(c);
         }
 
-        //Ensure this flag gets re-evaluated for ContainerFilters
-        c.getParent().hasWorkbookChildren = null;
+        // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
+        // since mutating cached objects is frowned upon, just uncache parent
+        // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
+        _removeFromCache(parent);
 
         fireCreateContainer(c, user);
         return c;
