@@ -88,6 +88,8 @@ import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTPropertyValidator;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -5844,7 +5846,34 @@ public class ExperimentServiceImpl implements ExperimentService
         if (obj.has("scale"))
             prop.setScale((Integer)obj.get("scale"));
 
+        JSONArray jsonValidators = obj.optJSONArray("validators");
+        if(null != jsonValidators)
+        {
+            List<GWTPropertyValidator> validators = new ArrayList<>();
+            for (int i = 0; i < jsonValidators.length(); i++)
+            {
+                JSONObject jsonValidator = jsonValidators.getJSONObject(i);
+                if (null != jsonValidator)
+                {
+                    validators.add(convertJsonToPropertyValidator(jsonValidator));
+                }
+            }
+            prop.setPropertyValidators(validators);
+        }
+
         return prop;
+    }
+
+    public GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException
+    {
+        GWTPropertyValidator validator = new GWTPropertyValidator();
+        validator.setName(obj.optString("name", "Validator"));
+        validator.setDescription(obj.optString("description"));
+        validator.setType(PropertyValidatorType.getType(obj.getString("type")));
+        validator.setExpression(obj.optString("expression"));
+        validator.setErrorMessage(obj.optString("errorMessage"));
+
+        return validator;
     }
 
     public void addExperimentListener(ExperimentListener listener)
