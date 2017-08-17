@@ -1869,7 +1869,16 @@ public class DataRegion extends DisplayElement
             out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
 
             if (newUI)
-                out.write(" style=\"position:relative;\"");
+            {
+                int width = 0;
+                if (showRecordSelectors)
+                    width += 25;
+                if (detailsColumn != null)
+                    width += 25;
+                if (updateColumn != null)
+                    width += 25;
+                out.write(" style=\"position:relative;width:" + width + "px;\"");
+            }
 
             String headerId = "column-header-" + UniqueID.getServerSessionScopedUID();
             if (!newUI)
