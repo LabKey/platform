@@ -138,7 +138,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
 
-                DesignerInfoImpl progressReportInfo = new DesignerInfoImpl(AssayProgressReport.TYPE, "Assay Progress Report", null,
+                DesignerInfoImpl progressReportInfo = new DesignerInfoImpl(AssayProgressReport.TYPE, AssayProgressReport.REPORT_LABEL, null,
                         new ActionURL(ReportsController.AssayProgressReportAction.class, context.getContainer()),
                         _getIconPath(AssayProgressReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(AssayProgressReport.TYPE));
                 prInfo.setId("create_assayProgressReport");

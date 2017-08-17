@@ -131,11 +131,6 @@ public class ReportsController extends BaseStudyController
         setActionResolver(_actionResolver);
     }
 
-//    public StudyImpl getStudy() throws ServletException
-//    {
-//        return StudyManager.getInstance().getStudy(getContainer());
-//    }
-
     protected HttpServletRequest getRequest()
     {
         return getViewContext().getRequest();
@@ -1948,7 +1943,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay Progress Report");
+            return root.addChild("Create " + AssayProgressReport.REPORT_LABEL);
         }
 
     }
@@ -2015,8 +2010,9 @@ public class ReportsController extends BaseStudyController
                 {
                     AssayProgressReport progressReport = (AssayProgressReport)report;
 
-                    Map<String, Map<String, Object>> allAssayData = progressReport.getAssayReportData(getViewContext(), errors);
-                    Map<String, Object> assayData = allAssayData.get(form.getAssayName());
+                    Map<String, Object> assayData = progressReport
+                            .getAssayReportData(getViewContext(), errors)
+                            .get(form.getAssayName());
 
                     if (assayData != null)
                     {

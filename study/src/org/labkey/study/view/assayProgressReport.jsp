@@ -15,7 +15,6 @@
      * limitations under the License.
      */
 %>
-
 <%@ page import="org.labkey.api.util.UniqueID"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -36,7 +35,6 @@
         dependencies.add("progress-report");
     }
 %>
-
 <%
     JspView<ReportsController.ProgressReportForm> me = (JspView<ReportsController.ProgressReportForm>)HttpView.currentView();
     ReportsController.ProgressReportForm form = me.getModelBean();
@@ -55,12 +53,9 @@
         reportConfig.put("shared", descriptor.isShared());
     }
 %>
-
-<h1>Create Assay Progress Report</h1>
 <labkey:panel>
     <div id=<%=h(renderId)%>></div>
 </labkey:panel>
-
 <script type="text/javascript">
     Ext4.onReady(function(){
 

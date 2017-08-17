@@ -4,6 +4,7 @@ import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,8 +44,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +51,8 @@ import java.util.stream.Collectors;
  */
 public class AssayProgressReport extends AbstractReport
 {
+    public static final String REPORT_LABEL = "Assay Progress Report";
+
     public static final String TYPE = "ReportService.AssayProgressReport";
     public static final String PARTICIPANTS = "participants";
     public static final String VISITS = "visits";
@@ -69,7 +70,6 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_RESULTS_UNEXPECTED = "unexpected";
 
     private SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
-    private Map<String, Map<String, Object>> _assayData = new LinkedHashMap<>();
 
     public enum SpecimenStatus
     {
@@ -150,23 +150,23 @@ public class AssayProgressReport extends AbstractReport
     @Override
     public String getTypeDescription()
     {
-        return "Assay Progress Report";
+        return REPORT_LABEL;
     }
 
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
         BindException errors = new NullSafeBindException(this, "form");
-        getAssayReportData(context, errors);
-
-        return new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", new AssayReportBean(getReportId(), _assayData), errors);
+        return new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", new AssayReportBean(getReportId(), getAssayReportData(context, errors)), errors);
     }
 
+    @NotNull
     public Map<String, Map<String, Object>> getAssayReportData(ViewContext context, BindException errors)
     {
         Study study = StudyService.get().getStudy(context.getContainer());
 
-        _assayData.clear();
+        Map<String, Map<String, Object>> assayData = new LinkedHashMap<>();
+
         _copiedToStudyData.clear();
 
         // assay expectations from the assay schedule
@@ -258,14 +258,15 @@ public class AssayProgressReport extends AbstractReport
                 // create the heat map data
                 data.put(HEAT_MAP, createHeatMapData(context, assay, assaySource));
 
-                _assayData.put(assay.getAssayName(), data);
+                assayData.put(assay.getAssayName(), data);
             }
         }
         catch (Exception e)
         {
             errors.addError(new LabKeyError(e));
         }
-        return _assayData;
+
+        return assayData;
     }
 
     AssayData createAssayDataSource(Study study, AssayExpectation expectation)
@@ -302,38 +303,6 @@ public class AssayProgressReport extends AbstractReport
                     "status", available.getName()));
         }
         return heatmap;
-    }
-
-    private void getCustomAssayData(AssayExpectation assay, ViewContext context)
-    {
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "Lists");
-        if (schema == null)
-            throw new NotFoundException("Schema not found");
-
-        TableInfo tableInfo = schema.getTable("progressReport");
-        if (tableInfo == null)
-            throw new NotFoundException("Assay progress report status not found for " + assay.getAssayName());
-
-        Map<String, Object> data = new HashMap<>();
-        Set<String> visits = new TreeSet<>();
-        Set<String> participants = new TreeSet<>();
-
-        data.put(VISITS, visits);
-        data.put(PARTICIPANTS, participants);
-
-        _assayData.put(assay.getAssayName(), data);
-        new TableSelector(tableInfo).forEach(rs ->
-        {
-            String visit = rs.getString("Visit");
-            String participant = rs.getString("ParticipantID");
-            String status = rs.getString("Status");
-
-            if (visit != null && participant != null && status != null)
-            {
-                visits.add(visit);
-                participants.add(participant);
-            }
-        });
     }
 
     private void getDatasetData(AssayExpectation assay, Study study, ViewContext context)
@@ -383,7 +352,7 @@ public class AssayProgressReport extends AbstractReport
     public static class AssayReportBean
     {
         private ReportIdentifier _id;
-        private Map<String, Map<String, Object>> _assayData = new HashMap<>();
+        private Map<String, Map<String, Object>> _assayData;
 
         public AssayReportBean(ReportIdentifier id, Map<String, Map<String, Object>> assayData)
         {

@@ -19,19 +19,14 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
 
     padding: 10,
 
-    constructor: function (config)
-    {
-        this.callParent([config]);
-    },
-
-    initComponent: function ()
+    initComponent: function()
     {
         // grab the json encoded assay config (if we are editing an existing report)
-        if (this.reportConfig.json){
+        if (this.reportConfig.json) {
 
-            var jsonData = Ext4.JSON.decode(this.reportConfig.json);
+            var jsonData = Ext4.decode(this.reportConfig.json);
             this.assayConfig = {};
-            Ext4.each(jsonData, function(row){
+            Ext4.each(jsonData, function(row) {
 
                 this.assayConfig[row.AssayName] = {
                     folderName  : row.folderName,
@@ -42,32 +37,34 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             }, this);
         }
 
-        this.items = [];
-        this.items.push(this.getReportPanel());
-        this.items.push(this.getAssayPanel());
+        this.items = [
+            this.getReportPanel(),
+            this.getAssayPanel()
+        ];
 
         this.buttons = [{
-                xtype   : 'button',
-                text    : 'Cancel',
-                scope   : this,
-                handler : function(){
-                    if (this.returnUrl)
-                        window.location = this.returnUrl;
-                    else
-                        window.history.back();
-                }
-            },{
-                xtype   : 'button',
-                text    : 'Save',
-                scope   : this,
-                handler : this.saveReport
-            }];
+            xtype   : 'button',
+            text    : 'Cancel',
+            scope   : this,
+            handler : function() {
+                if (this.returnUrl)
+                    window.location = this.returnUrl;
+                else
+                    window.history.back();
+            }
+        },{
+            xtype   : 'button',
+            text    : 'Save',
+            scope   : this,
+            handler : this.saveReport
+        }];
+
         this.callParent(arguments);
     },
 
-    getReportPanel : function(){
+    getReportPanel : function() {
 
-        if (!this.reportPanel){
+        if (!this.reportPanel) {
 
             var properties = [{
                 xtype      : 'textfield',
@@ -79,7 +76,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 value      : this.reportConfig.reportName,
                 listeners: {
                     scope : this,
-                    change: function(cmp, newVal){
+                    change: function(cmp, newVal) {
                         this.reportConfig.reportName = newVal;
                     }
                 }
@@ -92,7 +89,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 width      : 400,
                 listeners: {
                     scope  : this,
-                    change : function(cmp, newVal){
+                    change : function(cmp, newVal) {
                         this.reportConfig.reportDescription = newVal;
                     }
                 }
@@ -109,7 +106,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 width      : 400,
                 listeners: {
                     scope  : this,
-                    change: function(cmp, newVal, oldVal){
+                    change: function(cmp, newVal) {
                         this.reportConfig.shared = newVal;
                     }
                 }
@@ -122,13 +119,14 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 flex    : 1.2,
                 items   : properties
             });
-         }
+        }
+
         return this.reportPanel;
     },
 
-    getAssayPanel : function(){
+    getAssayPanel : function() {
 
-        if (!this.configPanel){
+        if (!this.configPanel) {
             this.configPanel = Ext4.create('Ext.panel.Panel', {
                 tpl     : this.getConfigTpl(),
                 listeners : {
@@ -143,23 +141,23 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
         return this.configPanel;
     },
 
-    getAssayInformation : function(){
+    getAssayInformation : function() {
 
         LABKEY.Query.selectRows({
             schemaName: 'study',
             queryName: 'AssaySpecimen',
             scope: this,
-            success: function(result){
+            success: function(result) {
                 this.assayData = result.rows;
                 this.getAssayPanel().getEl().unmask();
 
                 // merge any saved information
-                if (this.assayConfig){
+                if (this.assayConfig) {
 
-                    Ext4.each(this.assayData, function(row){
+                    Ext4.each(this.assayData, function(row) {
 
                         var cfg = this.assayConfig[row.AssayName];
-                        if (cfg){
+                        if (cfg) {
                             row.folderName = cfg.folderName;
                             row.folderId = cfg.folderId;
                             row.schemaName = cfg.schemaName;
@@ -173,28 +171,28 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
         });
     },
 
-    getConfigTpl : function(){
+    getConfigTpl : function() {
 
         return new Ext4.XTemplate('<table class="assay-summary">',
-                '<tr><th></th><th>Assay</th><th>Folder</th><th>Schema</th><th>Query</th></tr>',
-                '<tpl for=".">',
-                    '<tr>',
-                    '<td><span dataindex="{[xindex-1]}" height="16px" class="fa fa-pencil"></span></td>',
-                    '<td>{AssayName:htmlEncode}</td>',
-                    '<td>{folderName}</td>',
-                    '<td>{schemaName}</td>',
-                    '<td>{queryName}</td>',
-                    '</tr>',
-                '</tpl>',
-                '</table>'
+            '<tr><th></th><th>Assay</th><th>Folder</th><th>Schema</th><th>Query</th></tr>',
+            '<tpl for=".">',
+                '<tr>',
+                '<td><span dataindex="{[xindex-1]}" height="16px" class="fa fa-pencil"></span></td>',
+                '<td>{AssayName:htmlEncode}</td>',
+                '<td>{folderName:htmlEncode}</td>',
+                '<td>{schemaName:htmlEncode}</td>',
+                '<td>{queryName:htmlEncode}</td>',
+                '</tr>',
+            '</tpl>',
+            '</table>'
         );
     },
 
     registerClickHandlers : function() {
         var el = this.configPanel.getEl();
-        if (el){
+        if (el) {
             var icons = el.query('span.fa.fa-pencil');
-            if (icons && icons.length){
+            if (icons && icons.length) {
 
                 Ext4.each(icons, function(icon) {
 
@@ -204,10 +202,9 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
         }
     },
 
-    onEdit : function(e, cmp){
+    onEdit : function(e, cmp) {
 
         var dataIdx = cmp.getAttribute('dataindex');
-        var items = [{html: 'Choose the source query that will provide status information for this assay.', border : false}];
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
 
         var folderField = Ext4.create('Ext.form.field.ComboBox',
@@ -247,33 +244,37 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                 padding: '10px 0 0 0'
             })
         );
-        items.push(folderField, schemaField, queryField);
 
         var window = Ext4.create('Ext.window.Window', {
             title   : 'Choose source query for status information',
             width   : 500,
             modal   : true,
             cls     : 'labkey-assay-config',
+            autoShow: true,
             items   : [{
                 xtype   : 'form',
                 border  : false,
-                items   : items,
+                items   : [{
+                    html: 'Choose the source query that will provide status information for this assay.',
+                    border: false
+                }, folderField, schemaField, queryField],
                 padding : 10
             }],
+            buttonAlign: 'right',
             buttons: [{
                 text: 'Submit',
-                handler:  function() {
+                handler: function() {
 
                     var form = window.down('form').getForm();
-                    if (form.isValid()){
+                    if (form.isValid()) {
 
                         var folderName, folderId, schemaName, queryName;
 
                         // get the folder info
                         var folder = folderField.getValue();
-                        if (folder){
+                        if (folder) {
                             var rec = folderField.findRecordByValue(folder);
-                            if (rec){
+                            if (rec) {
                                 folderName = rec.get('Name');
                                 folderId = folder;
                             }
@@ -282,7 +283,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                         schemaName = schemaField.getValue();
                         queryName = queryField.getValue();
 
-                        if (dataIdx){
+                        if (dataIdx) {
                             var assayRec = this.assayData[dataIdx];
 
                             if (folderName)
@@ -299,44 +300,43 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                         }
                         window.close();
                     }
-                    else
-                    {
-                        Ext4.Msg.show({
-                            title: "Error",
-                            msg: 'All required fields must be specified.',
-                            buttons: Ext4.MessageBox.OK,
-                            icon: Ext4.MessageBox.ERROR
-                        });
+                    else {
+                        this.failureHandler(undefined, 'All required fields must be specified.');
                     }
                 },
                 scope: this
-            }],
-            buttonAlign: 'right',
-            scope: this
+            }]
         });
-        window.show();
     },
 
-    failureHandler : function(response)
-    {
+    failureHandler : function(response, message) {
         this.getEl().unmask();
-        var msg = response.status == 403 ? response.statusText : Ext4.JSON.decode(response.responseText).exception;
+
+        var msg = 'Unknown failure occurred';
+
+        if (response) {
+            msg = response.status === 403 ? response.statusText : Ext4.decode(response.responseText).exception;
+        }
+        if (message) {
+            msg = message;
+        }
+
         Ext4.Msg.show({
-            title:'Error',
+            title: 'Error',
             msg: msg,
             buttons: Ext4.Msg.OK,
             icon: Ext4.Msg.ERROR
         });
     },
 
-    saveReport : function(){
+    saveReport : function() {
         var form = this.reportPanel.getForm();
-        if (form.isValid()){
+        if (form.isValid()) {
 
             var data = [];
-            Ext4.each(this.assayData, function(row){
-
-                data.push({AssayName : row.AssayName,
+            Ext4.each(this.assayData, function(row) {
+                data.push({
+                    AssayName : row.AssayName,
                     folderName  : row.folderName,
                     folderId    : row.folderId,
                     schemaName  : row.schemaName,
@@ -354,25 +354,22 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
                     reportId    : this.reportConfig.reportId,
                     jsonData    : data
                 },
-                success: function (response) {
-                    var o = Ext4.JSON.decode(response.responseText);
+                success: function(response) {
+                    var o = Ext4.decode(response.responseText);
                     if (this.returnUrl)
                         window.location = this.returnUrl;
-                    else if (o.reportId){
+                    else if (o.reportId) {
                         window.location = LABKEY.ActionURL.buildURL('reports', 'runReport.view', null, {reportId : o.reportId});
                     }
                 },
-                failure: this.failureHandler,
+                failure: function(response) {
+                    this.failureHandler(response);
+                },
                 scope: this
             });
         }
         else {
-            Ext4.Msg.show({
-                title   :'Error',
-                msg     : 'Please fill out all required fields.',
-                buttons : Ext4.Msg.OK,
-                icon    : Ext4.Msg.ERROR
-            });
+            this.failureHandler(undefined, 'Please fill out all required fields.');
         }
     }
 });

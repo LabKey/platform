@@ -318,7 +318,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                         }
                         if (!foundMatch)
                         {
-                            outColumns.add(displayField);
+                       //     outColumns.add(displayField);
                         }
                     }
 

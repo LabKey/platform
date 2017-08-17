@@ -3,9 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-/**
- * Main panel for the NAb QC interface.
- */
 Ext4.QuickTips.init();
 
 Ext4.define('LABKEY.ext4.AssayStatusPanel', {
@@ -20,85 +17,72 @@ Ext4.define('LABKEY.ext4.AssayStatusPanel', {
 
     padding: 10,
 
-    constructor: function (config) {
-        this.callParent([config]);
-    },
+    initComponent: function() {
+        Ext4.applyIf(this, {
+            visitLabels: [],
+            visitLabelMap: {},
+            visits: []
+        });
 
-    initComponent: function () {
-        this.items = [];
-        this.items.push(this.getStatusPanel());
+        Ext4.each(this.visits, function(visit, i) {
+            this.visitLabelMap[visit] = this.visitLabels[i];
+        }, this);
+
+        this.items = [{
+            xtype: 'panel',
+            border: false,
+            frame: false,
+            tpl: this.getTemplate(),
+            data: {
+                name: this.name,
+                visits: this.visits,
+                participants: this.participants
+            }
+        }];
 
         this.callParent(arguments);
     },
 
-    getStatusPanel : function(){
+    getTemplate : function() {
 
-        if (!this.statusPanel){
-
-            this.statusPanel = Ext4.create('Ext.panel.Panel', {
-                border  : false,
-                frame   : false,
-                flex    : 1.2,
-                tpl     : this.getTemplate(),
-                data    : {
-                    name    : this.name,
-                    visits  : this.visits,
-                    participants : this.participants
-                }
-            });
-
-            this.visitLabelMap = {};
-            var i=0;
-            Ext4.each(this.visits, function(visit){
-
-                this.visitLabelMap[visit] = this.visitLables[i++];
-            }, this);
-        }
-        return this.statusPanel;
-    },
-
-    getTemplate : function () {
-
-        var tpl = new Ext4.XTemplate(
-                '<div><h3>{name:htmlEncode}</div>',
-                '<div class="table-responsive"><table class="table progress-report" id="ProgressReport"><tr>',
-                '<th>Participant</th>',
-                '<tpl for="visits">',
-                    '{[this.getVisitLabel(this, values)]}',
+        return new Ext4.XTemplate(
+            '<div><h3>{name:htmlEncode}</div>',
+            '<div class="table-responsive"><table class="table progress-report" id="ProgressReport"><tr>',
+            '<th>Participant</th>',
+            '<tpl for="visits">',
+                '{[this.getVisitLabel(this, values)]}',
+            '</tpl>',
+            '</tr>',
+            '<tpl for="participants">',
+                '<tr class="{[xindex % 2 === 1 ? "labkey-alternate-row" : "labkey-row"]}">',
+                '<td>{.:htmlEncode}</td>',
+                '<tpl for="parent.visits">',
+                    '{[this.renderCellValue(this, parent, values)]}',
                 '</tpl>',
                 '</tr>',
-                '<tpl for="participants">',
-                    '<tr class="{[xindex % 2 === 1 ? "labkey-alternate-row" : "labkey-row"]}">',
-                    '<td>{.}</td>',
-                    '<tpl for="parent.visits">',
-                        '{[this.renderCellValue(this, parent, values)]}',
-                    '</tpl>',
-                    '</tr>',
-                '</tpl>',
-                '</table></div>',
-                {
-                    getVisitLabel : function(cmp, visit){
-                        var me = cmp.initialConfig.me;
-                        return '<th>' + me.visitLabelMap[visit] + '</th>';
-                    },
-                    renderCellValue : function(cmp, ptid, visit)
-                    {
-                        var me = cmp.initialConfig.me;
-                        var className = 'fa fa-circle-o';
-                        var key = ptid + '|' + visit;
+            '</tpl>',
+            '</table></div>',
+            {
+                getVisitLabel : function(cmp, visit) {
+                    var me = cmp.initialConfig.me;
+                    return '<th>' + Ext4.htmlEncode(me.visitLabelMap[visit]) + '</th>';
+                },
+                renderCellValue : function(cmp, ptid, visit) {
+                    var me = cmp.initialConfig.me;
+                    var className = 'fa fa-circle-o';
+                    var key = ptid + '|' + visit;
 
-                        var mapCell = me.heatMap[key];
-                        var tooltip = '';
-                        if (mapCell){
-                            className = mapCell['iconcls'];
-                            tooltip = mapCell['tooltip'];
-                        }
-                        return '<td><span height="16px" data-qtip="' + tooltip + '" class="' + className + '"></span></td>';
-                    },
-                    me : this
-                }
+                    var mapCell = me.heatMap[key];
+                    var tooltip = '';
+                    if (mapCell) {
+                        className = mapCell['iconcls'];
+                        tooltip = mapCell['tooltip'];
+                    }
+                    return '<td><span height="16px" data-qtip="' + tooltip + '" class="' + className + '"></span></td>';
+                },
+                me : this
+            }
         );
-        return tpl;
     }
 });
 
@@ -114,38 +98,31 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
 
     padding: 10,
 
-    constructor: function (config)
-    {
-        this.reports = [];
-        this.callParent([config]);
+    componentIdFromAssay : function(assayName) {
+        return assayName + '-report';
     },
 
-    componentIdFromAssay : function(assayname){
-        return assayname + '-report';
-    },
-
-    assayFromComponentId : function(component){
+    assayFromComponentId : function(component) {
         return component.substring(0, component.length - '-report'.length);
     },
 
-    initComponent: function ()
-    {
-        this.items = [];
-        var storeData = [{name : 'All', componentId : 'all'}];
-
-        Ext4.each(this.assays, function(assay){
-
-            var id = this.componentIdFromAssay(assay);
-            this.reports.push(id);
-            storeData.push({name : Ext4.String.htmlEncode(assay), componentId : id})
-        }, this);
-
-        var assayStore = Ext4.create('Ext.data.Store', {
-            fields  : ['name', 'componentId'],
-            data : storeData
+    initComponent : function() {
+        Ext4.apply(this, {
+            reports: []
         });
 
-        this.items.push({
+        var storeData = [{name : 'All', componentId : 'all'}];
+
+        Ext4.each(this.assays, function(assay) {
+            var id = this.componentIdFromAssay(assay);
+            this.reports.push(id);
+            storeData.push({
+                name: Ext4.htmlEncode(assay),
+                componentId : id
+            })
+        }, this);
+
+        this.items = [{
             xtype   : 'button',
             text    : 'Export to Excel',
             itemId  : 'export-btn',
@@ -153,10 +130,8 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
             handler : this.exportAssays,
             margin  : '0 0, 10, 0',
             scope   : this
-        });
-
-        // legend and assay selector
-        this.items.push({
+        },{
+            // legend and assay selector
             xtype   : 'panel',
             border  : false,
             frame   : false,
@@ -169,8 +144,10 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                 value       : 'all',
                 displayField    : 'name',
                 valueField      : 'componentId',
-                forceSelction   : false,
-                store   : assayStore,
+                store: Ext4.create('Ext.data.Store', {
+                    fields: ['name', 'componentId'],
+                    data: storeData
+                }),
                 listeners : {
                     scope   : this,
                     change  : function(cmp, newValue) {
@@ -178,7 +155,7 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                         if (exportBtn)
                             exportBtn.setDisabled(newValue === 'all');
                         this.selectedAssay = newValue;
-                        Ext4.each(this.reports, function(report){
+                        Ext4.each(this.reports, function(report) {
 
                             var panel = this.getComponent(report);
                             if (panel){
@@ -188,18 +165,32 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                     }
                 }
             }]
-        });
+        },{
+            xtype: 'panel',
+            border: false,
+            frame: false,
+            tpl: new Ext4.XTemplate(
+                '<div><h4>Legend</h4></div>',
+                '<table class="legend">',
+                '<tpl for=".">',
+                '<tpl if="xindex % 2 === 1"><tr></tpl>',
+                '<td><span style="height:16px;" class="{icon-class}"></span></td><td>&nbsp;{label:htmlEncode}</td>',
+                '<tpl if="xindex % 2 != 1"></tr></tpl>',
+                '</tpl>',
+                '</table>'
+            ),
+            data: this.legend
+        }];
 
-        this.items.push(this.getLegendPanel());
+        this.callParent(arguments);
 
         // add the assays
-        this.on('render', this.createAssayReports, this);
-        this.callParent(arguments);
+        this.on('render', this.createAssayReports, this, {single: true});
     },
 
-    createAssayReports : function(){
+    createAssayReports : function() {
 
-        this.getEl().mask("Generating Assay Reports...");
+        this.getEl().mask('Generating Assay Reports...');
         LABKEY.Ajax.request({
             url    : LABKEY.ActionURL.buildURL('study-reports', 'getAssayReportData.api'),
             method  : 'POST',
@@ -213,30 +204,31 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                 if (o.success) {
                     var items = [];
                     this.assayData = o.assayData;
-                    Ext4.each(this.assays, function(assay){
+                    Ext4.each(this.assays, function(assay) {
 
                         var data = this.assayData[assay];
 
-                        if (data){
+                        if (data) {
                             var id = this.componentIdFromAssay(assay);
                             this.reports.push(id);
                             items.push({
                                 xtype   : 'labkey-assay-status',
                                 itemId  : id,
                                 name    : assay,
-                                visits  : data['visits'],
-                                visitLables : data['visitLabels'],
-                                participants : data['participants'],
-                                heatMap : data['heatMap']
+                                visits  : data.visits,
+                                visitLabels : data.visitLabels,
+                                participants : data.participants,
+                                heatMap : data.heatMap
                             });
                         }
                     }, this);
 
-                    if (items.length > 0)
+                    if (items.length > 0) {
                         this.add(items);
+                    }
                 }
             },
-            failure : function(response){
+            failure : function(response) {
                 this.getEl().unmask();
                 Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
             },
@@ -244,34 +236,11 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
         });
     },
 
-    getLegendPanel : function(){
-
-        if (!this.legendPanel){
-
-            var tpl = new Ext4.XTemplate(
-                    '<div><h4>Legend</h4></div>',
-                    '<table class="legend">',
-                    '<tpl for=".">',
-                        '<tpl if="xindex % 2 === 1"><tr></tpl>',
-                        '<td><span height="16px" class="{icon-class}"></span></td><td>&nbsp;{label}</td>',
-                        '<tpl if="xindex % 2 != 1"></tr></tpl>',
-                    '</tpl>',
-                    '</table>'
-            );
-
-            this.legendPanel = Ext4.create('Ext.panel.Panel', {
-                border  : false,
-                frame   : false,
-                flex    : 1.2,
-                tpl     : tpl,
-                data    : this.legend
-            });
-        }
-        return this.legendPanel;
-    },
-
-    exportAssays : function(){
-        window.location = LABKEY.ActionURL.buildURL('study-reports', 'exportAssayProgressReport.view', null, {reportId: this.reportId, assayName : this.assayFromComponentId(this.selectedAssay)});
+    exportAssays : function() {
+        window.location = LABKEY.ActionURL.buildURL('study-reports', 'exportAssayProgressReport.view', null, {
+            reportId: this.reportId,
+            assayName : this.assayFromComponentId(this.selectedAssay)
+        });
     }
 });
 
