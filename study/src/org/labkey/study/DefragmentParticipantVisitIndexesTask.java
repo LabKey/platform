@@ -46,7 +46,8 @@ public class DefragmentParticipantVisitIndexesTask implements MaintenanceTask
         SqlDialect dialect = ti.getSqlDialect();
 
         dialect.defragmentIndex(schema, ti.getSelectName(), "PK_ParticipantVisit");
-        dialect.defragmentIndex(schema, ti.getSelectName(), "IX_PV_SequenceNum");
+        dialect.defragmentIndex(schema, ti.getSelectName(), "ix_participantvisit_sequencenum");
+        dialect.defragmentIndex(schema, ti.getSelectName(), "ix_participantvisit_visitrowid");
         dialect.defragmentIndex(schema, ti.getSelectName(), "UQ_ParticipantVisit_ParticipantSequenceNum");
     }
 }
