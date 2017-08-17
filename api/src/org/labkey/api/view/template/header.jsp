@@ -92,7 +92,7 @@
     <labkey:form id="headerSearchForm" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET" style="margin:0;">
         <div id="hdr-search" class="lk-input">
             <% if (AppProps.getInstance().isDevMode() && getUser() != null && getUser().isInSiteAdminGroup()) { %>
-                <a href="#" onclick="LABKEY.Utils.toggleUI();">See the new look!</a>
+                <a href="javascript:void(0);" onclick="LABKEY.Utils.toggleUI();">See the new look!</a>
             <% } %>
             <span class="fa fa-search lk-fa-search-icon"></span>
             <input placeholder="<%=h("Search " + laf.getShortName())%>" id="search-input" type="text" name="q" class="hdr-search-input" value="">

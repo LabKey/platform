@@ -21,18 +21,11 @@
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext4");
-    }
-%>
+<% /* DO NOT ADD DEPENDENCIES HERE, WOULD END UP LOADING WITH EACH DATA REGION */ %>
 <%
     QueryView.ExcelExportOptionsBean model = (QueryView.ExcelExportOptionsBean) HttpView.currentModel();
 
@@ -114,9 +107,6 @@
 </table>
 <script type="text/javascript">
     (function($) {
-
-        LABKEY.requiresScript("SignSnapshotPanel.js");
-
         LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
             var xlsExportEl = $("#<%=h(xlsGUID)%>");
             var xlsxExportEl = $("#<%=h(xlsxGUID)%>");
@@ -174,18 +164,15 @@
                     });
                 }
                 else {
-                    var displaySignaturePanel = function() {
+                    LABKEY.requiresScript(['Ext4', 'SignSnapshotPanel.js'], function() {
                         Ext4.onReady(function() {
                             Ext4.create('LABKEY.Query.SignSnapshotPanel', {
-                                autoShow: true,
-                                url: exportUrl,
-                                params: exportParams,
                                 emailInput: '<%=h(model.getEmail())%>',
-                                'X-LABKEY-CSRF': LABKEY.CSRF
+                                params: exportParams,
+                                url: exportUrl
                             });
                         });
-                    };
-                    displaySignaturePanel();
+                    });
                     return false;
                 }
 
@@ -342,9 +329,7 @@
                 if (signButtonEl)
                     signButtonEl.prop('hidden', true);
             });
-
         });
-
     })(jQuery);
 </script>
 

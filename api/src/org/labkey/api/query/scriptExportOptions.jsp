@@ -22,6 +22,7 @@
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<% /* DO NOT ADD DEPENDENCIES HERE, WOULD END UP LOADING WITH EACH DATA REGION */ %>
 <%
     JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
     Map<String, ActionURL> map = me.getModelBean();
