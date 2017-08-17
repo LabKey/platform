@@ -38,6 +38,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -571,6 +572,75 @@ public class ExpDataClassDataTestCase
         list.insertListItems(user, c, lis);
         return listName;
     }
+
+
+    @Test
+    public void testDomainTemplate() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+        final Container sub = ContainerManager.createContainer(c, "sub3");
+
+        Set<Module> activeModules = new HashSet<>(c.getActiveModules());
+        Module m = ModuleLoader.getInstance().getModule("simpletest");
+        Assert.assertNotNull("This test requires 'simplemodule' to be deployed", m);
+        activeModules.add(m);
+        c.setActiveModules(activeModules);
+
+        DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "todolist");
+        Assert.assertNotNull(templateGroup);
+        Assert.assertFalse(
+                "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
+                templateGroup.hasErrors());
+
+        List<Domain> created = templateGroup.createAndImport(sub, user, true, true);
+
+        // verify the "Priority" list was created and data was imported
+        UserSchema listSchema = QueryService.get().getUserSchema(user, sub, "lists");
+        TableInfo priorityTable = listSchema.getTable("Priority");
+
+        Collection<Map<String, Object>> priorities = new TableSelector(priorityTable).getMapCollection();
+        Assert.assertEquals(5, priorities.size());
+
+        // Issue 27729: sequence not updated to max after bulk import with importIdentity turned on
+        // verify that we can insert a new priority
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        row.put("title", "p5");
+        rows.add(row);
+
+        List<Map<String, Object>> ret;
+        try (DbScope.Transaction tx = priorityTable.getSchema().getScope().beginTransaction())
+        {
+            BatchValidationException errors = new BatchValidationException();
+            ret = priorityTable.getUpdateService().insertRows(user, sub, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            tx.commit();
+        }
+
+        Assert.assertEquals(1, ret.size());
+        Assert.assertEquals(5, ((Integer)ret.get(0).get("pri")).longValue());
+        Assert.assertEquals("p5", ret.get(0).get("title"));
+
+
+        // verify the "TodoList" DataCLass was created and data was imported
+        UserSchema expSchema = QueryService.get().getUserSchema(user, sub, expDataSchemaKey);
+        TableInfo table = expSchema.getTable("TodoList");
+        Assert.assertNotNull("data class not in query schema", table);
+
+        Collection<Map<String, Object>> todos = new TableSelector(table, TableSelector.ALL_COLUMNS, null, null).getMapCollection();
+        Assert.assertEquals(1, todos.size());
+        Map<String, Object> todo = todos.iterator().next();
+        Assert.assertEquals("create xsd", todo.get("title"));
+
+        ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(sub, "TodoList");
+        ExpData data = ExperimentServiceImpl.get().getExpData(dataClass, "TODO-1");
+
+        Collection<String> aliases = data.getAliases();
+        Assert.assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(Arrays.asList("xsd", "domain templates")));
+
+    }
+
 
     // Issue 25224: NPE trying to delete a folder with a DataClass with at least one result row in it
     @Test

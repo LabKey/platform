@@ -47,6 +47,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class SampleSetDomainKind extends AbstractDomainKind
@@ -152,7 +153,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
         int parentCol = arguments.get("parentCol") instanceof Number ? ((Number)arguments.get("parentCol")).intValue() : -1;
 
-        String nameExpression = arguments.containsKey("nameExpression") ? String.valueOf(arguments.get("nameExpression")) : null;
+        String nameExpression = arguments.containsKey("nameExpression") ? Objects.toString(arguments.get("nameExpression"), null) : null;
 
         ExpSampleSet ss;
         try
