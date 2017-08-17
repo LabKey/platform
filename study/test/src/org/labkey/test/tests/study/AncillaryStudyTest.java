@@ -21,7 +21,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
-import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.WikiHelper;
 
@@ -31,11 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.labkey.test.util.DataRegionTable.DataRegion;
 
 @Category({DailyC.class})
 public class AncillaryStudyTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String PROJECT_NAME = "AncillaryStudyTest Project";
     private static final String STUDY_NAME = "Special Emphasis Study";
     private static final String STUDY_DESCRIPTION = "Ancillary study created by AncillaryStudyTest.";
@@ -208,7 +210,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Insert rows into source dataset");
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DATASETS[0]));
-        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
+        DataRegion(getDriver()).find().clickImportBulkData();
         setFormElement(Locator.name("text"), EXTRA_DATASET_ROWS);
         clickButton("Submit");
 
@@ -217,10 +219,11 @@ public class AncillaryStudyTest extends StudyBaseTest
         _studyHelper.goToManageDatasets();
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         clickButton("View Data");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
+        table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
-        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
+
         assertEquals("Dataset does not reflect changes in source study.", 21, table.getDataRowCount());
         assertTextPresent(SEQ_NUMBER + ".0");
         table.getColumnDataAsText("Sequence Num");
@@ -230,15 +233,15 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         Map<String, String> nameAndValue = new HashMap<>();
-        nameAndValue.put("Sequence Num", SEQ_NUMBER2);
-        (new ChartHelper(this)).editDrtRow(1, nameAndValue);
+        nameAndValue.put("SequenceNum", SEQ_NUMBER2);
+        table.updateRow(1, nameAndValue);
 
         log("Verify changes in Ancillary Study. (modify)");
         clickFolder(STUDY_NAME);
         _studyHelper.goToManageDatasets();
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         clickButton("View Data");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
@@ -251,8 +254,8 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Delete row from source dataset");
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DATASETS[0]));
-        checkCheckbox(Locator.checkboxByName(".select").index(1));
-        clickButton("Delete", 0);
+        table.checkCheckbox(1);
+        table.clickHeaderButton("Delete");
         assertAlert("Delete selected row from this dataset?");
         waitForElement(Locator.paginationText(48));
 
@@ -261,7 +264,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _studyHelper.goToManageDatasets();
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         clickButton("View Data");
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
@@ -298,7 +301,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Verify Linked Datasets");
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DEPENDENT_DATASETS[0]));
-        clickAndWait(Locator.linkWithText("edit"));
+        clickAndWait(Locator.tag("a").withAttribute("data-original-title","edit"));
         setFormElement(Locator.name("quf_formlang"), UPDATED_DATASET_VAL);
         clickButton("Submit");
 
@@ -314,7 +317,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         }
         clickAndWait(Locator.linkWithText(DEPENDENT_DATASETS[0]));
         assertTextNotPresent(UPDATED_DATASET_VAL);
-        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
+        new DataRegionTable("Dataset",getDriver()).goToView("Edit Snapshot");
         doAndWaitForPageToLoad(() ->
         {
             clickButton("Update Snapshot", 0);
@@ -362,7 +365,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         goToModule("Wiki");
         WikiHelper wh = new WikiHelper(this);
         wh.createWikiPage("17021", "17021 Regression", new File(TestFileUtils.getApiScriptFolder(), "filterTest.html"));
-        DataRegionTable regressionTable = new DataRegionTable("test17021", getDriver()); // wait for data region
+        DataRegionTable regressionTable = DataRegion(getDriver()).withName("test17021").waitFor();
         regressionTable.setUpFacetedFilter("PrimaryType", "Blood (Whole)");
         assertElementNotPresent(Locator.linkWithText("Semen"));
         clickButton("CANCEL",0);
