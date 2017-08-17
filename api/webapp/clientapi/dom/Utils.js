@@ -454,11 +454,11 @@ LABKEY.Utils = new function(impl, $) {
             signalContainer.hide();
         }
 
-        signalContainer.find('div[name="' + signalName + '"]').remove();
-        signalContainer.append('<div name="' + signalName + '" id="' + LABKEY.Utils.id() + '"/>');
+        signalContainer.find('div[name="' + LABKEY.Utils.encodeHtml(signalName) + '"]').remove();
+        signalContainer.append('<div name="' + LABKEY.Utils.encodeHtml(signalName) + '" id="' + LABKEY.Utils.id() + '"/>');
         if (signalResult)
         {
-            signalContainer.find('div[name="' + signalName + '"]').attr("value", signalResult);
+            signalContainer.find('div[name="' + LABKEY.Utils.encodeHtml(signalName) + '"]').attr("value", LABKEY.Utils.encodeHtml(signalResult));
         }
     };
 
