@@ -84,7 +84,11 @@
 
   tr.lk-row-hl, tr.lk-row-hl.lk-row-over {
     & > td {
+      color: $lk-grid-row-select-text-color;
       background-color: $lk-grid-row-select-color;
+      & > a {
+        color: $lk-grid-row-select-link-color;
+      }
     }
   }
 

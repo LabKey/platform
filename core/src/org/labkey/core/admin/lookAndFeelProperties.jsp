@@ -90,6 +90,7 @@
         <select name="themeName">
             <option value="Overcast" <%=selected("Overcast".equalsIgnoreCase(themeName))%>>Overcast (Seattle Alt)</option>
             <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(themeName))%>>Seattle</option>
+            <option value="Madison" <%=selected("Madison".equalsIgnoreCase(themeName))%>>Madison</option>
         </select>
     </td>
 </tr>

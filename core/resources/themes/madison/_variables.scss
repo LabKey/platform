@@ -1,0 +1,125 @@
+//== Paths
+//
+
+//== Colors
+//
+$Madison-red: #c5050c;
+$Madison-red-dark: #9b0000;
+$Madison-page-bkgd: #f7f7f7;
+$Madison-gray-blue: #dadfe1;
+$Madison-gray-darker: #646569;
+$Madison-gray-darkest: #282728;
+$Madison-body-font: #494949;
+$Madison-anchor-color: #0479a8;
+$Madison-gray-footer-text: #adadad;
+$Madison-gray-footer-text-hover: #f9f9f9;
+
+$lk-text-color: $Madison-body-font;
+//== Fonts
+//
+
+//== Forms / States
+//
+$lk-state-warning-text: $Madison-body-font;
+$lk-state-warning-bg: $Madison-gray-blue;
+$lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
+
+//== Body
+//
+$lk-body-bg-color: $Madison-page-bkgd;
+
+//== Buttons
+//
+$lk-button-bg-color: $Madison-page-bkgd;
+$lk-button-bg-color-hover: $Madison-red-dark;
+$lk-button-border-color: $Madison-red-dark;
+$lk-button-border-color-hover: $Madison-red-dark;
+$lk-button-color: $Madison-red-dark;
+$lk-button-color-hover: $Madison-page-bkgd;
+
+$lk-button-primary-bg-color: $Madison-anchor-color;
+$lk-button-primary-bg-color-hover: $Madison-anchor-color;
+$lk-button-primary-color: $Madison-page-bkgd;
+$lk-button-primary-color-hover: $Madison-page-bkgd;
+
+$lk-bar-button-color: $Madison-anchor-color;
+$lk-bar-button-color-hover: $Madison-gray-darkest;
+$lk-bar-button-border-color-hover: $Madison-gray-blue;
+
+//== Dropdowns
+//
+$lk-dropdown-bg-color: $Madison-page-bkgd;
+$lk-dropdown-link-hover-color: $Madison-page-bkgd;
+$lk-dropdown-link-hover-bg: $Madison-red-dark;
+
+//== Grids
+//
+$lk-grid-row-bg-color: $Madison-page-bkgd;
+$lk-grid-row-alt-bg-color: $Madison-gray-blue;
+$lk-grid-row-color-hover: $Madison-gray-footer-text;
+$lk-grid-row-select-color: $Madison-anchor-color;
+$lk-grid-row-select-color-hover: $Madison-gray-footer-text;
+$lk-grid-row-select-text-color: $Madison-page-bkgd;
+$lk-grid-row-select-link-color: $Madison-gray-blue;
+
+$lk-grid-filter-border-color: $Madison-red-dark;
+$lk-grid-sort-icon-color: $Madison-page-bkgd;
+
+//== Header
+//
+$lk-page-header-bg-color: $Madison-page-bkgd;
+$lk-page-header-text-color: $Madison-red-dark;
+$lk-page-header-icon-color: $Madison-red-dark;
+$lk-page-header-font-hover-color: $Madison-gray-darkest; //just a guess
+$lk-page-header-icon-hover-color: $Madison-gray-darkest; //just a guess
+
+//== Links
+//
+$lk-link-color: $Madison-anchor-color;
+$lk-text-link-color: $Madison-anchor-color;
+$lk-text-link-color-hover: $Madison-gray-darkest;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $Madison-red-dark;
+$lk-page-nav-text-color: $Madison-page-bkgd;
+$lk-page-nav-active-bg-color: $Madison-page-bkgd;
+$lk-page-nav-active-text-color: $Madison-red-dark;
+$lk-page-nav-dropdown-item-bg-color: $Madison-page-bkgd;
+$lk-page-nav-dropdown-item-text-color: $Madison-red-dark;
+$lk-page-nav-dropdown-highlight-item-bg-color: $Madison-red-dark;
+$lk-page-nav-dropdown-highlight-item-text-color: $Madison-page-bkgd;
+$lk-page-nav-dropdown-icon-color: $Madison-red-dark;
+//$lk-page-nav-secondary-tab-bg-color: #73b6e0 !default; // theme variable
+//$lk-page-nav-secondary-tab-text-color: $white !default; // theme variable
+//$lk-page-nav-primary-tab-bg-color: $lk-primary-bg-color !default; // theme variable
+//$lk-page-nav-primary-tab-text-color: $lk-brand-color !default; // theme variable
+
+//== Panels
+//
+$lk-panel-bg-color: $Madison-page-bkgd;
+$lk-panel-default-text: $Madison-body-font;
+$lk-panel-default-border: $Madison-gray-darker;
+
+//== Portals
+//
+$lk-webpart-accent-color: $Madison-red;
+$lk-webpart-title-hover-color: $Madison-anchor-color;
+
+//== Tabs (Bootstrap tabs (Export data set dropdown))
+//
+//$lk-nav-tab-primary-bg-color: #F8F8F8 !default; // theme variable
+//$lk-nav-tab-primary-text-color: #555555 !default; // theme variable
+//$lk-nav-tab-secondary-bg-color: transparent !default; // theme variable
+//$lk-nav-tab-secondary-text-color: $lk-brand-color !default; // theme variable
+//$lk-nav-tab-secondary-hover-bg-color: #EEEEEE !default; // theme variable
+//$lk-nav-tab-secondary-hover-text-color: $black !default; // theme variable
+
+//== Tool Icons
+//
+$lk-tool-icon-color: $Madison-red-dark;
+
+//== Tooltips
+//
+$lk-tooltip-bg-color: $Madison-gray-darkest;
+$lk-tooltip-text-color: $Madison-page-bkgd;

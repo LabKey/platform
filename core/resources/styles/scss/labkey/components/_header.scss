@@ -125,6 +125,15 @@
         }
       }
 
+      & > .btn-primary {
+        color: $lk-button-primary-color;
+      }
+
+      & > .btn-primary:hover,
+      & > .btn-primary:focus {
+        color: $lk-button-primary-color-hover;
+      }
+
       & > a.fa, & > a > i.fa {
         color: $lk-page-header-icon-color;
 
