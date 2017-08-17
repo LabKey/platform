@@ -143,7 +143,7 @@
 <% if (AppProps.getInstance().isDevMode() && isRealUser && user.isInSiteAdminGroup())
    { %>
             <li data-tt="tooltip" data-placement="bottom" title="Revert back to the legacy look and feel.">
-                <a onclick="LABKEY.Utils.toggleUI();"><i class="fa fa-history"></i></a>
+                <a href="javascript:void(0);" onclick="LABKEY.Utils.toggleUI();"><i class="fa fa-history"></i></a>
             </li>
 <% } %>
 
