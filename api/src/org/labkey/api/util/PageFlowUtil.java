@@ -1912,7 +1912,9 @@ public class PageFlowUtil
                 themeName = LookAndFeelProperties.getInstance(c).getThemeName();
 
                 // Only for 17.2 release
-                if (!"seattle".equalsIgnoreCase(themeName) && !"overcast".equalsIgnoreCase(themeName))
+                if (!"seattle".equalsIgnoreCase(themeName) &&
+                        !"overcast".equalsIgnoreCase(themeName) &&
+                        !"madison".equalsIgnoreCase(themeName))
                     return WebTheme.EXPERIMENTAL_DEFAULT_THEME_NAME;
             }
             else
