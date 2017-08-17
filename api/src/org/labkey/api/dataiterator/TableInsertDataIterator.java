@@ -265,10 +265,40 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     private void setAutoIncrement(INSERT bound)
     {
         TableInfo t = ((UpdateableTableInfo)_table).getSchemaTableInfo();
-        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && _scope.getSqlDialect().isSqlServer() && t.getSelectName() != null)
+        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && t.getSelectName() != null)
         {
-            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(t.getSelectName()).append(" ").append(bound.toString());
-            new SqlExecutor(_scope, _conn).execute(check);
+            final String selectName = t.getSelectName();
+            if (_scope.getSqlDialect().isSqlServer())
+            {
+                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(selectName).append(" ").append(bound.toString());
+                new SqlExecutor(_scope, _conn).execute(check);
+            }
+            else if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
+            {
+                // Find the 'serial' column
+                ColumnInfo autoIncCol = null;
+                for (ColumnInfo col : t.getColumns())
+                {
+                    if (col.isAutoIncrement())
+                    {
+                        autoIncCol = col;
+                        break;
+                    }
+                }
+
+                // Update the sequence for the serial column with the max+1 and handle empty tables
+                if (autoIncCol != null && autoIncCol.getSelectName() != null)
+                {
+                    String colSelectName = autoIncCol.getSelectName();
+                    SQLFragment resetSeq = new SQLFragment();
+                    resetSeq.append("SELECT setval(\n");
+                    resetSeq.append("  pg_get_serial_sequence('").append(selectName).append("', '").append(colSelectName).append("'),\n");
+                    resetSeq.append("  COALESCE((SELECT MAX(").append(colSelectName).append(")+1 FROM ").append(selectName).append("), 1),\n");
+                    resetSeq.append("  false");
+                    resetSeq.append(");\n");
+                    new SqlExecutor(_scope, _conn).execute(resetSeq);
+                }
+            }
         }
     }
 }
