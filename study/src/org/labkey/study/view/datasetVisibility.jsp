@@ -231,7 +231,7 @@
                             jsonData: {},
                             success: function () {
                                 // reshow the page
-                                window.location = window.location;
+                                window.location.reload(true);
                             },
                             // Show generic error message
                             failure: LABKEY.Utils.getCallbackWrapper(null, null, true)

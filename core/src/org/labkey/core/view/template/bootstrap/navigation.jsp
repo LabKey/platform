@@ -84,7 +84,6 @@
 %>
 <nav class="labkey-page-nav">
     <div class="container">
-        <div class="row">
         <div class="navbar-header">
             <ul class="nav">
                 <li id="project-mobile" class="dropdown visible-xs">
@@ -264,7 +263,6 @@
                     }
                 %>
             </ul>
-        </div>
         </div>
     </div>
 </nav>

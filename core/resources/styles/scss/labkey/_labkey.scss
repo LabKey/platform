@@ -35,12 +35,6 @@ legend {
   margin-top: 8px;
 }
 
-// TODO: (Nick) consider removing this now that "row" pattern is in use
-// removal can cause misalignment with header/nav
-.lk-body-ct {
-  padding: 0;
-}
-
 .bottom-spacing {
   padding-bottom: 10px;
 }
@@ -1514,6 +1508,25 @@ div span.labkey-main-menu-icon {
 .lk-file-upload-panel,
 .lk-file-upload-panel > .x4-panel-body-default  {
   background-color: $lk-dark-content-bar-color;
+}
+
+.issues-Changes {
+  margin-bottom: 4px;
+  margin-left: 8px;
+  color: $gray-dark;
+  word-break: break-all;
+
+  // This copies "table-condensed" from bootstrap. Add that class to issues-Changes tables?
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        padding: $table-condensed-cell-padding;
+      }
+    }
+  }
 }
 
 @import "components/header";

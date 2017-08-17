@@ -60,7 +60,6 @@
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
-        <div class="row">
         <div class="hidden-xs navbar-header">
             <a class="brand-logo" href="<%=h(laf.getLogoHref())%>">
                 <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
@@ -178,6 +177,5 @@
             </li>
 <% } %>
         </ul>
-    </div>
     </div>
 </div>

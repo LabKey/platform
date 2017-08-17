@@ -120,20 +120,26 @@
   }
 }
 
-@media (min-width: $lk-screen-lg-min) and (max-width: 1399px) {
+@media (min-width: $lk-screen-lg-min) and (max-width: 1299px) {
   .hidden-lg {
     display: none !important;
   }
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1300px) {
   .container {
-    width: 1370px;
+    width: 100%;
+    padding-left: 25px;
+    padding-right: 25px;
   }
 }
 
-@media (min-width: 1800px) {
-  .container {
-    width: 1770px;
+/* 10/2 was too narrow for 1450px so modifying 9/3 */
+@media (min-width: 1450px) {
+  .col-md-9 {
+    width: 80%;
+  }
+  .col-md-3 {
+    width: 20%;
   }
 }

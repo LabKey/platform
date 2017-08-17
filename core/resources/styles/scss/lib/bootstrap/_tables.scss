@@ -15,7 +15,7 @@ th {
 
 // Baseline styles
 
-.table{
+.table {
   background-color: $table-bg;
   width: 100%;
   max-width: 100%;
@@ -64,7 +64,7 @@ th {
 
 // Condensed table w/ half padding
 
-.table-condensed, .issues-Changes {
+.table-condensed {
   > thead,
   > tbody,
   > tfoot {
@@ -76,14 +76,6 @@ th {
     }
   }
 }
-
-.issues-Changes {
-  margin-bottom: 4px;
-  margin-left: 8px;
-  color: $gray-dark;
-  word-break: break-all;
-}
-
 
 // Bordered version
 //
@@ -174,62 +166,64 @@ table {
 
 .table-responsive {
   overflow-x: auto;
-  width: 100%;
-  margin-bottom: ($line-height-computed * 0.75);
-  overflow-y: hidden;
-  -ms-overflow-style: -ms-autohiding-scrollbar;
-  border: $table-outer-border-width solid $table-border-color;
 
-  // Tighten up spacing
-  > .table {
-    margin-bottom: 0;
-    //table-layout: fixed;
+  @media screen and (max-width: $screen-xs-max) {
+    width: 100%;
+    margin-bottom: ($line-height-computed * 0.75);
+    overflow-y: hidden;
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    border: $table-outer-border-width solid $table-border-color;
 
-    // Ensure the content doesn't wrap
-    > thead,
-    > tbody,
-    > tfoot {
-      > tr {
-        > th,
-        > td {
-          white-space: nowrap;
-        }
-      }
-    }
-  }
+    // Tighten up spacing
+    > .table {
+      margin-bottom: 0;
 
-  // Special overrides for the bordered tables
-  > .table-bordered {
-    border: 0;
-
-    // Nuke the appropriate borders so that the parent can handle them
-    > thead,
-    > tbody,
-    > tfoot {
-      > tr {
-        > th:first-child,
-        > td:first-child {
-          border-left: 0;
-        }
-        > th:last-child,
-        > td:last-child {
-          border-right: 0;
+      // Ensure the content doesn't wrap
+      > thead,
+      > tbody,
+      > tfoot {
+        > tr {
+          > th,
+          > td {
+            white-space: nowrap;
+          }
         }
       }
     }
 
-    // Only nuke the last row's bottom-border in `tbody` and `tfoot` since
-    // chances are there will be only one `tr` in a `thead` and that would
-    // remove the border altogether.
-    > tbody,
-    > tfoot {
-      > tr:last-child {
-        > th,
-        > td {
-          border-bottom: 0;
+    // Special overrides for the bordered tables
+    > .table-bordered {
+      border: 0;
+
+      // Nuke the appropriate borders so that the parent can handle them
+      > thead,
+      > tbody,
+      > tfoot {
+        > tr {
+          > th:first-child,
+          > td:first-child {
+            border-left: 0;
+          }
+          > th:last-child,
+          > td:last-child {
+            border-right: 0;
+          }
         }
       }
-    }
 
+      // Only nuke the last row's bottom-border in `tbody` and `tfoot` since
+      // chances are there will be only one `tr` in a `thead` and that would
+      // remove the border altogether.
+      > tbody,
+      > tfoot {
+        > tr:last-child {
+          > th,
+          > td {
+            border-bottom: 0;
+          }
+        }
+      }
+
+    }
   }
 }
