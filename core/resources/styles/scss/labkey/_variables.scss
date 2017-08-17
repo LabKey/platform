@@ -46,8 +46,8 @@ $lk-font-size-h4: ceil(($lk-font-size-base * 1.25)) !default; // ~18px
 $lk-font-size-h5: $lk-font-size-base !default;
 $lk-font-size-h6: ceil(($lk-font-size-base * 0.85)) !default; // ~12px
 
-$lk-font-family-sans-serif: "Roboto", Arial, Helvetica, sans-serif !default;
-$lk-font-family-secondary-sans-serif: "Titillium Web", Arial, Helvetica, sans-serif !default;
+$lk-body-font-family: "Roboto", Arial, Helvetica, sans-serif !default; // theme variable
+$lk-heading-font-family: "Titillium Web", Arial, Helvetica, sans-serif !default;
 $lk-font-family-code: "Bitstream Vera Sans Mono", "Courier New", monospace;
 //$lk-font-family-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 
@@ -126,6 +126,9 @@ $lk-button-primary-bg-color-hover: $lk-accent-color !default; // theme variable
 $lk-button-primary-color: $white !default; // theme variable
 $lk-button-primary-color-hover: $white !default; // theme variable
 
+$lk-button-primary-border-size: 1px !default; // theme variable
+$lk-button-primary-border-color: darken($lk-button-primary-bg-color, 5%) !default; // theme variable
+
 $lk-button-disabled-cursor: not-allowed !default;
 $lk-button-disabled-opacity: 0.65 !default;
 
@@ -139,7 +142,7 @@ $lk-bar-button-border-color: transparent !default; // theme variable
 $lk-bar-button-border: 1px solid $lk-bar-button-border-color !default;
 $lk-bar-button-border-color-hover: lightgray !default; // theme variable
 $lk-bar-button-border-hover: 1px solid $lk-bar-button-border-color-hover !default;
-
+$lk-bar-button-font-family: inherit !default; // theme variable
 //== Dialogs / Modals
 //
 $lk-dialog-body-bg-color: $white !default;
@@ -183,6 +186,7 @@ $lk-input-group-addon-padding-right-left: 4px;
 //
 $lk-grid-bg-color: $white !default;
 $lk-grid-border-color: lightgray !default;
+$lk-grid-font-family: inherit !default;
 
 $lk-grid-inner-border-color: $lk-grid-border-color !default;
 $lk-grid-inner-border-width: 1px !default;
@@ -222,7 +226,7 @@ $lk-page-header-navbar-nav-padding: 5px 8px !default; //TODO: investigate
 
 //== Headings
 //
-$lk-headings-font-family: $lk-font-family-secondary-sans-serif !default; // theme variable
+$lk-headings-font-family: $lk-heading-font-family !default; // theme variable
 
 //== Inputs
 //

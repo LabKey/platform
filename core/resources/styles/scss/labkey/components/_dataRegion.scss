@@ -35,6 +35,8 @@
 }
 
 .labkey-data-region {
+  font-family: $lk-grid-font-family;
+
   thead tr {
     background-color: $white;
   }

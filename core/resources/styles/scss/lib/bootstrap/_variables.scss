@@ -44,8 +44,8 @@ $link-hover-decoration: $lk-link-hover-decoration;
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-$font-family-sans-serif: $lk-font-family-sans-serif;
-$font-family-sans-serif-bold: $lk-font-family-sans-serif;
+$font-family-sans-serif: $lk-body-font-family;
+$font-family-sans-serif-bold: $lk-body-font-family;
 
 $font-family-serif:       Georgia, "Times New Roman", Times, serif !default;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
@@ -159,7 +159,8 @@ $btn-default-border:             $lk-button-border-color;
 
 $btn-primary-color:              $lk-button-primary-color;
 $btn-primary-bg:                 $lk-button-primary-bg-color;
-$btn-primary-border:             darken($btn-primary-bg, 5%) !default;
+$btn-primary-border-size:        $lk-button-primary-border-size;
+$btn-primary-border:             $lk-button-primary-border-color;
 
 $btn-success-color:              #fff !default;
 $btn-success-bg:                 $brand-success !default;

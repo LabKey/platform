@@ -31,7 +31,7 @@
 .btn-primary {
   color: $btn-primary-color;
   background-color: $btn-primary-bg;
-  border-color: $btn-primary-border;
+  border: $btn-primary-border-size solid $btn-primary-border;
 
   // Maintain same color when disabled
   &.disabled {

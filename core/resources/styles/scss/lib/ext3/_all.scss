@@ -2647,7 +2647,7 @@ a.x-grid3-hd-btn:hover {
   text-overflow: ellipsis;
   font-size: 11px;
   line-height: 13px;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
 }
 
 .x-pivotgrid .x-grid3-row-headers {
@@ -2667,7 +2667,7 @@ a.x-grid3-hd-btn:hover {
   text-align: right;
   text-overflow: ellipsis;
   font-size: 11px;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
 }
 
 .ext-gecko .x-pivotgrid .x-grid3-row-headers table td {
@@ -2680,7 +2680,7 @@ a.x-grid3-hd-btn:hover {
   position: absolute;
   text-align: center;
   vertical-align: middle;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   font-size: 11px;
   padding: auto 1px;
   display: table-cell;
@@ -3101,7 +3101,7 @@ table.x-date-inner {
 
 .x-date-mp td {
   padding:2px;
-  font:normal 11px $lk-font-family-sans-serif;
+  font:normal 11px $lk-body-font-family;
 }
 
 td.x-date-mp-month,td.x-date-mp-year,td.x-date-mp-ybtn {
@@ -5125,7 +5125,7 @@ td.x-date-mp-sep {
     background-color: #eee;
     border-color:#a3bad9;
     color:#222;
-    font:normal 11px $lk-font-family-sans-serif;
+    font:normal 11px $lk-body-font-family;
   }
 }
 
@@ -5213,7 +5213,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-tab-strip span.x-tab-strip-text {
-  font: normal $lk-font-size-base $lk-font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-body-font-family;
   color:#416aa3;
 }
 
@@ -5306,7 +5306,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-form-field {
-  font: normal $lk-font-size-base $lk-font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-body-font-family;
 }
 
 .x-form-select-one {
@@ -5372,16 +5372,16 @@ ul.x-tab-strip-bottom{
 }
 
 .x-form-grow-sizer {
-  font: normal 12px $lk-font-family-sans-serif;
+  font: normal 12px $lk-body-font-family;
 }
 
 .x-form-item {
-  font: normal 12px $lk-font-family-sans-serif;
+  font: normal 12px $lk-body-font-family;
 }
 
 .x-form-invalid-msg {
   color:#c0272b;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   background-image:url('#{$ext3-images-dir}/shared/warning.gif');
 }
 
@@ -5390,11 +5390,11 @@ ul.x-tab-strip-bottom{
 }
 
 .x-small-editor .x-form-field {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .ext-webkit .x-small-editor .x-form-field {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-form-invalid-icon {
@@ -5489,7 +5489,7 @@ ul.x-tab-strip-bottom{
 }
 
 .x-toolbar td,.x-toolbar span,.x-toolbar input,.x-toolbar div,.x-toolbar select,.x-toolbar label{
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-toolbar .x-item-disabled {
@@ -5619,7 +5619,7 @@ ul.x-tab-strip-bottom{
 .x-grid3-hd-row,
 .x-grid3-summary-row {
   td {
-    font: normal $lk-font-size-base $lk-font-family-sans-serif;
+    font: normal $lk-font-size-base $lk-body-font-family;
   }
 }
 
@@ -5751,7 +5751,7 @@ td.grid-hd-group-cell {
 }
 
 .x-grid3-topbar, .x-grid3-bottombar{
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-grid3-bottombar .x-toolbar{
@@ -5863,7 +5863,7 @@ td.grid-hd-group-cell {
 
 .x-grid-empty {
   color:gray;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-grid-with-col-lines .x-grid3-row td.x-grid3-cell {
@@ -5896,7 +5896,7 @@ td.grid-hd-group-cell {
 }
 .x-dd-drag-ghost{
   color:#000;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   border-color: #ddd #bbb #bbb #ddd;
   background-color:#fff;
 }
@@ -6003,7 +6003,7 @@ td.grid-hd-group-cell {
 
 .x-tree-node{
   color:#000;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-tree-node a, .x-dd-drag-ghost a{
@@ -6092,7 +6092,7 @@ td.grid-hd-group-cell {
   background-color:#dfecfb;
   background-image:url('#{$ext3-images-dir}/shared/glass-bg.gif');
   border-bottom-color:#a3bad9;
-  font: normal 10px $lk-font-family-sans-serif;
+  font: normal 10px $lk-body-font-family;
   color:#233d6d;
 }
 
@@ -6101,7 +6101,7 @@ td.grid-hd-group-cell {
 }
 
 .x-date-inner a {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   color:#000;
 }
 
@@ -6157,14 +6157,14 @@ td.grid-hd-group-cell {
 }
 
 .x-date-mp td {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-date-mp-btns button {
   background-color:#083772;
   color:#fff;
   border-color: #3366cc #000055 #000055 #3366cc;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-date-mp-btns {
@@ -6220,7 +6220,7 @@ td.x-date-mp-sep {
 }
 
 .x-tip .x-tip-body {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   color:#444;
 }
 
@@ -6250,7 +6250,7 @@ td.x-date-mp-sep {
 }
 
 .x-menu-list-item{
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-menu-sep {
@@ -6328,7 +6328,7 @@ td.x-date-mp-sep {
 .x-box-mc {
   background-color: #eee;
   background-image: url('#{$ext3-images-dir}/box/tb.gif');
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   color: #393939;
   font-size: 12px;
 }
@@ -6464,7 +6464,7 @@ td.x-date-mp-sep {
 }
 
 .x-panel-mc {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   background-color:#dfe8f6;
 }
 
@@ -6494,7 +6494,7 @@ td.x-date-mp-sep {
 }
 
 .x-panel-fbar td,.x-panel-fbar span,.x-panel-fbar input,.x-panel-fbar div,.x-panel-fbar select,.x-panel-fbar label{
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 .x-window-proxy {
   background-color:#c7dffc;
@@ -6502,7 +6502,7 @@ td.x-date-mp-sep {
 }
 
 .x-window-tl .x-window-header {
-  font: normal $lk-font-size-small $lk-font-family-sans-serif;
+  font: normal $lk-font-size-small $lk-body-font-family;
   letter-spacing: .5px;
   padding: 5px 0 4px 0;
 }
@@ -6533,7 +6533,7 @@ td.x-date-mp-sep {
 
 .x-window-mc {
   border-color:#99bbe8;
-  font: normal $lk-font-size-small $lk-font-family-sans-serif;
+  font: normal $lk-font-size-small $lk-body-font-family;
   background-color:#dfe8f6;
 }
 
@@ -6673,11 +6673,11 @@ body.x-body-masked .x-window-plain .x-window-mc {
 
 .x-list-header-inner div em {
   border-left-color:#ddd;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-list-body dt em {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 .x-list-over {
@@ -6716,7 +6716,7 @@ body.x-body-masked .x-window-plain .x-window-mc {
  }
 
 .x-window-dlg .ext-mb-textarea {
-  font: normal 12px $lk-font-family-sans-serif;
+  font: normal 12px $lk-body-font-family;
 }
 
 .x-window-dlg .x-msg-box-wait {

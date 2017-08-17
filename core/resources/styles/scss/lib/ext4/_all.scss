@@ -573,7 +573,7 @@ div.x4-editor {
   padding: 5px 5px 5px 20px;
   white-space: nowrap;
   color: #000;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   border: 1px solid;
   border-color: #ddd #bbb #bbb #ddd;
   background-color: #fff;
@@ -1730,7 +1730,7 @@ a.x4-tab {
   border-color: #a3bad9;
   background-color: #eeeeee;
   color: #222222;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 /* line 41, ../../../ext-theme-neutral/sass/src/LoadMask.scss */
@@ -3734,7 +3734,7 @@ body.x4-nbr .x4-btn-default-toolbar-medium-frameInfo {
 .x4-btn-default-toolbar-medium .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   color: #333333;
   padding: 0 3px;
 }
@@ -4151,7 +4151,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-btn-default-toolbar-large .x4-btn-inner {
   font-size: 11px;
   font-weight: normal;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   color: #333333;
   padding: 0 3px;
 }
@@ -4525,7 +4525,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
   margin: 0 6px 0 4px;
   color: #4c4c4c;
   line-height: 16px;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   font-size: 11px;
   font-weight: normal;
 }
@@ -6825,7 +6825,7 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
 
 /* line 120, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
 .x4-btn-group-header-text-container-default {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   line-height: 15px;
   color: #3e6aaa;
 }
@@ -7117,7 +7117,7 @@ body.x4-nbr .x4-btn-group-default-framed-notitle-frameInfo {
 
 /* line 120, ../../../ext-theme-neutral/sass/src/container/ButtonGroup.scss */
 .x4-btn-group-header-text-container-default-framed {
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   line-height: 15px;
   color: #3e6aaa;
 }
@@ -8441,7 +8441,7 @@ body.x4-nbr .x4-window-header-default-collapsed-left-frameInfo {
 .x4-form-invalid-under {
   padding: 2px 2px 2px 20px;
   color: #c0272b;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   line-height: 16px;
   background: no-repeat 0 2px;
   background-image: url('#{$ext4-images-dir}/form/exclamation.gif');
@@ -8464,13 +8464,13 @@ div.x4-lbl-top-err-icon {
 /* line 26, ../../../ext-theme-neutral/sass/src/form/Labelable.scss */
 .x4-form-item-label {
   color: $lk-form-label-color;
-  font: normal $lk-font-size-base $lk-font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-body-font-family;
   line-height: 1.25;
   margin-top: 4px;
 }
 /* line 31, ../../../ext-theme-neutral/sass/src/form/Labelable.scss */
 .x4-toolbar-item .x4-form-item-label {
-  font: normal 11px/13px $lk-font-family-sans-serif;
+  font: normal 11px/13px $lk-body-font-family;
   margin-top: 4px;
 }
 
@@ -8490,7 +8490,7 @@ div.x4-lbl-top-err-icon {
 /* line 6, ../../../ext-theme-neutral/sass/src/form/field/Base.scss */
 .x4-form-item,
 .x4-form-field {
-  font: normal $lk-font-size-small $lk-font-family-sans-serif;
+  font: normal $lk-font-size-small $lk-body-font-family;
 }
 
 /* line 21, ../../../ext-theme-neutral/sass/src/form/field/Base.scss */
@@ -8582,14 +8582,14 @@ textarea.x4-form-empty-field {
 
 /* line 11, ../../../ext-theme-neutral/sass/src/form/field/Display.scss */
 .x4-form-display-field {
-  font: normal 12px/14px $lk-font-family-sans-serif;
+  font: normal 12px/14px $lk-body-font-family;
   color: black;
   margin-top: 4px;
 }
 /* line 17, ../../../ext-theme-neutral/sass/src/form/field/Display.scss */
 .x4-toolbar-item .x4-form-display-field {
   margin-top: 4px;
-  font: normal 11px/13px $lk-font-family-sans-serif;
+  font: normal 11px/13px $lk-body-font-family;
 }
 
 /* line 1, ../../../ext-theme-neutral/sass/src/window/MessageBox.scss */
@@ -8672,11 +8672,11 @@ textarea.x4-form-empty-field {
 /* line 40, ../../../ext-theme-neutral/sass/src/form/field/Checkbox.scss */
 .x4-form-cb-label {
   margin-top: 4px;
-  font: normal 12px/14px $lk-font-family-sans-serif;
+  font: normal 12px/14px $lk-body-font-family;
 }
 /* line 43, ../../../ext-theme-neutral/sass/src/form/field/Checkbox.scss */
 .x4-toolbar-item .x4-form-cb-label {
-  font: normal 11px/13px $lk-font-family-sans-serif;
+  font: normal 11px/13px $lk-body-font-family;
   margin-top: 4px;
 }
 
@@ -9180,7 +9180,7 @@ a.x4-datepicker-arrow:hover {
 .x4-datepicker-column-header {
   width: 25px;
   color: #233d6d;
-  font: normal 10px $lk-font-family-sans-serif;
+  font: normal 10px $lk-body-font-family;
   text-align: right;
   border: 0 solid #b2d1f5;
   border-bottom-width: 1px;
@@ -9208,7 +9208,7 @@ a.x4-datepicker-arrow:hover {
 /* line 128, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker-date {
   padding: 0 4px 0 0;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   color: black;
   cursor: pointer;
   line-height: 18px;
@@ -9305,7 +9305,7 @@ a.x4-datepicker-date:hover {
 /* line 233, ../../../ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-monthpicker-item {
   margin: 5px 0 4px;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
   text-align: center;
 }
 
@@ -9582,7 +9582,7 @@ a.x4-color-picker-item:hover {
 
 /* line 100, ../../../ext-theme-neutral/sass/src/form/field/HtmlEditor.scss */
 .x4-html-editor-wrap textarea {
-  font: normal 12px $lk-font-family-sans-serif;
+  font: normal 12px $lk-body-font-family;
   background-color: white;
   resize: none;
 }
@@ -9600,12 +9600,12 @@ a.x4-color-picker-item:hover {
   padding: 10px;
   color: gray;
   background-color: white;
-  font: normal 11px $lk-font-family-sans-serif;
+  font: normal 11px $lk-body-font-family;
 }
 
 /* line 15, ../../../ext-theme-neutral/sass/src/panel/Table.scss */
 .x4-grid-cell {
-  font: normal $lk-font-size-base $lk-font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-body-font-family;
   line-height:1.25;
   background-color: white;
   border-color: #ededed #d0d0d0 #ededed #d0d0d0;
@@ -9871,7 +9871,7 @@ a.x4-color-picker-item:hover {
 .x4-column-header {
   border-right: 1px solid #c5c5c5;
   color: black;
-  font: normal $lk-font-size-base $lk-font-family-sans-serif;
+  font: normal $lk-font-size-base $lk-body-font-family;
   line-height: 1.25;
   background-image: none;
   background-color: #c5c5c5;
@@ -10088,7 +10088,7 @@ a.x4-color-picker-item:hover {
 
 /* line 1, ../../../ext-theme-neutral/sass/src/grid/feature/RowBody.scss */
 .x4-grid-rowbody {
-  font: normal 11px/13px $lk-font-family-sans-serif;
+  font: normal 11px/13px $lk-body-font-family;
   padding: 5px 6px 5px 6px;
 }
 /* line 6, ../../../ext-theme-neutral/sass/src/grid/feature/RowBody.scss */
@@ -10126,7 +10126,7 @@ a.x4-color-picker-item:hover {
   border-color: #ededed #d0d0d0 #ededed #d0d0d0;
   background-color: transparent !important;
   border-top-width: 0;
-  font: normal 11px/13px $lk-font-family-sans-serif;
+  font: normal 11px/13px $lk-body-font-family;
 }
 
 /* line 26, ../../../ext-theme-neutral/sass/src/grid/feature/Summary.scss */
@@ -10158,7 +10158,7 @@ a.x4-color-picker-item:hover {
 
 /* line 4, ../../../ext-theme-neutral/sass/src/grid/plugin/Editing.scss */
 .x4-grid-editor .x4-form-text {
-  font: normal 11px/15px $lk-font-family-sans-serif;
+  font: normal 11px/15px $lk-body-font-family;
   padding: 1px 5px 2px 5px;
   height: 20px;
 }
@@ -10193,7 +10193,7 @@ a.x4-color-picker-item:hover {
 }
 /* line 62, ../../../ext-theme-neutral/sass/src/grid/plugin/Editing.scss */
 .x4-grid-editor .x4-form-display-field {
-  font: normal 11px/15px $lk-font-family-sans-serif;
+  font: normal 11px/15px $lk-body-font-family;
   padding: 2px 6px 3px 6px;
   text-overflow: ellipsis;
 }
@@ -10596,7 +10596,7 @@ body.x4-nbr .x4-grid-row-editor-buttons-default-top-frameInfo {
 .x4-accordion-hd .x4-panel-header-text-container {
   color: black;
   font-weight: normal;
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   text-transform: none;
 }
 
@@ -13274,7 +13274,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 /* line 81, ../../../ext-theme-classic/sass/src/dom/Element.scss */
 .x4-box-mc {
   background: #eee url('#{$ext4-images-dir}/box/tb.gif');
-  font-family: $lk-font-family-sans-serif;
+  font-family: $lk-body-font-family;
   color: #393939;
   font-size: 15px;
 }
