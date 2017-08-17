@@ -53,6 +53,7 @@
 .panel-title {
   font-weight: $lk-panel-title-font-weight;
   & > a {
+    text-transform: $lk-panel-title-text-transform;
     &:hover {
       color: $lk-webpart-title-hover-color;
       text-decoration: $lk-link-hover-decoration;

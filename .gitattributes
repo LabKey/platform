@@ -619,6 +619,9 @@ core/webapp/createFolder.css -text
 core/webapp/editInPlaceElement.css -text
 core/webapp/editInPlaceElement.js -text
 core/webapp/fileAddRemoveIcon.css -text
+core/webapp/fonts/Lato/LICENSE.txt -text
+core/webapp/fonts/Lato/Lato-Bold.ttf -text
+core/webapp/fonts/Lato/Lato-Regular.ttf -text
 core/webapp/fonts/Roboto/LICENSE.txt -text
 core/webapp/fonts/Roboto/Roboto-Bold.ttf -text
 core/webapp/fonts/Roboto/Roboto-Regular.ttf -text

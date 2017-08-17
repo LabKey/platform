@@ -222,7 +222,7 @@ $lk-page-header-navbar-nav-padding: 5px 8px !default; //TODO: investigate
 
 //== Headings
 //
-$lk-headings-font-family: $lk-font-family-secondary-sans-serif !default;
+$lk-headings-font-family: $lk-font-family-secondary-sans-serif !default; // theme variable
 
 //== Inputs
 //
@@ -282,6 +282,7 @@ $lk-panel-heading-padding: 10px 15px !default;
 $lk-panel-footer-padding: $lk-panel-heading-padding !default;
 
 $lk-panel-title-font-weight: bold !default;
+$lk-panel-title-text-transform: inherit !default; // theme variable
 
 $lk-panel-default-text: $gray-dark !default; // theme variable
 $lk-panel-default-border: #DDDDDD !default; // theme variable

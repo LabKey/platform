@@ -73,6 +73,10 @@ $lk-page-header-icon-color: $Madison-red-dark;
 $lk-page-header-font-hover-color: $Madison-gray-darkest; //just a guess
 $lk-page-header-icon-hover-color: $Madison-gray-darkest; //just a guess
 
+//== Headings
+//
+$lk-headings-font-family: "Lato";
+
 //== Links
 //
 $lk-link-color: $Madison-anchor-color;
@@ -100,6 +104,8 @@ $lk-page-nav-dropdown-icon-color: $Madison-red-dark;
 $lk-panel-bg-color: $Madison-page-bkgd;
 $lk-panel-default-text: $Madison-body-font;
 $lk-panel-default-border: $Madison-gray-darker;
+
+$lk-panel-title-text-transform: uppercase;
 
 //== Portals
 //

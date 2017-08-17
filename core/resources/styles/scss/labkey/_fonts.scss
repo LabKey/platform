@@ -15,6 +15,20 @@ $labkey-fonts-dir: '../../fonts';
 }
 
 @font-face {
+  font-family: 'Lato'; /* regular */
+  src: url('#{$labkey-fonts-dir}/Lato/Lato-Regular.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Lato'; /* bold */
+  src: url('#{$labkey-fonts-dir}/Lato/Lato-Bold.ttf');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
   font-family: 'Titillium Web'; /* regular */
   src: url('#{$labkey-fonts-dir}/TitilliumWeb/TitilliumWeb-Regular.ttf');
   font-weight: normal;
