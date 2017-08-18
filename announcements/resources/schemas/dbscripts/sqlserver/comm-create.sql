@@ -76,7 +76,7 @@ GO
 
 -- View that joins each wiki with its current version (one row per wiki)
 CREATE VIEW comm.CurrentWikiVersions AS
-    SELECT pv.RowId, p.Container, p.Name, p.Path, p.PathParts, p.Depth, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
+    SELECT pv.RowId, p.Container, p.Name, p.Path, p.PathParts, p.Depth, pv.Title, pv.Version, pv.Body, pv.RendererType, p.CreatedBy, p.Created, p.ModifiedBy, p.Modified
         FROM comm.PagePaths p INNER JOIN comm.PageVersions pv ON p.PageVersionId = pv.RowId;
 
 GO
@@ -84,7 +84,7 @@ GO
 -- View that joins every wiki version with its parent (one row per wiki version). Report the wiki's Created & CreatedBy,
 -- but map the version's Created & CreatedBy to Modified & ModifiedBy, because that seems like the most useful mapping.
 CREATE VIEW comm.AllWikiVersions AS
-    SELECT pv.RowId, p.Container, p.Name, p.Path, p.PathParts, p.Depth, pv.Title, pv.Version, pv.Body, p.CreatedBy, p.Created, pv.CreatedBy AS ModifiedBy, pv.Created AS Modified
+    SELECT pv.RowId, p.Container, p.Name, p.Path, p.PathParts, p.Depth, pv.Title, pv.Version, pv.Body, pv.RendererType, p.CreatedBy, p.Created, pv.CreatedBy AS ModifiedBy, pv.Created AS Modified
         FROM comm.PageVersions pv INNER JOIN comm.PagePaths p ON pv.PageEntityId = p.EntityId;
 
 GO
