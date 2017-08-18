@@ -1,0 +1,11 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="timeline.js"/> <!-- TODO: Remove Ext4 usages -->
+        <script path="similetimeline/bundle.js"/>
+        <script path="similetimeline/scripts/l10n/en/timeline.js"/>
+        <script path="similetimeline/scripts/l10n/en/labellers.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+    </dependencies>
+</libraries>

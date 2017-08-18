@@ -3066,6 +3066,7 @@ timeline/webapp/similetimeline/styles/events.css -text
 timeline/webapp/similetimeline/styles/timeline.css -text
 timeline/webapp/similetimeline/timeline-api.js -text
 timeline/webapp/timeline.js -text
+timeline/webapp/timeline.lib.xml -text
 timeline/webapp/timeline/Timeline.js -text
 timeline/webapp/timeline/jquery/jquery-1.6.1.js -text
 timeline/webapp/timeline/jquery/jquery-1.6.1.min.js -text

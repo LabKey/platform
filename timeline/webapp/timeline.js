@@ -17,12 +17,11 @@ LABKEY.Timeline = {
         {
             if (getter == null)
                 return function() { return null };
-            else if (typeof getter == "function")
+            else if (LABKEY.Utils.isFunction(getter))
                 return getter;
             else if (htmlEncode)
-                return function (row) { return Ext4.htmlEncode(row[getter]); };
-            else
-                return function (row) { return row[getter]; };
+                return function(row) { return LABKEY.Utils.encodeHtml(row[getter]); };
+            return function (row) { return row[getter]; };
         }
 
         /**
@@ -33,7 +32,7 @@ LABKEY.Timeline = {
         {
             if (value == null)
                 return function() { return null };
-            else if (typeof value == "function")
+            else if (LABKEY.Utils.isFunction(value))
                 return value;
             else
                 return function (row) { return value };
@@ -134,17 +133,6 @@ LABKEY.Timeline = {
 
 };
 
-/**
- * The following code is adapted from the simile timeline timeline-api.js file.
- * NOTE: The code is modified to NOT load javascript files. Turns out when done outside the
- * head of a document this fails on IE7 and Safari. Instead of including timeline-api, the following tags should be used
-  *
-  * <script src='<%=contextPath%>/timeline.js'></script>
-  * <script src='<%=contextPath%>/similetimeline/bundle.js'></script>
-  * <script src='<%=contextPath%>/similetimeline/scripts/l10n/en/timeline.js'></script>
-  * <script src='<%=contextPath%>/similetimeline/scripts/l10n/en/labellers.js'></script>
- * where <%=contextPath%> is replaced by the actual web-app context path on the server. 
- */
 /*==================================================
  *  Timeline API
  *

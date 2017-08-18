@@ -24,11 +24,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext3");
-        dependencies.add("timeline.js");
-        dependencies.add("similetimeline/bundle.js");
-        dependencies.add("similetimeline/scripts/l10n/en/timeline.js");
-        dependencies.add("similetimeline/scripts/l10n/en/labellers.js");
+        dependencies.add("timeline");
     }
 %>
 <%
@@ -37,7 +33,7 @@
 %>
 <div class="ms-form" style="border:1px solid black;width:100%;height:<%=bean.getPixelHeight()%>px" id="<%=bean.getDivId()%>"></div>
 <script type="text/javascript">
-    Ext.onReady(function() {
+    LABKEY.Utils.onReady(function() {
         LABKEY.Timeline.create({
             renderTo:<%=q(bean.getDivId())%>,
             start:<%=q(bean.getStartField())%>,
