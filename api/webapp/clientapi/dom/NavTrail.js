@@ -33,41 +33,77 @@ LABKEY.NavTrail = new function()
          * object in this array can have two properties: url (which contains the URL for the page);
          * and title (which contains the title for the page). These will be assembled into the full list of ancestor pages at the top of the nav trail.
          * @param {string} [documentTitle] Document title
+         * @param {boolean} [encode=true] HTML encode the contents of currentPageTitle. Can be set to false if you are looking to include html.
          * @example
 <pre name="code" class="xml">
 var ancestorURL = LABKEY.ActionURL.buildURL('project', 'begin');
 LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"}]);
 </pre>
          */
-        setTrail: function (currentPageTitle, ancestors, documentTitle)
+        setTrail: function (currentPageTitle, ancestors, documentTitle, encode)
         {
-            var elem = document.getElementById("labkey-nav-trail-current-page");
-            if (elem)
-            {
-                elem.innerHTML = currentPageTitle;
-                elem.style.visibility = "visible";
-            }
+            var elem;
 
-            elem = document.getElementById("navTrailAncestors");
-            if (elem && ancestors)
+            if (LABKEY.experimental.useExperimentalCoreUI)
             {
-                var html = "",
-                    sep = "";
-                for (var idx = 0; idx < ancestors.length; ++idx)
+                elem = document.querySelector('.lk-body-title');
+                if (elem)
                 {
-                    html += sep;
-                    if (ancestors[idx].url && ancestors[idx].title)
+                    var newTrail = '';
+                    var newTitle = '<h3>' + (encode !== false ? LABKEY.Utils.encodeHtml(currentPageTitle) : currentPageTitle) + '</h3>';
+
+                    var trailEl = elem.querySelector('.breadcrumb');
+                    if (trailEl && ancestors)
                     {
-                        html += "<a href='" + ancestors[idx].url + "'>" + ancestors[idx].title + "</a>";
+                        newTrail = '<ol class="breadcrumb">';
+                        for (var i=0; i < ancestors.length; i++)
+                        {
+                            var a = ancestors[i];
+                            if (a.url && a.title)
+                            {
+                                newTrail += '<li><a href="' + a.url + '">' + LABKEY.Utils.encodeHtml(a.title) + '</a></li>';
+                            }
+                            else if (a.title)
+                            {
+                                newTrail += '<li><span>' + LABKEY.Utils.encodeHtml(a.title) + '</span></li>';
+                            }
+                        }
+                        newTrail += '</ol>';
                     }
-                    else if (ancestors[idx].title)
-                    {
-                        html += ancestors[idx].title;
-                    }
-                    sep = ' &gt; ';
+
+                    elem.innerHTML = newTrail + newTitle;
                 }
-                elem.innerHTML = html;
-                elem.visibility = "visible";
+            }
+            else
+            {
+                elem = document.getElementById("labkey-nav-trail-current-page");
+                if (elem)
+                {
+                    elem.innerHTML = currentPageTitle;
+                    elem.style.visibility = "visible";
+                }
+
+                elem = document.getElementById("navTrailAncestors");
+                if (elem && ancestors)
+                {
+                    var html = "",
+                        sep = "";
+                    for (var idx = 0; idx < ancestors.length; ++idx)
+                    {
+                        html += sep;
+                        if (ancestors[idx].url && ancestors[idx].title)
+                        {
+                            html += "<a href='" + ancestors[idx].url + "'>" + ancestors[idx].title + "</a>";
+                        }
+                        else if (ancestors[idx].title)
+                        {
+                            html += ancestors[idx].title;
+                        }
+                        sep = ' &gt; ';
+                    }
+                    elem.innerHTML = html;
+                    elem.visibility = "visible";
+                }
             }
 
             //set document title:
