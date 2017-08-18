@@ -816,7 +816,7 @@ public abstract class CompareType
         Set<String> values = new LinkedHashSet<>();
         if (value != null && !value.toString().trim().equals(""))
         {
-            String[] st = value.toString().split(separator, -1);
+            String[] st = value.toString().split("\\s*" + separator + "\\s*", -1);
             Collections.addAll(values, st);
         }
         return values;
