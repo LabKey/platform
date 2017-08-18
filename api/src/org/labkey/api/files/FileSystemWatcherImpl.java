@@ -16,6 +16,7 @@
 package org.labkey.api.files;
 
 import org.apache.log4j.Logger;
+import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
@@ -39,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import org.imca_cat.pollingwatchservice.PathWatchService;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -73,7 +73,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     FileSystemWatcherImpl() throws IOException
     {
         _watcher = FileSystems.getDefault().newWatchService();
-        FileSystemWatcherThread thread = new FileSystemWatcherThread();
+        FileSystemWatcherThread thread = new FileSystemWatcherThread("DefaultFileWatcher", _watcher);
         ContextListener.addShutdownListener(thread);
         thread.start();
 
@@ -81,7 +81,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         // directory looking for changes since last polling. See: https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html
         _pollingWatcher = new PollingWatchService(4, 10, TimeUnit.SECONDS);
         _pollingWatcher.start();
-        PollingFileSystemWatcherThread pollingThread = new PollingFileSystemWatcherThread();
+        FileSystemWatcherThread pollingThread = new FileSystemWatcherThread("PollingFileWatcher", _pollingWatcher);
         ContextListener.addShutdownListener(pollingThread);
         pollingThread.start();
     }
@@ -94,25 +94,25 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         PathListenerManager previous = _listenerMap.putIfAbsent(directory, plm);     // Atomic operation
         String fileStoreType = Files.getFileStore(directory).type();
 
-            // Register directory with the WatchService, if it's new
-            if (null == previous)
+        // Register directory with the WatchService, if it's new
+        if (null == previous)
+        {
+            if ("cifs".equalsIgnoreCase(fileStoreType) || "smbfs".equalsIgnoreCase(fileStoreType) || "nfs".equalsIgnoreCase(fileStoreType))
             {
-                if ("cifs".equalsIgnoreCase(fileStoreType))
-                {
-                    LOG.debug("Detected Non NTFS File System. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
-                    _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-                }
-                else
-                {
-                    LOG.debug("Detected NTFS File System. Register path with standard _watcher service for directory: " + directory.toAbsolutePath().toString());
-                    directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
-                }
+                LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
+                _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
             }
             else
-                plm = previous;
+            {
+                LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath().toString());
+                directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
+            }
+        }
+        else
+            plm = previous;
 
-            // Add the listener and its requested events
-            plm.addListener(listener, events);
+        // Add the listener and its requested events
+        plm.addListener(listener, events);
 
         LOG.debug("Registered a file listener on " + directory.toString());
     }
@@ -131,9 +131,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     // Not a daemon thread because listeners could be performing I/O and other tasks that are dangerous to interrupt.
     private class FileSystemWatcherThread extends Thread implements ShutdownListener
     {
-        private FileSystemWatcherThread()
+        WatchService _watcher;
+
+        private FileSystemWatcherThread(String name, WatchService watcher)
         {
-            super("FileSystemWatcherThread");
+            super(name);
+            _watcher = watcher;
         }
 
         @Override
@@ -211,89 +214,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
     }
 
-    private class PollingFileSystemWatcherThread extends Thread implements ShutdownListener
-    {
-        private PollingFileSystemWatcherThread()
-        {
-            super("PollingFileSystemWatcherThread");
-        }
-
-        @Override
-        public void run()
-        {
-            try
-            {
-                while (!isInterrupted())
-                {
-
-                    WatchKey pollingWatchKey = _pollingWatcher.take();
-                    Path pollingWatchedPath = null;
-
-                    try
-                    {
-                        pollingWatchedPath = (Path)pollingWatchKey.watchable();
-                        PathListenerManager pollingPlm = _listenerMap.get(pollingWatchedPath);
-
-                        // Should not happen, but this may help narrow down cause of #26934
-                        if (null == pollingPlm)
-                            throw new IllegalStateException("Received a file watcher event from " + pollingWatchedPath + " but its PathListenerManager was null!");
-
-                        for (WatchEvent<?> pollingWatchEvent : pollingWatchKey.pollEvents())
-                        {
-                            @SuppressWarnings("unchecked")
-                            WatchEvent<Path> event = (WatchEvent<Path>)pollingWatchEvent;
-                            pollingPlm.fireEvents(event, pollingWatchedPath);
-                        }
-
-                    }
-                    catch (Throwable e)  // Make sure throwables don't kill the background thread
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
-                    finally
-                    {
-                        // Always reset the watchKey, even if a listener throws, otherwise we'll never see another event on this directory.
-                        // If watch key is no longer valid, then I guess we should remove the listener manager.
-                        if (!pollingWatchKey.reset() && null != pollingWatchedPath)
-                            _listenerMap.remove(pollingWatchedPath);        // TODO: create an event to notify listeners?
-                    }
-                }
-            }
-            catch (ClosedWatchServiceException | InterruptedException ignored)
-            {
-                // We were interrupted or we closed the service... time to terminate the thread
-            }
-            finally
-            {
-                LOG.info(getClass().getSimpleName() + " is terminating");
-                close();
-            }
-        }
-
-        /* NOTE: this method is being called by the shutdown thread but interrupts the file watcher thread */
-        @Override
-        public void shutdownPre()
-        {
-            this.interrupt();
-        }
-
-        @Override
-        public void shutdownStarted()
-        {
-        }
-
-        private void close()
-        {
-            try
-            {
-                _pollingWatcher.close();
-            }
-            catch (IOException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
-        }
-    }
 
     // Manages all the listeners associated with a specific path
     private static class PathListenerManager
