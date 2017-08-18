@@ -1,9 +1,12 @@
 package org.labkey.api.pipeline.trigger;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Pipeline Trigger type (e.g., scheduled, file-watcher, email, etc.)
@@ -29,12 +32,14 @@ public interface PipelineTriggerType<C extends PipelineTriggerConfig>
 
     /**
      * Allows the trigger type a chance to validate the configuration string on insert/update.
+     * @param pipelineId The pipelineId
      * @param isEnabled Whether or not the configuration is set to enabled.
      * @param json The configuration (JSON) object
-     * @return A message about why the configuration is invalid for the given trigger type. Default null.
+     * @return Error messages why the configuration is invalid for the given trigger type. Default empty list.
      */
-    default String validateConfiguration(boolean isEnabled, JSONObject json)
+    @NotNull
+    default List<String> validateConfiguration(String pipelineId, boolean isEnabled, JSONObject json)
     {
-        return null;
+        return Collections.emptyList();
     }
 }

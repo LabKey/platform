@@ -22,9 +22,11 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -248,7 +250,8 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String type = getStringFromRow(row, "Type");
             String pipelineId = getStringFromRow(row, "PipelineId");
             boolean isEnabled = Boolean.parseBoolean(row.get("Enabled").toString());
-            String invalidMsg = "";
+
+            List<ValidationError> validationErrors = new ArrayList<>();
 
             // validate that the config name is unique for this container
             if (name != null)
@@ -260,7 +263,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
                     {
                         if (rowId == null || !rowId.equals(existingConfig.getRowId()))
                         {
-                            invalidMsg += "A pipeline trigger configuration already exists in this container for the given name: " + name + ". ";
+                            validationErrors.add(new PropertyValidationError("A pipeline trigger configuration already exists in this container for the given name: " + name, "name"));
                             break;
                         }
                     }
@@ -270,16 +273,16 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             // validate that the type is a valid registered PipelineTriggerType
             PipelineTriggerType triggerType = PipelineTriggerRegistry.get().getTypeByName(type);
             if (triggerType == null)
-                invalidMsg += "Invalid pipeline trigger type: " + type + ". ";
+                validationErrors.add(new PropertyValidationError("Invalid pipeline trigger type: " + type, "type"));
 
             // validate that the pipelineId is a valid TaskPipeline
             try
             {
                 PipelineJobService.get().getTaskPipeline(pipelineId);
             }
-            catch(NotFoundException e)
+            catch (NotFoundException e)
             {
-                invalidMsg += "Invalid pipeline task id: " + pipelineId + ". ";
+                validationErrors.add(new PropertyValidationError("Invalid pipeline task id: " + pipelineId, "pipelineId"));
             }
 
             // validate that the configuration value parses as valid JSON
@@ -294,20 +297,20 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
                 }
                 catch (IOException e)
                 {
-                    invalidMsg += "Invalid JSON object for the configuration field. ";
+                    validationErrors.add(new PropertyValidationError("Invalid JSON object for the configuration field: " + e.toString(), "configuration"));
                 }
             }
 
             // Finally, give the PipelineTriggerType a chance to validate the configuration JSON object
             if (triggerType != null)
             {
-                String typeInvalidMsg = triggerType.validateConfiguration(isEnabled, json);
-                if (typeInvalidMsg != null)
-                    invalidMsg += typeInvalidMsg;
+                List<String> configErrors = triggerType.validateConfiguration(pipelineId, isEnabled, json);
+                for (String msg : configErrors)
+                    validationErrors.add(new PropertyValidationError(msg, "configuration"));
             }
 
-            if (invalidMsg.length() > 0)
-                throw new ValidationException(invalidMsg);
+            if (!validationErrors.isEmpty())
+                throw new ValidationException(validationErrors);
         }
 
         private String getStringFromRow(Map<String, Object> row, String key)
