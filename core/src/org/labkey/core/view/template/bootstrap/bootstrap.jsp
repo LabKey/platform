@@ -27,6 +27,7 @@
     @Nullable
     private String renderTrail(List<NavTree> trees)
     {
+        // NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail
         if (trees == null || trees.isEmpty())
             return null;
 
@@ -85,6 +86,7 @@
     </div>
     <div class="row">
         <div class="col-md-12 lk-body-title">
+            <% /* NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail */ %>
             <% if (trail != null) { %><%= text(trail) %><% } %>
             <% if (pageTitle != null) { %><h3><%= h(pageTitle)%></h3><% } %>
         </div>

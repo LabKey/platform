@@ -31,22 +31,18 @@
 <%
     Container container = getContainer();
 %>
-<script type="text/javascript">
-    var _wb_titleId = Ext.id();
-    LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
-            undefined, <%=PageFlowUtil.jsString(container.getTitle())%>);
-</script>
-
 <style type="text/css">
     .wb-name
     {
         color: #999999;
     }
 </style>
-
 <div id="wb-description" class="labkey-edit-in-place"><%=null != container.getDescription() ? h(container.getDescription()) : "&nbsp;"%></div>
-
 <script type="text/javascript">
+    var _wb_titleId = Ext.id();
+    LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
+            undefined, <%=PageFlowUtil.jsString(container.getTitle())%>, false);
+
     Ext.onReady(function(){
         if (!LABKEY.Security.currentUser.canUpdate)
             return;
