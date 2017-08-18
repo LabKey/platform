@@ -23,13 +23,16 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
@@ -277,6 +280,12 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         public String getKindName()
         {
             return NAME;
+        }
+
+        @Override
+        public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
+        {
+            return PageFlowUtil.set(new PropertyStorageSpec.Index(false, COLUMN_NAME_LIST_ITEM_ENTITY_ID));
         }
     }
 }
