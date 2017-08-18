@@ -2269,6 +2269,7 @@ public class QueryController extends SpringActionController
             }
 
             DetailsView detailsView = new DetailsView(tableForm);
+            detailsView.setFrame(WebPartView.FrameType.PORTAL);
             detailsView.getDataRegion().setButtonBar(bb);
 
             VBox view = new VBox(detailsView);

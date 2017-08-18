@@ -1513,6 +1513,7 @@ public class UserController extends SpringActionController
 
             QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext());
             DetailsView detailsView = new DetailsView(quf);
+            detailsView.setFrame(WebPartView.FrameType.PORTAL);
             DataRegion rgn = detailsView.getDataRegion();
 
             setDataRegionButtons(rgn, isOwnRecord, canManageDetailsUser);

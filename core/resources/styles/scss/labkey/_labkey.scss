@@ -10,7 +10,6 @@ body {
   margin-bottom: 50px;
 }
 
-// TODO: This causes type="file" inputs to not look polished
 input, select, textarea {
   background-color: $lk-input-bg-color;
   border: $lk-input-border-width $lk-input-border-style $lk-input-border-color;

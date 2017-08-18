@@ -58,6 +58,13 @@ input[type="checkbox"] {
 
 input[type="file"] {
   display: block;
+
+  &.form-control {
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    padding-left: 0;
+  }
 }
 
 // Make range inputs behave like textual form controls
@@ -163,6 +170,19 @@ textarea.form-control {
   height: auto;
 }
 
+.form-horizontal {
+  .form-control {
+    width: auto;
+  }
+}
+
+@media (max-width: $lk-screen-sm-min) {
+  .form-horizontal {
+    .form-control {
+      width: 100%;
+    }
+  }
+}
 
 // Search inputs in iOS
 //
