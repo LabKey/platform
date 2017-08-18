@@ -31,17 +31,15 @@
     SetupForm bean = thisView.getModelBean();
     Container c = getContainer();
 
-    // the default project pipeline root based on the site default root
+    // the default project pipeline root is based on the file root
     String projectDefaultRoot = "";
     String folderRadioBtnLabel = "Set a pipeline override";
     boolean hasInheritedOverride = SetupForm.hasInheritedOverride(c);
 
-    File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
-    if (siteRoot != null)
+    File fileRoot = ServiceRegistry.get().getService(FileContentService.class).getFileRoot(c);
+    if (fileRoot != null)
     {
-        File projRoot = new File(siteRoot, c.getProject().getName());
-        // Show the user the path that we'd point to if using the default location
-        projectDefaultRoot = projRoot.getAbsolutePath();
+        projectDefaultRoot = fileRoot.getAbsolutePath();
     }
 
     if (bean.getConfirmMessage() != null)
@@ -72,11 +70,11 @@
                             <%=checked(SetupForm.SITE_DEFAULT_TYPE.equals(bean.getPipelineRootOption()))%>
                                    onclick="updatePipelineSelection();">
 <%                      if (hasInheritedOverride) { %>
-                            <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the site-level root</label><%=
+                            <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the file root</label><%=
                             PageFlowUtil.helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
                                     "override has been set in a parent folder.")%><span class="labkey-disabled">: <%=h(projectDefaultRoot)%></span><%
                         } else { %>
-                            <label for="pipeOptionSiteDefault">Use a default based on the site-level root</label>: <%=h(projectDefaultRoot)%><%
+                            <label for="pipeOptionSiteDefault">Use a default based on the file root</label>: <%=h(projectDefaultRoot)%><%
                         } %>
                         </td>
                     </tr>

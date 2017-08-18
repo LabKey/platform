@@ -167,7 +167,7 @@ public class PipelineServiceImpl implements PipelineService
             return new PipeRootImpl(pipelineRoot);
         }
 
-        // if we haven't found a 'real' root, default to a root off the site wide default
+        // if we haven't found a 'real' pipeline root, default to pipeline root same as file root for this container
         return getDefaultPipelineRoot(container, type);
     }
 
@@ -179,8 +179,10 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     /**
-     * Try to locate a default pipeline root from the site file root. Default pipeline roots only
-     * extend to the project level and are inherited by sub folders.
+     * Try to locate a default pipeline root from the default file root. However, if the file root for this container
+     * has been customized, then set the default pipeline root for this container to be the same as the customized file root.
+     * Or in other words: unless the pipeline root has been customized, set it the same as the file root.
+     * Default pipeline roots only extend to the project level and are inherited by sub folders.
      * @return null if there default root is misconfigured or unavailable
      */
     @Nullable
@@ -193,13 +195,14 @@ public class PipelineServiceImpl implements PipelineService
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                 if (svc != null && container != null)
                 {
-                    if (svc.isUseDefaultRoot(container.getProject()))
+                    // check to see if the file root has been overridden and if so set the pipeline root to the same place
+                    if (!svc.isUseDefaultRoot(container.getProject()))
                     {
                         File root = svc.getFileRoot(container);
                         if (root != null)
                         {
                             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                            return createDefaultRoot(container, dir.getFileSystemDirectory(), true);
+                            return createDefaultRoot(container, dir.getFileSystemDirectory(), false);
                         }
                     }
                     else
@@ -210,7 +213,7 @@ public class PipelineServiceImpl implements PipelineService
                             File dir = new File(root, svc.getFolderName(FileContentService.ContentType.files));
                             if (!dir.exists())
                                 dir.mkdirs();
-                            return createDefaultRoot(container, dir, false);
+                            return createDefaultRoot(container, dir, true);
                         }
                     }
                 }
@@ -224,7 +227,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @NotNull
-    private PipeRootImpl createDefaultRoot(Container container, File dir, boolean sameAsFilesRoot)
+    private PipeRootImpl createDefaultRoot(Container container, File dir, boolean isDefaultFileRoot)
     {
         PipelineRoot p = new PipelineRoot();
 
@@ -232,7 +235,7 @@ public class PipelineServiceImpl implements PipelineService
         p.setPath(dir.toURI().toString());
         p.setType(PipelineRoot.PRIMARY_ROOT);
 
-        return new PipeRootImpl(p, sameAsFilesRoot);
+        return new PipeRootImpl(p, isDefaultFileRoot);
     }
 
     @Override

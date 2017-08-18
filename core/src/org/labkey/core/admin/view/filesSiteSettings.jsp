@@ -232,8 +232,9 @@
     <table width="80%">
         <tr><td colspan="2" class="labkey-announcement-title"><span>Summary View for File Directories</span></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
-        <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column
-            indicates whether the directory is derived from the site-level file root (set above) or has been overridden. To view or
+        <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column for @files
+            indicates whether the directory is derived from the site-level file root (set above) or has been overridden. The 'Default' column for @pipeline
+            indicates whether the directory is the same as the @files directory or has been overridden. To view or
             manage files in a directory, double click on a row or click on the 'Browse Selected' button. To configure an
             @file or an @pipeline directory, select the directory and click on the 'Configure Selected' button in the toolbar.
         </td></tr>
