@@ -85,7 +85,7 @@ public class FolderMenu extends NavTreeMenu
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         String pattern = startURL.getLocalURIString();
 
-        String link = nav.getHref() == null ? null : nav.getHref();
+        String link = nav.getHref();
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
         if (level == 0 && null != nav.getText())
             level = 1;

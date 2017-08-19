@@ -58,13 +58,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     private static final int _debug = Debug.getLevel(HttpView.class);
     protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
-    private static final ThreadLocal<ViewStack> _viewContexts = new ThreadLocal<ViewStack>()
-    {
-        protected ViewStack initialValue()
-        {
-            return new ViewStack();
-        }
-    };
+    private static final ThreadLocal<ViewStack> _viewContexts = ThreadLocal.withInitial(ViewStack::new);
 
 
     private static class ViewStack extends Stack<ViewStackEntry>

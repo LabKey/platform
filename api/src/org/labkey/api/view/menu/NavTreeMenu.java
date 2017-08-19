@@ -63,7 +63,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         }
     }
 
-    public NavTreeMenu(ViewContext context,String rootId, String title, boolean collapseByDefault, NavTree... elements)
+    public NavTreeMenu(ViewContext context, String rootId, String title, boolean collapseByDefault, NavTree... elements)
     {
         this(context, rootId, title, null, collapseByDefault, true, elements);
     }
@@ -157,7 +157,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         String pattern = startURL.getLocalURIString();
 
-        String link = nav.getHref() == null ? null : nav.getHref();
+        String link = nav.getHref();
         String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript()) : null;
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
         if (level == 0 && null != nav.getText())
