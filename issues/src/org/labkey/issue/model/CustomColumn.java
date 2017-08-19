@@ -18,7 +18,6 @@ package org.labkey.issue.model;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.issue.ColumnType;
 
 /**
  * Created by klum on 4/19/2016.
