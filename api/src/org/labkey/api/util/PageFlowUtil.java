@@ -1730,6 +1730,25 @@ public class PageFlowUtil
             if (useExperimentalCoreUI())
             {
                 F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css")));
+
+                ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+                if (c.isRoot())
+                {
+                    /* Add the root customStylesheet */
+                    if (null != rootCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                }
+                else
+                {
+                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+                    /* Add the container relative customStylesheet */
+                    if (null != containerCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                    else if (null != rootCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                }
             }
             else
             {
