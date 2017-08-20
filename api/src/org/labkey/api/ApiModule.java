@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
+import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.module.CodeOnlyModule;
@@ -44,6 +45,7 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
+        AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
     }
 
     @NotNull

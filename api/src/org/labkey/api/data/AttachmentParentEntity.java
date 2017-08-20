@@ -27,6 +27,8 @@ import org.labkey.api.view.ViewContext;
  * Date: Mar 31, 2007
  * Time: 9:05:32 PM
  */
+
+// TODO: Make abstract, add constructor that takes containerId and EntityId, remove getAttachmentType()
 public class AttachmentParentEntity extends Entity implements AttachmentParent
 {
     @Override

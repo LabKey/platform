@@ -161,6 +161,6 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
     @Override
     public @NotNull AttachmentType getAttachmentType()
     {
-        return AttachmentType.UNKNOWN;
+        return _provider.getAttachmentType();
     }
 }

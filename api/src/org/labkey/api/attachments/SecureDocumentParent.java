@@ -21,7 +21,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ViewContext;
@@ -30,12 +35,16 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by davebradlee on 7/16/15.
+ * This was used originally by the Argos export request workflow. Currently not used, except by junit tests. If resurrected,
+ * constructor should be changed to take an actual object (not an arbitrary EntityId) and AttachmentType should be updated
+ * to filter the appropriate rows in core.Documents.
  *
+ * Created by davebradlee on 7/16/15.
  */
 public class SecureDocumentParent implements AttachmentParent, SecurableResource
 {
     private static final String NAME = "SecureDocumentParent";
+
     private final String _entityId;
     private final String _containerId;
     private final String _sourceModule;
@@ -141,6 +150,6 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
     @Override
     public @NotNull AttachmentType getAttachmentType()
     {
-        return AttachmentType.UNKNOWN;
+        return SecureDocumentType.get();
     }
 }
