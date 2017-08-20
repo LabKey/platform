@@ -47,6 +47,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -220,11 +221,11 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ImportSecurityPolicyAction extends FormViewAction<Object>
+    public class ImportSecurityPolicyAction extends FormViewAction<ReturnUrlForm>
     {
         private String _messageText = null;
 
-        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, boolean reshow, BindException errors) throws Exception
         {
             if (errors.hasErrors())
             {
@@ -250,12 +251,12 @@ public class SecurityController extends SpringActionController
             return root.addChild("Study Policy Import");
         }
 
-        public void validateCommand(Object form, Errors errors)
+        public void validateCommand(ReturnUrlForm form, Errors errors)
         {
 
         }
 
-        public boolean handlePost(Object form, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
             List<String> messages = new ArrayList<>();
             StudyPermissionExporter exporter = new StudyPermissionExporter();
@@ -330,11 +331,11 @@ public class SecurityController extends SpringActionController
             }
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public ActionURL getSuccessURL(ReturnUrlForm form)
         {
-            String redirect = (String) getViewContext().get("redirect");
-            if (redirect != null)
-                return new ActionURL(redirect);
+            ActionURL returnUrl = form.getReturnActionURL();
+            if (returnUrl != null)
+                return returnUrl;
 
             if (_messageText == null)
                 return new ActionURL(SecurityController.BeginAction.class, getContainer());
@@ -721,7 +722,7 @@ public class SecurityController extends SpringActionController
 
     static class Overview extends WebPartView
     {
-        HttpView impl;
+        private final HttpView _vbox;
 
         Overview(StudyImpl study)
         {
@@ -729,19 +730,18 @@ public class SecurityController extends SpringActionController
             setFrame(FrameType.NONE);
         }
 
-        Overview(StudyImpl study, ActionURL redirect)
+        Overview(StudyImpl study, ActionURL returnUrl)
         {
             super(FrameType.DIV);
-            JspView<StudyImpl> studySecurityView = new JspView<>("/org/labkey/study/security/studySecurity.jsp", study);
-            JspView<StudyImpl> studyView = new JspView<>("/org/labkey/study/security/study.jsp", study);
-            studyView.setTitle("Study Security");
-            if (redirect != null)
-                studyView.addObject("redirect", redirect.getLocalURIString());
 
-            JspView<StudyImpl> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", study);
+            JspView<StudyImpl> studySecurityView = new JspView<>("/org/labkey/study/security/studySecurity.jsp", study);
+
+            Pair<StudyImpl, ActionURL> pair = new Pair<>(study, returnUrl);
+            JspView<Pair<StudyImpl, ActionURL>> studyView = new JspView<>("/org/labkey/study/security/study.jsp", pair);
+            studyView.setTitle("Study Security");
+
+            JspView<Pair<StudyImpl, ActionURL>> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", pair);
             dsView.setTitle("Per Dataset Permissions");
-            if (redirect != null)
-                dsView.addObject("redirect", redirect.getLocalURIString());
 
             JspView<StudyImpl> siteView = new JspView<>("/org/labkey/study/security/locations.jsp", study);
             siteView.setTitle("Restricted Dataset Permissions (per Location)");
@@ -758,18 +758,16 @@ public class SecurityController extends SpringActionController
             {
                 JspView<StudyImpl> exportView = new JspView<>("/org/labkey/study/security/importExport.jsp", study);
                 exportView.setTitle("Import/Export Policy");
-                if (redirect != null)
-                    exportView.addObject("redirect", redirect.getLocalURIString());
                 v.addView(exportView);
             }
 
-            impl = v;
+            _vbox = v;
         }
 
 
         protected void renderView(Object model, PrintWriter out) throws Exception
         {
-            include(impl, out);
+            include(_vbox, out);
         }
     }
 

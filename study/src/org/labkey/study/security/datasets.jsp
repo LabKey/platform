@@ -22,17 +22,18 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
 <%@ page import="org.labkey.api.security.roles.EditorRole"%>
-<%@ page import="org.labkey.api.security.roles.ReaderRole" %>
+<%@ page import="org.labkey.api.security.roles.ReaderRole"%>
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -47,8 +48,9 @@
     }
 %>
 <%
-    HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
-    StudyImpl study = me.getModelBean();
+    Pair<StudyImpl, ActionURL> pair = ((HttpView<Pair<StudyImpl, ActionURL>>) HttpView.currentView()).getModelBean();
+    StudyImpl study = pair.first;
+    ActionURL returnUrl = pair.second;
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
 
     List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
@@ -140,9 +142,8 @@ else
 %>group's access to each dataset is controlled by the drop-down list in each cell.
 <labkey:form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
 <%
-    String redir = (String)getViewContext().get("redirect");
-    if (redir != null)
-        out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
+    if (returnUrl != null)
+        out.write("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
 
     int row = 0;
     %><br/><table class="labkey-data-region-legacy labkey-show-borders" id="datasetSecurityFormTable"><colgroup>

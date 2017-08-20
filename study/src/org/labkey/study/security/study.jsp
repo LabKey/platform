@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.GroupSecurityType" %>
@@ -32,16 +34,16 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
-    StudyImpl study = me.getModelBean();
+    Pair<StudyImpl, ActionURL> pair = ((HttpView<Pair<StudyImpl, ActionURL>>) HttpView.currentView()).getModelBean();
+    StudyImpl study = pair.first;
+    ActionURL returnUrl = pair.second;
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
     <labkey:form id="groupUpdateForm" action="<%=h(buildURL(SecurityController.SaveStudyPermissionsAction.class))%>" method="post">
 <%
-    String redir = (String) getViewContext().get("redirect");
-    if (redir != null)
-        out.write("<input type=\"hidden\" name=\"redirect\" value=\"" + h(redir) + "\">");
+    if (returnUrl != null)
+        out.write("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
 %>
     <table>
 
