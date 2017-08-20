@@ -222,6 +222,6 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     @Override
     public @NotNull AttachmentType getAttachmentType()
     {
-        return AttachmentType.UNKNOWN;
+        return FileSystemAttachmentType.get();
     }
 }

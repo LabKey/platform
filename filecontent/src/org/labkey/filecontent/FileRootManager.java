@@ -16,9 +16,7 @@
 
 package org.labkey.filecontent;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -39,14 +37,10 @@ public class FileRootManager
 {
     public static final String FILECONTENT_SCHEMA_NAME = "filecontent";
     private static final FileRootManager _instance = new FileRootManager();
-    private static final BlockingStringKeyCache<FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "FileRoots", new CacheLoader<String, FileRoot>(){
-        @Override
-        public FileRoot load(String key, @Nullable Object c)
-        {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
+    private static final BlockingStringKeyCache<FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "FileRoots", (key, c) -> {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
 
-            return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
-        }
+        return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
     });
 
     private FileRootManager(){}

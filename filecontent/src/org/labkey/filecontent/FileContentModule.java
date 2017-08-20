@@ -19,6 +19,7 @@ package org.labkey.filecontent;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.PropertyService;
@@ -28,9 +29,7 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
@@ -65,6 +64,7 @@ public class FileContentModule extends DefaultModule
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
         ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
+        AttachmentService.get().registerAttachmentType(FileSystemAttachmentType.get());
     }
 
     @NotNull
