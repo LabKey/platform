@@ -86,14 +86,7 @@ public class NavTreeManager
         if (null == treeMap)
             return Collections.emptySet();
 
-        Set<String> expandedPaths = treeMap.get(navTreeId);
-        if (null == expandedPaths)
-        {
-            expandedPaths = Collections.synchronizedSet(new HashSet<String>());
-            treeMap.put(navTreeId, expandedPaths);
-        }
-
-        return expandedPaths;
+        return treeMap.computeIfAbsent(navTreeId, k -> Collections.synchronizedSet(new HashSet<>()));
     }
 
 
