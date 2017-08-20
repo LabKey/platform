@@ -349,6 +349,7 @@ public class AnnouncementsController extends SpringActionController
             return new ConfirmDeleteView(ann, getWhat(), getSettings(getContainer()));
         }
 
+        @NotNull
         public URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
             return form.getReturnURLHelper();
@@ -632,16 +633,6 @@ public class AnnouncementsController extends SpringActionController
             }
         }
     }
-
-    @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class DeleteAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
-        {
-            return AttachmentService.get().delete(parent, form.getName(), getUser());
-        }
-    }
-
 
     public static class MemberListRemovalForm
     {
