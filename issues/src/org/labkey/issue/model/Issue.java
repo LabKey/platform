@@ -661,7 +661,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     /* CONSIDER: use Announcements/Notes instead of special Comments class */
 
-    public static class Comment extends AttachmentParentEntity implements Serializable
+    public static class Comment extends Entity implements Serializable
     {
         private Issue issue;
         private int commentId;
@@ -721,13 +721,6 @@ public class Issue extends Entity implements Serializable, Cloneable
             if (issue != null)
                 return issue.getContainerId();
             return super.getContainerId();
-        }
-
-        @NotNull
-        @Override
-        public AttachmentType getAttachmentType()
-        {
-            return IssueCommentType.get();
         }
     }
 

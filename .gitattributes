@@ -1172,6 +1172,7 @@ issues/src/org/labkey/issue/actions/RepairIssueLookupsAction.java -text
 issues/src/org/labkey/issue/actions/UpgradeIssuesAction.java -text
 issues/src/org/labkey/issue/actions/ValidateIssueDefNameAction.java -text
 issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
+issues/src/org/labkey/issue/model/CommentAttachmentParent.java -text
 issues/src/org/labkey/issue/model/CustomColumn.java -text
 issues/src/org/labkey/issue/model/GeneralIssuesListDefProvider.java -text
 issues/src/org/labkey/issue/model/Issue.java -text
@@ -2323,6 +2324,8 @@ study/src/org/labkey/study/model/PrimaryType.java -text
 study/src/org/labkey/study/model/PrimaryTypeDomainKind.java -text
 study/src/org/labkey/study/model/ProductAntigenImpl.java -text
 study/src/org/labkey/study/model/ProductImpl.java -text
+study/src/org/labkey/study/model/ProtocolDocumentAttachmentParent.java -text
+study/src/org/labkey/study/model/ProtocolDocumentType.java -text
 study/src/org/labkey/study/model/QCState.java -text
 study/src/org/labkey/study/model/QCStateSet.java -text
 study/src/org/labkey/study/model/SecurityType.java -text
@@ -2335,6 +2338,7 @@ study/src/org/labkey/study/model/SpecimenRequest.java -text
 study/src/org/labkey/study/model/SpecimenRequestActor.java -text
 study/src/org/labkey/study/model/SpecimenRequestEntity.java -text
 study/src/org/labkey/study/model/SpecimenRequestEvent.java -text
+study/src/org/labkey/study/model/SpecimenRequestEventType.java -text
 study/src/org/labkey/study/model/SpecimenRequestRequirement.java -text
 study/src/org/labkey/study/model/SpecimenRequestStatus.java -text
 study/src/org/labkey/study/model/SpecimenTypeSummary.java -text
@@ -2947,7 +2951,6 @@ survey/src/org/labkey/survey/SurveyController.java -text
 survey/src/org/labkey/survey/SurveyForm.java -text
 survey/src/org/labkey/survey/SurveyManager.java -text
 survey/src/org/labkey/survey/SurveyModule.java -text
-survey/src/org/labkey/survey/SurveyQuestion.java -text
 survey/src/org/labkey/survey/SurveySchema.java -text
 survey/src/org/labkey/survey/model/SurveyServiceImpl.java -text
 survey/src/org/labkey/survey/query/SurveyDesignQueryView.java -text

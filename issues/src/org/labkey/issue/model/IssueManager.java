@@ -932,7 +932,7 @@ public class IssueManager
                     }
                     entityIds.add(issue.getEntityId());
 
-                    attachmentParents.addAll(issue.getComments());
+                    issue.getComments().forEach(comment -> attachmentParents.add(new CommentAttachmentParent(comment)));
                 }
             }
             if (issueDefId != null)
@@ -1502,14 +1502,10 @@ public class IssueManager
         // get the list of comments for all issues being deleted (these are the attachment parents)
         SQLFragment commentsSQL = new SQLFragment("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
                 append(" WHERE IssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE IssueDefId = ? )");
+                append(" WHERE IssueDefId = ?)");
         commentsSQL.add(issueDef.getRowId());
         new SqlSelector(IssuesSchema.getInstance().getSchema(), commentsSQL).forEach(entityId -> {
-
-            AttachmentParentEntity parent = new AttachmentParentEntity();
-            parent.setContainer(c.getId());
-            parent.setEntityId(entityId);
-
+            CommentAttachmentParent parent = new CommentAttachmentParent(c.getId(), entityId);
             attachmentParents.add(parent);
         }, String.class);
 

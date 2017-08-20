@@ -731,17 +731,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
             {
-                if (AttachmentType.UNKNOWN != type)
-                {
-                    unionSql.append(union)
-                            // Adding unique column RowId ensures we get the proper count
-                            .append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
-                            .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
-                            .append(" WHERE ");
-                    type.addWhereSql(unionSql, "d.Parent", "d.DocumentName");
-                    unionSql.append("\n");
-                    union = "UNION\n";
-                }
+                unionSql.append(union)
+                        // Adding unique column RowId ensures we get the proper count
+                        .append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
+                        .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
+                        .append(" WHERE ");
+                type.addWhereSql(unionSql, "d.Parent", "d.DocumentName");
+                unionSql.append("\n");
+                union = "UNION\n";
             }
 
             SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
@@ -756,14 +753,11 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
             {
-                if (AttachmentType.UNKNOWN != type)
-                {
-                    whereSql.append(sep);
-                    sep = " OR";
-                    whereSql.append("\n(");
-                    type.addWhereSql(whereSql, "d.Parent", "d.DocumentName");
-                    whereSql.append(")");
-                }
+                whereSql.append(sep);
+                sep = " OR";
+                whereSql.append("\n(");
+                type.addWhereSql(whereSql, "d.Parent", "d.DocumentName");
+                whereSql.append(")");
             }
 
             SQLFragment unknownSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n");

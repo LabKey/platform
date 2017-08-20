@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -298,6 +299,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
         RoleManager.registerRole(new AssayDesignerRole());
+
+        AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
+        AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
     }
 
     public boolean hasScripts()

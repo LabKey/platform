@@ -56,6 +56,7 @@ import org.labkey.issue.ColumnType;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesController.DownloadAction;
+import org.labkey.issue.model.Issue.Comment;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -678,9 +679,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return DateUtil.formatDateTime(_c, d);
     }
 
-    public String renderAttachments(ViewContext context, Issue.Comment parent)
+    public String renderAttachments(ViewContext context, Comment comment)
     {
-        List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(parent));
+        List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(new CommentAttachmentParent(comment)));
 
         StringBuilder sb = new StringBuilder();
 
@@ -691,7 +692,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
             for (Attachment a : attachments)
             {
-                Issue issue = parent.getIssue();
+                Issue issue = comment.getIssue();
                 sb.append("<tr><td>");
                 sb.append("<a href=\"");
                 sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class).addParameter("issueId", issue.getIssueId())));

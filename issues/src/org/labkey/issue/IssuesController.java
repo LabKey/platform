@@ -111,6 +111,7 @@ import org.labkey.issue.actions.UpgradeIssuesAction;
 import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.CommentAttachmentParent;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
@@ -782,7 +783,7 @@ public class IssuesController extends SpringActionController
                             }
 
                             if (!attachmentFiles.isEmpty())
-                                AttachmentService.get().addAttachments(changeSummary.getComment(), attachmentFiles, getUser());
+                                AttachmentService.get().addAttachments(new CommentAttachmentParent(changeSummary.getComment()), attachmentFiles, getUser());
                         }
                     }
                 }
@@ -936,7 +937,7 @@ public class IssuesController extends SpringActionController
                 changeSummary = ChangeSummary.createChangeSummary(getViewContext(), getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
                 IssueManager.saveIssue(user, c, issue);
                 detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
-                AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
+                AttachmentService.get().addAttachments(new CommentAttachmentParent(changeSummary.getComment()), getAttachmentFileList(), user);
 
                 if (duplicateOf != null)
                 {
@@ -1389,7 +1390,7 @@ public class IssuesController extends SpringActionController
             {
                 protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
                 {
-                    AttachmentService.get().download(response, comment, form.getName());
+                    AttachmentService.get().download(response, new CommentAttachmentParent(comment), form.getName());
                 }
             };
         }

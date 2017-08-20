@@ -166,6 +166,6 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
     @Override
     public @NotNull AttachmentType getAttachmentType()
     {
-        return AttachmentType.UNKNOWN;
+        return SpecimenRequestEventType.get();
     }
 }

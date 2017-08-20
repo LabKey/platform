@@ -31,7 +31,6 @@ import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -68,7 +67,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SpecimenManager;
@@ -1002,26 +1000,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setAssayPlan(String assayPlan)
     {
         _assayPlan = assayPlan;
-    }
-
-    public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
-    {
-        final Study _study;
-
-        public ProtocolDocumentAttachmentParent(@NotNull Study study)
-        {
-            setContainer(study.getContainer().getId());
-            setEntityId(((StudyImpl) study).getProtocolDocumentEntityId());
-            _study = study;
-        }
-
-        @Override
-        public String getDownloadURL(ViewContext context, String name)
-        {
-            ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, _study.getContainer());
-            download.addParameter("name", name);
-            return download.getLocalURIString(false);
-        }
     }
 
 
