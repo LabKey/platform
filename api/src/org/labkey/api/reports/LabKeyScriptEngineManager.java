@@ -31,6 +31,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /*
 * User: Karl Lum
@@ -61,6 +63,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
     private static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
     private static final String REMOTE_ENGINE_DEF_MAP_PREFIX = ENGINE_DEF_MAP_PREFIX + "remote_";
+    private static final String DOCKER_ENGINE_DEF_MAP_PREFIX = ENGINE_DEF_MAP_PREFIX + "docker_";
 
     enum Props
     {
@@ -79,7 +82,8 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         user,
         password,
         remote,
-        pandocEnabled
+        pandocEnabled,
+        docker
     }
 
     ScriptEngineFactory rhino = null;
@@ -143,10 +147,10 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
     @Override
     public ScriptEngine getEngineByExtension(String extension)
     {
-        return getEngineByExtension(extension, false);
+        return getEngineByExtension(extension, false, false);
     }
 
-    public ScriptEngine getEngineByExtension(String extension, boolean requestRemote)
+    public ScriptEngine getEngineByExtension(String extension, boolean requestRemote, boolean requestDocker)
     {
         if (!StringUtils.isBlank(extension))
         {
@@ -168,7 +172,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
                     }
                 }
 
-                return (rEngines.size() == 0) ? null : selectRScriptEngine(rEngines, requestRemote);
+                return (rEngines.size() == 0) ? null : selectRScriptEngine(rEngines, requestRemote, requestDocker);
             }
             else if (isFactoryEnabled(engine.getFactory()))
                 return engine;
@@ -176,19 +180,31 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         return null;
     }
 
-    //
-    // We allow both a local and a remote R engine to be registered. Important: this function assumes that remote
-    // engines are only returned from getEngineDefinitions() if the Rserve feature has been enabled.
-    //
-    // If a single engine is registered, return it.
-    //
-    // If both local and remote are available then return appropriate engine based on the requestRemote flag.
-    //
-    private static ScriptEngine selectRScriptEngine(ArrayList<ExternalScriptEngineDefinition> rEngines, boolean requestRemote)
+    /**
+     *      If a R Docker engine has been registered and enabled, use it regardless of any registered local or remote
+     *      engines.
+     *      Otherwise, we allow both a local and a remote R engine to be registered. Important: this function assumes that remote
+     *      engines are only returned from getEngineDefinitions() if the Rserve feature has been enabled.
+     *      If a single engine is registered, return it.
+     *      If both local and remote are available then return appropriate engine based on the requestRemote flag.
+     *
+     * @param rEngines Any available R script engines
+     * @param requestRemote prefer a remote engine over local when available
+     * @param requestDocker use R Docker sandbox when available
+     * @return The correct ScriptEngine
+     */
+    private static ScriptEngine selectRScriptEngine(ArrayList<ExternalScriptEngineDefinition> rEngines, boolean requestRemote, boolean requestDocker)
     {
         ScriptEngineFactory factory;
 
-        if (rEngines.size() == 1)
+        Optional<ExternalScriptEngineDefinition> rDockerEngine = rEngines.stream()
+                                                                        .filter(def -> requestDocker && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX) && def.isDocker())
+                                                                        .findAny();
+        if (rDockerEngine.isPresent())
+        {
+            factory = new RDockerScriptEngineFactory(rDockerEngine.get());
+        }
+        else if (rEngines.size() == 1)
         {
             ExternalScriptEngineDefinition def = rEngines.get(0);
             factory = def.isRemote() ? new RserveScriptEngineFactory(def) : new RScriptEngineFactory(def);
@@ -220,9 +236,12 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
             if (def.containsKey(Props.remote.name()))
                 isRemote = Boolean.valueOf(def.get(Props.remote.name()));
 
+            boolean isDocker = false;
+            if (def.containsKey(Props.docker.name()))
+                isDocker = Boolean.valueOf(def.get(Props.docker.name()));
             try
             {
-                if (!isRemote || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                if (!isRemote || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) || isDocker)
                     engines.add(createDefinition(def, false));
             }
             catch (Exception e)
@@ -279,7 +298,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
                 if (key == null)
                 {
                     // new engine definition
-                    key = makeKey(def.isRemote(), def.getExtensions());
+                    key = makeKey(def);
                     if (getProp(key, SCRIPT_ENGINE_MAP) != null)
                         throw new IllegalArgumentException("An existing definition is already mapped to those file extensions");
 
@@ -293,33 +312,38 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
                     setProp(Props.languageName.name(), def.getLanguageName(), key);
                     setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
 
-                    if (def.isRemote())
+                    if (!def.isDocker())
                     {
-                        setProp(Props.machine.name(), def.getMachine(), key);
-                        setProp(Props.port.name(), String.valueOf(def.getPort()), key);
-
-                        String pathMapStr = null;
-                        PathMapper pathMapper = def.getPathMap();
-                        if (pathMapper != null && !pathMapper.getPathMap().isEmpty())
+                        if (def.isRemote())
                         {
-                            pathMapStr = ((PathMapperImpl)pathMapper).toJSON().toString();
-                        }
+                            setProp(Props.machine.name(), def.getMachine(), key);
+                            setProp(Props.port.name(), String.valueOf(def.getPort()), key);
 
-                        setProp(Props.pathMap.name(), pathMapStr, key);
-                        setProp(Props.user.name(), def.getUser(), key);
-                        setProp(Props.password.name(), def.getPassword(), key);
+                            String pathMapStr = null;
+                            PathMapper pathMapper = def.getPathMap();
+                            if (pathMapper != null && !pathMapper.getPathMap().isEmpty())
+                            {
+                                pathMapStr = ((PathMapperImpl) pathMapper).toJSON().toString();
+                            }
+
+                            setProp(Props.pathMap.name(), pathMapStr, key);
+                            setProp(Props.user.name(), def.getUser(), key);
+                            setProp(Props.password.name(), def.getPassword(), key);
+                        }
+                        else
+                        {
+                            setProp(Props.exePath.name(), def.getExePath(), key);
+                        }
+                        // note that this really is the invocation command for both local and
+                        // remote engines
+                        setProp(Props.exeCommand.name(), def.getExeCommand(), key);
                     }
-                    else
-                    {
-                        setProp(Props.exePath.name(), def.getExePath(), key);
-                    }
-                    // note that this really is the invocation command for both local and
-                    // remote engines
-                    setProp(Props.exeCommand.name(), def.getExeCommand(), key);
+
                     setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
                     setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
                     setProp(Props.remote.name(), String.valueOf(def.isRemote()), key);
                     setProp(Props.pandocEnabled.name(), String.valueOf(def.isPandocEnabled()), key); //TODO: should this be moved to an extended class?
+                    setProp(Props.docker.name(), String.valueOf(def.isDocker()), key);
                 }
                 else
                     throw new IllegalArgumentException("Existing definition does not exist in the DB");
@@ -355,10 +379,16 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         }
     }
 
-    private static String makeKey(boolean isRemote, String[] engineExtensions)
+    private static String makeKey(ExternalScriptEngineDefinition def)
     {
-        String prefix = isRemote ? REMOTE_ENGINE_DEF_MAP_PREFIX : ENGINE_DEF_MAP_PREFIX;
-        return prefix + StringUtils.join(engineExtensions, ',');
+        String prefix;
+        if (def.isDocker())
+            prefix = DOCKER_ENGINE_DEF_MAP_PREFIX;
+        else if (def.isRemote())
+            prefix = REMOTE_ENGINE_DEF_MAP_PREFIX;
+        else
+            prefix = ENGINE_DEF_MAP_PREFIX;
+        return prefix + StringUtils.join(def.getExtensions(), ',');
     }
 
     private static String makeKey(String[] engineExtensions)
@@ -453,6 +483,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
         boolean _enabled;
         boolean _external;
         boolean _remote;
+        boolean _docker;
         boolean _pandocEnabled;
 
         public String getKey()
@@ -579,6 +610,16 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
             _external = external;
         }
 
+        public void setDocker(boolean docker)
+        {
+            _docker = docker;
+        }
+
+        public boolean isDocker()
+        {
+            return _docker;
+        }
+
         public void setPort(int port)
         {
             _port = port;
@@ -642,7 +683,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
     }
 
 
-    // LabKeyScriptEngineManager.TestCase tests bootstrap property setting, so we need a way to forcre this into new install mode
+    // LabKeyScriptEngineManager.TestCase tests bootstrap property setting, so we need a way to force this into new install mode
     private static void populateScriptEngineDefinitionsWithStartupProps(Boolean startupModeForTest)
     {
         final boolean isBootstrap = null != startupModeForTest?startupModeForTest : ModuleLoader.getInstance().isNewInstall();
@@ -695,7 +736,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
             // Set a default value for external to true since script engines defined in startup props will likely be external
             entry.getValue().putIfAbsent("external", "True");
             ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
-            String key = makeKey(def.isRemote(), def.getExtensions());
+            String key = makeKey(def);
             // Only attempt to create the script engine if no script engine with this key has been created before.
             // This means that the property modifier 'startup' will be applied only once for script engine definitions.
             // It will create a script engine definition, but does not modify an existing script engine definition.

@@ -78,7 +78,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String NETWORK_DRIVE_USER = "networkDriveUser";
     static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
-    static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
+    static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
     static final String WEB_ROOT = "webRoot";
     static final String USER_FILE_ROOT = "userFileRoot";
     static final String MAX_BLOB_SIZE = "maxBLOBSize";

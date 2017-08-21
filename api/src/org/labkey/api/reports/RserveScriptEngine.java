@@ -252,6 +252,8 @@ public class RserveScriptEngine extends RScriptEngine
         return StringUtils.isEmpty(rserveOut) ? null : rserveOut;
      }
 
+
+    @Override
     public String getRemotePath(File localFile)
     {
         // get absolute path to make sure the paths are consistent
@@ -259,9 +261,17 @@ public class RserveScriptEngine extends RScriptEngine
         return getRemotePath(localPath);
     }
 
+
+    @Override
     public String getRemotePath(String localURI)
     {
-        PathMapper pathMap = _def.getPathMap();
+        return makeLocalToRemotePath(_def, localURI);
+    }
+
+
+    static public String makeLocalToRemotePath(ExternalScriptEngineDefinition def, String localURI)
+    {
+        PathMapper pathMap = def.getPathMap();
         if (pathMap != null && !pathMap.getPathMap().isEmpty())
         {
             // CONSIDER: Move converting file path to URI into the PathMapper.
@@ -296,6 +306,7 @@ public class RserveScriptEngine extends RScriptEngine
 
         return localURI;
     }
+
 
     /*
     public String getRemoteReportPath(String localPath)

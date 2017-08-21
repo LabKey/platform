@@ -61,6 +61,9 @@ public interface ExternalScriptEngineDefinition
     void setRemote(boolean remote);
     boolean isRemote();
 
+    void setDocker(boolean docker);
+    boolean isDocker();
+
     void setPandocEnabled(boolean pandocEnabled);
     boolean isPandocEnabled();
 

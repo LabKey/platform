@@ -173,6 +173,19 @@ public class RScriptEngine extends ExternalScriptEngine
         return RReport.getLocalPath(getWorkingDir(context));
     }
 
+
+    public String getRemotePath(File localFile)
+    {
+        return localFile.getAbsolutePath();
+    }
+
+
+    public String getRemotePath(String localURI)
+    {
+        return localURI;
+    }
+
+
     protected String createKnitrScript(ScriptContext context, File inputScript)
     {
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.None)
@@ -187,8 +200,9 @@ public class RScriptEngine extends ExternalScriptEngine
         // html to this working directory
         // pandoc will fail if HOME is not set
         String wd = getRWorkingDir(context);
-        sb.append("setwd(\"").append(wd).append("\")\n");
-        sb.append("Sys.setenv(HOME = \"").append(wd).append("\")\n");
+        String remote = getRemotePath(wd);
+        sb.append("setwd(\"").append(remote).append("\")\n");
+        sb.append("Sys.setenv(HOME = \"").append(remote).append("\")\n");
         sb.append("library(knitr)\n");
 
         //
@@ -239,9 +253,8 @@ public class RScriptEngine extends ExternalScriptEngine
             sb.append("knit(");
         }
 
-        String inputFilename = getInputFilename(inputScript);
         sb.append("input=\"");
-        sb.append(inputFilename);
+        sb.append(remote).append("/").append(inputScript.getName());
         sb.append("\")\n");
 
         //

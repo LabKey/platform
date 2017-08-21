@@ -229,6 +229,11 @@ public class ExternalScriptEngine extends AbstractScriptEngine
                     cmd = ParamReplacementSvc.get().processInputReplacement(cmd, PARAM_SCRIPT, scriptFilePath.replaceAll("\\\\", "/"));
                 }
 
+                if (cmd.contains("workingDir"))
+                {
+                    cmd = ParamReplacementSvc.get().processInputReplacement(cmd, "workingDir", workingDir.getAbsolutePath().replaceAll("\\\\", "/"));
+                }
+
                 // finally clean up the script
                 cmd = ParamReplacementSvc.get().clearUnusedReplacements(cmd);
 

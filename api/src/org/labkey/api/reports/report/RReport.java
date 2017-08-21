@@ -115,7 +115,7 @@ public class RReport extends ExternalScriptEngineReport
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
         if (mgr instanceof LabKeyScriptEngineManager)
-            return ((LabKeyScriptEngineManager)mgr).getEngineByExtension("r", requestRemote());
+            return ((LabKeyScriptEngineManager)mgr).getEngineByExtension("r", requestRemote(), true);
 
         // bypass the normal discovery mechanism
         return mgr.getEngineByExtension("r");
@@ -396,43 +396,19 @@ public class RReport extends ExternalScriptEngineReport
         String localPath = getLocalPath(inputFile);
         String scriptOut = null;
 
-        if (engine instanceof RserveScriptEngine)
-        {
-            //
-            // if we are using Rserve then we need to replace the input parameters with the remote
-            // path to the input file created on the labkey machine
-            //
-            RserveScriptEngine rengine = (RserveScriptEngine) engine;
-            String remotePath = rengine.getRemotePath(inputFile);
-            scriptOut = ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath);
-        }
-        else
-        {
-            scriptOut = ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, localPath);
-        }
-
-        return scriptOut;
+        RScriptEngine rengine = (RScriptEngine) engine;
+        String remotePath = rengine.getRemotePath(inputFile);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath);
     }
 
     @Override
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context) throws Exception
     {
         File reportDir = getReportDir(context.getContainer().getId());
-        String scriptOut = null;
-
-        if (engine instanceof RserveScriptEngine)
-        {
-            RserveScriptEngine rengine = (RserveScriptEngine)engine;
-            String localPath = getLocalPath(reportDir);
-            String remoteRoot = rengine.getRemotePath(localPath);
-            scriptOut = ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements);
-        }
-        else
-        {
-            scriptOut = ParamReplacementSvc.get().processParamReplacement(script, reportDir, null, replacements);
-        }
-
-        return scriptOut;
+        RScriptEngine rengine = (RScriptEngine)engine;
+        String localPath = getLocalPath(reportDir);
+        String remoteRoot = rengine.getRemotePath(localPath);
+        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements);
     }
 
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
