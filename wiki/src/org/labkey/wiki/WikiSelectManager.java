@@ -152,7 +152,7 @@ public class WikiSelectManager
 
 
     // TODO: Does every caller need a deep copy?
-    static List<NavTree> getNavTree(Container c, User u)
+    static @NotNull List<NavTree> getNavTree(Container c, User u)
     {
         List<NavTree> toc;
 

@@ -190,13 +190,13 @@
                         <% } %>
                         <%=h(tab.getText())%>
                     </a>
-                    <% if (isPageAdminMode && tab.getChildren().length == 1) { %>
+                    <% if (isPageAdminMode && tab.getChildren().size() == 1) { %>
                     <div class="dropdown lk-menu-drop skip-align">
                         <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                             <i class="fa fa-caret-down"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-right">
-                            <% PopupMenuView.renderTree(tab.getChildren()[0], out); %>
+                            <% PopupMenuView.renderTree(tab.getChildren().get(0), out); %>
                         </ul>
                     </div>
                     <% } %>

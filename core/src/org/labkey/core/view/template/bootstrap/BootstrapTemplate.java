@@ -46,7 +46,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -253,8 +252,7 @@ public class BootstrapTemplate extends HomeTemplate
             if (null == page.getAppBar())
                 return Collections.emptyList();
 
-            // TODO: switch getButtons() to offer a List
-            return Arrays.asList(page.getAppBar().getButtons());
+            return page.getAppBar().getButtons();
         }
 
         @NotNull

@@ -2311,12 +2311,9 @@ public class WikiController extends SpringActionController
             if (null != name && name.length() > 0)
             {
                 Wiki existingWiki = WikiSelectManager.getWiki(container, name);
-                if (null != existingWiki && (null == form.getEntityId() || !StringUtils.equals(existingWiki.getEntityId().toLowerCase(), form.getEntityId().toString().toLowerCase())))
+                if (null != existingWiki && (null == form.getEntityId() || !StringUtils.equalsIgnoreCase(existingWiki.getEntityId(), form.getEntityId().toString())))
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
-
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-            Set<Role> contextualRoles = new HashSet<>();
 
             //if HTML body, must be valid according to tidy
             if (null != form.getBody() && (null == form.getRendererType() || WikiRendererType.valueOf(form.getRendererType()) == WikiRendererType.HTML))
@@ -2324,11 +2321,13 @@ public class WikiController extends SpringActionController
                 String body = form.getBody();
                 ArrayList<String> tidyErrors = new ArrayList<>();
 
+                Set<Role> contextualRoles = new HashSet<>();
+
                 if (user.isDeveloper())
                     contextualRoles.add(RoleManager.getRole(DeveloperRole.class));
 
-                PageFlowUtil.validateHtml(body, tidyErrors,
-                        policy.hasPermission(user, IncludeScriptPermission.class, contextualRoles));
+                SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
+                PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermission(user, IncludeScriptPermission.class, contextualRoles));
 
                 for (String err : tidyErrors)
                     errors.rejectValue("body", ERROR_MSG, err);
@@ -2782,7 +2781,7 @@ public class WikiController extends SpringActionController
                 props.put("leaf", !page.hasChildren());
 
                 if (page.hasChildren())
-                    props.put("children", getChildrenProps(page.getChildList()));
+                    props.put("children", getChildrenProps(page.getChildren()));
                 else
                     props.put("icon", contextPath + "/_images/page.png");
 

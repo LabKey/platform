@@ -77,7 +77,7 @@
     // Based on how these are displayed we have to walk to list/array by offset in order to display
     // the proper order to the user
     int c; int r;
-    List<NavTree> children = projects.getChildList();
+    List<NavTree> children = projects.getChildren();
     Set<Integer> duplicates = new HashSet<>();
 
     if (projects.hasChildren())

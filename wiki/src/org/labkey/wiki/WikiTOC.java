@@ -92,8 +92,8 @@ public class WikiTOC extends NavTreeMenu
 
         //output only this one if wiki contains no pages
         boolean bHasInsert = _cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
-        boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().length > 0;
-        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().length > 0;
+        boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().size() > 0;
+        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().size() > 0;
 
         NavTree menu = new NavTree();
         if (bHasInsert)
@@ -267,7 +267,7 @@ public class WikiTOC extends NavTreeMenu
         super.renderView(model, out);
         out.println("</div>");
 
-        if (getElements().length > 1)
+        if (getElements().size() > 1)
         {
             out.println("<br>");
             out.println("<table width=\"100%\">");

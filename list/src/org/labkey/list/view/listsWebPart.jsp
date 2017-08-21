@@ -70,7 +70,7 @@
                     links.addChild("Delete List", list.urlFor(ListController.DeleteListDefinitionAction.class));
                 }
                 %><tr><%
-                if (links.getChildren().length > 1)
+                if (links.getChildren().size() > 1)
                 {
                     if (PageFlowUtil.useExperimentalCoreUI())
                     {
