@@ -52,7 +52,7 @@
     if (folderTitle.equals("home"))
         folderTitle = "Home";
 
-    NavTree[] tabs = bean.getButtons();
+    List<NavTree> tabs = bean.getButtons();
     List<NavTree> portalTabs = bean.getSubContainerTabs();
 %>
 <div class="labkey-app-bar">
@@ -86,7 +86,7 @@
                                 %>
                                         <span class="labkey-tab-menu" style="visibility:hidden;">
                                 <%
-                                        NavTree tabMenu = navTree.getChildren()[0];
+                                        NavTree tabMenu = navTree.getChildren().get(0);
                                         PopupMenu tabMenuPopup = new PopupMenu(tabMenu);
                                         tabMenu.setImage(request.getContextPath() + "/_images/text_link_arrow.gif", 10, 5);
                                         tabMenuPopup.setAlign(PopupMenu.Align.RIGHT);

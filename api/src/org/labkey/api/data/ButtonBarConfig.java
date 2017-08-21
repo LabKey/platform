@@ -387,7 +387,7 @@ public class ButtonBarConfig
             }
         }
 
-        return root.hasChildren() ? root.getChildList() : null;
+        return root.hasChildren() ? root.getChildren() : null;
     }
 
     public DataRegion.ButtonBarPosition getPosition()

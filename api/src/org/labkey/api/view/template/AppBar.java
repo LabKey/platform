@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view.template;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -64,7 +65,7 @@ public class AppBar extends NavTree
         return getText();
     }
 
-    public NavTree[] getButtons()
+    public @NotNull List<NavTree> getButtons()
     {
         return getChildren();
     }
@@ -119,7 +120,7 @@ public class AppBar extends NavTree
     private List<NavTree> fixCrumbTrail(List<NavTree> crumbTrail, ViewContext context)
     {
         ActionURL actionURL = context.getActionURL();
-        NavTree[] buttons = getButtons();
+        List<NavTree> buttons = getButtons();
         boolean hideTitle = false;
 
         NavTree selected = getSelected();
@@ -147,7 +148,7 @@ public class AppBar extends NavTree
         }
 
         Map<String, String> lastTabs = getLastTabMap(context);
-        if (selected == null && buttons.length > 0)
+        if (selected == null && !buttons.isEmpty())
         {
             // No tab was recognized as the active tab, so try to figure out which one to select
             String lastTab = lastTabs.get(context.getContainer().getId());
@@ -167,7 +168,7 @@ public class AppBar extends NavTree
             if (selected == null)
             {
                 // No matches for previously selected tab, so just choose the first one
-                selected = buttons[0];
+                selected = buttons.get(0);
             }
         }
         else if (selected != null)

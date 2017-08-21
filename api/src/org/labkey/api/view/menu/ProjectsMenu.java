@@ -22,6 +22,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Container;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * User: brittp
  * Date: Apr 9, 2007
@@ -31,7 +34,7 @@ public class ProjectsMenu extends NavTreeMenu
 {
     public ProjectsMenu(ViewContext context)
     {
-        super(context, "projectsMenu", "Projects", !isHomePage(context), getNavTree(context));
+        super(context, "projectsMenu", "Projects", null, !isHomePage(context), true, getNavTree(context));
     }
 
     private static boolean isHomePage(ViewContext context)
@@ -42,11 +45,11 @@ public class ProjectsMenu extends NavTreeMenu
         return isHomeContainer && "project".equalsIgnoreCase(url.getController()) && "begin".equalsIgnoreCase(url.getAction());
     }
     
-    public static NavTree[] getNavTree(ViewContext context)
+    public static List<NavTree> getNavTree(ViewContext context)
     {
         NavTree projects = ContainerManager.getProjectList(context, false);
         if (null == projects)
-            return new NavTree[0];
+            return Collections.emptyList();
 
         return projects.getChildren();
     }

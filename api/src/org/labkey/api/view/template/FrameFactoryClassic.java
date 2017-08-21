@@ -32,7 +32,9 @@ import org.labkey.api.view.WebPartFrame;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.api.view.WebPartView.FrameType;
@@ -342,7 +344,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
         public void renderPortalMenu(PrintWriter out, String title)
         {
-            NavTree[] links = null == config._portalLinks ? new NavTree[0] : config._portalLinks.getChildren();
+            List<NavTree> links = null == config._portalLinks ? Collections.emptyList() : config._portalLinks.getChildren();
             String sep = "";
 
             // Add Custom link
@@ -386,7 +388,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             if (config._location != null && config._location.equals(WebPartFactory.LOCATION_RIGHT))
             {
                 // Portal
-                if (links.length > 0)
+                if (!links.isEmpty())
                 {
                     for (NavTree link : links)
                         nMenu.addChild(link);
@@ -436,7 +438,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             else
             {
                 // show the move up move down and delete web part menu options
-                if (links.length > 0)
+                if (!links.isEmpty())
                 {
                     for (NavTree link : links)
                         nMenu.addChild(link);

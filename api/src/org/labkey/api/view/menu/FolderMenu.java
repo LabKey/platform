@@ -28,6 +28,8 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -44,11 +46,11 @@ public class FolderMenu extends NavTreeMenu
     }
 
     @Nullable
-    public static NavTree getNavTree(ViewContext context)
+    public static List<NavTree> getNavTree(ViewContext context)
     {
         if (context.getContainer().getProject() != null)
         {
-            return ContainerManager.getFolderListForUser(context.getContainer().getProject(), context);
+            return Collections.singletonList(ContainerManager.getFolderListForUser(context.getContainer().getProject(), context));
         }
 
         return null;
@@ -57,11 +59,11 @@ public class FolderMenu extends NavTreeMenu
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        NavTree[] _elements = getElements();
-        if (null != _elements)
+        List<NavTree> elements = getElements();
+        if (null != elements)
         {
             out.print("<div class=\"folder-nav\"><ul class=\"folder-nav-top\">");
-            for (NavTree element : _elements)
+            for (NavTree element : elements)
             {
                 if (null != element)
                     renderLinks(element, 0, "", element.getId(), getViewContext(), out);

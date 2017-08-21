@@ -19,6 +19,8 @@ package org.labkey.api.view;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * User: brittp
  * Date: Apr 10, 2007
@@ -28,7 +30,7 @@ public interface Collapsible
 {
     void setCollapsed(boolean collapsed);
     boolean isCollapsed();
-    @NotNull Collapsible[] getChildren();
+    @NotNull List<? extends Collapsible> getChildren();
     Collapsible findSubtree(@Nullable String path);
     String getId();
 }

@@ -188,7 +188,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
     {
         if (tree.getHref() != null && tree.getHref().length() > 0)
             tree.setHref(processURL(ctx, tree.getHref()));
-        for (NavTree child : tree.getChildList())
+        for (NavTree child : tree.getChildren())
             processURLs(ctx, child);
     }
 

@@ -32,6 +32,7 @@ import org.labkey.api.view.WebPartView;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -47,14 +48,14 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     private String _collapseId;
     protected boolean _highlightSelection = true;
 
-    public NavTreeMenu(ViewContext context, String collapseId, String title, @Nullable ActionURL titleHref, boolean collapseByDefault, boolean applyCollapseState, NavTree... elements)
+    protected NavTreeMenu(ViewContext context, String collapseId, String title, @Nullable ActionURL titleHref, boolean collapseByDefault, boolean applyCollapseState, List<NavTree> elements)
     {
         super(title);
         setFrame(FrameType.LEFT_NAVIGATION);
         _collapseId = collapseId;
         if (titleHref != null)
             setTitleHref(titleHref);
-        _elements = Arrays.asList(elements);
+        _elements = elements;
         if (applyCollapseState)
         {
             // assume we're collapsed
@@ -65,12 +66,12 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
     public NavTreeMenu(ViewContext context, String rootId, String title, boolean collapseByDefault, NavTree... elements)
     {
-        this(context, rootId, title, null, collapseByDefault, true, elements);
+        this(context, rootId, title, null, collapseByDefault, true, Arrays.asList(elements));
     }
 
     public NavTreeMenu(ViewContext context, String rootId, NavTree... elements)
-    {
-        this(context, rootId, null, null, false, true, elements);
+        {
+        this(context, rootId, null, null, false, true, Arrays.asList(elements));
     }
 
     public boolean isCollapsed()
@@ -101,14 +102,15 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     }
 
     @NotNull
-    public NavTree[] getChildren()
+    @Override
+    public List<? extends Collapsible> getChildren()
     {
-        return new NavTree[0];
+        return Collections.emptyList();
     }
 
-    public NavTree[] getElements()
+    public List<NavTree> getElements()
     {
-        return _elements.toArray(new NavTree[_elements.size()]);
+        return _elements;
     }
 
     public Collapsible findSubtree(String path)

@@ -76,7 +76,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
@@ -1577,7 +1576,7 @@ public class QueryView extends WebPartView<Object>
                     chartButton.setTooltip("Charts / Reports");
                     NavTree chartMenu = chartButton.getNavTree();
                     chartMenu.addSeparator();
-                    for (NavTree child : reportButton.getNavTree().getChildList())
+                    for (NavTree child : reportButton.getNavTree().getChildren())
                         chartButton.addMenuItem(child);
                 }
 

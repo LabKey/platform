@@ -226,7 +226,7 @@ public class PopupMenu extends DisplayElement
         out.append("if (typeof(Ext4) != 'undefined') { Ext4.onReady(function() {");
         out.append(renderUnregScript());
         out.append(" var m = Ext4.create('Ext.menu.Menu',");
-        out.append(renderMenuModel(_navTree.getChildList(), _safeID, _singletonMenu));
+        out.append(renderMenuModel(_navTree.getChildren(), _safeID, _singletonMenu));
         out.append("); }); } else { console.error('Unable to render menu. Ext4 is not available.'); }");
     }
 

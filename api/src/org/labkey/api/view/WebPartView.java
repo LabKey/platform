@@ -31,7 +31,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.FrameFactoryClassic;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.ServletException;
@@ -39,9 +38,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
@@ -485,9 +485,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
 
         @NotNull
-        public Collapsible[] getChildren()
+        @Override
+        public List<? extends Collapsible> getChildren()
         {
-            return new Collapsible[0];
+            return Collections.emptyList();
         }
 
         public Collapsible findSubtree(String path)

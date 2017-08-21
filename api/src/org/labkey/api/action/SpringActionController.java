@@ -38,7 +38,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -77,7 +76,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -563,10 +561,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
         appendNavTrail(action, root);
         if (root.hasChildren())
         {
-            NavTree[] children = root.getChildren();
-            page.setNavTrail(Arrays.asList(children));
+            List<NavTree> children = root.getChildren();
+            page.setNavTrail(children);
             if (null == page.getTitle())
-                page.setTitle(children[children.length-1].getText());
+                page.setTitle(children.get(children.size() - 1).getText());
         }
 
         ViewService service = ServiceRegistry.get(ViewService.class);

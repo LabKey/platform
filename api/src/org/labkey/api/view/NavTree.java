@@ -238,13 +238,7 @@ public class NavTree implements Collapsible
     }
 
     @NotNull
-    public NavTree[] getChildren()
-    {
-        return _children.toArray(new NavTree[_children.size()]);
-    }
-
-    @NotNull
-    public List<NavTree> getChildList()
+    public List<NavTree> getChildren()
     {
         return Collections.unmodifiableList(_children);
     }
