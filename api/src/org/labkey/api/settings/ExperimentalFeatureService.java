@@ -15,6 +15,9 @@
  */
 package org.labkey.api.settings;
 
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +35,7 @@ public interface ExperimentalFeatureService
 
     void removeFeatureListener(String feature, ExperimentFeatureListener listener);
 
-    void setFeatureEnabled(String feature, boolean enabled);
+    void setFeatureEnabled(String feature, boolean enabled, User user);
 
     interface ExperimentFeatureListener
     {
@@ -71,11 +74,13 @@ public interface ExperimentalFeatureService
             }
         }
 
-        public void setFeatureEnabled(String feature, boolean enabled)
+        public void setFeatureEnabled(String feature, boolean enabled, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.storeBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, enabled);
             props.save();
+
+            props.writeAuditLogEvent(ContainerManager.getRoot(), user, props.getOldProperties());
 
             if (_listeners != null && _listeners.containsKey(feature))
             {

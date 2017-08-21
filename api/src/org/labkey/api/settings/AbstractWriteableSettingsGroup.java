@@ -155,7 +155,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
             }
         }
 
-        html.append("</html>");
+        html.append("</table>");
 
         return propsChanged ? html.toString() : null;
     }
