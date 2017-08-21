@@ -3541,7 +3541,6 @@ if (!LABKEY.DataRegions) {
                 'showViewPanel',
                 'timeout',
                 {name: 'disableAnalytics', prefix: true},
-                {name: 'columns', prefix: true},
                 {name: 'maxRows', prefix: true, check: function(v) { return v > 0; }},
                 {name: 'showRows', prefix: true},
                 {name: 'offset', prefix: true, check: function(v) { return v !== 0; }},
