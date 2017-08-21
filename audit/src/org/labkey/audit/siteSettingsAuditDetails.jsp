@@ -26,8 +26,9 @@
 
 <p>On <%=h(model.getWhen())%>,
     <% if (model.getCreatedBy() != null) { %>
-        <b><%=h((model.getCreatedBy().getFriendlyName()))%></b> modified the site settings in the following way:</p>
+        <strong><%=h((model.getCreatedBy().getFriendlyName()))%></strong> modified the site settings in the following way:
     <% } else { %>
-        the site settings were modified in the following way:</p>
+        the site settings were modified in the following way:
     <% } %>
+</p>
 <%=text(model.getDiff())%>

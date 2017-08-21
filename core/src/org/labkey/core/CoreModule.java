@@ -1203,7 +1203,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ExperimentalFeatureService expFeatureSvc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
             if (expFeatureSvc != null)
             {
-                expFeatureSvc.setFeatureEnabled(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, true);
+                expFeatureSvc.setFeatureEnabled(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, true, null);
             }
         }
     }

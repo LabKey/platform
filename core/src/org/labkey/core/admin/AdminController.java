@@ -6039,7 +6039,7 @@ public class AdminController extends SpringActionController
             {
                 ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
                 if (svc != null)
-                    svc.setFeatureEnabled(form.getFeature(), form.isEnabled());
+                    svc.setFeatureEnabled(form.getFeature(), form.isEnabled(), getUser());
             }
 
             Map<String, Object> ret = new HashMap<>();
