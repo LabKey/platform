@@ -16,6 +16,8 @@
 
 package org.labkey.study.plate;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.Position;
@@ -327,5 +329,11 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     public SecurityPolicy getSecurityPolicy()
     {
         return null;
+    }
+
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AttachmentType.UNKNOWN;
     }
 }
