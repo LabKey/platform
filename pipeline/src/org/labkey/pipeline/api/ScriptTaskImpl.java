@@ -30,6 +30,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -161,7 +162,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
                     mgr instanceof LabKeyScriptEngineManager)
             {
-                engine = ((LabKeyScriptEngineManager) mgr).getEngineByExtension(extension, true /*requestRemote*/);
+                engine = ((LabKeyScriptEngineManager) mgr).getEngineByExtension(extension, true, false);
             }
             else
             {
@@ -327,7 +328,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
     protected String rewritePath(String path)
     {
-        if (_engine instanceof RserveScriptEngine)
+        if (_engine instanceof RScriptEngine)
         {
             // Ensure local path is absolute before converting to remote path
             File f = new File(path);
@@ -337,10 +338,13 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 path = f.getAbsolutePath();
             }
 
-            RserveScriptEngine rengine = (RserveScriptEngine) _engine;
-            String ret = rengine.getRemotePath(path);
-            getJob().debug("rewritePath: " + path + " -> " + ret);
-            return ret;
+            RScriptEngine rengine = (RScriptEngine) _engine;
+            String remotePath = rengine.getRemotePath(path);
+            if (null == remotePath)
+                return path;
+
+            getJob().debug("rewritePath: " + path + " -> " + remotePath);
+            return remotePath;
         }
         else
         {

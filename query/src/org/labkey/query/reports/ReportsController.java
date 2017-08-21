@@ -564,6 +564,7 @@ public class ReportsController extends SpringActionController
                     record.put("exeCommand", def.getExeCommand());
                     record.put("outputFileName", def.getOutputFileName());
                     record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
+                    record.put("docker", String.valueOf(def.isDocker()));
 
                     if (def.isRemote())
                     {

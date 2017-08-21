@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
+<%@ page import="org.labkey.api.rstudio.RStudioService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
@@ -37,6 +38,13 @@
 %>
 <%
     boolean isRemoteEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING);
+    boolean isRDockerAvailable = false;
+    if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
+    {
+        RStudioService rs = ServiceRegistry.get(RStudioService.class);
+        if (null != rs)
+            isRDockerAvailable = rs.isConfigured();
+    }
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <style type="text/css">
@@ -53,6 +61,7 @@
     var PERL_EXTENSIONS = 'pl';
     var R_ENGINE_NAME = 'R Scripting Engine';
     var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
+    var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
 
     function renderNameColumn(value, p, record)
     {
@@ -89,6 +98,14 @@
         if (record.name === R_ENGINE_NAME || record.name === REMOTE_R_ENGINE_NAME)
         {
             return getRSpecificFields(record.pandocEnabled)
+        }
+        else if (record.name === R_DOCKER_ENGINE_NAME)
+        {
+            return [{
+                name: 'pandocEnabled',
+                xtype: 'hidden',
+                value: true
+            }];
         }
 
         return null;
@@ -174,6 +191,27 @@
         });
     <% } %>
 
+    <% if (isRDockerAvailable) { %>
+        var rDockerEngineItem = new Ext.menu.Item({
+            id: 'add_rDockerEngine',
+            text:'New R Docker Engine',
+            listeners:{
+                click:function(button, event) {
+                    var record = {
+                        name: R_DOCKER_ENGINE_NAME,
+                        extensions: R_EXTENSIONS,
+                        external: true,
+                        outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                        enabled: true,
+                        docker: true,
+                        remote: true,
+                        languageName:'R'
+                    };
+                    editRecord(button, grid, record);
+                }
+            }
+        });
+    <% } %>
         var perlEngineItem = new Ext.menu.Item({
             id: 'add_perlEngine',
             text:'New Perl Engine',
@@ -213,6 +251,7 @@
                         {name:'enabled', type:'boolean'},
                         {name:'external', type:'boolean'},
                         {name:'remote', type:'boolean'},
+                        {name:'docker', type:'boolean'},
                         {name:'outputFileName'},
                         {name:'pandocEnabled', type:'boolean'}
                     ]),
@@ -222,16 +261,25 @@
                 rEngineItem.enable();
         <% if (isRemoteEnabled) { %>
                 rserveEngineItem.enable();
+        <%  }
+            if (isRDockerAvailable) { %>
+                rDockerEngineItem.enable();
         <%  } %>
                 perlEngineItem.enable();
                 for (var i in records) {
                     if (records[i].data) {
-        <% if (isRemoteEnabled) { %>
-                        if (records[i].data.extensions == R_EXTENSIONS && records[i].data.remote)
-                            rserveEngineItem.disable();
-        <%  } %>
-                        if (records[i].data.extensions == R_EXTENSIONS && !records[i].data.remote)
-                            rEngineItem.disable();
+                        if (records[i].data.extensions == R_EXTENSIONS)  {
+                            <% if (isRemoteEnabled) { %>
+                                if (records[i].data.remote)
+                                    rserveEngineItem.disable();
+                            <%  } %>
+                            if (!records[i].data.remote)
+                                rEngineItem.disable();
+                            <% if (isRDockerAvailable) { %>
+                            if (records[i].data.docker)
+                                rDockerEngineItem.disable();
+                            <%  } %>
+                        }
 
                         if (records[i].data.extensions == PERL_EXTENSIONS)
                             perlEngineItem.disable();
@@ -246,6 +294,9 @@
             items: [rEngineItem,
         <% if (isRemoteEnabled) { %>
                 rserveEngineItem,
+        <% } %>
+        <% if (isRDockerAvailable) { %>
+                rDockerEngineItem,
         <% } %>
                 perlEngineItem,
                 {
@@ -514,7 +565,7 @@
             name: 'languageName',
             id: 'editEngine_languageName',
             allowBlank: false,
-            readOnly: !record.external,
+            readOnly: !record.external || record.docker,
             value: record.languageName
         };
 
@@ -533,7 +584,7 @@
             allowBlank: false,
             tooltip: {text: 'The list of file extensions (separated by commas) that this engine is associated with', title: 'File Extensions'},
             listeners: {render: setFormFieldTooltip},
-            readOnly: !record.external,
+            readOnly: !record.external || record.docker,
             value: record.extensions
         };
 
@@ -543,7 +594,7 @@
             id: 'editEngine_outputFileName',
             value: record.outputFileName,
             tooltip: {text: 'If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.', title: 'Output File Name'},
-            disabled: !record.external,
+            disabled: !record.external || record.docker,
             listeners: {render: setFormFieldTooltip}
         };
 
@@ -575,29 +626,37 @@
             value: record.remote
         };
 
+        var itemDocker = {
+            name: 'docker',
+            xtype: 'hidden',
+            value: record.docker
+        };
+    
         // common items for both local and remote
         var panelItems = [
             itemName,
-            itemLanguageName,
-            itemLanguageVersion,
-            itemExtensions
+            itemLanguageName
         ];
+        if (!record.docker)
+            panelItems.push(itemLanguageVersion);
 
-        if (record.remote)
-        {
-            panelItems.push(itemMachine);
-            panelItems.push(itemPort);
-            panelItems.push(itemPathGrid);
-            panelItems.push(itemUser);
-            panelItems.push(itemPassword);
-        }
-        else
-        {
-            panelItems.push(itemPath);
-        }
+        panelItems.push(itemExtensions);
 
+        if (!record.docker) {
+            if (record.remote) {
+                panelItems.push(itemMachine);
+                panelItems.push(itemPort);
+                panelItems.push(itemPathGrid);
+                panelItems.push(itemUser);
+                panelItems.push(itemPassword);
+            }
+            else {
+                panelItems.push(itemPath);
+            }
+            panelItems.push(itemCmd);
+        }
         // common items for both local and remote
-        panelItems.push(itemCmd);
+
         panelItems.push(itemOutputFileName);
 
         //add engine specific fields
@@ -610,6 +669,7 @@
         panelItems.push(itemExternal);
         panelItems.push(itemKey);
         panelItems.push(itemRemote);
+        panelItems.push(itemDocker);
 
         var formPanel = new Ext.FormPanel({
             bodyStyle:'padding:5px 5px 0',
