@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view.template;
 
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
@@ -123,9 +122,6 @@ public class ClientDependency
         _module = null; // not related to a module
     }
 
-    // TODO: Delete this once css theme work is complete, #29864
-    private static final Set<Path> errorsToIgnore = Sets.newHashSet(Path.parse("core/css/seattle.css"), Path.parse("core/css/guide_seattle.css"), Path.parse("core/css/core.js"));
-
     private ClientDependency(Path filePath, ModeTypeEnum.Enum mode)
     {
         if (mode != null)
@@ -162,9 +158,7 @@ public class ClientDependency
                 // Allows you to run in dev mode without having the concatenated scripts built
                 if (!AppProps.getInstance().isDevMode() || !_mode.equals(ModeTypeEnum.PRODUCTION))
                 {
-                    // Suppress known css theme errors. TODO: Delete this once css theme work is complete, #29864
-                    if (!errorsToIgnore.contains(filePath))
-                        logError("Script file \"" + filePath + "\" not found, skipping.");
+                    logError("Script file \"" + filePath + "\" not found, skipping.");
                 }
             }
             else
