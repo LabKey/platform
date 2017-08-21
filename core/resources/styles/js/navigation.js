@@ -343,6 +343,10 @@
             return;
         }
         
+        if (menu.length === 0) {
+            return;
+        }
+
         var offset = menu.offset();
         var win = $(window);
 

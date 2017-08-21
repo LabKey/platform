@@ -86,7 +86,7 @@ public class EmailServiceImpl implements EmailService
             try
             {
                 MimeMessage mm = msg.createMessage();
-                emailer.addMessage(msg.getFrom(), mm);
+                emailer.addMessage(Arrays.asList(msg.getTo()), mm);
             }
             catch (MessagingException e)
             {
