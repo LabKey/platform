@@ -58,23 +58,23 @@ Ext4.define('LABKEY.Query.SignSnapshotPanel', {
             itemId: 'signature-form',
             padding: 10,
             border: false,
+            defaultType: 'textfield',
+            defaults: {
+                allowBlank: false,
+                anchor: '100%',
+                labelWidth: 70
+            },
             items: [this.errorMsg, {
                 name: 'email',
-                allowBlank: false,
                 fieldLabel: 'Email',
-                value: this.emailInput,
-                labelWidth: 70
+                value: this.emailInput
             },{
                 name: 'password',
-                allowBlank: false,
                 inputType: 'password',
-                fieldLabel: 'Password',
-                labelWidth: 70
+                fieldLabel: 'Password'
             },{
                 name: 'reason',
-                allowBlank: false,
-                fieldLabel: 'Reason',
-                labelWidth: 70
+                fieldLabel: 'Reason'
             }]
         };
     },
@@ -84,11 +84,12 @@ Ext4.define('LABKEY.Query.SignSnapshotPanel', {
             url: this.url,
             method: 'POST',
             params: Ext4.apply({}, this.getComponent('signature-form').getForm().getValues(), this.params),
-            success: LABKEY.Utils.getCallbackWrapper(function() {
+            success: LABKEY.Utils.getCallbackWrapper(function(result) {
                 this.close();
-                window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', this.containerPath, {
+                window.location = LABKEY.ActionURL.buildURL('query', 'detailsQueryRow', this.containerPath, {
                     schemaName: 'compliance',
-                    queryName: 'SignedSnapshot'
+                    queryName: 'SignedSnapshot',
+                    rowId: result.rowId
                 });
             }, this),
             failure: LABKEY.Utils.getCallbackWrapper(function(response) {

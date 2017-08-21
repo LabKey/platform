@@ -106,9 +106,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     DocumentSummaryInformation summaryInformation = hssfWorkbook.getDocumentSummaryInformation();
                     if (null == summaryInformation)
                         throw new IllegalStateException("Expected createInformationProperties to succeed.");
-                    CustomProperties props = (null != summaryInformation.getCustomProperties() ?
-                            summaryInformation.getCustomProperties() :
-                            new CustomProperties());
+                    CustomProperties propsTemp = summaryInformation.getCustomProperties();
+                    if (null == propsTemp)
+                        propsTemp = new CustomProperties();
+                    CustomProperties props = propsTemp;
                     metadata.forEach((name, value) -> props.put(name, value));
                     hssfWorkbook.getDocumentSummaryInformation().setCustomProperties(props);
                 }

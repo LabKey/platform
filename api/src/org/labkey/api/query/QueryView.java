@@ -1230,16 +1230,7 @@ public class QueryView extends WebPartView<Object>
     @NotNull
     public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
     {
-        PanelButton button = new PanelButton("Export", getDataRegionName(), 132);
-        ActionURL xlsURL = urlFor(QueryAction.exportRowsExcel);
-        ActionURL xlsxURL = urlFor(QueryAction.exportRowsXLSX);
-        ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
-
-        button.setIconCls("download");
-        button.setTabAlignTop(true);
-        boolean hasRecordSelectors = (recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) ||
-                                     (getTable() != null && !getTable().getPkColumns().isEmpty());
-
+        String buttonText = "Export";
         ActionURL signRowsXlsURL = null;
         ActionURL signRowsXlsxURL = null;
         ActionURL signRowsTsvURL = null;
@@ -1253,8 +1244,19 @@ public class QueryView extends WebPartView<Object>
             signRowsXlsURL = complianceService.urlFor(getContainer(), QueryAction.signRowsExcel, urlFor(QueryAction.signRowsExcel));
             signRowsXlsxURL = complianceService.urlFor(getContainer(), QueryAction.signRowsXLSX, urlFor(QueryAction.signRowsXLSX));
             signRowsTsvURL = complianceService.urlFor(getContainer(), QueryAction.signRowsTsv, urlFor(QueryAction.signRowsTsv));
-
+            if (null != signRowsXlsURL && null != signRowsXlsxURL && null != signRowsTsvURL)
+                buttonText += " / Sign Data";
         }
+
+        PanelButton button = new PanelButton(buttonText, getDataRegionName(), 132);
+        ActionURL xlsURL = urlFor(QueryAction.exportRowsExcel);
+        ActionURL xlsxURL = urlFor(QueryAction.exportRowsXLSX);
+        ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
+
+        button.setIconCls("download");
+        button.setTabAlignTop(true);
+        boolean hasRecordSelectors = (recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) ||
+                                     (getTable() != null && !getTable().getPkColumns().isEmpty());
 
         if (xlsURL != null && xlsxURL != null)
         {
@@ -2589,6 +2591,13 @@ public class QueryView extends WebPartView<Object>
     public ByteArrayAttachmentFile exportToExcelFile(ExcelWriter.ExcelDocumentType docType, @Nullable Map<String, String> metadata,
                                                      @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
     {
+        return exportToExcelFile(docType, getColumnHeaderType(), metadata, rowsOut, includeTimestamp);
+    }
+
+    @Nullable
+    public ByteArrayAttachmentFile exportToExcelFile(ExcelWriter.ExcelDocumentType docType, ColumnHeaderType headerType, @Nullable Map<String, String> metadata,
+                                                     @Nullable List<Integer> rowsOut, boolean includeTimestamp) throws Exception
+    {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
@@ -2597,7 +2606,7 @@ public class QueryView extends WebPartView<Object>
             try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
                 ExcelWriter ew = getExcelWriter(docType);
-                ew.setCaptionType(getColumnHeaderType());
+                ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false);
                 ew.setMetadata(metadata);
                 ew.write(stream);
