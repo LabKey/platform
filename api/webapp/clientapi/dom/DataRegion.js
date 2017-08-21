@@ -3515,6 +3515,10 @@ if (!LABKEY.DataRegions) {
                 params['webpart.titleHref'] = region.titleHref;
             }
 
+            if (LABKEY.Utils.isString(region.columns)) {
+                params[region.name + '.columns'] = region.columns;
+            }
+
             _applyOptionalParameters(region, params, [
                 'allowChooseQuery',
                 'allowChooseView',
