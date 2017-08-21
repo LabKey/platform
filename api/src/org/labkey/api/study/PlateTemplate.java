@@ -16,9 +16,7 @@
 
 package org.labkey.api.study;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
 
 import java.util.List;
 import java.util.Map;
@@ -57,10 +55,4 @@ public interface PlateTemplate extends PropertySet, AttachmentParent
     int getWellGroupCount(WellGroup.Type type);
 
     String getType();
-
-    @Override
-    default @NotNull AttachmentType getAttachmentType()
-    {
-        return AttachmentType.UNKNOWN;
-    }
 }
