@@ -26,6 +26,9 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.study.view.studydesign.StudyDesignConfigureMenuItem" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -62,63 +65,6 @@
             useAlternateLookupFields : <%=form.isUseAlternateLookupFields()%>,
             returnURL : <%=q(returnUrl)%>
         });
-
-        var projectMenu = null;
-        if (LABKEY.container.type != "project")
-        {
-            var projectPath = LABKEY.container.path.substring(0, LABKEY.container.path.indexOf("/", 1));
-            projectMenu = {
-                text: 'Project',
-                menu: {
-                    items: [{
-                        text: 'Assays',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignAssays'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'Labs',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'Sample Types',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'Units',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignUnits'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    }]
-                }
-            };
-        }
-
-        var folderMenu = {
-            text: 'Folder',
-            menu: {
-                items: [{
-                    text: 'Assays',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignAssays'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'Labs',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignLabs'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'Sample Types',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSampleTypes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'Units',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignUnits'}),
-                    hrefTarget: '_blank'  // issue 19493
-                }]
-            }
-        };
-
-        Ext4.create('Ext.button.Button', {
-            text: 'Configure',
-            renderTo: 'config-dropdown-menu',
-            menu: projectMenu ? {items: [projectMenu, folderMenu]} : folderMenu.menu
-        });
     });
 </script>
 
@@ -128,7 +74,37 @@ Enter assay schedule information in the grids below.
         <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
             Configure dropdown options for assays, labs, sample types, and units at the project
             level to be shared across study designs or within this folder for
-            study specific properties: <span id='config-dropdown-menu'></span>
+            study specific properties: 
+            <div style="display: inline" class="dropdown">
+                <button data-toggle="dropdown" class="btn btn-default">Configure <i class="fa fa-caret-down"></i></button>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <%
+                        NavTree folderTree = new NavTree("Folder");
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Assays", "study", "StudyDesignAssays", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Labs", "study", "StudyDesignLabs", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Sample Types", "study", "StudyDesignSampleTypes", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Units", "study", "StudyDesignUnits", getContainer()));
+
+                        if (!getContainer().isProject())
+                        {
+                            NavTree projectTree = new NavTree("Project");
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Assays", "study", "StudyDesignAssays", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Labs", "study", "StudyDesignLabs", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Sample Types", "study", "StudyDesignSampleTypes", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Units", "study", "StudyDesignUnits", getContainer().getProject()));
+
+                            NavTree navTree = new NavTree();
+                            navTree.addChild(projectTree);
+                            navTree.addChild(folderTree);
+                            PopupMenuView.renderTree(navTree, out);
+                        }
+                        else
+                        {
+                            PopupMenuView.renderTree(folderTree, out);
+                        }
+                    %>
+                </ul>
+            </div>
         </li>
         <li>
             Select the <%=h(visitNoun.toLowerCase())%>s for each assay in the schedule

@@ -430,7 +430,7 @@ else
             &nbsp;
             &nbsp;
             <div style="display: inline" class="dropdown">
-                <button data-toggle="dropdown" class="btn btn-default">More</button>
+                <button data-toggle="dropdown" class="btn btn-default">More <i class="fa fa-caret-down"></i></button>
                 <ul class="dropdown-menu dropdown-menu-left">
                 <% NavTree navTree = new NavTree();
                     if (hasInsertPerms)
@@ -460,7 +460,7 @@ else
                 <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-caret-down"></i>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-left">
+                <ul class="dropdown-menu dropdown-menu-right">
                     <% NavTree tree = new NavTree();
                         tree.addChild("Create Related Issue", relatedIssues.toString());
                         PopupMenuView.renderTree(tree, out); %>

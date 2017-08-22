@@ -306,7 +306,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         tplArr.push('<tr class="header-row">');
         if (!this.disableEdit)
-            tplArr.push('<td class="cell-display">&nbsp;</td>');
+            tplArr.push('<td class="cell-display" width="22px">&nbsp;</td>');
         Ext4.each(columns, function(column)
         {
             if (!column.hidden)

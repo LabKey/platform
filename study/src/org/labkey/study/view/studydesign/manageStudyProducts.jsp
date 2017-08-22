@@ -26,6 +26,9 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.study.view.studydesign.StudyDesignConfigureMenuItem" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -53,71 +56,6 @@
             renderTo : 'study-products-panel',
             disableEdit : <%=isDataspaceProject%>,
             returnURL : <%=q(returnUrl)%>
-        });
-
-        var projectMenu = null;
-        if (LABKEY.container.type != "project")
-        {
-            var projectPath = LABKEY.container.path.substring(0, LABKEY.container.path.indexOf("/", 1));
-            projectMenu = {
-                text: 'Project',
-                menu: {
-                    items: [{
-                        text: 'Challenge Types',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignChallengeTypes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'Immunogen Types',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignImmunogenTypes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'Genes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignGenes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'SubTypes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    },{
-                        text: 'Routes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    }]
-                }
-            };
-        }
-
-        var folderMenu = {
-            text: 'Folder',
-            menu: {
-                items: [{
-                    text: 'Challenge Types',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignChallengeTypes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'Immunogen Types',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignImmunogenTypes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'Genes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignGenes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'SubTypes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                },{
-                    text: 'Routes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                }]
-            }
-        };
-
-        Ext4.create('Ext.button.Button', {
-            text: 'Configure',
-            renderTo: 'config-dropdown-menu',
-            menu: projectMenu ? {items: [projectMenu, folderMenu]} : folderMenu.menu
         });
     });
 </script>
@@ -159,7 +97,39 @@ Enter vaccine design information in the grids below.
 %>
         <li>
             Configure dropdown options for challenge types, immunogen types, genes, subtypes and routes at the project level to be shared across study designs or within this folder for
-            study specific properties: <span id='config-dropdown-menu'></span>
+            study specific properties:
+            <div style="display: inline" class="dropdown">
+                <button data-toggle="dropdown" class="btn btn-default">Configure <i class="fa fa-caret-down"></i></button>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <%
+                        NavTree folderTree = new NavTree("Folder");
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Challenge Types", "study", "StudyDesignChallengeTypes", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Immunogen Types", "study", "StudyDesignImmunogenTypes", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Genes", "study", "StudyDesignGenes", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("SubTypes", "study", "StudyDesignSubTypes", getContainer()));
+                        folderTree.addChild(new StudyDesignConfigureMenuItem("Routes", "study", "StudyDesignRoutes", getContainer()));
+
+                        if (!getContainer().isProject())
+                        {
+                            NavTree projectTree = new NavTree("Project");
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Challenge Types", "study", "StudyDesignChallengeTypes", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Immunogen Types", "study", "StudyDesignImmunogenTypes", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Genes", "study", "StudyDesignGenes", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("SubTypes", "study", "StudyDesignSubTypes", getContainer().getProject()));
+                            projectTree.addChild(new StudyDesignConfigureMenuItem("Routes", "study", "StudyDesignRoutes", getContainer().getProject()));
+
+                            NavTree navTree = new NavTree();
+                            navTree.addChild(projectTree);
+                            navTree.addChild(folderTree);
+                            PopupMenuView.renderTree(navTree, out);
+                        }
+                        else
+                        {
+                            PopupMenuView.renderTree(folderTree, out);
+                        }
+                    %>
+                </ul>
+            </div>
         </li>
     </ul>
 </div>

@@ -132,14 +132,13 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
                 {
                     var recData = Ext4.clone(record.data);
                     recData['Label'] = recData['Label'] || recData['SequenceNumMin'];
-
                     data.push(recData);
                 }, this);
             }
 
             // add an option to select all existing visits for display
             if (data.length > 1)
-                data.push(0, 0, {Label: '[Show All]', RowId: -1, DisplayOrder: -999999});
+                data.push({Label: '[Show All]', RowId: -1, DisplayOrder: -999999});
 
             this.filteredVisitStore = Ext4.create('Ext.data.Store', {
                 model : 'LABKEY.VaccineDesign.Visit',
