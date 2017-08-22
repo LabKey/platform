@@ -845,7 +845,7 @@ public class PipelineServiceImpl implements PipelineService
         Container _subFolder;
         String PROJECT_NAME = "__ModulePropsTestProject";
         String FOLDER_NAME = "subfolder";
-        String DEFAULT_ROOT_URI = "trunk/build/deploy/files/__ModulePropsTestProject/@files";
+        String DEFAULT_ROOT_URI = "build/deploy/files/__ModulePropsTestProject/@files";
         private static final String FILE_ROOT_SUFFIX = "_FileRootTest";
         private static final String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
 
