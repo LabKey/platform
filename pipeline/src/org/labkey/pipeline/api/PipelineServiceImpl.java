@@ -22,10 +22,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -57,6 +61,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -831,5 +836,230 @@ public class PipelineServiceImpl implements PipelineService
     public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         PipelineStatusManager.deleteStatus(c, u, deleteExpRuns, rowIds);
+    }
+
+    public static class TestCase extends Assert
+    {
+        private User _user;
+        Container _project;
+        Container _subFolder;
+        String PROJECT_NAME = "__ModulePropsTestProject";
+        String FOLDER_NAME = "subfolder";
+        String DEFAULT_ROOT_URI = "trunk/build/deploy/files/__ModulePropsTestProject/@files";
+        private static final String FILE_ROOT_SUFFIX = "_FileRootTest";
+        private static final String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
+
+        @Before
+        public void setUp()
+        {
+            TestContext ctx = TestContext.get();
+            User loggedIn = ctx.getUser();
+            assertTrue("login before running this test", null != loggedIn);
+            assertFalse("login before running this test", loggedIn.isGuest());
+            _user = ctx.getUser().cloneUser();
+        }
+
+        /**
+         * Verify pipeline root and file root default values at the project level
+         */
+        @Test
+        public void testPipleRootDefaultsInProject() throws Exception
+        {
+            // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+
+            // obtain the pipeline root
+            PipeRoot pipelineRootSetting = PipelineService.get().getPipelineRootSetting(_project);
+            File pipelineRoot = pipelineRootSetting.getRootPath();
+
+            // obtain the file root
+            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
+
+            // verify pipeline root and file root are set to defaults and they they point to the same place
+            assertEquals("The pipeline root isDefault flag was not set correctly.", true, pipelineRootSetting.isDefault());
+            assertEquals("The default pipeline root was not set the same as the default file root.", pipelineRoot, fileRoot);
+            assertTrue("The pipeline root uri was: " + pipelineRootSetting.getUri().toString() + ", but expected: " + DEFAULT_ROOT_URI, pipelineRootSetting.getUri().toString().contains(DEFAULT_ROOT_URI));
+
+            // ensure everything back to the way it was before test ran
+            ContainerManager.deleteAll(_project, _user);
+        }
+
+        /**
+         * Verify when project level file root is customized that the previously defautl project level pipeline root is implicitly customized as well
+         * and points to the customized file root location.
+         */
+        @Test
+        public void testPipelineRootWithCustomizedFileRootInProject() throws Exception
+        {
+            // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+
+            // customize the file root to point to a new location off the site root
+            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
+
+            // obtain the pipeline root (customized implicitly because the file root was customized)
+            PipeRoot pipelineRootSetting = PipelineService.get().getPipelineRootSetting(_project);
+            File pipelineRoot = pipelineRootSetting.getRootPath();
+
+            // obtain the customized file root
+            File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
+
+            // verify pipeline root and file root are now both customized and set to the same customized location
+            assertEquals("The pipeline root isDefault flag was not set correctly.",false, pipelineRootSetting.isDefault());
+            assertEquals("The default pipeline root was not set the same as the customized file root.",pipelineRoot, fileRoot);
+            assertEquals("The pipeline root was not set to the customized file root location.", pipelineRoot.getParentFile(), getTestRoot(FILE_ROOT_SUFFIX));
+
+            ContainerManager.deleteAll(_project, _user);
+        }
+
+        /**
+         * Verify project level pipeline root and project level file root can be customized to point to different locations
+         */
+        @Test
+        public void testBothPipelineRootAndFileRootCustomizedInProject() throws Exception
+        {
+            // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+
+            // customize the file root to point to a new location off the site root
+            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
+
+            // customize the pipeline root to point to a new location off the site root
+            PipelineService.get().setPipelineRoot(_user, _project, PipelineRoot.PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
+
+            // obtain the customized pipeline root
+            PipeRoot pipelineRootSetting = PipelineService.get().getPipelineRootSetting(_project);
+            File pipelineRoot = pipelineRootSetting.getRootPath();
+
+            // obtain the customized file root
+            File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
+
+            // verify pipeline root and file root are now both customized and set to different customized location
+            assertEquals("The pipeline root isDefault flag was not set correctly.",false, pipelineRootSetting.isDefault());
+            assertNotEquals("The customized pipeline root was not set different than the customized file root.",pipelineRoot, fileRoot);
+            assertEquals("The file root was not set to the customized file root location.", fileRoot.getParentFile(), getTestRoot(FILE_ROOT_SUFFIX));
+            assertEquals("The pipeline root was not set to the customized pipeline root location.", pipelineRoot, getTestRoot(PIPELINE_ROOT_SUFFIX));
+
+            ContainerManager.deleteAll(_project, _user);
+        }
+
+        /**
+         * Verify when project level file root is customized that the subfolder of that project has the file root
+         * point to a subfolder of the customized project level file root location, and the pipeline root point to the
+         * same location as the subfolder file root.
+         */
+        @Test
+        public void testSubfolderWhenCustomizedFileRootInProject() throws Exception
+        {
+            // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+
+            // customize the file root to point to a new location off the site root
+            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
+
+            // create a subfolder of this project
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+
+            // obtain the customized file root of the project
+            File projectFileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
+
+            // obtain the customized file root of the subfolder
+            File subFolderFileRoot = fileService.getFileRoot(_subFolder, FileContentService.ContentType.files);
+
+            // obtain the pipeline root of the subfolder
+            // uses findPipelineRoot() because it will walk the folder hierarchy up to the project looking for custom
+            // pipeline root settings but getPipelineRootSetting will not.
+            PipeRoot subfolderPipelineRootSetting = PipelineService.get().findPipelineRoot(_subFolder);
+            File subfolderPipelineRoot = subfolderPipelineRootSetting.getRootPath();
+
+            // verify subfolder pipeline root and file root are now both customized and set to the same subfolder of the project file root
+            assertEquals("The pipeline root isDefault flag was not set correctly.",false, subfolderPipelineRootSetting.isDefault());
+            assertEquals("The pipeline root of this subfolder was not set the same as the file root of the subfolder.",subFolderFileRoot, subfolderPipelineRoot);
+            assertEquals("The file root of this subfolder was not set to a subfolder of the file root of the parent project.",projectFileRoot.getParentFile(), subFolderFileRoot.getParentFile().getParentFile());
+
+            ContainerManager.deleteAll(_project, _user);
+        }
+
+        /**
+         * Verify when both the project level file root and pipeline root are customized that a subfolder of the
+         * project has the file root point to a subfolder of the customized project level file root, but the pipeline root
+         * point to the same location as its parent project pipeline root.
+         *
+         * This a test of Issue 30795: Pipeline Files path for project subfolder issues when project has a files root override
+         */
+        @Test
+        public void testSubfolderWhenBothPipelineRootAndFileRootCustomizedInProject() throws Exception
+        {
+            // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+
+            // customize the file root to point to a new location off the site root
+            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
+
+            // customize the project pipeline root to point to a new location off the site root
+            PipelineService.get().setPipelineRoot(_user, _project, PipelineRoot.PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
+
+            // create a subfolder of this project
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+
+            // obtain the customized file root of the project
+            File projectFileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
+
+            // obtain the customized file root of the subfolder
+            File subFolderFileRoot = fileService.getFileRoot(_subFolder, FileContentService.ContentType.files);
+
+            // obtain the customized pipeline root of the project
+            PipeRoot projectPipelineRootSetting = PipelineService.get().getPipelineRootSetting(_project);
+            File projectPipelineRoot = projectPipelineRootSetting.getRootPath();
+
+            // obtain the pipeline root of the subfolder
+            // uses findPipelineRoot() because it will walk the folder hierarchy up to the project looking for custom
+            // pipeline root settings but getPipelineRootSetting will not.
+            PipeRoot subfolderPipelineRootSetting = PipelineService.get().findPipelineRoot(_subFolder);
+            File subfolderPipelineRoot = subfolderPipelineRootSetting.getRootPath();
+
+            // verify subfolder pipeline root and project pipeline root are now both customized and set to the same location
+            assertEquals("The project pipeline root isDefault flag was not set correctly.",false, projectPipelineRootSetting.isDefault());
+            assertEquals("The subfolder pipeline root isDefault flag was not set correctly.",false, subfolderPipelineRootSetting.isDefault());
+            assertEquals("The file root of this subfolder was not set to a subfolder of the file root of the parent project.",projectFileRoot.getParentFile(), subFolderFileRoot.getParentFile().getParentFile());
+            assertEquals("The pipeline root of this subfolder was not set the same as the pipeline root of the parent project.",projectPipelineRoot, subfolderPipelineRoot);
+
+            ContainerManager.deleteAll(_project, _user);
+        }
+
+        private File getTestRoot(String rootSufix)
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            File siteRoot = svc.getSiteDefaultRoot();
+            File testRoot = new File(siteRoot, rootSufix);
+            testRoot.mkdirs();
+            Assert.assertTrue("Unable to create test root", testRoot.exists());
+            return testRoot;
+        }
     }
 }

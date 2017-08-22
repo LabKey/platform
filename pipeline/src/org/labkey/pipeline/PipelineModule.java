@@ -267,7 +267,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,
             PipelineJobServiceImpl.TestCase.class,
-            CommandTaskImpl.TestCase.class
+            CommandTaskImpl.TestCase.class,
+            PipelineServiceImpl.TestCase.class
         ));
     }
 
