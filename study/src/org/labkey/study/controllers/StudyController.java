@@ -332,8 +332,8 @@ public class StudyController extends BaseStudyController
             _study = getStudy();
 
             WebPartView overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), StudyModule.manageStudyPartFactory.createWebPart());
-            WebPartView right = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
-			return new SimpleTemplate(overview,right);
+            WebPartView views = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
+			return new VBox(overview, views);
         }
 
         public NavTree appendNavTrail(NavTree root)
