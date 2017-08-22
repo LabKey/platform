@@ -38,6 +38,35 @@ legend {
   padding-bottom: 10px;
 }
 
+.lk-body-ct {
+  width: 100%;
+  position: relative;
+  padding-top: 113px;
+
+  > .container {
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .content-row {
+    display: flex;
+
+    .content-left {
+      flex-grow: 10;
+      min-width: 480px;
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    .content-right {
+      flex-grow: 1;
+      min-width: 240px;
+      padding-right: 15px;
+    }
+  }
+}
+
 li.labkey-ancillary-wizard-active-step {
   background-color: white;
   font-weight: bold;
@@ -850,20 +879,6 @@ table.labkey-manage-display
 table.labkey-manage-default-reqs
 {
   border-collapse: separate; border-spacing: 10px;
-}
-
-.labkey-data-region {
-  .labkey-participant-view-header {
-    font-weight: bold;
-    border: solid 1px #808080;
-  }
-
-  .labkey-expandable-row-header {
-    text-align: left;
-    background-color: #e5e5e5;
-    border: solid 1px #808080;
-    padding-left: 10px;
-  }
 }
 
 .labkey-callout-tip {

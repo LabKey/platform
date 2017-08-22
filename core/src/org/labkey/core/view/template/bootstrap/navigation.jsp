@@ -86,7 +86,7 @@
     <div class="container">
         <div class="navbar-header">
             <ul class="nav">
-                <li id="project-mobile" class="dropdown visible-xs">
+                <li id="project-mobile" class="dropdown" style="display: none;">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
 <%
                     if (context.isShowFolders())
@@ -150,7 +150,7 @@
                 if (context.isShowFolders())
                 {
 %>
-                <li class="dropdown hidden-xs" data-webpart="BetaNav" data-name="BetaNav">
+                <li class="dropdown" data-webpart="BetaNav" data-name="BetaNav">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>

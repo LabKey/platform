@@ -25,11 +25,13 @@
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
 %>
-<div class="container lk-body-ct">
-    <div class="row">
-        <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
-        <div class="well">
-            <% me.include(me.getBody(), out); %>
+<div class="container">
+    <div class="row content-row">
+        <div class="content-left">
+            <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
+            <div class="well">
+                <% me.include(me.getBody(), out); %>
+            </div>
         </div>
     </div>
 </div>

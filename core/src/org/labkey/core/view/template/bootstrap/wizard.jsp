@@ -26,8 +26,9 @@
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
 %>
-<div class="container lk-body-ct">
-    <div class="row">
+<div class="container">
+    <div class="row content-row">
+    <div class="content-left">
     <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
     <div class="labkey-wizard-container">
         <div class="well">
@@ -68,6 +69,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     </div>
 </div>

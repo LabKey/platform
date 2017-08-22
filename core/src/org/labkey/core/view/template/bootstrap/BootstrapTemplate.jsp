@@ -63,7 +63,7 @@
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {
 %>
-<div class="header-container">
+<div class="lk-header-ct">
 <%
         me.include(me.getView("header"), out);
 
@@ -74,7 +74,9 @@
 <%
     }
 %>
-<% me.include(me.getView("bodyTemplate"), out); %>
+<div class="lk-body-ct">
+    <% me.include(me.getView("bodyTemplate"), out); %>
+</div>
 <% if (null != me.getView("footer")) { %>
 <footer class="footer-block">
     <div class="footer-content">

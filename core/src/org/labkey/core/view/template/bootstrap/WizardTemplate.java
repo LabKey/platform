@@ -31,8 +31,9 @@ public class WizardTemplate extends BootstrapTemplate
     @Override
     protected HttpView getBodyTemplate(PageConfig page)
     {
-        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/wizard.jsp", page);
+        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/wizard.jsp", page);
         view.setBody(getBody());
+        view.setFrame(FrameType.NONE);
         return view;
     }
 

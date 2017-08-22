@@ -35,6 +35,7 @@
 }
 
 .labkey-data-region {
+  width: 100%;
   font-family: $lk-grid-font-family;
 
   thead tr {
@@ -111,6 +112,17 @@
     }
   }
 
+  .labkey-participant-view-header {
+    font-weight: bold;
+    border: solid 1px #808080;
+  }
+
+  .labkey-expandable-row-header {
+    text-align: left;
+    background-color: #e5e5e5;
+    border: solid 1px #808080;
+    padding-left: 10px;
+  }
 }
 
 .lk-region-bar {

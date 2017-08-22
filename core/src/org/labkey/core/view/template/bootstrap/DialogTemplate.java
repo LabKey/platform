@@ -31,8 +31,9 @@ public class DialogTemplate extends BootstrapTemplate
     @Override
     protected HttpView getBodyTemplate(PageConfig page)
     {
-        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/dialog.jsp", page);
+        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/dialog.jsp", page);
         view.setBody(getBody());
+        view.setFrame(FrameType.NONE);
         return view;
     }
 

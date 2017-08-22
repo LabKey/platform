@@ -343,10 +343,6 @@
             return;
         }
         
-        if (menu.length === 0) {
-            return;
-        }
-
         var offset = menu.offset();
         var win = $(window);
 
@@ -398,7 +394,7 @@
     });
 }(jQuery);
 
-// Initialize tooltips
+// Initialize tooltips & box-shadow scrolling
 +function($) {
     'use strict';
 
@@ -409,6 +405,21 @@
         // bind subsequent DOM updates
         $(document.body).tooltip({
             selector: '[data-tt="tooltip"]'
+        });
+
+        var $document = $(document),
+            $element = $('.lk-header-ct'),
+            className = 'box-shadow';
+
+        $document.scroll(function() {
+            if ($document.scrollTop() >= 20) {
+                // Change 50 to the value you require
+                // for the event to trigger
+                $element.addClass(className);
+            }
+            else {
+                $element.removeClass(className);
+            }
         });
     });
 }(jQuery);

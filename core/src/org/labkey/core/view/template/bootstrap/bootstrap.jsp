@@ -54,7 +54,7 @@
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView
             && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
 %>
-<div class="container lk-body-ct">
+<div class="container">
     <div class="row">
         <div class="col-md-12">
             <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
@@ -89,18 +89,17 @@
             <% /* NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail */ %>
             <% if (trail != null) { %><%= text(trail) %><% } %>
             <% if (pageTitle != null) { %><h3><%= h(pageTitle)%></h3><% } %>
+            <%     }
+                }
+            %>
         </div>
     </div>
-    <%
-            }
-       }
-    %>
-    <div class="row">
-        <div class="<%= h(showRight ? "col-md-9" : "col-md-12" ) %>">
+    <div class="row content-row">
+        <div class="content-left">
             <% me.include(me.getBody(), out); %>
         </div>
         <% if (showRight) { %>
-        <div class="col-md-3">
+        <div class="content-right">
             <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
         </div>
         <% } %>
