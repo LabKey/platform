@@ -54,14 +54,13 @@ legend {
 
     .content-left {
       flex-grow: 10;
-      min-width: 480px;
       padding-left: 15px;
       padding-right: 15px;
     }
 
     .content-right {
       flex-grow: 1;
-      min-width: 240px;
+      min-width: 240px; // TODO: remove this as it can cause content to overflow. Use natural flex
       padding-right: 15px;
     }
   }
