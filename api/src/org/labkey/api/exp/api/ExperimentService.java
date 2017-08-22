@@ -325,6 +325,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoRunList();
     TableInfo getTinfoData();
     TableInfo getTinfoDataClass();
+    TableInfo getTinfoMaterialInput();
     TableInfo getTinfoDataInput();
     TableInfo getTinfoPropertyDescriptor();
     TableInfo getTinfoAssayQCFlag();
