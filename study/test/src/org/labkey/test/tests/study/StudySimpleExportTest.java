@@ -1035,6 +1035,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         assertFormElementEquals(Locator.tagWithName("input", "replyTo"), NOTIFICATION_EMAIL);
 
         assertChecked(Locator.checkboxByName("ccCheckbox"));
+        waitForElement(Locator.xpath("//textarea[@id='cc']"));
         assertFormElementEquals(Locator.xpath("//textarea[@id='cc']"), NOTIFICATION_EMAIL);
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("defaultEmailNotify", "None"));
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("specimensAttachment", "ExcelAttachment"));
