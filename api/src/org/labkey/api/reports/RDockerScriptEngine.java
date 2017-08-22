@@ -6,6 +6,7 @@ import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.util.FileUtil;
 
@@ -95,7 +96,8 @@ public class RDockerScriptEngine extends RScriptEngine
     {
         return pathname ->
                 pathname.isFile() &&
-                        RScriptEngineFactory.isRScriptEngine(new String[] {FilenameUtils.getExtension(pathname.getName())});
+                        (RScriptEngineFactory.isRScriptEngine(new String[] {FilenameUtils.getExtension(pathname.getName())})
+                                || RReport.DATA_INPUT.equals(pathname.getName()));
     }
 
     @Override

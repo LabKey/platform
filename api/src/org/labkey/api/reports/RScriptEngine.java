@@ -176,7 +176,7 @@ public class RScriptEngine extends ExternalScriptEngine
 
     public String getRemotePath(File localFile)
     {
-        return localFile.getAbsolutePath();
+        return RReport.getLocalPath(localFile);
     }
 
 
