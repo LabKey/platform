@@ -43,7 +43,7 @@ if (LABKEY.experimental.useExperimentalCoreUI) {
 
             // default options
             var config = {
-                offsetY: 35,
+                offsetY: 60,
                 overrideMinWidth: false,
                 paddingHeight: 0,
                 paddingWidth: 1, // allow 1 px padding to avoid occasional border cutoff

@@ -1430,13 +1430,13 @@ public class DataRegion extends DisplayElement
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-bar lk-region-section north\"></div>");
 
         // table wrapper
-        out.write("<div class=\"table-responsive lk-region-section center\" style=\"display: block;\">");
+        out.write("<div class=\"lk-region-section center\" style=\"display: block;\">");
 
         // declare table
         out.write("<table id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
 
         String name = getName();
-        String tableCls = "table table-condensed labkey-data-region";
+        String tableCls = "table-condensed labkey-data-region";
         if (name != null)
             out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\"");
 
