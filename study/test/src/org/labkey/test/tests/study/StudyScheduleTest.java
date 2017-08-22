@@ -330,7 +330,7 @@ public class StudyScheduleTest extends StudyBaseTest
         log("linking dataset: " + name + " to type: " + type + "from dataset details.");
 
         clickAndWait(Locator.linkContainingText(name));
-        click(Locator.xpath("//span[text()='Link or Define Dataset']"));
+        waitAndClick(Locator.xpath("//span[text()='Link or Define Dataset']"));
         waitForElement(Locator.xpath("//div[contains(@class, 'x4-form-display-field')][text()='Define " + name + "']"), WAIT_FOR_JAVASCRIPT);
 
         linkDataset(name, type, targetDataset);
