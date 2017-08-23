@@ -55,6 +55,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -499,6 +500,18 @@ public class StudyServiceImpl implements StudyService
     public DbSchema getDatasetSchema()
     {
         return StudySchema.getInstance().getDatasetSchema();
+    }
+
+    @Override
+    public void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category)
+    {
+        DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(dataset.getStudy(), dataset.getEntityId());
+        if (dsDef != null)
+        {
+            dsDef = dsDef.createMutable();
+            dsDef.setCategoryId(category.getRowId());
+            dsDef.save(user);
+        }
     }
 
     public List<SecurableResource> getSecurableResources(Container container, User user)
