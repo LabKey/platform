@@ -594,7 +594,8 @@
             id: 'editEngine_outputFileName',
             value: record.outputFileName,
             tooltip: {text: 'If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.', title: 'Output File Name'},
-            disabled: !record.external || record.docker,
+            disabled: !record.external,
+            readOnly:  record.docker,
             listeners: {render: setFormFieldTooltip}
         };
 
