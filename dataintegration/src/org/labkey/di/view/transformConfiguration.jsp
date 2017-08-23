@@ -69,6 +69,10 @@ final String PENDING = TransformRun.TransformRunStatus.PENDING.getDisplayName();
 boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 %>
 <style type="text/css">
+    .etl-table {
+        width: 100%;
+    }
+
     .etl-table td {
         height: 35px;
         padding: 3px 5px;
