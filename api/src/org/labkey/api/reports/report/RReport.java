@@ -393,9 +393,6 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     protected String processInputReplacement(ScriptEngine engine, String script, File inputFile) throws Exception
     {
-        String localPath = getLocalPath(inputFile);
-        String scriptOut = null;
-
         RScriptEngine rengine = (RScriptEngine) engine;
         String remotePath = rengine.getRemotePath(inputFile);
         return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath);

@@ -30,7 +30,7 @@ public class RDockerScriptEngine extends RScriptEngine
     {
         super(def);
         _rs = rs;
-        _remoteWorkingDir = _rs.getMount() + "/" + "R_Sandbox";
+        _remoteWorkingDir = _rs.getMount() + "/R_Sandbox";
 
         def.setPathMap(new PathMapperImpl(){
 

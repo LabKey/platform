@@ -176,7 +176,11 @@ public class PathMapperImpl implements PathMapper
 
         if (bestEntry != null)
         {
-            return bestEntry.getKey() + path.substring(bestEntry.getValue().length());
+            StringBuilder sb = new StringBuilder(bestEntry.getKey());
+            if (!bestEntry.getKey().endsWith("/"))
+                sb.append("/");
+            sb.append(path.substring(bestEntry.getValue().length()));
+            path = sb.toString();
         }
         return path;
     }
