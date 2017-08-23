@@ -1932,9 +1932,13 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class AssayProgressReportAction extends SimpleViewAction<ProgressReportForm>
     {
+        private String _actionName = "Create ";
+
         @Override
         public ModelAndView getView(ProgressReportForm form, BindException errors) throws Exception
         {
+            if (form.getReportId() != null)
+                _actionName = "Edit ";
             JspView<ProgressReportForm> view = new JspView<>("/org/labkey/study/view/assayProgressReport.jsp", form, errors);
 
             return view;
@@ -1943,7 +1947,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Create " + AssayProgressReport.REPORT_LABEL);
+            return root.addChild(_actionName + AssayProgressReport.REPORT_LABEL);
         }
 
     }

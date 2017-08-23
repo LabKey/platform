@@ -40,14 +40,14 @@ public class ProgressReportTest extends ReportTest
             new BaseManageVaccineDesignVisitPage.Visit("Month 7", 183.0, 213.0)
     );
 
-    private static final String LUMINEX_PROGRESS_REPORT = "SELECT ParticipantId, ParticipantVisit.Visit, Type, ParticipantVisit.Visit.sequenceNumMin AS SequenceNum,\n" +
+    private static final String LUMINEX_PROGRESS_REPORT = "SELECT ParticipantId, ParticipantVisit.Visit, Type, MAX(ParticipantVisit.Visit.sequenceNumMin) AS SequenceNum,\n" +
         "CASE WHEN Type = 'X1' THEN 'collected'\n" +
         "WHEN Type = 'X10' THEN 'not-collected'\n" +
         "WHEN Type = 'X11' THEN 'not-received'\n" +
         "WHEN Type = 'X12' THEN 'not-available'\n" +
         "WHEN Type = 'X13' THEN 'unusable'\n" +
         "WHEN Type = 'X14' THEN 'unexpected'\n" +
-        "END AS Status FROM LuminexAssay";
+        "END AS Status FROM LuminexAssay GROUP BY ParticipantId, ParticipantVisit.Visit, Type";
 
     private static final String LUMINEX_CUSTOM_QUERY = "LuminexProgressReport";
     private static final String REPORT_NAME = "Basic Progress Report";

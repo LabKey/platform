@@ -246,7 +246,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
         );
 
         var window = Ext4.create('Ext.window.Window', {
-            title   : 'Choose source query for status information',
+            title   : 'Status Information Query',
             width   : 500,
             modal   : true,
             cls     : 'labkey-assay-config',
@@ -262,6 +262,24 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             }],
             buttonAlign: 'right',
             buttons: [{
+                text: 'Reset',
+                handler: function() {
+
+                    if (dataIdx) {
+                        var assayRec = this.assayData[dataIdx];
+
+                        assayRec.folderName = null;
+                        assayRec.folderId = null;
+                        assayRec.schemaName = null;
+                        assayRec.queryName = null;
+
+                        this.getAssayPanel().update(this.assayData);
+                        this.registerClickHandlers();
+                    }
+                    window.close();
+                },
+                scope: this
+            },{
                 text: 'Submit',
                 handler: function() {
 

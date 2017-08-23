@@ -248,7 +248,7 @@ public class AssayProgressReport extends AbstractReport
                         .map(Visit::getId)
                         .collect(Collectors.toList());
                 List<String> visitLabels = assaySource.getVisits(context).stream()
-                        .map(Visit::getLabel)
+                        .map(Visit::getDisplayString)
                         .collect(Collectors.toList());
 
                 data.put(VISITS, visits);

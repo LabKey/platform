@@ -42,6 +42,7 @@
     ObjectMapper jsonMapper = new ObjectMapper();
 %>
 <labkey:errors/>
+<labkey:scriptDependency/>
 <labkey:panel>
     <div id=<%=h(renderId)%>></div>
 </labkey:panel>

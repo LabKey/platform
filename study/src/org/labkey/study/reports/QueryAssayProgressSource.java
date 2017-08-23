@@ -77,6 +77,7 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                     if (tableInfo.getColumn(FieldKey.fromParts("Status")) == null)
                         throw new RuntimeException(String.format(format, "Status", _expectation.getSchemaName(), _expectation.getQueryName()));
 
+                    Set<PtidSequenceNum> uniqueResults = new HashSet<>();
                     new TableSelector(tableInfo).forEach(rs ->
                     {
                         String ptid = rs.getString("ParticipantId");
@@ -92,6 +93,12 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                                 Visit visit = StudyManager.getInstance().getVisitForSequence(_study, sequenceNum);
                                 if (visit != null)
                                 {
+                                    PtidSequenceNum ptidSequenceNum = new PtidSequenceNum(ptid, sequenceNum);
+                                    if (!uniqueResults.contains(ptidSequenceNum))
+                                        uniqueResults.add(ptidSequenceNum);
+                                    else
+                                        throw new RuntimeException("Duplicate rows found for ParticipantID/SequenceNum: (" + ptid + ", " + sequenceNum + ")");
+
                                     visits.add(visit.getId());
                                     _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visit.getId()), status));
                                 }
@@ -122,6 +129,34 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
             {
                 throw new RuntimeException("Unable to access the configured schema schema: " + _expectation.getSchemaName());
             }
+        }
+    }
+
+    private static class PtidSequenceNum
+    {
+        private String _ptid;
+        private Double _sequenceNum;
+
+        public PtidSequenceNum(String ptid, Double sequenceNum)
+        {
+            _ptid = ptid;
+            _sequenceNum = sequenceNum;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _ptid.hashCode() + (31 * _sequenceNum.hashCode());
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj instanceof PtidSequenceNum)
+            {
+                return ((PtidSequenceNum)obj)._ptid.equals(_ptid) && ((PtidSequenceNum)obj)._sequenceNum.equals(_sequenceNum);
+            }
+            return false;
         }
     }
 }
