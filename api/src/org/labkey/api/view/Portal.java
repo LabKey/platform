@@ -983,7 +983,7 @@ public class Portal
         StringBuilder sb = new StringBuilder();
         sb.append("<div>\n");
         sb.append("<form class=\"form-inline ").append(pullClass).append(" ").append(visibilityClass).append("\" action=\"").append(PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c)).append("\">\n");
-        sb.append("<input type=\"hidden\" name=\"pageId\" value=\"").append(bean.pageId).append("\"/>\n");
+        sb.append("<input type=\"hidden\" name=\"pageId\" value=\"").append(PageFlowUtil.filter(bean.pageId)).append("\"/>\n");
         sb.append("<input type=\"hidden\" name=\"location\" value=\"").append(bean.location).append("\"/>\n");
         sb.append(ReturnUrlForm.generateHiddenFormField(currentURL)).append("\n");
         sb.append("<div class=\"input-group\">\n");
