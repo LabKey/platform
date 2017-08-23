@@ -28,6 +28,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.list.model.ListQuerySchema;
@@ -74,7 +75,8 @@ public class ListQueryView extends QueryView
         if (getViewContext().hasPermission(DesignListPermission.class))
         {
             ActionURL designURL = getList().urlShowDefinition();
-            designURL.addReturnURL(getViewContext().getActionURL());
+            URLHelper returnURL = getSettings() != null ? getSettings().getReturnUrl() : null;
+            designURL.addReturnURL(returnURL != null ? returnURL : getViewContext().getActionURL());
             ActionButton btnUpload = new ActionButton("Design", designURL);
             bar.add(btnUpload);
         }
