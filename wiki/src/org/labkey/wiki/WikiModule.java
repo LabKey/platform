@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +26,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.wiki.model.WikiType;
 import org.labkey.wiki.renderer.MarkdownServiceImpl;
 import org.labkey.api.module.CodeOnlyModule;
@@ -119,6 +122,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
         // wiki module, so no dice.
+        populateHomeProjectWebpartsWithStartupProps();
         if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
 
@@ -133,6 +137,27 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
+    }
+
+    private void populateHomeProjectWebpartsWithStartupProps()
+    {
+        String propName = "homeProjectInitWebparts";
+        if (ModuleLoader.getInstance().isNewInstall())
+        {
+            Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
+            startupProps.forEach(prop ->
+            {
+                if (propName.equalsIgnoreCase(prop.getName()) && prop.getModifier() == ConfigProperty.modifier.bootstrap)
+                {
+                    for (String webpartName : StringUtils.split(prop.getValue(), ';'))
+                    {
+                        WebPartFactory webPartFactory = Portal.getPortalPart(webpartName);
+                        if (webPartFactory != null)
+                            Portal.registerHomeProjectInitWebpart(webPartFactory);
+                    }
+                }
+            });
+        }
     }
 
     private void bootstrap(ModuleContext moduleContext)
