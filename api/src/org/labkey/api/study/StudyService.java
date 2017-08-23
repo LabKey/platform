@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
@@ -143,6 +144,8 @@ public interface StudyService
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
     DbSchema getDatasetSchema();
+
+    void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
     void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 
