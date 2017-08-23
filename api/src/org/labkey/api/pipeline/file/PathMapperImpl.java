@@ -62,7 +62,7 @@ public class PathMapperImpl implements PathMapper
 
     public PathMapperImpl(Map<String, String> pathMap)
     {
-        _pathMap = pathMap;
+        pathMap.forEach((remote, local) -> _pathMap.put(StringUtils.removeEnd(remote, "/"), StringUtils.removeEnd(local, "/")));
     }
     
     public PathMapperImpl(Map<String, String> pathMap, boolean remoteIgnoreCase, boolean localIgnoreCase)
@@ -176,11 +176,7 @@ public class PathMapperImpl implements PathMapper
 
         if (bestEntry != null)
         {
-            StringBuilder sb = new StringBuilder(bestEntry.getKey());
-            if (!bestEntry.getKey().endsWith("/"))
-                sb.append("/");
-            sb.append(path.substring(bestEntry.getValue().length()));
-            path = sb.toString();
+            return bestEntry.getKey() + path.substring(bestEntry.getValue().length());
         }
         return path;
     }
@@ -368,6 +364,7 @@ public class PathMapperImpl implements PathMapper
             Map<String, String> m = new HashMap<>();
             m.put("file:/T:/edi", "file:/home/edi");
             m.put("file:/T:/data", "file:/data");
+
             PathMapper mapper = new PathMapperImpl(m, false, false);
 
             assertEquals(mapper.localToRemote("file:/home/edi/testFile.txt"), "file:/T:/edi/testFile.txt");
@@ -425,6 +422,18 @@ public class PathMapperImpl implements PathMapper
             assertEquals("", impl.capitalizeDriveLetter(""));
             assertEquals("file:/", impl.capitalizeDriveLetter("file:/"));
             assertEquals("f", impl.capitalizeDriveLetter("f"));
+        }
+
+        @Test
+        public void testFileRoot()
+        {
+            Map<String, String> m = new HashMap<>();
+            m.put("file:/T:", "file:/");
+
+            PathMapper mapper = new PathMapperImpl(m, false, false);
+
+            assertEquals(mapper.localToRemote("file:/testFile.txt"), "file:/T:/testFile.txt");
+            assertEquals(mapper.remoteToLocal("file:/T:/testFile.txt"), "file:/testFile.txt");
         }
     }
 }
