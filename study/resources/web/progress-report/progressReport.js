@@ -98,14 +98,6 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
 
     padding: 10,
 
-    componentIdFromAssay : function(assayName) {
-        return assayName + '-report';
-    },
-
-    assayFromComponentId : function(component) {
-        return component.substring(0, component.length - '-report'.length);
-    },
-
     initComponent : function() {
         Ext4.apply(this, {
             reports: []
@@ -114,10 +106,10 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
         var storeData = [{name : 'All', componentId : 'all'}];
 
         Ext4.each(this.assays, function(assay) {
-            var id = this.componentIdFromAssay(assay);
+            var id = assay.id;
             this.reports.push(id);
             storeData.push({
-                name: Ext4.htmlEncode(assay),
+                name: Ext4.htmlEncode(assay.name),
                 componentId : id
             })
         }, this);
@@ -206,15 +198,14 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
                     this.assayData = o.assayData;
                     Ext4.each(this.assays, function(assay) {
 
-                        var data = this.assayData[assay];
+                        var data = this.assayData[assay.id];
 
                         if (data) {
-                            var id = this.componentIdFromAssay(assay);
-                            this.reports.push(id);
+                            this.reports.push(assay.id);
                             items.push({
                                 xtype   : 'labkey-assay-status',
-                                itemId  : id,
-                                name    : assay,
+                                itemId  : assay.id,
+                                name    : assay.name,
                                 visits  : data.visits,
                                 visitLabels : data.visitLabels,
                                 participants : data.participants,
@@ -239,7 +230,7 @@ Ext4.define('LABKEY.ext4.AssayProgressReport', {
     exportAssays : function() {
         window.location = LABKEY.ActionURL.buildURL('study-reports', 'exportAssayProgressReport.view', null, {
             reportId: this.reportId,
-            assayName : this.assayFromComponentId(this.selectedAssay)
+            assayId : this.selectedAssay
         });
     }
 });

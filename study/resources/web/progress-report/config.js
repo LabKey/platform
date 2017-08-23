@@ -28,7 +28,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             this.assayConfig = {};
             Ext4.each(jsonData, function(row) {
 
-                this.assayConfig[row.AssayName] = {
+                this.assayConfig[row.RowId] = {
                     folderName  : row.folderName,
                     folderId    : row.folderId,
                     schemaName  : row.schemaName,
@@ -156,7 +156,7 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
 
                     Ext4.each(this.assayData, function(row) {
 
-                        var cfg = this.assayConfig[row.AssayName];
+                        var cfg = this.assayConfig[row.RowId];
                         if (cfg) {
                             row.folderName = cfg.folderName;
                             row.folderId = cfg.folderId;
@@ -354,7 +354,8 @@ Ext4.define('LABKEY.ext4.ProgressReportConfig', {
             var data = [];
             Ext4.each(this.assayData, function(row) {
                 data.push({
-                    AssayName : row.AssayName,
+                    AssayName   : row.AssayName,
+                    RowId       : row.RowId,
                     folderName  : row.folderName,
                     folderId    : row.folderId,
                     schemaName  : row.schemaName,

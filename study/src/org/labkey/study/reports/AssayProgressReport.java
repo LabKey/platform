@@ -4,6 +4,7 @@ import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -59,6 +60,7 @@ public class AssayProgressReport extends AbstractReport
     public static final String VISITS_LABELS = "visitLabels";
     public static final String HEAT_MAP = "heatMap";
     public static final String LEGEND = "legend";
+    public static final String NAME = "name";
 
     public static final String SPECIMEN_EXPECTED = "expected";
     public static final String SPECIMEN_COLLECTED = "collected";
@@ -161,11 +163,11 @@ public class AssayProgressReport extends AbstractReport
     }
 
     @NotNull
-    public Map<String, Map<String, Object>> getAssayReportData(ViewContext context, BindException errors)
+    public Map<Integer, Map<String, Object>> getAssayReportData(ViewContext context, BindException errors)
     {
         Study study = StudyService.get().getStudy(context.getContainer());
 
-        Map<String, Map<String, Object>> assayData = new LinkedHashMap<>();
+        Map<Integer, Map<String, Object>> assayData = new LinkedHashMap<>();
 
         _copiedToStudyData.clear();
 
@@ -189,7 +191,7 @@ public class AssayProgressReport extends AbstractReport
 
         // get the saved assay configs, includes the query to source the specimen status information
         String jsonData = getDescriptor().getProperty(ReportDescriptor.Prop.json);
-        Map<String, JSONObject> assayConfigMap = new HashMap<>();
+        Map<Integer, JSONObject> assayConfigMap = new HashMap<>();
         if (jsonData != null)
         {
             JSONArray assays = new JSONArray(jsonData);
@@ -197,12 +199,13 @@ public class AssayProgressReport extends AbstractReport
             {
                 for (JSONObject assay : assays.toJSONObjectArray())
                 {
+                    String rowId = assay.getString("RowId");
                     String assayName = assay.getString("AssayName");
                     String schemaName = assay.getString("schemaName");
                     String queryName = assay.getString("queryName");
 
-                    if (assayName != null && schemaName != null && queryName != null)
-                        assayConfigMap.put(assayName, assay);
+                    if (rowId != null && assayName != null && schemaName != null && queryName != null)
+                        assayConfigMap.put(NumberUtils.toInt(rowId), assay);
                 }
             }
         }
@@ -219,9 +222,9 @@ public class AssayProgressReport extends AbstractReport
             assayVisits.sort((o1, o2) -> (int) (o1.getSequenceNumMin() - o2.getSequenceNumMin()));
             assay.setExpectedVisits(assayVisits);
 
-            if (assayConfigMap.containsKey(assay.getAssayName()))
+            if (assayConfigMap.containsKey(assay.getRowId()))
             {
-                JSONObject assayConfig = assayConfigMap.get(assay.getAssayName());
+                JSONObject assayConfig = assayConfigMap.get(assay.getRowId());
 
                 String folder = assayConfig.getString("folderId");
                 if (folder != null)
@@ -251,6 +254,7 @@ public class AssayProgressReport extends AbstractReport
                         .map(Visit::getDisplayString)
                         .collect(Collectors.toList());
 
+                data.put(NAME, assay.getAssayName());
                 data.put(VISITS, visits);
                 data.put(VISITS_LABELS, visitLabels);
                 data.put(PARTICIPANTS, assaySource.getParticipants(context));
@@ -258,7 +262,7 @@ public class AssayProgressReport extends AbstractReport
                 // create the heat map data
                 data.put(HEAT_MAP, createHeatMapData(context, assay, assaySource));
 
-                assayData.put(assay.getAssayName(), data);
+                assayData.put(assay.getRowId(), data);
             }
         }
         catch (Exception e)
@@ -352,9 +356,9 @@ public class AssayProgressReport extends AbstractReport
     public static class AssayReportBean
     {
         private ReportIdentifier _id;
-        private Map<String, Map<String, Object>> _assayData;
+        private Map<Integer, Map<String, Object>> _assayData;
 
-        public AssayReportBean(ReportIdentifier id, Map<String, Map<String, Object>> assayData)
+        public AssayReportBean(ReportIdentifier id, Map<Integer, Map<String, Object>> assayData)
         {
             _id = id;
             _assayData = assayData;
@@ -365,7 +369,7 @@ public class AssayProgressReport extends AbstractReport
             return _id;
         }
 
-        public Map<String, Map<String, Object>> getAssayData()
+        public Map<Integer, Map<String, Object>> getAssayData()
         {
             return _assayData;
         }

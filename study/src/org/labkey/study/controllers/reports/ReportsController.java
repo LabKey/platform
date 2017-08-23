@@ -1896,17 +1896,17 @@ public class ReportsController extends BaseStudyController
 
     public static class ProgressReportForm extends ReportUtil.JsonReportForm
     {
-        private String _assayName;
+        private Integer _assayId;
         private String _jsonData;
 
-        public String getAssayName()
+        public Integer getAssayId()
         {
-            return _assayName;
+            return _assayId;
         }
 
-        public void setAssayName(String assayName)
+        public void setAssayId(Integer assayId)
         {
-            _assayName = assayName;
+            _assayId = assayId;
         }
 
         public String getJsonData()
@@ -1920,7 +1920,7 @@ public class ReportsController extends BaseStudyController
             super.bindProperties(props);
 
             // used for export to excel
-            _assayName = (String)props.get("assayName");
+            _assayId = (Integer) props.get("assayId");
 
             Object json = props.get("jsonData");
             if (json != null)
@@ -2016,7 +2016,7 @@ public class ReportsController extends BaseStudyController
 
                     Map<String, Object> assayData = progressReport
                             .getAssayReportData(getViewContext(), errors)
-                            .get(form.getAssayName());
+                            .get(form.getAssayId());
 
                     if (assayData != null)
                     {
@@ -2060,7 +2060,7 @@ public class ReportsController extends BaseStudyController
                         }
 
                         MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(rows, cols.toArray(new ColumnDescriptor[cols.size()]));
-                        xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + form.getAssayName(), "#"));
+                        xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + assayData.get("name"), "#"));
                         xlWriter.write(response);
                     }
                 }
@@ -2082,7 +2082,7 @@ public class ReportsController extends BaseStudyController
                 Report report = reportIdentifier.getReport(getViewContext());
                 if (report instanceof AssayProgressReport)
                 {
-                    Map<String, Map<String, Object>> assayData = ((AssayProgressReport)report).getAssayReportData(getViewContext(), errors);
+                    Map<Integer, Map<String, Object>> assayData = ((AssayProgressReport)report).getAssayReportData(getViewContext(), errors);
                     if (!errors.hasErrors())
                     {
                         response.put("success", true);
