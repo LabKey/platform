@@ -2,8 +2,10 @@ package org.labkey.api.pipeline.trigger;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Entity;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class PipelineTriggerConfigImpl extends Entity implements PipelineTriggerConfig, Cloneable
@@ -13,7 +15,6 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
     private String _description;
     private String _type;
     private boolean _enabled;
-    private String _configuration;
     private Map<String, Object> _configMap;
     private String _pipelineId;
     private Date _lastChecked;
@@ -109,19 +110,37 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
     @Override
     public String getConfiguration()
     {
-        return _configuration;
+        return new JSONObject(_configMap).toString();
     }
 
     public void setConfiguration(String configuration)
     {
-        _configuration = configuration;
-        _configMap = new JSONObject(configuration);
+        if (StringUtils.isEmpty(configuration))
+            _configMap = new HashMap<>();
+        else
+            _configMap = new JSONObject(configuration);
     }
 
     public void setConfiguration(Map<String, Object> configMap)
     {
         _configMap = configMap;
-        _configuration = new JSONObject(configMap).toString();
+    }
+
+    public Map<String, Object> getConfigMap()
+    {
+        return _configMap;
+    }
+
+    /**
+     * Get "parameters" object from the config
+     */
+    public Map<String, Object> getParameterMap()
+    {
+        Map<String, Object> parameterMap = (Map)getConfigMap().get("parameters");
+        if (parameterMap == null)
+            _configMap.put("parameters", parameterMap = new HashMap<>());
+
+        return parameterMap;
     }
 
     @Override

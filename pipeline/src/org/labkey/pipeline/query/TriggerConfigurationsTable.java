@@ -200,7 +200,8 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         {
             validateRow(row);
             Map<String, Object> newRow = super.insertRow(user, container, row);
-            startIfEnabled(container, newRow);
+            String name = getStringFromRow(newRow, "Name");
+            startIfEnabled(container, name, newRow);
             return newRow;
         }
 
@@ -208,9 +209,18 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             validateRow(row);
+
+            String name = getStringFromRow(oldRow, "Name");
+            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
+
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
-            // TODO need to also handle the start/stop for a change to type or pipelineId
-            startIfEnabled(container, newRow);
+
+            // call the stop() method for this config if it was successfully updated
+            if (config != null)
+                config.stop();
+
+            String newName = getStringFromRow(newRow, "Name");
+            startIfEnabled(container, newName, newRow);
             return newRow;
         }
 
@@ -229,10 +239,10 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             return deleteRow;
         }
 
-        private void startIfEnabled(Container container, Map<String, Object> row)
+        private void startIfEnabled(Container container, String name, Map<String, Object> row)
         {
             boolean enabled = Boolean.parseBoolean(row.getOrDefault("Enabled", false).toString());
-            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, getStringFromRow(row, "Name"));
+            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
 
             if (config != null)
             {
