@@ -13,6 +13,7 @@ $Madison-body-font: #494949;
 $Madison-anchor-color: #0479a8;
 $Madison-gray-footer-text: #adadad;
 $Madison-gray-footer-text-hover: #f9f9f9;
+$Madison-white: #FFFFFF;
 
 $lk-text-color: $Madison-body-font;
 
@@ -33,7 +34,7 @@ $lk-body-bg-color: $Madison-page-bkgd;
 
 //== Buttons
 //
-$lk-button-bg-color: $Madison-page-bkgd;
+$lk-button-bg-color: $Madison-white;
 $lk-button-bg-color-hover: $Madison-red-dark;
 $lk-button-border-color: $Madison-red-dark;
 $lk-button-border-color-hover: $Madison-red-dark;
@@ -45,8 +46,9 @@ $lk-button-primary-bg-color: $Madison-red;
 $lk-button-primary-bg-color-hover: $Madison-red;
 $lk-button-primary-color: $Madison-page-bkgd;
 $lk-button-primary-color-hover: $Madison-page-bkgd;
-$lk-button-primary-border-size: 3px;
+$lk-button-primary-border-size: 2px;
 $lk-button-primary-border-color: $Madison-page-bkgd;
+$lk-button-primary-border-color-hover: $Madison-gray-blue;
 
 $lk-bar-button-color: $Madison-anchor-color;
 $lk-bar-button-color-hover: $Madison-gray-darkest;
@@ -79,8 +81,8 @@ $lk-grid-sort-icon-color: $Madison-page-bkgd;
 $lk-page-header-bg-color: $Madison-red;
 $lk-page-header-text-color: $Madison-page-bkgd;
 $lk-page-header-icon-color: $Madison-page-bkgd;
-$lk-page-header-font-hover-color: $Madison-gray-darkest; //just a guess
-$lk-page-header-icon-hover-color: $Madison-gray-darkest; //just a guess
+$lk-page-header-font-hover-color: $Madison-gray-blue;
+$lk-page-header-icon-hover-color: $Madison-gray-blue;
 
 //== Headings
 //
@@ -110,8 +112,8 @@ $lk-page-nav-primary-tab-text-color: $Madison-red-dark;
 
 //== Panels
 //
-$lk-panel-bg-color: $Madison-page-bkgd;
-$lk-panel-default-text: $Madison-body-font;
+$lk-panel-bg-color: $Madison-white;
+$lk-panel-default-text: $Madison-red;
 $lk-panel-default-border: $Madison-gray-darker;
 
 $lk-panel-title-text-transform: uppercase;
@@ -134,3 +136,4 @@ $lk-tool-icon-color: $Madison-red-dark;
 //
 $lk-tooltip-bg-color: $Madison-gray-darkest;
 $lk-tooltip-text-color: $Madison-page-bkgd;
+$lk-tooltip-opacity: 1;

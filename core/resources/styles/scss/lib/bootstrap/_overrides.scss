@@ -46,7 +46,7 @@
   &:focus,
   &:hover {
     background-color: $lk-button-primary-bg-color-hover;
-    border-color: darken($lk-brand-color, 5%);
+    border-color: $lk-button-primary-border-color-hover;
     color: $lk-button-primary-color-hover;
   }
 }
@@ -62,7 +62,7 @@
   }
 }
 
-.tooltip {
+.tooltip.in {
   opacity: $lk-tooltip-opacity;
 }
 

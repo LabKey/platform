@@ -129,6 +129,7 @@ $lk-button-primary-color-hover: $white !default; // theme variable
 
 $lk-button-primary-border-size: 1px !default; // theme variable
 $lk-button-primary-border-color: darken($lk-button-primary-bg-color, 5%) !default; // theme variable
+$lk-button-primary-border-color-hover: ($lk-brand-color, 5%) !default; // theme variable
 
 $lk-button-disabled-cursor: not-allowed !default;
 $lk-button-disabled-opacity: 0.65 !default;
@@ -353,7 +354,7 @@ $lk-tool-icon-color: rgb(18, 100, 149) !default; // theme variable
 //
 $lk-tooltip-bg-color: $black !default; // theme variable
 $lk-tooltip-text-color: $white !default; // theme variable
-$lk-tooltip-opacity: 0.8 !default;
+$lk-tooltip-opacity: 0.8 !default; // theme variable
 
 //== Wells
 //
