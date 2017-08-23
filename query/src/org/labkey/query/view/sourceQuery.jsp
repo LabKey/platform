@@ -29,7 +29,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("clientapi/ext3");
+        dependencies.add("Ext4");
         dependencies.add("codemirror");
         dependencies.add("query/QueryEditorPanel.js");
     }
@@ -54,37 +54,14 @@
 %>
 <style type="text/css">
 
-    /* Back Panel */
-    .x-border-layout-ct {
-        background: none repeat scroll 0 0 transparent;
-    }
-
-    .x-panel-body {
-        background-color: transparent;
-    }
-
-    /* Strip behind Tabs */
-    .x-tab-panel-header, .x-tab-panel-footer {
-        background-color: transparent;
-    }
-
-    ul.x-tab-strip-top {
-        background: transparent;
-    }
-
     /* Buttons on Panels */
     .query-button {
         float: left;
-        padding: 3px 5px;
+        margin-right: 3px;
     }
 
-    .query-editor-panel {
-        background-color: transparent;
-    }
-
-    /* Allow fullscreen on editor */
-    .x-panel-body {
-        position: static;
+    .query-editor-panel-parent, .query-editor-panel {
+        /*background: transparent;*/
     }
 
     table.labkey-data-region {
@@ -93,36 +70,28 @@
 
     .error-container {
         margin-left: 30px !important;
-        margin-top: 25px !important;
+        margin-top: 10px !important;
     }
 
     .labkey-status-info {
-        height : 12px;
         font-size: 12px;
         margin : 0 0 10px 0;
     }
 
     /* Masking style */
-    .ext-el-mask-msg {
+    .x4-mask-msg {
         border: none;
-        background-color: transparent;
-    }
-
-    .indicator-helper {
-        margin: auto !important;
-        margin-left: 3px !important;
-        padding-left: 25px !important;
     }
 
 </style>
-<div id="status" class="labkey-status-info" style="visibility: hidden;" width="99%">(status)</div>
+<div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
 <div id="query-editor-panel" class="extContainer"></div>
 <script type="text/javascript">
-    Ext.onReady(function(){
+    Ext4.onReady(function(){
 
-        Ext.QuickTips.init();
+        Ext4.QuickTips.init();
 
-        Ext.Ajax.timeout = 60 * 60 * 24 * 1000; // 1 day in ms
+        Ext4.Ajax.timeout = 60 * 60 * 24 * 1000; // 1 day in ms
 
         // TODO: Replace the following object with an Ajax call
         var query = {
@@ -151,26 +120,26 @@
         var activeTab = tabMap[hash] !== undefined ? tabMap[hash] : tabMap.source;
 
         var clearStatus = function() {
-            var elem = Ext.get('status');
+            var elem = Ext4.get('status');
             elem.update('&nbsp;');
             elem.setVisible(false);
         };
 
         var setError = function(msg) {
-            var elem = Ext.get('status');
+            var elem = Ext4.get('status');
             elem.update(msg);
             elem.dom.className = 'labkey-status-error';
             elem.setVisible(true);
         };
 
         var setStatus = function(msg, autoClear) {
-            var elem = Ext.get('status');
+            var elem = Ext4.get('status');
             elem.update(msg);
             elem.dom.className = 'labkey-status-info';
             elem.setDisplayed(true);
             elem.setVisible(true);
             if (autoClear) {
-                clearStatus.defer(5000);
+                Ext4.defer(clearStatus, 5000);
             }
         };
 
@@ -187,14 +156,15 @@
             }
         };
 
-        var panel = new Ext.Panel({
+        var panel = Ext4.create('Ext.panel.Panel', {
             renderTo   : 'query-editor-panel',
+            bodyCls    : 'query-editor-panel-parent',
             layout     : 'fit',
             frame      : false,
             border     : false,
-            boxMinHeight: 450,
-            items      : [{
-                xtype       : 'labkey-query-editor',
+            // allow this component to resize the height to fit the browser window
+            autoResize: { skipHeight: false },
+            items      : [Ext4.create('LABKEY.query.QueryEditorPanel', {
                 id          : 'qep',
                 border      : false,
                 layout      : 'fit',
@@ -203,7 +173,7 @@
                 activeTab   : activeTab,
                 listeners: {
                     render: function(qep) {
-                        Ext.EventManager.addListener(document, 'keydown', function(evt) {
+                        Ext4.EventManager.addListener(document, 'keydown', function(evt) {
                             var handled = false;
 
                             if (evt.ctrlKey && !evt.altKey && !evt.shiftKey) {
@@ -231,12 +201,7 @@
                     beforeSave: function() { setStatus('Saving...'); },
                     save: afterSave
                 }
-            }]
+            })]
         });
-
-        Ext.EventManager.onWindowResize(function(w, h) {
-            LABKEY.ext.Utils.resizeToViewport(panel, w, h, 40, 50);
-        });
-        Ext.EventManager.fireWindowResize();
     });
 </script>

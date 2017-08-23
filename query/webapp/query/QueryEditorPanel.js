@@ -3,7 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.query");
 
 // http://stackoverflow.com/questions/494035/how-do-you-pass-a-variable-to-a-regular-expression-javascript/494122#494122
 if (window.RegExp && !window.RegExp.quote) {
@@ -12,7 +11,8 @@ if (window.RegExp && !window.RegExp.quote) {
     };
 }
 
-LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
+Ext4.define('LABKEY.query.SourceEditorPanel', {
+    extend: 'Ext.panel.Panel',
 
     title: 'Source',
 
@@ -29,31 +29,26 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
     initComponent : function() {
 
+        this.editorBoxId = Ext4.id();
         this.editorId = 'queryText';
-        this.editorBoxId = Ext.id();
         
-        this.editor = new Ext.Panel({
-            border: true, frame: false,
+        this.editor = Ext4.create('Ext.panel.Panel', {
+            padding : '10px 0 0 0',
+            border: true,
+            frame: false,
             autoHeight: true,
             items : [
                 {
                     id    : this.editorBoxId,
                     xtype : 'box',
-                    autoEl: {
-                        tag  : 'textarea',
-                        id   : this.editorId,
-                        rows : 17,
-                        cols : 80,
-                        style: 'width: 100%; height: 100%;',
-                        wrap : 'off',
-                        html : Ext.util.Format.htmlEncode(this.query.queryText)
-                    }
+                    html: '<textarea id="queryText" rows="17" cols="80" wrap="off" style="width: 100%; height: 100%;">'
+                        + Ext4.util.Format.htmlEncode(this.query.queryText) + '</textarea>'
                 }
             ],
             listeners : {
                 afterrender : function(cmp)
                 {
-                    var code = Ext.get(this.editorId);
+                    var code = Ext4.get(this.editorId);
                     var size = cmp.getSize();
 
                     if (code) {
@@ -77,11 +72,11 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                     {
                         var h = this.getHeight() - 125;
                         this.editor.setHeight(h);
-                        var box = Ext.getCmp(this.editorBoxId);
+                        var box = Ext4.getCmp(this.editorBoxId);
                         if (box)
                         {
                             box.setHeight(h);
-                            var _f = Ext.get('frame_' + this.editorId);
+                            var _f = Ext4.get('frame_' + this.editorId);
                             if (_f)
                                 _f.setHeight(h, false);
 
@@ -99,26 +94,27 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
         this.items = [
             this.initButtonBar(),
             this.editor,
-            {
-                xtype: 'panel',
+            Ext4.create('Ext.panel.Panel', {
                 autoScroll: true,
                 flex: 1,
-                border: false, frame: false,
+                border: false,
+                frame: false,
                 items: [{
-                    id: this.getDisplay(),
-                    layout: 'fit',
-                    border: false, frame: false
+                    id: this.display,
+                    xtype : 'box',
+                    border: false,
+                    frame: false
                 }]
-            }
+            })
         ];
 
-        this.executeTask = new Ext.util.DelayedTask(function(args){
+        this.executeTask = new Ext4.util.DelayedTask(function(args){
             this.onExecuteQuery(args.force);
         }, this, []);
 
-        LABKEY.query.SourceEditorPanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
 
-        this.on('resize', function(){
+        this.on('resize', function() {
             this.editor.fireEvent('resize');
         });
     },
@@ -201,8 +197,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             xtype : 'button',
             text  : 'Help',
             cls   : 'query-button',
-            style : 'float: none;',
-            menu  : new Ext.menu.Menu({
+            menu  : Ext4.create('Ext.menu.Menu', {
                 id : 'keyboard-menu',
                 cls : 'extContainer',
                 items : [{
@@ -280,12 +275,12 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
     onShow : function()
     {
-        LABKEY.query.SourceEditorPanel.superclass.onShow.call(this);
+        this.callParent();
     },
 
     onHide : function()
     {
-        LABKEY.query.SourceEditorPanel.superclass.onHide.call(this);
+        this.callParent();
     },
 
 
@@ -326,22 +321,22 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 });
 
 
+Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
+    extend: 'Ext.panel.Panel',
 
-LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
     constructor : function(config)
     {
-        Ext.applyIf(config, {
+        Ext4.applyIf(config, {
             title: 'XML Metadata',
             bodyStyle: 'padding:5px',
             autoScroll: true,
             monitorValid: true,
             
             // Panel Specific
-            editorId   : 'metadataText',
             save       : function() {}
         });
         
-        LABKEY.query.MetadataXMLEditorPanel.superclass.constructor.call(this, config);
+        this.callParent([config]);
     },
 
     initComponent : function()
@@ -390,9 +385,10 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         );
 
 
-        this.editorBoxId = Ext.id();
+        this.editorBoxId = Ext4.id();
+        this.editorId = 'metadataText';
         
-        this.editor = new Ext.Panel({
+        this.editor = Ext4.create('Ext.panel.Panel', {
             padding : '10px 0 0 0',
             border: true, frame : false,
             autoHeight: true,
@@ -400,22 +396,15 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                 {
                     id : this.editorBoxId,
                     xtype : 'box',
-                    autoEl: {
-                        tag  : 'textarea',
-                        id   : this.editorId,
-                        rows : 17,
-                        cols : 80,
-                        wrap : 'off',
-                        style: 'width: 100%; height: 100%;',
-                        html : Ext.util.Format.htmlEncode(this.query.metadataText)
-                    }
+                    html: '<textarea id="metadataText" rows="17" cols="80" wrap="off" style="width: 100%; height: 100%;">'
+                        + Ext4.util.Format.htmlEncode(this.query.metadataText) + '</textarea>'
                 }
             ],
             listeners :
             {
                 afterrender : function(cmp)
                 {
-                    var code = Ext.get(this.editorId);
+                    var code = Ext4.get(this.editorId);
                     var size = cmp.getSize();
 
                     if (code) {
@@ -436,10 +425,10 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                     if (!x) {
                         var h = this.getHeight() - 160;
                         this.editor.setHeight(h);
-                        var box = Ext.getCmp(this.editorBoxId);
+                        var box = Ext4.getCmp(this.editorBoxId);
                         if (box) {
                             box.setHeight(h);
-                            var _f = Ext.get('frame_' + this.editorId);
+                            var _f = Ext4.get('frame_' + this.editorId);
                             if (_f) {
                                 _f.setHeight(h, false);
                             }
@@ -455,13 +444,16 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         items.push(this.editor);
 
         this.display = 'xml-response-panel';
-        this.queryResponse = new Ext.Panel({
+        this.queryResponse = Ext4.create('Ext.panel.Panel', {
             autoScroll : true,
-            border     : false, frame: false,
-            items      : [{
-                layout : 'fit',
-                id     : this.display,
-                border : false, frame : false
+            flex : 1,
+            border : false,
+            frame : false,
+            items : [{
+                id : this.display,
+                xtype: 'box',
+                border : false,
+                frame : false
             }]
         });
 
@@ -470,10 +462,9 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
 
         this.items = items;
         
-        LABKEY.query.MetadataXMLEditorPanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
 
-        this.on('resize', function()
-        {
+        this.on('resize', function() {
             this.editor.fireEvent('resize');
         });
     },
@@ -503,7 +494,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
         }
         else
         {
-            var el = Ext.get('metadataText');
+            var el = Ext4.get('metadataText');
             if (el)
                 return el.getValue();
         }
@@ -531,37 +522,40 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
     }
 });
 
-LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
+Ext4.define('LABKEY.query.QueryEditorPanel', {
+    extend: 'Ext.panel.Panel',
 
     constructor : function(config)
     {
-        Ext.apply(this, config);
+        Ext4.apply(this, config);
 
         this._executeSucceeded = false;
         this._executing = false;
 
-        if (!Ext.isDefined(this.query.canEdit))
+        if (!Ext4.isDefined(this.query.canEdit))
             this.query.canEdit = true;
-        if (!Ext.isDefined(this.query.canEditSql))
+        if (!Ext4.isDefined(this.query.canEditSql))
             this.query.canEditSql = this.query.canEdit;
-        if (!Ext.isDefined(this.query.canEditMetaData))
+        if (!Ext4.isDefined(this.query.canEditMetaData))
             this.query.canEditMetaData = this.canEdit;
 
-        LABKEY.query.QueryEditorPanel.superclass.constructor.call(this);
+        this.callParent([config]);
     },
 
     initComponent : function()
     {
         var items = [];
 
-        this._dataTabId = Ext.id();
-        this.dataTab = new Ext.Panel({
+        this._dataTabId = Ext4.id();
+        this.dataTab = Ext4.create('Ext.panel.Panel', {
             title : 'Data',
             autoScroll : true,
+            border: false,
             items : [{
                 id    : this._dataTabId,
-                xtype : 'panel',
-                border: false, frame : false
+                xtype : 'box',
+                border: false,
+                frame : false
             }],
             listeners : {
                 activate : function(p)
@@ -576,8 +570,8 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             }
         });
 
-        var _metaId = Ext.id();
-        this.sourceEditor = new LABKEY.query.SourceEditorPanel({
+        var _metaId = Ext4.id();
+        this.sourceEditor = Ext4.create('LABKEY.query.SourceEditorPanel', {
             query : this.query,
             metadata : true,
             metaId : _metaId,
@@ -585,13 +579,13 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         });
 
 
-        this.metaEditor = new LABKEY.query.MetadataXMLEditorPanel({
+        this.metaEditor = Ext4.create('LABKEY.query.MetadataXMLEditorPanel', {
             id    : _metaId,
             query : this.query,
             queryEditorPanel : this // back pointer for onSave()
         });
 
-        this.tabPanel = new Ext.TabPanel({
+        this.tabPanel = Ext4.create('Ext.tab.Panel', {
             activeTab : this.activeTab,
             items     : [this.sourceEditor, this.dataTab, this.metaEditor]
         });
@@ -600,12 +594,12 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
         this.items = items;
 
-        LABKEY.query.QueryEditorPanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
     },
 
     onRender : function()
     {
-        LABKEY.query.QueryEditorPanel.superclass.onRender.apply(this, arguments);
+        this.callParent();
         
         window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
     },
@@ -641,12 +635,12 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         else
             json.ff_queryText = this.getSourceEditor().getValue();
 
-        Ext.Ajax.request(
+        Ext4.Ajax.request(
         {
             url    : LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(onSuccess, this),
-            jsonData : Ext.encode(json),
+            jsonData : Ext4.encode(json),
             failure: LABKEY.Utils.getCallbackWrapper(onError, this, true),
             headers : {
                 'Content-Type' : 'application/json'
@@ -689,9 +683,9 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
     clearErrors : function()
     {
-        var errorEls = Ext.DomQuery.select('.error-container');
+        var errorEls = Ext4.DomQuery.select('.error-container');
         for (var i=0; i < errorEls.length; i++) {
-            Ext.get(errorEls[i]).parent().update('');
+            Ext4.get(errorEls[i]).parent().update('');
         }
     },
 
@@ -702,22 +696,21 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
     showErrors : function(errors, css)
     {
-        var tabEl;
-        if (errors && errors.length > 0)
-        {
+        if (errors && errors.length > 0) {
             this.gotoError(errors[0]);
-
-            // default to showing errors are source tab
-            var tabEl = errors[0].type == 'xml' ? this.getMetadataEditor().display : this.getSourceEditor().display;
         }
 
-        var errorEl = tabEl ? Ext.get(tabEl) : undefined;
-        var queryEl = Ext.get('query-response-panel');
+        var xmlEl = Ext4.get('xml-response-panel');
+        var queryEl = Ext4.get('query-response-panel');
 
-        if (!errors || errors.length == 0)
-        {
-            if (errorEl) errorEl.update('');
-            if (queryEl) queryEl.update('');
+        if (xmlEl) {
+            xmlEl.update('');
+        }
+        if (queryEl) {
+            queryEl.update('');
+        }
+
+        if (!errors || errors.length == 0) {
             return;
         }
 
@@ -728,20 +721,15 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             var err = errors[e];
             inner.push('<li>' + err.msg);
             if (err.decorations && err.decorations.ResolveText && err.decorations.ResolveURL)
-                inner.push('&nbsp;<a href="' + err.decorations.ResolveURL + '">' + Ext.util.Format.htmlEncode(err.decorations.ResolveText) + '</a>');
+                inner.push('&nbsp;<a href="' + err.decorations.ResolveURL + '">' + Ext4.util.Format.htmlEncode(err.decorations.ResolveText) + '</a>');
             inner.push('</li>');
         }
         inner.push('</ul></div>');
 
-        if (errorEl)
-        {
-            errorEl.update('');
-            errorEl.update(inner.join(''));
+        if (xmlEl) {
+            xmlEl.update(inner.join(''));
         }
-
-        if (queryEl)
-        {
-            queryEl.update('');
+        if (queryEl) {
             queryEl.update(inner.join(''));
         }
     },
@@ -783,7 +771,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
         this.tabPanel.setActiveTab(this.dataTab);
         this.dataTab.getEl().mask('Loading Query...', 'loading-indicator indicator-helper');
 
-        var qwpEl = Ext.get(this.getSourceEditor().display);
+        var qwpEl = Ext4.get(this.getSourceEditor().display);
         if (qwpEl) { qwpEl.update(''); }
 
         // QueryWebPart Configuration
@@ -794,10 +782,11 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             allowChooseQuery : false,
             allowChooseView  : false,
             allowHeaderLock  : false,
+            disableAnalytics : true,
             frame     : 'none',
             title     : '',
             masking   : false,
-            timeout   : Ext.Ajax.timeout, // 12451 -- control the timeout
+            timeout   : Ext4.Ajax.timeout, // 12451 -- control the timeout
             buttonBarPosition : 'top',    // 12644 -- only have a top toolbar
             success   : function(response) {
                 this._executeSucceeded = true;
@@ -835,7 +824,7 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             config.metadata = { type : 'xml', value: _meta };
 
         this._dataLoaded = true;
-        var qwp = new LABKEY.QueryWebPart(config);
+        new LABKEY.QueryWebPart(config);
     },
 
     addTab : function(config, makeActive)
@@ -866,5 +855,3 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
     // Allows others to hook events on metadataEditor
     getMetadataEditor : function() { return this.metaEditor; }
 });
-
-Ext.reg("labkey-query-editor", LABKEY.query.QueryEditorPanel);

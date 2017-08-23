@@ -547,7 +547,6 @@
             listeners: {
                 resize: function(cmp, width) {
                     ptidPanel.getGroupPanel().setWidth(width - 10);
-                    doAdjustSize();
                 }
             }
         });
@@ -681,7 +680,6 @@
             return;
         }
 
-        doAdjustSize(); // get close
         renderGroups();
         renderSubjects();
 
@@ -731,36 +729,6 @@
         var groupsPanel = Ext4.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
         if (groupsPanel.length == 1 && groupsPanel[0].getHeight() < ptidDiv.getHeight())
             groupsPanel[0].setHeight(ptidDiv.getHeight());
-
-        Ext4.EventManager.onWindowResize(doAdjustSize);
-        doAdjustSize();
-    }
-
-    function doAdjustSize()
-    {
-        // CONSIDER: register for window resize
-        var listDiv = Ext4.get(<%=q(listDivId)%>);
-        if (!listDiv) return;
-        var width;
-        if (LABKEY.experimental.useExperimentalCoreUI)
-        {
-            var participantDiv = Ext4.get(<%=q(divId)%>);
-            var groupsDiv = Ext4.get(<%=q(groupsDivId)%>);
-            var parentWidth = participantDiv.el.parent().getBox().width;
-            var filterWidth = groupsDiv ? groupsDiv.el.getBox().width : 0;
-            width = parentWidth - filterWidth;
-        }
-        else
-        {
-            var rightAreaWidth = 15;
-            try {rightAreaWidth = Ext4.fly(Ext4.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
-            var padding = 60;
-            var viewWidth = Ext4.getBody().getViewSize().width;
-            var right = viewWidth - padding - rightAreaWidth;
-            var x = listDiv.getXY()[0];
-            width = Math.max(<%=bean.getWide() ? 350 : 200%>, (right-x));
-        }
-        listDiv.setWidth(width);
     }
 
     return { render : render };
