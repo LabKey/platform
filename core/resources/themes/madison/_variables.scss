@@ -39,6 +39,7 @@ $lk-button-border-color: $Madison-red-dark;
 $lk-button-border-color-hover: $Madison-red-dark;
 $lk-button-color: $Madison-red-dark;
 $lk-button-color-hover: $Madison-page-bkgd;
+$lk-button-font-family: Lato;
 
 $lk-button-primary-bg-color: $Madison-red;
 $lk-button-primary-bg-color-hover: $Madison-red;
@@ -88,7 +89,7 @@ $lk-headings-font-family: "Lato";
 //== Links
 //
 $lk-link-color: $Madison-anchor-color;
-$lk-text-link-color: $Madison-anchor-color;
+$lk-text-link-color: $Madison-red-dark;
 $lk-text-link-color-hover: $Madison-gray-darkest;
 
 //== Navigation
@@ -102,10 +103,10 @@ $lk-page-nav-dropdown-item-text-color: $Madison-red-dark;
 $lk-page-nav-dropdown-highlight-item-bg-color: $Madison-red-dark;
 $lk-page-nav-dropdown-highlight-item-text-color: $Madison-page-bkgd;
 $lk-page-nav-dropdown-icon-color: $Madison-red-dark;
-//$lk-page-nav-secondary-tab-bg-color: #73b6e0 !default; // theme variable
-//$lk-page-nav-secondary-tab-text-color: $white !default; // theme variable
-//$lk-page-nav-primary-tab-bg-color: $lk-primary-bg-color !default; // theme variable
-//$lk-page-nav-primary-tab-text-color: $lk-brand-color !default; // theme variable
+$lk-page-nav-secondary-tab-bg-color: $Madison-gray-blue;
+$lk-page-nav-secondary-tab-text-color: $Madison-red-dark;
+$lk-page-nav-primary-tab-bg-color: $Madison-page-bkgd;
+$lk-page-nav-primary-tab-text-color: $Madison-red-dark;
 
 //== Panels
 //
@@ -122,12 +123,8 @@ $lk-webpart-title-hover-color: $Madison-anchor-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //
-//$lk-nav-tab-primary-bg-color: #F8F8F8 !default; // theme variable
-//$lk-nav-tab-primary-text-color: #555555 !default; // theme variable
-//$lk-nav-tab-secondary-bg-color: transparent !default; // theme variable
-//$lk-nav-tab-secondary-text-color: $lk-brand-color !default; // theme variable
-//$lk-nav-tab-secondary-hover-bg-color: #EEEEEE !default; // theme variable
-//$lk-nav-tab-secondary-hover-text-color: $black !default; // theme variable
+$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-secondary-text-color: $Madison-anchor-color;
 
 //== Tool Icons
 //
