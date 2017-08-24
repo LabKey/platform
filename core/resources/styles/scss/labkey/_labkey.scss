@@ -1105,12 +1105,20 @@ div.note {
     font-weight: bold;
   }
 
-  img {
+  img, .fa {
     border: none;
     width: 64px;
     height: 64px;
+  }
+
+  img {
     background: $lk-tool-icon-color; /* no RGBa */
     background: rgba($lk-tool-icon-color, 0.7); /* FF, Safari, Chrome, IE9 */
+  }
+
+  .fa {
+    color: $lk-tool-icon-color; /* no RGBa */
+    color: rgba($lk-tool-icon-color, 0.7); /* FF, Safari, Chrome, IE9 */
   }
 
   &:hover {
@@ -1118,9 +1126,16 @@ div.note {
       color: $lk-text-link-color-hover;
     }
 
-    img {
+    img, .fa {
       cursor: pointer;
+    }
+
+    img {
       background: rgba($lk-tool-icon-color, 1.0); /* FF, Safari, Chrome, IE9 */
+    }
+
+    .fa {
+      color: rgba($lk-tool-icon-color, 1.0); /* FF, Safari, Chrome, IE9 */
     }
   }
 }
@@ -1386,7 +1401,7 @@ div span.labkey-main-menu-icon {
   width: 26px;
   height: 20px;
   font-size: 16px;
-  background-color: white;
+  background-color: transparent;
 }
 
 .labkey-wp-header .fa-pencil {
