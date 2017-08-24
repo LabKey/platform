@@ -144,7 +144,11 @@ Ext4.define('LABKEY.ext.IconPanel', {
                         '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>',
                         'style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
                         '<a ' + '<tpl if="url">href="{url}"</tpl>' + '>',
-                        '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
+                        '<tpl if="useDefaultIconUrl">',
+                            '<div class="thumb-img-{labelPosition}"><span class="fa fa-folder-open {imageSize}"></span></div>',
+                        '<tpl else>',
+                            '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
+                        '</tpl>',
                         '<span class="thumb-label-{labelPosition}">{label:htmlEncode}</span>',
                         '</a>',
                     '</div>',
@@ -160,12 +164,19 @@ Ext4.define('LABKEY.ext.IconPanel', {
                 medium: 40,
                 small: 20
             },
+            faImageSizeMap: {
+                large: "fa-5x",
+                medium: "fa-3x",
+                small: "fa-lg"
+            },
             prepareData: function(d){
                 var panel = this.up('panel');
                 var item = Ext4.apply({}, this.renderData);
 
-                if(panel.iconField)
+                if(panel.iconField){
                     item.iconurl = d[panel.iconField];
+                    item.useDefaultIconUrl = item.iconurl === "";
+                }
                 if(panel.labelField)
                     item.label = d[panel.labelField];
                 if(panel.urlField)
@@ -174,9 +185,10 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     item.tooltip = d[panel.tooltipField];
 
                 var multiplier = 1.66;
-                item.imageSize = this.imageSizeMap[this.renderData.iconSize];
-                item.thumbWidth = item.labelPosition=='bottom' ? item.imageSize * multiplier + 'px':  '100%';
-                item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(Math.ceil(item.imageSize*multiplier)) : 1;
+                var imageSizePx = this.imageSizeMap[this.renderData.iconSize];
+                item.imageSize = item.useDefaultIconUrl ? this.faImageSizeMap[this.renderData.iconSize] : imageSizePx;
+                item.thumbWidth = item.labelPosition=='bottom' ? imageSizePx * multiplier + 'px':  '100%';
+                item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(Math.ceil(imageSizePx * multiplier)) : 1;
                 return item;
             },
             calculateColumnNumber: function(thumbWidth){

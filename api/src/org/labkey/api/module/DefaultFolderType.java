@@ -47,6 +47,7 @@ import java.util.Set;
  */
 public class DefaultFolderType implements FolderType
 {
+    public static final String DEFAULT_FOLDER_ICON_PATH = "_icons/icon_folder2.png";
     protected List<WebPart> requiredParts;
     protected List<WebPart> preferredParts;
     protected Set<Module> activeModules;
@@ -54,7 +55,7 @@ public class DefaultFolderType implements FolderType
     protected String name;
     protected Module defaultModule;
     protected boolean workbookType = false;
-    protected String folderIconPath = "_icons/icon_folder2.png";
+    protected String folderIconPath = DEFAULT_FOLDER_ICON_PATH;
     protected boolean forceAssayUploadIntoWorkbooks = false;
     protected boolean menubarEnabled = false;
     protected List<FolderTab> _folderTabs = null;

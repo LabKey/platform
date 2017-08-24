@@ -164,7 +164,7 @@ public class CustomFolderType implements FolderType
     @NotNull
     public String getFolderIconPath()
     {
-        return "_icons/icon_folder2.png";
+        return DefaultFolderType.DEFAULT_FOLDER_ICON_PATH;
     }
 
     public boolean getForceAssayUploadIntoWorkbooks()

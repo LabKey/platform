@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -279,6 +280,12 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
             FolderType ft = c.getFolderType();
             Path iconPath = Path.parse(ft.getFolderIconPath());
+
+            if (iconPath.toString().equals(DefaultFolderType.DEFAULT_FOLDER_ICON_PATH))
+            {
+                return "";
+            }
+
             WebdavResource iconResource = WebdavService.get().getRootResolver().lookup(iconPath);
             if (null == iconResource || !iconResource.isFile())
             {
