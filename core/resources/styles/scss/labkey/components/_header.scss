@@ -237,6 +237,7 @@
   position: fixed;
   width: 100%;
   z-index: 1000;
+  top: 0;
 
   &.box-shadow {
     -webkit-box-shadow: 0 2px 3px #bbb; /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
