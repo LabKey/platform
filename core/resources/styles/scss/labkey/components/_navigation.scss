@@ -368,8 +368,13 @@
   .button-icon {
     background-color: $lk-page-nav-dropdown-icon-color;
     opacity: 1.0;
+
     &:hover {
       background-color: $black;
+    }
+
+    img {
+      margin-bottom: 1px;
     }
   }
 
