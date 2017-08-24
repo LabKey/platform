@@ -190,6 +190,7 @@ Ext4.onReady(function() {
         renderTo : <%=PageFlowUtil.jsString(renderTarget)%>,
         layout   : 'border',
         height   : 400,
+        autoResize: false,
         border   : false, frame : false,
         style    : 'background-color: transparent;',
         items    : [panel]
