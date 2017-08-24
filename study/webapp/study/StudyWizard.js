@@ -2107,6 +2107,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     this.gridSelectAll(grid);
                 else
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
+                if(this.settings.phiLevel)
+                    this.publishPhiRadioGroup.setValue('exportPhiLevel', this.settings.phiLevel);
             }
         };
 
