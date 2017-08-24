@@ -138,7 +138,12 @@ public abstract class PipelineTriggerConfigImpl extends Entity implements Pipeli
     {
         Map<String, Object> parameterMap = (Map)getConfigMap().get("parameters");
         if (parameterMap == null)
-            _configMap.put("parameters", parameterMap = new HashMap<>());
+        {
+            parameterMap = new HashMap<>();
+            // todo: this is causing an java.lang.UnsupportedOperationException because sometimes _configMap is a java.util.Collections$UnmodifiableMap
+            // not sure of consequence of not setting this 'parameters' key here, doesn't appear to currently cause any problem to leave it unset.
+            //_configMap.put("parameters", parameterMap);
+        }
 
         return parameterMap;
     }

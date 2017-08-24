@@ -840,14 +840,15 @@ public class PipelineServiceImpl implements PipelineService
 
     public static class TestCase extends Assert
     {
+        private static String PROJECT_NAME = "__PipelineRootTestProject";
+        private static String FOLDER_NAME = "subfolder";
+        private static String DEFAULT_ROOT_URI = "build/deploy/files/__PipelineRootTestProject/@files";
+        private static String FILE_ROOT_SUFFIX = "_FileRootTest";
+        private static String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
+
         private User _user;
-        Container _project;
-        Container _subFolder;
-        String PROJECT_NAME = "__ModulePropsTestProject";
-        String FOLDER_NAME = "subfolder";
-        String DEFAULT_ROOT_URI = "build/deploy/files/__ModulePropsTestProject/@files";
-        private static final String FILE_ROOT_SUFFIX = "_FileRootTest";
-        private static final String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
+        private Container _project;
+        private Container _subFolder;
 
         @Before
         public void setUp()
@@ -863,7 +864,7 @@ public class PipelineServiceImpl implements PipelineService
          * Verify pipeline root and file root default values at the project level
          */
         @Test
-        public void testPipleRootDefaultsInProject() throws Exception
+        public void testPipelineRootDefaultsInProject() throws Exception
         {
             // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
             if (ContainerManager.getForPath(PROJECT_NAME) != null)
