@@ -96,7 +96,7 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
         else if (queryName == 'Product')
             columns += ',Role';
         else if (queryName == 'DataSets')
-            columns += ',DatasetId';
+            columns += ',DataSetId';
 
         return Ext4.create('LABKEY.ext4.Store', {
             storeId: key,
@@ -126,13 +126,13 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
     {
         var store = LABKEY.VaccineDesign.Utils.getStudyDesignStore(queryName),
             storeCols = Ext4.Array.pluck(store.getColumns(), 'dataIndex'),
+            keys = ['RowId', 'Name', 'DataSetId'],
             record = null;
 
-        if (storeCols.indexOf('RowId') > -1)
-            record = store.findRecord('RowId', value, 0, false, true, true);
-
-        if (record == null && storeCols.indexOf('Name') > -1)
-            record = store.findRecord('Name', value, 0, false, true, true);
+        Ext4.each(keys, function(key) {
+            if (record == null && storeCols.indexOf(key) > -1)
+                record = store.findRecord(key, value, 0, false, true, true);
+        });
 
         return record != null ? record.get("Label") : value;
     },

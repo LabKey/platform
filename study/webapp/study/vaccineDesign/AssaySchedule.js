@@ -6,7 +6,7 @@
 Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
     extend : 'Ext.panel.Panel',
 
-    autoResize : false,
+    width: 750,
 
     border : false,
 
@@ -147,7 +147,6 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
         if (!this.cancelButton)
         {
             this.cancelButton = Ext4.create('Ext.button.Button', {
-                margin: this.disableEdit ? 0 : '0 0 0 10px',
                 text: this.disableEdit ? 'Done' : 'Cancel',
                 handler: this.goToReturnURL,
                 scope: this
@@ -254,7 +253,9 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
 
     mainTitle : 'Assay Schedule',
 
-    studyDesignQueryNames : ['StudyDesignAssays', 'StudyDesignLabs', 'StudyDesignSampleTypes', 'StudyDesignUnits', 'Location'],
+    width : 620,
+
+    studyDesignQueryNames : ['StudyDesignAssays', 'StudyDesignLabs', 'StudyDesignSampleTypes', 'StudyDesignUnits', 'Location', 'DataSets'],
 
     visitNoun : 'Visit',
 
@@ -405,98 +406,154 @@ Ext4.define('LABKEY.VaccineDesign.AssaysGrid', {
     {
         if (!this.columnConfigs)
         {
+            var width = 0; // add to the running width as we go through which columns to show in the config
+            var columnConfigs = [];
+
             var assayNameEditorConfig = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('AssayName', 185, 'StudyDesignAssays');
             assayNameEditorConfig.editable = true; // Rho use-case
 
-            var columnConfigs = [{
+            columnConfigs.push({
                 label: 'Assay Name',
                 width: 200,
                 dataIndex: 'AssayName',
                 required: true,
                 editorType: 'LABKEY.ext4.ComboBox',
                 editorConfig: assayNameEditorConfig
-            },{
+            });
+            width += 200;
+
+            columnConfigs.push({
                 label: 'Dataset',
                 width: 200,
                 dataIndex: 'DataSet',
+                queryName: 'DataSets',
                 editorType: 'LABKEY.ext4.ComboBox',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('DataSet', 185, 'DataSets', undefined, 'Label', 'DataSetId')
-            },{
+            });
+            width += 200;
+
+            var hidden = this.disableEdit && !this.columnHasData('Description');
+            columnConfigs.push({
                 label: 'Description',
                 width: 200,
-                hidden: this.disableEdit && !this.columnHasData('Description'),
+                hidden: hidden,
                 dataIndex: 'Description',
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Description', 185)
-            }];
+            });
+            if (!hidden) {
+                width += 200;
+            }
 
             if (this.useAlternateLookupFields)
             {
+                hidden = this.disableEdit && !this.columnHasData('Source');
                 columnConfigs.push({
                     label: 'Source',
                     width: 60,
-                    hidden: this.disableEdit && !this.columnHasData('Source'),
+                    hidden: hidden,
                     dataIndex: 'Source',
                     editorType: 'Ext.form.field.Text',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Source', 45)
                 });
+                if (!hidden) {
+                    width += 60;
+                }
+
+                hidden = this.disableEdit && !this.columnHasData('LocationId');
                 columnConfigs.push({
                     label: 'Location',
                     width: 140,
-                    hidden: this.disableEdit && !this.columnHasData('LocationId'),
+                    hidden: hidden,
                     dataIndex: 'LocationId',
                     queryName: 'Location',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('LocationId', 125, 'Location', undefined, 'Label', 'RowId')
                 });
+                if (!hidden) {
+                    width += 140;
+                }
+
+                hidden = this.disableEdit && !this.columnHasData('TubeType');
                 columnConfigs.push({
                     label: 'TubeType',
                     width: 200,
-                    hidden: this.disableEdit && !this.columnHasData('TubeType'),
+                    hidden: hidden,
                     dataIndex: 'TubeType',
                     editorType: 'Ext.form.field.Text',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('TubeType', 185)
                 });
+                if (!hidden) {
+                    width += 200;
+                }
             }
             else
             {
+                hidden = this.disableEdit && !this.columnHasData('Lab');
                 columnConfigs.push({
                     label: 'Lab',
                     width: 140,
-                    hidden: this.disableEdit && !this.columnHasData('Lab'),
+                    hidden: hidden,
                     dataIndex: 'Lab',
                     queryName: 'StudyDesignLabs',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Lab', 125, 'StudyDesignLabs')
                 });
+                if (!hidden) {
+                    width += 140;
+                }
+
+                hidden = this.disableEdit && !this.columnHasData('SampleType');
                 columnConfigs.push({
                     label: 'Sample Type',
                     width: 140,
-                    hidden: this.disableEdit && !this.columnHasData('SampleType'),
+                    hidden: hidden,
                     dataIndex: 'SampleType',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SampleType', 125, 'StudyDesignSampleTypes', undefined, 'Name')
                 });
+                if (!hidden) {
+                    width += 140;
+                }
+
+                hidden = this.disableEdit && !this.columnHasData('SampleQuantity');
                 columnConfigs.push({
                     label: 'Sample Quantity',
                     width: 140,
-                    hidden: this.disableEdit && !this.columnHasData('SampleQuantity'),
+                    hidden: hidden,
                     dataIndex: 'SampleQuantity',
                     editorType: 'Ext.form.field.Number',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignNumberConfig('SampleQuantity', 125, 2)
                 });
+                if (!hidden) {
+                    width += 140;
+                }
+
+                hidden = this.disableEdit && !this.columnHasData('SampleUnits');
                 columnConfigs.push({
                     label: 'Sample Units',
                     width: 140,
-                    hidden: this.disableEdit && !this.columnHasData('SampleUnits'),
+                    hidden: hidden,
                     dataIndex: 'SampleUnits',
                     queryName: 'StudyDesignUnits',
                     editorType: 'LABKEY.ext4.ComboBox',
                     editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('SampleUnits', 125, 'StudyDesignUnits')
                 });
+                if (!hidden) {
+                    width += 140;
+                }
             }
 
             var visitConfigs = this.getVisitColumnConfigs();
+
+            // update the width based on the number of visit columns
+            width += (Math.max(2, visitConfigs.length) * 75);
+            this.setWidth(width);
+
+            // update the outer panel width if necessary
+            var outerPanel = this.up('panel');
+            if (outerPanel != null)
+                outerPanel.setWidth(Math.max(width, 750));
 
             this.columnConfigs = columnConfigs.concat(visitConfigs);
         }

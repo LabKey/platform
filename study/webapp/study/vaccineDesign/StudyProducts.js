@@ -12,7 +12,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
 
     bodyStyle : 'background-color: transparent;',
 
-    minWidth: 1500,
+    minWidth: 1350,
 
     disableEdit : true,
 
@@ -125,7 +125,6 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         if (!this.cancelButton)
         {
             this.cancelButton = Ext4.create('Ext.button.Button', {
-                margin: this.disableEdit ? 0 : '0 0 0 10px',
                 text: this.disableEdit ? 'Done' : 'Cancel',
                 handler: this.goToReturnURL,
                 scope: this
@@ -285,7 +284,7 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
 
     cls : 'study-vaccine-design vaccine-design-immunogens',
 
-    width: 1350,
+    autoResize: false,
 
     mainTitle : 'Immunogens',
 
@@ -298,6 +297,8 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
     {
         if (!this.columnConfigs)
         {
+            var width = 0; // add to the running width as we go through which columns to show in the config
+
             this.columnConfigs = [{
                 label: 'Label',
                 width: 200,
@@ -346,6 +347,7 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                     }]
                 }
             }];
+            width += 1000;
 
             if (this.showDoseRoute)
             {
@@ -370,7 +372,10 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                         }]
                     }
                 });
+                width += 315;
             }
+
+            this.setWidth(width);
         }
 
         return this.columnConfigs;
@@ -382,7 +387,7 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
 
     cls : 'study-vaccine-design vaccine-design-adjuvants',
 
-    width : 530,
+    autoResize: false,
 
     mainTitle : 'Adjuvants',
 
@@ -395,6 +400,8 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
     {
         if (!this.columnConfigs)
         {
+            var width = 0; // add to the running width as we go through which columns to show in the config
+
             this.columnConfigs = [{
                 label: 'Label',
                 width: 200,
@@ -403,6 +410,7 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 185)
             }];
+            width += 200;
 
             if (this.showDoseRoute)
             {
@@ -427,7 +435,10 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
                         }]
                     }
                 });
+                width += 330;
             }
+
+            this.setWidth(width);
         }
 
         return this.columnConfigs;
@@ -439,7 +450,7 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
 
     cls : 'study-vaccine-design vaccine-design-challenges',
 
-    width : 730,
+    autoResize: false,
 
     mainTitle : 'Challenges',
 
@@ -452,6 +463,8 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
     {
         if (!this.columnConfigs)
         {
+            var width = 0; // add to the running width as we go through which columns to show in the config
+
             this.columnConfigs = [{
                 label: 'Label',
                 width: 200,
@@ -467,6 +480,7 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
                 editorType: 'LABKEY.ext4.ComboBox',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Type', 185, 'StudyDesignChallengeTypes')
             }];
+            width += 400;
 
             if (this.showDoseRoute)
             {
@@ -491,7 +505,10 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
                         }]
                     }
                 });
+                width += 330;
             }
+
+            this.setWidth(width);
         }
 
         return this.columnConfigs;

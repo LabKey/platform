@@ -7,9 +7,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
 
     extend: 'Ext.window.Window',
 
-    bodyStyle: 'overflow-y: auto; padding: 10px;',
-
-    cls: 'treatment-dialog',
+    bodyStyle: 'overflow-y: auto; padding: 10px 0;',
 
     listeners: {
         resize: function (cmp)
@@ -80,6 +78,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentDialog', {
             var column = {
                 xtype: 'checkboxgroup',
                 fieldLabel: key,
+                labelStyle: 'font-weight: bold;',
                 colspan: 1,
                 columns: 1,
                 flex: 0.75,

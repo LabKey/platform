@@ -62,7 +62,6 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanelBase', {
         if (!this.cancelButton)
         {
             this.cancelButton = Ext4.create('Ext.button.Button', {
-                margin: this.disableEdit ? 0 : '0 0 0 10px',
                 text: this.disableEdit ? 'Done' : 'Cancel',
                 handler: this.goToReturnURL,
                 scope: this

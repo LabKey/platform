@@ -89,7 +89,7 @@
         <br/>
         <div class="study-vaccine-design immunization-schedule-cohorts">
             <div class="main-title">Immunization Schedule</div>
-            <table class='outer'>
+            <table class="outer">
                 <tr class="header-row">
                     <td class="cell-display">Group / Cohort</td>
                     <td class="cell-display"><%=h(subjectNoun)%> Count</td>
@@ -122,7 +122,7 @@
                         visitTreatments.put(treatmentVisitMap.getVisitId(), treatmentVisitMap.getTreatmentId());
                     }
 %>
-                    <tr class="row row-outer <%=index % 2 == 0 ? "alternate-row" : ""%>" outer-index="<%=index-1%>">
+                    <tr class="row-outer <%=index % 2 == 0 ? "alternate-row" : ""%>" outer-index="<%=index-1%>">
                         <td class="cell-display " data-index="Label"><%=h(cohort.getLabel())%></td>
                         <td class="cell-display " data-index="SubjectCount"><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : ""%></td>
 <%

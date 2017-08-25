@@ -74,19 +74,6 @@
     width: calc(100% - 20px);
     white-space: nowrap;
 }
-.treatment-dialog {
-    background-color: #C0C0C0;
-    border-color: dimgray;
-    box-shadow:  #C0C0C0 0 1px 0 0 inset,#C0C0C0 0 -1px 0 0 inset,#C0C0C0 -1px 0 0 0 inset,#C0C0C0 1px 0 0 0 inset;
-}
-.treatment-dialog .x4-window-header-default{
-    background-color: #C0C0C0;
-    border-color: dimgray;
-    box-shadow:  #C0C0C0 0 1px 0 0 inset,#C0C0C0 0 -1px 0 0 inset,#C0C0C0 -1px 0 0 0 inset,#C0C0C0 1px 0 0 0 inset;
-}
-.treatment-dialog .x4-window-header-text-container-default {
-    color: black;
-}
 
 .treatment-input-cell .x4-form-field {
     cursor: pointer;
