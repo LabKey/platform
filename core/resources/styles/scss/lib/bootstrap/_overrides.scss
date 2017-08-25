@@ -62,6 +62,51 @@
   }
 }
 
+//== InputGroups
+//
+.input-group {
+  &.input-group-unstyled.input-group-horizontal {
+    display: $lk-input-group-display;
+  }
+}
+
+.input-group-addon {
+  padding: $padding-base-vertical $lk-input-group-addon-padding-right-left;
+
+  > .validation-state-icon {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    z-index: 99;
+  }
+
+  &.validation-state {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+//additional styles for validation/context icons
+.input-group-unstyled .input-group-addon {
+  border-radius: $lk-input-group-unstyled-border-radius;
+  border: $lk-input-group-unstyled-border;
+  background-color: $lk-input-group-unstyled-bg-color;
+}
+
+@media (min-width: $lk-screen-sm-min) {
+  .input-group-pull-right {
+    float: right !important;
+  }
+}
+
+@media (max-width: $lk-screen-sm-min) {
+  .input-group-disappear-sm {
+    display: none;
+  }
+}
+
+//== End InputGroups
+
 .tooltip.in {
   opacity: $lk-tooltip-opacity;
 }

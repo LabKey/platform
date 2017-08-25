@@ -100,6 +100,7 @@
         </div>
         <% if (showRight) { %>
         <div class="content-right">
+            <div class="content-right-spacer"></div>
             <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT), out); %>
         </div>
         <% } %>

@@ -53,15 +53,22 @@ legend {
     display: flex;
 
     .content-left {
-      flex-grow: 10;
-      padding-left: 15px;
-      padding-right: 15px;
+      flex-grow: $lk-portal-content-left-flex;
+      padding-left: $lk-portal-gutter-width;
+      padding-right: $lk-portal-gutter-width;
     }
 
     .content-right {
-      flex-grow: 1;
-      min-width: 240px; // TODO: remove this as it can cause content to overflow. Use natural flex
-      padding-right: 15px;
+      flex-grow: $lk-portal-content-right-flex;
+      padding-right: $lk-portal-gutter-width;
+    }
+
+    // spacer element to for a minimum width of content-right. min-width does not work well with flex
+    .content-right-spacer {
+      width: $lk-portal-content-right-min-width;
+      height: 0;
+      padding: 0;
+      margin: 0;
     }
   }
 }
@@ -1442,7 +1449,7 @@ div span.labkey-main-menu-icon {
 }
 
 .labkey-wizard-container {
-  border-top: $lk-container-border-top;
+  border-top: $lk-portal-panel-border-top;
 
   .labkey-wizard-row {
     padding-top: 20px;
@@ -1474,9 +1481,8 @@ div span.labkey-main-menu-icon {
   }
 }
 
-.labkey-portal-container
-{
-  border-top: $lk-container-border-top;
+.labkey-portal-container {
+  border-top: $lk-portal-panel-border-top;
 
   .labkey-portal-container {
     border-top: none;
