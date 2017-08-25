@@ -126,6 +126,7 @@
         {
             fileCell.innerHTML = "<input type='file' size='40' name='" + name + "' />";
             file.fileInput = fileCell.children[0];
+            file.fileInput.style.border = 'none';
             file.fileInput.onchange = function() {
                 checkForDuplicateFileName(file);
             };
@@ -156,14 +157,14 @@
         // add a cell to show the file name after selection
         var fileNameCell = file.mainRow.insertCell(-1);
         fileNameCell.width = "100%";
-        fileNameCell.innerHTML = '<label></label>';
+        fileNameCell.innerHTML = '<div style="padding: 5px;"></div>';
         file.fileNameLabel = fileNameCell.children[0];
 
         // add a new row for error messages, collapsed by default
         file.errorRow = tbl.insertRow(-1);
         var errorCell = file.errorRow.insertCell(-1);
         errorCell.colSpan = 20;
-        errorCell.innerHTML = "<label class='labkey-error'></label>";
+        errorCell.innerHTML = "<div class='labkey-error'></div>";
         file.errorLabel = errorCell.children[0];
 
         reindexFileUploadInputRows();
