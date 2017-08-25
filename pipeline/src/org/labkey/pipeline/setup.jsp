@@ -65,49 +65,52 @@
         <tr>
             <td colspan="10">
                 <table>
-                    <tr>
+                    <tr style="height: 1.75em">
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="<%= h(SetupForm.SITE_DEFAULT_TYPE) %>"<%=disabled(hasInheritedOverride)%>
                             <%=checked(SetupForm.SITE_DEFAULT_TYPE.equals(bean.getPipelineRootOption()))%>
                                    onclick="updatePipelineSelection();">
 <%                      if (hasInheritedOverride) { %>
-                            <label for="pipeOptionSiteDefault" class="labkey-disabled">Use a default based on the file root</label><%=
+                            <span class="labkey-disabled">Use a default based on the file root</span><%=
                             PageFlowUtil.helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
                                     "override has been set in a parent folder.")%><span class="labkey-disabled">: <%=h(projectDefaultRoot)%></span><%
                         } else { %>
-                            <label for="pipeOptionSiteDefault">Use a default based on the file root</label>: <%=h(projectDefaultRoot)%><%
+                            Use a default based on the file root: <%=h(projectDefaultRoot)%><%
                         } %>
                         </td>
                     </tr>
                     <% if (hasInheritedOverride) { %>
-                        <tr>
+                        <tr style="height: 1.75em">
                             <td>
                                 <input type="radio" name="pipelineRootOption" id="revertOverride" value="<%= h(SetupForm.REVERT_OVERRIDE) %>" onclick="updatePipelineSelection();">
-                                <label for="revertOverride">Remove this pipeline override and inherit settings from parent</label>
+                                Remove this pipeline override and inherit settings from parent
                             </td>
                         </tr>
                     <% } %>
-                    <tr>
-                        <td><input type="radio" name="pipelineRootOption" id="pipeOptionProjectSpecified" value="<%=h(SetupForm.PROJECT_SPECIFIED_TYPE)%>"
+                    <tr style="height: 1.75em">
+                        <td>
+                            <input type="radio" name="pipelineRootOption" id="pipeOptionProjectSpecified" value="<%=h(SetupForm.PROJECT_SPECIFIED_TYPE)%>"
                                         <%=checked(SetupForm.PROJECT_SPECIFIED_TYPE.equals(bean.getPipelineRootOption())) %>
                                                onclick="updatePipelineSelection();">
-                                        <label for="pipeOptionProjectSpecified"><%=h(folderRadioBtnLabel)%></label></td>
+                            <%=h(folderRadioBtnLabel)%>
+                        </td>
                     </tr>
                     <tr>
                         <td colspan="2">
-                            <table width="100%" style="padding-left: 3em;" id="pipelineRootSettings">
+                            <table width="100%" style="margin: 0 0 10px 20px;" id="pipelineRootSettings">
                                 <tr>
-                                    <td class="labkey-form-label"><label for="pipeProjectRootPath">Primary directory</label></td>
+                                    <td class="labkey-form-label">Primary directory</td>
                                     <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getPath())%>"></td>
                                 </tr>
                                 <tr>
-                                    <td class="labkey-form-label"><label for="pipeOptionIndexable">Searchable</label></td>
-                                    <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable"<%=checked(bean.isSearchable() && SetupForm.PROJECT_SPECIFIED_TYPE.equals(bean.getPipelineRootOption()))%>>
-                                        <label for="pipeOptionIndexable">Allow files to be indexed for full-text search</label>
+                                    <td class="labkey-form-label">Searchable</td>
+                                    <td id="pipeIndexTd">
+                                        <input type="checkbox" name="searchable" id="pipeOptionIndexable"<%=checked(bean.isSearchable() && SetupForm.PROJECT_SPECIFIED_TYPE.equals(bean.getPipelineRootOption()))%>>
+                                        Allow files to be indexed for full-text search
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="labkey-form-label"><label for="pipeOptionSupplementalPath">Supplemental directory</label></td>
-                                    <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath"<%=checked(bean.getSupplementalPath() != null)%> onclick="Ext.get('supplementalPathDiv').dom.style.display = (Ext.get('pipeOptionSupplementalPath').dom.checked ? '' : 'none'); Ext.get('pipeProjectSupplementalPath').dom.disabled = (Ext.get('pipeOptionSupplementalPath').dom.checked ? false : true);">
+                                    <td class="labkey-form-label" valign="top">Supplemental directory</td>
+                                    <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath"<%=checked(bean.getSupplementalPath() != null)%> onclick="document.querySelector('#supplementalPathDiv').style.display = (document.querySelector('#pipeOptionSupplementalPath').checked ? '' : 'none'); document.querySelector('#pipeProjectSupplementalPath').disabled = !document.querySelector('#pipeOptionSupplementalPath');">
                                         Include an additional directory when looking for files. No files will be written to this directory.
                                         <div id="supplementalPathDiv" <% if (bean.getSupplementalPath() == null) { %>style="display:none"<% } %>>
                                             <input type="text" id="pipeProjectSupplementalPath" <% if (bean.getSupplementalPath() == null) { %>disabled<% } %> name="supplementalPath" size="50" value="<%=h(bean.getSupplementalPath())%>">
