@@ -5,7 +5,6 @@ import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -88,9 +87,6 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         {
             DataIterator it = builder.getDataIterator(context);
             DataIterator in = DataIteratorUtil.wrapMap(it, false);
-            Domain domain = queryTable.getDomain();
-            if (domain == null)
-                return it;
             return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
         };
     }
