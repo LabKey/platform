@@ -16,19 +16,20 @@
 
 package org.labkey.study.plate;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.Position;
 import org.labkey.api.study.PositionImpl;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.WellGroupTemplate;
-import org.labkey.api.data.Container;
 import org.labkey.api.util.GUID;
-import org.labkey.api.view.ViewContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -51,11 +52,6 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     public PlateTemplateImpl()
     {
         // no-param constructor for reflection
-    }
-
-    public PlateTemplateImpl(Container container, String name, String templateType)
-    {
-        this(container, name, templateType, 8, 12);
     }
 
     public PlateTemplateImpl(Container container, String name, String type, int rowCount, int colCount)
@@ -101,12 +97,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     {
         if (_groups == null)
             _groups = new HashMap<>();
-        Map<String, WellGroupTemplateImpl> templatesByType = _groups.get(template.getType());
-        if (templatesByType == null)
-        {
-            templatesByType = new LinkedHashMap<>();
-            _groups.put(template.getType(), templatesByType);
-        }
+        Map<String, WellGroupTemplateImpl> templatesByType = _groups.computeIfAbsent(template.getType(), k -> new LinkedHashMap<>());
         templatesByType.put(template.getName(), template);
         if (!wellGroupsInOrder(templatesByType))
         {
@@ -317,23 +308,5 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     public void setType(String type)
     {
         _type = type;
-    }
-
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
-    }
-
-    @Override
-    public @NotNull AttachmentType getAttachmentType()
-    {
-        return AttachmentType.UNKNOWN;
     }
 }

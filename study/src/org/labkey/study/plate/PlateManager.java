@@ -19,21 +19,13 @@ package org.labkey.study.plate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
@@ -49,7 +41,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.AbstractPlateTypeHandler;
 import org.labkey.api.study.Plate;
-import org.labkey.api.study.PlateQueryView;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.PlateTypeHandler;
@@ -61,13 +52,8 @@ import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
-import org.labkey.study.plate.query.PlateSchema;
-import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,10 +61,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -87,10 +71,7 @@ import java.util.Set;
  */
 public class PlateManager implements PlateService
 {
-    private final Object TEMPLATE_NAME_SYNC_OBJ = new Object();
-
     private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
-    private Set<String> _distinctTemplateNames;
     private boolean _lsidHandlersRegistered = false;
     private Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
 
@@ -201,12 +182,8 @@ public class PlateManager implements PlateService
         return templates;
     }
 
-    public PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int colCount) throws SQLException
+    public PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int colCount)
     {
-        synchronized (TEMPLATE_NAME_SYNC_OBJ)
-        {
-            _distinctTemplateNames = null;
-        }
         return new PlateTemplateImpl(container, null, templateType, rowCount, colCount);
     }
 
@@ -335,12 +312,7 @@ public class PlateManager implements PlateService
             for (Map.Entry<String, Object> entry : props.entrySet())
             {
                 String wellgroupLsid = (String) entry.getValue();
-                List<PositionImpl> groupPositions = groupLsidToPositions.get(wellgroupLsid);
-                if (groupPositions == null)
-                {
-                    groupPositions = new ArrayList<>();
-                    groupLsidToPositions.put(wellgroupLsid, groupPositions);
-                }
+                List<PositionImpl> groupPositions = groupLsidToPositions.computeIfAbsent(wellgroupLsid, k -> new ArrayList<>());
                 groupPositions.add(position);
             }
         }
@@ -489,51 +461,6 @@ public class PlateManager implements PlateService
         }
     }
 
-    public PlateQueryView getPlateGridView(ViewContext context)
-    {
-        return getPlateGridView(context, null);
-    }
-
-    public PlateQueryView getPlateGridView(ViewContext context, SimpleFilter filter)
-    {
-        return PlateSchema.createPlateQueryView(context, filter);
-    }
-
-    public PlateQueryView getWellGroupGridView(ViewContext context)
-    {
-        return PlateSchema.createWellGroupQueryView(context, null);
-    }
-
-    public PlateQueryView getWellGroupGridView(ViewContext context, WellGroup.Type showOnlyType)
-    {
-        return PlateSchema.createWellGroupQueryView(context, null, showOnlyType);
-    }
-
-    public Set<String> getDistinctTemplateNames()
-    {
-        synchronized (TEMPLATE_NAME_SYNC_OBJ)
-        {
-            if (_distinctTemplateNames == null)
-            {
-                DbSchema schema = StudySchema.getInstance().getSchema();
-                TableInfo plateTable = StudySchema.getInstance().getTableInfoPlate();
-                _distinctTemplateNames = new HashSet<>();
-
-                new SqlSelector(schema, "SELECT DISTINCT Name FROM " + schema.getName() + "." + plateTable.getName()).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        while (rs.next())
-                            _distinctTemplateNames.add(rs.getString("Name"));
-                    }
-                });
-            }
-
-            return _distinctTemplateNames;
-        }
-    }
-
     public void deletePlate(Container container, int rowid)
     {
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
@@ -556,7 +483,6 @@ public class PlateManager implements PlateService
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            AttachmentService.get().deleteAttachments(plate);
             OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
             Table.delete(StudySchema.getInstance().getTableInfoWell(), plateIdFilter);
             Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), plateIdFilter);
@@ -699,33 +625,6 @@ public class PlateManager implements PlateService
         return (PlateManager) PlateService.get();
     }
 
-    public void deleteDataFile(Plate plate)
-    {
-        String guid = ((PlateImpl) plate).getDataFileId();
-        if (guid != null)
-            AttachmentService.get().deleteAttachments(plate);
-    }
-
-    public void setDataFile(User user, Plate plate, AttachmentFile file) throws IOException, AttachmentService.DuplicateFilenameException
-    {
-        AttachmentService.get().addAttachments(plate, Collections.singletonList(file), user);
-    }
-
-    public ActionURL getDataFileURL(Plate iplate, Class<? extends Controller> downloadClass)
-    {
-        PlateImpl plate = (PlateImpl) iplate;
-        if (plate.getDataFileId() != null)
-        {
-            List<Attachment> attachments = AttachmentService.get().getAttachments(plate);
-            if (!attachments.isEmpty())
-            {
-                assert attachments.size() == 1 : "Expected only one data file per plate";
-                return new DownloadURL(downloadClass, plate.getContainer(), plate.getDataFileId(), attachments.get(0).getName());
-            }
-        }
-        return null;
-    }
-
     public PlateTemplate copyPlateTemplate(PlateTemplate source, User user, Container destContainer)
             throws SQLException, PlateService.NameConflictException
     {
@@ -791,12 +690,6 @@ public class PlateManager implements PlateService
     private PlateTemplateImpl getCachedPlateTemplate(Container container, String idString)
     {
         return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, idString));
-    }
-
-    @Override
-    public DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException
-    {
-        return CurveFitFactory.getCurveImpl(wellGroup, assumeDecreasing, percentCalculator, type);
     }
 
     @Override
