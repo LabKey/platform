@@ -587,7 +587,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(newUI ? "<th " : "<td ");
         out.write("class=\"labkey-column-header ");
         if (newUI && hasMenu)
-            out.write("dropdown dropdown-rollup "); // TODO: add an in-place div to fill the <th> and use it to mount the dropdown
+            out.write("dropdown dropdown-rollup ");
         out.write(getGridHeaderClass());
         if (sortField != null)
         {
@@ -609,8 +609,6 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("\""); // end of "class"
 
         out.write(" style=\"");
-        if (newUI)
-            out.write("position:relative;");
         out.write(getDefaultHeaderStyle());
         out.write("\"");
 
@@ -654,9 +652,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("\"");
 
         out.write(">\n");
-        if (newUI && hasMenu)
-            out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\">");
-        else
+        if (!newUI)
             out.write("<div>");
 
         renderTitle(ctx, out);
@@ -676,12 +672,15 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-column-header-sort-icon\"/>");
         }
 
-        out.write("</div>");
+        if (!newUI)
+            out.write("</div>");
 
         if (hasMenu)
         {
             if (newUI)
             {
+                // 31304: click target should fill the entire cell
+                out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
                 out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
                 PopupMenuView.renderTree(navTree, out);
                 out.write("</ul>");

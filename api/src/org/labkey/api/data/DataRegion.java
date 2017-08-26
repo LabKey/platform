@@ -1866,18 +1866,18 @@ public class DataRegion extends DisplayElement
         if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
         {
             out.write(newUI ? "<th " : "<td ");
-            out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
+            out.write("class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
 
             if (newUI)
             {
                 int width = 0;
                 if (showRecordSelectors)
-                    width += 25;
+                    width += 45; // account for drop menu
                 if (detailsColumn != null)
-                    width += 25;
+                    width += 15;
                 if (updateColumn != null)
-                    width += 25;
-                out.write(" style=\"position:relative;width:" + width + "px;\"");
+                    width += 15;
+                out.write(" style=\"width:" + width + "px;\"");
             }
 
             String headerId = "column-header-" + UniqueID.getServerSessionScopedUID();
@@ -1891,22 +1891,6 @@ public class DataRegion extends DisplayElement
 
             if (showRecordSelectors)
             {
-                if (newUI)
-                    out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\">");
-                else
-                    out.write("<div>");
-                out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
-                out.write(TOGGLE_CHECKBOX_NAME);
-                out.write("\" ");
-                out.write(">");
-
-                // TODO: move inline style to stylesheet
-                out.write("<span style=\"display:inline-block; background: url('");
-                out.write(ctx.getViewContext().getContextPath());
-                out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
-                out.write("></span>");
-                out.write("</div>");
-
                 NavTree navtree = new NavTree();
 
                 NavTree selectAll = new NavTree("Select All");
@@ -1949,6 +1933,12 @@ public class DataRegion extends DisplayElement
 
                 if (newUI)
                 {
+                    out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
+                    out.write(TOGGLE_CHECKBOX_NAME);
+                    out.write("\" ");
+                    out.write(">");
+
+                    out.write("<span class=\"dropdown-toggle\" data-toggle=\"dropdown\"></span>");
                     out.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
                     PopupMenuView.renderTree(navtree, out);
                     out.write("</ul>");
@@ -1956,6 +1946,17 @@ public class DataRegion extends DisplayElement
                 }
                 else
                 {
+                    out.write("<div>");
+                    out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
+                    out.write(TOGGLE_CHECKBOX_NAME);
+                    out.write("\" ");
+                    out.write(">");
+                    out.write("<span style=\"display:inline-block; background: url('");
+                    out.write(ctx.getViewContext().getContextPath());
+                    out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
+                    out.write("></span>");
+                    out.write("</div>");
+
                     PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
                     popup.renderMenuScript(out);
 
