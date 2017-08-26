@@ -46,6 +46,21 @@
     border-bottom: solid 1px #AAAAAA;
     padding: 1px 4px;
     vertical-align: top;
+    position: relative;
+
+    &.dropdown:hover,
+    > .dropdown-toggle:hover {
+      cursor: pointer;
+    }
+
+    // 31304: click target should fill the entire cell
+    > div.dropdown-toggle {
+      position:absolute;
+      top:0;
+      bottom:0;
+      left:0;
+      right:0;
+    }
   }
 
   .labkey-col-total {
@@ -249,15 +264,6 @@ table.labkey-fixed-width-columns {
   background: #F0F0F0;
 }
 
-.labkey-col-header-filter {
-
-  &:hover,
-  th:hover {
-    background-color: $lk-grid-color;
-    cursor: pointer;
-  }
-}
-
 /* Used to highlight cells with a darker color, limited use right now */
 td.labkey-highlight-cell, th.labkey-highlight-cell {
   background: #AAAAAA;
@@ -280,7 +286,7 @@ td.labkey-blank-cell, th.labkey-blank-cell {
 }
 
 .labkey-column-header {
-  span {
+  span.fa {
     display: none;
     padding-left: 5px;
 
@@ -307,6 +313,13 @@ td.labkey-blank-cell, th.labkey-blank-cell {
     span.fa-sort-down {
       display: inline;
     }
+  }
+
+  &.labkey-selectors > span.dropdown-toggle {
+    display: inline-block;
+    background: url('#{$internal-images-dir}/arrow_down.png') right no-repeat;
+    width: 16px;
+    height: 10px;
   }
 }
 
