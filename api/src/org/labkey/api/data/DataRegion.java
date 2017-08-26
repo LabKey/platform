@@ -93,7 +93,7 @@ public class DataRegion extends DisplayElement
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
     private List<AnalyticsProviderItem> _summaryStatsProviders = null;
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
-    private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(PageFlowUtil.useExperimentalCoreUI(), !PageFlowUtil.useExperimentalCoreUI());
+    private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig();
     private TableInfo _table = null;
     private ActionURL _selectAllURL = null;
     private boolean _showRecordSelectors = false;
@@ -1866,7 +1866,7 @@ public class DataRegion extends DisplayElement
         if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
         {
             out.write(newUI ? "<th " : "<td ");
-            out.write("class=\"labkey-column-header labkey-selectors labkey-col-header-filter\"");
+            out.write("class=\"labkey-column-header labkey-selectors\"");
 
             if (newUI)
             {
@@ -2304,7 +2304,7 @@ public class DataRegion extends DisplayElement
             if (updateColumn != null)
                 renderGridCellContents(ctx, out, updateColumn, "fa fa-pencil lk-dr-action-icon");
             if (detailsColumn != null)
-                renderGridCellContents(ctx, out, detailsColumn, "fa fa-gear lk-dr-action-icon");
+                renderGridCellContents(ctx, out, detailsColumn, "fa fa-info-circle lk-dr-action-icon");
         }
         out.write("</td>");
     }
