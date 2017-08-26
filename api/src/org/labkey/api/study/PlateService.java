@@ -19,19 +19,13 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -123,10 +117,9 @@ public interface PlateService
      * @param rowCount The number of columns in the plate.
      * @param columnCount The number of rows in the plate.
      * @return A newly created plate template instance.
-     * @throws SQLException Thrown in the event of a database failure.
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
-    PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount) throws SQLException;
+    PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount);
 
     /**
      * Creates a new plate template.
@@ -174,37 +167,6 @@ public interface PlateService
     Position createPosition(Container container, int row, int column);
 
     /**
-     * Creates a new grid view of all plates created from the specified template.
-     * @param context The view context into which the grid view will be rendered.
-     * @return Returns a query view that may be used in UI.
-     */
-    PlateQueryView getPlateGridView(ViewContext context);
-
-    /**
-     * Creates a new grid view of all plates created from the specified template.
-     *
-     * @param context The view context into which the grid view will be rendered.
-     * @param filter The filter to apply to the plate view.
-     * @return Returns a query view that may be used in UI.
-     */
-    PlateQueryView getPlateGridView(ViewContext context, SimpleFilter filter);
-
-    /**
-     * Creates a new grid view of all well groups created from the specified template.
-     * @param context The view context into which the grid view will be rendered.
-     * @return Returns a query view that may be used in UI.
-     */
-    PlateQueryView getWellGroupGridView(ViewContext context);
-
-    /**
-     * Creates a new grid view of all well groups of a certain type created from the specified template.
-     * @param context The view context into which the grid view will be rendered.
-     * @param showOnlyType The well group type that should be included in the grid view.
-     * @return Returns a query view that may be used in UI.
-     */
-    PlateQueryView getWellGroupGridView(ViewContext context, WellGroup.Type showOnlyType);
-
-    /**
      * Deletes all plate and template data from the specified container.  Typically used
      * only when a container is deleted.
      * @param container The container from which to delete all plate data.
@@ -225,30 +187,6 @@ public interface PlateService
     void registerDetailsLinkResolver(PlateDetailsResolver resolver);
 
     /**
-     * Associates a data file with a plate.  Only one file may be associated with a given plate.
-     * @param user The current user.
-     * @param plate The plate with which to associate the data file.
-     * @param file The file to associate.
-     * @throws IOException Thrown if the specified file cannot be read.
-     * @throws AttachmentService.DuplicateFilenameException Thrown if the specified file has already been attached to this plate
-     */
-    void setDataFile(User user, Plate plate, AttachmentFile file) throws IOException, AttachmentService.DuplicateFilenameException;
-
-    /**
-     * Deletes a plate-associated data file.
-     * @param plate The plate associated with the data file to be deleted.
-     */
-    void deleteDataFile(Plate plate);
-
-    /**
-     * Gets the download URL for the associated plate's data file.
-     * @param plate The plate associated with the data file to be downloaded.
-     * @param downloadClass The controller class that implements the 'download' action.
-     * @return A ActionURL containing the download URL.
-     */
-    ActionURL getDataFileURL(Plate plate, Class<? extends Controller> downloadClass);
-
-    /**
      * Copies a plate template from one container to another.
      * @param source The source plate template
      * @param user The user performing the copy
@@ -263,17 +201,6 @@ public interface PlateService
      * Registers a handler for a particular type of plate
      */
     void registerPlateTypeHandler(PlateTypeHandler handler);
-
-    /**
-     * Calculates a dilution curve for the specified well group.
-     * @param wellGroup The well group containing WellData objects over which a curve should be calculated.
-     * @param assumeDecreasing Whether the curve is assumed to be decreasing by default.  Used only if the data points are too chaotic to provide a reasonable guess.
-     * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
-     * @param type The Type of fit desired.
-     * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
-     * @throws FitFailedException Thrown if a curve cannot be fit to the data points.
-     */
-    DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 
     /**
      * Calculates a dilution curve for the specified well groups.

@@ -16,8 +16,6 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.attachments.AttachmentParent;
-
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +24,7 @@ import java.util.Map;
  * Date: Oct 20, 2006
  * Time: 1:02:47 PM
  */
-public interface PlateTemplate extends PropertySet, AttachmentParent
+public interface PlateTemplate extends PropertySet
 {
     String getName();
 
