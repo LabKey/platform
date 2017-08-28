@@ -3229,7 +3229,7 @@ public class DataRegion extends DisplayElement
                     ContextAction.Builder action = new ContextAction.Builder()
                             .iconCls("filter")
                             // TODO: Only allow open if the column is available to the region...new scenario for UX
-                            .onClick(region + "._openFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
+                            .onClick(region + "._openFilter(" + PageFlowUtil.jsString(fieldKey) + ", arguments[0]); return false;")
                             .onClose(region + ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
                             .text(caption.toString())
                             .tooltip(caption.toString());

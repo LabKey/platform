@@ -459,6 +459,7 @@ if (!LABKEY.DataRegions) {
             _load(this);
         }
         else if (!isQWP) {
+            _initContexts.call(this);
             _initMessaging.call(this);
             _initSelection.call(this);
             _initHeaderLocking.call(this);
@@ -552,18 +553,10 @@ if (!LABKEY.DataRegions) {
      * @param {string|FieldKey} fieldKey the name of the field from which all filters should be removed
      */
     LABKEY.DataRegion.prototype.clearFilter = function(fieldKey) {
-        fieldKey = _resolveFieldKey(this, fieldKey);
+        var fk = _resolveFieldKey(this, fieldKey);
 
-        if (fieldKey) {
-            var columnPrefix = '.' + fieldKey.toString() + '~';
-
-            //var event = $.Event("beforeclearfilter");
-            //
-            //$(this).trigger(event, this, columnName);
-            //
-            //if (event.isDefaultPrevented()) {
-            //    return;
-            //}
+        if (fk) {
+            var columnPrefix = '.' + fk.toString() + '~';
 
             if (this.async) {
                 this.offset = 0;
@@ -1391,6 +1384,8 @@ if (!LABKEY.DataRegions) {
 
     LABKEY.DataRegion.prototype.showContext = function() {
         if (NEW_UI) {
+            _initContexts();
+
             var ctx = _getContextBarSelector(this);
             if (ctx.html().trim() !== '') {
                 ctx.show();
@@ -1792,6 +1787,22 @@ if (!LABKEY.DataRegions) {
         this.offset = 0;
 
         _setParameter(this, MAX_ROWS_PREFIX, newmax, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
+    };
+
+    var _initContexts = function() {
+        // clear old contents
+        var ctxBar = _getContextBarSelector(this);
+        ctxBar.find('.labkey-button-bar').remove();
+
+        if (ctxBar.find('.fa-filter').length >= 2) {
+            ctxBar.append([
+                '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
+                '<span class="labkey-button ctx-clear-all">Clear All</span>',
+                '</div>'
+            ].join(''));
+
+            ctxBar.find('.ctx-clear-all').off('click').on('click', $.proxy(this.clearAllFilters, this));
+        }
     };
 
     //
@@ -2467,24 +2478,20 @@ if (!LABKEY.DataRegions) {
      * @param summaryStatName
      */
     LABKEY.DataRegion.prototype.toggleSummaryStatForCustomView = function(viewName, colFieldKey, summaryStatName) {
-        this.getQueryDetails(function(queryDetails)
-        {
+        this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view != null)
-            {
-                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
-                {
-                    var colProviderNames = [];
-                    $.each(view.analyticsProviders, function(index, existingProvider) {
-                        if (existingProvider.fieldKey == colFieldKey)
-                            colProviderNames.push(existingProvider.name);
-                    });
+            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+                var colProviderNames = [];
+                $.each(view.analyticsProviders, function(index, existingProvider) {
+                    if (existingProvider.fieldKey === colFieldKey)
+                        colProviderNames.push(existingProvider.name);
+                });
 
-                    var index = colProviderNames.indexOf(summaryStatName);
-                    if (index == -1)
-                        _addAnalyticsProviderToView.call(this, view, colFieldKey, summaryStatName, true);
-                    else
-                        _removeAnalyticsProviderFromView.call(this, view, colFieldKey, summaryStatName, true);
+                if (colProviderNames.indexOf(summaryStatName) === -1) {
+                    _addAnalyticsProviderToView.call(this, view, colFieldKey, summaryStatName, true);
+                }
+                else {
+                    _removeAnalyticsProviderFromView.call(this, view, colFieldKey, summaryStatName, true);
                 }
             }
         }, null, this);
@@ -2498,22 +2505,18 @@ if (!LABKEY.DataRegions) {
      * @param callbackScope
      */
     LABKEY.DataRegion.prototype.getColumnAnalyticsProviders = function(viewName, colFieldKey, callback, callbackScope) {
-        this.getQueryDetails(function(queryDetails)
-        {
+        this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view != null)
-            {
-                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
-                {
-                    var colProviderNames = [];
-                    $.each(view.analyticsProviders, function(index, existingProvider) {
-                        if (existingProvider.fieldKey == colFieldKey)
-                            colProviderNames.push(existingProvider.name);
-                    });
-
-                    if ($.isFunction(callback)) {
-                        callback.call(callbackScope, colProviderNames);
+            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+                var colProviderNames = [];
+                $.each(view.analyticsProviders, function(index, existingProvider) {
+                    if (existingProvider.fieldKey === colFieldKey) {
+                        colProviderNames.push(existingProvider.name);
                     }
+                });
+
+                if ($.isFunction(callback)) {
+                    callback.call(callbackScope, colProviderNames);
                 }
             }
         }, null, this);
@@ -2526,30 +2529,26 @@ if (!LABKEY.DataRegions) {
      * @param summaryStatProviderNames
      */
     LABKEY.DataRegion.prototype.setColumnSummaryStatistics = function(viewName, colFieldKey, summaryStatProviderNames) {
-        this.getQueryDetails(function(queryDetails)
-        {
+        this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view != null)
-            {
-                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
-                {
-                    var newAnalyticsProviders = [];
-                    $.each(view.analyticsProviders, function(index, existingProvider) {
-                        if (existingProvider.fieldKey !== colFieldKey || existingProvider.name.indexOf('AGG_') != 0)
-                            newAnalyticsProviders.push(existingProvider);
-                    });
+            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+                var newAnalyticsProviders = [];
+                $.each(view.analyticsProviders, function(index, existingProvider) {
+                    if (existingProvider.fieldKey !== colFieldKey || existingProvider.name.indexOf('AGG_') != 0) {
+                        newAnalyticsProviders.push(existingProvider);
+                    }
+                });
 
-                    $.each(summaryStatProviderNames, function(index, providerName) {
-                        newAnalyticsProviders.push({
-                            fieldKey: colFieldKey,
-                            name: providerName,
-                            isSummaryStatistic: true
-                        });
+                $.each(summaryStatProviderNames, function(index, providerName) {
+                    newAnalyticsProviders.push({
+                        fieldKey: colFieldKey,
+                        name: providerName,
+                        isSummaryStatistic: true
                     });
+                });
 
-                    view.analyticsProviders = newAnalyticsProviders;
-                    _updateSessionCustomView.call(this, view, true);
-                }
+                view.analyticsProviders = newAnalyticsProviders;
+                _updateSessionCustomView.call(this, view, true);
             }
         }, null, this);
     };
@@ -2560,23 +2559,17 @@ if (!LABKEY.DataRegions) {
      * @param colFieldKey
      */
     LABKEY.DataRegion.prototype.removeColumn = function(viewName, colFieldKey) {
-        this.getQueryDetails(function(queryDetails)
-        {
+        this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view != null)
-            {
-                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
-                {
-                    var colFieldKeys = $.map(view.columns, function (c) {
-                        return c.fieldKey;
-                    }),
-                    fieldKeyIndex = colFieldKeys.indexOf(colFieldKey);
+            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+                var colFieldKeys = $.map(view.columns, function (c) {
+                            return c.fieldKey;
+                        }),
+                        fieldKeyIndex = colFieldKeys.indexOf(colFieldKey);
 
-                    if (fieldKeyIndex > -1)
-                    {
-                        view.columns.splice(fieldKeyIndex, 1);
-                        _updateSessionCustomView.call(this, view, true);
-                    }
+                if (fieldKeyIndex > -1) {
+                    view.columns.splice(fieldKeyIndex, 1);
+                    _updateSessionCustomView.call(this, view, true);
                 }
             }
         }, null, this);
@@ -2590,20 +2583,15 @@ if (!LABKEY.DataRegions) {
      * @param providerName
      */
     LABKEY.DataRegion.prototype.addAnalyticsProviderForCustomView = function(viewName, colFieldKey, providerName) {
-        this.getQueryDetails(function(queryDetails)
-        {
+        this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view != null)
-            {
-                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
-                {
-                    _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
+            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+                _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
 
-                    var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                    Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
-                        menuItem.disable();
-                    });
-                }
+                var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
+                Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
+                    menuItem.disable();
+                });
             }
         }, null, this);
     };
@@ -2616,20 +2604,15 @@ if (!LABKEY.DataRegions) {
      * @param providerName
      */
     LABKEY.DataRegion.prototype.removeAnalyticsProviderForCustomView = function(viewName, colFieldKey, providerName) {
-        this.getQueryDetails(function(queryDetails)
-        {
+        this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view != null)
-            {
-                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
-                {
-                    _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
+            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+                _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
 
-                    var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                    Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
-                        menuItem.enable();
-                    });
-                }
+                var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
+                Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
+                    menuItem.enable();
+                });
             }
         }, null, this);
     };
@@ -2637,23 +2620,27 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    LABKEY.DataRegion.prototype._openFilter = function(columnName) {
-        if (this._dialogLoaded) {
-            new LABKEY.FilterDialog({
-                dataRegionName: this.name,
-                column: this.getColumn(columnName),
-                cacheFacetResults: false // could have changed on Ajax
-            }).show();
+    LABKEY.DataRegion.prototype._openFilter = function(columnName, evt) {
+        if (evt && $(evt.target).hasClass('fa-close')) {
+            return;
         }
-        else {
-            LABKEY.requiresExt3ClientAPI(function() {
+
+        var column = this.getColumn(columnName);
+
+        if (column) {
+            var show = function() {
                 this._dialogLoaded = true;
                 new LABKEY.FilterDialog({
                     dataRegionName: this.name,
                     column: this.getColumn(columnName),
                     cacheFacetResults: false // could have changed on Ajax
                 }).show();
-            }, this);
+            }.bind(this);
+
+            this._dialogLoaded ? show() : LABKEY.requiresExt3ClientAPI(show);
+        }
+        else {
+            LABKEY.Utils.alert('Column not available', 'Unable to find column "' + columnName + '" in this view.');
         }
     };
 
@@ -2674,7 +2661,7 @@ if (!LABKEY.DataRegions) {
                 if (requiresRefresh) {
                     this.refresh();
                 }
-                else if (info.views.length == 1) {
+                else if (info.views.length === 1) {
                     this.view = info.views[0];
                     _initCustomViews.call(this);
                     this.showContext();
@@ -2683,16 +2670,14 @@ if (!LABKEY.DataRegions) {
         });
     };
 
-    var _addAnalyticsProviderToView = function(view, colFieldKey, providerName, isSummaryStatistic)
-    {
+    var _addAnalyticsProviderToView = function(view, colFieldKey, providerName, isSummaryStatistic) {
         var colProviderNames = [];
         $.each(view.analyticsProviders, function(index, existingProvider) {
-            if (existingProvider.fieldKey == colFieldKey)
+            if (existingProvider.fieldKey === colFieldKey)
                 colProviderNames.push(existingProvider.name);
         });
 
-        if (colProviderNames.indexOf(providerName) == -1)
-        {
+        if (colProviderNames.indexOf(providerName) === -1) {
             view.analyticsProviders.push({
                 fieldKey: colFieldKey,
                 name: providerName,
@@ -2703,11 +2688,10 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    var _removeAnalyticsProviderFromView = function(view, colFieldKey, providerName, isSummaryStatistic)
-    {
+    var _removeAnalyticsProviderFromView = function(view, colFieldKey, providerName, isSummaryStatistic) {
         var indexToRemove = null;
         $.each(view.analyticsProviders, function(index, existingProvider) {
-            if (existingProvider.fieldKey == colFieldKey && existingProvider.name == providerName) {
+            if (existingProvider.fieldKey === colFieldKey && existingProvider.name === providerName) {
                 indexToRemove = index;
                 return false;
             }
@@ -2892,14 +2876,11 @@ if (!LABKEY.DataRegions) {
         LABKEY.Query.deleteQueryView(config);
     };
 
-    var _getViewFromQueryDetails = function(queryDetails, viewName)
-    {
-        var matchingView = null;
+    var _getViewFromQueryDetails = function(queryDetails, viewName) {
+        var matchingView;
 
-        $.each(queryDetails.views, function(index, view)
-        {
-            if (view.name == viewName)
-            {
+        $.each(queryDetails.views, function(index, view) {
+            if (view.name === viewName) {
                 matchingView = view;
                 return false;
             }
@@ -2908,8 +2889,7 @@ if (!LABKEY.DataRegions) {
         return matchingView;
     };
 
-    var _queryDetailsContainsColumn = function(queryDetails, colFieldKey)
-    {
+    var _queryDetailsContainsColumn = function(queryDetails, colFieldKey) {
         var keys = $.map(queryDetails.columns, function(c){ return c.fieldKey; }),
             exists = keys.indexOf(colFieldKey) > -1;
 
