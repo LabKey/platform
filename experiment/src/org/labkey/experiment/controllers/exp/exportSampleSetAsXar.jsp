@@ -21,7 +21,7 @@
 <%
     ActionURL url = (ActionURL)HttpView.currentModel();
 %>
-<table class="labkey-export-tab-contents">
+<table class="lk-fields-table">
     <tr>
         <td>
             <table class="labkey-export-tab-layout"><tr><td>Export sample set definition as a XAR file</td></tr></table>

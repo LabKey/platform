@@ -28,7 +28,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
 
 <p class="labkey-error"><b><%= h(bean.getError()) %></b></p>
 
-<table cellspacing="4" class="labkey-export-tab-contents">
+<table cellspacing="4" class="lk-fields-table">
     <tr>
         <td>LSID output type:</td>
         <td>

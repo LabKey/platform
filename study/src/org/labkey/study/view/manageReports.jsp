@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
 <%@ page import="java.io.Writer" %>
 <%@ page import="java.util.ArrayList" %>
@@ -87,9 +86,7 @@
     int reportCount = 0;
 
 %>
-
 <labkey:errors/>
-
 <%
     if (bean.isWideView())
     {
@@ -165,11 +162,11 @@
         {
             int paddingTop = countSection==0?0:30;
             FrameFactoryClassic.startTitleFrame(out, title, null, "100%", null,paddingTop);
-            out.write("<table>");
+            out.write("<table class=\"lk-fields-table\">");
         }
         else
         {
-            // labkey-announement-title has too much whitespace for first element
+            // labkey-announcement-title has too much whitespace for first element
             if (countSection==0)
                 out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" style=\"padding-top:0;\" align=left><span>");
             else

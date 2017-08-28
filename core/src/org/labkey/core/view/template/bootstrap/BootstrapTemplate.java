@@ -307,6 +307,26 @@ public class BootstrapTemplate extends HomeTemplate
         isAppTemplate = appTemplate;
     }
 
+    public static String getTemplatePrefix(PageConfig page)
+    {
+        PageConfig.Template t = page.getTemplate();
+        final String templateCls;
+
+        switch (t)
+        {
+            case Wizard:
+                templateCls = "wizard";
+                break;
+            case Dialog:
+                templateCls = "dialog";
+                break;
+            default:
+                templateCls = "default";
+        }
+
+        return templateCls;
+    }
+
     // For now, gives a central place to render messaging
     public static String renderSiteMessages(PageConfig page)
     {

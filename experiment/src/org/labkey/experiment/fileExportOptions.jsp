@@ -60,7 +60,7 @@ String guid = GUID.makeGUID();
     }
 </script>
 
-<table cellspacing="4" class="labkey-export-tab-contents" style="overflow-y: visible;">
+<table cellspacing="4" class="lk-fields-table" style="overflow-y: visible;">
     <tr>
         <td valign="middle"><input type="radio" name="fileExportType" value="all" checked onclick="setFileDownloadEnabled(document.getElementById('<%=h(guid) %>').checked, '<%= h(guid) %>');" /></td>
         <td valign="middle">Include all files</td>

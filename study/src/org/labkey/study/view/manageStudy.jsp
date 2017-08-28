@@ -137,8 +137,7 @@
         }
     }
 %>
-
-<table>
+<table class="lk-fields-table">
     <%
         if (c.hasPermission(user, AdminPermission.class))
         {

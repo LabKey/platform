@@ -63,7 +63,7 @@ public class ContainersView extends WebPartView
         PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), url);
         ct.setCurrent(getViewContext().getContainer());
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(getViewContext().getContainer());
-        StringBuilder html = new StringBuilder("<div id='" + _id + "' class='extContainer " + _className+ "'><table class=\"labkey-data-region\" style=\"" + props.getNavigationBarWidth() + "px\">");
+        StringBuilder html = new StringBuilder("<div id=\"" + PageFlowUtil.filter(_id) + "\" class=\"extContainer " + _className + "\"><table class=\"labkey-data-region-legacy\" style=\"" + props.getNavigationBarWidth() + "px\">");
         ct.render(html);
         html.append("</table><br>");
         html.append("<span style=\"font-style:italic\">*Indicates permissions are inherited</span></div>");

@@ -108,6 +108,8 @@
 
 .gwt-ButtonBar {
   padding: 4px 0;
+  border-collapse: separate;
+  border-spacing: 2px;
 }
 
 .gwt-TabPanelBottom {
@@ -149,4 +151,9 @@
 
 .gwt-label label, .gwt-RadioButton label {
   font-weight: normal;
+}
+
+// 31318: These are "Ext 3" classes that are applied by GWT components only
+.x-modal, .x-ignore {
+  display: none !important;
 }

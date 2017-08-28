@@ -169,7 +169,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         {
             loadingStyle = PropertyUtil.getServerProperty("loadingStyle");
             if (null == loadingStyle || "".equals(loadingStyle))
-            loadingStyle = "loading-indicator";
+                loadingStyle = "loading-indicator";
         }
         return loadingStyle;
     }
@@ -180,7 +180,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         panel.clear();
         Element e = panel.getElement();
         e.removeClassName(getLoadingStyle());
-        e.addClassName("extContainer");
     }
 
 
@@ -787,6 +786,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         {
             String labelStyleName = "labkey-form-label"; // Pretty yellow background for labels
             HTMLTable.CellFormatter cellFormatter = _table.getCellFormatter();
+            _table.setStyleName("lk-fields-table");
 
             int row = 0;
 
@@ -864,6 +864,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             String labelStyleName = "labkey-form-label"; // Pretty yellow background for labels
             FlexTable table = new FlexTable();
             HTMLTable.CellFormatter cellFormatter = table.getCellFormatter();
+            table.setStyleName("lk-fields-table");
 
             int row = 0;
 

@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<table class="labkey-export-tab-contents">
+<table class="lk-fields-table">
     <tr>
         <td class="labkey-export-tab-options">
             <table class="labkey-export-tab-layout">

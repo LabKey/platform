@@ -42,25 +42,19 @@
     String themeName = laf.getThemeName();
 %>
 <%=formatMissedErrors("form")%>
-
 <labkey:form name="preferences" method="post" id="form-preferences">
-
-<table width="100%" cellpadding=0>
-
+<table width="100%" cellpadding=0 class="lk-fields-table">
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-
 <% if (c.isProject()) {%>
 <tr>
     <td colspan=2>Security defaults</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">New folders should inherit permissions by default</td>
     <td><input type="checkbox" name="shouldInherit" size="50"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
 </tr>
-
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -74,7 +68,6 @@
 <tr>
     <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=text(bean.helpLink)%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">System description (used in emails)</td>
     <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getDescription()) %>"></td>
@@ -118,25 +111,25 @@
         <% } %>
     </td>
 </tr>
-<% } %>
 <tr>
     <td class="labkey-form-label">Font size</td>
     <td>
         <select name="themeFont">
             <% for (ThemeFont themeFont : bean.themeFonts)
-                {
-                    %><option value="<%=h(themeFont.toString())%>"<%=selected(themeFont == bean.currentThemeFont)%>><%=h(themeFont.getFriendlyName())%></option><%
-                }
-            %>
+            {
+            %><option value="<%=h(themeFont.toString())%>"<%=selected(themeFont == bean.currentThemeFont)%>><%=h(themeFont.getFriendlyName())%></option><%
+            }
+        %>
         </select>
         Font Size Samples:
-            <% for (ThemeFont themeFont : bean.themeFonts)
-                {
-                    %><span style="font-size:<%=h(themeFont.getNormalSize())%>">&nbsp;&nbsp;<%=h(themeFont.toString())%></span><%
-                }
-            %>
+        <% for (ThemeFont themeFont : bean.themeFonts)
+        {
+        %><span style="font-size:<%=h(themeFont.getNormalSize())%>">&nbsp;&nbsp;<%=h(themeFont.toString())%></span><%
+        }
+    %>
     </td>
 </tr>
+<% } %>
 <tr>
     <td class="labkey-form-label">Show Navigation</td>
     <td><%
@@ -146,7 +139,6 @@
         <input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
-
 <tr>
     <td class="labkey-form-label">Show LabKey Help menu item</td>
     <td><input type="checkbox" name="enableHelpMenu" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
@@ -160,7 +152,6 @@
         <%=PageFlowUtil.helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
     <td><input type="checkbox" name="enableDiscussion" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
-
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
     <td><input type="text" name="logoHref" size="50" value="<%= h(laf.getUnsubstitutedLogoHref()) %>"></td>
@@ -176,11 +167,9 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
 <tr>
     <td colspan=2>Customize settings used in system emails (<%=text(bean.helpLink)%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">
         System email address (<i>from</i> address for system notification emails)
@@ -195,7 +184,6 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
 <%
     }  // End of project/site only settings
 
@@ -204,7 +192,7 @@
             "specifying a prefix, numeric part, and suffix. For more information see the " +
             "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\">" +
+            "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
             "<colgroup><col><col><col><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left style=\"width:200px;\">Meaning</tr>" +
             "<tr valign=top class=\"labkey-row\"><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
@@ -218,7 +206,7 @@
             "<code>SimpleDateFormat</code> understands. For more information see the " +
             "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\">" +
+            "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
             "<colgroup><col><col style=\"width: 100%;\"><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr class=\"labkey-row\"><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
@@ -245,7 +233,7 @@
 <tr>
     <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr><%
+<%
 
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
     if (c.isRoot())
@@ -291,11 +279,7 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
-<%
-    if (!folder)
-    {
-
+<% if (!folder) {
     String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
             " the format: <module>-<name>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
             " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
@@ -304,7 +288,6 @@
 <tr>
     <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, true)%></td>
     <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
@@ -323,7 +306,6 @@
 <tr>
     <td colspan=2>Provide a custom site welcome page (<%=text(bean.welcomeLink)%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Alternative site welcome page<%=PageFlowUtil.helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
     <td><input type="text" name="customWelcome" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
@@ -341,7 +323,6 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
 </table>
 </labkey:form>
 <script type="text/javascript">

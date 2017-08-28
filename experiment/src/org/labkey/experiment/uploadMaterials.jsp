@@ -121,7 +121,7 @@
 </p>
 <labkey:form id="sampleSetUploadForm" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="POST">
     <input type="hidden" name="<%= h(ActionURL.Param.returnUrl)%>" value="<%=h(form.getReturnUrl())%>" />
-<table>
+<table class="lk-fields-table">
     <tr>
         <td class="labkey-form-label" width="100">Name</td>
         <td>

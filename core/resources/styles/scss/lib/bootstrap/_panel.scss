@@ -1,9 +1,22 @@
+// TODO: Get rid of this and place the border directly on panel-portal
+.labkey-portal-container {
+  border-top: $lk-portal-panel-border-top;
+
+  .labkey-portal-container {
+    border-top: none;
+  }
+}
+
 .panel-portal {
   @include panel-variant($panel-default-border, $panel-default-text, $panel-bg, $panel-default-border);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20);
 
   .panel-portal {
     @include panel-variant($panel-default-border, $panel-bg, $lk-webpart-accent-color, $panel-default-border);
+
+    .labkey-anchor-disabled {
+      color: $panel-bg !important;
+    }
   }
 }
 

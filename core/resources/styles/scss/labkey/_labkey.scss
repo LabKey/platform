@@ -8,6 +8,10 @@ html {
 
 body {
   margin-bottom: 50px;
+
+  * {
+    outline: none !important;
+  }
 }
 
 input, select, textarea {
@@ -70,6 +74,17 @@ legend {
       padding: 0;
       margin: 0;
     }
+  }
+}
+
+.dialog-template-body,
+.wizard-template-body {
+  .lk-header-ct {
+    border-bottom: 1px solid lightgray;
+  }
+
+  .lk-body-ct {
+    padding-top: 93px; // navigation not displayed
   }
 }
 
@@ -739,8 +754,7 @@ a.no-arrow {
 
 .labkey-text-link,
 a.labkey-text-link-noarrow,
-.labkey-disabled-text-link
-{
+.labkey-disabled-text-link {
   font-size: 11px;
   font-weight: bold;
   letter-spacing: 0.5px;
@@ -790,12 +804,8 @@ a.labkey-text-link {
   }
 }
 
-table.labkey-announcement-thread {
-  border-spacing: 0;
-
-  td {
-    padding: 3px;
-  }
+table.labkey-announcement-thread td {
+  padding: 3px;
 }
 
 /* API */
@@ -807,15 +817,9 @@ table.labkey-output
 
 /*  Experiment */
 
-table.labkey-protocol-applications
-{
-  border-collapse: collapse;
-  border-spacing: 0;
-
-  td {
-    border: 1px solid #DDDDDD;
-    padding: 5px;
-  }
+table.labkey-protocol-applications td {
+  border: 1px solid #DDDDDD;
+  padding: 5px;
 }
 
 /* Flow */
@@ -986,13 +990,6 @@ div.labkey-webpart-menu div.labkey-wiki p {
 }
 
 @import "components/knitr";
-
-/* R reports */
-table.labkey-r-tsvout
-{
-  border-spacing: 0;
-}
-
 @import "gwt";
 
 /* Create Chart View */
@@ -1048,29 +1045,7 @@ a.upload-button
   left: 455px !important;
 }
 
-.labkey-export-tab-contents
-{
-  padding: 0.5em;
-}
-
-.labkey-export-tab-contents td
-{
-  padding: 1px;
-}
-
-.labkey-file-browser-elem
-{
-  border: 1px solid #DDDDDD;
-}
-
 @import "components/tabStrip";
-
-/* This is used as the final tab in a tab strip */
-#labkey-end-tab-space
-{
-  padding-right: 5px;
-  white-space: nowrap;
-}
 
 .drag-target-table-positioner {
   border-top: 2px solid green;
@@ -1481,34 +1456,15 @@ div span.labkey-main-menu-icon {
   }
 }
 
-.labkey-portal-container {
-  border-top: $lk-portal-panel-border-top;
-
-  .labkey-portal-container {
-    border-top: none;
-  }
-}
-
-.labkey-anchor-disabled
-{
+.labkey-anchor-disabled {
   color: $lk-webpart-title-color !important;
   cursor: default;
-}
-
-.panel-portal .panel-portal .labkey-anchor-disabled
-{
-  color: $panel-bg !important;
 }
 
 // formerly : .x4-btn-default-toolbar-small-disabled
 .labkey-btn-default-toolbar-small-disabled {
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
   opacity: 0.5;
-}
-
-.padding-0 {
-  padding-left: 0;
-  padding-right: 0;
 }
 
 .nav-tabs {
@@ -1561,6 +1517,11 @@ div span.labkey-main-menu-icon {
       }
     }
   }
+}
+
+.lk-fields-table {
+  border-collapse: separate;
+  border-spacing: 2px;
 }
 
 @import "components/header";

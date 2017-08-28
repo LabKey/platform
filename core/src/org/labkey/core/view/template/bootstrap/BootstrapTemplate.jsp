@@ -51,14 +51,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model.getClientDependencies()) %>
     <% } %>
 </head>
-<body onload="<%=h(onLoad)%>">
-<%
-    if (me.includeGWT()) {
-%>
-<iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe>
-<%
-    }
-%>
+<body onload="<%=h(onLoad)%>" class="<%=h(BootstrapTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {

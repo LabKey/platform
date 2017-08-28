@@ -37,17 +37,13 @@
     boolean editConnection = StringUtils.isNotEmpty(name);
     String nameToShow = editConnection ? name : remoteConnectionForm.getNewConnectionName();
 %>
-
-<h2><%=text(editConnection ? "Edit Remote Connection" : "Create Remote Connection")%></h2>
 <p>
     Administrators can define external remote connections to alternate LabKey servers.
     This feature should be used with care since, depending
     on your configuration, any user with access to the remote site could view arbitrary data in your remote server.
 </p>
 <labkey:errors></labkey:errors>
-
 <br>
-
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
 <table>
     <tr>

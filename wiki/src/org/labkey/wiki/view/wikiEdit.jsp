@@ -91,9 +91,7 @@
     });
     LABKEY._wiki.setURLs(<%= model.getRedir() %>, <%= model.getCancelRedir() %>);
 </script>
-
 <div id="status" class="labkey-status-info" style="display: none; width: 99%;">(status)</div>
-
 <table width=99%;>
     <tr>
         <td width="50%" align="left" style="white-space: nowrap;">
@@ -112,10 +110,10 @@
 </table>
 <table width="99%">
     <tr>
-        <td width="99%" style="vertical-align:top;">
-            <table width="99%">
+        <td style="vertical-align:top;width:99%">
+            <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label" style="white-space: nowrap;">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
+                    <td class="labkey-form-label-nowrap">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
                     <td width="99%">
                         <input type="text" name="name" id="<%=h(ID_PREFIX)%>name" size="80" maxlength="255"/>
                     </td>
@@ -127,7 +125,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label" style="white-space: nowrap;">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
+                    <td class="labkey-form-label-nowrap">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
                     <td width="99%">
                         <input type="checkbox" name="shouldIndex" id="<%=h(ID_PREFIX)%>shouldIndex"/>
                     </td>

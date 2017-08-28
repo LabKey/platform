@@ -48,5 +48,6 @@
 }
 
 .lk-menu-drop {
-  display: inline;
+  /* allows items to sit next to each other while also keeping menu open below this clickable drop */
+  display: inline-block;
 }
