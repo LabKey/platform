@@ -163,7 +163,7 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         public void renderWebpartStart(PrintWriter out)
         {
             out.print("<!--FrameType.PORTAL-->");
-            out.println("<div name=\"webpart\" class=\"labkey-portal-container\"");
+            out.println("<div name=\"webpart\"");
             if (null != getConfig()._webpart)
                 out.println(" id=\"webpart_" + getConfig()._webpart.getRowId() + "\"");
             out.write(">");

@@ -609,7 +609,7 @@ else
         <button class="btn btn-default btn-xs" id="relatedCommentsToggle" onclick="toggleComments()" style="margin-bottom: 10px">Show Related Comments</button>
 
         <%}%>
-        <labkey:panel className="labkey-portal-container">
+        <labkey:panel type="portal">
 
         <%
         for (Issue.Comment comment : commentLinkedList)

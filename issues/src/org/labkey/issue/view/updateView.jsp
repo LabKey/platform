@@ -604,7 +604,7 @@ else
     <%
         }%>
         <%if (issue.getIssueId() != 0 && !issue.getComments().isEmpty()) {%>
-            <labkey:panel className="labkey-portal-container">
+            <labkey:panel type="portal">
                 <%for (Issue.Comment comment : issue.getComments())
                     {%>
                     <div class="currentIssue" style="display: inline">

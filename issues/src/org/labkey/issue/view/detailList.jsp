@@ -327,7 +327,7 @@
         <button class="btn btn-default btn-xs" id="<%=h(relatedCommentsToggleId)%>" onclick="toggleRelatedFns[<%=h(issueId)%>]()" style="margin-bottom: 10px">Show Related Comments</button>
 
         <%}%>
-        <labkey:panel className="labkey-portal-container">
+        <labkey:panel type="portal">
 
             <%
                 for (Issue.Comment comment : IssueManager.getCommentsForRelatedIssues(issue, user))
@@ -357,7 +357,7 @@
 
                 if (bean.getHasUpdatePermissions())
                 {%>
-            <a class="btn btn-default" href="<%=IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)%>">Update</a>
+            <%=button("Update").href(IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId))%>
             <%}%>
         </labkey:panel>
     </div>

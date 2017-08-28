@@ -404,7 +404,6 @@
 %>
 <% if (result != null) { %>
 <div class="<%=text(hasNavResults ? "col-md-9" : "col-md-12")%>">
-<div class="labkey-portal-container">
     <div class="panel panel-portal">
         <div class="panel-body">
             <%
@@ -511,38 +510,35 @@
         </div>
     </div>
 </div>
-</div>
 <% if (hasNavResults) { %>
 <div class="col-md-3">
-    <div class="labkey-portal-container">
-        <div class="panel panel-portal">
-            <div class="panel-body">
-                <div class="labkey-search-results-counts">
-                    <span>Folders</span>
-                </div>
+    <div class="panel panel-portal">
+        <div class="panel-body">
+            <div class="labkey-search-results-counts">
+                <span>Folders</span>
+            </div>
+            <%
+                for (SearchService.SearchHit hit : navResult.hits)
+                {
+            %>
+            <div class="labkey-search-result">
+                <h4>
+                    <img style="vertical-align: top;" src="<%=getContextPath()%>/_icons/folder.gif"/>
+                    <a href="<%=h(hit.url)%>"><%=h(hit.title)%></a>
+                </h4>
                 <%
-                    for (SearchService.SearchHit hit : navResult.hits)
+                    String summary = StringUtils.trimToNull(hit.summary);
+                    if (null != summary)
                     {
                 %>
-                <div class="labkey-search-result">
-                    <h4>
-                        <img style="vertical-align: top;" src="<%=getContextPath()%>/_icons/folder.gif"/>
-                        <a href="<%=h(hit.url)%>"><%=h(hit.title)%></a>
-                    </h4>
-                    <%
-                        String summary = StringUtils.trimToNull(hit.summary);
-                        if (null != summary)
-                        {
-                    %>
-                    <div><%=h(summary, false)%></div>
-                    <%
-                        }
-                    %>
-                </div>
+                <div><%=h(summary, false)%></div>
                 <%
                     }
                 %>
             </div>
+            <%
+                }
+            %>
         </div>
     </div>
 </div>
