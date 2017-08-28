@@ -25,6 +25,7 @@ public class PanelTag extends BodyTagSupport
 {
     private String className = null;
     private String id = null;
+    private String type = "default";
 
     public String getClassName()
     {
@@ -48,11 +49,21 @@ public class PanelTag extends BodyTagSupport
         this.id = id;
     }
 
+    public String getType()
+    {
+        return type;
+    }
+
+    public void setType(String type)
+    {
+        this.type = type;
+    }
+
     public int doStartTag() throws JspException
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<div class=\"panel panel-default");
+        sb.append("<div class=\"panel panel-" + getType());
         if (StringUtils.isNotEmpty(getClassName()))
             sb.append(" " + getClassName().trim());
         sb.append("\"");
