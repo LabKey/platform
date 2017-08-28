@@ -10,7 +10,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     cls: 'labkey-customize-grid-panel',
     layout: 'border',
     height: 310,
-    width: !LABKEY.experimental.useExperimentalCoreUI ? 800 : undefined,
+    width: 800,
     activeTab: 0,
     border: false,
     bodyStyle: 'background-color: transparent;',
