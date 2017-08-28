@@ -232,6 +232,7 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
         _rootPanel.add(_statusLabel);
 
         FlexTable table = createAssayInfoTable(_assay);
+        table.setStyleName("lk-fields-table");
         WebPartPanel infoPanel = new WebPartPanel("Assay Properties", table);
         infoPanel.setWidth("100%");
         _rootPanel.add(infoPanel);

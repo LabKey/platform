@@ -32,8 +32,7 @@
     HttpView me = HttpView.currentView();
     GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
 %>
-<%--<textarea id="gwtDebug" cols="200" rows=20 style="overflow:auto;"></textarea>--%>
-<div id="<%= h(bean.getModuleName()) %>-Root" class="extContainer <%=h(bean.getLoadingStyleName())%>"></div>
+<div id="<%= h(bean.getModuleName()) %>-Root" class="<%=h(bean.getLoadingStyleName())%>"></div>
 <%
 String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
@@ -41,11 +40,6 @@ String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSes
 %>
 <script id="__gwt_marker_<%=h(bean.getModuleName())%>"></script>
 <script type="text/javascript" src="<%=h(hashedPath)%>"></script>
-<%-- 14005: ExtJS popup menus broken on GWT pages -- removed gwt specific stylesheets --%>
-<%--<script type="text/javascript">--%>
-    <%--LABKEY.requiresCss("gxt/css/gxt-all.css");--%>
-    <%--LABKEY.requiresCss("gxt/css/gxt-gray.css");--%>
-<%--</script>--%>
 <script type="text/javascript">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
 <%= text(GWTView.PROPERTIES_OBJECT_NAME) %> = {<%

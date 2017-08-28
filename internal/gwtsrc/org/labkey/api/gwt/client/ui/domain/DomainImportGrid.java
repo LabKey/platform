@@ -94,7 +94,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         _showPropertiesPanel = true;
 
         _grid = new Grid(1, 0);
-        _grid.setStyleName("labkey-data-region labkey-show-borders");
+        _grid.setStyleName("labkey-data-region-legacy labkey-show-borders");
         _grid.getRowFormatter().setStyleName(0, "labkey-row-header");
 
         add(_grid);
@@ -162,7 +162,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         int numDataRows = columns.get(0).getData().size();
         _grid.resizeRows(numDataRows + 2); // Need a row for the name and a row for the type
 
-        for(int columnIndex=0; columnIndex<columns.size(); columnIndex++)
+        for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++)
         {
             InferencedColumn column = columns.get(columnIndex);
             final GWTPropertyDescriptor prop = column.getPropertyDescriptor();
@@ -198,9 +198,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                             for (PropertyPane<DomainType, FieldType> prop : _properties)
                                 prop.showPropertyDescriptor(field, true);
 
-                            //Point pt = event.getXY();
-
-                            //_propertiesPanel.setPagePosition(pt.x + Window.getScrollLeft(), pt.y + Window.getScrollTop());
                             _propertiesPanel.show();
                             _propertiesPanel.setHeading(field.getName() + " Column Properties");
                             _propertiesPanel.center();
@@ -224,7 +221,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             // don't allow file and attachment properties for import (they don't really make sense here)
             picker.setAllowAttachmentProperties(false);
             picker.setAllowFileLinkProperties(false);
-            //picker.setIsRangeEditable(false);
 
             List<String> data = column.getData();
             for (int row=0; row<numDataRows; row++)
@@ -251,23 +247,18 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             for (PropertyPane<DomainType, FieldType> propertiesPane : _properties)
             {
                 TabItem item = new TabItem(propertiesPane.getName());
-
-                //item.setSize(300, 400);
                 item.setLayout(new FitLayout());
                 item.add(propertiesPane);
-
                 tabPanel.add(item);
             }
+
             _propertiesPanel = new Dialog();
             _propertiesPanel.setModal(true);
-
             _propertiesPanel.setBorders(false);
-            //_propertiesPanel.setHeading("Column Properties");
             _propertiesPanel.setSize(500, 300);
             _propertiesPanel.setHideOnButtonClick(true);
             _propertiesPanel.setButtons(Dialog.OK);
             _propertiesPanel.setLayout(new FitLayout());
-
             _propertiesPanel.add(tabPanel);
         }
     }
@@ -289,8 +280,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
     {
         if (null != _importColumnMap.get(prop))
             return _importColumnMap.get(prop).booleanValue();
-        else
-            return false;
+        return false;
     }
 
     private List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
@@ -305,7 +295,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
-        //validatorPane.addItem(new ValidatorItem<DomainType, FieldType>(validatorPane));
 
         PropertyPane<DomainType, FieldType> reportingPane = new PropertyPane<DomainType, FieldType>(this, "Reporting");
         reportingPane.addItem(new MeasureItem<DomainType, FieldType>(reportingPane));

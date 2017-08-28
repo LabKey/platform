@@ -31,7 +31,7 @@ public class ResultSetView extends WebPartView
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        out.println("<table class=\"labkey-data-region labkey-show-borders\">");
+        out.println("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
         try
         {

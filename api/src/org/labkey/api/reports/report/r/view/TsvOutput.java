@@ -156,7 +156,7 @@ public class TsvOutput extends AbstractParamReplacement
                     }
 
                     int row = 0;
-                    out.write("<table class=\"labkey-data-region labkey-show-borders\">");
+                    out.write("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
                     renderTitle(model, out);
                     if (isCollapse())
                         out.write("<tr style=\"display:none\"><td><table>");
@@ -166,9 +166,9 @@ public class TsvOutput extends AbstractParamReplacement
                     for (ColumnDescriptor col : display)
                     {
                         if (Number.class.isAssignableFrom(col.getClass()))
-                            out.write("<td class='labkey-column-header' align='right'>");
+                            out.write("<td class=\"labkey-column-header\" align=\"right\">");
                         else
-                            out.write("<td class='labkey-column-header'>");
+                            out.write("<td class=\"labkey-column-header\">");
                         out.write(PageFlowUtil.filter(col.name, true, true));
                         out.write("</td>");
                         row++;
@@ -193,7 +193,7 @@ public class TsvOutput extends AbstractParamReplacement
 
                             out.write("<td");
                             if (Number.class.isAssignableFrom(col.clazz))
-                                out.write(" align='right'");
+                                out.write(" align=\"right\"");
                             if (null != style)
                             {
                                 out.write(" style=\"");

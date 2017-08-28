@@ -7457,8 +7457,6 @@ internal/webapp/groupTabPanel/GroupTab.js -text
 internal/webapp/groupTabPanel/GroupTabPanel.js -text
 internal/webapp/groupTabPanel/UngroupedTab.css -text
 internal/webapp/groupTabPanel/groupTab.lib.xml -text
-internal/webapp/gxt/css/gxt-all.css -text
-internal/webapp/gxt/css/gxt-gray.css -text
 internal/webapp/gxt/images/default/box/corners-blue.gif -text
 internal/webapp/gxt/images/default/box/corners.gif -text
 internal/webapp/gxt/images/default/box/l-blue.gif -text

@@ -143,10 +143,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         public String getClassName()
         {
+            String cls = "labkey-link gwt-FontImage";
             if (_fontClass != null)
-                return "labkey-link gwt-FontImage fa " + _fontClass;
-            else
-                return "labkey-link gwt-FontImage";
+                cls += " fa " + _fontClass;
+            return cls;
         }
     }
 
@@ -661,7 +661,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             for (int row = 0; row < _table.getRowCount(); row++)
             {
                 Element e = _table.getRowFormatter().getElement(row);
-                DOM.setStyleAttribute(e, "backgroundColor", null);
                 e.removeClassName("selected-field-row");
             }
         }
@@ -689,7 +688,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
 
             Element e = _table.getRowFormatter().getElement(tableRow);
-            DOM.setStyleAttribute(e, "backgroundColor", "#eeeeee");
             e.addClassName("selected-field-row");
 
             if (isPropertiesEditable(getRow(index)))

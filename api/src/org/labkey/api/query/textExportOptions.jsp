@@ -72,7 +72,7 @@
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
 %>
-<table class="labkey-export-tab-contents">
+<table class="lk-fields-table">
     <tr>
         <td><label for="<%=text(delimGUID)%>">Separator:</label></td>
         <td>

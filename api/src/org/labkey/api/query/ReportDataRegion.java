@@ -109,7 +109,7 @@ public class ReportDataRegion extends DataRegion
                 messages.put(MessagePart.filter.name(), filter.toString());
 
             // for now set the width to 100%, but we want to be smarter about calculating the viewport width less scroll
-            out.write("<table width=\"100%\" class=\"labkey-data-region\"");
+            out.write("<table class=\"labkey-data-region\"");
             out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
 
             String name = getName();

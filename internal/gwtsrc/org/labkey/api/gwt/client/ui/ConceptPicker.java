@@ -47,7 +47,7 @@ import java.util.ArrayList;
  *
  *    RangeURI      (roughly the storage type of the field, file/attachment are oddities)
  *    ConceptURI    Marker type e.g. Subject or VisitDate (may imply storage type)
- *    Lookup        Lookup (container,schmea,table), must match storage type of PK
+ *    Lookup        Lookup (container,schema,table), must match storage type of PK
  */
 public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 {
@@ -226,14 +226,11 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             setAutoHeight(true);
             setHeading("Choose Field Type");
 
-//            setLayout(new AccordionLayout());
             setLayout(new RowLayout(Style.Orientation.VERTICAL));
             okText = "Apply";
             setButtons(Dialog.OKCANCEL);
             
             // SIMPLE
-            //ContentPanel simplePanel = new ContentPanel(new FitLayout());
-            //simplePanel.setHeading("Simple data type");
             final RadioGroup group = new RadioGroup("rangeURI");
             group.setOrientation(Style.Orientation.VERTICAL);
             group.add(new ConceptTypeRadio(stringType));
@@ -247,13 +244,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             group.add(new ConceptTypeRadio(attachmentType));
             group.add(new ConceptTypeRadio(userType));
             group.add(new ConceptTypeRadio(subjectType));
-            //simplePanel.add(group);
-            //add(simplePanel);
             add(group);
 
             // LOOKUP
-            //ContentPanel lookupPanel = new ContentPanel(new VBoxLayout());
-            //lookupPanel.setHeading("Lookup");
             _lookupRadio = new ConceptTypeRadio(genericLookup)
             {
                 @Override
@@ -264,27 +257,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 }
             };
             _lookupEditorPanel = new LookupEditorPanel(lookupService, null, true);
-            //lookupPanel.add(lookupRadio);
-            //lookupPanel.add(_lookupEditorPanel);
-            //add(lookupPanel);
             group.add(_lookupRadio);
             add(_lookupEditorPanel);
 
-            // CUSTOM
-//            ContentPanel customPanel = new ContentPanel(new FitLayout());
-//            customPanel.setHeading("Custom Types");
-//            final RadioGroup custom = new RadioGroup("customGroup");
-//            custom.setOrientation(Style.Orientation.VERTICAL);
-//            custom.add(new ConceptTypeRadio(fileType));
-//            custom.add(new ConceptTypeRadio(attachmentType));
-//            custom.add(new ConceptTypeRadio(userType));
-//            custom.add(new ConceptTypeRadio(subjectType));
-//            customPanel.add(custom);
-//            add(customPanel);
-
-            // init all radios list
-//            allradios.addAll(custom.getAll());
-//            allradios.add(lookupRadio);
             for (Field f : group.getAll())
                 allradios.add((ConceptTypeRadio)f);
 
@@ -371,7 +346,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 final String typeURI = _lookupEditorPanel.getTypeURI();
                 PropertyType type = null == typeURI ? null : PropertyType.fromURI(typeURI);
 
-                _log("apply " + folder + " " + schema + " " + table + " " + typeURI);
+//                _log("apply " + folder + " " + schema + " " + table + " " + typeURI);
 
                 if (_empty(schema) || _empty(table))
                 {
@@ -642,8 +617,8 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     public static boolean validateLookup(PropertyType fkType, String schema, String table, PropertyType pkType)
     {
         boolean ret = _validateLookup(fkType, pkType);
-        _log("" + ret + "=validateLookup(" + (null==fkType ? "null" : fkType.getShortName())
-                + "," + schema + "," + table + "," + pkType.getShortName() + ")");
+//        _log("" + ret + "=validateLookup(" + (null==fkType ? "null" : fkType.getShortName())
+//                + "," + schema + "," + table + "," + pkType.getShortName() + ")");
         return ret;
     }
 
@@ -708,7 +683,6 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     }
 
     private static boolean _empty(String s) {return null==s || s.length()==0;}
-//    private static String _string(Object o) {return null==o ? "" : o.toString();}
     private static String _default(String a, String b) {return _empty(a) ? b : a;}
     private static void _log(String s)
     {

@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.query.ExportScriptFactory" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -24,10 +23,10 @@
 QueryView.TextExportOptionsBean bean = (QueryView.TextExportOptionsBean)HttpView.currentView().getModelBean();
 %>
 
-<table class=labkey-export-tab-contents>
+<table class="lk-fields-table">
     <tr><td>Variable&nbsp;Name:</td><td align="left"><input id="rstudio_variable_name" name=var value=""/></td></tr>
 </table>
-<table class=labkey-export-tab-contents>
+<table class="lk-fields-table">
 <tr><td colspan=2><button id="open_in_rstudio_button">Export to RStudio</button>&nbsp;<span id="rstudioStatus"></span></td></tr>
 </table>
 

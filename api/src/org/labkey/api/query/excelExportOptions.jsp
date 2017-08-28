@@ -62,7 +62,7 @@
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
 %>
-<table class="labkey-export-tab-contents">
+<table class="lk-fields-table">
     <tr>
         <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="<%=h(checkboxGroupName)%>" checked="checked" /></td>
         <td valign="center"><label for="<%=h(xlsxGUID)%>">Excel Workbook (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>

@@ -48,7 +48,7 @@
         }
     };
 </script>
-<table class="labkey-export-tab-contents">
+<table class="lk-fields-table">
     <%
     int columns = (int)Math.round(map.size() / 2.0);    // Put all the script languages into two rows, and use as many columns as needed
     Iterator<Map.Entry<String, ActionURL>> iter = map.entrySet().iterator();
