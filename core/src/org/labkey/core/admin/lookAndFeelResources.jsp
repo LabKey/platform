@@ -33,7 +33,7 @@
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
-<table cellpadding=0>
+<table cellpadding=0 class="lk-fields-table">
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -56,7 +56,7 @@
     </td>
 </tr>
 <tr>
-    <td>Replace with: <input type="file" name="logoImage" size="25"></td>
+    <td>Replace with: <input type="file" name="logoImage" size="25" style="border: none;"></td>
 </tr>
 
 <tr>
@@ -71,7 +71,7 @@
     </td>
 </tr>
 <tr>
-    <td>Replace with: <input type="file" name="iconImage" size="25"></td>
+    <td>Replace with: <input type="file" name="iconImage" size="25" style="border: none;"></td>
 </tr>
 
 <tr>
@@ -86,7 +86,7 @@
     </td>
 </tr>
 <tr>
-    <td>Replace with: <input type="file" name="customStylesheet" size="25"></td>
+    <td>Replace with: <input type="file" name="customStylesheet" size="25" style="border: none;"></td>
 </tr>
 <tr>
     <td><br/><%= button("Save").submit(true).onClick("_form.setClean();") %></td>
