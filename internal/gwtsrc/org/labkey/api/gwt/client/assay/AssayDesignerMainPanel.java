@@ -234,12 +234,14 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
         FlexTable table = createAssayInfoTable(_assay);
         table.setStyleName("lk-fields-table");
         WebPartPanel infoPanel = new WebPartPanel("Assay Properties", table);
-        infoPanel.setWidth("100%");
+        if (!PropertyUtil.useExperimentalCoreUI())
+            infoPanel.setWidth("100%");
         _rootPanel.add(infoPanel);
 
         for (int i = 0; i < _assay.getDomains().size(); i++)
         {
-            _rootPanel.add(new HTML("<br/>"));
+            if (!PropertyUtil.useExperimentalCoreUI())
+                _rootPanel.add(new HTML("<br/>"));
 
             GWTDomain<GWTPropertyDescriptor> domain = _assay.getDomains().get(i);
 
@@ -268,7 +270,8 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
             _rootPanel.add(panel);
         }
 
-        _rootPanel.add(new HTML("<br/>"));
+        if (!PropertyUtil.useExperimentalCoreUI())
+            _rootPanel.add(new HTML("<br/>"));
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
 

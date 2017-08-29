@@ -113,5 +113,4 @@ public abstract class AbstractDesignerMainPanel extends VerticalPanel
                 event.setMessage("Changes have not been saved and will be discarded.");
         }
     }
-
 }

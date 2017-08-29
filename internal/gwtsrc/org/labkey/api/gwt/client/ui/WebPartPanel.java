@@ -16,31 +16,52 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.safehtml.shared.SafeHtmlUtils;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
  * User: jeckels
  * Date: Jun 13, 2007
  */
-public class WebPartPanel extends FlexTable
+public class WebPartPanel extends Composite
 {
     public WebPartPanel(String title, Widget contents)
     {
-        setStyleName("labkey-wp");
-        setText(0, 0, title);
+        final HTMLPanel panel;
+        final String bodyId = HTMLPanel.createUniqueId();
 
-        getRowFormatter().setStyleName(0, "labkey-wp-header");
-        getCellFormatter().setStyleName(0, 0, "labkey-wp-title-left");
-        getCellFormatter().getElement(0, 0).setTitle(title);
+        if (PropertyUtil.useExperimentalCoreUI())
+        {
+            panel = new HTMLPanel(
+                "<div class=\"panel panel-portal\">" +
+                "<div class=\"panel-heading clearfix\">" +
+                    "<h3 class=\"panel-title pull-left\" title=\"" + SafeHtmlUtils.htmlEscape(title) + "\">" + SafeHtmlUtils.htmlEscape(title) + "</h3>" +
+                "</div>" +
+                "<div id=\"" + bodyId + "\" class=\"panel-body\"></div>" +
+                "</div>"
+            );
+            panel.getElement().setAttribute("name", "webpart");
+        }
+        else
+        {
+            panel = new HTMLPanel("table",
+                "<tbody>" +
+                "<tr class=\"labkey-wp-header\">" +
+                    "<td class=\"labkey-wp-title-left\" title=\"" + SafeHtmlUtils.htmlEscape(title) + "\">" + SafeHtmlUtils.htmlEscape(title) + "</td>" +
+                "</tr>" +
+                "<tr>" +
+                    "<td id=\"" + bodyId + "\" class=\"labkey-wp-body\"></td>" +
+                "</tr>" +
+                "</tbody>"
+            );
+            panel.setStyleName("labkey-wp");
+        }
 
-        getCellFormatter().setStyleName(1, 0, "labkey-wp-body");
-        setWidget(1, 0, contents);
-    }
+        panel.add(contents, bodyId);
 
-    public void setContent(Widget content)
-    {
-        getCellFormatter().setStyleName(1, 0, "labkey-wp-body");
-        setWidget(1, 0, content);
+        initWidget(panel);
     }
 }
