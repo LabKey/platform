@@ -24,11 +24,13 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.BVT;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.ProjectMenu;
+import org.labkey.test.pages.AssayDesignerPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
 
@@ -37,12 +39,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.labkey.test.util.ListHelper.ListColumnType;
 
 @Category({BVT.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
 {
-    private boolean foo = setIsBootstrapWhitelisted(true);
+    {setIsBootstrapWhitelisted(true);}
     private final PortalHelper portalHelper = new PortalHelper(this);
 
     protected static final String TEST_ASSAY = "Test" + TRICKY_CHARACTERS + "Assay1";
@@ -51,17 +52,34 @@ public class AssayTest extends AbstractAssayTest
     protected static final String TEST_ASSAY_SET_PROP_EDIT = "NewTargetStudy";
     protected static final String TEST_ASSAY_SET_PROP_NAME = "testAssaySetProp";
     protected static final int TEST_ASSAY_SET_PREDEFINED_PROP_COUNT = 2;
-    protected static final ListColumnType[] TEST_ASSAY_SET_PROP_TYPES = { ListHelper.ListColumnType.Boolean, ListHelper.ListColumnType.Double, ListHelper.ListColumnType.Integer, ListHelper.ListColumnType.DateTime };
+    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_SET_PROP_TYPES = {
+            FieldDefinition.ColumnType.Boolean,
+            FieldDefinition.ColumnType.Double,
+            FieldDefinition.ColumnType.Integer,
+            FieldDefinition.ColumnType.DateTime
+    };
     protected static final String[] TEST_ASSAY_SET_PROPERTIES = { "false", "100.0", "200", "2001-10-10" };
     protected static final String TEST_ASSAY_RUN_PROP_NAME = "testAssayRunProp";
     protected static final int TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT = 0;
-    protected static final ListColumnType[] TEST_ASSAY_RUN_PROP_TYPES = { ListHelper.ListColumnType.String, ListHelper.ListColumnType.Boolean, ListHelper.ListColumnType.Double, ListHelper.ListColumnType.Integer, ListHelper.ListColumnType.DateTime, ListHelper.ListColumnType.File };
+    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_RUN_PROP_TYPES = {
+            FieldDefinition.ColumnType.String,
+            FieldDefinition.ColumnType.Boolean,
+            FieldDefinition.ColumnType.Double,
+            FieldDefinition.ColumnType.Integer,
+            FieldDefinition.ColumnType.DateTime,
+            FieldDefinition.ColumnType.File
+    };
     protected static final String TEST_ASSAY_RUN_PROP1 = "TestRunProp";
     protected static final String TEST_ASSAY_DATA_PROP_NAME = "testAssayDataProp";
     protected static final String TEST_ASSAY_DATA_ALIASED_PROP_NAME = "testAssayAliasedData";
     protected static final String ALIASED_DATA = "aliasedData";
     public static final int TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT = 4;
-    protected static final ListColumnType[] TEST_ASSAY_DATA_PROP_TYPES = { ListHelper.ListColumnType.Boolean, ListHelper.ListColumnType.Integer, ListHelper.ListColumnType.DateTime, ListHelper.ListColumnType.String };
+    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_DATA_PROP_TYPES = {
+            FieldDefinition.ColumnType.Boolean,
+            FieldDefinition.ColumnType.Integer,
+            FieldDefinition.ColumnType.DateTime,
+            FieldDefinition.ColumnType.String
+    };
 
     protected static final String TEST_RUN1 = "FirstRun";
     protected static final String TEST_RUN1_COMMENTS = "First comments";
@@ -262,37 +280,28 @@ public class AssayTest extends AbstractAssayTest
         log("Defining a test assay at the project level");
         //define a new assay at the project level
         //the pipeline must already be setup
-        clickProject(getProjectName());
+        goToProjectHome();
         portalHelper.addWebPart("Assay List");
 
-        //copied from old test
-        clickButton("Manage Assays");
-        clickButton("New Assay Design");
-        assertElementNotPresent(Locator.radioButtonByNameAndValue("providerName", "Flow"));
-        checkRadioButton(Locator.radioButtonByNameAndValue("providerName", "General"));
-        clickButton("Next");
-
-        waitForElement(Locator.xpath("//input[@id='AssayDesignerName']"), WAIT_FOR_JAVASCRIPT);
-
-        setFormElement(Locator.xpath("//input[@id='AssayDesignerName']"), TEST_ASSAY);
-        setFormElement(Locator.xpath("//textarea[@id='AssayDesignerDescription']"), TEST_ASSAY_DESC);
+        AssayDesignerPage designerPage = _assayHelper.createAssayAndEdit("General", TEST_ASSAY);
+        designerPage.setDescription(TEST_ASSAY_DESC);
 
         for (int i = TEST_ASSAY_SET_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + TEST_ASSAY_SET_PROP_TYPES.length; i++)
         {
-            _listHelper.addField("Batch Fields", TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_TYPES[i - TEST_ASSAY_SET_PREDEFINED_PROP_COUNT]);
+            designerPage.addBatchField(TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_TYPES[i - TEST_ASSAY_SET_PREDEFINED_PROP_COUNT]);
         }
 
         for (int i = TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT + TEST_ASSAY_RUN_PROP_TYPES.length; i++)
         {
-            _listHelper.addField("Run Fields", TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_TYPES[i - TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT]);
+            designerPage.addRunField(TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_TYPES[i - TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT]);
         }
 
         for (int i = TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + TEST_ASSAY_DATA_PROP_TYPES.length; i++)
         {
-            _listHelper.addField("Data Fields", TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_TYPES[i - TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT]);
+            designerPage.addDataField(TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_TYPES[i - TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT]);
         }
 
-        _listHelper.addField("Data Fields", "Flags", "Flags", ListColumnType.Flag);
+        designerPage.addDataField("Flags", "Flags", FieldDefinition.ColumnType.Flag);
 
         // Set some to required
         setRequired("Batch Fields", TEST_ASSAY_SET_PREDEFINED_PROP_COUNT);
@@ -302,14 +311,12 @@ public class AssayTest extends AbstractAssayTest
         setRequired("Data Fields", TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2);
 
         // import aliases
-        _listHelper.clickRow(getPropertyXPath("Data Fields"), TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3);
-        click(Locator.xpath(getPropertyXPath("Data Fields") + "//span[contains(@class,'x-tab-strip-text') and text()='Advanced']"));
-        waitForElement(Locator.xpath(getPropertyXPath("Data Fields") + "//td/input[@id='importAliases']"), WAIT_FOR_JAVASCRIPT);
-        setFormElement(Locator.xpath(getPropertyXPath("Data Fields") + "//td/input[@id='importAliases']"), TEST_ASSAY_DATA_ALIASED_PROP_NAME);
+        _listHelper.clickRow(getPropertyXPathContains("Data Fields"), TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3);
+        click(Locator.xpath(getPropertyXPathContains("Data Fields") + "//span[contains(@class,'x-tab-strip-text') and text()='Advanced']"));
+        waitForElement(Locator.xpath(getPropertyXPathContains("Data Fields") + "//input[@id='importAliases']"), WAIT_FOR_JAVASCRIPT);
+        setFormElement(Locator.xpath(getPropertyXPathContains("Data Fields") + "//input[@id='importAliases']"), TEST_ASSAY_DATA_ALIASED_PROP_NAME);
 
-        sleep(1000);
-        clickButton("Save", 0);
-        waitForText(20000, "Save successful.");
+        designerPage.save();
     }
 
     /**
@@ -844,13 +851,12 @@ public class AssayTest extends AbstractAssayTest
         clickProject(getProjectName());
 
         waitAndClickAndWait(Locator.linkWithText(TEST_ASSAY));
-        _assayHelper.clickEditAssayDesign();
-        waitForElement(Locator.xpath(getPropertyXPathContains("Data Fields") + "//td//input[@name='ff_name5']"), WAIT_FOR_JAVASCRIPT);
-        _listHelper.setColumnName(getPropertyXPathContains("Data Fields"), 5, TEST_ASSAY_DATA_PROP_NAME + "edit");
-        _listHelper.setColumnLabel(getPropertyXPathContains("Data Fields"), 5, TEST_ASSAY_DATA_PROP_NAME + "edit");
-        _listHelper.deleteField("Data Fields", 4);
-        clickButton("Save", 0);
-        waitForText(WAIT_FOR_JAVASCRIPT, "Save successful.");
+        AssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
+        PropertiesEditor dataFields = designerPage.dataFields();
+        dataFields.selectField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
+        dataFields.selectField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
+        dataFields.selectField(4).markForDeletion();
+        designerPage.save();
 
         //ensure that label has changed in run data in Lab 1 folder
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);

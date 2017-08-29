@@ -444,12 +444,14 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         {
             clearLoading(_root);
             _root.add(_buttons);
-            _root.add(new HTML("<br/>"));
+            if (!PropertyUtil.useExperimentalCoreUI())
+                _root.add(new HTML("<br/>"));
 
             _propertiesPanel = new ListPropertiesPanel(_readonly);
             _root.add(new WebPartPanel("List Properties", _propertiesPanel));
 
-            _root.add(new HTML("<br/>"));
+            if (!PropertyUtil.useExperimentalCoreUI())
+                _root.add(new HTML("<br/>"));
             _propTable.setReadOnly(_readonly);
             _schemaPanel = new ListSchema(_propTable);
             _root.add(new WebPartPanel("List Fields", _schemaPanel));
@@ -679,15 +681,15 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _domain = null;
         getService().getList(id, new ErrorDialogAsyncCallback<GWTList>()
         {
-                public void handleFailure(String message, Throwable caught)
-                {
-                    _loading.setText("ERROR: " + message);
-                }
+            public void handleFailure(String message, Throwable caught)
+            {
+                _loading.setText("ERROR: " + message);
+            }
 
-                public void onSuccess(GWTList result)
-                {
-                    setList(result);
-                }
+            public void onSuccess(GWTList result)
+            {
+                setList(result);
+            }
         });
     }
 

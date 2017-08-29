@@ -1915,12 +1915,7 @@ search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/search2.jsp -text
 search/src/org/labkey/search/view/searchStats.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
-study/gwtsrc/gwt/DatasetDesigner.gwt.xml_old -text
-study/gwtsrc/gwt/DatasetImporter.gwt.xml_old -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
-study/gwtsrc/gwt/StudyChartDesigner.gwt.xml_old -text
-study/gwtsrc/gwt/StudyDesigner.gwt.xml_old -text
-study/gwtsrc/gwt/TemplateDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text

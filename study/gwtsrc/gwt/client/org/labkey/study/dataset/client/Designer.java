@@ -234,7 +234,8 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             _propertiesPanel = new DatasetProperties();
             _root.add(new WebPartPanel("Dataset Properties", _propertiesPanel));
-            _root.add(new HTML("<br/>"));
+            if (!PropertyUtil.useExperimentalCoreUI())
+                _root.add(new HTML("<br/>"));
 
             _schemaPanel = new DatasetSchema(_propTable);
             _root.add(new WebPartPanel("Dataset Fields", _schemaPanel));
@@ -642,6 +643,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
         private void createPanel()
         {
+            _table.setStyleName("lk-fields-table");
             boolean fromAssay = _dataset.getSourceAssayName() != null;
 
             String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
@@ -802,8 +804,6 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row, 0, panel);
-
-
 
             // ADDITIONAL KEY COLUMN
             VerticalPanel vPanel = new VerticalPanel();
@@ -1151,7 +1151,5 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         {
             errors.addAll(_propEdit.validate());
         }
-
     }
-
 }

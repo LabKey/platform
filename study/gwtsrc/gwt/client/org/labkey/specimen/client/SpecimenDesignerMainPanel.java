@@ -114,7 +114,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
 
         for (GWTDomain<GWTPropertyDescriptor> domain : Arrays.asList(domainEvent, domainVial, domainSpecimen))
         {
-            _rootPanel.add(new HTML("<br/>"));
+            if (!PropertyUtil.useExperimentalCoreUI())
+                _rootPanel.add(new HTML("<br/>"));
 
             // Make sure required properties cannot be edited or moved
             for (GWTPropertyDescriptor property : domain.getFields())
@@ -146,11 +147,13 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
             vPanel.add(editor.getWidget());
 
             final WebPartPanel panel = new WebPartPanel(domain.getName(), vPanel);
-            panel.setWidth("100%");
+            if (!PropertyUtil.useExperimentalCoreUI())
+                panel.setWidth("100%");
             _rootPanel.add(panel);
         }
 
-        _rootPanel.add(new HTML("<br/>"));
+        if (!PropertyUtil.useExperimentalCoreUI())
+            _rootPanel.add(new HTML("<br/>"));
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
 

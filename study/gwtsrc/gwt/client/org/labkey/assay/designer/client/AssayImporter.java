@@ -217,7 +217,8 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
                 table.setWidget(row++, 1, combo);
 
                 WebPartPanel infoPanel = new WebPartPanel("Assay Properties", panel);
-                infoPanel.setWidth("100%");
+                if (!PropertyUtil.useExperimentalCoreUI())
+                    infoPanel.setWidth("100%");
                 root.add(infoPanel);
 
                 panel.add(table);
@@ -238,7 +239,8 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
 
         VerticalPanel panel = new VerticalPanel();
         WebPartPanel columnsPanel = new WebPartPanel("Columns for Assay Data", panel);
-        columnsPanel.setWidth("100%");
+        if (!PropertyUtil.useExperimentalCoreUI())
+            columnsPanel.setWidth("100%");
         root.add(columnsPanel);
 
         // create an importer instance, we will manage the buttons externally

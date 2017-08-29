@@ -109,7 +109,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         return panel;
     }
 
-    private Panel createStudyOptions()
+    private Composite createStudyOptions()
     {
         // participant chart check
         FlexTable panel = new FlexTable();
@@ -135,7 +135,8 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                 subjectNounLower + " shown in any dataset grid."));
         panel.setWidget(row, 0, hp);
         WebPartPanel wpp = new WebPartPanel("Study Options", panel);
-        wpp.setWidth("100%");
+        if (!PropertyUtil.useExperimentalCoreUI())
+            wpp.setWidth("100%");
 
         return wpp;
     }
