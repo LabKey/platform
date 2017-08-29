@@ -7,19 +7,18 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
     extend: 'Ext.window.Window',
     modal: true,
     border: false,
-    width: 550,
     closeAction: 'destroy',
     title: 'Create Related Issue',
 
     initComponent : function() {
-        this.buttons = ['->', {
-            text: 'Create Issue',
-            scope: this,
-            handler: this.handleCreate
-        },{
+        this.buttons = ['->',{
             text: 'Cancel',
             scope: this,
             handler: this.close
+        }, {
+            text: 'Create Issue',
+            scope: this,
+            handler: this.handleCreate
         }];
 
         this.items = [this.getPanel()];

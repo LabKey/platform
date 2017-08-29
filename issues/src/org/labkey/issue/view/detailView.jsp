@@ -428,15 +428,14 @@ else
 
             </div>
             &nbsp;
-            &nbsp;
             <div style="display: inline" class="dropdown">
                 <button data-toggle="dropdown" class="btn btn-default">More <i class="fa fa-caret-down"></i></button>
                 <ul class="dropdown-menu dropdown-menu-left">
                 <% NavTree navTree = new NavTree();
                     if (hasInsertPerms)
-                        navTree.addChild("Create Related Issue", relatedIssues.toString());
+                        navTree.addChild("Create related issue", relatedIssues.toString());
                     if (!getUser().isGuest())
-                        navTree.addChild("Email Preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
+                        navTree.addChild("Email preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
                     if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
                         navTree.addChild("Move", "javascript:moveIssue()");
                     navTree.addChild("Print", context.cloneActionURL().replaceParameter("_print", "1"));
@@ -462,7 +461,7 @@ else
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
                     <% NavTree tree = new NavTree();
-                        tree.addChild("Create Related Issue", relatedIssues.toString());
+                        tree.addChild("Create related issue", relatedIssues.toString());
                         PopupMenuView.renderTree(tree, out); %>
                 </ul>
             </div>
@@ -587,7 +586,9 @@ else
                     for(DomainProperty prop : propertyArr)
                     {%>
                         <%=text(bean.renderColumn(prop, getViewContext(), true, true, true, false))%>
-                    <%}%>
+                    <%}
+                %>
+                <%=text(bean.renderAdditionalDetailInfo())%>
             </div>
     </div>
 

@@ -771,11 +771,21 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     sep = ", ";
                 }
 
-                sb.append("<tr><td class='labkey-form-label'>");
-                sb.append(label);
-                sb.append("</td><td>");
-                sb.append(cellContents.toString());
-                sb.append("</td><tr>");
+                if (PageFlowUtil.useExperimentalCoreUI())
+                {
+                    sb.append("<div class='form-group'>");
+                    sb.append("<label class='control-label'>").append(label).append("</label>");
+                    sb.append("<div class='col-9'>").append(cellContents.toString()).append("</div>");
+                    sb.append("</div>");
+                }
+                else
+                {
+                    sb.append("<tr><td class='labkey-form-label'>");
+                    sb.append(label);
+                    sb.append("</td><td>");
+                    sb.append(cellContents.toString());
+                    sb.append("</td><tr>");
+                }
             }
 
             return sb.toString();
