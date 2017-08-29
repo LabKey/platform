@@ -36,6 +36,8 @@
     AssayHeaderView bean = me.getModelBean();
     if (bean.isIncludeDescription() && bean.getProtocol().getProtocolDescription() != null && !"".equals(bean.getProtocol().getProtocolDescription().trim())) { %>
         <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
+
+    <p>
 <% }
     ActionURL current = getActionURL();
     for (NavTree link : bean.getLinks())
@@ -56,3 +58,4 @@
         }
     }
 %>
+    </p>

@@ -112,6 +112,7 @@
         // add a cell for the file upload input
         var fileCell = file.mainRow.insertCell(0);
         fileCell.style.whiteSpace = 'nowrap';
+        fileCell.style.paddingTop = '3px';
 
         var name = PREFIX + (currentIndex > 0 ? currentIndex : "");
 
@@ -137,7 +138,7 @@
         {
             // add a cell with a button for removing the given row
             var removeCell = file.mainRow.insertCell(1);
-            removeCell.innerHTML = "<a class='labkey-file-remove-icon labkey-file-remove-icon-disabled');'><span>&nbsp;</span></a>";
+            removeCell.innerHTML = "<a class='labkey-file-remove-icon labkey-file-remove-icon-disabled'><span>&nbsp;</span></a>";
             file.removeButtonAnchor = removeCell.children[0];
             file.removeButtonAnchor.onclick = function() {
                 removeFileUploadInputRow(this, file);
@@ -157,7 +158,7 @@
         // add a cell to show the file name after selection
         var fileNameCell = file.mainRow.insertCell(-1);
         fileNameCell.width = "100%";
-        fileNameCell.innerHTML = '<div style="padding: 5px;"></div>';
+        fileNameCell.innerHTML = '<div style="padding-left: 5px;"></div>';
         file.fileNameLabel = fileNameCell.children[0];
 
         // add a new row for error messages, collapsed by default
