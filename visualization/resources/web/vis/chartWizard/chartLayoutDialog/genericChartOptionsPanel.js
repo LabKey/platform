@@ -744,11 +744,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 this.setFooter('');
         }
 
-        this.adjustColorOptionVisibility(renderType, Ext4.isDefined(measures.color));
+        this.adjustColorOptionVisibility(renderType, Ext4.isDefined(measures.color), Ext4.isDefined(measures.series));
     },
 
-    adjustColorOptionVisibility : function(renderType, hasColorMeasure) {
-        this.setPointColorVisible(!hasColorMeasure);
+    adjustColorOptionVisibility : function(renderType, hasColorMeasure, hasSeriesMeasure) {
+        var visibleColor = (renderType == 'box_plot' || renderType == 'scatter_plot') && !hasColorMeasure;
+        var visibleSeries = renderType == 'line_plot' && !hasSeriesMeasure;
+        this.setPointColorVisible(visibleColor || visibleSeries);
+
         this.setFillColorVisible(!(renderType == 'bar_chart' && hasColorMeasure));
         this.setColorPalletteVisible(renderType == 'pie_chart' || hasColorMeasure);
     },
