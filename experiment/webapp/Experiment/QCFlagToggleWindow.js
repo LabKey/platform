@@ -134,7 +134,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
                 layout: 'fit',
                 border: false,
                 items: [this.flagsGrid],
-                buttonAlign: 'center',
+                buttonAlign: 'right',
                 buttons: this.userCanUpdate ? [this.saveButton, this.cancelButton] : [this.okButton]
             })
         ];
