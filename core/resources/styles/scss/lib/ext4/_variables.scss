@@ -13,7 +13,7 @@ $button-default-base-color: $lk-button-bg-color;
 $button-default-base-color-over: $lk-button-bg-color-hover;
 $button-default-base-color-focus: $button-default-base-color-over;
 $button-default-base-color-pressed: #c0c0c0;
-$button-default-base-color-disabled: adjust-color($lk-brand-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default;
+$button-default-base-color-disabled: adjust-color($lk-x4-button-default-base-color-disabled, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default;
 
 $button-default-border-color: $lk-button-bg-color-hover;
 $button-default-border-color-over: $lk-button-border-color-hover;
@@ -38,35 +38,36 @@ $btn-background-gradient-end: #e4e4e4;
 $btn-pressed-gradient-start: #c0c0c0;
 $btn-pressed-gradient-end: #ddd;
 
-$btn-group-inner-border-color: adjust-color($lk-brand-color, $saturation: -9%, $lightness: 8.5%) !default;
+$btn-group-inner-border-color: adjust-color($lk-x4-btn-group-inner-border-base-color, $saturation: -9%, $lightness: 8.5%) !default;
 
 //== Forms
 //
-$form-field-focus-border-color: adjust-color($lk-brand-color, $hue: -4.322deg, $saturation: -1.065%, $lightness: -16.863%) !default;
+$form-field-focus-border-color: adjust-color($lk-x4-form-field-focus-border-base-color, $hue: -4.322deg, $saturation: -1.065%, $lightness: -16.863%) !default;
 $form-trigger-border-color-focus: $form-field-focus-border-color !default;
 $form-trigger-border-color-over: $form-trigger-border-color-focus !default;
 
 //== Grids
 //
-$grid-row-cell-selected-border-color: adjust-color($lk-brand-color, $hue: 6.952deg, $saturation: 5.848%, $lightness: -6.471%) !default;
+$grid-row-cell-selected-border-color: adjust-color($lk-x4-grid-row-cell-selected-border-base-color, $hue: 6.952deg, $saturation: 5.848%, $lightness: -6.471%) !default;
 
 //== Layout
 //
-$accordion-header-background-color: $lk-webpart-color;
-$border-layout-ct-background-color: adjust-color($lk-brand-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 7.843%) !default;
+$accordion-header-background-color: $lk-x4-accordion-header-background-color;
+$border-layout-ct-background-color: adjust-color($lk-x4-border-layout-ct-background-base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 7.843%) !default;
 
 //== Panel
 //
-$panel-header-background-color: $lk-brand-color;
+$panel-header-background-color: $lk-x4-panel-header-background-color;
 $panel-header-color: $white;
 $panel-body-background-color: $lk-panel-bg-color;
 $panel-border-color: #B4B4B4 !default;
 $panel-header-inner-border: false;
-$panel-header-background-gradient: color-stops($lk-brand-color, $lk-brand-color);
+$panel-header-background-gradient: color-stops($lk-x4-panel-header-background-gradient-base-color,
+        $lk-x4-panel-header-background-gradient-base-color);
 
-$panel-header-inner-border-color: adjust-color($lk-brand-color, $hue: 0deg, $saturation: -6.098%, $lightness: 4.902%) !default;
+$panel-header-inner-border-color: adjust-color($lk-x4-panel-header-inner-border-base-color, $hue: 0deg, $saturation: -6.098%, $lightness: 4.902%) !default;
 $panel-frame-header-inner-border-color: $panel-header-inner-border-color;
-$panel-frame-base-color: $lk-brand-color !default;
+$panel-frame-base-color: $lk-x4-panel-frame-base-color !default;
 $panel-frame-background-color: $panel-frame-base-color !default;
 $panel-body-border-color: $panel-border-color;
 $panel-background-gradient-start: $panel-header-background-color;
@@ -76,7 +77,7 @@ $panel-background-gradient-end: $panel-header-background-color;
 //
 $toolbar-background-color: #eeeeee;
 $toolbar-border-color: $lk-panel-default-border;
-$toolbar-separator-color: adjust-color($lk-brand-color, $hue: -1deg, $saturation: 100%, $lightness: -4.3%) !default;
+$toolbar-separator-color: adjust-color($lk-x4-toolbar-separator-base-color, $hue: -1deg, $saturation: 100%, $lightness: -4.3%) !default;
 $toolbar-background-gradient-start: #eeeeee;
 $toolbar-background-gradient-end: #eeeeee;
 
@@ -122,10 +123,10 @@ $tip-border-color: adjust-color($tip-base-color, $hue: -1.705deg, $saturation: -
 
 //== Windows
 //
-$window-background-color: $lk-brand-color;
+$window-background-color: $lk-x4-window-background-color;
 $window-header-color: $white;
 $window-body-background-color: $lk-dialog-body-bg-color;
-$window-base-color: $lk-brand-color !default;
+$window-base-color: $lk-x4-window-base-color !default;
 $window-border-color: adjust-color($window-base-color, $hue: 0.952deg, $saturation: -32.377%, $lightness: -13.725%) !default;
 $window-inner-border-color: adjust-color($window-base-color, $hue: 2.667deg, $saturation: 9.662%, $lightness: 11.373%) !default;
 $window-header-background-color: $window-background-color !default;

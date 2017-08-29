@@ -137,3 +137,39 @@ $lk-tool-icon-color: $Madison-red-dark;
 $lk-tooltip-bg-color: $Madison-gray-darkest;
 $lk-tooltip-text-color: $Madison-page-bkgd;
 $lk-tooltip-opacity: 1;
+
+// TODO: Merge Ext specific styles with those above.
+//== Ext4
+//== Ext4 - Buttons
+//
+$lk-x4-button-default-base-color-disabled: $Madison-red;
+$lk-x4-btn-group-inner-border-base-color: $Madison-red;
+
+//== Ext4 - Forms
+//
+$lk-x4-form-field-focus-border-base-color: $Madison-red;
+
+//== Ext4- Grids
+//
+$lk-x4-grid-row-cell-selected-border-base-color: $Madison-red;
+
+//== Ext4 - Layout
+//
+$lk-x4-accordion-header-background-color: $Madison-page-bkgd;
+$lk-x4-border-layout-ct-background-base-color: $Madison-red;
+
+//== Ext4 - Panel
+//
+$lk-x4-panel-header-background-color: $Madison-red;
+$lk-x4-panel-header-background-gradient-base-color: $Madison-red;
+$lk-x4-panel-header-inner-border-base-color: $Madison-red;
+$lk-x4-panel-frame-base-color: $Madison-red;
+
+//== Ext4 - Toolbars
+//
+$lk-x4-toolbar-separator-base-color: $Madison-red;
+
+//== Ext4 - Windows
+//
+$lk-x4-window-background-color: $Madison-red;
+$lk-x4-window-base-color: $Madison-red;
