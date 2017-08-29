@@ -15,13 +15,14 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
 {
@@ -64,11 +65,15 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
         {
             // Too bad there's no way to configure EOL characters for the Jackson pretty printer.
             // It seems to use system defaults.
-            String[] outputLines = value.split("\r\n|\r|\n");
+            String filteredValue = PageFlowUtil.filter(value, true);
+            Pattern p = Pattern.compile("<br>");
+            Matcher m = p.matcher(filteredValue);
+            int count = 0;
+            while (m.find())
+                count++;
+            String outputTxt = "<div class='expandable-text-container'>" + filteredValue + "</div>";
 
-            String outputTxt = "<div class='expandable-text-container'>" + StringUtils.join(outputLines, "<br/>") + "</div>";
-
-            boolean exceedsMaxLineCount = maxLineCount != null && outputLines.length > maxLineCount;
+            boolean exceedsMaxLineCount = maxLineCount != null && count > maxLineCount;
             boolean exceedsMaxCharCount = maxCharCount != null && value.length() > maxCharCount;
             if (exceedsMaxLineCount || exceedsMaxCharCount)
             {

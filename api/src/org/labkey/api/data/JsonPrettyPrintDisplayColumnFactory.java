@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 
@@ -58,8 +57,7 @@ public class JsonPrettyPrintDisplayColumnFactory extends ExpandableTextDisplayCo
             try
             {
                 Object json = mapper.readValue(value.toString(), Object.class);
-                String output = PageFlowUtil.filter(mapper.writer(pp).writeValueAsString(json)).replace("  ", "&nbsp;&nbsp;");
-                return getFormattedOutputText(output, 10, null);
+                return getFormattedOutputText(mapper.writer(pp).writeValueAsString(json), 10, null);
             }
             catch (IOException e)
             {
