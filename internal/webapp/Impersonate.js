@@ -15,13 +15,13 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
 
     initComponent : function() {
         this.buttons = ['->', {
-            text: 'Impersonate',
-            scope: this,
-            handler: this.handleImpersonateUser
-        },{
             text: 'Cancel',
             scope: this,
             handler: this.close
+        }, {
+            text: 'Impersonate',
+            scope: this,
+            handler: this.handleImpersonateUser
         }];
 
         this.items = [this.getPanel()];
@@ -140,14 +140,14 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     defaultFocus: '#impersonate',
 
     initComponent : function() {
-        this.buttons = ['->', {
-            text: 'Impersonate',
-            scope: this,
-            handler: this.handleImpersonateGroup
-        },{
+        this.buttons = ['->',{
             text: 'Cancel',
             scope: this,
             handler: this.close
+        }, {
+            text: 'Impersonate',
+            scope: this,
+            handler: this.handleImpersonateGroup
         }];
 
         this.items = [this.getPanel()];
@@ -264,11 +264,11 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             handler: this.handleImpersonateRole
         });
 
-        this.buttons = ['->', this.impersonateButton, {
+        this.buttons = ['->', {
             text: 'Cancel',
             scope: this,
             handler: this.close
-        }];
+        }, this.impersonateButton];
 
         this.items = [this.getPanel()];
 
