@@ -40,11 +40,11 @@
     <table>
         <tr>
             <td class="labkey-form-label"><label for="shortURLTextField">Short URL</label><%= helpPopup("Short URL", "The unique name for this short URL")%></td>
-            <td><input name="shortURL" id="shortURLTextField" /></td>
+            <td><input name="shortURL" id="shortURLTextField" size="40" /></td>
         </tr>
         <tr>
             <td class="labkey-form-label"><label for="targetURLTextField">Target URL</label><%= helpPopup("Target URL", "The URL on this server that will be the redirect target. The server portion of the URL will be stripped off - only the path portion will be retained")%></td>
-            <td><input name="fullURL" id="targetURLTextField" /></td>
+            <td><input name="fullURL" id="targetURLTextField" size="40" /></td>
         </tr>
         <tr>
             <td></td>
