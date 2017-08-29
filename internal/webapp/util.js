@@ -128,7 +128,7 @@ function showPathname(filechooser, elementId)
         el.html([
             '<table>',
                 '<tr>',
-                    '<td style="padding-right: 5px;">' + (filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>')) + '</td>',
+                    '<td style="padding: 0 5px;">' + (filename == '' ? '' : ('<img src=\"' + LABKEY.Utils.getFileIconUrl(filename) + '\"/>')) + '</td>',
                     '<td>' + LABKEY.Utils.encodeHtml(filename) + '</td>',
                 '</tr>',
             '</table>'
@@ -153,10 +153,10 @@ function addFilePicker(tblId, linkId)
     newRow.style.minHeight = '20px';
     var filePickerCell = newRow.insertCell(0);
     var filePickerId = "formFile" + twoDigit(filePickerIndex);
-    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + twoDigit(filePickerIndex) + ']" size="45" onChange="showPathname(this, \'filename' + twoDigit(filePickerIndex) + '\')">';
+    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + twoDigit(filePickerIndex) + ']" size="45" onChange="showPathname(this, \'filename' + twoDigit(filePickerIndex) + '\')" style="border: none; background-color: transparent;">';
     var removePathnameCell = newRow.insertCell(1);
     removePathnameCell.innerHTML = '<table><tr><td><a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">&nbsp;remove</a></td>' +
-        '<td><label id="filename' + twoDigit(filePickerIndex) + '"></label></td></tr></table>';
+        '<td><span id="filename' + twoDigit(filePickerIndex) + '"></span></td></tr></table>';
     updateInstructions(document.getElementById(linkId), table.rows.length);
 }
 
