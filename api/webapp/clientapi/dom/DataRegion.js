@@ -4327,7 +4327,7 @@ if (!LABKEY.DataRegions) {
     };
 
     MsgProto.expand = function() {
-        if (this.isVisible()) {
+        if (!NEW_UI && this.isVisible()) {
             this.getParent().find('.labkey-dataregion-msg').show();
 
             var toggle = this.getToggleEl();
@@ -4340,7 +4340,7 @@ if (!LABKEY.DataRegions) {
     };
 
     MsgProto.collapse = function() {
-        if (this.isVisible()) {
+        if (!NEW_UI && this.isVisible()) {
             this.getParent().find('.labkey-dataregion-msg').hide();
 
             var toggle = this.getToggleEl();
@@ -4353,6 +4353,7 @@ if (!LABKEY.DataRegions) {
     };
 
     MsgProto.getToggleEl = function() {
+        // TODO: Can be removed once NEW_UI is permanent
         return this.getParent().find('.labkey-dataregion-msg-toggle');
     };
 
