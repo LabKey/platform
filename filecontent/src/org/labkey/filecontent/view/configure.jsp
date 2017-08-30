@@ -27,13 +27,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<FileContentController.FileContentForm> me = (JspView<FileContentController.FileContentForm>) HttpView.currentView();
     FileContentController.FileContentForm form = me.getModelBean();
     FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-    AttachmentDirectory[] attachmentDirs = service.getRegisteredDirectories(getContainer());
+    Collection<AttachmentDirectory> attachmentDirs = service.getRegisteredDirectories(getContainer());
 
     String fileSetHelp = "A file set enables web file sharing of data in subdirectories that do not correspond " +
     "exactly to LabKey containers. It is important to remember that when you request a file from a file set, " +

@@ -75,16 +75,12 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
 
         // Check if there are any named file sets
-        AttachmentDirectory[] dirs = svc.getRegisteredDirectories(c);
-        if (null != dirs)
+        for (AttachmentDirectory dir : svc.getRegisteredDirectories(c))
         {
-            for (AttachmentDirectory dir : dirs)
+            if (!StringUtils.isEmpty(dir.getLabel()))
             {
-                if (!StringUtils.isEmpty(dir.getLabel()))
-                {
-                    result.add(FileContentService.FILE_SETS_LINK);
-                    break;
-                }
+                result.add(FileContentService.FILE_SETS_LINK);
+                break;
             }
         }
         return result;
@@ -177,15 +173,13 @@ public class FileWebdavProvider implements WebdavService.Provider
             setPolicy(_c.getPolicy());
             
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            AttachmentDirectory[] dirs = svc.getRegisteredDirectories(_c);
-            if (dirs != null)
-                for (AttachmentDirectory dir : dirs)
-                {
-                    if (StringUtils.isEmpty(dir.getLabel()))
-                        continue;
-                    _map.put(dir.getLabel(), dir);
-                    _names.add(dir.getLabel());
-                }
+            for (AttachmentDirectory dir : svc.getRegisteredDirectories(_c))
+            {
+                if (StringUtils.isEmpty(dir.getLabel()))
+                    continue;
+                _map.put(dir.getLabel(), dir);
+                _names.add(dir.getLabel());
+            }
             _names.sort(String.CASE_INSENSITIVE_ORDER);
         }
 

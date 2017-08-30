@@ -105,6 +105,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     {
     }
 
+    @Override
     public @Nullable File getFileRoot(Container c, ContentType type)
     {
         switch (type)
@@ -141,6 +142,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return null;
     }
 
+    @Override
     public @Nullable File getFileRoot(Container c)
     {
         if (c == null)
@@ -166,6 +168,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return null;
     }
 
+    @Override
     public File getDefaultRoot(Container c, boolean createDir)
     {
         Container firstOverride = getFirstAncestorWithOverride(c);
@@ -216,6 +219,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return toTest;
     }
 
+    @Override
     public void setFileRoot(Container c, File path)
     {
         if (c.isWorkbookOrTab())
@@ -242,6 +246,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         ContainerManager.firePropertyChangeEvent(evt);
     }
 
+    @Override
     public void disableFileRoot(Container container)
     {
         if (container == null || container.isRoot())
@@ -261,6 +266,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
     public boolean isFileRootDisabled(Container c)
     {
         Container effective = getEffectiveContainer(c);
@@ -271,6 +277,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return !root.isEnabled();
     }
 
+    @Override
     public boolean isUseDefaultRoot(Container c)
     {
         if (c == null)
@@ -289,6 +296,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return c.isWorkbookOrTab() ? c.getParent() : c;
     }
 
+    @Override
     public void setIsUseDefaultRoot(Container c, boolean useDefaultRoot)
     {
         Container effective = getEffectiveContainer(c);
@@ -306,8 +314,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
-    @NotNull
-    public File getSiteDefaultRoot()
+    @Override
+    public @NotNull File getSiteDefaultRoot()
     {
         File root = AppProps.getInstance().getFileSystemRoot();
 
@@ -320,8 +328,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return root;
     }
 
-    @NotNull
-    public File getUserFilesRoot()
+    public @NotNull File getUserFilesRoot()
     {
         File root = AppProps.getInstance().getUserFilesRoot();
 
@@ -334,8 +341,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return root;
     }
 
-    @NotNull
-    private File getDefaultRoot()
+    private @NotNull File getDefaultRoot()
     {
         File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
 
@@ -352,6 +358,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return defaultRoot;
     }
 
+    @Override
     public void setSiteDefaultRoot(File root)
     {
         if (root == null || !root.exists())
@@ -369,6 +376,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         ContainerManager.firePropertyChangeEvent(evt);
     }
 
+    @Override
     public void setUserFilesRoot(File root)
     {
         if (root == null || !root.exists())
@@ -386,6 +394,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         ContainerManager.firePropertyChangeEvent(evt);
     }
 
+    @Override
     public FileSystemAttachmentParent registerDirectory(Container c, String name, String path, boolean relative)
     {
         FileSystemAttachmentParent parent = new FileSystemAttachmentParent();
@@ -405,6 +414,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return ret;
     }
 
+    @Override
     public void unregisterDirectory(Container c, String name)
     {
         FileSystemAttachmentParent parent = getRegisteredDirectory(c, name);
@@ -416,6 +426,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         ContainerManager.firePropertyChangeEvent(evt);
     }
 
+    @Override
     public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException
     {
         if (createDir) //force create
@@ -453,6 +464,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return dir;
     }
 
+    @Override
     public FileSystemAttachmentParent getRegisteredDirectory(Container c, String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -461,6 +473,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
     }
 
+    @Override
     public FileSystemAttachmentParent getRegisteredDirectoryFromEntityId(Container c, String entityId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -469,13 +482,15 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
     }
 
-    public FileSystemAttachmentParent[] getRegisteredDirectories(Container c)
+    @Override
+    public @NotNull Collection<AttachmentDirectory> getRegisteredDirectories(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
-        return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getArray(FileSystemAttachmentParent.class);
+        return Collections.unmodifiableCollection(new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getCollection(FileSystemAttachmentParent.class));
     }
 
+    @Override
     public void containerCreated(Container c, User user)
     {
         try
@@ -492,6 +507,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         File dir = null;
@@ -539,6 +555,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return Collections.emptyList();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
@@ -580,6 +597,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
     public @Nullable String getFolderName(FileContentService.ContentType type)
     {
         if (type != null)
@@ -624,6 +642,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
     public FilesAdminOptions getAdminOptions(Container c)
     {
         FileRoot root = FileRootManager.get().getFileRoot(c);
@@ -636,6 +655,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return new FilesAdminOptions(c, xml);
     }
 
+    @Override
     public void setAdminOptions(Container c, FilesAdminOptions options)
     {
         if (options != null)
@@ -651,11 +671,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public static final String PROPERTIES_DOMAIN = "File Properties";
     public static final String TYPE_PROPERTIES = "FileProperties";
 
+    @Override
     public String getDomainURI(Container container)
     {
         return getDomainURI(container, getAdminOptions(container).getFileConfig());
     }
 
+    @Override
     public String getDomainURI(Container container, FilesAdminOptions.fileConfig config)
     {
         while (config == FilesAdminOptions.fileConfig.useParent && container != container.getParent())
@@ -669,12 +691,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
     }
 
+    @Override
     public ExpData getDataObject(WebdavResource resource, Container c)
     {
         return getDataObject(resource, c, null, false);
     }
 
-    public static ExpData getDataObject(WebdavResource resource, Container c, User user, boolean create)
+    private static ExpData getDataObject(WebdavResource resource, Container c, User user, boolean create)
     {
         if (resource != null)
         {
@@ -699,6 +722,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return new FileQueryUpdateService(tinfo, container);
     }
 
+    @Override
     public boolean isValidProjectRoot(String root)
     {
         File f = new File(root);
@@ -709,6 +733,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return true;
     }
 
+    @Override
     public void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container)
     {
         try
@@ -753,6 +778,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    @Override
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
         // Make sure that we've got the best representation of the file that we can
