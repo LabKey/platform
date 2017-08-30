@@ -52,7 +52,7 @@
 <%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
 <input type=hidden name=allowMultipleDiscussions value="<%=bean.allowMultipleDiscussions%>">
-<table style="max-width: 1050px"> <!-- 13625 -->
+<table class="lk-fields-table" style="max-width: 1050px"> <!-- 13625 -->
   <tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type='text' size='60' maxlength="255" id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr><%
     if (settings.hasStatus())
     {
