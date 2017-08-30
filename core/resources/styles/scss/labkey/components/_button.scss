@@ -22,7 +22,7 @@
   &:hover,
   &:focus {
     background-color: $lk-button-bg-color-hover;
-    border: 1px solid $lk-button-border-color-hover;
+    border: $lk-button-border-size solid $lk-button-border-color-hover;
     color: $lk-button-color-hover;
     cursor: pointer;
   }
@@ -36,7 +36,7 @@
     &:focus {
       /* Intentionally not using *-hover variables */
       background-color: $lk-button-bg-color;
-      border: 1px solid $lk-button-border-color;
+      border: $lk-button-border-size solid $lk-button-border-color;
       color: $lk-button-color;
       cursor: pointer;
     }
