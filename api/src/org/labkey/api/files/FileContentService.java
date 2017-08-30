@@ -121,11 +121,11 @@ public interface FileContentService
     boolean isValidProjectRoot(String root);
 
     /**
-     * Return a named AttachmentParent for files in the directory mapped to this container
+     * Return all AttachmentParents for files in the directory mapped to this container
      * @param c Container in the file system
-     * @return Array of attachment directories that have previously been registered
+     * @return Collection of attachment directories that have previously been registered
      */
-    AttachmentDirectory[] getRegisteredDirectories(Container c);
+    @NotNull Collection<AttachmentDirectory> getRegisteredDirectories(Container c);
 
     enum ContentType {
         files,

@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.CustomizeFilesWebPartView" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -27,7 +28,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -36,7 +36,7 @@
     ViewContext ctx = getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-    AttachmentDirectory [] attDirs = svc.getRegisteredDirectories(getContainer());
+    Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
     Collection<String> cloudStoreNames = Collections.emptyList();
     CloudStoreService cloud = ServiceRegistry.get().getService(CloudStoreService.class);
