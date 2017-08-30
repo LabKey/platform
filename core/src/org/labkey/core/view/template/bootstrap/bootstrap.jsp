@@ -88,7 +88,18 @@
         <div class="col-md-12 lk-body-title">
             <% /* NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail */ %>
             <% if (trail != null) { %><%= text(trail) %><% } %>
-            <% if (pageTitle != null) { %><h3><%= h(pageTitle)%></h3><% } %>
+            <% if (pageTitle != null) { %>
+            <h3>
+                <%= h(pageTitle) %>
+                <% if (!getActionURL().equals(getContainer().getStartURL(getUser()))) { %>
+                <small>
+                    <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>">
+                        <i class="fa fa-folder-o"></i><%= h(getContainer().getName()) %>
+                    </a>
+                </small>
+                <% } %>
+            </h3>
+            <% } %>
             <%     }
                 }
             %>

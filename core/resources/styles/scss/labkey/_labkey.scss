@@ -88,6 +88,20 @@ legend {
   }
 }
 
+.lk-body-title-folder {
+  color: #555;
+  padding-left: 10px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  .fa {
+    padding-right: 3px;
+    font-size: 12px;
+  }
+}
+
 li.labkey-ancillary-wizard-active-step {
   background-color: white;
   font-weight: bold;
