@@ -16,7 +16,7 @@ $gray:                   lighten($gray-base, 33.5%) !default; // #555
 $gray-light:             lighten($gray-base, 46.7%) !default; // #777
 $gray-lighter:           lighten($gray-base, 93.5%) !default; // #eee
 
-$brand-primary:         $lk-brand-color;
+$brand-primary:         $lk-brand-primary;
 $brand-success:         $lk-success-color;
 $brand-info:            $lk-info-color;
 $brand-warning:         $lk-warning-color;

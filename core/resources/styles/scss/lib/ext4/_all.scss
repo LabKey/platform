@@ -1782,7 +1782,7 @@ a.x4-tab {
 .x4-btn-default-small {
   @include border-radius($lk-button-border-radius);
   padding: $lk-button-padding;
-  border: 1px solid $lk-button-border-color;
+  border: $lk-button-border-size solid $lk-button-border-color;
   background: $lk-button-bg-color none;
 }
 

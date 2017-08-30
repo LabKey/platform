@@ -99,6 +99,7 @@ $lk-padding-xs-horizontal: 5px !default;
 //== Body
 //
 $lk-body-bg-color: $lk-primary-bg-color !default; //theme variable
+$lk-brand-primary: $lk-brand-color !default; //theme variable
 
 //== Borders
 //
@@ -117,6 +118,7 @@ $lk-button-bg-color-hover: $lk-accent-color !default; // theme variable
 $lk-button-border-color: $lk-accent-color !default; // theme variable
 $lk-button-border-color-hover: $lk-accent-color !default; // theme variable
 $lk-button-border-radius: 0 !default;
+$lk-button-border-size: 1px !default; // theme variable
 $lk-button-color: $lk-accent-color !default; // theme variable
 $lk-button-color-hover: $white !default; // theme variable
 $lk-button-font-family: $lk-body-font-family !default; // theme variable

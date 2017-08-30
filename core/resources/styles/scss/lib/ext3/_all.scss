@@ -6960,7 +6960,7 @@ li.x-menu-item-active a.x-menu-item {
   cursor: pointer;
   white-space: nowrap;
 
-  border: 1px solid $lk-button-border-color;
+  border: $lk-button-border-size solid $lk-button-border-color;
   border-radius: $lk-button-border-radius;
 
   button {

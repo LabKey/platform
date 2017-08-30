@@ -17,11 +17,6 @@ $Madison-white: #FFFFFF;
 
 $lk-text-color: $Madison-body-font;
 
-//== Fonts
-//
-$lk-body-font-family: Georgia, sans-serif;
-$lk-heading-font-family: Lato, sans-serif;
-
 //== Forms / States
 //
 $lk-state-warning-text: $Madison-body-font;
@@ -31,6 +26,7 @@ $lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
 //== Body
 //
 $lk-body-bg-color: $Madison-page-bkgd;
+$lk-brand-primary: $Madison-red;
 
 //== Buttons
 //
@@ -38,9 +34,10 @@ $lk-button-bg-color: $Madison-white;
 $lk-button-bg-color-hover: $Madison-red;
 $lk-button-border-color: $Madison-red;
 $lk-button-border-color-hover: $Madison-red;
+$lk-button-border-size: 2px;
+
 $lk-button-color: $Madison-red;
 $lk-button-color-hover: $Madison-page-bkgd;
-$lk-button-font-family: Lato;
 
 $lk-button-primary-bg-color: $Madison-red;
 $lk-button-primary-bg-color-hover: $Madison-red;
@@ -53,7 +50,6 @@ $lk-button-primary-border-color-hover: $Madison-gray-blue;
 $lk-bar-button-color: $Madison-anchor-color;
 $lk-bar-button-color-hover: $Madison-gray-darkest;
 $lk-bar-button-border-color-hover: $Madison-gray-blue;
-$lk-bar-button-font-family: Lato;
 
 //== Dropdowns
 //
@@ -63,8 +59,6 @@ $lk-dropdown-link-hover-bg: $Madison-red-dark;
 
 //== Grids
 //
-$lk-grid-font-family: Arial;
-
 $lk-grid-row-bg-color: $Madison-page-bkgd;
 $lk-grid-row-alt-bg-color: $Madison-gray-blue;
 $lk-grid-row-color-hover: $Madison-gray-footer-text;
@@ -83,10 +77,6 @@ $lk-page-header-text-color: $Madison-page-bkgd;
 $lk-page-header-icon-color: $Madison-page-bkgd;
 $lk-page-header-font-hover-color: $Madison-gray-blue;
 $lk-page-header-icon-hover-color: $Madison-gray-blue;
-
-//== Headings
-//
-$lk-headings-font-family: "Lato";
 
 //== Links
 //

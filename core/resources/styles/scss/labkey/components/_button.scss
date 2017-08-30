@@ -3,7 +3,7 @@
 
 .labkey-button {
   background-color: $lk-button-bg-color;
-  border: 1px solid $lk-button-border-color;
+  border: $lk-button-border-size solid $lk-button-border-color;
   border-radius: $lk-button-border-radius;
   color: $lk-button-color;
   display: inline-block;
