@@ -340,13 +340,23 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                 {
                     String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
                     String nounV2 = includesViruses ? "Sample and virus" : "Sample";
-
-                    out.write("<td class='labkey-form-label'>" + nounV1 + " Metadata");
-                    out.write(PageFlowUtil.helpPopup(nounV1 + " Metadata", nounV2 + " metadata should be " +
+                    String helpPopup = PageFlowUtil.helpPopup(nounV1 + " Metadata", nounV2 + " metadata should be " +
                             "provided in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() +
                             ".  This information is used to determine data processing and to map " + nounV2.toLowerCase() +
-                            " values to plate locations."));
-                    out.write(" *</td>");
+                            " values to plate locations.");
+
+                    if (PageFlowUtil.useExperimentalCoreUI())
+                    {
+                        out.write("<label class=\"col-sm-3 col-lg-2 control-label\">");
+                        out.write(nounV1 + " Metadata" + helpPopup + " *");
+                        out.write("</label>");
+                    }
+                    else
+                    {
+                        out.write("<td class='labkey-form-label'>");
+                        out.write(nounV1 + " Metadata" + helpPopup + " *");
+                        out.write("</td>");
+                    }
                 }
             }
 
@@ -385,14 +395,16 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                         out.write("\n<td>Upload a data file</td>");
                         out.write("\n</tr><tr>");
                         out.write("\n<td></td><td><div id=\"newMetadataFileName\"  style=\"display:none\"><input type=\"file\" id=\"" +
-                                SAMPLE_FILE_INPUT_NAME + "\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\"></div></td>");
+                                SAMPLE_FILE_INPUT_NAME + "\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\"></div></td>");
                         out.write("\n</tr></table>");
                     }
                     else
+                    {
                         out.write("<table><tr><td></td><td>" +
                                 "<input type=\"hidden\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_NEWUPLOAD + "\">" +
-                                "<input type=\"file\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\">" +
+                                "<input type=\"file\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\">" +
                                 "</td></tr></table>");
+                    }
                 }
             }
         });

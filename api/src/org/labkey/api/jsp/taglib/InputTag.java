@@ -40,6 +40,7 @@ public class InputTag extends SimpleTagBase
     private String state;
     private String type;
     private Object value;
+    private Integer size;
 
     public void setChecked(Boolean checked)
     {
@@ -121,6 +122,11 @@ public class InputTag extends SimpleTagBase
         this.onKeyUp = onKeyUp;
     }
 
+    public void setSize(Integer size)
+    {
+        this.size = size;
+    }
+
     public void doTag() throws JspException, IOException
     {
         Input.InputBuilder input;
@@ -157,7 +163,8 @@ public class InputTag extends SimpleTagBase
             .required(isRequired)
             .readOnly(isReadOnly)
             .value(value)
-            .checked(checked);
+            .checked(checked)
+            .size(size);
 
         if (Input.State.ERROR.toString().equalsIgnoreCase(state))
             input.state(Input.State.ERROR);

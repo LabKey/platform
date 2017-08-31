@@ -29,7 +29,7 @@
     DilutionAssayRun assay = bean.getAssay();
     String wellFormat = bean.getPlateDataFormat();
 %>
-<table cellspacing="5px">
+<table>
 <%
     int plateIndex = 0;
     List<Plate> plates = assay.getPlates();
@@ -38,20 +38,16 @@
     {
 %>
 <tr>
-    <td valign=top>
-        <table class="labkey-data-region labkey-show-borders plate-summary">
-            <%
-                if (multiPlate)
-                {
-            %>
-            <tr>
-                <td class="labkey-data-region-header-container" style="text-align:center;" colspan="<%= plate.getColumns() + 1 %>">
-                    Plate <%= plateIndex+1 %>
-                </td>
-            </tr>
-            <%
-                }
-            %>
+    <td valign="top" style="padding-bottom: 20px;">
+<%
+        if (multiPlate)
+        {
+%>
+            <h3 style="font-size: 16px">Plate <%= plateIndex+1 %></h3>
+<%
+        }
+%>
+        <table class="labkey-data-region-legacy labkey-show-borders plate-summary">
             <tr>
                 <td>&nbsp;</td>
                 <%

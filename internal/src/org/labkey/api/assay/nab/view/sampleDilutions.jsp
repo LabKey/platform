@@ -30,7 +30,23 @@
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
 %>
-<table cellspacing="5px">
+<style type="text/css">
+    .lk-sample-dilutions-table {
+        border: solid #d3d3d3 1px;
+    }
+
+    .lk-sample-dilutions-table td {
+        padding: 0 3px;
+    }
+
+    .lk-sample-dilutions-header {
+        background-color: #eeeeee;
+        border: solid #d3d3d3 1px;
+        padding: 5px !important;
+    }
+</style>
+
+<table>
     <tr>
         <%
             int count = 0;
@@ -39,13 +55,15 @@
             {
                 DilutionSummary summary = results.getDilutionSummary();
         %>
-        <td>
-            <table class="labkey-data-region">
+        <td style="padding: 0 10px 10px 0;" valign="top">
+            <table class="labkey-data-region-legacy lk-sample-dilutions-table">
                 <tr>
-                    <td colspan="4" class="labkey-data-region-header-container" style="text-align:center;"><%= h(results.getCaption(bean.getDataIdentifier())) %></td>
+                    <td colspan="4" align="center" class="lk-sample-dilutions-header">
+                        <%= h(results.getCaption(bean.getDataIdentifier())) %></div>
+                    </td>
                 </tr>
                 <tr>
-                    <td align="right" style="text-decoration:underline"><%= summary.getMethod().getAbbreviation() %></td>
+                    <td align="right" style="text-decoration:underline; padding-right: 10px;"><%= summary.getMethod().getAbbreviation() %></td>
                     <td align="center" colspan="3"  style="text-decoration:underline"><%=h(bean.getNeutralizationAbrev())%></td>
                 </tr>
                 <%
@@ -61,12 +79,10 @@
                             shortDecFormat = new DecimalFormat("0");
                 %>
                 <tr>
-                    <td align=right><%= shortDecFormat.format(dilution) %></td>
-                    <td
-                        align=right><%= Luc5Assay.percentString(summary.getPercent(data)) %></td>
+                    <td align="right" style="padding-right: 10px;"><%= shortDecFormat.format(dilution) %></td>
+                    <td align="right"><%= Luc5Assay.percentString(summary.getPercent(data)) %></td>
                     <td>&plusmn;</td>
-                    <td
-                        align=right><%= Luc5Assay.percentString(summary.getPlusMinus(data)) %></td>
+                    <td align="right"><%= Luc5Assay.percentString(summary.getPlusMinus(data)) %></td>
                 </tr>
                 <%
                     }

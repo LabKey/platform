@@ -51,7 +51,7 @@
                 {
                     Pair<String, Object> property = index < entries.length ? entries[index] : null;
             %>
-                <th style="text-align:left"><%= property != null ? h(property.getKey()) : "&nbsp;"  %></th>
+                <td style="text-align:left; font-weight: bold;"><%= property != null ? h(property.getKey()) : "&nbsp;"  %></td>
                 <td><%= property != null ? h(property.getValue()) : "&nbsp;"  %></td>
             <%
                 }

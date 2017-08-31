@@ -32,6 +32,7 @@
         dependencies.add("nabqc");
     }
 %>
+<br/>
 <labkey:errors/>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
@@ -40,26 +41,32 @@
 
     boolean writer = getContainer().hasPermission(getUser(), InsertPermission.class);
 %>
-<table>
 <%
     if (bean.needsNotesView())
     {
 %>
-    <tr class="labkey-wp-header">
-        <th align="left">Notes</th>
-    </tr>
-    <% me.include(bean.getRunNotesView(), out); %>
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left">
+                Notes
+            </h3>
+        </div>
+        <div class="panel-body">
+            <% me.include(bean.getRunNotesView(), out); %>
+        </div>
+    </div>
 <%
     }
 %>
-    <tr class="labkey-wp-header">
-        <th>Run Summary<%= h(assay.getRunName() != null ? ": " + assay.getRunName() : "") %></th>
-    </tr>
-    <tr>
-        <td><% me.include(bean.getRunPropertiesView(), out); %></td>
-    </tr>
-    <tr>
-        <td>
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left">
+                Run Summary<%= h(assay.getRunName() != null ? ": " + assay.getRunName() : "") %>
+            </h3>
+        </div>
+        <div class="panel-body">
+            <% me.include(bean.getRunPropertiesView(), out); %>
+            <br/>
             <table>
                 <tr>
                     <td valign="top"><% me.include(bean.getGraphView(), out); %></td>
@@ -68,38 +75,47 @@
                     </td>
                 </tr>
             </table>
-        </td>
-    </tr>
-    <tr>
-        <td><% me.include(bean.getSamplePropertiesView(), out); %></td>
-    </tr>
-</table>
-<table>
-    <tr class="labkey-wp-header">
-        <th><%=h(bean.getSampleNoun())%> Information</th>
-    </tr>
-    <tr>
-        <td><% me.include(bean.getSampleDilutionsView(), out); %></td>
-    </tr>
-</table>
-<table>
-    <tr class="labkey-wp-header">
-        <th>Plate Data</th>
-    </tr>
-    <tr>
-        <td><% me.include(bean.getPlateDataView(), out); %></td>
-    </tr>
-    <%
+            <br/>
+            <% me.include(bean.getSamplePropertiesView(), out); %>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left">
+                <%=h(bean.getSampleNoun())%> Information
+            </h3>
+        </div>
+        <div class="panel-body">
+            <% me.include(bean.getSampleDilutionsView(), out); %>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left">
+                Plate Data
+            </h3>
+        </div>
+        <div class="panel-body">
+            <% me.include(bean.getPlateDataView(), out); %>
+        </div>
+    </div>
+
+<%
     if (!bean.isPrintView() && writer)
     {
 %>
-    <tr class="labkey-wp-header">
-        <th>Discussions</th>
-    </tr>
-    <tr>
-        <td><% me.include(bean.getDiscussionView(getViewContext()), out); %></td>
-    </tr>
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title pull-left">
+                Discussions
+            </h3>
+        </div>
+        <div class="panel-body">
+            <% me.include(bean.getDiscussionView(getViewContext()), out); %>
+        </div>
+    </div>
 <%
     }
 %>
-</table>

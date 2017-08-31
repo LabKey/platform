@@ -78,7 +78,7 @@
                 if (sampleData.size() > 0)
                 {
             %>
-                <table class="labkey-data-region labkey-show-borders">
+                <table class="labkey-data-region-legacy labkey-show-borders">
                     <colgroup><%
 
                         for (PropertyDescriptor pd : sampleData.get(0).keySet())
@@ -112,7 +112,7 @@
                         {
                             rowNumber++;
                     %>
-                        <tr <%=text(rowNumber % 2 == 0 ? "class=\"labkey-alternate-row\"" : "class=\"labkey-row\"")%>>
+                        <tr <%=text(rowNumber % 2 == 1 ? "class=\"labkey-alternate-row\"" : "class=\"labkey-row\"")%>>
                     <%
                         for (Map.Entry<PropertyDescriptor, Object> entry : row.entrySet())
                         {

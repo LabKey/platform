@@ -44,8 +44,8 @@
 %>
 <tr>
     <td>
-        This run is shown with a <strong><%= h(assay.getRenderedCurveFitType().getLabel()) %></strong> curve fit,
-       but is saved with a <strong><%= h(assay.getSavedCurveFitType() != null ? assay.getSavedCurveFitType().getLabel() : "unknown") %></strong> curve fit.
+        <p>This run is shown with a <strong><%= h(assay.getRenderedCurveFitType().getLabel()) %></strong> curve fit,
+        but is saved with a <strong><%= h(assay.getSavedCurveFitType() != null ? assay.getSavedCurveFitType().getLabel() : "unknown") %></strong> curve fit.
         To replace<br>the saved data with the displayed data,
         <%
         if (deleteAndInsertPerms)
@@ -61,7 +61,7 @@
         <%
         }
         %>
-        <p>
+        </p>
     </td>
 </tr>
 <%
@@ -71,7 +71,7 @@
 %>
 <tr>
     <td class="labkey-form-label">
-        This run has been automatically saved.
+        <p>This run has been automatically saved.
     <%
             if (c.hasPermission(user, DeletePermission.class))
             {
@@ -83,7 +83,7 @@
     <%
             }
     %>
-        <p>
+        </p>
     </td>
 </tr>
 <%
@@ -96,9 +96,8 @@
 %>
 <tr>
     <td class="labkey-form-label">
-        <span class="labkey-error"><b>WARNING</b>: The following runs use a data file by the same name.</span><br><br>
-        <% include(duplicateDataFileView, out); %><p>
-
+        <p><span class="labkey-error"><b>WARNING</b>: The following runs use a data file by the same name.</span><br><br>
+        <% include(duplicateDataFileView, out); %></p>
     </td>
 </tr>
 <%
