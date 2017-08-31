@@ -2074,7 +2074,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         {
             SimpleFilter materialFilter = new SimpleFilter(containerFilter);
             materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
-            Table.delete(tinfoMaterial, containerFilter);
+            Table.delete(tinfoMaterial, materialFilter);
         }
 
         // Views  // TODO when these views get removed remove this

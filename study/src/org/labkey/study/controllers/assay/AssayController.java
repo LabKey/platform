@@ -291,6 +291,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("protocolSchemaName", provider.createProtocolSchema(user, c, protocol, null).getSchemaName());
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
+        assayProperties.put("templateLink", PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
