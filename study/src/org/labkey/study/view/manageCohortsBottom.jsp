@@ -91,18 +91,17 @@
     // If we're using automatic assignment, the user can't alter the specific assignments,
     // but we want to show a read-only view of them
     %>
-    <table id="participant-cohort-assignments">
+    <table id="participant-cohort-assignments" class="labkey-data-region-legacy labkey-show-borders">
         <tr>
-            <th><%= h(StudyService.get().getSubjectColumnName(getContainer())) %></th>
-            <th>Current Cohort</th>
+            <td class="labkey-column-header"><%= h(StudyService.get().getSubjectColumnName(getContainer())) %></td>
+            <td class="labkey-column-header">Current Cohort</td>
         </tr>
     <%
+    int index = 0;
     for (Map.Entry<Participant, CohortImpl> entry : participant2Cohort.entrySet())
     {
-
-
     %>
-        <tr>
+        <tr class="<%=h(index % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><%= h(id(entry.getKey().getParticipantId())) %></td>
             <td><%
                 if (!study.isManualCohortAssignment())
@@ -141,6 +140,7 @@
             </td>
         </tr>
     <%
+        index++;
     }
     %>
     </table>

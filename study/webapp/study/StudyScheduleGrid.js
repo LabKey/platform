@@ -156,7 +156,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         });
 
         var bottomPanel = Ext4.create('Ext.container.Container', {
-            height: 25,
+            // height: 25,
             border: false,
             flex: 1,
             layout: {
@@ -168,7 +168,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 border: false, frame : false,
                 width : 250,
                 defaults : {
-                    style : 'margin-left: 4px; margin-right: 4px; margin-top: 3px;'
+                    style : 'margin: 3px 4px; padding: 2px 8px;'
                 },
                 items: bbarButtons
             }, {

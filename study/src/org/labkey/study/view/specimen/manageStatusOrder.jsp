@@ -82,9 +82,9 @@ function orderModule(down)
 </script>
 
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusOrderAction.class))%>" name="reorder" method="POST">
-<table>
+    <table>
         <tr>
-            <td>
+            <td style="padding-right: 20px;">
                 <%
                 %>
                 <select name="items" size="<%= statuses.size() %>">
@@ -101,12 +101,13 @@ function orderModule(down)
                 %>
                 </select>
             </td>
-            <td align="center" valign="center">
-                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
+            <td valign="center">
+                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br/>
                 <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
             </td>
         </tr>
     </table>
+    <br/>
     <input type="hidden" name="order" value="">
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(SpecimenController.ManageStatusesAction.class, getContainer()) %>
 </labkey:form>

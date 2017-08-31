@@ -70,9 +70,8 @@
 %>
 <labkey:errors/>
 
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments"
-      method="post">
-    <table width="70%">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments" method="post">
+    <table class="lk-fields-table">
         <tr>
             <td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment
                 information.
@@ -209,11 +208,8 @@
             </td>
         </tr>
         <tr>
-            <td>&nbsp;</td>
-        </tr>
-        <tr>
-            <td>&nbsp;</td>
-            <td>
+            <td colspan="2">
+                <br/>
                 <%= button("Save").submit(true) %>
                 <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, getContainer())) %>
             </td>

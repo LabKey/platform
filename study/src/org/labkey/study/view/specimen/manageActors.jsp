@@ -48,12 +48,12 @@
 %>
 <labkey:errors/>
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageActorsAction.class))%>" name="manageActors" method="POST">
-    <table>
+    <table class="lk-fields-table">
         <tr>
-            <th>&nbsp;</th>
-            <th>Actor Name</th>
-            <th>Actor Type</th>
-            <th>&nbsp;</th>
+            <td>&nbsp;</td>
+            <td style="font-weight: bold;">Actor Name</td>
+            <td style="font-weight: bold;">Actor Type</td>
+            <td>&nbsp;</td>
         </tr>
         <%
         if (actors != null && actors.length > 0)

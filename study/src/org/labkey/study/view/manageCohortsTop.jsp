@@ -108,7 +108,7 @@
             FrameFactoryClassic.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
     %>
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
-    <table>
+    <table class="lk-fields-table">
         <tr>
             <th align="right"><%= h(subjectNounSingle) %>/Cohort
                 Dataset<%= helpPopup(subjectNounSingle + "/Cohort Dataset",

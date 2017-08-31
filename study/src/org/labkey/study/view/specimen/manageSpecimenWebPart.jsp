@@ -180,10 +180,8 @@
             });
 
             var form = Ext4.create('Ext.form.FormPanel', {
-                title: 'Specimen Groupings',
                 renderTo: 'configurePanel',
-                bodyPadding: 6,
-                bodyStyle: 'background: none',
+                bodyStyle: 'background: transparent;',
                 frame: false,
                 border: false,
                 width: 682,

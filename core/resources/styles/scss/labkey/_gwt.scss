@@ -135,6 +135,11 @@
     padding: 4px 7px;
     cursor: pointer;
     background-color: #f4f4f4;
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+    }
   }
 
   .gwt-TabBarItem-selected {
@@ -142,6 +147,7 @@
     margin-right: 6px;
     cursor: default;
     background: transparent;
+    opacity: 1;
 
     div {
       font-weight: bold;

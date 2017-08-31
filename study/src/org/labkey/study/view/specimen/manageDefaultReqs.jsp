@@ -54,17 +54,16 @@ function verifyNewRequirement(prefix)
 }
 </script>
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
-    <table class="labkey-manage-default-reqs">
-    <tr class="labkey-wp-header">
-        <th align="left">Requirements of Each Originating Lab</th>
-    </tr>
-    <tr>
-        <td>
-            <table width=100% class="labkey-data-region">
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
+            Requirements of Each Originating Lab
+        </h3></div>
+        <div class=" panel-body">
+            <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
-                    <th align="left">&nbsp;</th>
-                    <th align="left">Actor</th>
-                    <th align="left" colspan="2">Description</th>
+                    <td class="labkey-column-header">&nbsp;</td>
+                    <td class="labkey-column-header">Actor</td>
+                    <td class="labkey-column-header" colspan="2">Description</td>
                 </tr>
                 <%
                     for (SpecimenRequestRequirement requirement : originatingRequirements)
@@ -73,14 +72,14 @@ function verifyNewRequirement(prefix)
                 <tr>
                     <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
-                    <td
-                            colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
                 <%
                     }
                 %>
                 <tr>
-                    <td colspan="2">
+                    <td>&nbsp;</td>
+                    <td>
                         <select id="originatorActor" name="originatorActor">
                             <option value="-1"></option>
                             <%
@@ -100,18 +99,19 @@ function verifyNewRequirement(prefix)
                     <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('originator');") %></td>
                 </tr>
             </table>
-        </td>
-    </tr>
-    <tr class="labkey-wp-header">
-        <th align="left">Requirements of Each Providing Lab</th>
-    </tr>
-    <tr>
-        <td>
-            <table width=100% class="labkey-data-region">
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
+            Requirements of Each Providing Lab
+        </h3></div>
+        <div class=" panel-body">
+            <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
-                    <th align="left">&nbsp;</th>
-                    <th align="left">Actor</th>
-                    <th align="left" colspan="2">Description</th>
+                    <td class="labkey-column-header">&nbsp;</td>
+                    <td class="labkey-column-header">Actor</td>
+                    <td class="labkey-column-header" colspan="2">Description</td>
                 </tr>
                 <%
                     for (SpecimenRequestRequirement requirement : providerRequirements)
@@ -120,14 +120,14 @@ function verifyNewRequirement(prefix)
                 <tr>
                     <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
-                    <td
-                            colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
                 <%
                     }
                 %>
                 <tr>
-                    <td colspan="2">
+                    <td>&nbsp;</td>
+                    <td>
                         <select id="providerActor" name="providerActor">
                             <option value="-1"></option>
                             <%
@@ -147,101 +147,105 @@ function verifyNewRequirement(prefix)
                     <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('provider');") %></td>
                 </tr>
             </table>
-        </td>
-    </tr>
-    <tr class="labkey-wp-header">
-            <th align="left">Requirements of Receiving Lab</th>
-        </tr>
-        <tr>
-            <td>
-                <table width=100% class="labkey-data-region">
-                    <tr>
-                        <th align="left">&nbsp;</th>
-                        <th align="left">Actor</th>
-                        <th align="left" colspan="2">Description</th>
-                    </tr>
-                    <%
-                        for (SpecimenRequestRequirement requirement : receiverRequirements)
-                        {
-                    %>
-                    <tr>
-                        <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
-                        <td><%= h(requirement.getActor().getLabel()) %></td>
-                        <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
-                    </tr>
-                    <%
-                        }
-                    %>
-                    <tr>
-                        <td colspan="2">
-                            <select id="receiverActor" name="receiverActor">
-                                <option value="-1"></option>
-                                <%
-                                    for (SpecimenRequestActor actor : actors)
+        </div>
+    </div>
+
+
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
+            Requirements of Receiving Lab
+        </h3></div>
+        <div class=" panel-body">
+            <table class="labkey-data-region-legacy" style="width: 650px;">
+                <tr>
+                    <td class="labkey-column-header">&nbsp;</td>
+                    <td class="labkey-column-header">Actor</td>
+                    <td class="labkey-column-header" colspan="2">Description</td>
+                </tr>
+                <%
+                    for (SpecimenRequestRequirement requirement : receiverRequirements)
+                    {
+                %>
+                <tr>
+                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
+                    <td><%= h(requirement.getActor().getLabel()) %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                </tr>
+                <%
+                    }
+                %>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>
+                        <select id="receiverActor" name="receiverActor">
+                            <option value="-1"></option>
+                            <%
+                                for (SpecimenRequestActor actor : actors)
+                                {
+                                    if (actor.isPerSite())
                                     {
-                                        if (actor.isPerSite())
-                                        {
-                                %>
-                                <option value="<%= actor.getRowId() %>"><%= h(actor.getLabel()) %></option>
-                                <%
-                                        }
+                            %>
+                            <option value="<%= actor.getRowId() %>"><%= h(actor.getLabel()) %></option>
+                            <%
                                     }
-                                %>
-                            </select>
-                        </td>
-                        <td><input type="text" id="receiverDescription" name="receiverDescription" size="50"></td>
-                        <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('receiver');") %></td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-        <tr class="labkey-wp-header">
-            <th align="left">General Requirements</th>
-        </tr>
-        <tr>
-            <td>
-                <table width=100% class="labkey-data-region">
-                    <tr>
-                        <th align="left">&nbsp;</th>
-                        <th align="left">Actor</th>
-                        <th align="left" colspan="2">Description</th>
-                    </tr>
-                    <%
-                        for (SpecimenRequestRequirement requirement : generalRequirements)
-                        {
-                    %>
-                    <tr>
-                        <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
-                        <td><%= h(requirement.getActor().getLabel()) %></td>
-                        <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
-                    </tr>
-                    <%
-                        }
-                    %>
-                    <tr>
-                        <td colspan="2">
-                            <select id="generalActor" name="generalActor">
-                                <option value="-1"></option>
-                                <%
-                                    for (SpecimenRequestActor actor : actors)
+                                }
+                            %>
+                        </select>
+                    </td>
+                    <td><input type="text" id="receiverDescription" name="receiverDescription" size="50"></td>
+                    <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('receiver');") %></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
+            General Requirements
+        </h3></div>
+        <div class=" panel-body">
+            <table class="labkey-data-region-legacy" style="width: 650px;">
+                <tr>
+                    <td class="labkey-column-header">&nbsp;</td>
+                    <td class="labkey-column-header">Actor</td>
+                    <td class="labkey-column-header" colspan="2">Description</td>
+                </tr>
+                <%
+                    for (SpecimenRequestRequirement requirement : generalRequirements)
+                    {
+                %>
+                <tr>
+                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
+                    <td><%= h(requirement.getActor().getLabel()) %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                </tr>
+                <%
+                    }
+                %>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>
+                        <select id="generalActor" name="generalActor">
+                            <option value="-1"></option>
+                            <%
+                                for (SpecimenRequestActor actor : actors)
+                                {
+                                    if (!actor.isPerSite())
                                     {
-                                        if (!actor.isPerSite())
-                                        {
-                                %>
-                                <option value="<%= actor.getRowId() %>"><%= h(actor.getLabel()) %></option>
-                                <%
-                                        }
+                            %>
+                            <option value="<%= actor.getRowId() %>"><%= h(actor.getLabel()) %></option>
+                            <%
                                     }
-                                %>
-                            </select>
-                        </td>
-                        <td><input type="text" id="generalDescription" name="generalDescription" size="50"></td>
-                        <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('general');") %></td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+                                }
+                            %>
+                        </select>
+                    </td>
+                    <td><input type="text" id="generalDescription" name="generalDescription" size="50"></td>
+                    <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('general');") %></td>
+                </tr>
+            </table>
+        </div>
+    </div>
     <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getContainer()).getLocalURIString()%>">
 </labkey:form>
 <%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, getContainer())) %>

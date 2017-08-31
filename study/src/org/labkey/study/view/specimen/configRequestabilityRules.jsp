@@ -256,15 +256,15 @@
             success: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo); }
         });
 
-        var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';
+        var labelStyle = 'padding-bottom: 5px; font-weight: normal;';
 
         var queryHelpText = 'Select the query and view that identify vials affected by this rule.  The returned list must include a "GlobalUniqueId" column.';
         var queryLabel = new Ext.form.Label({
-            html: '<div style="' + labelStyle +'">' + queryHelpText + '<\/div>'
+            html: '<div style="' + labelStyle +'">' + queryHelpText + '</div>'
         });
 
         var actionLabel = new Ext.form.Label({
-            html: '<br><div style="' + labelStyle +'">Select whether vials identified by the query should be marked as available or unavailable.<\/div>'
+            html: '<br><div style="' + labelStyle +'">Select whether vials identified by the query should be marked as available or unavailable.</div>'
         });
 
         var formPanel = new Ext.form.FormPanel({
@@ -276,12 +276,15 @@
             layout:'fit',
             border: false,
             width: 475,
-            height: 300,
+            height: 330,
             closeAction:'close',
             modal: true,
             items: formPanel,
             resizable: false,
             buttons: [{
+                text: 'Cancel',
+                handler: function() { win.close(); }
+            },{
                 text: 'Submit',
                 handler: function(){
                     var form = formPanel.getForm();
@@ -306,9 +309,6 @@
                     if (addRule(grid, type, ruleName, actionCombo.getValue(), testUrl, ruleData))
                         win.close();
                 }
-            },{
-                text: 'Cancel',
-                handler: function() { win.close(); }
             }],
             bbar: [{ xtype: 'tbtext', text: '',id:'statusTxt' }]
         });
@@ -631,18 +631,26 @@
 <labkey:errors/>
 
 <table>
-    <tr class="labkey-wp-header"><th colspan=2>Requestability Rule Configuration</th></tr>
-    <tr><td><i>Whether a given vial is requestable is determined by running a series of configurable rules.  Each
-    rule may change the requestability state of any vial(s).  Rules are run in order, so a vial's final state will be
-        determined by the last rule to affect that vial.<br><br>
-        Note: if present, the <%= h(RequestabilityManager.RuleType.LOCKED_IN_REQUEST.getName()) %>
-        ensures that a single vial can never be part of two simultaneous requests.
-        </i></td>
+    <tr>
+        <td class="labkey-announcement-title" colspan="2"><span>Requestability Rule Configuration</span></td>
+    </tr>
+    <tr>
+        <td class="labkey-title-area-line" colspan="2"></td>
+    </tr>
+    <tr>
+        <td>
+            Whether a given vial is requestable is determined by running a series of configurable rules.  Each
+            rule may change the requestability state of any vial(s).  Rules are run in order, so a vial's final state will be
+            determined by the last rule to affect that vial.<br><br>
+            <i>Note: if present, the <%= h(RequestabilityManager.RuleType.LOCKED_IN_REQUEST.getName()) %>
+            ensures that a single vial can never be part of two simultaneous requests.
+            </i>
+        </td>
     </tr>
     <tr><td>&nbsp;</td></tr>
 </table>
 
-<div style="padding-left:10em" id="rulesGrid" class="extContainer"></div>
+<div id="rulesGrid" class="extContainer"></div>
 <table>
     <tr>
         <td class="labkey-announcement-title" colspan="2"><span>Available Rule Types</span></td>

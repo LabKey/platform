@@ -34,8 +34,6 @@
 %>
 <labkey:errors/><br>
 <labkey:form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
-<%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
-<%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
 <table width="800px">
@@ -44,7 +42,7 @@
     <%
         FrameFactoryClassic.startTitleFrame(out, "Currently Defined Dataset QC States", null, "100%", null);
     %>
-        <table>
+        <table class="lk-fields-table">
             <tr>
                 <th>&nbsp;</th>
                 <th>State Name</th>
@@ -195,4 +193,7 @@
         </td>
     </tr>
 </table>
+<br/>
+<%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
+<%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 </labkey:form>

@@ -45,7 +45,7 @@ Any user with READ access to this folder may view some summary data.  However, a
     if (returnUrl != null)
         out.write("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
 %>
-    <table>
+    <table class="lk-fields-table">
 
         <tr>
             <th>&nbsp;</th>

@@ -20,19 +20,12 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
 <labkey:form action="<%=h(buildURL(SecurityController.ExportSecurityPolicyAction.class))%>">
-    Export Policy As XML File:
-    <p></p>
+    Export Policy As XML File: <br/>
     <%= button("Export").submit(true) %>
 </labkey:form>
-<p></p>
-<hr>
-<p></p>
-
+<br/><br/>
 <labkey:form action="<%=h(buildURL(SecurityController.ImportSecurityPolicyAction.class))%>" enctype="multipart/form-data" method="post">
-    Import Policy From XML File:
-    <p></p>
-    <input type="file" name="fileUpload"/>
-
-    <p></p>
+    Import Policy From XML File: <br/>
+    <input type="file" name="fileUpload" style="border: none; padding-bottom: 5px;"/>
     <%= button("Import").submit(true) %>
 </labkey:form>

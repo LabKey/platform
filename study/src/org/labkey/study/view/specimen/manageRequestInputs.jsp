@@ -29,12 +29,9 @@
     SpecimenController.ManageRequestInputsBean bean = me.getModelBean();
     String contextPath = bean.getContextPath();
 
-    String tdButtons = "<a href=\"#\" onClick=\"return moveRow(this, true);\">" +
-            "<img src=\"" + contextPath + "/_images/uparrow.gif\" alt=\"[Move Up]\"></a>\n" +
-            "<a href=\"#\" onClick=\"return moveRow(this, false);\">" +
-            "<img src=\"" + contextPath + "/_images/downarrow.gif\" alt=\"[Move Down]\"></a>\n" +
-            "<a href=\"#\" onClick=\"return deleteRow(this);\">" +
-            "<img src=\"" + contextPath + "/_images/delete.gif\" alt=\"[Delete]\"></a>\n";
+    String tdButtons = "<a href=\"#\" onClick=\"return moveRow(this, true);\"><i class=\"fa fa-arrow-up\"></i></a>\n" +
+            "<a href=\"#\" onClick=\"return moveRow(this, false);\"><i class=\"fa fa-arrow-down\"></i></a>\n" +
+            "<a href=\"#\" onClick=\"return deleteRow(this);\"><i class=\"fa fa-times\"></i></a>\n";
 
     String tdTitle = "<input type=\"text\" name=\"title\" size=\"20\">";
     String tdHelpText = "<input type=\"text\" name=\"helpText\" size=\"50\">";
@@ -172,7 +169,7 @@
     }
 </script>
 <labkey:form action="<%=h(buildURL(SpecimenController.HandleUpdateRequestInputsAction.class))%>" method="POST" onsubmit="return verifyForm()">
-    <table id="inputTable">
+    <table id="inputTable" class="lk-fields-table">
         <tr>
             <th valign="bottom">&nbsp;</th>
             <th valign="bottom">Title</th>
@@ -189,7 +186,7 @@
             SpecimenManager.SpecimenRequestInput input = inputs[inputIndex];
     %>
         <tr>
-            <td><%= text(tdButtons) %></td>
+            <td style="padding-right: 5px;"><%= text(tdButtons) %></td>
             <td><input type="text" name="title" size="20" value="<%= h(input.getTitle()) %>"></td>
             <td><input type="text" name="helpText" size="50" value="<%= h(input.getHelpText()) %>"></td>
             <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="multiline"<%=checked(input.isMultiLine())%>></td>

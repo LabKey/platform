@@ -32,8 +32,7 @@
     StudyController.ManageLocationTypesForm bean = me.getModelBean();
 %>
 <div style="max-width: 1000px">
-    <p>For each location type you can allow or disallow location of that type to be requesting locations.
-    </p>
+    <p>Select which location types are allowed to be requesting locations:</p>
 </div>
 <div id="locationTypesPanel"></div>
 
@@ -48,9 +47,6 @@
             var checkBoxGroup = Ext4.create('Ext.form.CheckboxGroup', {
                 columns: 1,
                 vertical: true,
-                fieldLabel: 'Allow Type',
-                labelSeparator: '',
-                labelAlign: 'top',
 
                 items: [
                     {boxLabelAlign: 'after', boxLabel: 'Repository',          checked: <%=bean.isRepository()%>},
@@ -61,10 +57,8 @@
             });
 
             var form = Ext4.create('Ext.form.FormPanel', {
-                title: 'Location Types',
                 renderTo: 'locationTypesPanel',
-                bodyPadding: 10,
-                bodyStyle: 'background: none',
+                bodyStyle: 'background: transparent;',
                 frame: false,
                 border: false,
                 width: 200,

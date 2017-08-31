@@ -104,7 +104,7 @@ function addExtFilePickerHandler()
         text: "remove",
         name: "remove",
         uploadId: fibasic.id,
-        style : 'margin: 4px;',
+        style : 'margin: 2px 4px;',
         handler: removeNewAttachment
     });
 
@@ -389,7 +389,7 @@ function renderFormPanel(data, editable){
             fieldLabel : 'Render Type',
             xtype : 'combo',
             labelWidth : 160,
-            height : 22,
+            height : 30,
             padding : 5,
             hiddenName : 'DescriptionRendererType',
             name : 'DescriptionRendererType',
@@ -540,7 +540,14 @@ function renderFormPanel(data, editable){
         padding : 10,
         border : false,
         bodyStyle : 'background-color: transparent;',
-        defaults : {labelWidth: 160, width: 500, height : 30, padding : '5px', disabled : !editableFormPanel},
+        defaults : {
+            labelWidth: 160,
+            labelStyle: 'font-weight: bold;',
+            width: 500,
+            height : 30,
+            padding : '5px',
+            disabled : !editableFormPanel
+        },
         items: items,
         dockedItems: [{
             xtype: 'toolbar',

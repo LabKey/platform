@@ -100,8 +100,8 @@
             </td>
         </tr>
         <tr>
-            <th>&nbsp;</th>
-            <td>
+            <td colspan="2">
+                <br/>
                 <%= button("Save").submit(true) %>&nbsp;
                 <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, container)) %>
             </td>
