@@ -518,26 +518,17 @@ public class LoginController extends SpringActionController
                 SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));
             }
 
-            URLHelper returnURL = form.getReturnURLHelper();
-            LoginReturnProperties properties = null;
-
-            // Create LoginReturnProperties if we have a returnURL
-            if (null != returnURL)
-            {
-                properties = AuthenticationManager.getLoginReturnProperties(request);
-                // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
-                if (null == properties || properties.isExpired())
-                {
-                    properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
-                }
-            }
             // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
             // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
             if (!isGuest)
-               return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+            {
+                URLHelper returnURL = form.getReturnURLHelper();
 
-            if (null != properties)
-                AuthenticationManager.setLoginReturnProperties(request, properties);
+                // Create LoginReturnProperties if we have a returnURL
+                LoginReturnProperties properties = null != returnURL ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
+
+                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+            }
 
             return showLogin(form, errors, request, getPageConfig());
         }
@@ -559,52 +550,30 @@ public class LoginController extends SpringActionController
         {
             HttpServletRequest request = getViewContext().getRequest();
 
-            // allow clients using loginApi to store a returnURL at the start of the login that can be utilized after any SSO or secondary logins have finished
+            // Store passed in returnURL at the start of the login so we can redirect to it after any password resets, secondary logins, profile updates, etc. have finished
             URLHelper returnURL = form.getReturnURLHelper();
             if (null != returnURL)
             {
-                LoginReturnProperties properties = AuthenticationManager.getLoginReturnProperties(request);
-                // create or update only if more than 5 minutes since any previously stashed LoginReturnProperties for this session. Prevents bogus redirects as in issue: 23782
-                if (null == properties || properties.isExpired())
-                {
-                    properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
-                    AuthenticationManager.setLoginReturnProperties(request, properties);
-                }
+                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                AuthenticationManager.setLoginReturnProperties(request, properties);
             }
 
             // TODO: check during upgrade?
             Project termsProject = getTermsOfUseProject(form);
+            boolean isGuest = getUser().isGuest();
 
-            if (!isTermsOfUseApproved(form))
+            if (!isTermsOfUseApproved(form) && !form.isApprovedTermsOfUse())
             {
-                if (!form.isApprovedTermsOfUse())
+                if (null != termsProject)
                 {
-                    // Determine if the user is already logged in
-                    if (!getUser().isGuest())
-                    {
-                        if (null != termsProject)
-                        {
-                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must approve the terms of use.");
-                        }
-                        else
-                        {
-                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
-                        }
-                        return false;
-                    }
-                    else
-                    {
-                        if (null != termsProject)
-                        {
-                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
-                        }
-                        else
-                        {
-                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
-                        }
-                        return false;
-                    }
+                    // Adjust message for guest vs. already logged in
+                    errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must " + (isGuest ? "log in and " : "") + "approve the terms of use.");
                 }
+                else
+                {
+                    errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use this site, you must check the box to approve the terms of use.");
+                }
+                return false;
             }
 
             ApiSimpleResponse response = null;
@@ -830,41 +799,41 @@ public class LoginController extends SpringActionController
                 return response;
             }
 
-            ValidEmail _email;
-            User _user;
+            ValidEmail email;
+            User user;
 
             try
             {
-                _email = new ValidEmail(rawEmail);
+                email = new ValidEmail(rawEmail);
 
-                if (SecurityManager.isLdapEmail(_email))
+                if (SecurityManager.isLdapEmail(email))
                 {
                     // ldap authentication users must reset through their ldap administrator
-                    errors.reject("reset", "Reset Password failed: " + _email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
+                    errors.reject("reset", "Reset Password failed: " + email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
                     response.put("success", false);
                     response.put("message", errors.getMessage());
                     return response;
                 }
-                else if (!SecurityManager.loginExists(_email))
+                else if (!SecurityManager.loginExists(email))
                 {
-                    errors.reject("reset", "Reset Password failed: " + _email + " does not have a password.");
+                    errors.reject("reset", "Reset Password failed: " + email + " does not have a password.");
                     response.put("success", false);
                     response.put("message", errors.getMessage());
                     return response;
                 }
                 else
                 {
-                    _user = UserManager.getUser(_email);
+                    user = UserManager.getUser(email);
 
                     // We've validated that a login exists, so the user better not be null... but crashweb #8379 indicates this can happen.
-                    if (null == _user)
+                    if (null == user)
                     {
                         errors.reject("reset", "This account does not exist.");
                         response.put("success", false);
                         response.put("message", errors.getMessage());
                         return response;
                     }
-                    else if (!_user.isActive())
+                    else if (!user.isActive())
                     {
                         errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
                         response.put("success", false);
@@ -882,54 +851,55 @@ public class LoginController extends SpringActionController
             }
 
             StringBuilder sbReset = new StringBuilder();
+
             try
             {
                 // Create a placeholder password that's impossible to guess and a separate email
                 // verification key that gets emailed.
                 String verification = SecurityManager.createTempPassword();
-                SecurityManager.setVerification(_email, verification);
+                SecurityManager.setVerification(email, verification);
                 try
                 {
                     Container c = getContainer();
                     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-                    final SecurityMessage message = SecurityManager.getResetMessage(false, _user, form.getProvider());
-                    ActionURL verificationURL = SecurityManager.createModuleVerificationURL(c, _email, verification, null, form.getProvider(), false);
+                    final SecurityMessage message = SecurityManager.getResetMessage(false, user, form.getProvider());
+                    ActionURL verificationURL = SecurityManager.createModuleVerificationURL(c, email, verification, null, form.getProvider(), false);
 
                     final User system = new User(laf.getSystemEmailAddress(), 0);
                     system.setFirstName(laf.getCompanyName());
-                    SecurityManager.sendEmail(c, system, message, _email.getEmailAddress(), verificationURL);
+                    SecurityManager.sendEmail(c, system, message, email.getEmailAddress(), verificationURL);
 
-                    if (!_user.getEmail().equals(_email.getEmailAddress()))
+                    if (!user.getEmail().equals(email.getEmailAddress()))
                     {
-                        final SecurityMessage adminMessage = SecurityManager.getResetMessage(true, _user, form.getProvider());
-                        message.setTo(_email.getEmailAddress());
-                        SecurityManager.sendEmail(c, _user, adminMessage, _user.getEmail(), verificationURL);
+                        final SecurityMessage adminMessage = SecurityManager.getResetMessage(true, user, form.getProvider());
+                        message.setTo(email.getEmailAddress());
+                        SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
                     }
                     sbReset.append("An email has been sent to you with instructions for how to reset your password. ");
-                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");
+                    UserManager.addToUserHistory(UserManager.getUser(email), email + " reset the password.");
                 }
                 catch (ConfigurationException e)
                 {
                     sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>");
                     sbReset.append(AppProps.getInstance().getAdministratorContactHTML());
-                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
+                    UserManager.addToUserHistory(UserManager.getUser(email), email + " reset the password, but sending the email failed.");
                 }
                 catch (MessagingException e)
                 {
                     sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
-                    UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password, but sending the email failed.");
+                    UserManager.addToUserHistory(UserManager.getUser(email), email + " reset the password, but sending the email failed.");
                 }
             }
             catch (SecurityManager.UserManagementException e)
             {
                 sbReset.append(": failed to reset password due to: ").append(e.getMessage());
-                UserManager.addToUserHistory(UserManager.getUser(_email), _email + " attempted to reset the password, but the reset failed: " + e.getMessage());
+                UserManager.addToUserHistory(UserManager.getUser(email), email + " attempted to reset the password, but the reset failed: " + e.getMessage());
             }
+
             response.put("success", true);
             response.put("message", sbReset.toString());
             return response;
         }
-
     }
 
     @RequiresNoPermission
@@ -1010,7 +980,6 @@ public class LoginController extends SpringActionController
     @CSRF
     public class GetRegistrationConfigApiAction extends ApiAction
     {
-
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
