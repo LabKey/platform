@@ -111,7 +111,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
-            return new PostgreSql96Dialect();
+            return new PostgreSql100Dialect();
         }
 
         throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
@@ -150,7 +150,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 9.3, 9.4, "", PostgreSql93Dialect.class);
             good("PostgreSQL", 9.4, 9.5, "", PostgreSql94Dialect.class);
             good("PostgreSQL", 9.5, 9.6, "", PostgreSql95Dialect.class);
-            good("PostgreSQL", 9.6, 11.0, "", PostgreSql96Dialect.class);
+            good("PostgreSQL", 9.6, 9.7, "", PostgreSql96Dialect.class);
+            good("PostgreSQL", 9.7, 11.0, "", PostgreSql100Dialect.class);
         }
     }
 
