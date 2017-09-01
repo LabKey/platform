@@ -17,6 +17,7 @@ package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -44,4 +45,10 @@ public class PostgreSql92Dialect extends PostgreSql91Dialect
 
         return words;
     }
- }
+
+    @Override
+    public void addAdminWarningMessages(Collection<String> messages)
+    {
+        messages.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + PostgreSqlDialectFactory.RECOMMENDED);
+    }
+}

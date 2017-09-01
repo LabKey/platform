@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.RefactorIn18_1;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
@@ -76,26 +77,24 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         return dialect;
     }
 
+    @RefactorIn18_1 // Remove support for PostgreSQL 9.2
     private @NotNull SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
     {
         int version = versionNumber.getVersionInt();
 
-        // Version 9.2 or greater is allowed
+        // Version 9.2 or greater is allowed (for now)
         if (version >= 92)
         {
             // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
-            // getAdminWarning() method to return a message that gets displayed in the page header for admins.
-//            if (91 == version)
-//            {
-//                // PostgreSQL 9.1 is deprecated; support will be removed soon
-//                if (logWarnings)
-//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-//
-//                return new PostgreSql91Dialect();
-//            }
-
+            // addAdminWarnings() method to add a message that gets displayed in the page header for admins.
             if (92 == version)
+            {
+                // PostgreSQL 9.2 is deprecated; support will be removed soon
+                if (logWarnings)
+                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new PostgreSql92Dialect();
+            }
 
             if (93 == version)
                 return new PostgreSql93Dialect();
@@ -109,13 +108,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (96 == version)
                 return new PostgreSql96Dialect();
 
-            if (version > 96)
-            {
-                if (logWarnings)
-                    _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+            if (logWarnings)
+                _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
-                return new PostgreSql96Dialect();
-            }
+            return new PostgreSql96Dialect();
         }
 
         throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);

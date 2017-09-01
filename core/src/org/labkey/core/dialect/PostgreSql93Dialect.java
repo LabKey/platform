@@ -18,6 +18,7 @@ package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Set;
 
 /*
@@ -35,5 +36,11 @@ public class PostgreSql93Dialect extends PostgreSql92Dialect
         words.add("lateral");
 
         return words;
+    }
+
+    @Override
+    public void addAdminWarningMessages(Collection<String> messages)
+    {
+        // Override the 9.2 override... no warnings for 9.3+
     }
 }
