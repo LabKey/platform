@@ -812,6 +812,15 @@ public class PipelineServiceImpl implements PipelineService
             }
         }
 
+        String pipelineDescription = form.getPipelineDescription();
+        if(pipelineDescription != null)
+        {
+            if(variableMap == null)
+                variableMap = new HashMap<>();
+
+            variableMap.put("pipelineDescription", pipelineDescription);
+        }
+
         AbstractFileAnalysisJob job = protocol.createPipelineJob(context, root, filesInputList, fileParameters, variableMap);
         PipelineService.get().queueJob(job);
         return job.getJobGUID();

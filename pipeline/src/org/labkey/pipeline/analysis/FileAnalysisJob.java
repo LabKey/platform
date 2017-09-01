@@ -70,6 +70,16 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     }
 
     @Override
+    public String getDescription()
+    {
+        String description = getParameters().get("pipelineDescription");
+        if(description != null)
+            return description;
+
+        return super.getDescription();
+    }
+
+    @Override
     public Map<String, String> getParameters()
     {
         Map<String, String> parameters = new HashMap<>(super.getParameters());
