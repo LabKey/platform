@@ -48,6 +48,7 @@ public class AnalyzeForm extends PipelinePathForm
     private Boolean allowNonExistentFiles;
     private Boolean includeWorkbooks = false;
     private boolean allowProtocolRedefinition = false;
+    private String pipelineDescription;
 
     private static final String UNKNOWN_STATUS = "UNKNOWN";
 
@@ -229,5 +230,15 @@ public class AnalyzeForm extends PipelinePathForm
     public static String getDefaultXMLParameters()
     {
         return "<?xml version=\"1.0\"?><bioml/>";
+    }
+
+    public String getPipelineDescription()
+    {
+        return pipelineDescription;
+    }
+
+    public void setPipelineDescription(String pipelineDescription)
+    {
+        this.pipelineDescription = pipelineDescription;
     }
 }

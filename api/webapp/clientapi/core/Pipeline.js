@@ -159,6 +159,7 @@ LABKEY.Pipeline = new function(){
          * @param {Integer[]} config.fileIds data IDs of files be to used as inputs for this pipeline.  these correspond to the rowIds from the table ext.data.  they do not need to be located within the file path provided.  the user does need read access to the container associated with each file.
          * @param {String} config.protocolName name of the analysis protocol
          * @param {String} [config.protocolDescription] description of the analysis protocol
+         * @param {String} [config.pipelineDescription] description displayed in the pipeline
          * @param {String|Element} [config.xmlParameters] XML representation of the protocol description. Not allowed
          * if a protocol with the same name has already been saved. If no protocol with the same name exists, either
          * this property or jsonParameters must be specified.
@@ -191,6 +192,7 @@ LABKEY.Pipeline = new function(){
                 file: config.files,
                 fileIds: config.fileIds,
                 allowNonExistentFiles: config.allowNonExistentFiles,
+                pipelineDescription: config.pipelineDescription,
                 saveProtocol: config.saveProtocol == undefined || config.saveProtocol
             };
             if (config.xmlParameters)
