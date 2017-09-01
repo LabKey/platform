@@ -255,10 +255,13 @@ public class QuerySettings
                 try
                 {
                     int maxRows = Integer.parseInt(maxRowsParam);
-                    if (maxRows >= 0)
+                    if (maxRows >= 0 || maxRows == Table.ALL_ROWS)
                         setMaxRows(maxRows);
+                    
                     if (_maxRows == Table.NO_ROWS)
                         _showRows = ShowRows.NONE;
+                    if (_maxRows == Table.ALL_ROWS)
+                        _showRows = ShowRows.ALL;
                 }
                 catch (NumberFormatException ignored) { }
             }
