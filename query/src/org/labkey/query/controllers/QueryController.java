@@ -2779,12 +2779,12 @@ public class QueryController extends SpringActionController
 
             // Issue 12233: add implicit maxRows=100k when using client API
             settings.setShowRows(ShowRows.PAGINATED);
-            settings.setMaxRows(100000);
+            settings.setMaxRows(DEFAULT_API_MAX_ROWS);
 
             // 16961: ExecuteSql API without maxRows parameter defaults to returning 100 rows
             //apply optional settings (maxRows, offset)
             boolean metaDataOnly = false;
-            if (null != form.getMaxRows() && form.getMaxRows() >= 0)
+            if (null != form.getMaxRows() && (form.getMaxRows() >= 0 || form.getMaxRows() == Table.ALL_ROWS))
             {
                 settings.setMaxRows(form.getMaxRows());
                 metaDataOnly = Table.NO_ROWS == form.getMaxRows();
