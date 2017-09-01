@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
@@ -30,6 +31,7 @@ import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -40,6 +42,8 @@ import org.labkey.di.VariableMapImpl;
 import org.labkey.di.data.TransformProperty;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -180,6 +184,115 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         TransformConfiguration cfg = TransformManager.get().getTransformConfiguration(getContainer(),_etlDescriptor);
         cfg.setJsonState(state);
         TransformManager.get().saveTransformConfiguration(getUser(), cfg);
+    }
+
+    private static final DbScope.TransactionKind SNAPSHOT_TRANSACTION_KIND = new DbScope.TransactionKind()
+    {
+        @Override
+        public @NotNull String getKind()
+        {
+            return "SNAPSHOT";
+        }
+
+        @Override
+        public boolean isReleaseLocksOnFinalCommit()
+        {
+            return true;
+        }
+    };
+
+    @Override
+    public void run()
+    {
+        DbScope sourceScope = null;
+        DbScope targetScope = null;
+
+        /*
+            ETL xmls may optionally be configured to wrap an entire multi-step ETL job in a transaction, on the source, destination, or both.
+            The transaction on the source scope will be a REPEATABLE READ/SNAPSHOT transaction guaranteeing consistent state of source data
+            throughout the transaction. This prevents phantom reads of new source data which has been added/updates since
+            the ETL started.
+
+            The transaction on the destination scope allows for rolling back the results an entire job in the event of a failure. This should
+            be used with caution, as it can/will cause locking contention for the duration of the ETL job on tables
+            the ETL has touched, especially on SQL Server.
+
+            Additional caveats:
+                - Specifying to transact the source and/or destination is only meaningful if every step in the ETL uses
+                  the same source or destination scope. Different schemas are fine, as long as they are in the same DbScope
+                - Transacting the source is only available for Postgres data sources. SQL Server is a future possibility.
+                - If the source and destination schemas are in the same scope, a single REPEATABLE READ transaction is used. And
+                  this is only available for Postgres.
+         */
+
+        if (null != _etlDescriptor.getTransactSourceSchema())
+        {
+            sourceScope = DefaultSchema
+                    .get(_transformJobContext.getUser(), _transformJobContext.getContainer(), _etlDescriptor.getTransactSourceSchema())
+                    .getDbSchema()
+                    .getScope();
+            /*
+            TODO: Support SQL Server if possible. Tricky:
+              - On SQL Server, REPEATABLE READ isolation causes locking issues on the source tables. This defeats the purpose of using a transaction
+                when sourcing from a live data source. To eliminate chance of the source transaction locking other activity, we'd need to use the
+                SNAPSHOT isolation level instead. (this is essentially the equivalent of Postgres REPEATABLE READ, which exceeds the ANSI SQL standard for REPEATABLE READ isolation level)
+              - Using SNAPSHOT isolation requires setting the database property ALLOW_SNAPSHOT_ISOLATION ON. This has impact for performance and db/tempdb size that need to be better understood
+              - Changing the isolation level on SQL Server requires first acquiring a connection and setting the isolation level BEFORE beginning a transaction
+                on that connection. (On Postgres the isolation level is set immediately AFTER beginning the transaction.) In order to still use DbScope.Transaction,
+                 DbScope.beginTransaction() would need to allow optionally passing in this previously acquired & configured connection instead of grabbing one from the pool.
+              - Note that while java.sql.Connection doesn't define a constant corresponding to SNAPSHOT isolation level, JTDS represents it as int 4096. (Or an explicit SET TRANSACTION
+                  statement can be run over the connection.)
+            */
+            if (!sourceScope.getSqlDialect().isPostgreSQL())
+                throw new IllegalArgumentException("Transacting the source scope is only available on Postgres data sources.");
+        }
+
+        if (null != _etlDescriptor.getTransactTargetSchema())
+        {
+            targetScope = DefaultSchema
+                    .get(_transformJobContext.getUser(), _transformJobContext.getContainer(), _etlDescriptor.getTransactTargetSchema())
+                    .getDbSchema()
+                    .getScope();
+
+            if (targetScope.equals(sourceScope))
+                targetScope = null; // If both source and destination are on the same data source, we only have one connection/transaction
+        }
+
+        DbScope.Transaction sourceTx = null == sourceScope ? null : sourceScope.beginTransaction(SNAPSHOT_TRANSACTION_KIND);
+        try
+        {
+            try (DbScope.Transaction targetTx = null == targetScope ? null : targetScope.beginTransaction())
+            {
+                if (null != sourceTx)
+                {
+                    sourceTx.getConnection().setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+                }
+                super.run();
+                if (TaskStatus.complete == this.getActiveTaskStatus())
+                {
+                    if (null != sourceTx && !sourceTx.isAborted())
+                        sourceTx.commitAndKeepConnection(); // Keep connection open so we can reset its isolation level to default
+                    if (null != targetTx && !targetTx.isAborted())
+                        targetTx.commit();
+                }
+            }
+            finally
+            {
+                if (null != sourceTx)
+                {
+                    // Need to explicitly end the transaction to be able to set connection's isolation level back to default.
+                    if (sourceScope.isTransactionActive())
+                        sourceTx.getConnection().rollback();
+                    sourceTx.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+                    sourceTx.close();
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            getLogger().error("SQLException setting connection transaction isolation level.", e);
+            sourceTx.close();
+        }
     }
 
     @Override

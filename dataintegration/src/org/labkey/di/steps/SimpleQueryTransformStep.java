@@ -128,8 +128,8 @@ public class SimpleQueryTransformStep extends TransformTask
             long start = System.currentTimeMillis();
 
             try (
-                    DbScope.Transaction txTarget = (null==targetScope || !_meta.isUseTargetTransaction()) ? null : targetScope.ensureTransaction();
-                    DbScope.Transaction txSource = (null==sourceScope || !_meta.isUseSourceTransaction()) ? null : sourceScope.ensureTransaction()
+                    DbScope.Transaction txTarget = conditionalGetTransaction(targetScope, _meta.isUseTargetTransaction());
+                    DbScope.Transaction txSource = conditionalGetTransaction(sourceScope, _meta.isUseSourceTransaction())
             )
             {
                 log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +

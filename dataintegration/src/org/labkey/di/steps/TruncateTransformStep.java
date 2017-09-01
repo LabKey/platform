@@ -26,7 +26,6 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -56,12 +55,6 @@ public class TruncateTransformStep extends SimpleQueryTransformStep
     public boolean hasWork()
     {
         return true;
-    }
-
-    @Override
-    public void doWork(RecordedAction action) throws PipelineJobException
-    {
-        super.doWork(action);
     }
 
     @Override
@@ -100,7 +93,7 @@ public class TruncateTransformStep extends SimpleQueryTransformStep
 
             try
             (
-                DbScope.Transaction txTarget = (null==targetScope || !_meta.isUseTargetTransaction()) ? null : targetScope.ensureTransaction();
+                    DbScope.Transaction txTarget = conditionalGetTransaction(targetScope, _meta.isUseTargetTransaction());
             )
             {
                 Map<Enum, Object> options = new HashMap<>();

@@ -112,6 +112,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final boolean _standalone;
     private final boolean _siteScope;
     private boolean _allowMultipleQueuing;
+    private final String _transactSourceSchema;
+    private final String _transactTargetSchema;
     private Map<String, String> _pipelineParameters;
     private Map<ParameterDescription, Object> _constants;
     private static final String XAR_EXT = ".etl.xar.xml";
@@ -129,7 +131,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     TransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
     {
-        this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false, null, null);
+        this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false, null, null, null, null);
     }
 
     TransformDescriptor(String id, EtlType etlXml, String moduleName, Long interval,
@@ -139,14 +141,16 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     {
         this(id, etlXml.getName(), etlXml.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas,
                 declaredVariables, etlXml.getLoadReferencedFiles(), gatedByStep, etlXml.getStandalone(),
-                etlXml.getSiteScope(), etlXml.getAllowMultipleQueuing(), pipelineParameters, constants);
+                etlXml.getSiteScope(), etlXml.getAllowMultipleQueuing(), pipelineParameters, constants,
+                etlXml.getTransactSourceSchema(), etlXml.getTransactDestinationSchema());
     }
 
     private TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
                                 CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                 Map<ParameterDescription, Object> declaredVariables,
                                 boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope, boolean allowMultipleQueuing,
-                                Map<String, String> pipelineParameters, Map<ParameterDescription, Object> constants) throws XmlException, IOException
+                                Map<String, String> pipelineParameters, Map<ParameterDescription, Object> constants,
+                                String transactSourceSchema, String transactTargetSchema) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -165,6 +169,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         _allowMultipleQueuing = allowMultipleQueuing;
         _pipelineParameters = pipelineParameters;
         _constants = constants;
+        _transactSourceSchema = transactSourceSchema;
+        _transactTargetSchema = transactTargetSchema;
     }
 
     public String getName()
@@ -223,6 +229,16 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     public boolean isSiteScope()
     {
         return _siteScope;
+    }
+
+    public String getTransactSourceSchema()
+    {
+        return _transactSourceSchema;
+    }
+
+    public String getTransactTargetSchema()
+    {
+        return _transactTargetSchema;
     }
 
     @Override

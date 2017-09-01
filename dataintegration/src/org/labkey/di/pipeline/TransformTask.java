@@ -669,4 +669,25 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         return new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms(), _meta.getConstants(), _meta.getAlternateKeys());
     }
+
+    /**
+     * Encapsulate the logic of whether or not to start a transaction, rather than have ternary operators in all the try-with-resources
+     * blocks of different ETL step types.
+     * If there is already an active transaction in the scope's connection, it was started by the option of wrapping an entire multi-step
+     * ETL job in a transaction. In this case we can't reuse the existing transaction (we wouldn't want to commit it mid job),
+     * nor do we allow nesting of transactions here.
+     *
+     * @param scope This may be null, most likely when the source and target schemas are in the same db scope
+     * @param useTransaction Likely set from the etl xml, the majority of the time this will be true. False when the etl xml
+     *                      has been configured to not use a transaction on the step. Kind of silly to call this method when this is false, but it makes the
+     *                       try-with-resources blocks more readable/maintainable.
+     * @return A new transaction, or null
+     */
+    @Nullable
+    protected DbScope.Transaction conditionalGetTransaction(@Nullable DbScope scope, boolean useTransaction)
+    {
+        if (null == scope || !useTransaction || scope.isTransactionActive())
+            return null;
+        else return scope.ensureTransaction();
+    }
 }

@@ -319,10 +319,11 @@ public class StoredProcedureStep extends TransformTask
         long duration = 0;
         boolean badReturn = false;
 
-        try (Connection conn = procScope.getConnection();
-             CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procDbSchemaName, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
-             DbScope.Transaction txProc = _meta.isUseProcTransaction() ?  procScope.ensureTransaction() : null;
-             DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? targetScope.ensureTransaction() : null
+        boolean closeConnection = !procScope.isTransactionActive();
+        Connection conn = procScope.getConnection();
+        try (CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procDbSchemaName, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
+             DbScope.Transaction txProc = conditionalGetTransaction(procScope, _meta.isUseProcTransaction());
+             DbScope.Transaction txTarget = conditionalGetTransaction(targetScope, _meta.isUseTargetTransaction())
         )
 
         {
@@ -359,6 +360,11 @@ public class StoredProcedureStep extends TransformTask
 
             duration = finish - start;
         }
+        finally
+        {
+            if (closeConnection)
+                conn.close();
+        }
         if (badReturn)
         {
             error("Error: Sproc exited with return code " + returnValue);
@@ -366,7 +372,6 @@ public class StoredProcedureStep extends TransformTask
         }
         info("Stored procedure " + procQuerySchemaName + "." + procName + " completed in " + DateUtil.formatDuration(duration));
         return true;
-
     }
 
     /**

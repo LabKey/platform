@@ -38,6 +38,32 @@
                 <documentation>By default, if a job for the etl is already pending (waiting), we block adding another instance of the etl to the job queue. Set this flag to override and allow multiple instances in the queue.</documentation>
             </annotation>
         </attribute>
+        <attribute name="transactSourceSchema" type="string">
+        <annotation>
+            <documentation>Optional. Experimental, Postgres datasources only. Causes a multi-step ETL to wrap an entire run of the ETL in a single transaction
+                on the source datasource containing the schema specified. This transaction will be isolation level REPEATABLE READ, guaranteeing consistent
+                state of source data throughout the transaction. This prevents phantom reads of source data which has been inserted/updated since
+                the ETL started. Only meaningful if the source schemas for every step in the ETL are all from the same datasource. Individual steps
+                will not have their own transaction boundaries.
+                This setting is independent of the optional transactDestinationSchema setting. If both are specified, and the two schemas are from
+                the same datasource, the ETL will be wrapped in a single REPEATABLE READ transaction.
+            </documentation>
+        </annotation>
+        </attribute>
+        <attribute name="transactDestinationSchema" type="string">
+            <annotation>
+                <documentation>Optional. Experimental, use with caution. Causes a multi-step ETL to wrap an entire run of the ETL in a single transaction
+                    on the destination datasource containing the schema specified. This transaction will only be committed upon successful completion
+                    of the ETL run; any error will cause a full rollback of every step up to that point. Only meaningful if the destination schemas for every
+                    step in the ETL are all from the same datasource. Individual steps will not have their own transaction boundaries, nor will setting
+                    a batchSize have any effect. Using this setting will very likely cause lock contention problems on the destination queries,
+                    especially on SQL Server.
+                    This setting is independent of the optional transactSourceSchema setting. If both are specified, and the two schemas are from
+                    the same datasource, the ETL run will be wrapped in a single REPEATABLE READ transaction. This scenario is only supported if
+                    tha single datasource is Postgres.
+                </documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <complexType name="SourceColumnsType">
@@ -120,7 +146,7 @@
         <attribute name="batchSize" type="nonNegativeInteger" use="optional" default="0">
             <annotation>
                 <documentation>
-                    Formerly called "transactionsSize". For query targets, incrementally commit target transaction every n rows instead of in a single wrapping transaction.
+                    Formerly called "transactionSize". For query targets, incrementally commit target transaction every n rows instead of in a single wrapping transaction.
                     For file targets, instead of writing a single file, create a new file every n rows. Each will be the fileBaseName + "-1", "-2", etc, + fileExtension</documentation>
             </annotation>
         </attribute>
