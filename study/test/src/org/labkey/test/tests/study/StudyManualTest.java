@@ -18,14 +18,12 @@ package org.labkey.test.tests.study;
 
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public abstract class StudyManualTest extends StudyTest
 {
@@ -62,7 +60,6 @@ public abstract class StudyManualTest extends StudyTest
 
         // change study label
         clickAndWait(Locator.linkWithText("Change Study Properties"));
-
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), getStudyLabel());
         clickButton("Submit");
@@ -73,7 +70,6 @@ public abstract class StudyManualTest extends StudyTest
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"), TestFileUtils.getFileContents(VISIT_MAP));
         clickButton("Import");
-
 
         // import custom visit mapping
         importCustomVisitMappingAndVerify();
@@ -103,7 +99,7 @@ public abstract class StudyManualTest extends StudyTest
         clickButton("Save");
 
         // upload datasets:
-        setPipelineRoot(getPipelinePath());
+        setPipelineRoot(StudyHelper.getPipelinePath());
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
         clickButton("Process and Import Data");
@@ -143,9 +139,9 @@ public abstract class StudyManualTest extends StudyTest
         clickAndWait(Locator.linkWithText("Clear Custom Mapping"));
         clickAndWait(Locator.linkWithText("OK"));
         assertTextPresent("The custom mapping is currently empty");
-        assertButtonPresent("Import Custom Mapping");
-        assertButtonNotPresent("Replace Custom Mapping");
-        assertButtonNotPresent("Clear Custom Mapping");
+        assertElementPresent(Locator.lkButton("Import Custom Mapping"));
+        assertElementNotPresent(Locator.lkButton("Replace Custom Mapping"));
+        assertElementNotPresent(Locator.lkButton("Clear Custom Mapping"));
         assertTextNotPresent("Vaccine 1", "Vaccination 1", "Cycle 10", "All Done");
 
         // Import custom mapping again
@@ -191,34 +187,16 @@ public abstract class StudyManualTest extends StudyTest
 
 
     // Hide visits based on label -- manual create vs. import will result in different indexes for these visits
-    protected void hideVisits(String... visitLabel)
+    protected void hideVisits(String... visitLabels)
     {
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Visits"));
+        _studyHelper.goToManageVisits();
 
-        Set<String> labels = new HashSet<>(Arrays.asList(visitLabel));
-        int row = 2;  // Skip header row (row index is one-based)
-        String currentLabel;
-
-        // Loop until we find all the labels or we hit the end of the table
-        while (!labels.isEmpty() && null != (currentLabel = getVisitLabel(row)))
+        for (String visitLabel : visitLabels)
         {
-            if (labels.contains(currentLabel))
-            {
-                clickAndWait(Locator.tag("a").withAttribute("data-original-title","edit").index(row - 2));
-                uncheckCheckbox(Locator.name("showByDefault"));
-                clickButton("Save");
-                labels.remove(currentLabel);
-            }
-
-            row++;
+            new ManageVisitPage(getDriver()).goToEditVisit(visitLabel);
+            uncheckCheckbox(Locator.name("showByDefault"));
+            clickButton("Save");
         }
-    }
-
-    // row is one-based
-    private String getVisitLabel(int row)
-    {
-        return getText(Locator.xpath("//table[@id='visits']/tbody/tr[" + row + "]/td[2]"));
     }
 
     protected void createCustomAssays()
