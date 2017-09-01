@@ -311,8 +311,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (context.getErrors().hasErrors())
             return null;
 
-        QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, outputRows);
-
         return outputRows;
     }
 
