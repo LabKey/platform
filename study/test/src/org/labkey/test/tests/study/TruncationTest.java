@@ -52,11 +52,6 @@ public class TruncationTest extends BaseWebDriverTest
         return "TruncationTest Project";
     }
 
-    protected String getFolderName()
-    {
-        return "My Study";
-    }
-
     @Override
     public List<String> getAssociatedModules()
     {
@@ -73,19 +68,17 @@ public class TruncationTest extends BaseWebDriverTest
     private void initTest()
     {
         _containerHelper.createProject(getProjectName(), "Study");
-        _containerHelper.createSubfolder(getProjectName(), getProjectName(), getFolderName(), "Study", null, true);
         importFolderFromZip(TestFileUtils.getSampleData("studies/AltIdStudy.folder.zip"));
         clickTab("Overview");
         PortalHelper portalHelper = new PortalHelper(this);
         portalHelper.addWebPart("Lists");
-        _listHelper.importListArchive(getFolderName(), LIST_ARCHIVE);
+        _listHelper.importListArchive(getProjectName(), LIST_ARCHIVE);
     }
 
     @Test
     public void testTruncateList()
     {
         goToProjectHome();
-        clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(LIST_NAME));
         click(Locator.linkContainingText("Delete All Rows"));
         waitAndClick(Ext4Helper.Locators.ext4Button("Yes"));
@@ -98,14 +91,13 @@ public class TruncationTest extends BaseWebDriverTest
     public void testTruncateDataset()
     {
         goToProjectHome();
-        clickFolder(getFolderName());
         waitAndClickAndWait(Locator.linkContainingText("Manage Datasets"));
-        waitAndClick(Locator.linkContainingText("DEM-1"));
-        waitAndClick(Locator.linkContainingText("Delete All Rows"));
-        click(Ext4Helper.Locators.ext4Button("Yes"));
+        waitAndClickAndWait(Locator.linkContainingText("DEM-1"));
+        waitAndClick(Locator.lkButton("Delete All Rows"));
+        waitAndClick(Ext4Helper.Locators.ext4Button("Yes"));
         waitForText("24 rows deleted");
         click(Ext4Helper.Locators.ext4Button("OK"));
-        click(Locator.linkContainingText("View Data"));
+        clickAndWait(Locator.linkContainingText("View Data"));
         waitForText("No data to show.");
     }
 
@@ -114,9 +106,8 @@ public class TruncationTest extends BaseWebDriverTest
     {
         impersonateRole("Editor");
         goToProjectHome();
-        clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(LIST_NAME));
         assertTextNotPresent("Delete All Rows");
-        stopImpersonatingRole();
+        stopImpersonating();
     }
 }
