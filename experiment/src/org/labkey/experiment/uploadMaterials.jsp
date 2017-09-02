@@ -140,15 +140,15 @@
         <tr>
             <td class="labkey-form-label">Insert/Update Options</td>
             <td>This sample set already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
-                <labkey:radio name="insertUpdateChoice" id="insertOnlyChoice" value="<%=InsertUpdateChoice.insertOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOnlyChoice">Insert only new samples; error if trying to update an existing sample.</label><br>
-                <labkey:radio name="insertUpdateChoice" id="insertIgnoreChoice" value="<%=InsertUpdateChoice.insertIgnore.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertIgnoreChoice">Insert only new samples; ignore any existing samples.</label><br>
-                <labkey:radio name="insertUpdateChoice" id="insertOrUpdateChoice" value="<%=InsertUpdateChoice.insertOrUpdate.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOrUpdateChoice">Insert any new samples and update existing samples.</label><br>
-                <labkey:radio name="insertUpdateChoice" id="updateOnlyChoice" value="<%=InsertUpdateChoice.updateOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="updateOnlyChoice">Update only existing samples with new values; error if sample doesn't already exist.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="insertOnlyChoice" value="<%=InsertUpdateChoice.insertOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Insert only new samples; error if trying to update an existing sample.<br>
+                <labkey:radio name="insertUpdateChoice" id="insertIgnoreChoice" value="<%=InsertUpdateChoice.insertIgnore.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Insert only new samples; ignore any existing samples.<br>
+                <labkey:radio name="insertUpdateChoice" id="insertOrUpdateChoice" value="<%=InsertUpdateChoice.insertOrUpdate.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Insert any new samples and update existing samples.<br>
+                <labkey:radio name="insertUpdateChoice" id="updateOnlyChoice" value="<%=InsertUpdateChoice.updateOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Update only existing samples with new values; error if sample doesn't already exist.<br>
 
                 <br>
                 By default, any additional columns in the uploaded sample data will be ignored.<br>
                 <labkey:checkbox name="createNewColumnsOnExistingSampleSet" id="createNewColumnsOnExistingSampleSet" value="true" checked="<%= form.isCreateNewColumnsOnExistingSampleSet()%>" />
-                <label for="createNewColumnsOnExistingSampleSet">Add any new columns found in the uploaded sample data to the existing sample set columns.</label>
+                Add any new columns found in the uploaded sample data to the existing sample set columns.
             </td>
         </tr>
     <% } %>
@@ -213,13 +213,13 @@
             <input type="radio" id="nameFormat_nameExpression" name="nameFormat"
                    value="<%=h(NameFormatChoice.NameExpression.toString())%>"
                    <%=checked(NameFormatChoice.NameExpression.equals(form.getNameFormatEnum()))%> >
-            <label for="nameFormat_nameExpression">Expression:</label>
+            Expression:
             <input type="text" id="nameExpression" name="nameExpression" size="70" maxLength="200" value="<%=h(form.getNameExpression())%>"  placeholder="e.g, \${DataInputs:first:defaultValue('S')}-\${now:date}-\${batchRandomId}" />
             <br/>
             <input type="radio" id="nameFormat_idColumns" name="nameFormat"
                    value="<%=h(NameFormatChoice.IdColumns.toString())%>"
                    <%=checked(NameFormatChoice.IdColumns.equals(form.getNameFormatEnum()))%> >
-            <label for="nameFormat_idColumns">ID Columns:</label>
+            ID Columns:
                 <table class="labkey-indented">
                     <tr>
                         <td align="right">#1:</td>

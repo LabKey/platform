@@ -230,7 +230,7 @@
          );
 
         var zipFileComponent = Ext4.create('Ext.Component', {
-            html: '<input type="file" name="folderZip" size="50">',
+            html: '<input type="file" name="folderZip" size="50" style="border: none;">',
             hidden: false
         });
 

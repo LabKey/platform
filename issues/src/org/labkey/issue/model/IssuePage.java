@@ -480,7 +480,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         }
                         else
                         {
-                            dc.renderDetailsCaptionCell(renderContext, writer);
+                            dc.renderDetailsCaptionCell(renderContext, writer, null);
                             sb.append(writer);
                         }
                     }

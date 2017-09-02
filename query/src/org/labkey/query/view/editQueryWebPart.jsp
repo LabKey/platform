@@ -89,9 +89,7 @@
             defaults : {
                 labelWidth: 225,
                 width : 525,
-                labelCls : 'labkey-form-label',
-                fieldStyle : 'margin-left: 5px;',
-                margin : '2 2 2 2'
+                fieldStyle : 'margin-left: 5px;'
             },
             border : false,
             width: 700,
@@ -246,8 +244,7 @@
                     for(var i = 0; i < labels.getCount(); i++)
                     {
                         labels.item(i).addCls('labkey-form-label');
-                        labels.item(i).setStyle('padding-bottom', '7px');
-                        labels.item(i).setStyle('padding-top', '7px');
+                        labels.item(i).setStyle('padding', '2px 4px');
                     }
 
                     var triggers = Ext4.select('.x4-form-trigger');
