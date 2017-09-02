@@ -412,9 +412,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
-        _column.renderDetailsCaptionCell(ctx, out);
+        _column.renderDetailsCaptionCell(ctx, out, cls);
     }
 
     @Override

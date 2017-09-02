@@ -998,7 +998,7 @@ public abstract class DisplayColumn extends RenderColumn
         StringWriter writer = new StringWriter();
         try
         {
-            renderDetailsCaptionCell(ctx, writer);
+            renderDetailsCaptionCell(ctx, writer, null);
         }
         catch (Exception e)
         {
@@ -1007,14 +1007,14 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
             return;
 
         if (PageFlowUtil.useExperimentalCoreUI())
         {
-            out.write("<label class=\"col-sm-3 col-lg-2 control-label\">");
+            out.write("<label class=\"" + (cls != null ? cls : "col-sm-3 col-lg-2 control-label") + "\">");
             renderTitle(ctx, out);
             out.write("</label>");
         }

@@ -123,7 +123,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (!PageFlowUtil.useExperimentalCoreUI())
                     renderInputError(ctx, out, 1, renderer);
                 out.write("<tr>");
-                renderer.renderDetailsCaptionCell(ctx, out);
+                renderer.renderDetailsCaptionCell(ctx, out, null);
                 renderer.renderInputCell(ctx, out, 1);
                 out.write("<td>");
                 if (((DefaultableDisplayColumn) renderer).getJavaType() == File.class)

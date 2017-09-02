@@ -858,7 +858,7 @@ public class DataColumn extends DisplayColumn
         out.write(title);
     }
 
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
             return;
@@ -866,7 +866,7 @@ public class DataColumn extends DisplayColumn
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         if (newUI)
-            out.write("<label class=\"col-sm-3 col-lg-2 control-label\">");
+            out.write("<label class=\"" + (cls != null ? cls : "col-sm-3 col-lg-2 control-label") + "\">");
         else
             out.write("<td class=\"labkey-form-label\">");
         renderTitle(ctx, out);

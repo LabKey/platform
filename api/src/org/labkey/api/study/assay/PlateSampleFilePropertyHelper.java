@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
@@ -334,7 +335,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             }
 
             @Override
-            public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
+            public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
             {
                 if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
                 {

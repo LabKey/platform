@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.actions;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -64,7 +65,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         return calculateValue(ctx);
     }
 
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
             return;

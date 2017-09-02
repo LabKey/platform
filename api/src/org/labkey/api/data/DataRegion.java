@@ -2449,7 +2449,7 @@ public class DataRegion extends DisplayElement
                     if (!renderer.isVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
                         continue;
                     out.write(newUI ? "<div class=\"form-group\">" : "<tr>");
-                    renderer.renderDetailsCaptionCell(ctx, out);
+                    renderer.renderDetailsCaptionCell(ctx, out, null);
                     renderer.renderInputWrapperBegin(out, 1);
                     renderer.renderDetailsData(ctx, out, 1);
                     renderer.renderInputWrapperEnd(out);
@@ -2661,7 +2661,7 @@ public class DataRegion extends DisplayElement
             renderInputError(errors, out, span);
             out.write("<tr>");
         }
-        renderer.renderDetailsCaptionCell(ctx, out);
+        renderer.renderDetailsCaptionCell(ctx, out, null);
 
         if (renderer.isEditable())
             renderer.renderInputCell(ctx, out, span);
@@ -2833,7 +2833,7 @@ public class DataRegion extends DisplayElement
                     for (String heading : groupHeadings)
                     {
                         if (newUI)
-                            out.write("<td nowrap><label class=\"col-sm-3 col-lg-2 control-label\">");
+                            out.write("<td nowrap><label class=\"control-label\">");
                         else
                             out.write("<td valign=\"bottom\" class=\"labkey-form-label\">");
                         out.write(PageFlowUtil.filter(heading));
@@ -2911,7 +2911,7 @@ public class DataRegion extends DisplayElement
                         out.write(">");
 
                         if (newUI)
-                            out.write("<td nowrap><label class=\"col-sm-3 col-lg-2 control-label\">");
+                            out.write("<td nowrap><label class=\"control-label\">");
                         else
                             out.write("<td class=\"labkey-form-label\" nowrap>");
                         out.write(PageFlowUtil.filter(groupHeadings.get(i)));
@@ -2999,12 +2999,12 @@ public class DataRegion extends DisplayElement
         if (PageFlowUtil.useExperimentalCoreUI())
         {
             out.write("<td nowrap>");
-            col.renderDetailsCaptionCell(ctx, out);
+            col.renderDetailsCaptionCell(ctx, out, "control-header-label");
             out.write("</td>");
         }
         else
         {
-            col.renderDetailsCaptionCell(ctx, out);
+            col.renderDetailsCaptionCell(ctx, out, null);
         }
     }
 
@@ -3027,7 +3027,7 @@ public class DataRegion extends DisplayElement
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         if (newUI)
-            out.write("<td nowrap><label class=\"col-sm-3 col-lg-2 control-label\">");
+            out.write("<td nowrap><label class=\"control-label\">");
         else
             out.write("<td class=\"labkey-form-label\">");
 
