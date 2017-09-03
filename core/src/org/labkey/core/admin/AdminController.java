@@ -60,6 +60,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -133,6 +134,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.core.CoreModule;
+import org.labkey.core.admin.FolderManagementAction.FolderManagementTabStrip;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
@@ -2440,8 +2442,8 @@ public class AdminController extends SpringActionController
 
             StringBuilder html = new StringBuilder();
 
-            html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
-            html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
+            html.append(PageFlowUtil.textLink("Clear Caches and Refresh", getCachesURL(true, false)));
+            html.append(PageFlowUtil.textLink("Refresh", getCachesURL(false, false)));
 
             html.append("<br/><br/>\n");
             appendStats(html, "Caches", cacheStats);
@@ -3540,7 +3542,7 @@ public class AdminController extends SpringActionController
             ModuleStatusBean bean = new ModuleStatusBean();
 
             if (loader.isNewInstall())
-                bean.nextURL = new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot());
+                bean.nextURL = new ActionURL(NewInstallSiteSettingsAction.class, ContainerManager.getRoot());
             else if (form.getReturnURL() != null)
             {
                 try
@@ -3553,7 +3555,7 @@ public class AdminController extends SpringActionController
                 }
             }
             if (null == bean.nextURL)
-                bean.nextURL = new ActionURL(AdminController.InstallCompleteAction.class, ContainerManager.getRoot());
+                bean.nextURL = new ActionURL(InstallCompleteAction.class, ContainerManager.getRoot());
 
             if (loader.isNewInstall())
                 bean.verb = "Install";
@@ -3569,7 +3571,7 @@ public class AdminController extends SpringActionController
             else
                 bean.verbing = "Starting";
 
-            JspView <ModuleStatusBean> statusView = new JspView<>("/org/labkey/core/admin/moduleStatus.jsp", bean, errors);
+            JspView<ModuleStatusBean> statusView = new JspView<>("/org/labkey/core/admin/moduleStatus.jsp", bean, errors);
             vbox.addView(statusView);
 
             getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
@@ -3921,6 +3923,228 @@ public class AdminController extends SpringActionController
 
             sw.flush();
             PageFlowUtil.streamFileBytes(response, fullyQualifiedSchemaName + ".xml", sw.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
+        }
+    }
+
+
+    public abstract class FolderManagementViewAction<FORM> extends SimpleViewAction<FORM>
+    {
+        @Override
+        public ModelAndView getView(FORM form, BindException errors) throws Exception
+        {
+            FolderManagementViewAction<FORM> that = this;
+
+            return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
+            {
+                @Override
+                public HttpView getTabView(String tabId) throws Exception
+                {
+                    return that.getTabView(form, errors);
+                }
+            };
+        }
+
+        abstract HttpView getTabView(FORM form, BindException errors) throws Exception;
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return folderManagementNavTrail(root);
+        }
+    }
+
+
+    private NavTree folderManagementNavTrail(NavTree root)
+    {
+        Container container = getContainer();
+
+        if (container.isRoot())
+            return appendAdminNavTrail(root, "Admin Console", ShowAdminAction.class, container);
+
+        if (container.isContainerTab())
+            root.addChild(container.getParent().getName(), getContainer().getParent().getStartURL(getUser()));
+
+        root.addChild(container.getName(), getContainer().getStartURL(getUser()));
+        root.addChild("Folder Management");
+
+        return root;
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class FolderInformationAction extends FolderManagementViewAction
+    {
+        @Override
+        public HttpView getTabView(Object o, BindException errors) throws Exception
+        {
+            return getContainerInfoView(getContainer(), getUser());
+        }
+    }
+
+
+    public abstract class FolderManagementViewPostAction<FORM> extends FormViewAction<FORM>
+    {
+        @Override
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+        {
+            FolderManagementViewPostAction<FORM> that = this;
+
+            return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
+            {
+                @Override
+                public HttpView getTabView(String tabId) throws Exception
+                {
+                    return that.getTabView(form, errors);
+                }
+            };
+        }
+
+        @Override
+        public URLHelper getSuccessURL(FORM form)
+        {
+            return null;
+        }
+
+        abstract HttpView getTabView(FORM form, BindException errors) throws Exception;
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return folderManagementNavTrail(root);
+        }
+    }
+
+
+    public static class SearchForm
+    {
+        private boolean _searchable;
+        private String _provider;
+
+        public boolean isSearchable()
+        {
+            return _searchable;
+        }
+
+        public void setSearchable(boolean searchable)
+        {
+            _searchable = searchable;
+        }
+
+        public String getProvider()
+        {
+            return _provider;
+        }
+
+        public void setProvider(String provider)
+        {
+            _provider = provider;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class SearchAction extends FolderManagementViewPostAction<SearchForm>
+    {
+        @Override
+        HttpView getTabView(SearchForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/fullTextSearch.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(SearchForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SearchForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            if (container.isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            ContainerManager.updateSearchable(container, form.isSearchable(), getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SearchForm searchForm)
+        {
+            // In this case, must redirect back to view so Container is reloaded (simple reshow will continue to show the old value)
+            return getViewContext().getActionURL();
+        }
+    }
+
+
+    public static class MissingValuesForm
+    {
+        private boolean _inheritMvIndicators;
+        private String[] _mvIndicators;
+        private String[] _mvLabels;
+
+        public boolean isInheritMvIndicators()
+        {
+            return _inheritMvIndicators;
+        }
+
+        public void setInheritMvIndicators(boolean inheritMvIndicators)
+        {
+            _inheritMvIndicators = inheritMvIndicators;
+        }
+
+        public String[] getMvIndicators()
+        {
+            return _mvIndicators;
+        }
+
+        public void setMvIndicators(String[] mvIndicators)
+        {
+            _mvIndicators = mvIndicators;
+        }
+
+        public String[] getMvLabels()
+        {
+            return _mvLabels;
+        }
+
+        public void setMvLabels(String[] mvLabels)
+        {
+            _mvLabels = mvLabels;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
+    {
+        @Override
+        HttpView getTabView(MissingValuesForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(MissingValuesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(MissingValuesForm form, BindException errors) throws Exception
+        {
+            if (form.isInheritMvIndicators())
+            {
+                MvUtil.inheritMvIndicators(getContainer());
+                return true;
+            }
+            else
+            {
+                // Javascript should have enforced any constraints
+                MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
+                return true;
+            }
         }
     }
 
@@ -5768,7 +5992,7 @@ public class AdminController extends SpringActionController
                 {
                     String previousRelease = ModuleContext.formatVersion(Constants.getPreviousReleaseVersion());
                     String nextRelease = ModuleContext.formatVersion(Constants.getNextReleaseVersion());
-                    ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
+                    ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + previousRelease + "," + nextRelease);
                     url.addParameter("managedOnly", true);
                     managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + previousRelease + ", " + nextRelease + " and unmanaged modules", url);
@@ -5788,7 +6012,7 @@ public class AdminController extends SpringActionController
 
                 if (!form.isUnmanagedOnly())
                 {
-                    ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
+                    ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("unmanagedOnly", true);
                     unmanagedLink = PageFlowUtil.textLink("Click here to show unmanaged modules only", url);
                 }

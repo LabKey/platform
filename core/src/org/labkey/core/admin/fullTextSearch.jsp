@@ -16,18 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    Container c = getContainer();
-%>
-<labkey:form name="fullTextSearch" method="POST" action='<%=text(buildURL(FolderManagementAction.class)+"tabId=fullTextSearch")%>'>
+<labkey:form name="fullTextSearch" method="POST">
     <table>
         <tr>
             <td>
-                The full-text search feature will search content in all folders where the user has read permissions.  There<br>
+                The full-text search feature will search content in all folders where the user has read permissions. There<br>
                 may be cases when content that can be read should be excluded from multi-folder searches, for example, if the<br>
                 folder contains archived versions of content and you want only the more recent versions of that content to<br>
                 appear in search results. Uncheck the box to exclude this folder's content from multi-folder searches.<br>
@@ -36,7 +31,7 @@
         <tr>
             <td>
                 <label>
-                    <input type="checkbox" id="searchable" name="searchable"<%=checked(c.isSearchable())%>>
+                    <input type="checkbox" id="searchable" name="searchable"<%=checked(getContainer().isSearchable())%>>
                 Include this folder's content in multi-folder search results</label>
                 <input type="hidden" name="<%=text(SpringActionController.FIELD_MARKER)%>searchable">
             </td>

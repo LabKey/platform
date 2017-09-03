@@ -36,7 +36,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.property.Lookup;
@@ -81,6 +80,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.TabStripView.TabInfo2;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -109,6 +109,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * User: klum
@@ -170,10 +173,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
     {
         if (form.isFolderTypeTab())
             return handleFolderTypePost(form, errors);
-        else if (form.isMvIndicatorsTab())
-            return handleMvIndicatorsPost(form, errors);
-        else if (form.isFullTextSearchTab())
-            return handleFullTextSearchPost(form, errors);
         else if (form.isFilesTab())
             return handleFilesPost(form, errors);
         else if (form.isMessagesTab())
@@ -187,23 +186,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         else if (form.isConceptsTab())
             return handleConceptsPost(form, errors);
         else
-            return handleFolderTreePost(form, errors);
-    }
-
-    private boolean handleMvIndicatorsPost(FolderManagementForm form, BindException errors) throws SQLException
-    {
-        _successURL = getViewContext().getActionURL();
-        if (form.isInheritMvIndicators())
-        {
-            MvUtil.inheritMvIndicators(getContainer());
-            return true;
-        }
-        else
-        {
-            // Javascript should have enforced any constraints
-            MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
-            return true;
-        }
+            return handleFolderTreePost();
     }
 
     private boolean handleFolderTypePost(FolderManagementForm form, BindException errors) throws SQLException
@@ -422,20 +405,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         if (ctx.getActionURL().getParameter("rootSet") != null && confirmMessage != null)
             form.setConfirmMessage(confirmMessage);
-    }
-
-    private boolean handleFullTextSearchPost(FolderManagementForm form, BindException errors) throws SQLException
-    {
-        Container container = getContainer();
-        if (container.isRoot())
-        {
-            throw new NotFoundException();
-        }
-
-        ContainerManager.updateSearchable(container, form.getSearchable(), getUser());
-        _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces a reload of the Container object to get the property update
-
-        return true;
     }
 
     private boolean handleMessagesPost(FolderManagementForm form, BindException errors) throws Exception
@@ -693,7 +662,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         return !errors.hasErrors();
     }
 
-    private boolean handleFolderTreePost(FolderManagementForm form, BindException errors) throws Exception
+    private boolean handleFolderTreePost() throws Exception
     {
         _successURL = getViewContext().getActionURL();
         return true;
@@ -706,7 +675,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     public NavTree appendNavTrail(NavTree root)
     {
-        setHelpTopic("customizeFolder");
+        setHelpTopic("customizeFolder"); // TODO: subclass should set this
 
         Container container = getContainer();
 
@@ -722,7 +691,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private Set<String> getRegisteredFolderWritersForImplicitExport(Container sourceContainer)
     {
-
         // this method is very similar to CoreController.GetRegisteredFolderWritersAction.execute() method, but instead of
         // of building up a map of Writer object names to display in the UI, we are instead adding them to the list of Writers
         // to apply during the implicit export.
@@ -769,13 +737,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private String tabId;
         private String origin;
 
-        // missing value settings
-        private boolean inheritMvIndicators;
-        private String[] mvIndicators;
-        private String[] mvLabels;
-
-        // full-text search settings
-        private boolean searchable;
+        // messages settings
         private String _provider;
 
         // folder export settings
@@ -885,16 +847,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return "folderType".equals(getTabId());
         }
 
-        public boolean isMvIndicatorsTab()
-        {
-            return "mvIndicators".equals(getTabId());
-        }
-
-        public boolean isFullTextSearchTab()
-        {
-            return "fullTextSearch".equals(getTabId());
-        }
-
         public boolean isFilesTab()
         {
             return "files".equals(getTabId());
@@ -915,11 +867,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return "import".equals(getTabId());
         }
 
-        public boolean isInformationTab()
-        {
-            return "info".equals(getTabId());
-        }
-
         public boolean isSettingsTab()
         {
             return "settings".equals(getTabId());
@@ -928,46 +875,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public boolean isConceptsTab()
         {
             return "concepts".equals(getTabId());
-        }
-
-        public boolean isInheritMvIndicators()
-        {
-            return inheritMvIndicators;
-        }
-
-        public void setInheritMvIndicators(boolean inheritMvIndicators)
-        {
-            this.inheritMvIndicators = inheritMvIndicators;
-        }
-
-        public String[] getMvIndicators()
-        {
-            return mvIndicators;
-        }
-
-        public void setMvIndicators(String[] mvIndicators)
-        {
-            this.mvIndicators = mvIndicators;
-        }
-
-        public String[] getMvLabels()
-        {
-            return mvLabels;
-        }
-
-        public void setMvLabels(String[] mvLabels)
-        {
-            this.mvLabels = mvLabels;
-        }
-
-        public boolean getSearchable()
-        {
-            return searchable;
-        }
-
-        public void setSearchable(boolean searchable)
-        {
-            this.searchable = searchable;
         }
 
         public String getProvider()
@@ -1277,13 +1184,45 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
     }
 
 
-    private static class FolderManagementTabStrip extends TabStripView
+    private static final List<TabInfo2> REGISTERED_TABS = new CopyOnWriteArrayList<>();
+
+    public static void addTab(String name, String id, Function<Container, ActionURL> urlGenerator, Predicate<Container> filter)
+    {
+        REGISTERED_TABS.add(new TabInfo2(name, id, urlGenerator, filter));
+    }
+
+    private static final Predicate<Container> ALWAYS_TRUE = container -> true;
+    private static final Predicate<Container> NOT_ROOT = container -> !container.isRoot();
+
+    static
+    {
+        // Original order: Folder Tree, Folder Type, Missing Values, Module Properties, Concepts, Search, Notifications, Export, Import, Files, Information
+
+        // Remaining tabs to convert: Folder Tree, Folder Type, Module Properties, Concepts, Notifications, Export, Import, Files
+
+        addTab("Missing Values", "mvIndicators", c -> new ActionURL(AdminController.MissingValuesAction.class, c), ALWAYS_TRUE);
+        addTab("Search", "fullTextSearch", c -> new ActionURL(AdminController.SearchAction.class, c), NOT_ROOT);
+        addTab("Information", "info", c -> new ActionURL(AdminController.FolderInformationAction.class, c), NOT_ROOT);
+    }
+
+    static class FolderManagementTabStrip extends TabStripView
     {
         private final Container _container;
         private final FolderManagementForm _form;
         private final BindException _errors;
 
-        private FolderManagementTabStrip(Container c, FolderManagementForm form, BindException errors)
+        FolderManagementTabStrip(Container c, String tabId, BindException errors)
+        {
+            _container = c;
+            _form = null;
+            _errors = errors;
+
+            // Stay on same tab if there are errors
+            if (_errors.hasErrors() && null != StringUtils.trimToNull(tabId))
+                setSelectedTabId(tabId);
+        }
+
+        FolderManagementTabStrip(Container c, FolderManagementForm form, BindException errors)
         {
             _container = c;
             _form = form;
@@ -1304,7 +1243,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 tabs.add(new TabInfo("Folder Tree", "folderTree", url));
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
             }
-            tabs.add(new TabInfo("Missing Values", "mvIndicators", url));
 
             //only show module properties tab if a module w/ properties to set is present for current folder
             Set<Module> activeModules = getViewContext().getContainer().getActiveModules();
@@ -1329,7 +1267,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
             if (!_container.isRoot())
             {
-                tabs.add(new TabInfo("Search", "fullTextSearch", url));
                 tabs.add(new TabInfo("Notifications", "messages", url));
 
                 tabs.add(new TabInfo("Export", "export", url));
@@ -1345,8 +1282,18 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                         tabs.add(new TabInfo("Formats", "settings", url));
                     }
                 }
-                tabs.add(new TabInfo("Information", "info", url));
             }
+
+            REGISTERED_TABS.forEach(tab->{
+                if (tab.shouldRender(_container))
+                {
+                    ActionURL actionURL = tab.getActionURL(_container);
+                    NavTree navTree = new NavTree(tab.getText(), actionURL);
+                    navTree.setId(tab.getId());
+                    tabs.add(navTree);
+                }
+            });
+
             return tabs;
         }
 
@@ -1370,12 +1317,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 case "folderType":
                     assert !_container.isRoot() : "No folder type settings for the root folder";    // TODO: Not needed
                     return new JspView<>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
-                case "mvIndicators":
-                    return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
                 case "concepts":
                     return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", _form, _errors);
-                case "fullTextSearch":
-                    return new JspView<>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
                 case "files":
                     HttpView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors);
 
@@ -1406,8 +1349,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     }
 
                     return new JspView<>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
-                case "info":
-                    return AdminController.getContainerInfoView(_container, getViewContext().getUser());
                 case "props":
                     return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", _form, _errors);
                 case "settings":
