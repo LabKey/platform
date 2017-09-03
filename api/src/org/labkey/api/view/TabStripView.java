@@ -18,12 +18,15 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * User: Karl Lum
@@ -54,10 +57,10 @@ public abstract class TabStripView extends JspView<TabStripView>
 
         try
         {
-            /**
-             * Until the lifecycle of client dependencies is better supported, TabStripView needs
-             * to bootstrap the dependencies of the getTabView() so that those .jsps can still declare
-             * dependencies as we desire.
+            /*
+              Until the lifecycle of client dependencies is better supported, TabStripView needs
+              to bootstrap the dependencies of the getTabView() so that those .jsps can still declare
+              dependencies as we desire.
              */
             view = getTabView(getSelectedTabId());
         }
@@ -126,6 +129,33 @@ public abstract class TabStripView extends JspView<TabStripView>
         {
             super(name, url.clone().replaceParameter(TAB_PARAM, id).getLocalURIString());
             setId(id);
+        }
+    }
+
+    public static class TabInfo2 extends NavTree
+    {
+        private final Function<Container, ActionURL> _urlGenerator;
+        private final Predicate<Container> _filter;
+
+        public TabInfo2(String name, String id, Function<Container, ActionURL> urlGenerator, Predicate<Container> filter)
+        {
+            super(name, (URLHelper)null);
+            setId(id);
+            _urlGenerator = urlGenerator;
+            _filter = filter;
+        }
+
+        public boolean shouldRender(Container c)
+        {
+            return _filter.test(c);
+        }
+
+        public ActionURL getActionURL(Container c)
+        {
+            ActionURL url = _urlGenerator.apply(c);
+            url.addParameter("tabId", getId());
+
+            return url;
         }
     }
 }
