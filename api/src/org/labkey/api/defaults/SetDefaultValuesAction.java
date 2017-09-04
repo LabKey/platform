@@ -110,12 +110,15 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
         public void render(RenderContext ctx, Writer out) throws IOException
         {
+            boolean newUI = PageFlowUtil.useExperimentalCoreUI();
             renderFormBegin(ctx, out, MODE_INSERT);
             renderMainErrors(ctx, out);
-            out.write("<table>");
-            out.write("<tr><th>Field</th>" +
-                    "<th>Initial/Default Value</th>" +
-                    "<th>Default type</th><tr>");
+            out.write("<table class=\"lk-fields-table\">");
+            out.write("<tr>" +
+                    "<td><label>Field</label></td>" +
+                    "<td><label class=\"col-sm-9 col-lg-10\">Initial/Default Value</label></td>" +
+                    "<td><label>Default type</label></td>" +
+                    "</tr>");
             for (DisplayColumn renderer : getDisplayColumns())
             {
                 if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
@@ -123,8 +126,19 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (!PageFlowUtil.useExperimentalCoreUI())
                     renderInputError(ctx, out, 1, renderer);
                 out.write("<tr>");
-                renderer.renderDetailsCaptionCell(ctx, out, null);
+
+                if (newUI)
+                    out.write("<td nowrap>");
+                renderer.renderDetailsCaptionCell(ctx, out, "");
+                if (newUI)
+                    out.write("</td>");
+
+                if (newUI)
+                    out.write("<td nowrap>");
                 renderer.renderInputCell(ctx, out, 1);
+                if (newUI)
+                    out.write("</td>");
+
                 out.write("<td>");
                 if (((DefaultableDisplayColumn) renderer).getJavaType() == File.class)
                     out.write("Defaults cannot be set for file fields.");
@@ -137,6 +151,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     out.write(PageFlowUtil.helpPopup("Default Value Type: " + defaultType.getLabel(), defaultType.getHelpText(), true));
                 }
                 out.write("</td>");
+
                 out.write("</tr>");
             }
             out.write("</table>");
@@ -231,7 +246,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             ActionURL url = buildSetInheritedDefaultsURL(domain, domainIdForm);
             headerHtml.append(PageFlowUtil.textLink("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
-        headerHtml.append("<br><br>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.");
+        headerHtml.append("<p>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.</p>");
 
         HtmlView headerView = new HtmlView(headerHtml.toString());
 
