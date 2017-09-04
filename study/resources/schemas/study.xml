@@ -98,13 +98,13 @@
         <description>The default property/field within the Subject/Visit Comment dataset that should be displayed in specimen and dataset views.</description>
       </column>
       <column columnName="SubjectNounSingular">
-        <description>The singular noun used to identify subjects.  Examples include "Participant", "Mouse", or "Yeast".  This value cannot be changed after study creation.</description>
+        <description>The singular noun used to identify subjects.  Examples include "Participant", "Mouse", or "Yeast".</description>
       </column>
       <column columnName="SubjectNounPlural">
-        <description>The plural noun used to identify subjects.  Examples include "Participants", "Mice", or "Yeasts".  This value cannot be changed after study creation.</description>
+        <description>The plural noun used to identify subjects.  Examples include "Participants", "Mice", or "Yeasts".</description>
       </column>
       <column columnName="SubjectColumnName">
-        <description>The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".  This value cannot be changed after study creation.</description>
+        <description>The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".</description>
       </column>
       <column columnName="Description">
         <description>A short description of the study.</description>
