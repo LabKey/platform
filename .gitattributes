@@ -402,7 +402,6 @@ core/src/org/labkey/core/admin/experimentalFeatures.jsp -text
 core/src/org/labkey/core/admin/exportFolder.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
 core/src/org/labkey/core/admin/folderType.jsp -text
-core/src/org/labkey/core/admin/fullTextSearch.jsp -text
 core/src/org/labkey/core/admin/importFolder.jsp -text
 core/src/org/labkey/core/admin/importer/FolderTypeImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/ModulePropertiesImporterFactory.java -text
@@ -1909,6 +1908,7 @@ search/src/org/labkey/search/view/SearchWebPart.java -text
 search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/customizeSearchWebPart.jsp -text
 search/src/org/labkey/search/view/exportContents.jsp -text
+search/src/org/labkey/search/view/fullTextSearch.jsp -text
 search/src/org/labkey/search/view/indexerAdmin.jsp -text
 search/src/org/labkey/search/view/indexerStats.jsp -text
 search/src/org/labkey/search/view/search.jsp -text

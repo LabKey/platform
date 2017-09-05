@@ -294,7 +294,6 @@ public class AdminController extends SpringActionController
             // Show Concepts tab only if the experiment module is enabled in this container
             return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
         }, c -> new ActionURL(AdminController.ConceptsAction.class, c));
-        addTab("Search", "fullTextSearch", NOT_ROOT, c -> new ActionURL(SearchAction.class, c));
         addTab("Notifications", "messages", NOT_ROOT, c -> new ActionURL(NotificationsAction.class, c));
         addTab("Export", "export", NOT_ROOT, c -> new ActionURL(ExportFolderAction.class, c));
         addTab("Import", "import", NOT_ROOT, c -> new ActionURL(ImportFolderAction.class, c));
@@ -4011,70 +4010,6 @@ public class AdminController extends SpringActionController
         protected HttpView getTabView(Object o, BindException errors) throws Exception
         {
             return getContainerInfoView(getContainer(), getUser());
-        }
-    }
-
-
-    public static class SearchForm
-    {
-        private boolean _searchable;
-        private String _provider;
-
-        public boolean isSearchable()
-        {
-            return _searchable;
-        }
-
-        public void setSearchable(boolean searchable)
-        {
-            _searchable = searchable;
-        }
-
-        public String getProvider()
-        {
-            return _provider;
-        }
-
-        public void setProvider(String provider)
-        {
-            _provider = provider;
-        }
-    }
-
-
-    @RequiresPermission(AdminPermission.class)
-    public class SearchAction extends FolderManagementViewPostAction<SearchForm>
-    {
-        @Override
-        protected HttpView getTabView(SearchForm form, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/core/admin/fullTextSearch.jsp", form, errors);
-        }
-
-        @Override
-        public void validateCommand(SearchForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(SearchForm form, BindException errors) throws Exception
-        {
-            Container container = getContainer();
-            if (container.isRoot())
-            {
-                throw new NotFoundException();
-            }
-
-            ContainerManager.updateSearchable(container, form.isSearchable(), getUser());
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(SearchForm searchForm)
-        {
-            // In this case, must redirect back to view so Container is reloaded (simple reshow will continue to show the old value)
-            return getViewContext().getActionURL();
         }
     }
 

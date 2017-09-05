@@ -44,6 +44,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
@@ -54,7 +55,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderManagement;
+import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -1047,5 +1051,59 @@ public class SearchController extends SpringActionController
         event.setQuery(query);
 
         AuditLogService.get().addEvent(user, event);
+    }
+
+
+    public static class SearchSettingsForm
+    {
+        private boolean _searchable;
+        private String _provider;
+
+        public boolean isSearchable()
+        {
+            return _searchable;
+        }
+
+        public void setSearchable(boolean searchable)
+        {
+            _searchable = searchable;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class SearchSettingsAction extends FolderManagementViewPostAction<SearchSettingsForm>
+    {
+        @Override
+        protected HttpView getTabView(SearchSettingsForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/search/view/fullTextSearch.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(SearchSettingsForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SearchSettingsForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            if (container.isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            ContainerManager.updateSearchable(container, form.isSearchable(), getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SearchSettingsForm searchForm)
+        {
+            // In this case, must redirect back to view so Container is reloaded (simple reshow will continue to show the old value)
+            return getViewContext().getActionURL();
+        }
     }
 }
