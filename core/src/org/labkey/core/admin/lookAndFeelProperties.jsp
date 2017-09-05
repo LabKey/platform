@@ -278,11 +278,12 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-<% if (!folder) {
-    String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
-        " the format: <module>-<name>. For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
-        " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
-        "<br/><br/>Requires AdminOperationsPermission to update.";
+<%
+    if (!folder) {
+        String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
+            " the format: <module>-<name>. For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
+            " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
+            "<br/><br/>Requires AdminOperationsPermission to update.";
 %>
 <tr>
     <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
@@ -295,10 +296,14 @@
     <td>&nbsp;</td>
 </tr>
 <%
-    String customWelcomeHelp = "The relative URL of the page, either a full LabKey view or simple HTML resource, to be loaded as the welcome page." +
-        " The welcome page will be loaded when a user loads the site with no action provided (i.e. https://www.labkey.org)." +
-        " This is often used to provide a splash screen for guests. Note: do not include the contextPath in this string." +
-        " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
+    }
+
+    if (c.isRoot())
+    {
+        String customWelcomeHelp = "The relative URL of the page, either a full LabKey view or simple HTML resource, to be loaded as the welcome page." +
+            " The welcome page will be loaded when a user loads the site with no action provided (i.e. https://www.labkey.org)." +
+            " This is often used to provide a splash screen for guests. Note: do not include the contextPath in this string." +
+            " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
 %>
 <tr>
     <td colspan=2>Provide a custom site welcome page (<%=text(bean.welcomeLink)%>)</td>
