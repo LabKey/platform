@@ -120,7 +120,7 @@
         );
     };
 
-    // note: client dependencies declared in FolderManagementAction.FolderManagementTabStrip
+    // note: client dependencies declared in FolderManagementTabStrip
     Ext4.onReady(function()
     {
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});

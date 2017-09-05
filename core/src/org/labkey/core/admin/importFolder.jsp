@@ -179,7 +179,7 @@
 
 <script type="text/javascript">
     Ext4.onReady(function()  {
-        // note: client dependencies declared in FolderManagementAction.FolderManagementTabStrip
+        // note: client dependencies declared in FolderManagementTabStrip
         var templateFolders = [];
         var sourceRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             width: 300,

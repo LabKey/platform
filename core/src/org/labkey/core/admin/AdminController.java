@@ -533,7 +533,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getFileRootManagementURL(Container c)
+        public ActionURL getFileRootsURL(Container c)
         {
             return getFolderManagementURL(FileRootsAction.class, c, "files");
         }
@@ -794,6 +794,7 @@ public class AdminController extends SpringActionController
         propValueMap.put("Created By", (createdBy != null ? PageFlowUtil.filter(createdBy.getDisplayName(currentUser)) : "<" + c.getCreatedBy() + ">"));
         propValueMap.put("Folder Type", PageFlowUtil.filter(c.getFolderType().getName()));
         propValueMap.put("Description", PageFlowUtil.filter(c.getDescription()));
+
         return new HtmlView(PageFlowUtil.getDataRegionHtmlForPropertyObjects(propValueMap));
     }
 

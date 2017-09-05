@@ -112,15 +112,15 @@ public class FolderManagement
         {
             List<NavTree> tabs = new LinkedList<>();
 
-            FolderManagement.REGISTERED_TABS.forEach(tab->{
-                if (tab.shouldRender(_container))
-                {
+            FolderManagement.REGISTERED_TABS.stream()
+                .filter(tab->tab.shouldRender(_container))
+                .forEach(tab->{
                     ActionURL actionURL = tab.getActionURL(_container);
                     NavTree navTree = new NavTree(tab.getText(), actionURL);
                     navTree.setId(tab.getId());
                     tabs.add(navTree);
                 }
-            });
+            );
 
             return tabs;
         }

@@ -234,7 +234,6 @@
     <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
 </tr>
 <%
-
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
     if (c.isRoot())
     {
@@ -281,9 +280,9 @@
 </tr>
 <% if (!folder) {
     String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
-            " the format: <module>-<name>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
-            " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
-            "<br/><br/>Requires AdminOperationsPermission to update.";
+        " the format: <module>-<name>. For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
+        " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
+        "<br/><br/>Requires AdminOperationsPermission to update.";
 %>
 <tr>
     <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
@@ -295,10 +294,6 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-<%
-    }
-%>
-
 <%
     String customWelcomeHelp = "The relative URL of the page, either a full LabKey view or simple HTML resource, to be loaded as the welcome page." +
         " The welcome page will be loaded when a user loads the site with no action provided (i.e. https://www.labkey.org)." +
@@ -315,7 +310,9 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
+<%
+    }
+%>
 <tr>
     <td><%= button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;<%= PageFlowUtil.button("Reset")
             .href(new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))
