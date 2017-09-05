@@ -37,13 +37,17 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
     ActionURL getExperimentalFeaturesURL();
     ActionURL getMaintenanceURL(URLHelper returnURL);
+
+    // URLs to key Folder Management tabs
     ActionURL getManageFoldersURL(Container c);
+    ActionURL getMissingValuesURL(Container c);
+    ActionURL getModulePropertiesURL(Container c);
+    ActionURL getNotificationsURL(Container c);
     ActionURL getExportFolderURL(Container c);
     ActionURL getImportFolderURL(Container c);
-    ActionURL getFolderManagementURL(Container c);
-    ActionURL getFolderManagementFileURL(Container c);
-    ActionURL getFolderManagementSettingsURL(Container c);
-    ActionURL getFolderManagementPropsURL(Container c);
+    ActionURL getFolderSettingsURL(Container c);
+    ActionURL getFileRootManagementURL(Container c);
+
     ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
     ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL);
     ActionURL getMemTrackerURL();

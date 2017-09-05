@@ -54,7 +54,7 @@ public class FolderAdminMenu extends NavTreeMenu
         NavTree permissions = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(c));
         permissions.setId("__lk-admin-folder-permissions");
         admin.add(permissions);
-        NavTree management = new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c));
+        NavTree management = new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
         management.setId("__lk-admin-folder-management");
         admin.add(management);
         return admin;
