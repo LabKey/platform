@@ -69,8 +69,14 @@
             <br/>
             <table>
                 <tr>
-                    <td valign="top"><% me.include(bean.getGraphView(), out); %></td>
-                    <td valign="top"><% include(bean.getControlsView(), out); %><br>
+                    <td valign="top" style="padding-right: 20px;">
+                        <% me.include(bean.getGraphView(), out); %><br/>
+                    </td>
+            <% if (bean.getAssay().getPlates().size() > 1 && bean.getGraphsPerRow() > 1) { %>
+                </tr><tr>
+            <% } %>
+                    <td valign="top">
+                        <% include(bean.getControlsView(), out); %><br>
                         <% me.include(bean.getCutoffsView(), out); %>
                     </td>
                 </tr>

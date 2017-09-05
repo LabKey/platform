@@ -34,7 +34,7 @@
     if (assay.getPlates().size() > 1)
     {
 %>
-<table width="100%" class="labkey-data-region-legacy labkey-show-borders">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">Plate</td>
         <td class="labkey-column-header">Range</td>
@@ -46,7 +46,7 @@
         for (Plate plate : assay.getPlates())
         {
 %>
-    <tr>
+    <tr class="<%=h(plateNum % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td style="font-weight:bold"><%= plateNum++ %></td>
         <td align=left><%=Luc5Assay.intString(assay.getControlRange(plate, null))%></td>
         <td align="left"><%=Luc5Assay.intString(assay.getVirusControlMean(plate, null))%> &plusmn;
@@ -66,17 +66,17 @@
         if (virusNames.isEmpty())
         {
 %>
-<table>
-    <tr>
+<table class="labkey-data-region-legacy labkey-show-borders">
+    <tr class="labkey-row">
         <td style="text-align:left; font-weight: bold;">Range</td>
         <td align=left><%=Luc5Assay.intString(assay.getControlRange(plate, null))%></td>
     </tr>
-    <tr>
+    <tr class="labkey-alternate-row">
         <td style="text-align:left; font-weight: bold;">Virus Control</td>
         <td align="left"><%=Luc5Assay.intString(assay.getVirusControlMean(plate, null))%> &plusmn;
             <%=Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, null))%></td>
     </tr>
-    <tr>
+    <tr class="labkey-row">
         <td style="text-align:left; font-weight: bold;">Cell Control</td>
         <td align=left><%=Luc5Assay.intString(assay.getCellControlMean(plate, null))%> &plusmn;
             <%=Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, null))%></td>
@@ -87,8 +87,8 @@
         else
         {
 %>
-<table>
-    <tr>
+<table class="labkey-data-region-legacy labkey-show-borders">
+    <tr class="labkey-row">
         <td style="text-align:left; font-weight: bold;">Virus</td>
 <%
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
@@ -99,7 +99,7 @@
         }
 %>
     </tr>
-    <tr>
+    <tr class="labkey-alternate-row">
         <td style="text-align:left; font-weight: bold;">Range</td>
 <%
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
@@ -110,7 +110,7 @@
         }
 %>
     </tr>
-    <tr>
+    <tr class="labkey-row">
         <td style="text-align:left; font-weight: bold;">Virus Control</td>
 <%
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
@@ -122,7 +122,7 @@
         }
 %>
     </tr>
-    <tr>
+    <tr class="labkey-alternate-row">
         <td style="text-align:left; font-weight: bold;">Cell Control</td>
 <%
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())

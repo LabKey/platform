@@ -34,6 +34,10 @@
         border-collapse:collapse;
 	}
 
+    table.cutoff-table td {
+        padding: 1px 4px;
+    }
+
 	td.cutoff-data {
 		background-color: #FFFFA0;
         border: 1px solid #DDDDDD;
@@ -54,16 +58,16 @@
 </style>
 <table class="cutoff-table" cellspacing="0px">
     <tr>
-        <td>&nbsp;</td>
+        <td class="cutoff-heading">&nbsp;</td>
         <td class="cutoff-heading" colspan="<%= 2* assay.getCutoffs().length %>">Cutoff Dilutions</td>
     </tr>
     <tr>
-        <td>&nbsp;</td>
+        <td class="cutoff-heading">&nbsp;</td>
         <td class="cutoff-heading" colspan=<%= assay.getCutoffs().length %>>Curve Based</td>
         <td class="cutoff-heading" colspan=<%= assay.getCutoffs().length %>>Point Based</td>
     </tr>
     <tr>
-        <td>&nbsp;</td>
+        <td class="cutoff-heading">&nbsp;</td>
         <%
             for (int set = 0; set < 2; set++)
             {
