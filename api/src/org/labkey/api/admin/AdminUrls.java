@@ -46,7 +46,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getExportFolderURL(Container c);
     ActionURL getImportFolderURL(Container c);
     ActionURL getFolderSettingsURL(Container c);
-    ActionURL getFileRootManagementURL(Container c);
+    ActionURL getFileRootsURL(Container c);
 
     ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
     ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL);
