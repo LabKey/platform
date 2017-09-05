@@ -131,31 +131,4 @@ public abstract class TabStripView extends JspView<TabStripView>
             setId(id);
         }
     }
-
-    public static class TabInfo2 extends NavTree
-    {
-        private final Function<Container, ActionURL> _urlGenerator;
-        private final Predicate<Container> _filter;
-
-        public TabInfo2(String name, String id, Function<Container, ActionURL> urlGenerator, Predicate<Container> filter)
-        {
-            super(name, (URLHelper)null);
-            setId(id);
-            _urlGenerator = urlGenerator;
-            _filter = filter;
-        }
-
-        public boolean shouldRender(Container c)
-        {
-            return _filter.test(c);
-        }
-
-        public ActionURL getActionURL(Container c)
-        {
-            ActionURL url = _urlGenerator.apply(c);
-            url.addParameter("tabId", getId());
-
-            return url;
-        }
-    }
 }
