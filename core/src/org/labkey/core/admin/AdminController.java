@@ -37,11 +37,15 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.attachments.Attachment;
@@ -51,22 +55,34 @@ import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -75,6 +91,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -83,28 +100,16 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.RoleAssignment;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -118,11 +123,13 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -132,17 +139,22 @@ import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.MemoryVirtualFile;
+import org.labkey.api.writer.ZipFile;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.CoreModule;
-import org.labkey.core.admin.FolderManagementAction.FolderManagementTabStrip;
+import org.labkey.core.admin.ProjectSettingsAction.LookAndFeelView;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
+import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -152,12 +164,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.beans.Introspector;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -202,8 +219,7 @@ public class AdminController extends SpringActionController
             AdminController.class,
             FilesSiteSettingsAction.class,
             FileListAction.class,
-            ProjectSettingsAction.class,
-            FolderManagementAction.class);
+            ProjectSettingsAction.class);
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
     private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
@@ -222,7 +238,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root), AdminPermission.class);
-        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new AdminUrlsImpl().getMissingValuesURL(root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
         AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
@@ -254,7 +270,6 @@ public class AdminController extends SpringActionController
     {
         setActionResolver(_actionResolver);
     }
-
 
     @RequiresNoPermission
     public class BeginAction extends SimpleRedirectAction
@@ -360,26 +375,31 @@ public class AdminController extends SpringActionController
 
     public static class AdminUrlsImpl implements AdminUrls
     {
+        @Override
         public ActionURL getModuleErrorsURL(Container container)
         {
             return new ActionURL(ShowModuleErrors.class, container);
         }
 
+        @Override
         public ActionURL getAdminConsoleURL()
         {
             return getShowAdminURL();
         }
 
+        @Override
         public ActionURL getModuleStatusURL(URLHelper returnURL)
         {
             return AdminController.getModuleStatusURL(returnURL);
         }
 
+        @Override
         public ActionURL getCustomizeSiteURL()
         {
             return new ActionURL(CustomizeSiteAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getCustomizeSiteURL(boolean upgradeInProgress)
         {
             ActionURL url = getCustomizeSiteURL();
@@ -390,11 +410,13 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getExperimentalFeaturesURL()
         {
             return new ActionURL(ExperimentalFeaturesAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getProjectSettingsURL(Container c)
         {
             return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
@@ -407,6 +429,7 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getProjectSettingsMenuURL(Container c)
         {
             ActionURL url = getProjectSettingsURL(c);
@@ -414,6 +437,7 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getProjectSettingsFileURL(Container c)
         {
             ActionURL url = getProjectSettingsURL(c);
@@ -421,6 +445,7 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getCustomizeEmailURL(@NotNull Container c, @Nullable Class<? extends EmailTemplate> selectedTemplate, @Nullable URLHelper returnURL)
         {
             return getCustomizeEmailURL(c, selectedTemplate == null ? null : selectedTemplate.getName(), returnURL);
@@ -445,6 +470,7 @@ public class AdminController extends SpringActionController
             return new ActionURL(ResetPropertiesAction.class, c);
         }
 
+        @Override
         public ActionURL getMaintenanceURL(URLHelper returnURL)
         {
             ActionURL url = new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
@@ -453,21 +479,25 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getManageFoldersURL(Container c)
         {
-            return AdminController.getFolderManagementURL(c, "folderTree");
+            return getFolderManagementURL(ManageFoldersAction.class, c, "folderTree");
         }
 
+        @Override
         public ActionURL getExportFolderURL(Container c)
         {
-            return AdminController.getFolderManagementURL(c, "export");
+            return getFolderManagementURL(ExportFolderAction.class, c, "export");
         }
 
+        @Override
         public ActionURL getImportFolderURL(Container c)
         {
-            return AdminController.getFolderManagementURL(c, "import");
+            return getFolderManagementURL(ImportFolderAction.class, c, "import");
         }
 
+        @Override
         public ActionURL getCreateProjectURL(@Nullable ActionURL returnURL)
         {
             return getCreateFolderURL(ContainerManager.getRoot(), returnURL);
@@ -489,6 +519,7 @@ public class AdminController extends SpringActionController
             return new ActionURL(SetFolderPermissionsAction.class, c);
         }
 
+        @Override
         public NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
             root.addChild("Admin Console", getAdminConsoleURL());
@@ -501,25 +532,34 @@ public class AdminController extends SpringActionController
             return root;
         }
 
-        public ActionURL getFolderManagementURL(Container c)
+        @Override
+        public ActionURL getFileRootManagementURL(Container c)
         {
-            return new ActionURL(FolderManagementAction.class, c);
-        }
-
-        public ActionURL getFolderManagementFileURL(Container c)
-        {
-            return AdminController.getFolderManagementURL(c, "files");
-        }
-
-        public ActionURL getFolderManagementSettingsURL(Container c)
-        {
-            return AdminController.getFolderManagementURL(c, "settings");
+            return getFolderManagementURL(FileRootsAction.class, c, "files");
         }
 
         @Override
-        public ActionURL getFolderManagementPropsURL(Container c)
+        public ActionURL getFolderSettingsURL(Container c)
         {
-            return AdminController.getFolderManagementURL(c, "props");
+            return getFolderManagementURL(FolderSettingsAction.class, c, "settings");
+        }
+
+        @Override
+        public ActionURL getNotificationsURL(Container c)
+        {
+            return getFolderManagementURL(NotificationsAction.class, c, "messages");
+        }
+
+        @Override
+        public ActionURL getModulePropertiesURL(Container c)
+        {
+            return getFolderManagementURL(ModulePropertiesAction.class, c, "props");
+        }
+
+        @Override
+        public ActionURL getMissingValuesURL(Container c)
+        {
+            return getFolderManagementURL(MissingValuesAction.class, c, "mvIndicators");
         }
 
         public ActionURL getInitialFolderSettingsURL(Container c)
@@ -527,11 +567,13 @@ public class AdminController extends SpringActionController
             return new ActionURL(SetInitialFolderSettingsAction.class, c);
         }
 
+        @Override
         public ActionURL getMemTrackerURL()
         {
             return new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getFilesSiteSettingsURL(boolean upgrade)
         {
             ActionURL url = new ActionURL(FilesSiteSettingsAction.class, ContainerManager.getRoot());
@@ -553,13 +595,11 @@ public class AdminController extends SpringActionController
         {
             return new ActionURL(TrackedAllocationsViewerAction.class, ContainerManager.getRoot());
         }
-    }
 
-    public static ActionURL getFolderManagementURL(Container c, String tabId)
-    {
-        ActionURL url = new ActionURL(FolderManagementAction.class, c);
-        url.addParameter("tabId", tabId);
-        return url;
+        public static ActionURL getFolderManagementURL(Class<? extends Controller> actionClass, Container c, String tabId)
+        {
+            return new ActionURL(actionClass, c).addParameter("tabId", tabId);
+        }
     }
 
     public static class MaintenanceBean
@@ -750,8 +790,8 @@ public class AdminController extends SpringActionController
         propValueMap.put("Displayed Title", PageFlowUtil.filter(c.getTitle()));
         propValueMap.put("EntityId", c.getId());
         propValueMap.put("RowId", c.getRowId());
-        propValueMap.put("Created", c.getCreated());
-        propValueMap.put("Created By", (createdBy != null ? createdBy.getDisplayName(currentUser) : "<" + c.getCreatedBy() + ">"));
+        propValueMap.put("Created", PageFlowUtil.filter(DateUtil.formatDateTime(c, c.getCreated())));
+        propValueMap.put("Created By", (createdBy != null ? PageFlowUtil.filter(createdBy.getDisplayName(currentUser)) : "<" + c.getCreatedBy() + ">"));
         propValueMap.put("Folder Type", PageFlowUtil.filter(c.getFolderType().getName()));
         propValueMap.put("Description", PageFlowUtil.filter(c.getDescription()));
         return new HtmlView(PageFlowUtil.getDataRegionHtmlForPropertyObjects(propValueMap));
@@ -1091,7 +1131,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                return getFolderManagementURL(c, "settings");
+                return new AdminUrlsImpl().getFolderSettingsURL(c);
             }
         }
     }
@@ -1370,7 +1410,7 @@ public class AdminController extends SpringActionController
         void setEnabledCloudStore(String[] enabledCloudStore);
     }
 
-    public interface FolderSettingsForm
+    public interface SettingsForm
     {
         String getDefaultDateFormat();
 
@@ -1393,7 +1433,7 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, FolderSettingsForm
+    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, SettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -3934,7 +3974,7 @@ public class AdminController extends SpringActionController
         {
             FolderManagementViewAction<FORM> that = this;
 
-            return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
+            return new FolderManagement.FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
             {
                 @Override
                 public HttpView getTabView(String tabId) throws Exception
@@ -3989,7 +4029,7 @@ public class AdminController extends SpringActionController
         {
             FolderManagementViewPostAction<FORM> that = this;
 
-            return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
+            return new FolderManagement.FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
             {
                 @Override
                 public HttpView getTabView(String tabId) throws Exception
@@ -4145,6 +4185,1297 @@ public class AdminController extends SpringActionController
                 MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
                 return true;
             }
+        }
+    }
+
+
+    public static class ExportFolderForm
+    {
+        private String[] _types;
+        private int _location;
+        private String _format = "new"; // As of 14.3, this is the only supported format. But leave in place for the future.
+        private String _exportType;
+        private boolean _includeSubfolders;
+        private boolean _removeProtected;
+        private boolean _removePhi;
+        private PHI _exportPhiLevel;
+        private boolean _shiftDates;
+        private boolean _alternateIds;
+        private boolean _maskClinic;
+
+        public String[] getTypes()
+        {
+            return _types;
+        }
+
+        public void setTypes(String[] types)
+        {
+            _types = types;
+        }
+
+        public int getLocation()
+        {
+            return _location;
+        }
+
+        public void setLocation(int location)
+        {
+            _location = location;
+        }
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        public void setFormat(String format)
+        {
+            _format = format;
+        }
+
+        public AbstractFolderContext.ExportType getExportType()
+        {
+            if ("study".equals(_exportType))
+                return AbstractFolderContext.ExportType.STUDY;
+            else
+                return AbstractFolderContext.ExportType.ALL;
+        }
+
+        public void setExportType(String exportType)
+        {
+            _exportType = exportType;
+        }
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+
+        public boolean isRemoveProtected()
+        {
+            return _removeProtected;
+        }
+
+        public void setRemoveProtected(boolean removeProtected)
+        {
+            _removeProtected = removeProtected;
+        }
+
+        public boolean isRemovePhi()
+        {
+            return _removePhi;
+        }
+
+        public void setRemovePhi(boolean removePhi)
+        {
+            _removePhi = removePhi;
+        }
+
+        public PHI getExportPhiLevel()
+        {
+            return _exportPhiLevel;
+        }
+
+        public void setExportPhiLevel(PHI exportPhiLevel)
+        {
+            _exportPhiLevel = exportPhiLevel;
+        }
+
+        public boolean isShiftDates()
+        {
+            return _shiftDates;
+        }
+
+        public void setShiftDates(boolean shiftDates)
+        {
+            _shiftDates = shiftDates;
+        }
+
+        public boolean isAlternateIds()
+        {
+            return _alternateIds;
+        }
+
+        public void setAlternateIds(boolean alternateIds)
+        {
+            _alternateIds = alternateIds;
+        }
+
+        public boolean isMaskClinic()
+        {
+            return _maskClinic;
+        }
+
+        public void setMaskClinic(boolean maskClinic)
+        {
+            _maskClinic = maskClinic;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ExportFolderAction extends FolderManagementViewPostAction<ExportFolderForm>
+    {
+        private ActionURL _successURL = null;
+
+        @Override
+        public ModelAndView getView(ExportFolderForm exportFolderForm, boolean reshow, BindException errors) throws Exception
+        {
+            // In export-to-browser do nothing (leave the export page in place). We just exported to the response, so
+            // rendering a view would throw.
+            return reshow && !errors.hasErrors() ? null : super.getView(exportFolderForm, reshow, errors);
+        }
+
+        @Override
+        HttpView getTabView(ExportFolderForm form, BindException errors) throws Exception
+        {
+            form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
+            return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(ExportFolderForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ExportFolderForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            if (container.isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            FolderWriterImpl writer = new FolderWriterImpl();
+            FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
+                    form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isRemovePhi(), form.getExportPhiLevel(), form.isShiftDates(),
+                    form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+
+            switch(form.getLocation())
+            {
+                case 0:
+                {
+                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                    if (root == null || !root.isValid())
+                    {
+                        throw new NotFoundException("No valid pipeline root found");
+                    }
+                    File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
+                    try
+                    {
+                        writer.write(container, ctx, new FileSystemFile(exportDir));
+                    }
+                    catch (Container.ContainerException e)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    }
+                    _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
+                    break;
+                }
+                case 1:
+                {
+                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                    if (root == null || !root.isValid())
+                    {
+                        throw new NotFoundException("No valid pipeline root found");
+                    }
+                    File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
+                    exportDir.mkdir();
+                    try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
+                    {
+                        writer.write(container, ctx, zip);
+                    }
+                    catch (Container.ContainerException e)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    }
+                    _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
+                    break;
+                }
+                case 2:
+                {
+                    // Write to stream first, so any error can be reported properly
+                    try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStream outputStream = new BufferedOutputStream(baos))
+                    {
+                        try (ZipFile zip = new ZipFile(outputStream, true))
+                        {
+                            writer.write(container, ctx, zip);
+                        }
+
+                        PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"), baos.toByteArray(), false);
+                    }
+                    catch (Container.ContainerException e)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    }
+                    break;
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ExportFolderForm exportFolderForm)
+        {
+            return _successURL;
+        }
+    }
+
+
+    public static class ImportFolderForm
+    {
+        private boolean _createSharedDatasets;
+        private boolean _validateQueries;
+        private boolean _advancedImportOptions;
+        private String _sourceTemplateFolder;
+        private String _sourceTemplateFolderId;
+        private String _origin;
+
+        public boolean isCreateSharedDatasets()
+        {
+            return _createSharedDatasets;
+        }
+
+        public void setCreateSharedDatasets(boolean createSharedDatasets)
+        {
+            _createSharedDatasets = createSharedDatasets;
+        }
+
+        public boolean isValidateQueries()
+        {
+            return _validateQueries;
+        }
+
+        public void setValidateQueries(boolean validateQueries)
+        {
+            _validateQueries = validateQueries;
+        }
+
+        public boolean isAdvancedImportOptions()
+        {
+            return _advancedImportOptions;
+        }
+
+        public void setAdvancedImportOptions(boolean advancedImportOptions)
+        {
+            _advancedImportOptions = advancedImportOptions;
+        }
+
+        public String getSourceTemplateFolder()
+        {
+            return _sourceTemplateFolder;
+        }
+
+        public void setSourceTemplateFolder(String sourceTemplateFolder)
+        {
+            _sourceTemplateFolder = sourceTemplateFolder;
+        }
+
+        public String getSourceTemplateFolderId()
+        {
+            return _sourceTemplateFolderId;
+        }
+
+        public void setSourceTemplateFolderId(String sourceTemplateFolderId)
+        {
+            _sourceTemplateFolderId = sourceTemplateFolderId;
+        }
+
+        public String getOrigin()
+        {
+            return _origin;
+        }
+
+        public void setOrigin(String origin)
+        {
+            _origin = origin;
+        }
+
+        public Container getSourceTemplateFolderContainer()
+        {
+            if (null == getSourceTemplateFolderId())
+                return null;
+            return ContainerManager.getForId(getSourceTemplateFolderId().replace(',', ' ').trim());
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ImportFolderAction extends FolderManagementViewPostAction<ImportFolderForm>
+    {
+        private ActionURL _successURL;
+
+        @Override
+        HttpView getTabView(ImportFolderForm form, BindException errors) throws Exception
+        {
+            // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
+            if (!errors.hasErrors())
+            {
+                form.setCreateSharedDatasets(true);
+                form.setValidateQueries(true);
+            }
+
+            return new JspView<>("/org/labkey/core/admin/importFolder.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(ImportFolderForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ImportFolderForm form, BindException errors) throws Exception
+        {
+            ViewContext context = getViewContext();
+            ActionURL url = context.getActionURL();
+            User user = getUser();
+            Container container = getContainer();
+            PipeRoot pipelineRoot;
+            boolean isStudy = false;
+            File archiveXml;
+            File pipelineUnzipDir;
+            File pipelineUnzipFile;
+            PipelineUrls pipelineUrlProvider;
+            String originalFileName;
+            File archiveFile;
+            boolean fromTemplateSourceFolder;
+
+            if (form.getOrigin() == null)
+            {
+                form.setOrigin("Folder");
+            }
+
+            // don't allow import into the root container
+            if (container.isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            // make sure we have a pipeline url provider to use for the success URL redirect
+            pipelineUrlProvider = PageFlowUtil.urlProvider(PipelineUrls.class);
+            if (pipelineUrlProvider == null)
+            {
+                errors.reject("folderImport", "Pipeline url provider does not exist.");
+                return false;
+            }
+
+            // make sure that the pipeline root is valid for this container
+            pipelineRoot = PipelineService.get().findPipelineRoot(container);
+            if (!PipelineService.get().hasValidPipelineRoot(container) || pipelineRoot == null)
+            {
+                errors.reject("folderImport", "Pipeline root not set or does not exist on disk.");
+                return false;
+            }
+
+            // make sure we are able to delete any existing unzip dir in the pipeline root
+            try
+            {
+                pipelineUnzipDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+            }
+            catch (DirectoryNotDeletedException e)
+            {
+                errors.reject("studyImport", "Import failed: Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
+                return false;
+            }
+
+            if (!StringUtils.isEmpty(form.getSourceTemplateFolder()))
+            {
+                // user choose to import from a template source folder
+
+                Container sourceContainer = form.getSourceTemplateFolderContainer();
+
+                // In order to support the Advanced import options to import into multiple target folders we need to zip
+                // the source template folder so that the zip file can be passed to the pipeline processes.
+                FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
+                        getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
+                        false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                FolderWriterImpl writer = new FolderWriterImpl();
+                String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
+                try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
+                {
+                    writer.write(sourceContainer, ctx, zip);
+                }
+                catch (Container.ContainerException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                }
+                File implicitZipFile = new File(pipelineUnzipDir, zipFileName);
+
+                // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
+                ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
+
+                fromTemplateSourceFolder = StringUtils.isNotEmpty(form.getSourceTemplateFolderId());
+                originalFileName = implicitZipFile.getName();
+                archiveFile = implicitZipFile;
+            }
+            else
+            {
+                // user chose to import from a zip file
+
+                Map<String, MultipartFile> map = getFileMap();
+
+                // make sure we have a single file selected for import
+                if (map.isEmpty() || map.size() > 1)
+                {
+                    errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
+                    return false;
+                }
+
+                // make sure the file is not empty and that it has a .zip extension
+                MultipartFile zipFile = map.values().iterator().next();
+                if (0 == zipFile.getSize() || StringUtils.isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
+                {
+                    errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
+                    return false;
+                }
+
+                // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
+                try
+                {
+                    pipelineUnzipFile = new File(pipelineUnzipDir, zipFile.getOriginalFilename());
+                    pipelineUnzipFile.getParentFile().mkdirs();
+                    pipelineUnzipFile.createNewFile();
+                    FileUtil.copyData(zipFile.getInputStream(), pipelineUnzipFile);
+                    ZipUtil.unzipToDirectory(pipelineUnzipFile, pipelineUnzipDir);
+                }
+                catch (FileNotFoundException e)
+                {
+                    errors.reject("folderImport", "File not found.");
+                    return false;
+                }
+                catch (IOException e)
+                {
+                    errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
+                    return false;
+                }
+
+                fromTemplateSourceFolder = false;
+                originalFileName = zipFile.getOriginalFilename();
+                archiveFile = pipelineUnzipFile;
+            }
+
+            // get the main xml file from the unzipped import archive
+            archiveXml = new File(pipelineUnzipDir, "folder.xml");
+            if (!archiveXml.exists())
+            {
+                archiveXml = new File(pipelineUnzipDir, "study.xml");
+                isStudy = true;
+            }
+            if (!archiveXml.exists())
+            {
+                errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
+                return false;
+            }
+
+            ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
+            options.setSkipQueryValidation(!form.isValidateQueries());
+            options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+            options.setAdvancedImportOptions(form.isAdvancedImportOptions());
+
+            // if the option is selected to show the advanced import options, redirect to there
+            if (form.isAdvancedImportOptions())
+            {
+                // archiveFile is the zip of the source template folder located in the current container's unzip dir
+                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), archiveFile, isStudy, options, fromTemplateSourceFolder);
+                return true;
+            }
+
+            // finally, create the study or folder import pipeline job
+            _successURL = pipelineUrlProvider.urlBegin(container);
+            if (isStudy)
+                StudyService.get().runStudyImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
+            else
+                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ImportFolderForm importFolderForm)
+        {
+            return _successURL;
+        }
+    }
+
+
+    private Set<String> getRegisteredFolderWritersForImplicitExport(Container sourceContainer)
+    {
+        // this method is very similar to CoreController.GetRegisteredFolderWritersAction.execute() method, but instead of
+        // of building up a map of Writer object names to display in the UI, we are instead adding them to the list of Writers
+        // to apply during the implicit export.
+        Set<String> registeredFolderWriters = new HashSet<>();
+        FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null == registry)
+        {
+            throw new RuntimeException();
+        }
+        Collection<FolderWriter> registeredWriters = registry.getRegisteredFolderWriters();
+        for (FolderWriter writer : registeredWriters)
+        {
+            String dataType = writer.getDataType();
+            boolean excludeForDataspace = sourceContainer.isDataspace() && "Study".equals(dataType);
+            boolean excludeForTemplate = !writer.includeWithTemplate();
+
+            if (dataType != null && writer.show(sourceContainer) && !excludeForDataspace && !excludeForTemplate)
+            {
+                registeredFolderWriters.add(dataType);
+
+                // for each Writer also determine if their are related children Writers, if so include them also
+                Collection<org.labkey.api.writer.Writer> childWriters = writer.getChildren(true, true);
+                if (childWriters != null && childWriters.size() > 0)
+                {
+                    for (org.labkey.api.writer.Writer child : childWriters)
+                    {
+                        dataType = child.getDataType();
+                        if (dataType != null)
+                            registeredFolderWriters.add(dataType);
+                    }
+                }
+            }
+        }
+        return registeredFolderWriters;
+    }
+
+
+    public static class FolderSettingsForm implements SettingsForm
+    {
+        private String _defaultDateFormat;
+        private String _defaultDateTimeFormat;
+        private String _defaultNumberFormat;
+        private boolean _restrictedColumnsEnabled;
+
+        public String getDefaultDateFormat()
+        {
+            return _defaultDateFormat;
+        }
+
+        public void setDefaultDateFormat(String defaultDateFormat)
+        {
+            _defaultDateFormat = defaultDateFormat;
+        }
+
+        public String getDefaultDateTimeFormat()
+        {
+            return _defaultDateTimeFormat;
+        }
+
+        public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
+        {
+            _defaultDateTimeFormat = defaultDateTimeFormat;
+        }
+
+        public String getDefaultNumberFormat()
+        {
+            return _defaultNumberFormat;
+        }
+
+        public void setDefaultNumberFormat(String defaultNumberFormat)
+        {
+            _defaultNumberFormat = defaultNumberFormat;
+        }
+
+        public boolean areRestrictedColumnsEnabled()
+        {
+            return _restrictedColumnsEnabled;
+        }
+
+        public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
+        {
+            _restrictedColumnsEnabled = restrictedColumnsEnabled;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class FolderSettingsAction extends FolderManagementViewPostAction<FolderSettingsForm>
+    {
+        @Override
+        HttpView getTabView(FolderSettingsForm form, BindException errors) throws Exception
+        {
+            return new LookAndFeelView(getContainer(), null, errors);
+        }
+
+        @Override
+        public void validateCommand(FolderSettingsForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+
+            if (!ProjectSettingsAction.saveFolderSettings(c, form, props, getUser(), errors))
+                return false;
+//TODO            _successURL = getViewContext().getActionURL();
+
+            return true;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ModulePropertiesAction extends FolderManagementViewAction
+    {
+        @Override
+        HttpView getTabView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", null, errors);
+        }
+    }
+
+
+    public static class FolderTypeForm
+    {
+        private String[] _activeModules = new String[ModuleLoader.getInstance().getModules().size()];
+        private String _defaultModule;
+        private String _folderType;
+        private boolean _wizard;
+
+        public String[] getActiveModules()
+        {
+            return _activeModules;
+        }
+
+        public void setActiveModules(String[] activeModules)
+        {
+            _activeModules = activeModules;
+        }
+
+        public String getDefaultModule()
+        {
+            return _defaultModule;
+        }
+
+        public void setDefaultModule(String defaultModule)
+        {
+            _defaultModule = defaultModule;
+        }
+
+        public String getFolderType()
+        {
+            return _folderType;
+        }
+
+        public void setFolderType(String folderType)
+        {
+            _folderType = folderType;
+        }
+
+        public boolean isWizard()
+        {
+            return _wizard;
+        }
+
+        public void setWizard(boolean wizard)
+        {
+            _wizard = wizard;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class FolderTypeAction extends FolderManagementViewPostAction<FolderTypeForm>
+    {
+        private ActionURL _successURL = null;
+
+        @Override
+        HttpView getTabView(FolderTypeForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/folderType.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(FolderTypeForm form, Errors errors)
+        {
+            boolean fEmpty = true;
+            for (String module : form._activeModules)
+            {
+                if (module != null)
+                {
+                    fEmpty = false;
+                    break;
+                }
+            }
+            if (fEmpty && "None".equals(form.getFolderType()))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Error: Please select at least one module to display.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(FolderTypeForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            if (container.isRoot())
+            {
+                throw new NotFoundException();
+            }
+
+            String[] modules = form.getActiveModules();
+
+            if (modules.length == 0)
+            {
+                errors.reject(null, "At least one module must be selected");
+                return false;
+            }
+
+            Set<Module> activeModules = new HashSet<>();
+            for (String moduleName : modules)
+            {
+                Module module = ModuleLoader.getInstance().getModule(moduleName);
+                if (module != null)
+                    activeModules.add(module);
+            }
+
+            if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+            {
+                container.setFolderType(FolderType.NONE, activeModules, getUser(), errors);
+                Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
+                container.setDefaultModule(defaultModule);
+            }
+            else
+            {
+                FolderType folderType = FolderTypeManager.get().getFolderType(form.getFolderType());
+                if (container.isContainerTab() && folderType.hasContainerTabs())
+                    errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
+                else
+                    container.setFolderType(folderType, activeModules, getUser(), errors);
+            }
+            if (errors.hasErrors())
+                return false;
+
+            if (form.isWizard())
+            {
+                _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(container);
+                _successURL.addParameter("wizard", Boolean.TRUE.toString());
+            }
+            else
+                _successURL = container.getFolderType().getStartURL(container, getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(FolderTypeForm folderTypeForm)
+        {
+            return _successURL;
+        }
+    }
+
+
+    public static class FileRootsForm extends SetupForm implements FileManagementForm
+    {
+        private String _folderRootPath;
+        private String _fileRootOption;
+
+        // cloud settings
+        private String[] _enabledCloudStore;
+        //file management
+        public String getFolderRootPath()
+        {
+            return _folderRootPath;
+        }
+
+        public void setFolderRootPath(String folderRootPath)
+        {
+            _folderRootPath = folderRootPath;
+        }
+
+        public String getFileRootOption()
+        {
+            return _fileRootOption;
+        }
+
+        public void setFileRootOption(String fileRootOption)
+        {
+            _fileRootOption = fileRootOption;
+        }
+
+        @Override
+        public String[] getEnabledCloudStore()
+        {
+            return _enabledCloudStore;
+        }
+
+        @Override
+        public void setEnabledCloudStore(String[] enabledCloudStore)
+        {
+            _enabledCloudStore = enabledCloudStore;
+        }
+
+        public boolean isDisableFileSharing()
+        {
+            return ProjectSettingsForm.FileRootProp.disable.name().equals(getFileRootOption());
+        }
+
+        public boolean hasSiteDefaultRoot()
+        {
+            return ProjectSettingsForm.FileRootProp.siteDefault.name().equals(getFileRootOption());
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
+    {
+        @Override
+        HttpView getTabView(FileRootsForm form, BindException errors) throws Exception
+        {
+            HttpView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
+
+            try
+            {
+                setConfirmMessage(getViewContext(), form);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+
+            return view;
+        }
+
+        @Override
+        public void validateCommand(FileRootsForm form, Errors errors)
+        {
+
+        }
+
+        @Override
+        public boolean handlePost(FileRootsForm form, BindException errors) throws Exception
+        {
+            // File root settings
+            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+            if (service != null)
+            {
+                if (form.isPipelineRootForm())
+                    return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
+                else
+                {
+                    setFileRootFromForm(getViewContext(), form);
+                }
+            }
+
+            // Cloud settings
+            setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
+
+            return true;
+        }
+    }
+
+
+    public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form)
+    {
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+
+        if (form.isDisableFileSharing())
+            service.disableFileRoot(ctx.getContainer());
+        else if (form.hasSiteDefaultRoot())
+            service.setIsUseDefaultRoot(ctx.getContainer(), true);
+        else
+        {
+            String root = StringUtils.trimToNull(form.getFolderRootPath());
+
+            // test permissions.  only site admins are able to turn on a custom file root for a folder
+            // this is only relevant if the folder is either being switched to a custom file root,
+            // or if the file root is changed.
+            if (!service.isUseDefaultRoot(ctx.getContainer()) && !service.getFileRoot(ctx.getContainer()).getPath().equalsIgnoreCase(form.getFolderRootPath()))
+            {
+                if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
+                    throw new UnauthorizedException("Only site admins change change file roots");
+            }
+
+            if (root != null)
+            {
+                service.setIsUseDefaultRoot(ctx.getContainer(), false);
+                service.setFileRoot(ctx.getContainer(), new File(root));
+            }
+            else
+                service.setFileRoot(ctx.getContainer(), null);
+        }
+    }
+
+
+    public static void setEnabledCloudStores(ViewContext ctx, String[] enabledCloudStores)
+    {
+        CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
+        if (cloud != null)
+        {
+            Set<String> enabled = Collections.emptySet();
+            if (enabledCloudStores != null)
+                enabled = new HashSet<>(Arrays.asList(enabledCloudStores));
+            cloud.setEnabledCloudStores(ctx.getContainer(), enabled);
+        }
+    }
+
+
+    public static void setConfirmMessage(ViewContext ctx, FileManagementForm form) throws IllegalArgumentException
+    {
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        String confirmMessage = null;
+
+        if (service != null)
+        {
+            if (service.isFileRootDisabled(ctx.getContainer()))
+            {
+                form.setFileRootOption(ProjectSettingsForm.FileRootProp.disable.name());
+                confirmMessage = "File sharing has been disabled for this " + ctx.getContainer().getContainerNoun();
+            }
+            else if (service.isUseDefaultRoot(ctx.getContainer()))
+            {
+                form.setFileRootOption(ProjectSettingsForm.FileRootProp.siteDefault.name());
+                File root = service.getFileRoot(ctx.getContainer());
+                if (root != null && root.exists())
+                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath();
+            }
+            else
+            {
+                File root = service.getFileRoot(ctx.getContainer());
+
+                form.setFileRootOption(ProjectSettingsForm.FileRootProp.folderOverride.name());
+                if (root != null)
+                {
+                    root = FileUtil.getAbsoluteCaseSensitiveFile(root);
+                    form.setFolderRootPath(root.getAbsolutePath());
+                    if (root.exists())
+                        confirmMessage = "The file root is set to: " + root.getAbsolutePath();
+                    else
+                        throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + ctx.getRequest().getServerName() + ".");
+                }
+            }
+        }
+
+        if (ctx.getActionURL().getParameter("rootSet") != null && confirmMessage != null)
+            form.setConfirmMessage(confirmMessage);
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ManageFoldersAction extends FolderManagementViewAction
+    {
+        @Override
+        HttpView getTabView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/manageFolders.jsp", null, errors);
+        }
+    }
+
+
+    public static class NotificationsForm
+    {
+        private String _provider;
+
+        public String getProvider()
+        {
+            return _provider;
+        }
+
+        public void setProvider(String provider)
+        {
+            _provider = provider;
+        }
+    }
+
+
+    private static final String DATA_REGION_NAME = "Users";
+
+    @RequiresPermission(AdminPermission.class)
+    public class NotificationsAction extends FolderManagementViewPostAction<NotificationsForm>
+    {
+        @Override
+        HttpView getTabView(NotificationsForm form, BindException errors) throws Exception
+        {
+            final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
+            DataRegionSelection.clearAll(getViewContext(), key);
+
+            QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME);
+            settings.setAllowChooseView(true);
+            settings.getBaseSort().insertSortColumn("DisplayName");
+
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+            QueryView queryView = new QueryView(schema, settings, errors)
+            {
+                @Override
+                public List<DisplayColumn> getDisplayColumns()
+                {
+                    List<DisplayColumn> columns = new ArrayList<>();
+                    SecurityPolicy policy = getContainer().getPolicy();
+                    Set<String> assignmentSet = new HashSet<>();
+
+                    assignmentSet.add(SecurityManager.getGroup(Group.groupAdministrators).getName());
+                    assignmentSet.add(SecurityManager.getGroup(Group.groupDevelopers).getName());
+
+                    for (RoleAssignment assignment : policy.getAssignments())
+                    {
+                        Group g = SecurityManager.getGroup(assignment.getUserId());
+                        if (g != null)
+                            assignmentSet.add(g.getName());
+                    }
+
+                    for (DisplayColumn col : super.getDisplayColumns())
+                    {
+                        if (col.getName().equalsIgnoreCase("Groups"))
+                            columns.add(new FolderGroupColumn(assignmentSet, col.getColumnInfo()));
+                        else
+                            columns.add(col);
+                    }
+                    return columns;
+                }
+
+                @Override
+                protected void populateButtonBar(DataView dataView, ButtonBar bar)
+                {
+                    try
+                    {
+                        // add the provider configuration menu items to the admin panel button
+                        MenuButton adminButton = new MenuButton("Update user settings");
+                        adminButton.setRequiresSelection(true);
+                        for (ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
+                            adminButton.addMenuItem("For " + provider.getName().toLowerCase(), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
+
+                        bar.add(adminButton);
+                        super.populateButtonBar(dataView, bar);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            queryView.setShadeAlternatingRows(true);
+            queryView.setShowBorders(true);
+            queryView.setShowDetailsColumn(false);
+            queryView.setShowRecordSelectors(true);
+            queryView.setFrame(WebPartView.FrameType.NONE);
+            queryView.disableContainerFilterSelection();
+            queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+
+            VBox defaultsView = new VBox(
+                    new HtmlView(
+                            "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
+                                    "You can change this folder's default settings for email notifications here.")
+            );
+
+            PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
+            for (ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
+            {
+                defaultsView.addView(new JspView<>("/org/labkey/core/admin/view/notifySettings.jsp", provider.createConfigForm(getViewContext(), config)));
+            }
+
+            return new VBox(
+                    new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, errors),
+                    defaultsView,
+                    new VBox(
+                            new HtmlView(
+                                    "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
+                                            "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
+                                            "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
+                                            "visible in the appropriately named column.<br/><br/>" +
+                                            "To bulk edit individual settings: select one or more users, click the 'Update user settings' menu, and select the notification type."),
+                            queryView
+                    )
+            );
+        }
+
+        @Override
+        public void validateCommand(NotificationsForm form, Errors errors)
+        {
+            ConfigTypeProvider provider = MessageConfigService.get().getConfigType(form.getProvider());
+
+            if (provider != null)
+                provider.validateCommand(getViewContext(), errors);
+        }
+
+        @Override
+        public boolean handlePost(NotificationsForm form, BindException errors) throws Exception
+        {
+            ConfigTypeProvider provider = MessageConfigService.get().getConfigType(form.getProvider());
+
+            if (provider != null)
+            {
+                return provider.handlePost(getViewContext(), errors);
+            }
+            errors.reject(SpringActionController.ERROR_MSG, "Unable to find the selected config provider");
+            return false;
+        }
+    }
+
+
+    private static class FolderGroupColumn extends DataColumn
+    {
+        private final Set<String> _assignmentSet;
+
+        public FolderGroupColumn(Set<String> assignmentSet, ColumnInfo col)
+        {
+            super(col);
+            _assignmentSet = assignmentSet;
+        }
+
+        @Override
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            String value = (String)ctx.get(getBoundColumn().getDisplayField().getFieldKey());
+
+            if (value != null)
+            {
+                StringBuilder sb = new StringBuilder();
+                String delim = "";
+
+                for (String name : value.split(","))
+                {
+                    if (_assignmentSet.contains(name))
+                    {
+                        sb.append(delim);
+                        sb.append(name);
+                        delim = ",<br>";
+                    }
+                }
+                out.write(sb.toString());
+            }
+        }
+    }
+
+
+    private static class PanelConfig implements MessageConfigService.PanelInfo
+    {
+        private final ActionURL _returnUrl;
+        private final String _dataRegionSelectionKey;
+
+        public PanelConfig(ActionURL returnUrl, String selectionKey)
+        {
+            _returnUrl = returnUrl;
+            _dataRegionSelectionKey = selectionKey;
+        }
+
+        @Override
+        public ActionURL getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        @Override
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+    }
+
+
+    public static class ConceptsForm
+    {
+        private String _conceptURI;
+        private String _containerId;
+        private String _schemaName;
+        private String _queryName;
+
+        public String getConceptURI()
+        {
+            return _conceptURI;
+        }
+
+        public void setConceptURI(String conceptURI)
+        {
+            _conceptURI = conceptURI;
+        }
+
+        public String getContainerId()
+        {
+            return _containerId;
+        }
+
+        public void setContainerId(String containerId)
+        {
+            _containerId = containerId;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
+    {
+        @Override
+        HttpView getTabView(ConceptsForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(ConceptsForm form, Errors errors)
+        {
+            // validate that the required input fields are provided
+            String missingRequired = "", sep = "";
+            if (form.getConceptURI() == null)
+            {
+                missingRequired += "conceptURI";
+                sep = ", ";
+            }
+            if (form.getSchemaName() == null)
+            {
+                missingRequired += sep + "schemaName";
+                sep = ", ";
+            }
+            if (form.getQueryName() == null)
+                missingRequired += sep + "queryName";
+            if (missingRequired.length() > 0)
+                errors.reject(SpringActionController.ERROR_MSG, "Missing required field(s): " + missingRequired + ".");
+
+            // validate that, if provided, the containerId matches an existing container
+            Container postContainer = null;
+            if (form.getContainerId() != null)
+            {
+                postContainer = ContainerManager.getForId(form.getContainerId());
+                if (postContainer == null)
+                    errors.reject(SpringActionController.ERROR_MSG, "Container does not exist for containerId provided.");
+            }
+
+            // validate that the schema and query names provided exist
+            if (form.getSchemaName() != null && form.getQueryName() != null)
+            {
+                Container c = postContainer != null ? postContainer : getContainer();
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), c, form.getSchemaName());
+                if (schema == null)
+                    errors.reject(SpringActionController.ERROR_MSG, "UserSchema '" + form.getSchemaName() + "' not found.");
+                else if (schema.getTable(form.getQueryName()) == null)
+                    errors.reject(SpringActionController.ERROR_MSG, "Table '" + form.getSchemaName() + "." + form.getQueryName() + "' not found.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(ConceptsForm form, BindException errors) throws Exception
+        {
+            Lookup lookup = new Lookup(ContainerManager.getForId(form.getContainerId()), form.getSchemaName(), form.getQueryName());
+            ConceptURIProperties.setLookup(getContainer(), form.getConceptURI(), lookup);
+
+            return true;
         }
     }
 

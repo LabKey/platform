@@ -282,8 +282,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static ActionURL getAdminEmailURL(Container c, URLHelper returnURL)
     {
-        ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
-        url.addParameter("tabId", "messages");
+        ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getNotificationsURL(c);
         url.addReturnURL(returnURL);
         return url;
     }
@@ -2177,7 +2176,7 @@ public class AnnouncementsController extends SpringActionController
                 this.settings = settings;
                 filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
                 adminURL = c.hasPermission(user, AdminPermission.class) ? getAdminURL(c, url) : null;
-                emailPrefsURL   = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
+                emailPrefsURL = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
                 emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
                 containerEmailTemplateURL = c.hasPermission(user, AdminPermission.class) ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, AnnouncementManager.NotificationEmailTemplate.class, url) : null;
                 siteEmailTemplateURL = user.isSiteAdmin() ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, url) : null;

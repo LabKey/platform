@@ -315,12 +315,12 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
             else
             {
-                FolderManagementAction.setFileRootFromForm(getViewContext(), form);
+                AdminController.setFileRootFromForm(getViewContext(), form);
             }
         }
 
         // Cloud settings
-        FolderManagementAction.setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
+        AdminController.setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
 
         return true;
     }
@@ -469,7 +469,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     {
                         try
                         {
-                            FolderManagementAction.setConfirmMessage(getViewContext(), _form);
+                            AdminController.setConfirmMessage(getViewContext(), _form);
                         }
                         catch (IllegalArgumentException e)
                         {
@@ -576,7 +576,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
 
     // Validate and populate the folder settings; save & log all changes
-    public static boolean saveFolderSettings(Container c, AdminController.FolderSettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
+    public static boolean saveFolderSettings(Container c, AdminController.SettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
         String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
         if (null == defaultDateFormat)

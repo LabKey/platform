@@ -300,8 +300,10 @@
 %>
 
 <%
-    String customWelcomeHelp = "The relative URL of the page, either a full LabKey view or simple HTML resource, to be loaded as the welcome page.  The welcome page will be loaded when a user loads the site with no action provided (i.e. https://labkey.org).  This is often used to provide a splash screen for guests.  Note: do not include the contextPath in this string.  " +
-            " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
+    String customWelcomeHelp = "The relative URL of the page, either a full LabKey view or simple HTML resource, to be loaded as the welcome page." +
+        " The welcome page will be loaded when a user loads the site with no action provided (i.e. https://www.labkey.org)." +
+        " This is often used to provide a splash screen for guests. Note: do not include the contextPath in this string." +
+        " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
 %>
 <tr>
     <td colspan=2>Provide a custom site welcome page (<%=text(bean.welcomeLink)%>)</td>

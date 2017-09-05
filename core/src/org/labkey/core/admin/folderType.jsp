@@ -23,17 +23,15 @@
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="org.labkey.core.admin.AdminController.FolderTypeForm" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -48,7 +46,7 @@
 var requiredModules = {};
 var defaultModules = {};  <% // This is used... Java code below generates JavaScript that references defaultModules[] %>
 <% //Generate javascript objects...
-    FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
+    FolderTypeForm form = (FolderTypeForm) HttpView.currentModel();
     final ViewContext context = getViewContext();
     Container c = getContainer();
     boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
@@ -236,7 +234,7 @@ function validate()
     return false;
 }
 </script>
-<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>" onsubmit="return validate();">
+<labkey:form name="folderModules" id="folderModules" method="POST" onsubmit="return validate();">
     <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>

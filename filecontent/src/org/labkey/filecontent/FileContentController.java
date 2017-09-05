@@ -940,8 +940,7 @@ public class FileContentController extends SpringActionController
 
                     if (containsFileWebPart(c))
                     {
-                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
-                        config.addParameter("tabId", "files");
+                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getFileRootManagementURL(c);
 
                         node.put("configureURL", config.getEncodedLocalURIString());
                         node.put("browseURL", browse.getEncodedLocalURIString());
@@ -953,8 +952,7 @@ public class FileContentController extends SpringActionController
                     children.add(node);
                 }
             }
-            catch (MissingRootDirectoryException e){}
-            catch (UnsetRootDirectoryException e){}
+            catch (MissingRootDirectoryException | UnsetRootDirectoryException e){}
 
             // include all child containers
             for (Container child : c.getChildren())

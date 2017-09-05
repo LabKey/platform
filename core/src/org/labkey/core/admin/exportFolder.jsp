@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.ExportFolderForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -35,7 +35,7 @@
 <%
 ViewContext context = getViewContext();
 Container c = context.getContainerNoTab();
-FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
+ExportFolderForm form = (ExportFolderForm) HttpView.currentModel();
 
 Study study = StudyService.get() != null ? StudyService.get().getStudy(c) : null;
 String subjectNoun = study != null ? study.getSubjectNounSingular() : null;

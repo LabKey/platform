@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.admin.AdminController.ImportFolderForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -33,13 +33,13 @@
     }
 %>
 <%
-    FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
+    ImportFolderForm form = (ImportFolderForm) HttpView.currentModel();
     Container c = getViewContext().getContainerNoTab();
     Container project = c.getProject();
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
     boolean isStudyRequest = requestOrigin.equals("Study") || requestOrigin.equals("Reload");
-
     boolean canCreateSharedDatasets = false;
+
     if (isStudyRequest && !c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
@@ -106,7 +106,7 @@
         <td>
             <%=h(mainDescription)%>
             <br/><br/>
-            <%=(helpLinkTxt)%>
+            <%=text(helpLinkTxt)%>
         </td>
     </tr>
     <tr>

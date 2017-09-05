@@ -127,7 +127,7 @@
 <%
     AdminUrls urls = urlProvider(AdminUrls.class);
     String name = c.isProject() ? "project" : "folder";
-    ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderManagementSettingsURL(c);
+    ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderSettingsURL(c);
 %>
 <labkey:form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
     <table>

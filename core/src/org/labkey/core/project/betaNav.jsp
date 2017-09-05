@@ -42,7 +42,7 @@
 
     ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(me.getViewContext().getActionURL());
     ActionURL createFolderURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(getContainer(), me.getViewContext().getActionURL());
-    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(getContainer());
+    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(getContainer());
 
     NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
 %>

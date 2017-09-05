@@ -76,7 +76,7 @@
     {
         ActionURL createProjectUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(c.getStartURL(getUser()));
         ActionURL createFolderUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, c.getStartURL(getUser()));
-        ActionURL folderManagementUrl = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
+        ActionURL folderManagementUrl = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 
         if (user.hasRootAdminPermission())
         {

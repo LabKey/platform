@@ -16,14 +16,12 @@
      */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.settings.ConceptURIProperties" %>
 <%@ page import="org.labkey.api.exp.property.Lookup" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.settings.ConceptURIProperties" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
