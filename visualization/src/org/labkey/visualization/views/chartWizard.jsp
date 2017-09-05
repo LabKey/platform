@@ -140,6 +140,7 @@
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
 
+            minWidth: 800,
             autoResize: {
                 skipHeight: autoResizeSkipHeight
             }
