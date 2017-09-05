@@ -135,6 +135,8 @@ import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
+import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
+import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
@@ -209,6 +211,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
+import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
+import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
+import static org.labkey.api.view.FolderManagement.NOT_ROOT;
+import static org.labkey.api.view.FolderManagement.addTab;
+
 /**
  * User: Karl Lum
  * Date: Feb 27, 2008
@@ -264,6 +272,35 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
+    }
+
+    public static void registerFolderManagementTabs()
+    {
+        addTab("Folder Tree", "folderTree", NOT_ROOT, c -> new ActionURL(ManageFoldersAction.class, c));
+        addTab("Folder Type", "folderType", NOT_ROOT, c -> new ActionURL(FolderTypeAction.class, c));
+        addTab("Missing Values", "mvIndicators", EVERY_CONTAINER, c -> new ActionURL(MissingValuesAction.class, c));
+        addTab("Module Properties", "props", c -> {
+            if (!c.isRoot())
+            {
+                // Show module properties tab only if a module w/ properties to set is present for current folder
+                for (Module m : c.getActiveModules())
+                    if (!m.getModuleProperties().isEmpty())
+                        return true;
+            }
+
+            return false;
+        }, c -> new ActionURL(ModulePropertiesAction.class, c));
+        addTab("Concepts", "concepts", c -> {
+            // Show Concepts tab only if the experiment module is enabled in this container
+            return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
+        }, c -> new ActionURL(AdminController.ConceptsAction.class, c));
+        addTab("Search", "fullTextSearch", NOT_ROOT, c -> new ActionURL(SearchAction.class, c));
+        addTab("Notifications", "messages", NOT_ROOT, c -> new ActionURL(NotificationsAction.class, c));
+        addTab("Export", "export", NOT_ROOT, c -> new ActionURL(ExportFolderAction.class, c));
+        addTab("Import", "import", NOT_ROOT, c -> new ActionURL(ImportFolderAction.class, c));
+        addTab("Files", "files", FOLDERS_AND_PROJECTS, c -> new ActionURL(FileRootsAction.class, c));
+        addTab("Formats", "settings", FOLDERS_ONLY, c -> new ActionURL(FolderSettingsAction.class, c));
+        addTab("Information", "info", NOT_ROOT, c -> new ActionURL(FolderInformationAction.class, c));
     }
 
     public AdminController()
@@ -1760,7 +1797,6 @@ public class AdminController extends SpringActionController
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
-
     }
 
     public static class SiteSettingsForm
@@ -3968,90 +4004,13 @@ public class AdminController extends SpringActionController
     }
 
 
-    public abstract class FolderManagementViewAction<FORM> extends SimpleViewAction<FORM>
-    {
-        @Override
-        public ModelAndView getView(FORM form, BindException errors) throws Exception
-        {
-            FolderManagementViewAction<FORM> that = this;
-
-            return new FolderManagement.FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
-            {
-                @Override
-                public HttpView getTabView(String tabId) throws Exception
-                {
-                    return that.getTabView(form, errors);
-                }
-            };
-        }
-
-        abstract HttpView getTabView(FORM form, BindException errors) throws Exception;
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return folderManagementNavTrail(root);
-        }
-    }
-
-
-    private NavTree folderManagementNavTrail(NavTree root)
-    {
-        Container container = getContainer();
-
-        if (container.isRoot())
-            return appendAdminNavTrail(root, "Admin Console", ShowAdminAction.class, container);
-
-        if (container.isContainerTab())
-            root.addChild(container.getParent().getName(), getContainer().getParent().getStartURL(getUser()));
-
-        root.addChild(container.getName(), getContainer().getStartURL(getUser()));
-        root.addChild("Folder Management");
-
-        return root;
-    }
-
-
     @RequiresPermission(AdminPermission.class)
     public class FolderInformationAction extends FolderManagementViewAction
     {
         @Override
-        public HttpView getTabView(Object o, BindException errors) throws Exception
+        protected HttpView getTabView(Object o, BindException errors) throws Exception
         {
             return getContainerInfoView(getContainer(), getUser());
-        }
-    }
-
-
-    public abstract class FolderManagementViewPostAction<FORM> extends FormViewAction<FORM>
-    {
-        @Override
-        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
-        {
-            FolderManagementViewPostAction<FORM> that = this;
-
-            return new FolderManagement.FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
-            {
-                @Override
-                public HttpView getTabView(String tabId) throws Exception
-                {
-                    return that.getTabView(form, errors);
-                }
-            };
-        }
-
-        @Override
-        public URLHelper getSuccessURL(FORM form)
-        {
-            return null;
-        }
-
-        abstract HttpView getTabView(FORM form, BindException errors) throws Exception;
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return folderManagementNavTrail(root);
         }
     }
 
@@ -4087,7 +4046,7 @@ public class AdminController extends SpringActionController
     public class SearchAction extends FolderManagementViewPostAction<SearchForm>
     {
         @Override
-        HttpView getTabView(SearchForm form, BindException errors) throws Exception
+        protected HttpView getTabView(SearchForm form, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/fullTextSearch.jsp", form, errors);
         }
@@ -4162,7 +4121,7 @@ public class AdminController extends SpringActionController
     public class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
     {
         @Override
-        HttpView getTabView(MissingValuesForm form, BindException errors) throws Exception
+        protected HttpView getTabView(MissingValuesForm form, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", form, errors);
         }
@@ -4333,7 +4292,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        HttpView getTabView(ExportFolderForm form, BindException errors) throws Exception
+        protected HttpView getTabView(ExportFolderForm form, BindException errors) throws Exception
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
             return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
@@ -4514,7 +4473,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL;
 
         @Override
-        HttpView getTabView(ImportFolderForm form, BindException errors) throws Exception
+        protected HttpView getTabView(ImportFolderForm form, BindException errors) throws Exception
         {
             // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
             if (!errors.hasErrors())
@@ -4798,7 +4757,7 @@ public class AdminController extends SpringActionController
     public class FolderSettingsAction extends FolderManagementViewPostAction<FolderSettingsForm>
     {
         @Override
-        HttpView getTabView(FolderSettingsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(FolderSettingsForm form, BindException errors) throws Exception
         {
             return new LookAndFeelView(getContainer(), null, errors);
         }
@@ -4827,7 +4786,7 @@ public class AdminController extends SpringActionController
     public class ModulePropertiesAction extends FolderManagementViewAction
     {
         @Override
-        HttpView getTabView(Object o, BindException errors) throws Exception
+        protected HttpView getTabView(Object o, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", null, errors);
         }
@@ -4889,7 +4848,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL = null;
 
         @Override
-        HttpView getTabView(FolderTypeForm form, BindException errors) throws Exception
+        protected HttpView getTabView(FolderTypeForm form, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/folderType.jsp", form, errors);
         }
@@ -5029,7 +4988,7 @@ public class AdminController extends SpringActionController
     public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
     {
         @Override
-        HttpView getTabView(FileRootsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(FileRootsForm form, BindException errors) throws Exception
         {
             HttpView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
 
@@ -5164,7 +5123,7 @@ public class AdminController extends SpringActionController
     public class ManageFoldersAction extends FolderManagementViewAction
     {
         @Override
-        HttpView getTabView(Object o, BindException errors) throws Exception
+        protected HttpView getTabView(Object o, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/manageFolders.jsp", null, errors);
         }
@@ -5193,7 +5152,7 @@ public class AdminController extends SpringActionController
     public class NotificationsAction extends FolderManagementViewPostAction<NotificationsForm>
     {
         @Override
-        HttpView getTabView(NotificationsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(NotificationsForm form, BindException errors) throws Exception
         {
             final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
             DataRegionSelection.clearAll(getViewContext(), key);
@@ -5424,7 +5383,7 @@ public class AdminController extends SpringActionController
     public class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
     {
         @Override
-        HttpView getTabView(ConceptsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(ConceptsForm form, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", form, errors);
         }

@@ -789,6 +789,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps();
 
         AdminController.registerAdminConsoleLinks();
+        AdminController.registerFolderManagementTabs();
         AnalyticsController.registerAdminConsoleLinks();
         UserController.registerAdminConsoleLinks();
         LoggerController.registerAdminConsoleLinks();

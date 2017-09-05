@@ -378,7 +378,6 @@ core/src/org/labkey/core/admin/CustomizeMenuForm.java -text
 core/src/org/labkey/core/admin/FileListAction.java -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
-core/src/org/labkey/core/admin/FolderManagement.java -text
 core/src/org/labkey/core/admin/InstallSettingsAction.java -text
 core/src/org/labkey/core/admin/MenuViewFactory.java -text
 core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
