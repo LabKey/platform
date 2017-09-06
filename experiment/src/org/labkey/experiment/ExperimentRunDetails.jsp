@@ -34,7 +34,7 @@
     List<? extends ExpRun> replacesRuns = run.getReplacesRuns();
 %>
 
-<table>
+<table class="lk-fields-table">
     <tr>
         <td class="labkey-form-label">Name</td>
         <td><%= h(run.getName()) %></td>

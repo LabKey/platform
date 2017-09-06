@@ -46,17 +46,17 @@
 %>
 
 <% if (debug) { %>
-<table class="labkey-protocol-applications">
+<table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <td><b>Step</b></td>
-        <td><b>Name</b></td>
-        <td><b>Type</b></td>
-        <td><b>Protocol</b></td>
-        <td><b>Date</b></td>
-        <td><b>Start</b></td>
-        <td><b>End</b></td>
-        <td><b>Records</b></td>
-        <td><b>Properties</b></td>
+        <td class="labkey-column-header">Step</td>
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Protocol</td>
+        <td class="labkey-column-header">Date</td>
+        <td class="labkey-column-header">Start</td>
+        <td class="labkey-column-header">End</td>
+        <td class="labkey-column-header">Records</td>
+        <td class="labkey-column-header">Properties</td>
     </tr>
     <% for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
     {
@@ -91,13 +91,13 @@
         <% if (!materialRunInputs.isEmpty() || !dataRunInputs.isEmpty() || !materialRunOutputs.isEmpty() || !dataRunOutputs.isEmpty()) { %>
         <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top"></td>
-            <td valign="top" colspan="8">
+            <td valign="top" colspan="8" style="padding: 5px;">
                 <% if (!materialRunInputs.isEmpty() || !dataRunInputs.isEmpty()) { %>
                 <b>Inputs</b><br>
-                <table class="labkey-protocol-applications" width="100%">
+                <table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders" width="100%">
                     <% for (ExpMaterialRunInput materialRunInput : materialRunInputs) { %>
                     <% ExpMaterial material = materialRunInput.getMaterial(); %>
-                    <tr>
+                    <tr class="labkey-row">
                         <td width="100px"><a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a></td>
                         <td width="40px"><%= h(materialRunInput.getRole()) %></td>
                         <td width="200px"><%= h(materialRunInput.getLSID()) %></td>
@@ -110,7 +110,7 @@
 
                     <% for (ExpDataRunInput dataRunInput : dataRunInputs) { %>
                     <% ExpData data = dataRunInput.getData(); %>
-                    <tr>
+                    <tr class="labkey-row">
                         <td width="100px">
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                             <% ExperimentDataHandler handler = data.findDataHandler();
@@ -130,10 +130,10 @@
 
                 <% if (!materialRunOutputs.isEmpty() || !dataRunOutputs.isEmpty()) { %>
                 <b>Outputs</b><br>
-                <table class="labkey-protocol-applications" width="100%">
+                <table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders" width="100%">
                     <% for (ExpMaterialRunInput materialRunInput : materialRunOutputs) { %>
                     <% ExpMaterial material = materialRunInput.getMaterial(); %>
-                    <tr>
+                    <tr class="labkey-row">
                         <td width="100px"><a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a></td>
                         <td width="40px"><%= h(materialRunInput.getRole()) %></td>
                         <td width="200px"><%= h(materialRunInput.getLSID()) %></td>
@@ -146,7 +146,7 @@
 
                     <% for (ExpDataRunInput dataRunInput : dataRunOutputs) { %>
                     <% ExpData data = dataRunInput.getData(); %>
-                    <tr>
+                    <tr class="labkey-row">
                         <td width="100px">
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                             <% ExperimentDataHandler handler = data.findDataHandler();
@@ -166,17 +166,16 @@
             </td>
         </tr>
         <% } // end if has inputs or outputs %>
-        <tr><td colspan="8" style="border:none;"></td></tr>
     <% } %>
 </table>
 
 <% } else { // not debug %>
 
-<table class="labkey-protocol-applications">
+<table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <td><b>Name</b></td>
-        <td><b>Inputs</b></td>
-        <td><b>Outputs</b></td>
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Inputs</td>
+        <td class="labkey-column-header">Outputs</td>
     </tr>
     <% for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
     {
