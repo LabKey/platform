@@ -109,8 +109,9 @@ public abstract class VennDiagramView extends HorizontalPanel
         }
 
         FlexTable selectionTable = new FlexTable();
-        
+        selectionTable.setStylePrimaryName("lk-fields-table");
         selectionTable.setCellSpacing(5);
+        
         int row = 0;
         int col = 0;
 
