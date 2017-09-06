@@ -3050,26 +3050,27 @@ if (!LABKEY.DataRegions) {
         return $('#' + region.domId + '-viewbar');
     };
 
-    var _buttonBind = function(region, cls, fn) {
-        region.msgbox.find('.labkey-button' + cls).off('click').on('click', $.proxy(function() {
+    var _buttonSelectionBind = function(region, cls, fn) {
+        var partEl = NEW_UI ? region.msgbox.getParent().find('div[data-msgpart="selection"]') : region.msgbox;
+        partEl.find('.labkey-button' + cls).off('click').on('click', $.proxy(function() {
             fn.call(this);
         }, region));
     };
 
     var _onRenderMessageArea = function(region, parts) {
         var msgArea = region.msgbox;
-        if (msgArea && !NEW_UI) {
+        if (msgArea) {
             if (region.showRecordSelectors && parts['selection']) {
-                _buttonBind(region, '.select-all', region.selectAll);
-                _buttonBind(region, '.select-none', region.clearSelected);
-                _buttonBind(region, '.show-all', region.showAll);
-                _buttonBind(region, '.show-selected', region.showSelected);
-                _buttonBind(region, '.show-unselected', region.showUnselected);
+                _buttonSelectionBind(region, '.select-all', region.selectAll);
+                _buttonSelectionBind(region, '.select-none', region.clearSelected);
+                _buttonSelectionBind(region, '.show-all', region.showAll);
+                _buttonSelectionBind(region, '.show-selected', region.showSelectedRows);
+                _buttonSelectionBind(region, '.show-unselected', region.showUnselectedRows);
             }
             else if (parts['customizeview']) {
-                _buttonBind(region, '.unsavedview-revert', function() { _revertCustomView(this); });
-                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined); });
-                _buttonBind(region, '.unsavedview-save', function() { _saveSessionCustomView(this); });
+                _buttonSelectionBind(region, '.unsavedview-revert', function() { _revertCustomView(this); });
+                _buttonSelectionBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined); });
+                _buttonSelectionBind(region, '.unsavedview-save', function() { _saveSessionCustomView(this); });
             }
         }
     };
