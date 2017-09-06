@@ -14,6 +14,7 @@ Ext4.define('LABKEY.query.browser.view.Home', {
     constructor : function(config) {
         this.callParent([config]);
         this.addEvents('schemaclick');
+        this.showHidden = LABKEY.ActionURL.getParameters().showHidden === 'true';
     },
 
     initComponent : function() {
@@ -94,9 +95,11 @@ Ext4.define('LABKEY.query.browser.view.Home', {
         var sortedNames = [],
             schemas = {};
 
-        Ext4.iterate(schemaTree.schemas, function(schemaName) {
-            sortedNames.push(schemaName);
-            schemas[schemaName] = this.queryCache.lookupSchema(schemaTree, schemaName);
+        Ext4.iterate(schemaTree.schemas, function(schemaName, o) {
+            if (!o.hidden || this.showHidden){
+                sortedNames.push(schemaName);
+                schemas[schemaName] = this.queryCache.lookupSchema(schemaTree, schemaName);
+            }
         }, this);
         sortedNames.sort(function(a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); }); // 10572
 
