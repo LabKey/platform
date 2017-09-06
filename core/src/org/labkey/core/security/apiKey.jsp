@@ -54,7 +54,6 @@
     }
     String id = SessionApiKeyManager.get().createKey(request, session);
 %>
-<%= AppProps.getInstance().getBaseServerUrl() %>
 This API key can be used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. Using an API key avoids
 copying and storing your credentials on the client machine. Also, all client API access is tied to the current browser session, which means the code runs under the
 current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state, etc.). It also means the API key
