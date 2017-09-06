@@ -96,7 +96,7 @@
                     </tr>
                     <tr>
                         <td colspan="2">
-                            <table width="100%" style="margin: 0 0 10px 20px;" id="pipelineRootSettings">
+                            <table class="lk-fields-table" style="margin: 0 0 10px 20px;" id="pipelineRootSettings">
                                 <tr>
                                     <td class="labkey-form-label">Primary directory</td>
                                     <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getPath())%>"></td>

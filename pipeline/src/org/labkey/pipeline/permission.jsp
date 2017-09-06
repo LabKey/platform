@@ -59,7 +59,10 @@ These permissions control whether pipeline files can be downloaded and updated v
     Pair[] optionsGuest = new Pair[] {optionsFull[0], optionsFull[1]};
 
     int i=0;
-    %><b class="labkey-message">Global groups</b><table><%  // FIELDSET is broken on firefox  <fieldset><legend>Global groups</legend>
+    %>
+        <h4>Global groups</h4>
+        <table class="lk-fields-table">
+    <%
     for (Group g : groups)
     {
         if (g.isProjectGroup())
@@ -76,7 +79,11 @@ These permissions control whether pipeline files can be downloaded and updated v
         </select></td></tr><%
         i++;
     }
-    %></table><b class="labkey-message">Project groups</b><table><%
+    %>
+        </table>
+        <h4>Project groups</h4>
+        <table class="lk-fields-table">
+    <%
     for (Group g : groups)
     {
         if (!g.isProjectGroup())

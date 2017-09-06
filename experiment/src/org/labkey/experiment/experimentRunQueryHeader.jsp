@@ -36,9 +36,12 @@
             <input type="hidden" name="<%=h(params.getKey())%>" value="<%=h(params.getValue())%>" />
     <%  }
     } %>
-    <label for="experimentRunFilter">Filter by run type</label>: <select id="experimentRunFilter" name="experimentRunFilter" onchange="form.submit()">
-        <% for (ExperimentRunType type : bean.getFilters()) { %>
-            <option <% if (type == bean.getSelectedFilter()) { %>selected <% } %> value="<%=h(type.getDescription())%>"><%=h(type.getDescription())%></option>
-        <% } %>
-    </select>
+    <p>
+        Filter by run type:
+        <select id="experimentRunFilter" name="experimentRunFilter" onchange="form.submit()">
+            <% for (ExperimentRunType type : bean.getFilters()) { %>
+                <option <% if (type == bean.getSelectedFilter()) { %>selected <% } %> value="<%=h(type.getDescription())%>"><%=h(type.getDescription())%></option>
+            <% } %>
+        </select>
+    </p>
 </labkey:form>
