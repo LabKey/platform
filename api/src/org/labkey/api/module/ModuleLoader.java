@@ -70,6 +70,7 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.TemplateHeaderView;
@@ -1449,6 +1450,25 @@ public class ModuleLoader implements Filter
         }
 
         initiateModuleStartup();
+        verifyRequiredModules();
+    }
+
+
+    // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
+    // Particularly interesting for compliant deployments, e.g., <Parameter name="requiredModules" value="Compliance"/>
+    private void verifyRequiredModules()
+    {
+        String requiredModules = getServletContext().getInitParameter("requiredModules");
+
+        if (null != requiredModules)
+        {
+            List<String> missedModules = Arrays.stream(requiredModules.split(","))
+                .filter(name->!_moduleMap.containsKey(name))
+                .collect(Collectors.toList());
+
+            if (!missedModules.isEmpty())
+                setStartupFailure(new ConfigurationException(StringUtilsLabKey.pluralize(missedModules.size(), "required module") + " not present: " + missedModules));
+        }
     }
 
 
