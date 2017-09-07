@@ -166,14 +166,14 @@ LABKEY.Utils = new function(impl, $) {
      * @param msg
      */
     impl.alert = function(title, msg) {
-        if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true) {
-            displayModal(title, msg);
-        }
-        else if (window.Ext4) {
+        if (window.Ext4) {
             Ext4.Msg.alert(title?Ext4.htmlEncode(title):"", msg?Ext4.htmlEncode(msg):"")
         }
         else if (window.Ext) {
             Ext.Msg.alert(title?Ext.util.Format.htmlEncode(title):"", msg?Ext.util.Format.htmlEncode(msg):"");
+        }
+        else if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true) {
+            displayModal(title, msg);
         }
         else {
             alert(LABKEY.Utils.encodeHtml(title + ' : ' + msg));
