@@ -58,9 +58,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.api.view.FolderManagement.NOT_ROOT;
-import static org.labkey.api.view.FolderManagement.addTab;
-
 
 public class SearchModule extends DefaultModule
 {
@@ -182,7 +179,7 @@ public class SearchModule extends DefaultModule
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
 
-        FolderManagement.addTab("Search", "fullTextSearch", NOT_ROOT, c -> new ActionURL(SearchController.SearchSettingsAction.class, c));
+        FolderManagement.addTab("Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
     }
 
 

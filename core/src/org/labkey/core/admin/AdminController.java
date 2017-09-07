@@ -276,9 +276,9 @@ public class AdminController extends SpringActionController
 
     public static void registerFolderManagementTabs()
     {
-        addTab("Folder Tree", "folderTree", NOT_ROOT, c -> new ActionURL(ManageFoldersAction.class, c));
-        addTab("Folder Type", "folderType", NOT_ROOT, c -> new ActionURL(FolderTypeAction.class, c));
-        addTab("Missing Values", "mvIndicators", EVERY_CONTAINER, c -> new ActionURL(MissingValuesAction.class, c));
+        addTab("Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
+        addTab("Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
+        addTab("Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
         addTab("Module Properties", "props", c -> {
             if (!c.isRoot())
             {
@@ -289,17 +289,17 @@ public class AdminController extends SpringActionController
             }
 
             return false;
-        }, c -> new ActionURL(ModulePropertiesAction.class, c));
+        }, ModulePropertiesAction.class);
         addTab("Concepts", "concepts", c -> {
             // Show Concepts tab only if the experiment module is enabled in this container
             return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
-        }, c -> new ActionURL(AdminController.ConceptsAction.class, c));
-        addTab("Notifications", "messages", NOT_ROOT, c -> new ActionURL(NotificationsAction.class, c));
-        addTab("Export", "export", NOT_ROOT, c -> new ActionURL(ExportFolderAction.class, c));
-        addTab("Import", "import", NOT_ROOT, c -> new ActionURL(ImportFolderAction.class, c));
-        addTab("Files", "files", FOLDERS_AND_PROJECTS, c -> new ActionURL(FileRootsAction.class, c));
-        addTab("Formats", "settings", FOLDERS_ONLY, c -> new ActionURL(FolderSettingsAction.class, c));
-        addTab("Information", "info", NOT_ROOT, c -> new ActionURL(FolderInformationAction.class, c));
+        }, AdminController.ConceptsAction.class);
+        addTab("Notifications", "messages", NOT_ROOT, NotificationsAction.class);
+        addTab("Export", "export", NOT_ROOT, ExportFolderAction.class);
+        addTab("Import", "import", NOT_ROOT, ImportFolderAction.class);
+        addTab("Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
+        addTab("Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
+        addTab("Information", "info", NOT_ROOT, FolderInformationAction.class);
     }
 
     public AdminController()
@@ -4007,7 +4007,7 @@ public class AdminController extends SpringActionController
     public class FolderInformationAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView(Object o, BindException errors) throws Exception
+        protected HttpView getTabView() throws Exception
         {
             return getContainerInfoView(getContainer(), getUser());
         }
@@ -4708,11 +4708,7 @@ public class AdminController extends SpringActionController
             Container c = getContainer();
             WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
 
-            if (!ProjectSettingsAction.saveFolderSettings(c, form, props, getUser(), errors))
-                return false;
-//TODO            _successURL = getViewContext().getActionURL();
-
-            return true;
+            return ProjectSettingsAction.saveFolderSettings(c, form, props, getUser(), errors);
         }
     }
 
@@ -4721,9 +4717,9 @@ public class AdminController extends SpringActionController
     public class ModulePropertiesAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView(Object o, BindException errors) throws Exception
+        protected HttpView getTabView() throws Exception
         {
-            return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp", null, errors);
+            return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp");
         }
     }
 
@@ -5058,9 +5054,9 @@ public class AdminController extends SpringActionController
     public class ManageFoldersAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView(Object o, BindException errors) throws Exception
+        protected HttpView getTabView() throws Exception
         {
-            return new JspView<>("/org/labkey/core/admin/manageFolders.jsp", null, errors);
+            return new JspView<>("/org/labkey/core/admin/manageFolders.jsp");
         }
     }
 
