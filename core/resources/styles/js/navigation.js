@@ -424,40 +424,6 @@
     });
 }(jQuery);
 
-// Data Region column dropdown
-+function($) {
-    'use strict';
-
-    var columnMenu;
-
-    function attachMenu(e) {
-        columnMenu = $(e.target).find('.dropdown-menu');
-        $('body').append(columnMenu.detach());
-
-        var parent = $(e.relatedTarget);
-        var offsets = parent.offset();
-
-        columnMenu.css({
-            top: offsets.top + parent.height() + 'px',
-            left: offsets.left + 'px',
-            width: columnMenu.width() + 'px'
-        });
-
-        columnMenu.show();
-    }
-
-    function detachMenu(e) {
-        if (columnMenu) {
-            $(e.target).append(columnMenu.detach());
-            columnMenu.hide();
-        }
-    }
-
-    $(document)
-            .on('show.bs.dropdown', '.lk-region-ct', attachMenu)
-            .on('hide.bs.dropdown', '.lk-region-ct', detachMenu);
-}(jQuery);
-
 // Menu filtering inputs
 +function($) {
     'use strict';
@@ -491,7 +457,7 @@
                 display = 'list-item';
 
             // hide the list-item if it does not contain the filter text
-            if (filterTxt.length > 0 && filterItemTxt.indexOf(filterTxt) == -1) {
+            if (filterTxt.length > 0 && filterItemTxt.indexOf(filterTxt) === -1) {
                 display = 'none';
             }
 
@@ -527,4 +493,100 @@
 
     $(document).on('show.bs.dropdown', attachMenuFiltering);
     $(document).on('hide.bs.dropdown', resetMenuFiltering);
+}(jQuery);
+
++function($) {
+    'use strict';
+    var hideTimeout, showTimeout, menuOpen = false;
+
+    var toggle = $.fn.dropdown.Constructor.prototype.toggle;
+    var toggleSelector = '.navbar-header [data-toggle="dropdown"]';
+    var popupSelector = '.navbar-header .dropdown-menu';
+
+    function cancelHide() {
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+            hideTimeout = false;
+        }
+    }
+
+    function cancelShow() {
+        if (showTimeout) {
+            clearTimeout(showTimeout);
+            showTimeout = false;
+            // console.log('clear showTimeout');
+        }
+    }
+
+    function delayHide(e) {
+        cancelHide();
+        cancelShow();
+        hideTimeout = setTimeout(doHide.bind(this, e), 500);
+    }
+
+    function delayShow(e) {
+        if (!showTimeout) {
+            // console.log('delayShow');
+            showTimeout = setTimeout(doShow.bind(this, e), 500);
+        }
+    }
+
+    function doHide(e) {
+        // console.log('hide!');
+        menuOpen = false;
+        toggle.call(this, e);
+    }
+
+    function doShow(e) {
+        // console.log('show!');
+        menuOpen = true;
+        // cancelShow();
+        toggle.call(this, e);
+    }
+
+    function onPopupEnter() {
+        cancelHide();
+    }
+
+    function onPopupLeave(e) {
+        delayHide.call(this, e);
+    }
+
+    function onToggleActive(e) {
+        if (e.type === 'click') {
+            // let bootstrap handle it
+            cancelHide();
+            cancelShow();
+            menuOpen = true;
+        }
+        else if (menuOpen) { // && !thisMenu
+            // show immediately
+            doShow.call(this, e);
+        }
+        else {
+            // console.log('select -> delayShow!');
+            delayShow.call(this, e);
+        }
+    }
+
+    function onToggleOut(e) {
+        if (menuOpen) {
+            delayHide.call(this, e);
+        }
+        else {
+            cancelShow();
+        }
+    }
+
+    //
+    // $(document)
+    //         .on('click.bs.dropdown.data-api', function() {
+    //             // If anywhere besides the toggleSelector is clicked, assume the menu is closed.
+    //             menuOpen = false;
+    //         })
+    //         .on('click.bs.dropdown.data-api', toggleSelector, onToggleActive)
+    //         .on('mouseenter.bs.dropdown.data-api', toggleSelector, onToggleActive)
+    //         .on('mouseleave.bs.dropdown.data-api', toggleSelector, onToggleOut)
+    //         .on('mouseenter', popupSelector, onPopupEnter)
+    //         .on('mouseleave', popupSelector, onPopupLeave)
 }(jQuery);

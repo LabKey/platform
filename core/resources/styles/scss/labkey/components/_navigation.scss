@@ -16,6 +16,12 @@
   .navbar-header {
     float: left;
 
+    .dropdown-menu {
+      margin: -1px 0 0;
+      left: -1px;
+      border-top-color: transparent;
+    }
+
     .navbar-toggle {
       color: $lk-page-nav-text-color;
       float: left;
