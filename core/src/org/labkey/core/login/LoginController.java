@@ -64,7 +64,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -508,19 +507,9 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(LoginForm form, BindException errors) throws Exception
         {
-            boolean isGuest = getUser().isGuest();
-            HttpServletRequest request = getViewContext().getRequest();
-
-            if (isGuest)
-            {
-                // Reset authentication state. If, for example, user hits back button in the midst of two-factor auth
-                // workflow then start over. Preserve login return properties, if they exist
-                SessionHelper.clearSession(request, PageFlowUtil.set(AuthenticationManager.getLoginReturnPropertiesSessionKey()));
-            }
-
             // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
             // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
-            if (!isGuest)
+            if (!getUser().isGuest())
             {
                 URLHelper returnURL = form.getReturnURLHelper();
 
@@ -529,6 +518,13 @@ public class LoginController extends SpringActionController
 
                 return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
             }
+
+            HttpServletRequest request = getViewContext().getRequest();
+
+            // Clear authentication state. If, for example, user hits back button in the midst of two-factor auth workflow
+            // then start all over with the authentication process. Preserve other session attributes (e.g., login return
+            // properties, terms of use acceptance, etc.)
+            AuthenticationManager.clearAuthenticationProcessAttributes(request);
 
             return showLogin(form, errors, request, getPageConfig());
         }
@@ -762,7 +758,6 @@ public class LoginController extends SpringActionController
 
             response.put("success", true);
             return response;
-
         }
 
         public void afterPasswordSet(BindException errors, User user)
@@ -931,8 +926,7 @@ public class LoginController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Unable to determine the terms of use type from the information submitted on the form.");
             }
-            ApiSimpleResponse response = null;
-            response = new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
             return response;
         }
@@ -1443,7 +1437,6 @@ public class LoginController extends SpringActionController
     private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
         protected ValidEmail _email = null;
-        private boolean _skipProfile = true;  // In most set password scenarios we skip the profile page
         protected boolean _unrecoverableError = false;
 
         public void validateCommand(SetPasswordForm form, Errors errors)
@@ -1559,7 +1552,6 @@ public class LoginController extends SpringActionController
                 {
                     // This user has passed primary authentication
                     AuthenticationManager.setPrimaryAuthenticationResult(request, result);
-                    _skipProfile = form.getSkipProfile();
                 }
             }
 
