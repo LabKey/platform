@@ -49,6 +49,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import gwt.client.org.labkey.study.StudyApplication;
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
+import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.HelpPopup;
@@ -226,7 +227,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         {
             if (_dataset.getKeyPropertyName() != null)
             {
-                _domain.setProtectedNotAllowedFieldNames(Collections.singleton(_dataset.getKeyPropertyName()));
+                _domain.setPhiNotAllowedFieldNames(Collections.singleton(_dataset.getKeyPropertyName()));
                 _propTable.init(new GWTDomain(_domain));
             }
             _root.remove(_loading);
@@ -1018,16 +1019,16 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             String keyPropertyName = _dataset.getKeyPropertyName();
             if (keyPropertyName != null && keyPropertyName.length() != 0)
             {
-                _propTable.getDomain().setProtectedNotAllowedFieldNames(Collections.singleton(keyPropertyName));
+                _propTable.getDomain().setPhiNotAllowedFieldNames(Collections.singleton(keyPropertyName));
                 GWTPropertyDescriptor prop = _propTable.getProperty(keyPropertyName);
                 if (prop != null)
                 {
-                    prop.setProtected(false);
+                    prop.setPHI(PHIType.NotPHI.toString());
                 }
             }
             else
             {
-                _propTable.getDomain().setProtectedNotAllowedFieldNames(Collections.emptySet());
+                _propTable.getDomain().setPhiNotAllowedFieldNames(Collections.emptySet());
             }
             _propTable.refresh();
         }

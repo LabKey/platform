@@ -30,7 +30,6 @@ import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.gwt.client.ui.property.PHIItem;
 import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
-import org.labkey.api.gwt.client.ui.property.ProtectedItem;
 import org.labkey.api.gwt.client.ui.property.URLItem;
 import org.labkey.api.gwt.client.ui.property.VisibilityItem;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -53,6 +52,9 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         _contentPanel.insert(_otherContainerMessage, 0);
         // Since removing a field won't delete any real data, don't bother lecturing the user on the danger
         _warnAboutDelete = false;
+        if(_phiSelector != null)
+            _phiSelector.setEnabled(false);  // don't allow PHI metadata setting via this pathway
+                                             // TODO: make this work for provisioned tables, does not currently (PropertiesEditor.select() overrides)
     }
 
     private ImageButton getWrapFieldButton()
@@ -165,6 +167,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         buttonPanel.add(getWrapFieldButton());
     }
 
+    @Override
     protected List<PropertyPane<GWTTableInfo, GWTColumnInfo>> createPropertyPanes(DockPanel propertyDock)
     {
         PropertyPane<GWTTableInfo, GWTColumnInfo> formatPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Format");
@@ -183,8 +186,8 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new URLItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new VisibilityItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
-        propertyPane.addItem(new ProtectedItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
-        propertyPane.addItem(new PHIItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        _phiSelector = new PHIItem<GWTTableInfo, GWTColumnInfo>(propertyPane);
+        propertyPane.addItem(_phiSelector);
         propertyPane.addItem(new ExcludeFromShiftingItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
         addChangeHandler(propertyPane.getChangeListener());

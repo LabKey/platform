@@ -87,7 +87,6 @@ public class ListWriter
     public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
-        boolean removeProtected = ctx != null && ctx.isRemoveProtected();
         boolean removePhi = ctx != null && ctx.isRemovePhi();
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
@@ -137,7 +136,7 @@ public class ListWriter
 
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
-                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, removeProtected, removePhi, exportPhiLevel));
+                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, removePhi, exportPhiLevel));
                 xmlWriter.writeTable(tableXml);
 
                 // Write settings
@@ -145,7 +144,7 @@ public class ListWriter
                 writeSettings(settings, def);
 
                 // Write data
-                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removeProtected, removePhi, exportPhiLevel);
+                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removePhi, exportPhiLevel);
 
                 if (null != ctx && ctx.isAlternateIds())
                 {
@@ -170,7 +169,7 @@ public class ListWriter
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
 
-                    writeAttachments(ti, def, c, listsDir, removeProtected, removePhi, exportPhiLevel);
+                    writeAttachments(ti, def, c, listsDir, removePhi, exportPhiLevel);
                 }
             }
 
@@ -228,7 +227,7 @@ public class ListWriter
         if (def.getFileAttachmentIndex()) settings.setFileAttachmentIndex(def.getFileAttachmentIndex());
     }
 
-    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, boolean removeProtected, boolean removePhi, PHI exportPhiLevel) throws SQLException, IOException
+    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, boolean removePhi, PHI exportPhiLevel) throws SQLException, IOException
     {
         List<ColumnInfo> attachmentColumns = new ArrayList<>();
 
@@ -238,9 +237,8 @@ public class ListWriter
             {
                 ColumnInfo column = ti.getColumn(prop.getName());
 
-                // Don't export files associated with protected file attachment columns if protected columns are being skipped. See #28035.
-                // Also don't export columns at or above the export PHI level is PHI columns are being skipped
-                if (shouldRemoveProtected(removeProtected, column) || shouldRemovePhi(removePhi, exportPhiLevel, column))
+                // Don't export columns at or above the export PHI level if PHI columns are being skipped
+                if (shouldRemovePhi(removePhi, exportPhiLevel, column))
                     continue;
 
                 attachmentColumns.add(column);
@@ -295,7 +293,7 @@ public class ListWriter
         }
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removeProtected, boolean removePhi, PHI exportPhiLevel)
+    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removePhi, PHI exportPhiLevel)
     {
         Collection<ColumnInfo> columns = new LinkedHashSet<>();
         Set<ColumnInfo> pks = new HashSet<>(tinfo.getPkColumns());
@@ -313,10 +311,8 @@ public class ListWriter
              */
             if ((column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField())))
             {
-                // Exclude columns marked as Protected, if removeProtected is true (except key columns marked as protected, those must be exported)
-                // Same with PHI level of the column being at or above the export PHI level
-                if ((shouldRemoveProtected(removeProtected, column) || shouldRemovePhi(removePhi, exportPhiLevel, column))
-                        && !pks.contains(column) && !column.isKeyField())
+                // Exclude columns marked at or above the export PHI level, if removePhi is true (except key columns marked at or above the export PHI level, those must be exported)
+                if (shouldRemovePhi(removePhi, exportPhiLevel, column) && !pks.contains(column) && !column.isKeyField())
                     continue;
 
                 columns.add(column);
@@ -337,11 +333,6 @@ public class ListWriter
         return columns;
     }
 
-    private static boolean shouldRemoveProtected(boolean isRemoveProtected, ColumnInfo column)
-    {
-        return isRemoveProtected && column.isProtected();
-    }
-
     private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
     {
         return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
@@ -349,21 +340,6 @@ public class ListWriter
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testShouldRemoveProtected()
-        {
-            ColumnInfo ciProtected = new ColumnInfo("test");
-            ciProtected.setProtected(true);
-            ColumnInfo ciNotProtected = new ColumnInfo("test");
-            ciNotProtected.setProtected(false);
-
-            // shouldn't remove if isRemoveProtected is false
-            assertFalse(shouldRemoveProtected(false, ciProtected));
-
-            // should remove if it is protected
-            assertTrue(shouldRemoveProtected(true, ciProtected));
-        }
-
         @Test
         public void testShouldRemovePhi()
         {

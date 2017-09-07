@@ -29,6 +29,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
@@ -538,7 +539,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public static boolean shouldDisplay(DomainProperty prop, Container container, User user)
     {
-        Class<? extends Permission> permission = prop.isProtected() ? InsertPermission.class : ReadPermission.class;
+        // treat anything higher than NotPHI as needing special permission
+        Class<? extends Permission> permission = prop.getPHI().isExportLevelAllowed(PHI.Limited) ? ReadPermission.class : InsertPermission.class;
         return container.hasPermission(user, permission);
     }
 

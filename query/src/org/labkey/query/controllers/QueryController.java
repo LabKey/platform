@@ -25,6 +25,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,6 +82,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GWTView;
@@ -97,6 +100,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -138,6 +142,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.management.modelmbean.XMLParseException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1002,6 +1007,25 @@ public class QueryController extends SpringActionController
             _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
             if (null == _baseSchema)
                 throw new NotFoundException("Schema not found: " + _form.getSchemaKey().toDisplayString());
+
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+            List<XmlError> xmlErrors = new ArrayList<>();
+            options.setErrorListener(xmlErrors);
+            try
+            {
+                TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
+                for (ColumnType column : tablesDoc.getTables().getTableArray()[0].getColumns().getColumnArray())
+                {
+                    if(column.isSetPhi() || column.isSetProtected())
+                    {
+                        throw new IllegalArgumentException("PHI/protected metadata must not be set here.");
+                    }
+                }
+            }
+            catch (XmlException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
 
 

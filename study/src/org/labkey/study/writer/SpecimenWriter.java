@@ -123,10 +123,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                     col = "{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, " + col + ")} AS " + ci.getSelectName();
                 }
 
-                // don't export values for columns set as Protected in the XML metadata override
-                // also don't export values for columns set at or above the PHI export level
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn)
-                        || shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
+                // Don't export values for columns set at or above the PHI export level
+                if (shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
                 {
                     col = "NULL AS " + ci.getSelectName();
                 }
@@ -136,10 +134,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 // DisplayColumn will use getAlias() to retrieve the value from the map
                 col = column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias();
 
-                // don't export values for columns set as Protected in the XML metadata override
-                // also don't export values for columns set at or above the PHI export level
-                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn)
-                        || shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
+                // Don't export values for columns set at or above the PHI export level
+                if (shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), column, queryColumn))
                 {
                     col = "NULL AS " + dc.getDisplayColumn().getAlias();
                 }
@@ -254,17 +250,6 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         return null;
     }
 
-    private static boolean shouldRemoveProtected(boolean isRemoveProtected, SpecimenColumn column, ColumnInfo queryColumn)
-    {
-        if (isRemoveProtected && !column.isKeyColumn())
-        {
-            if (queryColumn != null && queryColumn.isProtected())
-                return true;
-        }
-
-        return false;
-    }
-
     private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, SpecimenColumn column, ColumnInfo queryColumn)
     {
         if (isRemovePhi && !column.isKeyColumn())
@@ -309,32 +294,6 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             ptids.add("Ptid3");
             assertEquals("Ptid1,Ptid2,Ptid3", convertListToString(ptids, false));
             assertEquals("'Ptid1','Ptid2','Ptid3'", convertListToString(ptids, true));
-        }
-
-        @Test
-        public void testShouldRemoveProtected()
-        {
-            ColumnInfo ciProtected = new ColumnInfo("test");
-            ciProtected.setProtected(true);
-            ColumnInfo ciNotProtected = new ColumnInfo("test");
-            ciNotProtected.setProtected(false);
-
-            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
-            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
-
-            // shouldn't remove if isRemoveProtected is false
-            assertFalse(shouldRemoveProtected(false, notKeyCol, ciProtected));
-            assertFalse(shouldRemoveProtected(false, keyCol, ciProtected));
-
-            // shouldn't remove if it is a key column
-            assertFalse(shouldRemoveProtected(true, keyCol, ciProtected));
-            assertFalse(shouldRemoveProtected(true, keyCol, ciNotProtected));
-
-            // shouldn't remove if not a key column and is not protected
-            assertFalse(shouldRemoveProtected(true, notKeyCol, ciNotProtected));
-
-            // should remove if not a key column and it is protected
-            assertTrue(shouldRemoveProtected(true, notKeyCol, ciProtected));
         }
 
         @Test

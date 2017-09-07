@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.QueryParseException;
@@ -40,7 +41,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
-import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -86,6 +86,9 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         try
         {
             table = schema.getTable(tableName);
+            Domain domain = table.getDomain();
+            if (domain != null)
+                gwtTableInfo.setProvisioned(domain.isProvisioned());
         }
         catch (QueryParseException e)
         {
@@ -115,8 +118,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setMeasure(columnInfo.isMeasure());
             gwtColumnInfo.setRecommendedVariable(columnInfo.isRecommendedVariable());
             gwtColumnInfo.setDefaultScale(columnInfo.getDefaultScale().name());
-            gwtColumnInfo.setProtected(columnInfo.isProtected());
-            gwtColumnInfo.setPHI(columnInfo.getPHI().name());
+            /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
+            gwtColumnInfo.setPHI(columnInfo.getPHI().name());*/
             gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
@@ -240,14 +243,11 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         {
                             gwtColumnInfo.setDefaultScale(column.getDefaultScale().toString());
                         }
-                        if (column.isSetProtected())
-                        {
-                            gwtColumnInfo.setProtected(column.getProtected());
-                        }
+                        /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
                         if (column.isSetPhi())
                         {
                             gwtColumnInfo.setPHI(column.getPhi().toString());
-                        }
+                        }*/
                         if (column.isSetExcludeFromShifting())
                         {
                             gwtColumnInfo.setExcludeFromShifting(column.getExcludeFromShifting());
@@ -541,14 +541,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 xmlColumn.unsetDefaultScale();
             }
 
-            if (gwtColumnInfo.isProtected() != rawColumnInfo.isProtected())
-            {
-                xmlColumn.setProtected(gwtColumnInfo.isProtected());
-            }
-            else if (xmlColumn.isSetProtected())
-            {
-                xmlColumn.unsetProtected();
-            }
+            /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
 
             if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
             {
@@ -557,7 +550,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             else if (xmlColumn.isSetPhi())
             {
                 xmlColumn.unsetPhi();
-            }
+            }*/
 
             if (gwtColumnInfo.isExcludeFromShifting() != rawColumnInfo.isExcludeFromShifting())
             {

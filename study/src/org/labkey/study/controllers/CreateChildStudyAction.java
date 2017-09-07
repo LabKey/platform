@@ -32,11 +32,14 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
+import org.labkey.study.StudySchema;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
+import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SpecimenRequest;
@@ -77,25 +80,37 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
     public ApiResponse execute(ChildStudyDefinition form, BindException errors) throws Exception
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
-        StudyImpl newStudy = createNewStudy(form);
 
-        if (newStudy != null)
+        SpecimenTablesTemplate previousTablesTemplate = null;
+        try
         {
-            List<AttachmentFile> files = getAttachmentFileList();
-            newStudy.attachProtocolDocument(files, getUser());
+            // Need to set optional fields to null, or user-added metadata on those fields won't be copied over properly
+            previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
+            StudyImpl newStudy = createNewStudy(form);
 
-            // run the remainder of the study creation as a pipeline job
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
-            PipelineService.get().queueJob(job);
+            if (newStudy != null)
+            {
+                List<AttachmentFile> files = getAttachmentFileList();
+                newStudy.attachProtocolDocument(files, getUser());
 
-            String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()).getLocalURIString();
+                // run the remainder of the study creation as a pipeline job
+                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                CreateChildStudyPipelineJob job = new CreateChildStudyPipelineJob(getViewContext(), root, form, _destFolderCreated);
+                PipelineService.get().queueJob(job);
 
-            resp.put("redirect", redirect);
-            resp.put("success", true);
+                String redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()).getLocalURIString();
+
+                resp.put("redirect", redirect);
+                resp.put("success", true);
+            }
+            else
+                errors.reject(SpringActionController.ERROR_MSG, "Failed to create the destination study.");
         }
-        else
-            errors.reject(SpringActionController.ERROR_MSG, "Failed to create the destination study.");
+        finally
+        {
+            if (previousTablesTemplate != null)
+                StudySchema.getInstance().setSpecimenTablesTemplates(previousTablesTemplate);
+        }
 
         return resp;
     }

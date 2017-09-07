@@ -408,7 +408,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         if (null == _root)
             return;
 
-        d.setProtectedNotAllowedFieldNames(Collections.singleton(_list.getKeyPropertyName()));
+        d.setPhiNotAllowedFieldNames(Collections.singleton(_list.getKeyPropertyName()));
 
         _domain = d;
         _domain.setSchemaName("lists");

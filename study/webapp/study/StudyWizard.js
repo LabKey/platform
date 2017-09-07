@@ -2022,9 +2022,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 'Shift date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days)',
                 'shiftDates']);
         }
-        availablePublishOptions.push(['Remove Protected Columns',
-            'Exclude all dataset, list, and specimen columns that have been tagged as protected',
-            'removeProtectedColumns']);
         availablePublishOptions.push(['Remove PHI Protected Columns',
             'Exclude all dataset, list, and specimen columns that are tagged at a certain PHI level or higher (see below)',
             'removePhiColumns']);
@@ -2099,16 +2096,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 var publishOptions = {};
                 publishOptions['maskClinic'] = this.settings.maskClinic;
-                publishOptions['removeProtectedColumns'] = this.settings.removeProtectedColumns;
                 publishOptions['removePhiColumns'] = this.settings.removePhiColumns;
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
-                if (this.settings.maskClinic && this.settings.removeProtectedColumns && this.settings.removePhiColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
+                if(this.settings.removeProtectedColumns)  // may be true for legacy studies, so convert to PHI
+                {
+                    publishOptions['removePhiColumns'] = true;
+                    this.publishPhiRadioGroup.setValue('exportPhiLevel', 'Limited');  // protected bit being set is equal to Limited PHI
+                }
+                if(this.settings.removePhiColumns && this.settings.phiLevel)
+                    this.publishPhiRadioGroup.setValue('exportPhiLevel', this.settings.phiLevel);
+                if (this.settings.maskClinic && this.settings.removePhiColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
                     this.gridSelectAll(grid);
                 else
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
-                if(this.settings.phiLevel)
-                    this.publishPhiRadioGroup.setValue('exportPhiLevel', this.settings.phiLevel);
             }
         };
 

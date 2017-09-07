@@ -27,7 +27,6 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
@@ -35,6 +34,7 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
+import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.search.SearchResultsPage;
@@ -43,7 +43,6 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.RReportHelper;
-import org.labkey.test.util.SearchHelper;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -63,7 +62,7 @@ import static org.junit.Assert.fail;
 
 @Category({DailyC.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 30)
-public class StudyPublishTest extends StudyProtectedExportTest
+public class StudyPublishTest extends StudyPHIExportTest
 {
     {setIsBootstrapWhitelisted(true);}
     private final String ID_PREFIX = "PUBLISHED-";
@@ -150,8 +149,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
     private final int PUB3_EXPECTED_SPECIMENS = 29;
 
     private final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
-    private final String[] SPECIMEN_KEY_FIELDS = {"SpecimenNumber", "MouseId"};
-    private final String[] SPECIMEN_PROTECTED_FIELDS = {"DerivativeType", "VolumeUnits"};
+    private final String[] SPECIMEN_PHI_FIELDS = {"Fr_Container", "Fr_Level1"};
 
     private int _pipelineJobs = 0;
     private final String SUB_FOLDER_NAME = "PublishedSubStudy";
@@ -214,8 +212,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
         // Create some lists
         _listHelper.importListArchive(getFolderName(), LIST_ARCHIVE);
 
-        // Set some specimen fields as protected to test exclusion with snapshot and refresh
-        setSpecimenFieldsProtected(SPECIMEN_KEY_FIELDS, SPECIMEN_PROTECTED_FIELDS);
+        // Set some specimen fields as PHI-protected to test exclusion with snapshot and refresh
+        setSpecimenFieldsPhi(SPECIMEN_PHI_FIELDS);
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
@@ -286,7 +284,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
     protected void verifyPublishedStudy(@LoggedParam final String name, final String projectName, final String[] ptids, final String[] datasets, final String[] dependentDatasets,
                                         final String[] visits, final String[] views, final String[] reports, final String[] lists,
                                         final boolean includeSpecimens, final boolean refreshSpecimens, final int expectedSpecimenCount,
-                                        final boolean removeProtected, final boolean shiftDates, final boolean alternateIDs, final boolean maskClinicNames)
+                                        final boolean removePhiColumns, final boolean shiftDates, final boolean alternateIDs, final boolean maskClinicNames)
     {
         // Verify alternate IDs (or lack thereof)
         SearchResultsPage searchResultsPage = new SiteNavBar(getDriver())
@@ -515,12 +513,12 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
             //TODO: verify date shifting
 
-            // verify protected specimen fields were removed
+            // verify PHI-protected specimen fields were removed
             DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
-            for (String field : SPECIMEN_PROTECTED_FIELDS)
+            for (String field : SPECIMEN_PHI_FIELDS)
             {
-                SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenDetail");
-                command.setFilters(Arrays.asList(new Filter(field, null, removeProtected ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK)));
+                SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
+                command.setFilters(Arrays.asList(new Filter(field, null, removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK)));
                 Connection connection = createDefaultConnection(true);
                 SelectRowsResponse response;
 
@@ -536,7 +534,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
                 if (response.getRowCount().intValue() > 0)
                 {
                     // Fail with a useful screenshot
-                    t1.setFilter(field, (removeProtected ? "Is Not Blank" : "Is Blank"), null);
+                    t1.setFilter(field, (removePhiColumns ? "Is Not Blank" : "Is Blank"), null);
                     assertTextPresent("No data to show.");
                     fail("This should be unreachable. SelectRows response had unexpected rows but DataRegion did not");
                 }
@@ -636,7 +634,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
     @LogMethod
     private void publishStudy(@LoggedParam String name, String description, PublishLocation location, String[] groups, String[] datasets,
                               String[] visits, String[] views, String[] reports, String[] lists, boolean includeSpecimens, boolean refreshSpecimens,
-                              boolean removeProtected, boolean shiftDates, boolean alternateIDs, boolean maskClinicNames)
+                              boolean removePhi, boolean shiftDates, boolean alternateIDs, boolean maskClinicNames)
     {
         pushLocation();
         waitAndClickAndWait(Locator.linkWithText(DATE_SHIFT_DATASET_LABEL));
@@ -783,8 +781,11 @@ public class StudyPublishTest extends StudyProtectedExportTest
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
-        if (removeProtected)
-            _extHelper.selectExtGridItem("name", "Remove Protected Columns", -1, "studyWizardPublishOptionsList", true);
+        if (removePhi)
+        {
+            _extHelper.selectExtGridItem("name", "Remove PHI Protected Columns", -1, "studyWizardPublishOptionsList", true);
+            checkCheckbox(Locator.radioButtonByNameAndValue("exportPhiLevel", "Limited"));
+        }
         if (shiftDates)
             _extHelper.selectExtGridItem("name", "Shift Mouse Dates", -1, "studyWizardPublishOptionsList", true);
         if (alternateIDs)
@@ -876,7 +877,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates", "Remove Protected Columns");
+        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates", "Remove PHI Protected Columns");
         //goToProjectHome();
     }
 
@@ -1050,17 +1051,19 @@ public class StudyPublishTest extends StudyProtectedExportTest
     }
 
     // Test should be in an existing study
-    private void setSpecimenFieldsProtected(String[] keyFields, String[] protectedFields)
+    private void setSpecimenFieldsPhi(String[] phiFields)
     {
-        goToQueryView("study", "SpecimenEvent", true);
+        goToManageStudy();
+        clickAndWait(Locator.linkContainingText("Edit specimen properties"));
+
+        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("SpecimenEvent").waitFor();
         List<String> fields = new ArrayList<>();
-        fields.addAll(Arrays.asList(keyFields));
-        fields.addAll(Arrays.asList(protectedFields));
+        fields.addAll(Arrays.asList(phiFields));
         for (String field : fields)
         {
-            click(Locator.tagContainingText("div", field));
-            click(Locator.tagContainingText("span", "Additional Properties"));
-            checkCheckbox(Locator.name("protected"));
+            editor.selectField(field);
+            PropertiesEditor.FieldPropertyDock.AdvancedTabPane advancedTabPane = editor.fieldProperties().selectAdvancedTab();
+            advancedTabPane.phi.set(PropertiesEditor.PhiSelectType.PHI);
         }
         clickButton("Save", 0);
         waitForText("Save successful.");
@@ -1091,7 +1094,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
             selectQuery(schema, query);
             waitForText("edit metadata");
             clickAndWait(Locator.linkContainingText("edit metadata"));
-            waitForElement(Locator.xpath("id('org.labkey.query.metadata.MetadataEditor-Root')//td[contains(@class, 'labkey-wp-title-left')]").withText("Metadata Properties"));
+            PropertiesEditor.PropertiesEditor(getDriver()).withTitle("Metadata Properties").waitFor();
         }
     }
 

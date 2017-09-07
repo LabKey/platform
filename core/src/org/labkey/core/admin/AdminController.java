@@ -4091,7 +4091,6 @@ public class AdminController extends SpringActionController
         private String _format = "new"; // As of 14.3, this is the only supported format. But leave in place for the future.
         private String _exportType;
         private boolean _includeSubfolders;
-        private boolean _removeProtected;
         private boolean _removePhi;
         private PHI _exportPhiLevel;
         private boolean _shiftDates;
@@ -4149,16 +4148,6 @@ public class AdminController extends SpringActionController
         public void setIncludeSubfolders(boolean includeSubfolders)
         {
             _includeSubfolders = includeSubfolders;
-        }
-
-        public boolean isRemoveProtected()
-        {
-            return _removeProtected;
-        }
-
-        public void setRemoveProtected(boolean removeProtected)
-        {
-            _removeProtected = removeProtected;
         }
 
         public boolean isRemovePhi()
@@ -4249,7 +4238,7 @@ public class AdminController extends SpringActionController
 
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
-                    form.getFormat(), form.isIncludeSubfolders(), form.isRemoveProtected(), form.isRemovePhi(), form.getExportPhiLevel(), form.isShiftDates(),
+                    form.getFormat(), form.isIncludeSubfolders(), form.isRemovePhi(), form.getExportPhiLevel(), form.isShiftDates(),
                     form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
 
             switch(form.getLocation())
@@ -4489,7 +4478,7 @@ public class AdminController extends SpringActionController
                 // In order to support the Advanced import options to import into multiple target folders we need to zip
                 // the source template folder so that the zip file can be passed to the pipeline processes.
                 FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
-                        getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false, false,
+                        getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
                         false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                 FolderWriterImpl writer = new FolderWriterImpl();
                 String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
@@ -6083,7 +6072,7 @@ public class AdminController extends SpringActionController
                         // export objects from the source folder
                         FolderWriterImpl writer = new FolderWriterImpl();
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), false, false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                                form.getTemplateIncludeSubfolders(), false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // create the new target container

@@ -106,7 +106,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 
             for (ColumnInfo col : table.getColumns())
             {
-                if (!shouldRemoveProtected(ctx.isRemoveProtected(), col) || !shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col) || !col.isKeyField())
+                if (!shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col) || !col.isKeyField())
                     columns.add(col);
             }
 
@@ -114,11 +114,6 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
             xmlWriter.writeTable(tableXml);
         }
         specimensDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
-    }
-
-    private static boolean shouldRemoveProtected(boolean isRemoveProtected, ColumnInfo column)
-    {
-        return isRemoveProtected && column.isProtected();
     }
 
     private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
@@ -181,21 +176,6 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testShouldRemoveProtected()
-        {
-            ColumnInfo ciProtected = new ColumnInfo("test");
-            ciProtected.setProtected(true);
-            ColumnInfo ciNotProtected = new ColumnInfo("test");
-            ciNotProtected.setProtected(false);
-
-            // shouldn't remove if isRemoveProtected is false
-            assertFalse(shouldRemoveProtected(false, ciProtected));
-
-            // should remove if it is protected
-            assertTrue(shouldRemoveProtected(true, ciProtected));
-        }
-
         @Test
         public void testShouldRemovePhi()
         {

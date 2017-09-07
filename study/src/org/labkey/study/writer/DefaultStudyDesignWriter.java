@@ -117,9 +117,7 @@ public abstract class DefaultStudyDesignWriter
                 continue;
             if (FieldKey.fromParts("ModifiedBy").equals(col.getFieldKey()))
                 continue;
-            if (ctx.isRemoveProtected() && col.isProtected())
-                continue;
-            if (ctx.isRemovePhi() && !(col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())))
+            if (ctx.isRemovePhi() && !(col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())) && !col.isKeyField())
                 continue;
 
             columns.add(col);
@@ -152,8 +150,8 @@ public abstract class DefaultStudyDesignWriter
                 {
                     if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
                     {
-                        if (!shouldRemoveProtected(ctx.isRemoveProtected(), col)
-                                && !(shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col)))
+                        // NOTE: currently these study tables should never be allowed to have columns set at any level of PHI, so this check does nothing at the moment
+                        if (!(shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col)))
                             columns.add(col);
                     }
                 }
@@ -164,11 +162,6 @@ public abstract class DefaultStudyDesignWriter
         vf.saveXmlBean(schemaFileName, tablesDoc);
     }
 
-    private static boolean shouldRemoveProtected(boolean isRemoveProtected, ColumnInfo column)
-    {
-        return isRemoveProtected && column.isProtected();
-    }
-
     private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
     {
         return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
@@ -176,21 +169,6 @@ public abstract class DefaultStudyDesignWriter
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testShouldRemoveProtected()
-        {
-            ColumnInfo ciProtected = new ColumnInfo("test");
-            ciProtected.setProtected(true);
-            ColumnInfo ciNotProtected = new ColumnInfo("test");
-            ciNotProtected.setProtected(false);
-
-            // shouldn't remove if isRemoveProtected is false
-            assertFalse(shouldRemoveProtected(false, ciProtected));
-
-            // should remove if it is protected
-            assertTrue(shouldRemoveProtected(true, ciProtected));
-        }
-
         @Test
         public void testShouldRemovePhi()
         {

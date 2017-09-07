@@ -322,8 +322,9 @@ public class IssuesUpgradeCode implements UpgradeCode
                         else
                             _log.warn("Unable to mark field: '" + col.getName() + "' as required due to existing NULL values.");
                     }
-                    if (!col.getPermission().equals(ReadPermission.class))
-                        prop.setProtected(true);
+                    // Protected bit no longer exists, so this is commented out to avoid breaking build
+                    //if (!col.getPermission().equals(ReadPermission.class))
+                    //    prop.setProtected(true);
 
                     if (col.isPickList())
                     {

@@ -51,6 +51,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
@@ -1235,11 +1236,12 @@ public class IssuesController extends SpringActionController
                         if (!_baseNames.contains(prop.getName()))
                         {
                             _customProperties.add(prop);
+                            // treat anything higher than NotPHI as needing special permission
                             CustomColumn col = new CustomColumn(c,
                                     prop.getName().toLowerCase(),
                                     prop.getLabel() != null ? prop.getLabel() : ColumnInfo.labelFromName(prop.getName()),
                                     prop.getLookup() != null,
-                                    prop.isProtected() ? InsertPermission.class : ReadPermission.class);
+                                    prop.getPHI().isExportLevelAllowed(PHI.Limited) ? ReadPermission.class : InsertPermission.class);
 
                             _columnMap.put(col.getName(), col);
                             _captionMap.put(col.getName(), col.getCaption());

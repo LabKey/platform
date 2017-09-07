@@ -178,12 +178,6 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getDefaultScale();
     }
 
-    @Override
-    public boolean isProtected()
-    {
-        return _pd.isProtected();
-    }
-
     public PHI getPHI()
     {
         return _pd.getPHI();
@@ -345,15 +339,6 @@ public class DomainPropertyImpl implements DomainProperty
             return;
 
         edit().setDefaultScale(defaultScale);
-    }
-
-    @Override
-    public void setProtected(boolean isProtected)
-    {
-        // UNDONE: isProtected() has side-effect due to calling isNumeric()->getSqlTypeInt() which relies on rangeURI which might not be set yet.
-        if (!isEdited() && isProtected == isProtected())
-            return;
-        edit().setProtected(isProtected);
     }
 
     @Override
@@ -714,7 +699,6 @@ public class DomainPropertyImpl implements DomainProperty
         setExcludeFromShifting(propSrc.isExcludeFromShifting());
         setFacetingBehavior(propSrc.getFacetingBehavior());
         setImportAliasSet(propSrc.getImportAliasSet());
-        setProtected(propSrc.isProtected());
         setPhi(propSrc.getPHI());
         setURL(propSrc.getURL());
         setHidden(propSrc.isHidden());
@@ -865,11 +849,11 @@ public class DomainPropertyImpl implements DomainProperty
             assertFalse(_dp._schemaChanged);
 
             // change a property
-            _pd.setProtected(true);
+            _pd.setPHI(PHI.Restricted);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty());
             assertFalse(_dp._schemaChanged);
-            assertTrue(_dp.isProtected() == _pd.isProtected());
+            assertTrue(_dp.getPHI() == _pd.getPHI());
 
             // Issue #18738 change the schema outside of a schema reload and verify that the column
             // change the schema but don't mark the property as "Schema Import"
@@ -896,7 +880,7 @@ public class DomainPropertyImpl implements DomainProperty
             // verify no change when setting value to the same value as it was
             resetProperties(d, domainURI, c);
             _pd.setRangeURI("http://www.w3.org/2001/XMLSchema#int");
-            _pd.setProtected(false);
+            _pd.setPHI(PHI.Restricted);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertFalse(_dp.isDirty());
             assertFalse(_dp._schemaChanged);
@@ -993,7 +977,6 @@ public class DomainPropertyImpl implements DomainProperty
             pd.setLookupSchema("lkSchema");
             pd.setLookupQuery("lkQuery");
             pd.setFacetingBehaviorType(FacetingBehaviorType.AUTOMATIC);
-            pd.setProtected(false);
             pd.setPHI(PHI.NotPHI);
             pd.setExcludeFromShifting(false);
             return pd;

@@ -35,7 +35,6 @@ public class ChildStudyDefinition
     private String _description;
     private String _srcPath;
     private String _dstPath;
-    private boolean _removeProtectedColumns;
     private boolean _removePhiColumns;
     private PHI _exportPhiLevel;
     private boolean _shiftDates;
@@ -175,14 +174,6 @@ public class ChildStudyDefinition
     public void setCopyParticipantGroups(boolean copyParticipantGroups)
     {
         _copyParticipantGroups = copyParticipantGroups;
-    }
-
-    public boolean isRemoveProtectedColumns(){
-        return _removeProtectedColumns;
-    }
-
-    public void setRemoveProtectedColumns(boolean removeProtectedColumns){
-        _removeProtectedColumns = removeProtectedColumns;
     }
 
     public boolean isRemovePhiColumns(){
@@ -394,8 +385,6 @@ public class ChildStudyDefinition
             publishOptions.add("Use Alternate Participant IDs");
         if (isShiftDates())
             publishOptions.add("Shift Participant Dates");
-        if (isRemoveProtectedColumns())
-            publishOptions.add("Remove Protected Columns");
         if (isRemovePhiColumns())
             publishOptions.add("Remove PHI Protected Columns At Or Above " + getExportPhiLevel().name());
         if (isMaskClinic())

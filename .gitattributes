@@ -760,6 +760,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-16.30-17.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.10-17.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.10-17.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.20-17.21.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-17.21-17.22.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -804,6 +805,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-16.30-17.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.10-17.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.10-17.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.20-17.21.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-17.21-17.22.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -2884,7 +2886,7 @@ study/test/src/org/labkey/test/tests/study/StudyExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyLotsOfParticipantsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyManualTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyMergeParticipantsTest.java -text
-study/test/src/org/labkey/test/tests/study/StudyProtectedExportTest.java -text
+study/test/src/org/labkey/test/tests/study/StudyPHIExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyProtocolDesignerTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyPublishTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyReloadTest.java -text

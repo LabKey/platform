@@ -200,8 +200,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     _form.setStudyProps(_form.getStudyProps()[0].split(","));
                 Set<String> dataTypes = getDataTypesToExport(_form);
 
-                FolderExportContext folderExportContext = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false,
-                        _form.isRemoveProtectedColumns(), _form.isRemovePhiColumns(), _form.getExportPhiLevel(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(),
+                FolderExportContext folderExportContext = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false, _form.isRemovePhiColumns(), _form.getExportPhiLevel(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(),
                         _form.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
                 if (_form.getLists() != null)
@@ -214,7 +213,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     folderExportContext.setReportIds(_form.getReports());
 
                 StudyExportContext studyExportContext = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
-                        dataTypes, _form.isRemoveProtectedColumns(), _form.isRemovePhiColumns(), _form.getExportPhiLevel(),
+                        dataTypes, _form.isRemovePhiColumns(), _form.getExportPhiLevel(),
                         new ParticipantMapper(sourceStudy, user, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
                         _form.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
                 );
@@ -260,6 +259,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 // import the specimen data and settings
                 importSpecimenData(destStudy, vf);
+                importSpecimenMetadata(_errors, vf, studyImportContext);
                 importSpecimenSettings(_errors, vf, studyImportContext);
 
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
@@ -370,6 +370,16 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (importContext != null)
         {
             new CohortImporter().process(importContext, studyDir, errors);
+        }
+    }
+
+    private void importSpecimenMetadata(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception
+    {
+        VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(importContext);
+
+        if (importContext != null)
+        {
+            new SpecimenSchemaImporter().process(importContext, specimenDir, errors);
         }
     }
 

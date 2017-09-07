@@ -234,6 +234,8 @@ public class StudySnapshot
         /* Folder Objects */
         private List<String> folderObjects = new ArrayList<>();
         /* Publish Options */
+        /* removeProtectedColumns is only here for legacy studies, no longer readable
+           Jackson serializer gets cranky if it sees properties it doesn't know about */
         private boolean removeProtectedColumns;
         private boolean removePhiColumns;
         private PHI phiLevel;
@@ -408,7 +410,6 @@ public class StudySnapshot
 
         private void loadPublishOptions(StudyExportContext ctx)
         {
-            removeProtectedColumns = ctx.isRemoveProtected();
             removePhiColumns = ctx.isRemovePhi();
             phiLevel = ctx.getPhiLevel();
             shiftDates = ctx.isShiftDates();
@@ -426,9 +427,11 @@ public class StudySnapshot
             return useAlternateParticipantIds;
         }
 
+        /* removeProtectedColumns is only here for legacy studies, no longer readable
+           Jackson serializer gets cranky if it sees properties it doesn't know about */
         public boolean isRemoveProtectedColumns()
         {
-            return removeProtectedColumns;
+            return false;
         }
 
         public boolean isRemovePhiColumns()
