@@ -880,7 +880,7 @@ public class DomainPropertyImpl implements DomainProperty
             // verify no change when setting value to the same value as it was
             resetProperties(d, domainURI, c);
             _pd.setRangeURI("http://www.w3.org/2001/XMLSchema#int");
-            _pd.setPHI(PHI.Restricted);
+            _pd.setPHI(PHI.NotPHI);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertFalse(_dp.isDirty());
             assertFalse(_dp._schemaChanged);
