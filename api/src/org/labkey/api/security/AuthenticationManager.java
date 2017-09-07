@@ -59,6 +59,7 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -1159,31 +1160,40 @@ public class AuthenticationManager
     public static void setPrimaryAuthenticationResult(HttpServletRequest request, PrimaryAuthenticationResult result)
     {
         HttpSession session = request.getSession(true);
-        session.setAttribute(getSessionKey(PrimaryAuthenticationProvider.class), result);
+        session.setAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class), result);
     }
 
 
     public static @Nullable PrimaryAuthenticationResult getPrimaryAuthenticationResult(HttpSession session)
     {
-        return (PrimaryAuthenticationResult)session.getAttribute(getSessionKey(PrimaryAuthenticationProvider.class));
+        return (PrimaryAuthenticationResult)session.getAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class));
     }
 
 
     public static void setSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz, User user)
     {
-        session.setAttribute(getSessionKey(clazz), user);
+        session.setAttribute(getAuthenticationProcessSessionKey(clazz), user);
     }
 
 
     public static @Nullable User getSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz)
     {
-        return (User)session.getAttribute(getSessionKey(clazz));
+        return (User)session.getAttribute(getAuthenticationProcessSessionKey(clazz));
     }
 
 
-    private static String getSessionKey(Class<? extends AuthenticationProvider> clazz)
+    private static final String AUTHENTICATION_PROCESS_PREFIX = "AuthenticationProcess$";
+
+    private static String getAuthenticationProcessSessionKey(Class<? extends AuthenticationProvider> clazz)
     {
-        return clazz.getName() + "$User";
+        return AUTHENTICATION_PROCESS_PREFIX + clazz.getName() + "$User";
+    }
+
+
+    // Clear all primary and secondary authentication results
+    public static void clearAuthenticationProcessAttributes(HttpServletRequest request)
+    {
+        SessionHelper.clearAttributesWithPrefix(request, AUTHENTICATION_PROCESS_PREFIX);
     }
 
 

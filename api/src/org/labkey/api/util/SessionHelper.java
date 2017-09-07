@@ -145,4 +145,20 @@ public class SessionHelper
             }
         }
     }
+
+
+    public static void clearAttributesWithPrefix(@NotNull HttpServletRequest request, String prefix)
+    {
+        HttpSession session = request.getSession();
+
+        if (null != session)
+        {
+            synchronized (SessionHelper.getSessionLock(session))
+            {
+                Collections.list(session.getAttributeNames()).stream()
+                    .filter(name->name.startsWith(prefix))
+                    .forEach(session::removeAttribute);
+            }
+        }
+    }
 }
