@@ -78,7 +78,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected Set<String> importAliases = new LinkedHashSet<>();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
-    protected Boolean isProtected = false;
     protected PHI phi = PHI.NotPHI;
     protected Boolean isExcludeFromShifting = false;
 
@@ -112,7 +111,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.importAliases = new LinkedHashSet<>(importAliases);
         to.facetingBehaviorType = facetingBehaviorType;
         to.crosstabColumnMember = crosstabColumnMember;
-        to.isProtected = isProtected;
         to.phi = phi;
         to.isExcludeFromShifting = isExcludeFromShifting;
         to.scale = scale;
@@ -678,16 +676,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setCrosstabColumnMember(CrosstabMember member)
     {
         this.crosstabColumnMember = member;
-    }
-
-    public boolean isProtected()
-    {
-        return isProtected;
-    }
-
-    public void setProtected(boolean isProtected)
-    {
-        this.isProtected = isProtected;
     }
 
     public void setPHI(PHI phi)

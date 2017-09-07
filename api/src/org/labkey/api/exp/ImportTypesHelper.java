@@ -22,6 +22,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
+import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
 
 import java.util.ArrayList;
@@ -71,8 +72,7 @@ public class ImportTypesHelper
         _standardKeys.add("DefaultScale");
         _standardKeys.add("ConditionalFormats");
         _standardKeys.add("FacetingBehaviorType");
-        _standardKeys.add("Protected");
-        //_standardKeys.add("Phi");
+        _standardKeys.add("Phi");
         _standardKeys.add("ExcludeFromShifting");
         _standardKeys.add("Scale");
 
@@ -179,7 +179,15 @@ public class ImportTypesHelper
                     importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
                 }
 
-                boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
+                PHIType.Enum phi = PHIType.NOT_PHI;
+                if (columnXml.isSetProtected())  // column is removed from LabKey but need to support old archives, see spec #28920
+                {
+                    if (columnXml.getProtected())
+                        phi = PHIType.LIMITED;  // always convert protected to limited PHI; may be overridden by getPhi(), though
+                }
+                if(columnXml.isSetPhi())
+                    phi = columnXml.getPhi();
+
                 boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
 
                 ColumnType.Fk fk = columnXml.getFk();
@@ -211,7 +219,7 @@ public class ImportTypesHelper
                         defaultScale,
                         ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
                         facetingBehaviorType,
-                        isProtected,
+                        phi,
                         isExcludeFromShifting,
                         columnXml.isSetScale() ? columnXml.getScale() : null
 

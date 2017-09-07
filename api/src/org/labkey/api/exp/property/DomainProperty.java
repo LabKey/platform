@@ -51,7 +51,6 @@ public interface DomainProperty extends ImportAliasable
     boolean isDimension();
     boolean isRecommendedVariable();
     DefaultScaleType getDefaultScale();
-    boolean isProtected();
     PHI getPHI();
     boolean isExcludeFromShifting();
     boolean isMvEnabledForDrop();
@@ -78,7 +77,6 @@ public interface DomainProperty extends ImportAliasable
     void setDimension(boolean isDimension);
     void setRecommendedVariable(boolean isRecommendedVariable);
     void setDefaultScale(DefaultScaleType defaultScale);
-    void setProtected(boolean isProtected);
     void setPhi(PHI phi);
     void setExcludeFromShifting(boolean isExcludeFromShifting);
     void setScale(int scale);

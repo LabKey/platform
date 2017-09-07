@@ -70,7 +70,6 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty recommendedVariable = new BooleanProperty(false);
     private StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
     private StringProperty facetingBehaviorType = new StringProperty();
-    private BooleanProperty isProtected = new BooleanProperty();
     private StringProperty phi = new StringProperty(PHIType.NotPHI.name());
     private BooleanProperty isExcludeFromShifting = new BooleanProperty();
     private BooleanProperty isPreventReordering = new BooleanProperty();
@@ -129,7 +128,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         setImportAliases(s.getImportAliases());
         setURL(s.getURL());
         setFacetingBehaviorType(s.getFacetingBehaviorType());
-        setProtected(s.isProtected());
         setPHI(s.getPHI());
         setExcludeFromShifting(s.isExcludeFromShifting());
         setPreventReordering(s.getPreventReordering());
@@ -464,21 +462,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.facetingBehaviorType.set(facetingBehavior);
     }
 
-    public boolean isSetProtected()
-    {
-        return isProtected.getBoolean() != null;
-    }
-
-    public boolean isProtected()
-    {
-        return isProtected.booleanValue();
-    }
-
-    public void setProtected(boolean isProtected)
-    {
-        this.isProtected.setBool(isProtected);
-    }
-
     public String getPHI()
     {
         return phi.getString();
@@ -591,7 +574,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isRecommendedVariable() != that.isRecommendedVariable()) return false;
         if (!StringUtils.equals(getDefaultScale(), that.getDefaultScale())) return false;
         if (!StringUtils.equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
-        if (isProtected() != that.isProtected()) return false;
         if (getPHI() != null ? !getPHI().equals(that.getPHI()) : that.getPHI() != null) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 
@@ -640,7 +622,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (recommendedVariable.getBoolean() != null ? recommendedVariable.getBoolean().hashCode() : 0);
         result = 31 * result + (defaultScale.getString() != null ? defaultScale.getString().hashCode() : 0);
         result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
-        result = 31 * result + (isProtected.getBoolean() != null ? isProtected.getBoolean().hashCode() : 0);
         result = 31 * result + (phi.getString() != null ? phi.hashCode() : 0);
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
         result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
@@ -686,7 +667,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("defaultValue".equals(prop)) throw new IllegalStateException("defaultValue cannot be bound.");
         if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");
         if ("facetingBehaviorType".equals(prop)) return facetingBehaviorType;
-        if ("protected".equals(prop)) return isProtected;
         if ("phi".equals(prop)) return phi;
         if ("excludeFromShifting".equals(prop)) return isExcludeFromShifting;
         if ("scale".equals(prop)) return scale;

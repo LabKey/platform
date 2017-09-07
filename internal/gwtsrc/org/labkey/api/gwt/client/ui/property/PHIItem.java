@@ -36,7 +36,7 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
         _phiTypes.setName("phiLevel");
     }
 
-    private void updateEnabledState(FieldType field)
+    private void updateState(FieldType field)
     {
         if (_phiTypes.getItemCount() == 0)
         {
@@ -57,6 +57,14 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
             }
         }
         _phiTypes.setSelectedIndex(0);
+    }
+
+    private void updateEnabledState(DomainType domain, FieldType currentField)
+    {
+        if (!domain.allowsPhi(currentField))
+            currentField.setPHI(PHIType.NotPHI.toString());
+
+        setCanEnable(domain.allowsPhi(currentField));
     }
 
     public int addToTable(FlexTable flexTable, int row)
@@ -104,13 +112,14 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
-        updateEnabledState(field);
+        updateState(field);
+        updateEnabledState(domain, field);
     }
 
     @Override
     public void propertyDescriptorChanged(FieldType field)
     {
-        updateEnabledState(field);
+        updateState(field);
     }
 
 

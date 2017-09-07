@@ -36,7 +36,6 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     Set<String> getDataTypes();
     String getFormat();
     boolean isIncludeSubfolders();
-    boolean isRemoveProtected();
     boolean isRemovePhi();
     PHI getPhiLevel();
     boolean isShiftDates();

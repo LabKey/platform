@@ -1474,7 +1474,7 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "protected, phi, excludefromshifting)\n");
+                "phi, excludefromshifting)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as ontolotyuri, " +
@@ -1510,7 +1510,6 @@ public class OntologyManager
                 "cast(? as int) as modifiedby, " +
                 "{fn now()} as modified, " +
                 "? as facetingbehaviortype, " +
-                "? as protected, " +
                 "? as phi, " +
                 "? as excludefromshifting\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
@@ -1549,7 +1548,6 @@ public class OntologyManager
         sql.add(user); // modifiedby
         // modified
         sql.add(pd.getFacetingBehaviorType());
-        sql.add(pd.isProtected());
         sql.add(pd.getPHI());
         sql.add(pd.isExcludeFromShifting());
         // WHERE
@@ -2722,7 +2720,7 @@ public class OntologyManager
         }
         p.setLookup(lookup);
         p.setFacetingBehavior(pd.getFacetingBehaviorType());
-        p.setProtected(pd.isProtected());
+        p.setPhi(pd.getPHI());
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
     }
 
@@ -2798,7 +2796,6 @@ public class OntologyManager
                     facetingBehavior = type;
             }
 
-            boolean isProtected = m.get("Protected") != null && ((Boolean) m.get("Protected")).booleanValue();
             PHI phi = PHI.NotPHI;
             if (m.get("Phi") != null)
             {
@@ -2882,7 +2879,6 @@ public class OntologyManager
             pd.setLookupSchema(lookupSchema);
             pd.setLookupQuery(lookupQuery);
             pd.setFacetingBehaviorType(facetingBehavior);
-            pd.setProtected(isProtected);
             pd.setPHI(phi);
             pd.setExcludeFromShifting(isExcludeFromShifting);
         }

@@ -158,12 +158,6 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     }
 
     @Override
-    public boolean isRemoveProtected()
-    {
-        return false;
-    }
-
-    @Override
     public boolean isRemovePhi()
     {
         return false;

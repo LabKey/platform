@@ -78,7 +78,6 @@ import org.labkey.api.gwt.client.ui.property.MaxLengthItem;
 import org.labkey.api.gwt.client.ui.property.MeasureItem;
 import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
 import org.labkey.api.gwt.client.ui.property.PHIItem;
-import org.labkey.api.gwt.client.ui.property.ProtectedItem;
 import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
 import org.labkey.api.gwt.client.ui.property.RequiredItem;
 import org.labkey.api.gwt.client.ui.property.URLItem;
@@ -168,7 +167,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private ImageButton _inferSchemaButton;
     private ImageButton _compareTemplateButton;
     private DefaultValueItem<DomainType, FieldType> _defaultValueSelector;
-    private PHIItem<DomainType, FieldType> _phiSelector;
+    protected PHIItem<DomainType, FieldType> _phiSelector;
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
@@ -443,7 +442,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, advancedPane);
         advancedPane.addItem(_defaultValueSelector);
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
-        advancedPane.addItem(new ProtectedItem<DomainType, FieldType>(advancedPane));
         _phiSelector = new PHIItem<DomainType, FieldType>(advancedPane);
         advancedPane.addItem(_phiSelector);
         advancedPane.addItem(new ExcludeFromShiftingItem<DomainType, FieldType>(advancedPane));
@@ -684,7 +682,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
             if (_phiSelector != null)
             {
-                _phiSelector.setEnabled(!readOnly);
+                _phiSelector.setEnabled(!readOnly && _domain.isProvisioned());  // only support PHI metadata selection for provisioned tables
+                                                                                // TODO: this is only a rough check, should restrict to only tables we support PHI for explicitly
+                                                                                // TODO: should also always disable in schema browser
             }
 
             Element e = _table.getRowFormatter().getElement(tableRow);

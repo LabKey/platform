@@ -395,7 +395,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setRawValueColumn(col.isRawValueColumn());
         setMvIndicatorColumn(col.isMvIndicatorColumn());
         setFacetingBehaviorType(col.getFacetingBehaviorType());
-        setProtected(col.isProtected());
         setExcludeFromShifting(col.isExcludeFromShifting());
         setPHI(col.getPHI());
         setShouldLog(col.isShouldLog());
@@ -1079,19 +1078,19 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             setDisplayWidth(xmlCol.getDisplayWidth());
         if (xmlCol.isSetNullable())
             nullable = xmlCol.getNullable();
-        if (xmlCol.isSetProtected())
-            isProtected = xmlCol.getProtected();
         if (xmlCol.isSetExcludeFromShifting())
             isExcludeFromShifting = xmlCol.getExcludeFromShifting();
-
         if (xmlCol.isSetImportAliases())
             importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
-
         if (xmlCol.isSetConditionalFormats())
         {
             setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
         }
-
+        if (xmlCol.isSetProtected())  // column is removed from LabKey but need to support old archives, see spec #28920
+        {
+            if (xmlCol.getProtected())
+                phi = PHI.Limited;  // always convert protected to limited PHI; may be overridden by getPhi(), though
+        }
         if (xmlCol.isSetPhi())
             phi = PHI.valueOf(xmlCol.getPhi().toString());
         if (xmlCol.isSetFacetingBehavior())

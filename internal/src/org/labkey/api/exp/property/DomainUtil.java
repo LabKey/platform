@@ -247,7 +247,6 @@ public class DomainUtil
         gwtProp.setDefaultScale(prop.getDefaultScale().name());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
-        gwtProp.setProtected(prop.isProtected());
         gwtProp.setPHI(prop.getPHI().name());
         gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
@@ -380,8 +379,13 @@ public class DomainUtil
             gwtProp.setDefaultValue(columnXml.getDefaultValue());
         if (columnXml.isSetImportAliases())
             gwtProp.setImportAliases(StringUtils.join(columnXml.getImportAliases().getImportAliasArray(), ","));
-        if (columnXml.isSetProtected())
-            gwtProp.setProtected(columnXml.getProtected());
+        if (columnXml.isSetProtected())  // column is removed from LabKey but need to support old archives, see spec #28920
+        {
+            if (columnXml.getProtected())
+                gwtProp.setPHI(PHI.Limited.toString());  // always convert protected to limited PHI; may be overridden by getPhi(), though
+        }
+        if (columnXml.isSetPhi())
+            gwtProp.setPHI(columnXml.getPhi().toString());
         if (columnXml.isSetExcludeFromShifting())
             gwtProp.setExcludeFromShifting(columnXml.getExcludeFromShifting());
         if (columnXml.isSetScale())
@@ -749,9 +753,6 @@ public class DomainUtil
             FacetingBehaviorType type = FacetingBehaviorType.valueOf(from.getFacetingBehaviorType());
             to.setFacetingBehavior(type);
         }
-
-        if (from.isProtected())
-            to.setProtected(from.isProtected());
 
         if (from.getPHI() != null)
         {

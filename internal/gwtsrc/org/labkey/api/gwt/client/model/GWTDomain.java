@@ -51,7 +51,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
     private Set<String> reservedFieldNames = new HashSet<String>();
-    private Set<String> protectedNotAllowedFieldNames = new HashSet<String>();
+    private Set<String> phiNotAllowedFieldNames = new HashSet<String>();
 
     private Set<String> excludeFromExportFieldNames = new HashSet<String>();
     private boolean provisioned = false;
@@ -114,9 +114,9 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.queryName = src.queryName;
         this.templateDescription = src.templateDescription;
 
-        if (src.getProtectedNotAllowedFieldNames() != null)
+        if (src.getPhiNotAllowedFieldNames() != null)
         {
-            this.getProtectedNotAllowedFieldNames().addAll(src.getProtectedNotAllowedFieldNames());
+            this.getPhiNotAllowedFieldNames().addAll(src.getPhiNotAllowedFieldNames());
         }
     }
 
@@ -278,11 +278,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     }
 
     /**
-     * @return  Indicates that the property is not allowed to be set as "Protected"
+     * @return  Indicates that the property is not allowed to be set as PHI
      */
-    public boolean allowsProtected(FieldType field)
+    public boolean allowsPhi(FieldType field)
     {
-        return !(getProtectedNotAllowedFieldNames() != null && field.getName() != null && getProtectedNotAllowedFieldNames().contains(field.getName().toLowerCase()));
+        return !(getPhiNotAllowedFieldNames() != null && field.getName() != null && getPhiNotAllowedFieldNames().contains(field.getName().toLowerCase()));
     }
 
     /**
@@ -351,17 +351,17 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         return excludeFromExportFieldNames.contains(field.getName().toLowerCase());
     }
 
-    public Set<String> getProtectedNotAllowedFieldNames()
+    public Set<String> getPhiNotAllowedFieldNames()
     {
-        return protectedNotAllowedFieldNames;
+        return phiNotAllowedFieldNames;
     }
 
-    public void setProtectedNotAllowedFieldNames(Set<String> protectedNotAllowedFieldNames)
+    public void setPhiNotAllowedFieldNames(Set<String> phiNotAllowedFieldNames)
     {
-        this.protectedNotAllowedFieldNames = new HashSet<String>();
-        for (String fieldName : protectedNotAllowedFieldNames)
+        this.phiNotAllowedFieldNames = new HashSet<String>();
+        for (String fieldName : phiNotAllowedFieldNames)
         {
-            this.protectedNotAllowedFieldNames.add(fieldName.toLowerCase());
+            this.phiNotAllowedFieldNames.add(fieldName.toLowerCase());
         }
     }
 
