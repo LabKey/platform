@@ -70,7 +70,6 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.TemplateHeaderView;
@@ -1467,7 +1466,7 @@ public class ModuleLoader implements Filter
                 .collect(Collectors.toList());
 
             if (!missedModules.isEmpty())
-                setStartupFailure(new ConfigurationException(StringUtilsLabKey.pluralize(missedModules.size(), "required module") + " not present: " + missedModules));
+                setStartupFailure(new ConfigurationException("Required module" + (missedModules.size() > 1 ? "s" : "") + " not present: " + missedModules));
         }
     }
 
