@@ -122,7 +122,9 @@ public interface AttachmentService
 
     void registerAttachmentType(AttachmentType type);
 
-    HttpView getAttachmentAdminView(ActionURL currentUrl);
+    HttpView getAdminView(ActionURL currentUrl);
+
+    HttpView getFindAttachmentParentsView();
 
     class DuplicateFilenameException extends IOException
     {
