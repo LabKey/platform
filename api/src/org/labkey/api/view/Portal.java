@@ -1022,11 +1022,11 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView) throws Exception
     {
         boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
-        populatePortalView(context, id, template, printView, canCustomize);
+        populatePortalView(context, id, template, printView, canCustomize, false);
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView, boolean canCustomize) throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView, boolean canCustomize, boolean alwaysShowCustomize) throws Exception
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         List<WebPart> parts = getParts(context.getContainer(), id, context);
@@ -1069,7 +1069,7 @@ public class Portal
                     if (desc.isEditable() && view.getCustomize() == null)
                         view.setCustomize(new NavTree("", getCustomizeURL(context, part)));
 
-                    if (PageFlowUtil.isPageAdminMode(context))
+                    if (alwaysShowCustomize || PageFlowUtil.isPageAdminMode(context))
                     {
                         if (i > 0)
                             navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
@@ -1107,7 +1107,7 @@ public class Portal
             }
         }
 
-        if (PageFlowUtil.isPageAdminMode(context) && canCustomize && !printView)
+        if ((alwaysShowCustomize || PageFlowUtil.isPageAdminMode(context)) && canCustomize && !printView)
             addCustomizeDropdowns(context.getContainer(), template, id, locations);
     }
 
