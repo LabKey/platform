@@ -24,21 +24,12 @@
     HttpView me = HttpView.currentView();
     ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(getContainer());
 %>
-<style type="text/css">
-    div.section
-    {
-        padding: 8px 0;
-    }
-</style>
-<div>
-    <div class="section">
-        <span>The menu bar can be customized to provide quick access to LabKey features.</span>
-    </div>
-    <div class="section">
-        <span>The menu bar is populated by web parts. You can add and remove webparts here.</span>
-    </div>
-    <div class="section">
+<div style="padding-bottom: 40px;">
+    <p>The menu bar can be customized to provide quick access to LabKey features. It is populated by webparts, which can be added/removed here.</p>
+    <p>
         <%= button("Refresh Menu Bar").href(refreshURL) %>
+    </p>
+    <div style="padding: 8px 0;">
+        <% include(me.getView("menubar"), out); %>
     </div>
-    <div class="section"><% include(me.getView("menubar"), out); %></div>
 </div>
