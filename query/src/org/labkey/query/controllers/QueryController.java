@@ -1013,12 +1013,15 @@ public class QueryController extends SpringActionController
             options.setErrorListener(xmlErrors);
             try
             {
-                TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
-                for (ColumnType column : tablesDoc.getTables().getTableArray()[0].getColumns().getColumnArray())
+                if(target.ff_metadataText != null)
                 {
-                    if(column.isSetPhi() || column.isSetProtected())
+                    TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
+                    for (ColumnType column : tablesDoc.getTables().getTableArray()[0].getColumns().getColumnArray())
                     {
-                        throw new IllegalArgumentException("PHI/protected metadata must not be set here.");
+                        if (column.isSetPhi() || column.isSetProtected())
+                        {
+                            throw new IllegalArgumentException("PHI/protected metadata must not be set here.");
+                        }
                     }
                 }
             }
