@@ -109,18 +109,12 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         if (_currentPD != null)
         {
             DOM.setStyleAttribute(getElement(), "display", "block");
-            DOM.setStyleAttribute(getElement(), "backgroundColor", "#eeeeee");
 
             for (PropertyPaneItem<DomainType, FieldType> item : _items)
-            {
                 item.showPropertyDescriptor(getCurrentDomain(), _currentPD);
-            }
         }
         else
-        {
             DOM.setStyleAttribute(getElement(), "display", "none");
-            DOM.setStyleAttribute(getElement(), "backgroundColor", "#ffffff");
-        }
 
         // note item.showProperty() may set/reset canEdit, so call setEnabled() after 
         setEnabled(editable);
