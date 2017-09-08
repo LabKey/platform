@@ -26,11 +26,8 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -54,10 +51,8 @@ import org.labkey.study.query.StudyQuerySchema;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -386,91 +381,65 @@ public class StudyUpgradeCode implements UpgradeCode
         String sql;
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
+            SqlExecutor sel = new SqlExecutor(StudySchema.getInstance().getScope());
+
+            // SQL Server insert into identity column
+            if (StudySchema.getInstance().getSqlDialect().isSqlServer())
+            {
+                sql = "SET IDENTITY_INSERT core.QCState ON";
+                sqlFrag = new SQLFragment(sql);
+                sel.execute(sqlFrag);
+            }
+
+            sql = "INSERT INTO core.QCState (RowId, Label, Description, Container, PublicData) " +
+                    "SELECT RowId, Label, Description, Container, PublicData FROM study.QCState;";
+            sqlFrag = new SQLFragment(sql);
+            sel.execute(sqlFrag);
+
+            if (StudySchema.getInstance().getSqlDialect().isSqlServer())
+            {
+                sql = "SET IDENTITY_INSERT core.QCState OFF";
+                sqlFrag = new SQLFragment(sql);
+                sel.execute(sqlFrag);
+            }
+            else
+            {   // PG after inserting into serial column
+                sql = "SELECT setval(pg_get_serial_sequence('core.QCState', 'rowid'), \n" +
+                        "(SELECT MAX(RowId) FROM core.QCState));";
+                sqlFrag = new SQLFragment(sql);
+                sel.execute(sqlFrag);
+            }
+
             sql = "ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultAssayQCState";
             sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+            sel.execute(sqlFrag);
 
             sql = "ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultDirectEntryQCState";
             sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+            sel.execute(sqlFrag);
 
             sql = "ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultPipelineQCState";
             sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+            sel.execute(sqlFrag);
 
-            sql = "SELECT * FROM study.QCState";  // No longer have a tableinfo for this table
-            SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
-
-            TableResultSet resultSet = selector.getResultSet();
-            if (null != resultSet)
-            {
-                Map<String, Object> newRowMap;
-
-                while (resultSet.next())
-                {
-                    Map<String, Object> rowMap = resultSet.getRowMap();
-
-                    newRowMap = new HashMap<>();
-                    newRowMap.put("Label", rowMap.get("Label"));
-                    newRowMap.put("Description", rowMap.get("Description"));
-                    newRowMap.put("Container", rowMap.get("Container"));
-                    newRowMap.put("PublicData", rowMap.get("PublicData"));
-
-                    Table.insert(context.getUpgradeUser(), StudySchema.getInstance().getTableInfoQCState(), newRowMap);
-                }
-                resultSet.close();
-            }
-
-            updateTableQCState("study", "Study", "DefaultPipelineQCState");
-            updateTableQCState("study", "Study", "DefaultAssayQCState");
-            updateTableQCState("study", "Study", "DefaultDirectEntryQCState");
-
-            transaction.commit();
-        }
-
-        // Leaving updating all the datasets out of the transaction to avoid very large transaction sizes
-        List<String> updated = new ArrayList<>();
-        Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
-        for (Container c : allContainers)
-        {
-            Study study = StudyManager.getInstance().getStudy(c);
-            if (null != study)
-            {
-                List<? extends Dataset> datasets = study.getDatasets();
-                for (Dataset dataset : datasets)
-                {
-                    Domain domain = dataset.getDomain();
-                    if (domain != null)
-                    {
-                        if (updated.contains(domain.getStorageTableName()))
-                            continue;
-
-                        updateTableQCState("studyDataset", domain.getStorageTableName(), DatasetDomainKind.QCSTATE);
-                        updated.add(domain.getStorageTableName());
-                    }
-                }
-            }
-        }
-
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
-        {
             sql = "ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.QCState (RowId)";
             sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+            sel.execute(sqlFrag);
 
             sql = "ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.QCState (RowId)";
             sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+            sel.execute(sqlFrag);
 
             sql = "ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.QCState (RowId)";
             sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
-
-            sql = "DROP TABLE study.QCState";
-            sqlFrag = new SQLFragment(sql);
-            new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+            sel.execute(sqlFrag);
 
             transaction.commit();
         }
+
+        // Don't hold transaction open for this
+        sql = "DROP TABLE study.QCState";
+        sqlFrag = new SQLFragment(sql);
+        new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
     }
 }
