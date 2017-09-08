@@ -865,18 +865,6 @@ public class DbScope
         // First try the canonical schema name (which could differ in casing from the requested name)
         Resource resource = schema.getSchemaResource();
 
-        // TODO: What scenario does this address? Push this into getSchemaResource() or remove.
-        if (null == resource)
-        {
-            String lowerName = schemaName.toLowerCase();
-
-            if (!lowerName.equals(schema.getName()))
-                resource = schema.getSchemaResource(lowerName);
-
-            // TODO: Track down why this block exists
-            assert null == resource;
-        }
-
         if (null == resource)
         {
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);

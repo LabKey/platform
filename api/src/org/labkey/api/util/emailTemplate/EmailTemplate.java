@@ -204,7 +204,7 @@ public abstract class EmailTemplate
     public Container getContainer(){return _container;}
     /* package */ void setContainer(Container c){_container = c;}
     @Nullable public String getSenderName(){return _senderName;}
-    public void setSenderName(String senderName){_senderName = senderName;}
+    public void setSenderName(@Nullable String senderName){_senderName = senderName;}
 
     @NotNull
     public ContentType getContentType()
@@ -414,7 +414,7 @@ public abstract class EmailTemplate
 
         /** Sort alphabetically by parameter name */
         @Override
-        public int compareTo(ReplacementParam o)
+        public int compareTo(@NotNull ReplacementParam o)
         {
             return _name.compareToIgnoreCase(o._name);
         }

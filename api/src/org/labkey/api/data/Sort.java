@@ -231,7 +231,7 @@ public class Sort
     {
         String[] sortKeys;
 
-        for (String sortParam : urlhelp.getParameters(regionName + SORT_KEY))
+        for (String sortParam : urlhelp.getParameterValues(regionName + SORT_KEY))
         {
             if (null == sortParam) continue;
             sortKeys = sortParam.split(",");

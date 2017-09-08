@@ -510,13 +510,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    /* use getParamaterValues() to be consistent with ServletRequest.getParameterValues() */
-    @Deprecated
-    public List<String> getParameters(String key)
-    {
-        return getParameterValues(key);
-    }
-
     public List<String> getParameterValues(String key)
     {
         if (null == _parameters)
