@@ -4379,32 +4379,25 @@ public class QueryController extends SpringActionController
             {
                 SqlDialect dialect = scope.getSqlDialect();
 
-                try
+                Collection<String> schemaNames = new LinkedList<>();
+                Collection<String> schemaNamesIncludingSystem = new LinkedList<>();
+
+                for (String schemaName : scope.getSchemaNames())
                 {
-                    Collection<String> schemaNames = new LinkedList<>();
-                    Collection<String> schemaNamesIncludingSystem = new LinkedList<>();
+                    schemaNamesIncludingSystem.add(schemaName);
 
-                    for (String schemaName : scope.getSchemaNames())
-                    {
-                        schemaNamesIncludingSystem.add(schemaName);
+                    if (dialect.isSystemSchema(schemaName))
+                        continue;
 
-                        if (dialect.isSystemSchema(schemaName))
-                            continue;
+                    if (null != moduleLoader.getModuleForSchemaName(DbSchema.getDisplayName(scope, schemaName)))
+                        continue;
 
-                        if (null != moduleLoader.getModuleForSchemaName(DbSchema.getDisplayName(scope, schemaName)))
-                            continue;
-
-                        schemaNames.add(schemaName);
-                    }
-
-                    DataSourceInfo source = new DataSourceInfo(scope);
-                    _sourcesAndSchemas.put(source, schemaNames);
-                    _sourcesAndSchemasIncludingSystem.put(source, schemaNamesIncludingSystem);
+                    schemaNames.add(schemaName);
                 }
-                catch (SQLException e)
-                {
-                    LOG.error("Exception retrieving schemas from DbScope '" + scope.getDataSourceName() + "'", e);
-                }
+
+                DataSourceInfo source = new DataSourceInfo(scope);
+                _sourcesAndSchemas.put(source, schemaNames);
+                _sourcesAndSchemasIncludingSystem.put(source, schemaNamesIncludingSystem);
             }
         }
     }
@@ -6394,22 +6387,14 @@ public class QueryController extends SpringActionController
             Collection<Map<String, Object>> sourcesAndSchemas = new LinkedList<>();
             for (DbScope scope : DbScope.getDbScopes())
             {
-                try
+                DataSourceInfo source = new DataSourceInfo(scope);
+                for (String schemaName : scope.getSchemaNames())
                 {
-                    DataSourceInfo source = new DataSourceInfo(scope);
-                    for (String schemaName : scope.getSchemaNames())
-                    {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("dataSourceDisplayName", source.displayName);
-                        map.put("dataSourceSourceName", source.sourceName);
-                        map.put("schemaName", schemaName);
-                        sourcesAndSchemas.add(map);
-                    }
-
-                }
-                catch (SQLException e)
-                {
-                    LOG.error("Exception retrieving schemas from DBScope '" + scope.getDataSourceName() + "'", e);
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("dataSourceDisplayName", source.displayName);
+                    map.put("dataSourceSourceName", source.sourceName);
+                    map.put("schemaName", schemaName);
+                    sourcesAndSchemas.add(map);
                 }
             }
 

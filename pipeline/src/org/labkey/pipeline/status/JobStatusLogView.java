@@ -111,7 +111,7 @@ public class JobStatusLogView extends ReaderView
             out.write("<pre class=\"labkey-log-file\">");
 
             // Exception report 20876 - limit length of processed lines to avoid running out of memory
-            final int maxLineLength = 10000000;
+            final int maxLineLength = 10_000_000;
             if (line.length() > maxLineLength)
             {
                 line = line.substring(0, maxLineLength);
