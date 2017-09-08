@@ -2828,13 +2828,30 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return AttachmentService.get().getAttachmentAdminView(getViewContext().getActionURL());
+            return AttachmentService.get().getAdminView(getViewContext().getActionURL());
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Attachments", getClass());
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class FindAttachmentParentsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return AttachmentService.get().getFindAttachmentParentsView();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Find Attachment Parents", getClass());
         }
     }
 

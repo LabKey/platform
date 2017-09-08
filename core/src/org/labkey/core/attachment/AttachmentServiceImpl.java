@@ -17,6 +17,7 @@
 package org.labkey.core.attachment;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -34,22 +35,8 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.ResultSetView;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.collections.Sets;
+import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
@@ -83,16 +70,19 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.CoreModule;
+import org.labkey.core.admin.AdminController;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
@@ -119,6 +109,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -717,13 +708,15 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getAttachmentAdminView(ActionURL currentUrl)
+    public HttpView getAdminView(ActionURL currentUrl)
     {
         String requestedType = currentUrl.getParameter("type");
         AttachmentType attachmentType = null != requestedType ? ATTACHMENT_TYPE_MAP.get(requestedType) : null;
 
         if (null == attachmentType)
         {
+            boolean findAttachmentParents = "1".equals(currentUrl.getParameter("find"));
+
             // The first query lists all the attachment types and the attachment counts for each. A separate select from
             // core.Documents for each type is needed to associate the Type values with the associated rows.
             SQLFragment unionSql = new SQLFragment();
@@ -760,14 +753,59 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 whereSql.append(")");
             }
 
-            SQLFragment unknownSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n");
+            SQLFragment unknownSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName");
+
+            if (findAttachmentParents)
+                unknownSql.append(", e.TableName");
+
+            unknownSql.append(" FROM core.Documents d\n");
             unknownSql.append("INNER JOIN core.Containers c ON c.EntityId = d.Container\n");
+
+            Set<String> schemasToIgnore = Sets.newCaseInsensitiveHashSet(currentUrl.getParameterValues("ignore"));
+
+            if (findAttachmentParents)
+            {
+                unknownSql.append("LEFT OUTER JOIN (\n");
+                addSelectAllEntityIdsSql(unknownSql, schemasToIgnore);
+                unknownSql.append(") e ON e.EntityId = d.Parent\n");
+            }
+
             unknownSql.append("WHERE NOT (");
             unknownSql.append(whereSql);
             unknownSql.append(")\n");
             unknownSql.append("ORDER BY Container, Parent, DocumentName");
 
-            return new VBox(getResultSetView(allSql, "Attachment Types and Counts", link), getResultSetView(unknownSql, "Unknown Attachments", null));
+            WebPartView unknownView = getResultSetView(unknownSql, "Unknown Attachments", null);
+            NavTree navMenu = new NavTree();
+
+            if (!findAttachmentParents)
+            {
+                navMenu.addChild(new NavTree("Search for Attachment Parents (Be Patient)",
+                    new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1).addParameter("ignore", "Audit"))
+                );
+            }
+            else
+            {
+                navMenu.addChild(new NavTree("Remove TableName Column",
+                        new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()))
+                );
+
+                if (schemasToIgnore.isEmpty())
+                {
+                    navMenu.addChild(new NavTree("Ignore Audit Schema",
+                            new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1).addParameter("ignore", "Audit"))
+                    );
+                }
+                else
+                {
+                    navMenu.addChild(new NavTree("Include All Schemas",
+                            new ActionURL(AdminController.AttachmentsAction.class, ContainerManager.getRoot()).addParameter("find", 1))
+                    );
+                }
+            }
+            unknownView.setNavMenu(navMenu);
+
+            return new VBox(getResultSetView(allSql, "Attachment Types and Counts", link), unknownView);
         }
         else
         {
@@ -782,7 +820,52 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
-    private HttpView getResultSetView(SQLFragment sql, String title, @Nullable String link)
+    @Override
+    // Joins each row of core.Documents to the table(s) (if any) that contain an entityid matching the document's parent
+    public HttpView getFindAttachmentParentsView()
+    {
+        SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
+        addSelectAllEntityIdsSql(sql, Sets.newCaseInsensitiveHashSet("Audit"));
+        sql.append(") c ON EntityId = Parent\nORDER BY TableName, DocumentName");
+
+        return getResultSetView(sql, "Probable Attachment Parents", null);
+    }
+
+    // Creates a two-column query of EntityId and table name that selects from every EntityId column in the labkey database:
+    // - Enumerate all schemas in the labkey scope looking for tables that include an EntityId column. These are the candidates.
+    // - Create a UNION query that selects all EntityIds in the candidate tables along with a constant column that includes the table name.
+    private void addSelectAllEntityIdsSql(SQLFragment sql, Set<String> schemasToIgnore)
+    {
+        List<ColumnInfo> entityIdColumns = new LinkedList<>();
+
+        DbScope.getLabKeyScope().getSchemaNames().stream()
+            .filter(schemaName->!schemasToIgnore.contains(schemaName)) // Exclude any passed in schema names
+            .map(schemaName->DbSchema.get(schemaName, DbSchemaType.Bare))
+            .forEach(schema-> schema.getTableNames().stream()
+                .map(schema::getTable)
+                .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or fake-o tables)
+                .map(SchemaTableInfo::getColumns)
+                .flatMap(Collection::stream)
+                .filter(c->StringUtils.containsIgnoreCase(c.getName(), "EntityId"))
+                .filter(ColumnRenderProperties::isStringType)
+                .forEach(entityIdColumns::add)
+            );
+
+        boolean first = true;
+
+        for (ColumnInfo column : entityIdColumns)
+        {
+            if (first)
+                first = false;
+            else
+                sql.append("    UNION\n");
+
+            TableInfo table = column.getParentTable();
+            sql.append("    SELECT ").append(column.getSelectName()).append(" AS EntityId, '").append(table.getSelectName()).append("' AS TableName FROM ").append(table.getSelectName()).append("\n");
+        }
+    }
+
+    private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable String link)
     {
         SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
         ResultSet rs = selector.getResultSet();
