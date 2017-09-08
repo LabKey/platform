@@ -45,12 +45,12 @@ import java.util.regex.Pattern;
  */
 public abstract class EmailTemplate
 {
-    private static Pattern scriptPattern = Pattern.compile("\\^(.*?)\\^");
-    private static List<ReplacementParam> _replacements = new ArrayList<>();
-    private static final String FORMAT_DELIMITER = "|";
-    protected static final String DEFAULT_SENDER = "^siteShortName^";
-
     private static final Logger LOG = Logger.getLogger(EmailTemplate.class);
+    private static final Pattern SCRIPT_PATTERN = Pattern.compile("\\^(.*?)\\^");
+    private static final List<ReplacementParam> REPLACEMENT_PARAMS = new ArrayList<>();
+    private static final String FORMAT_DELIMITER = "|";
+
+    protected static final String DEFAULT_SENDER = "^siteShortName^";
 
     /**
      * Distinguishes between the types of email that might be sent. Additionally, used to ensure correct encoding
@@ -128,37 +128,37 @@ public abstract class EmailTemplate
 
     static
     {
-        _replacements.add(new ReplacementParam<String>("organizationName", String.class, "Organization name (look and feel settings)"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("organizationName", String.class, "Organization name (look and feel settings)"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
         });
-        _replacements.add(new ReplacementParam<String>("siteShortName", String.class, "Header short name"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("siteShortName", String.class, "Header short name"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
         });
-        _replacements.add(new ReplacementParam<String>("contextPath", String.class, "Web application context path"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("contextPath", String.class, "Web application context path"){
             public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
         });
-        _replacements.add(new ReplacementParam<String>("supportLink", String.class, "Page where users can request support"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("supportLink", String.class, "Page where users can request support"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
         });
-        _replacements.add(new ReplacementParam<String>("systemDescription", String.class, "Header description"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("systemDescription", String.class, "Header description"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
         });
-        _replacements.add(new ReplacementParam<String>("systemEmail", String.class, "From address for system notification emails"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("systemEmail", String.class, "From address for system notification emails"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
-        _replacements.add(new ReplacementParam<Date>("currentDateTime", Date.class, "Current date and time of the server"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<Date>("currentDateTime", Date.class, "Current date and time of the server"){
             public Date getValue(Container c) {return new Date();}
         });
-        _replacements.add(new ReplacementParam<String>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
             public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
         });
-        _replacements.add(new ReplacementParam<String>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
             public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
         });
-        _replacements.add(new ReplacementParam<String>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
             public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
         });
-        _replacements.add(new ReplacementParam<String>("homePageURL", String.class, "The home page of this installation"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("homePageURL", String.class, "The home page of this installation"){
             public String getValue(Container c) {
                 return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
             }
@@ -214,7 +214,8 @@ public abstract class EmailTemplate
 
     public boolean isValid(String[] error)
     {
-        try {
+        try
+        {
             _validate(_subject);
             _validate(_body);
             return true;
@@ -231,7 +232,7 @@ public abstract class EmailTemplate
     {
         if (text != null)
         {
-            Matcher m = scriptPattern.matcher(text);
+            Matcher m = SCRIPT_PATTERN.matcher(text);
             while (m.find())
             {
                 String value = m.group(1);
@@ -313,7 +314,7 @@ public abstract class EmailTemplate
     protected String render(Container c, String text)
     {
         StringBuilder sb = new StringBuilder();
-        Matcher m = scriptPattern.matcher(text);
+        Matcher m = SCRIPT_PATTERN.matcher(text);
         int start;
         int end = 0;
         while (m.find())
@@ -330,7 +331,7 @@ public abstract class EmailTemplate
 
     public List<ReplacementParam> getValidReplacements()
     {
-        return _replacements;
+        return REPLACEMENT_PARAMS;
     }
 
     public static abstract class ReplacementParam<Type> implements Comparable<ReplacementParam<Type>>

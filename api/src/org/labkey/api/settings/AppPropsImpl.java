@@ -289,7 +289,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     public int getMaxBLOBSize()
     {
-        return lookupIntValue(MAX_BLOB_SIZE, 50000000);
+        return lookupIntValue(MAX_BLOB_SIZE, 50_000_000);
     }
 
     public boolean isExt3Required()

@@ -555,12 +555,7 @@ public class DbScope
                 int stackDepth;
                 synchronized (_transaction)
                 {
-                    List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
-                    if (transactions == null)
-                    {
-                        transactions = new ArrayList<>();
-                        _transaction.put(getEffectiveThread(), transactions);
-                    }
+                    List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
                     transactions.add(result);
                     stackDepth = transactions.size();
                 }
@@ -938,7 +933,7 @@ public class DbScope
     }
 
     // Collection of schema names in this scope, in no particular order.
-    public Collection<String> getSchemaNames() throws SQLException
+    public Collection<String> getSchemaNames()
     {
         return SchemaNameCache.get().getSchemaNameMap(this).values();
     }
@@ -1888,7 +1883,7 @@ public class DbScope
         }
 
         @Test
-        public void testLabKeyScope() throws SQLException
+        public void testLabKeyScope()
         {
             DbScope scope = getLabKeyScope();
             SqlDialect dialect = scope.getSqlDialect();
@@ -1906,7 +1901,6 @@ public class DbScope
 
             testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
             testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
-
         }
 
         private void testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
