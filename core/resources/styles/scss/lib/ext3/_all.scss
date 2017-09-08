@@ -628,7 +628,9 @@ ul.x-tab-strip-bottom{
 
 .x-tab-panel-header-plain .x-tab-strip-top {
   background:transparent !important;
-  padding-top:0 !important;
+  padding-top: 3px !important;
+  padding-left: 6px;
+  margin-bottom: 0;
 }
 
 .x-tab-panel-header-plain {
@@ -7390,11 +7392,6 @@ ul.x-tab-strip-top li {
 
 .x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
   background-image: none;
-}
-
-.x-tab-panel-header-plain .x-tab-strip-top  {
-  padding-top: 3px !important;
-  padding-left: 6px;
 }
 
 ul.x-tab-strip-top li {

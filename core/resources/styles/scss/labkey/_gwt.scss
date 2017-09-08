@@ -1,19 +1,8 @@
-.gwt-TextBox {
-  font-family: $font-family-sans-serif;
-  font-size: $font-size-base;
-  color: $text-color;
-  line-height: $line-height-base;
-}
-
 .gwt-ToolTip {
   background-color: #FFDF8C;
   font-size: 8pt;
   padding: 2px 4px;
   border: solid 1px #AAAAAA;
-}
-
-.gwt-CheckBox {
-  font-size: 8pt;
 }
 
 .dialogMiddleCenter {
@@ -23,14 +12,21 @@
 .gwt-DialogBox {
   border: 8px solid #89A1B4;
   background-color: #FFFFFF;
+
+  .Caption {
+    background-color: $lk-grid-color;
+    border: 1px solid #89A1B4;
+    padding: 3px;
+    font-weight: bold;
+    cursor: default;
+  }
 }
 
-.gwt-DialogBox .Caption {
-  background-color: $lk-grid-color;
-  border: 1px solid #89A1B4;
-  padding: 3px;
-  font-weight: bold;
-  cursor: default;
+.editor-property-dock {
+  .x-tab-panel-body.x-tab-panel-body-top {
+    background-color: #eeeeee;
+    padding: 10px;
+  }
 }
 
 .gwt-HorizontalSplitter .Bar {
@@ -47,16 +43,16 @@
   background-color: $lk-grid-color;
   border: 1px solid #89A1B4;
   cursor: default;
-}
 
-.gwt-MenuBar .gwt-MenuItem {
-  padding: 1px 4px;
-  font-size: 8pt;
-  cursor: default;
-}
+  .gwt-MenuItem {
+    padding: 1px 4px;
+    font-size: 8pt;
+    cursor: default;
+  }
 
-.gwt-MenuBar .gwt-MenuItem-selected {
-  background-color: #89A1B4;
+  .gwt-MenuItem-selected {
+    background-color: #89A1B4;
+  }
 }
 
 .gwt-ProgressBar-shell {
@@ -66,16 +62,16 @@
   background-color: #AAAAAA;
   height: 14pt;
   width: 300px;
-}
 
-.gwt-ProgressBar-shell .gwt-ProgressBar-bar {
-  background-color: #67A7E3;
-}
+  .gwt-ProgressBar-bar {
+    background-color: #67A7E3;
+  }
 
-.gwt-ProgressBar-shell .gwt-ProgressBar-text {
-  padding: 0;
-  margin: 0;
-  color: #FFFFFF;
+  .gwt-ProgressBar-text {
+    padding: 0;
+    margin: 0;
+    color: #FFFFFF;
+  }
 }
 
 .gwt-PushButton {
@@ -157,6 +153,10 @@
 
 .gwt-label label, .gwt-RadioButton label {
   font-weight: normal;
+}
+
+.selected-field-row {
+  background-color: #EEEEEE;
 }
 
 // 31318: This "Ext 3" class is applied by GWT components only
