@@ -159,6 +159,8 @@ public class ButtonBar extends DisplayElement
         out.write("<div");
         if (getStyle() == Style.toolbar)
             out.write(" class=\"labkey-button-bar\"");
+        else if (getStyle() == Style.separateButtons)
+            out.write(" class=\"labkey-button-bar-separate\"");
         out.write(">");
         for (DisplayElement el : getList())
         {
