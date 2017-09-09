@@ -1848,13 +1848,17 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Data file " + _data.getDataFileUrl() + " does not exist on disk");
             }
 
-            ExperimentDataHandler h = _data.findDataHandler();
-            if (h != null)
+            //Issues 25667 and 31152
+            if (form.isInline())
             {
-                URLHelper url = h.getShowFileURL(_data);
-                if (url != null)
+                ExperimentDataHandler h = _data.findDataHandler();
+                if (h != null)
                 {
-                    throw new RedirectException(url);
+                    URLHelper url = h.getShowFileURL(_data);
+                    if (url != null)
+                    {
+                        throw new RedirectException(url);
+                    }
                 }
             }
 

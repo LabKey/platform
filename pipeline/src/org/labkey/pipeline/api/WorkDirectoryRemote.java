@@ -408,7 +408,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
         // Issue 25166: this was a pre-existing potential bug.  If _sharedTempDirectory is true, we create a second level
         // of temp directory above the primary working dir.  this is added to make sure we clean this up.
-        _jobLog.debug("cleaning remote work dir: " + (_folderToClean == null ? _dir.getPath() : _folderToClean.getPath()));
+        _jobLog.debug("inspecting remote work dir: " + (_folderToClean == null ? _dir.getPath() : _folderToClean.getPath()));
         if (success && _folderToClean != null && !_dir.equals(_folderToClean))
         {
             _jobLog.debug("removing entire work dir through: " + _folderToClean.getPath());

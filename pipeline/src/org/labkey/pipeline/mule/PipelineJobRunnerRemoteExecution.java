@@ -19,9 +19,10 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
@@ -33,8 +34,10 @@ import org.mule.umo.endpoint.UMOEndpoint;
 import org.mule.umo.lifecycle.Callable;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDescriptor
 {
@@ -78,38 +81,23 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
                             List<PipelineStatusFileImpl> filesToCheck = entry.getValue();
 
                             _log.info("Starting to check status for " + filesToCheck.size() + " jobs on remote location '" + location + "'");
-                            int count = 0;
+                            RemoteExecutionEngine engine = configuredLocations.get(location);
+                            Set<String> jobIds = new HashSet<>();
                             for (PipelineStatusFileImpl sf : filesToCheck)
                             {
-                                if (sf.getJobStore() != null && sf.isActive())
-                                {
-                                    PipelineJob job = null;
-                                    try
-                                    {
-                                        job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
-
-                                        RemoteExecutionEngine engine = getEngine(job);
-
-                                        // Refresh to see what state the engine thinks the job is in
-                                        String status = engine.getStatus(job.getJobGUID());
-                                        sf.setStatus(status);
-                                        PipelineStatusManager.updateStatusFile(sf);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        if (job != null)
-                                        {
-                                            job.error("Failed to update status", e);
-                                        }
-                                    }
-                                }
-                                count++;
-                                if (count % 10 == 0)
-                                {
-                                    _log.info("Checked status for " + count + " of " + filesToCheck.size() + " jobs on remote location '" + location + "'");
-                                }
+                                jobIds.add(sf.getJobId());
                             }
-                            _log.info("Finished checking status jobs on remote location '" + location + "'");
+
+                            _log.info("Starting to check for status of " + jobIds.size() + " jobs for engine: " + engine.getType());
+                            try
+                            {
+                                engine.updateStatusForJobs(jobIds);
+                                _log.info("Finished checking status jobs on remote location '" + location + "'");
+                            }
+                            catch (PipelineJobException e)
+                            {
+                                _log.error("Unable to update status for engine: " + engine.getType(), e);
+                            }
                         }
                         _log.info("Finished checking status jobs for all remote locations");
                     }

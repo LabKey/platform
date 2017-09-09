@@ -19,16 +19,18 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.AbstractRemoteExecutionEngineConfig;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
+
+import java.util.Collection;
 
 /**
  * Created by: jeckels
  * Date: 11/18/15
  */
-public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
+public class DummyRemoteExecutionEngine implements RemoteExecutionEngine<DummyRemoteExecutionEngine.DummyConfig>
 {
     public static final String TYPE = "Dummy!!!";
     @NotNull
@@ -49,10 +51,19 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
     }
 
     @Override
-    public String getStatus(@NotNull String jobId) throws PipelineJobException
+    public void updateStatusForJobs(@NotNull Collection<String> jobIds) throws PipelineJobException
     {
-        _statusCount++;
-        return "UNKNOWN";
+        for (Object jobId : jobIds)
+        {
+            _statusCount++;
+
+            PipelineStatusFileImpl sf = (PipelineStatusFileImpl)PipelineService.get().getStatusFile((String)jobId);
+            if (sf != null)
+            {
+                sf.setStatus("UNKNOWN");
+                PipelineStatusManager.updateStatusFile(sf);
+            }
+        }
     }
 
     @Override
@@ -84,7 +95,7 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
 
     @Override
     @NotNull
-    public PipelineJobService.RemoteExecutionEngineConfig getConfig()
+    public DummyConfig getConfig()
     {
         return new DummyConfig();
     }

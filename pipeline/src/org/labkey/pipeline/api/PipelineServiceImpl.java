@@ -540,7 +540,6 @@ public class PipelineServiceImpl implements PipelineService
         map.save();
     }
 
-
     @Override
     public PipelineStatusFile getStatusFile(File logFile)
     {
@@ -551,6 +550,12 @@ public class PipelineServiceImpl implements PipelineService
     public PipelineStatusFile getStatusFile(int rowId)
     {
         return PipelineStatusManager.getStatusFile(rowId);
+    }
+
+    @Override
+    public PipelineStatusFile getStatusFile(String jobGuid)
+    {
+        return PipelineStatusManager.getJobStatusFile(jobGuid);
     }
 
     @Override

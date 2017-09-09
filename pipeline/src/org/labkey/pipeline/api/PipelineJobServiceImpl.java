@@ -337,7 +337,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
         Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
 
-        return TASK_FACTORY_CACHE.getResourceMap(module).get(id);
+        return module == null ? null : TASK_FACTORY_CACHE.getResourceMap(module).get(id);
     }
 
     public void addTaskFactory(TaskFactorySettings settings) throws CloneNotSupportedException
