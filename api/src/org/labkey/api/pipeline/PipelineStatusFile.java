@@ -37,6 +37,8 @@ public interface PipelineStatusFile
 
         PipelineStatusFile getStatusFile(int rowId);
 
+        PipelineStatusFile getStatusFile(String jobGuid);
+
         List<? extends PipelineStatusFile> getQueuedStatusFiles() throws SQLException;
 
         List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c) throws SQLException;
