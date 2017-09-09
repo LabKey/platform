@@ -459,7 +459,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 //                // If the matched input has a name, check the entire ${input} name matches.
 //                assert existing.getName() != null;
 //                if (existing.getName().equals(key))
-//                    throw new IllegalArgumentException("File replacement '${" + key + "}' name doesn't match exepcted file name: " + existing.getName());
+//                    throw new IllegalArgumentException("File replacement '${" + key + "}' name doesn't match expected file name: " + existing.getName());
 //            }
 
         }
@@ -646,9 +646,8 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
             }
             catch (IllegalArgumentException e)
             {
-                Assert.assertEquals("File replacement '${input.txt}' extension doesn't match exepcted file type: [.foo]", e.getMessage());
+                Assert.assertEquals("File replacement '${input.txt}' extension doesn't match expected file type: [.foo]", e.getMessage());
             }
         }
-
     }
 }
