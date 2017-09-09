@@ -705,7 +705,7 @@ public class WikiController extends SpringActionController
             {
                 protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
                 {
-                    AttachmentService.get().download(response, wiki, form.getName());
+                    AttachmentService.get().download(response, wiki.getAttachmentParent(), form.getName());
                 }
             };
         }
@@ -1564,7 +1564,7 @@ public class WikiController extends SpringActionController
             VBox view = new VBox(lb, gridView);
             Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (wiki != null)
-                view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki));
+                view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki.getAttachmentParent()));
             getPageConfig().setNoIndex();
             getPageConfig().setNoFollow();
             setHelpTopic("wikiUserGuide#history");
@@ -2735,7 +2735,7 @@ public class WikiController extends SpringActionController
                     Wiki parent = wiki.getParentWiki();
                     while (null != parent && null != parent.getLatestVersion())
                     {
-                        path.addFirst(parent.getName().toString());
+                        path.addFirst(parent.getName());
                         parent = parent.getParentWiki();
                     }
                     

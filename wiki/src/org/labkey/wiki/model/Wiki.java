@@ -15,15 +15,14 @@
  */
 package org.labkey.wiki.model;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DownloadURL;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Entity;
 import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiController.DownloadAction;
@@ -43,7 +42,7 @@ import java.util.List;
  * Time: 10:28:24 AM
  */
 
-public class Wiki extends AttachmentParentEntity implements Serializable
+public class Wiki extends Entity implements Serializable
 {
     // TODO: it's odd we need all of entityId, rowId and name
     // entityId for attachments
@@ -106,13 +105,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    @NotNull
-    @Override
-    public AttachmentType getAttachmentType()
-    {
-        return WikiType.get();
-    }
-
     public int getRowId()
     {
         return _rowId;
@@ -172,7 +164,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public Collection<Attachment> getAttachments()
     {
-        return AttachmentService.get().getAttachments(this);
+        return AttachmentService.get().getAttachments(new WikiAttachmentParent(this));
     }
 
     public boolean hasChildren()
@@ -237,5 +229,10 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     public int hashCode()
     {
         return _rowId;
+    }
+
+    public AttachmentParent getAttachmentParent()
+    {
+        return new WikiAttachmentParent(this);
     }
 }

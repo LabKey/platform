@@ -181,7 +181,7 @@ public class WikiManager implements WikiService
             wikiInsert.setPageVersionId(wikiversion.getRowId());
             Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
-            getAttachmentService().addAttachments(wikiInsert, files, user);
+            getAttachmentService().addAttachments(wikiInsert.getAttachmentParent(), files, user);
 
             transaction.commit();
         }
@@ -194,7 +194,7 @@ public class WikiManager implements WikiService
         }
 
         if (wikiInsert.getName() != null)
-            fireWikiCreated(user, c, wikiInsert.getName().toString());
+            fireWikiCreated(user, c, wikiInsert.getName());
     }
 
 
@@ -260,7 +260,7 @@ public class WikiManager implements WikiService
         }
 
         if (wikiNew.getName() != null)
-            fireWikiChanged(user, c, wikiNew.getName().toString());
+            fireWikiChanged(user, c, wikiNew.getName());
 
         return true;
     }
@@ -284,7 +284,7 @@ public class WikiManager implements WikiService
             Table.delete(comm.getTableInfoPages(),
                     new SimpleFilter(FieldKey.fromParts("entityId"), wiki.getEntityId()));
 
-            getAttachmentService().deleteAttachments(wiki);
+            getAttachmentService().deleteAttachments(wiki.getAttachmentParent());
 
             if (null != getDiscussionService())
                 getDiscussionService().deleteDiscussions(c, user, wiki.getEntityId());
@@ -297,7 +297,7 @@ public class WikiManager implements WikiService
         }
 
         if (wiki.getName() != null)
-            fireWikiDeleted(user, c, wiki.getName().toString());
+            fireWikiDeleted(user, c, wiki.getName());
         WikiCache.uncache(c, wiki, true);
     }
 
@@ -461,7 +461,7 @@ public class WikiManager implements WikiService
         //get wiki & attachments
         Wiki wiki = WikiSelectManager.getWiki(cSrc, srcName);
         Collection<Attachment> attachments = wiki.getAttachments();
-        List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki, attachments);
+        List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki.getAttachmentParent(), attachments);
 
 
         WikiVersion[] wikiVersions = null;
@@ -521,13 +521,14 @@ public class WikiManager implements WikiService
         AttachmentService attsvc = getAttachmentService();
         boolean changes = false;
         String message = null;
+        AttachmentParent parent = wiki.getAttachmentParent();
 
         //delete the attachments requested
         if (null != deleteNames && !deleteNames.isEmpty())
         {
             for (String name : deleteNames)
             {
-                attsvc.deleteAttachment(wiki, name, user);
+                attsvc.deleteAttachment(parent, name, user);
             }
             changes = true;
         }
@@ -537,7 +538,7 @@ public class WikiManager implements WikiService
         {
             try
             {
-                attsvc.addAttachments(wiki, files, user);
+                attsvc.addAttachments(parent, files, user);
             }
             catch (AttachmentService.DuplicateFilenameException e)
             {
@@ -650,7 +651,7 @@ public class WikiManager implements WikiService
             f.add(wikiName);
         }
 
-        HashMap<String, AttachmentParent> ids = new HashMap<>();
+        HashMap<String, Wiki> ids = new HashMap<>();
         // AGGH wiki doesn't have a title!
         HashMap<String, String> titles = new HashMap<>();
 
@@ -729,7 +730,8 @@ public class WikiManager implements WikiService
             {
                 String entityId = pair.first;
                 String documentName = pair.second;
-                Wiki parent = (Wiki)ids.get(entityId);
+                Wiki parent = ids.get(entityId);
+                AttachmentParent attachmentParent = parent.getAttachmentParent();
 
                 ActionURL wikiUrl = pageUrl.clone().addParameter("name", parent.getName());
                 ActionURL attachmentURL = downloadUrl.clone()
@@ -740,7 +742,7 @@ public class WikiManager implements WikiService
                 WebdavResource attachmentRes = getAttachmentService().getDocumentResource(
                         new Path(entityId,documentName),
                         attachmentURL, displayTitle,
-                        parent,
+                        attachmentParent,
                         documentName, searchCategory);
 
                 NavTree t = new NavTree("wiki page", wikiUrl);
@@ -768,7 +770,7 @@ public class WikiManager implements WikiService
 
         try
         {
-            Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
+            Wiki wiki = WikiSelectManager.getWiki(c, name);
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();
@@ -797,9 +799,9 @@ public class WikiManager implements WikiService
     @Override
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
-        Wiki wiki = new Wiki(c, new String(name));
+        Wiki wiki = new Wiki(c, name);
         WikiVersion wikiversion = new WikiVersion();
-        wikiversion.setTitle(new String(title));
+        wikiversion.setTitle(title);
 
         wikiversion.setBody(body);
 

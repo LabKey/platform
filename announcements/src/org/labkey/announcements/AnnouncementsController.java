@@ -572,7 +572,7 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementModel ann = getAnnouncement(form);
             verifyPermissions(ann);
             getPageConfig().setTemplate(PageConfig.Template.None);
-            return getAttachmentView(form, ann);
+            return getAttachmentView(form, ann.getAttachmentParent());
         }
 
         public boolean handlePost(AttachmentForm attachmentForm, BindException errors) throws Exception

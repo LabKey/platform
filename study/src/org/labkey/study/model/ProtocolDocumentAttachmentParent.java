@@ -14,8 +14,7 @@ public class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
 
     public ProtocolDocumentAttachmentParent(@NotNull Study study)
     {
-        setContainer(study.getContainer().getId());
-        setEntityId(((StudyImpl) study).getProtocolDocumentEntityId());
+        super(study.getContainer().getId(), ((StudyImpl) study).getProtocolDocumentEntityId());
         _study = study;
     }
 

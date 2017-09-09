@@ -21,12 +21,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController.DownloadAction;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DownloadURL;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Entity;
 import org.labkey.api.data.Transient;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -51,7 +51,7 @@ import java.util.Set;
 /**
  * Bean Class for AnnouncementModel.
  */
-public class AnnouncementModel extends AttachmentParentEntity implements Serializable
+public class AnnouncementModel extends Entity implements Serializable
 {
     private int _rowId = 0;
     private String _parentId = null;
@@ -225,7 +225,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     public @NotNull Collection<Attachment> getAttachments()
     {
-        return AttachmentService.get().getAttachments(this);
+        return AttachmentService.get().getAttachments(getAttachmentParent());
     }
 
 
@@ -444,11 +444,9 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         }
     }
 
-    @NotNull
-    @Override
-    public AttachmentType getAttachmentType()
+    public AttachmentParent getAttachmentParent()
     {
-        return AnnouncementType.get();
+        return new AnnouncementAttachmentParent(this);
     }
 }
 

@@ -3,18 +3,18 @@ package org.labkey.issue.model;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.issue.model.Issue.Comment;
 
 public class CommentAttachmentParent extends AttachmentParentEntity
 {
-    public CommentAttachmentParent(Issue.Comment comment)
+    public CommentAttachmentParent(Comment comment)
     {
-        this(comment.getContainerId(), comment.getEntityId());
+        super(comment);
     }
 
     public CommentAttachmentParent(String containerId, String entityId)
     {
-        setContainer(containerId);
-        setEntityId(entityId);
+        super(containerId, entityId);
     }
 
     @Override

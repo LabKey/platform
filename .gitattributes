@@ -59,6 +59,7 @@ announcements/src/org/labkey/announcements/discussionMenuAjax.jsp -text
 announcements/src/org/labkey/announcements/emailNotification.txt -text
 announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/insert.jsp -text
+announcements/src/org/labkey/announcements/model/AnnouncementAttachmentParent.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementDigestProvider.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementModel.java -text
@@ -3559,6 +3560,7 @@ wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
 wiki/src/org/labkey/wiki/model/CollaborationFolderType.java -text
 wiki/src/org/labkey/wiki/model/RadeoxMacroProxy.java -text
 wiki/src/org/labkey/wiki/model/Wiki.java -text
+wiki/src/org/labkey/wiki/model/WikiAttachmentParent.java -text
 wiki/src/org/labkey/wiki/model/WikiEditModel.java -text
 wiki/src/org/labkey/wiki/model/WikiTree.java -text
 wiki/src/org/labkey/wiki/model/WikiType.java -text

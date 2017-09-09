@@ -309,7 +309,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             setPolicy(_c.getPolicy());
             _wiki = WikiSelectManager.getWiki(_c, name);
             if (null != _wiki)
-                _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
+                _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki.getAttachmentParent());
         }
 
 
@@ -376,7 +376,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         public String getExecuteHref(ViewContext context)
         {
-            return new ActionURL(WikiController.PageAction.class, _c).addParameter("name",_wiki.getName()).toString();
+            return new ActionURL(WikiController.PageAction.class, _c).addParameter("name", _wiki.getName()).toString();
         }
     }
 
@@ -384,14 +384,14 @@ public class WikiWebdavProvider implements WebdavService.Provider
     static String getResourcePath(Wiki page)
     {
         String docname = getDocumentName(page);
-        return AbstractWebdavResource.c(page.getContainerPath(),WIKI_NAME,page.getName(),docname);
+        return AbstractWebdavResource.c(page.getContainerPath(), WIKI_NAME, page.getName(), docname);
     }
 
 
     static String getResourcePath(Container c, String name, WikiRendererType type)
     {
         String docname = type.getDocumentName(name);
-        return AbstractWebdavResource.c(c.getPath(),WIKI_NAME,name,docname);
+        return AbstractWebdavResource.c(c.getPath(), WIKI_NAME, name,docname);
     }
 
 
@@ -426,7 +426,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
-            init(folder._c, wiki.getName(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<String, Object>());
+            init(folder._c, wiki.getName(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<>());
 
             _wiki = wiki;
             WikiVersion v = getWikiVersion();

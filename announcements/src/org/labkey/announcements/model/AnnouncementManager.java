@@ -247,7 +247,7 @@ public class AnnouncementManager
 
         try
         {
-            AttachmentService.get().addAttachments(insert, files, user);
+            AttachmentService.get().addAttachments(insert.getAttachmentParent(), files, user);
         }
         finally
         {
@@ -417,7 +417,7 @@ public class AnnouncementManager
 
         try
         {
-            AttachmentService.get().addAttachments(update, files, user);
+            AttachmentService.get().addAttachments(update.getAttachmentParent(), files, user);
         }
         finally
         {
@@ -431,7 +431,7 @@ public class AnnouncementManager
     private static void deleteAnnouncement(AnnouncementModel ann)
     {
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
-        AttachmentService.get().deleteAttachments(ann);
+        AttachmentService.get().deleteAttachments(ann.getAttachmentParent());
     }
 
 
@@ -708,7 +708,7 @@ public class AnnouncementManager
                 WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
                         new Path(entityId, documentName),
                         attachmentUrl, displayTitle,
-                        ann,
+                        ann.getAttachmentParent(),
                         documentName, searchCategory);
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                 task.addResource(attachmentRes, SearchService.PRIORITY.item);
