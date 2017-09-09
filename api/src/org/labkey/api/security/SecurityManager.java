@@ -2120,7 +2120,7 @@ public class SecurityManager
          * the provider redirects to its terms action by throwing a RedirectException.
          * @param context the current ViewContext
          * @param isBasicAuth is this a Basic authentication scenario?
-         * @throws RedirectException
+         * @throws RedirectException if provider determines that terms still need to be accepted
          */
         void verifyTermsOfUse(ViewContext context, boolean isBasicAuth) throws RedirectException;
     }

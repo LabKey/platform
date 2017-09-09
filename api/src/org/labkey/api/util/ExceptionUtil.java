@@ -40,7 +40,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.RequestBasicAuthException;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -622,25 +621,14 @@ public class ExceptionUtil
             UnauthorizedException.Type type = uae.getType();
             boolean overrideBasicAuth = "UNAUTHORIZED".equals(headerHint);
             boolean isCSRFViolation = uae instanceof CSRFException;
-            boolean isTermsOfUseViolation = uae instanceof TermsOfUseException;
 
-            // check for redirect to login.jsp -- unauthorized guest
+            // check for redirect to login page -- unauthorized guest
             if (isGET)
             {
                 // If user has not logged in or agreed to terms, not really unauthorized yet...
-                if (!isCSRFViolation && (isGuest || isTermsOfUseViolation) && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth)
+                if (!isCSRFViolation && isGuest && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth)
                 {
-                    ActionURL redirect;
-
-                    if (isTermsOfUseViolation)
-                    {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
-                    }
-                    else
-                    {
-                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
-                    }
-                    return redirect;
+                    return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
                 }
             }
 
@@ -970,16 +958,6 @@ public class ExceptionUtil
             assertNull("BasicAuth should not redirect", answer.redirect);
             assertEquals(HttpServletResponse.SC_FORBIDDEN, answer.response.status);
             assertFalse(answer.response.headers.containsKey("WWW-Authenticate"));
-
-            // Guest TermsOfUse
-            answer = handleIt(guest, new TermsOfUseException(), null);
-            assertNotNull("expect return url for terms of use redirect", answer.redirect);
-            assertEquals(0, answer.response.status);  // status not set
-
-            // Non-Guest TermsOfUse
-            answer = handleIt(me, new TermsOfUseException(), null);
-            assertNotNull("expect return url for terms of use redirect", answer.redirect);
-            assertEquals(0, answer.response.status);  // status not set
 
             // Guest CSRF
             answer = handleIt(guest, new CSRFException(), null);

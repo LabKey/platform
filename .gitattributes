@@ -1673,7 +1673,6 @@ api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandler.java -text
 api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
-api/src/org/labkey/api/view/TermsOfUseException.java -text
 api/src/org/labkey/api/view/ThemeFont.java -text
 api/src/org/labkey/api/view/URLException.java -text
 api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
