@@ -614,7 +614,7 @@ public class ExceptionUtil
         {
             UnauthorizedException uae = (UnauthorizedException) ex;
 
-            // This header allows for requests to explictly ask to not get basic auth headers back
+            // This header allows for requests to explicitly ask to not get basic auth headers back
             // useful for when the page wants to handle 401's itself
             String headerHint = request.getHeader("X-ONUNAUTHORIZED");
 

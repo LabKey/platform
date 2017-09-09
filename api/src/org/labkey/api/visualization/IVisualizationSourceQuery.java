@@ -61,14 +61,14 @@ public interface IVisualizationSourceQuery
 
     void addSelect(VisualizationSourceColumn select, boolean measure);
 
-    public boolean isSkipVisitJoin();
+    boolean isSkipVisitJoin();
 
-    public boolean isVisitTagQuery();
+    boolean isVisitTagQuery();
 
     /**
-     * True if any select or aggregate requires a left join explictly. This is an override for any columns
+     * True if any select or aggregate requires a left join explicitly. This is an override for any columns
      * that might require some form of an INNER JOIN.
      * @return
      */
-    public boolean isRequireLeftJoin();
+    boolean isRequireLeftJoin();
 }
