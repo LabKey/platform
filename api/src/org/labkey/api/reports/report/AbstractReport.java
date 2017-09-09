@@ -304,12 +304,6 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return getDescriptor().getContainerId();
     }
 
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
     @NotNull
     @Override
     public AttachmentType getAttachmentType()
@@ -633,11 +627,5 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             }
         }
         return false;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
     }
 }

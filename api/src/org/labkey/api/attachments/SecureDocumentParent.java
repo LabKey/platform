@@ -29,7 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,11 +63,6 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
     public String getContainerId()
     {
         return _containerId;
-    }
-
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
     }
 
     @NotNull

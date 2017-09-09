@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.reader.Readers;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.CheckedInputStream;
@@ -150,12 +149,6 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
     public String getDownloadURL(ViewContext context, String name)
     {
         return _provider.getDownloadURL(context, name);
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
     }
 
     @Override

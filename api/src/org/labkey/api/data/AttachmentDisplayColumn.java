@@ -20,8 +20,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -105,18 +103,6 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
         public String getContainerId()
         {
             return _c.getId();
-        }
-
-        @Override
-        public String getDownloadURL(ViewContext context, String name)
-        {
-            return null;
-        }
-
-        @Override
-        public SecurityPolicy getSecurityPolicy()
-        {
-            return null;
         }
 
         @Override

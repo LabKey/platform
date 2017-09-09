@@ -19,8 +19,6 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentType;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.view.ViewContext;
 
 /**
  * User: adam
@@ -45,18 +43,6 @@ public class AttachmentParentEntity extends Entity implements AttachmentParent
     {
         setContainer(containerId);
         setEntityId(entityId);
-    }
-
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
     }
 
     @Override

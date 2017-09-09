@@ -29,7 +29,15 @@ public interface AttachmentParent
 {
     String getEntityId();
     String getContainerId();
-    String getDownloadURL(ViewContext context, String name);
-    SecurityPolicy getSecurityPolicy();
     @NotNull AttachmentType getAttachmentType();
+
+    default String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
+    default SecurityPolicy getSecurityPolicy()
+    {
+        return null;
+    }
 }

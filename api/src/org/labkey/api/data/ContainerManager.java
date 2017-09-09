@@ -1038,18 +1038,6 @@ public class ContainerManager
         {
             return _c;
         }
-
-        @Override
-        public String getDownloadURL(ViewContext context, String name)
-        {
-            return null;
-        }
-
-        @Override
-        public SecurityPolicy getSecurityPolicy()
-        {
-            return null;
-        }
     }
 
 

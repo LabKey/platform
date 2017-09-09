@@ -42,18 +42,6 @@ public class AvatarThumbnailProvider implements ThumbnailProvider
     }
 
     @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
-    }
-
-    @Override
     public @NotNull AttachmentType getAttachmentType()
     {
         return AvatarType.get();
