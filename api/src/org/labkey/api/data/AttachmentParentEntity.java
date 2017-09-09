@@ -28,9 +28,25 @@ import org.labkey.api.view.ViewContext;
  * Time: 9:05:32 PM
  */
 
-// TODO: Make abstract, add constructor that takes containerId and EntityId, remove getAttachmentType()
+// TODO: Make abstract, remove deprecated constructor, remove getAttachmentType()
 public class AttachmentParentEntity extends Entity implements AttachmentParent
 {
+    @Deprecated
+    public AttachmentParentEntity()
+    {
+    }
+
+    protected AttachmentParentEntity(Entity entity)
+    {
+        this(entity.getContainerId(), entity.getEntityId());
+    }
+
+    protected AttachmentParentEntity(String containerId, String entityId)
+    {
+        setContainer(containerId);
+        setEntityId(entityId);
+    }
+
     @Override
     public String getDownloadURL(ViewContext context, String name)
     {

@@ -15,10 +15,13 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentParentImpl;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,23 +72,57 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException
     {
-        String entityIdValue = null;
-        String downloadUrl = getURLExpression().eval(ctx);
-        String[] parts = downloadUrl.split("entityId=");
-        if (parts.length > 1)
-        {
-            String[] paramParts = parts[1].split("&");
-            if (paramParts.length > 0)
-                entityIdValue = paramParts[0];
-        }
-
+        String entityId = (String)ctx.get("EntityId");
         String filename = (String)getValue(ctx);
 
-        if (null == filename || entityIdValue == null)
+        if (null == filename || entityId == null)
             return null;
 
-        AttachmentParent parent = new AttachmentParentImpl(entityIdValue, ctx.getContainer());
+        AttachmentParent parent = new DisplayColumnAttachmentParent(entityId, ctx.getContainer());
         return AttachmentService.get().getInputStream(parent, filename);
     }
 
+
+    /**
+     * Created by xingyang on 12/8/15.
+     */
+    private static class DisplayColumnAttachmentParent implements AttachmentParent
+    {
+        private final String _entityId;
+        private final Container _c;
+
+        public DisplayColumnAttachmentParent(String entityId, Container c)
+        {
+            _entityId = entityId;
+            _c = c;
+        }
+
+        public String getEntityId()
+        {
+            return _entityId;
+        }
+
+        public String getContainerId()
+        {
+            return _c.getId();
+        }
+
+        @Override
+        public String getDownloadURL(ViewContext context, String name)
+        {
+            return null;
+        }
+
+        @Override
+        public SecurityPolicy getSecurityPolicy()
+        {
+            return null;
+        }
+
+        @Override
+        public @NotNull AttachmentType getAttachmentType()
+        {
+            return AttachmentType.UNKNOWN;
+        }
+    }
 }
