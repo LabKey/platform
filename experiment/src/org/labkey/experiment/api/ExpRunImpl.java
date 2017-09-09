@@ -46,7 +46,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
@@ -55,7 +54,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -760,13 +758,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
 
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
-
     public void clearCache()
     {
         _populated = false;
@@ -874,12 +865,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         return false;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
     }
 
     @Override

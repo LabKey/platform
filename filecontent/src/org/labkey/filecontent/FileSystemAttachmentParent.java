@@ -25,11 +25,9 @@ import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -80,12 +78,6 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     public String getContainerId()
     {
         return c.getId();
-    }
-
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
     }
 
     public File getFileSystemDirectory() throws MissingRootDirectoryException
@@ -211,12 +203,6 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         {
             FileContentServiceImpl._log.warn(e.getMessage());
         }
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
     }
 
     @Override

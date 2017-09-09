@@ -20,8 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.view.ViewContext;
 
 import java.util.Date;
 
@@ -149,18 +147,6 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
     {
         verifyMutability();
         _requirementId = requirementId;
-    }
-
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
-
-    @Override
-    public SecurityPolicy getSecurityPolicy()
-    {
-        return null;
     }
 
     @Override
