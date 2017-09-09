@@ -135,7 +135,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _listHelper.deleteField("Dataset Fields", 0);
         _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer);
         // Format "TestDate" as "Date"
-        _listHelper.addField(new ListColumn("TestDate", "TestDate", ListHelper.ListColumnType.DateTime, "TestDate", "Date"));
+        _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
         // "TestDateTime" format will default to date-time
         _listHelper.addField("Dataset Fields", "TestDateTime", "TestDateTime", ListHelper.ListColumnType.DateTime);
         clickButton("Save");
@@ -380,16 +380,14 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Study Navigator"));
         waitForText(visitLabel);
 
-        // header hover-item does not render in UX UI.
-        // TODO: re-enable this when issue is resolved: https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=31200
-//        click(Locator.css(".labkey-help-pop-up"));
-//        waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
+        click(Locator.css(".labkey-help-pop-up"));
+        waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
 
         log("Visit Properties: verify visit description in dataset visit column hover");
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn(new String[]{"ParticipantVisit", "Visit"});
+        _customizeViewsHelper.addColumn(new String[]{"ParticipantVisit", "Visit"});
         _customizeViewsHelper.saveDefaultView();
         mouseOver(Locator.tagWithText("td", visitLabel));
         waitForElement(Locator.xpath("id('helpDivBody')").containing(visitDescription));
