@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -40,9 +41,16 @@
     JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
     FolderNavigationForm form = me.getModelBean();
 
-    ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(me.getViewContext().getActionURL());
-    ActionURL createFolderURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(getContainer(), me.getViewContext().getActionURL());
-    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(getContainer());
+    Container c = getContainer();
+    ActionURL startURL = c.getStartURL(getUser()); // 30975: Return to startURL due to async view context
+
+    ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(null);
+    createProjectURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
+
+    ActionURL createFolderURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, null);
+    createFolderURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
+
+    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 
     NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
 %>
@@ -91,7 +99,7 @@
 <%
     }
 
-    if (getContainer().hasPermission(getUser(), AdminPermission.class))
+    if (c.hasPermission(getUser(), AdminPermission.class))
     {
 %>
         <span class="beta-nav-button-icon">
@@ -111,7 +119,7 @@
 <%
     }
 
-    if (!getContainer().isRoot())
+    if (!c.isRoot())
     {
 %>
         <span class="beta-nav-button-icon">
@@ -195,8 +203,8 @@
                 }
             });
 
-            <% if (getContainer().getProject() != null && !getContainer().isRoot()) { %>
-                var l = projectList.find('li[data-submenu-id="<%=h(getContainer().getProject().getName().toLowerCase())%>"]');
+            <% if (c.getProject() != null && !c.isRoot()) { %>
+                var l = projectList.find('li[data-submenu-id="<%=h(c.getProject().getName().toLowerCase())%>"]');
                 if (l.length) {
                     l.trigger('mouseenter');
 
