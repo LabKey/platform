@@ -53,7 +53,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
-import org.labkey.api.defaults.SetDefaultValuesListAction;
+import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -140,7 +140,6 @@ import java.util.TreeSet;
 public class ListController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class,
-            SetDefaultValuesListAction.class,
             ClearDefaultValuesAction.class
             );
 
@@ -1031,5 +1030,10 @@ public class ListController extends SpringActionController
             }
             return listsJSON;
         }
+    }
+
+    @RequiresPermission(DesignListPermission.class)
+    public class SetDefaultValuesListAction extends SetDefaultValuesAction
+    {
     }
 }
