@@ -1087,9 +1087,9 @@ public class Portal
                         if (PageFlowUtil.useExperimentalCoreUI())
                         {
                             if (part.hasFrame())
-                                navTree.addChild("Hide Webpart Frame", getToggleFrameURL(context, part), null, "fa fa-eye-slash");
+                                navTree.addChild("Hide Frame", getToggleFrameURL(context, part), null, "fa fa-eye-slash");
                             else
-                                navTree.addChild("Show Webpart Frame", getToggleFrameURL(context, part), null, "fa fa-eye");
+                                navTree.addChild("Show Frame", getToggleFrameURL(context, part), null, "fa fa-eye");
                         }
                     }
                 }
