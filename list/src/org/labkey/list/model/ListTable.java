@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -68,6 +69,7 @@ import java.util.Set;
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
     private final ListDefinition _list;
+    private static final Logger LOG = Logger.getLogger(ListTable.class);
 
     public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
     {
@@ -104,8 +106,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     }
                     else
                     {
-                        throw new IllegalStateException("" + _list.getName() + "." + _list.getKeyName() + " (primary key) " +
-                                "has not been provisioned properly. Ensure the domain is established before constructing.");
+                        LOG.warn("" + _list.getName() + "." + _list.getKeyName() + " (primary key) " + "has not yet been provisioned.");
                     }
 
                     colKey.setKeyField(true);

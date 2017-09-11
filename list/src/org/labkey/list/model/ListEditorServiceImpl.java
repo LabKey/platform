@@ -55,6 +55,7 @@ import org.labkey.list.view.ListItemAttachmentParent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -317,8 +318,10 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             int id = key.getPropertyId();
             GWTPropertyDescriptor newKey = findField(id, dd.getFields());
-            if (null != newKey)
-                list.setKeyPropertyName(newKey.getName());
+            if (null != newKey && !key.getName().equalsIgnoreCase(newKey.getName()))
+            {
+                return Collections.singletonList("Cannot change key field name");
+            }
         }
 
         // Note attachment columns that are getting removed
