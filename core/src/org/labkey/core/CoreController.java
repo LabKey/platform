@@ -42,13 +42,11 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.admin.PortalBackgroundImageCache;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -151,11 +149,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -257,24 +253,6 @@ public class CoreController extends SpringActionController
             }
 
             return url;
-        }
-
-        @Override
-        public ActionURL getBackgroundImageBaseURL(AttachmentParent parent)
-        {
-            for (Attachment attachment : AttachmentService.get().getAttachments(parent))
-            {
-
-                Container c = ContainerManager.getForId(parent.getContainerId());
-                ActionURL url = new ActionURL(BackgroundImageAction.class, c);
-                // we add the container and entity id for the portal selection scenario in which
-                // each attachment may belong to a different container
-                url.addParameter("containerId", parent.getContainerId());
-                url.addParameter("entityId", parent.getEntityId());
-                url.addParameter("imageName", attachment.getName());
-                return url; // should only be a single attachment
-            }
-            return null;
         }
 
         @Override
@@ -2008,69 +1986,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class BackgroundImageAction extends ExportAction<BackgroundImageForm>
-    {
-        @Override
-        public void export(BackgroundImageForm form, HttpServletResponse response, BindException errors) throws Exception
-        {
-            AttachmentParentEntity parent = new AttachmentParentEntity();
-            parent.setContainer(form.getContainerId());
-            parent.setEntityId(form.getEntityId());
-
-            CacheableWriter writer = PortalBackgroundImageCache.getImageWriter(parent, form.getImageName());
-
-            if (null != writer)
-            {
-                // review: is this correct?
-                Calendar expiration = new GregorianCalendar();
-                expiration.add(Calendar.YEAR, 1);
-                writer.writeToResponse(response, expiration);
-            }
-        }
-    }
-
-    public static class BackgroundImageForm
-    {
-        private String _containerId;
-        private String _entityId;
-        private String _imageName;
-
-
-        public String getImageName()
-        {
-            return _imageName;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setImageName(String imageName)
-        {
-            _imageName = imageName;
-        }
-
-        public String getEntityId()
-        {
-            return _entityId;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setEntityId(String entityId)
-        {
-            _entityId = entityId;
-        }
-
-        public String getContainerId()
-        {
-            return _containerId;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setContainerId(String containerId)
-        {
-            _containerId = containerId;
-        }
-    }
-
     public static class LoadLibraryForm
     {
         private String[] _library;
@@ -2210,8 +2125,7 @@ public class CoreController extends SpringActionController
                 controller.new SaveModulePropertiesAction(),
                 controller.new GetContainerInfoAction(),
                 controller.new GetRegisteredFolderWritersAction(),
-                controller.new GetRegisteredFolderImportersAction(),
-                controller.new BackgroundImageAction()
+                controller.new GetRegisteredFolderImportersAction()
             );
 
             // @RequiresPermission(InsertPermission.class)
