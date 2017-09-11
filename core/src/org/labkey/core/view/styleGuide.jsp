@@ -246,7 +246,7 @@
         <br>
         <div class="lk-sg-example">
             <form action="labkey">
-                <table width="100%" cellpadding="0">
+                <table width="100%" cellpadding="0" class="lk-fields-table">
                     <tr>
                         <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
                         <td><input type="text" name="systemShortName" size="50" value="LabKey Server"></td>
