@@ -5004,7 +5004,7 @@ public class AdminController extends SpringActionController
 
     public static void setEnabledCloudStores(ViewContext ctx, String[] enabledCloudStores)
     {
-        CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
+        CloudStoreService cloud = CloudStoreService.get();
         if (cloud != null)
         {
             Set<String> enabled = Collections.emptySet();

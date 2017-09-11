@@ -64,7 +64,7 @@
         canChangeFileSettings = false;
     }
 
-    CloudStoreService cloud = ServiceRegistry.get(CloudStoreService.class);
+    CloudStoreService cloud = CloudStoreService.get();
     Collection<String> storeNames = Collections.emptyList();
     if (cloud != null)
     {
