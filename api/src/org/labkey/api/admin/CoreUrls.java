@@ -17,10 +17,9 @@ package org.labkey.api.admin;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.Container;
 
 /**
  * User: adam
@@ -33,8 +32,10 @@ public interface CoreUrls extends UrlProvider
     ActionURL getThemeStylesheetURL(Container c);
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
+
+    // TODO: Delete? Unused...
     ActionURL getAttachmentIconURL(Container c, String filename);
-    ActionURL getBackgroundImageBaseURL(AttachmentParent parent);
+
     ActionURL getProjectsURL(Container c);
 
     /** Still needs objectURI parameter and value tacked on */

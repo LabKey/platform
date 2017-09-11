@@ -95,7 +95,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         if (null == methodName)
             return;
 
-        // inspect to find form class
+        // inspect the action's *public* methods to determine form class
         Class typeBest = null;
         for (Method m : this.getClass().getMethods())
         {

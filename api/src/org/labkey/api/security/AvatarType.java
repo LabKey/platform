@@ -7,7 +7,7 @@ import org.labkey.api.data.SQLFragment;
 
 public class AvatarType implements AttachmentType
 {
-    private static AvatarType INSTANCE = new AvatarType();
+    private static final AvatarType INSTANCE = new AvatarType();
 
     public static AvatarType get()
     {

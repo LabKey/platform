@@ -137,6 +137,7 @@ api/src/org/labkey/api/attachments/AttachmentParent.java -text
 api/src/org/labkey/api/attachments/AttachmentParentFactory.java -text
 api/src/org/labkey/api/attachments/AttachmentService.java -text
 api/src/org/labkey/api/attachments/AttachmentType.java -text
+api/src/org/labkey/api/attachments/BaseBackgroundImageAction.java -text
 api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
 api/src/org/labkey/api/attachments/DocumentConversionService.java -text
 api/src/org/labkey/api/attachments/DocumentWriter.java -text
@@ -145,6 +146,7 @@ api/src/org/labkey/api/attachments/FileAttachmentFile.java -text
 api/src/org/labkey/api/attachments/InputStreamAttachmentFile.java -text
 api/src/org/labkey/api/attachments/LookAndFeelResourceAttachmentParent.java -text
 api/src/org/labkey/api/attachments/LookAndFeelResourceType.java -text
+api/src/org/labkey/api/attachments/PortalBackgroundImageCache.java -text
 api/src/org/labkey/api/attachments/SecureDocumentParent.java -text
 api/src/org/labkey/api/attachments/SecureDocumentType.java -text
 api/src/org/labkey/api/attachments/SpringAttachmentFile.java -text
