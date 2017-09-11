@@ -220,12 +220,17 @@ public class Input extends DisplayElement
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        boolean isHorizontal = Layout.HORIZONTAL.equals(getLayout());
-        boolean isInline = Layout.INLINE.equals(getLayout());
-        boolean needsInputGroup = needsInputGroup();
 
-        if (!isHidden())
+        if (isHidden())
         {
+            doInput(sb);
+        }
+        else
+        {
+            final boolean isHorizontal = Layout.HORIZONTAL.equals(getLayout());
+            final boolean needsInputGroup = needsInputGroup();
+
+            // begin form-group
             if (isFormGroup())
             {
                 sb.append("<div class=\"form-group");
@@ -237,16 +242,11 @@ public class Input extends DisplayElement
             if (isShowLabel())
                 doLabel(sb);
 
-            if (isInline && StringUtils.isNotEmpty(getContextContent()))
-                doContextField(sb);
-
-            sb.append("</label> ");
-
-            // wrapper for layout
+            // begin wrapper for layout
             if (isHorizontal)
                 sb.append("<div class=\"col-sm-9 col-lg-10\">");
 
-            // wrapper for input group
+            // begin wrapper for input group
             if (needsInputGroup)
             {
                 sb.append("<div class=\"input-group input-group-unstyled");
@@ -254,27 +254,23 @@ public class Input extends DisplayElement
                     sb.append(" input-group-horizontal");
                 sb.append("\">");
             }
-        }
 
-        doInput(sb);
+            doInput(sb);
 
-        if (!isHidden())
-        {
+            doStateIcon(sb);
 
-            if (null != getState())
-                doStateIcon(sb);
-
-            if ((isHorizontal || !isInline) && StringUtils.isNotEmpty(getContextContent()))
+            if (isHorizontal && StringUtils.isNotEmpty(getContextContent()))
                 doContextField(sb);
 
+            // end wrapper for input group
             if (needsInputGroup)
                 sb.append("</div>");
-                // end wrapper for input group
 
+            // end wrapper for layout
             if (isHorizontal)
                 sb.append("</div>");
-                // end wrapper for layout
 
+            // end form-group
             if (isFormGroup())
                 sb.append("</div>");
         }
@@ -348,21 +344,29 @@ public class Input extends DisplayElement
 
         if (getLabel() != null)
             sb.append(PageFlowUtil.filter(getLabel()));
+
+        if (Layout.INLINE.equals(getLayout()) && StringUtils.isNotEmpty(getContextContent()))
+            doContextField(sb);
+
+        sb.append("</label> ");
     }
 
     private void doStateIcon(StringBuilder sb)
     {
-        String iconClass = State.SUCCESS.equals(getState()) ? "fa fa-check-circle" : "fa fa-exclamation-circle";
-        sb.append("<span class=\"input-group-addon validation-state\">");
-        sb.append("<i class=\" validation-state-icon ");
-        sb.append(iconClass).append("\"");
-        if (null != getStateMessage())
+        if (null != getState())
         {
-            sb.append(" data-tt=\"tooltip\" data-container=\"body\" data-placement=\"top\" title=\"");
-            sb.append(getStateMessage());
+            String iconClass = State.SUCCESS.equals(getState()) ? "fa fa-check-circle" : "fa fa-exclamation-circle";
+            sb.append("<span class=\"input-group-addon validation-state\">");
+            sb.append("<i class=\" validation-state-icon ");
+            sb.append(iconClass).append("\"");
+            if (null != getStateMessage())
+            {
+                sb.append(" data-tt=\"tooltip\" data-container=\"body\" data-placement=\"top\" title=\"");
+                sb.append(getStateMessage());
+            }
+            sb.append("\"></i>");
+            sb.append("</span>");
         }
-        sb.append("\"></i>");
-        sb.append("</span>");
     }
 
     private boolean needsInputGroup()
