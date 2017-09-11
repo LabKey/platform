@@ -898,12 +898,6 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             if (field.clearValue != undefined)
                 field.clearValue();
-            //else if (field.getXType() == 'radiogroup') // another special case for radio groups
-            //{
-            //    Ext4.each(field.query('radio'), function(radio){
-            //        radio.setValue(false);
-            //    });
-            //}
             else
                 field.setValue(null);
         }
@@ -983,16 +977,22 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             if (field.submitValue && field.isDirty() && (field.isHidden() || field.isValid()))
             {
                 // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radio fields
-                if (field.getXType() == 'radiogroup')
-                {} // skip the radiogroup itself in favor of the radiofields
-                else if (field.getXType() == 'checkboxgroup') {
-                    if (field.getName())
-                        values[field.getName()] = field.getValue();
+                if (field.getXType() == 'radiogroup') {
+                    // skip the radiogroup itself in favor of the radiofields
                 }
-                else if (field.getXType() == "radiofield")
-                    this.addFieldValue(values, field.getName(), field.getGroupValue());
-                else
+                else if (field.getXType() == 'checkboxgroup') {
+                    if (field.getName()) {
+                        values[field.getName()] = field.getValue();
+                    }
+                }
+                else if (field.getXType() == "radiofield") {
+                    if (field.getValue()) { // this will be true for only the selected radio field in the group
+                        this.addFieldValue(values, field.getName(), field.getGroupValue());
+                    }
+                }
+                else {
                     this.addFieldValue(values, field.getName(), field.getSubmitValue());
+                }
             }
         }, this);
 
