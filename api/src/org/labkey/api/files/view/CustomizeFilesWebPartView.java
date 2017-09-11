@@ -45,6 +45,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         private Portal.WebPart _webPart;
         private String _rootOffset;
         private int size = 350;
+        private String _title;
 
         public CustomizeWebPartForm(Portal.WebPart webPart)
         {
@@ -57,6 +58,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             fileSet = propertyMap.get("fileSet");
             path = propertyMap.get("path");
             _rootOffset = propertyMap.get("rootOffset");
+            _title = propertyMap.get("title");
 
             if(propertyMap.get("size") != null)
                 size = Integer.parseInt(propertyMap.get("size"));
@@ -136,6 +138,16 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         public void setSize(int size)
         {
             this.size = size;
+        }
+
+        public String getTitle()
+        {
+            return _title;
+        }
+
+        public void setTitle(String title)
+        {
+            _title = title;
         }
     }
 }

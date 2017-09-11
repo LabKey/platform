@@ -16,6 +16,7 @@
 package org.labkey.api.cloud;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
 import java.util.Collection;
@@ -28,6 +29,11 @@ import java.util.Set;
 public interface CloudStoreService
 {
     String CLOUD_NAME = "@cloud";
+
+    static CloudStoreService get()
+    {
+        return ServiceRegistry.get(CloudStoreService.class);
+    }
 
     /**
      * Returns a list of blob store provider (id, name) pairs.
@@ -59,4 +65,8 @@ public interface CloudStoreService
      */
     void setEnabledCloudStores(Container c, Set<String> enabledCloudStores);
 
+    /**
+     * Add cloud storage portal tab with web part
+     */
+    void addCloudStorageTab(Container container);
 }

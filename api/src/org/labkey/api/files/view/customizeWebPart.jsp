@@ -39,7 +39,7 @@
     Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
     Collection<String> cloudStoreNames = Collections.emptyList();
-    CloudStoreService cloud = ServiceRegistry.get().getService(CloudStoreService.class);
+    CloudStoreService cloud = CloudStoreService.get();
     if (cloud != null)
     {
         cloudStoreNames = cloud.getEnabledCloudStores(getContainer());
@@ -62,6 +62,10 @@
     from a directory configured by a site administrator.<br><br>
 
     <table>
+        <tr>
+            <td class="labkey-form-label">Title</td>
+            <td><input type="text" name="title" style="margin: 1%" size="32" value="<%=h(form.getTitle())%>"> </td>
+        </tr>
         <tr>
             <td class="labkey-form-label">File Root</td>
             <td><select name="fileSet">

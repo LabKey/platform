@@ -65,6 +65,7 @@ import java.util.List;
 public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 {
     public static final String PART_NAME = "Files";
+    public static final String DEFAULT_TITLE = "Files";
     private static final Logger _log = Logger.getLogger(FilesWebPart.class);
 
     private boolean showAdmin = false;
@@ -80,7 +81,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         container = c;
         setModelBean(new FilesForm());
         setFileSet(null);
-        setTitle(PART_NAME);
+        setTitle(DEFAULT_TITLE);
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
         setBodyClass("labkey-wp-nopadding");
 
@@ -145,6 +146,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (size != null)
         {
             getModelBean().setHeight(Integer.parseInt(size));
+        }
+
+        String title = webPartDescriptor.getPropertyMap().get("title");
+        if (title != null)
+        {
+            setTitle(title);
         }
 
         if (form.getRootOffset() != null)
