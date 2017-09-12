@@ -86,17 +86,15 @@ function orderModule(listName, hiddenElName, down)
 }
 </script>
 <labkey:form method="post" name="reorder" action="<%=h(buildURL(StudyController.VisitOrderAction.class))%>" enctype="multipart/form-data">
-    <table>
+    <table class="lk-fields-table">
         <tr>
-            <th>Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
+            <th style="font-weight: bold;" colspan="2">Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
                     "study and specimen data.  By default, visits are displayed in order of increasing visit ID for visit-based studies, and in date " +
                     "order for date-based studies.")%></th>
-            <td></td>
-            <th>Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
+            <th style="font-weight: bold;" colspan="2">Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
                     "or after others.  Visits are chronologically ordered when all participants move only downward through the visit list.  Any given " +
                     StudyService.get().getSubjectNounSingular(getContainer()).toLowerCase() + " may skip some visits, depending on " +
                     "cohort assignment or other factors.  It is generally not useful to set a chronological order for date-based studies.")%></th>
-            <td></td>
         </tr>
         <%
             List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
@@ -111,7 +109,7 @@ function orderModule(listName, hiddenElName, down)
             }
         %>
         <tr>
-            <td colspan="2">
+            <td colspan="2" style="padding-right: 50px;">
                 <input type="checkbox"
                        name="explicitDisplayOrder"
                        value="true"<%=checked(displayEnabled)%>
@@ -192,5 +190,7 @@ function orderModule(listName, hiddenElName, down)
             </td>
         </tr>
     </table>
-    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
+    <br/>
+    <%= button("Save").submit(true) %>
+    <%= button("Cancel").href(returnURL) %>
 </labkey:form>

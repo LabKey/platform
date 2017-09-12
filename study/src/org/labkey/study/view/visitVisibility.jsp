@@ -27,13 +27,13 @@
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
 %>
 <labkey:form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
-    <table>
+    <table class="lk-fields-table">
         <tr>
-            <th align="left">ID</th>
-            <th align="left">Label</th>
-            <th align="left">Cohort</th>
-            <th align="left">Type</th>
-            <th align="left">Show By Default</th>
+            <th align="left" style="font-weight: bold;">ID</th>
+            <th align="left" style="font-weight: bold;">Label</th>
+            <th align="left" style="font-weight: bold;">Cohort</th>
+            <th align="left" style="font-weight: bold;">Type</th>
+            <th align="left" style="font-weight: bold;">Show By Default</th>
         </tr>
     <%
         for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
@@ -96,5 +96,6 @@
         }
     %>
     </table>
+    <br/>
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
 </labkey:form>

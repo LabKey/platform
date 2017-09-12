@@ -74,7 +74,7 @@
 %>
 
 <p>
-    Please select the <%=h(noun.toLowerCase())%>s you want to delete. 
+    Select the <%=h(noun.toLowerCase())%>s you want to delete.
     <span style="font-weight: bold;">Note: this will also delete any related dataset and specimen rows.</span>
 </p>
 <labkey:errors/>

@@ -47,7 +47,7 @@
 <labkey:form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
-    <table>
+    <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview' or 'Week 2'")%></td>
             <td>
@@ -202,7 +202,7 @@
         <tr>
             <td class="labkey-form-label" valign="top">Associated Datasets</td>
             <td>
-                <table>
+                <table class="lk-fields-table">
                 <%
                     HashMap<Integer, VisitDatasetType> typeMap = new HashMap<>();
                     for (VisitDataset vds : visit.getVisitDatasets())
@@ -235,13 +235,8 @@
             </td>
         </tr>
     </table>
-    <table>
-        <tr>
-            <td>
-                <%= button("Save").submit(true) %>&nbsp;
-                <%= button(isDateBased ? "Delete Timepoint" : "Delete Visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;
-                <%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
-            </td>
-        </tr>
-    </table>
+    <br/>
+    <%= button("Save").submit(true) %>&nbsp;
+    <%= button(isDateBased ? "Delete Timepoint" : "Delete Visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;
+    <%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
 </labkey:form>

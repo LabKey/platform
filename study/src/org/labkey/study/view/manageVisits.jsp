@@ -16,10 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkDeleteVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DeleteUnusedVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ImportVisitMapAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ShowVisitImportMappingAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.UpdateParticipantVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitOrderAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
@@ -32,10 +34,10 @@
 <%
     List<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
 %>
-<table>
+<table class="lk-fields-table">
     <tr>
         <td>View study schedule</td>
-        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+        <td><%= textLink("Study Schedule", StudyScheduleAction.class) %></td>
     </tr>
 <%
     if (allVisits.size() > 0)
@@ -51,11 +53,11 @@
     </tr>
     <tr>
         <td>Visits may be deleted by an administrator</td>
-        <td><%= textLink("Delete Multiple Visits", StudyController.BulkDeleteVisitsAction.class) %></td>
+        <td><%= textLink("Delete Multiple Visits", BulkDeleteVisitsAction.class) %></td>
     </tr>
     <tr>
         <td>Delete unused visits</td>
-        <td><%= textLink("Delete Unused Visits", StudyController.DeleteUnusedVisitsAction.class) %></td>
+        <td><%= textLink("Delete Unused Visits", DeleteUnusedVisitsAction.class) %></td>
     </tr>
 <%
     }
@@ -94,7 +96,7 @@
         <td class="labkey-column-header">Description</td>
     </tr>
     <%
-        ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, getStudy().getContainer());
+        ActionURL editTimepointURL = new ActionURL(VisitSummaryAction.class, getStudy().getContainer());
         int rowCount = 0;
         for (VisitImpl visit : getVisits(Visit.Order.DISPLAY))
         {

@@ -63,7 +63,7 @@ is uploaded along with the data. This form allows you to define a range of seque
 %>
 </p>
 <labkey:form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
-    <table>
+    <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview' or '2 Weeks'")%></td>
             <td>
@@ -128,12 +128,8 @@ is uploaded along with the data. This form allows you to define a range of seque
                 <input type="checkbox" name="showByDefault"<%=checked(!form.isReshow() || v.isShowByDefault())%>>
             </td>
         </tr>
-        <tr>
-            <td>&nbsp;</td>
-            <td>
-                <input type="hidden" name="returnUrl" value="<%= returnURL %>">
-                <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
-            </td>
-        </tr>
     </table>
+    <br/>
+    <input type="hidden" name="returnUrl" value="<%= returnURL %>">
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
 </labkey:form>

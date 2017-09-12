@@ -31,21 +31,18 @@
     assert null != study;
 %>
 <labkey:form action="" method="post">
-    <table width="70%">
+    <p>This page displays some of the settings associated with <%=text(study.isAncillaryStudy() ? "this ancillary" : "the publication of this")%> study.</p>
+<%
+    if (snapshot.isRefresh())
+    {
+%>
+        <p>This study is currently configured to refresh its specimens from the source study on a nightly basis. This can be changed below.</p>
+<%
+    }
+%>
+    <table class="lk-fields-table" style="width: 750px;">
         <tr>
-            <td>
-This page displays some of the settings associated with <%=text(study.isAncillaryStudy() ? "this ancillary" : "the publication of this")%> study.<%
-if (snapshot.isRefresh()) { %> This study is currently configured to refresh its specimens from the source study on a nightly basis. This can be changed below.<% } %>
-            </td>
-        </tr>
-        <tr>
-            <td>&nbsp;</td>
-        </tr>
-    </table>
-
-    <table>
-        <tr>
-            <td class="labkey-form-label">Created By:</td>
+            <td class="labkey-form-label" style="width: 150px;">Created By:</td>
             <td><%=h(UserManager.getUser(snapshot.getCreatedBy()).getDisplayName(getUser()))%></td>
         </tr>
         <tr>
@@ -59,33 +56,26 @@ if (snapshot.isRefresh()) { %> This study is currently configured to refresh its
         <tr>
             <td class="labkey-form-label">Modified:</td>
             <td><%=formatDate(snapshot.getModified())%></td>
-        </tr><%
-
+        </tr>
+    <%
         if (!study.isAncillaryStudy())
-        {  %>
+        {
+    %>
         <tr>
-            <td class="labkey-form-label">Refresh Specimens:</td>
-            <td><input type="checkbox" id="refresh" name="refresh"<%=checked(snapshot.isRefresh())%>></td>
-        </tr>
-        <tr>
-            <td>&nbsp;</td>
-        </tr>
-    </table>
-    <table width="70%">
-        <tr>
-            <td>Note that the "Modified By" user's permissions apply to the nightly specimen refresh. A successful specimen refresh requires this user to
-                have administrator permissions in this folder. Clicking the Update button changes the "Modified By" user to the current user.</td>
-        </tr><%
-        }
-        %>
-        <tr>
-            <td>&nbsp;</td>
-        </tr>
-        <tr>
+            <td class="labkey-form-label" valign="top">Refresh Specimens:</td>
             <td>
-                <% if (!study.isAncillaryStudy()) { %><%= button("Update").submit(true) %>&nbsp; <% } %>
-                <%= button("Done").href(ManageStudyAction.class, getContainer()) %>
+                <input type="checkbox" id="refresh" name="refresh"<%=checked(snapshot.isRefresh())%>>
+                <p>
+                    Note that the "Modified By" user's permissions apply to the nightly specimen refresh. A successful specimen refresh requires this user to
+                    have administrator permissions in this folder. Clicking the Update button changes the "Modified By" user to the current user.
+                </p>
             </td>
         </tr>
+    <%
+        }
+    %>
     </table>
+    <br/>
+    <% if (!study.isAncillaryStudy()) { %><%= button("Update").submit(true) %>&nbsp; <% } %>
+    <%= button("Done").href(ManageStudyAction.class, getContainer()) %>
 </labkey:form>
