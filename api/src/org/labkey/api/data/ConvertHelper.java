@@ -44,6 +44,7 @@ import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -78,9 +79,11 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+import org.junit.Test;
 
 
 public class ConvertHelper implements PropertyEditorRegistrar
@@ -273,7 +276,17 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
             if (o instanceof Timestamp)
                 return o;
-            Date date = (Date) _dateConverter.convert(Date.class, o);
+
+            Date date;
+            String signedDurationCandidate = StringUtils.trimToNull((String) o);
+            if (DateUtil.isSignedDuration(signedDurationCandidate))
+            {
+                date = new Date(DateUtil.applySignedDuration(new Date().getTime(), signedDurationCandidate));
+            }
+            else
+            {
+                date = (Date) _dateConverter.convert(Date.class, o);
+            }
             return null==date ? null : new Timestamp(date.getTime());
         }
     }
@@ -793,6 +806,30 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 throw new ConversionException(e);
             }
         }
+
+
     }
 
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testConvertDate()
+        {
+
+            Object convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "+1d");
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date());
+            cal.add(Calendar.DATE, 1);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()).toString(),
+                    DateUtil.getDateOnly((Timestamp)convertedDate).toString());
+
+            convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "-2m0d");
+            cal.setTime(new Date());
+            cal.add(Calendar.MONTH, -2);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()).toString(),
+                     DateUtil.getDateOnly((Timestamp)convertedDate).toString());
+
+        }
+
+    }
 }

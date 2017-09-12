@@ -1097,7 +1097,31 @@ validNum:       {
         double sec = -1;
     }
 
+    public static boolean isSignedDuration(String durationCandidate)
+    {
+        try{
 
+            _parseDuration(durationCandidate.substring(1));
+            return true;
+        }
+        catch (ConversionException e)
+        {
+            return false;
+        }
+    }
+
+    public static long applySignedDuration(long time, String duration)
+    {
+        if(duration.startsWith("+"))
+        {
+             return addDuration(time, duration.substring(1));
+        }
+        if(duration.startsWith("-"))
+        {
+            return subtractDuration(time,duration.substring(1));
+        }
+        throw new IllegalArgumentException("The duration provided is not valid: " + duration);
+    }
     public static _duration _parseDuration(String s)
     {
         boolean period = false;
