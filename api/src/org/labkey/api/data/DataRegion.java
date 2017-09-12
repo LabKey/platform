@@ -1861,7 +1861,7 @@ public class DataRegion extends DisplayElement
         out.write("\n<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" " + (newUI ? "class=\"labkey-col-header-row\"" : "") + ">");
 
         DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
-        DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;;
+        DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;
 
         if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
         {
