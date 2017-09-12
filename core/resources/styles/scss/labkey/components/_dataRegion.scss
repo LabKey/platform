@@ -63,6 +63,11 @@
     }
   }
 
+  .labkey-group-column-header {
+    border-bottom: solid 1px $lk-grid-border-color;
+    text-align: center;
+  }
+
   .labkey-col-total {
     span.summary-stat-label {
       font-weight: bold;
