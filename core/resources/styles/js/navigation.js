@@ -349,8 +349,8 @@
         // distance between menu's bottom edge and bottom of window
         var spaceDown = win.scrollTop() + win.height() - (offset.top + menu.height());
 
-        // distance between menu's right edge and right side of the window
-        var spaceRight = win.scrollLeft() + win.width() - (offset.left + menu.width());
+        // if toggle element is in left half of screen then left align the menu
+        var inLeftHemisphere = (me.offset().left + 100) < (win.width() / 2);
 
         if (spaceDown < 0) {
             me.removeClass('dropdown').addClass('dropup');
@@ -359,11 +359,11 @@
             me.removeClass('dropup').addClass('dropdown');
         }
 
-        if (spaceRight < 0) {
-            menu.removeClass('dropdown-menu-left').addClass('dropdown-menu-right');
+        if (inLeftHemisphere) {
+            menu.removeClass('dropdown-menu-right').addClass('dropdown-menu-left');
         }
         else {
-            menu.removeClass('dropdown-menu-right').addClass('dropdown-menu-left');
+            menu.removeClass('dropdown-menu-left').addClass('dropdown-menu-right');
         }
     };
 
@@ -384,14 +384,7 @@
             .on('keydown.bs.submenu.data-api', 'a.subexpand', SubMenu.prototype.keydown)
             // note: the two bindings to unfurl. rollups are treated differently from common lk-menu-drop
             .on('hide.bs.dropdown.data-api', '.dropdown-rollup, .lk-menu-drop', SubMenu.prototype.unfurl)
-            .on('shown.bs.dropdown.data-api', '.lk-menu-drop', SubMenu.prototype.viewportAlign);
-
-    $(function() {
-        // stop click within the nav menu and custom menus from closing the menu
-        $('.navbar-header .dropdown-menu').click(function(e) {
-            e.stopPropagation();
-        });
-    });
+            .on('shown.bs.dropdown.data-api', '.dropdown-rollup, .lk-menu-drop', SubMenu.prototype.viewportAlign);
 }(jQuery);
 
 // Initialize tooltips & box-shadow scrolling
@@ -560,4 +553,7 @@
             .on('mouseleave', popupSelector, function(){
                 delayHidePopup(openMenu);
             })
+            .on('click', popupSelector, function(e) {
+                e.stopPropagation();
+            });
 }(jQuery);
