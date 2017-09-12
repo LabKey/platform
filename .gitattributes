@@ -159,6 +159,7 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -tex
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
 core/build.gradle -text
 core/module.properties -text
+core/package-lock.json -text
 core/package.json -text
 core/postcss.config.js -text
 core/resources/credits/executables.txt -text
