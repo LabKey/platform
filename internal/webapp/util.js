@@ -33,7 +33,7 @@ function showHelpDiv(elem, titleText, bodyText, width)
     if (_hideTimer)
         clearTimeout(_hideTimer);
 
-    while (offsetElem && offsetElem.tagName != "BODY")
+    while (offsetElem && offsetElem.tagName != "BODY" && offsetElem.tagName != "HTML")
     {
         posLeft += offsetElem.offsetLeft  - offsetElem.scrollLeft;
         posTop += offsetElem.offsetTop - offsetElem.scrollTop;

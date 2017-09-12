@@ -58,16 +58,20 @@ public class CrosstabDataRegion extends DataRegion
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+
         if (_numMemberMeasures > 0)
         {
             //add a row for the column axis label if there is one
-            out.write("<tr>\n");
+            out.write(newUI ? "<thead><tr>\n" : "<tr>\n");
             renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
             renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), out);
-            out.write("</tr>\n");
+            out.write(newUI ? "</tr></thead>\n" : "</tr>\n");
 
             //add an extra row for the column dimension members
-            out.write("<tr>\n");
+            out.write(newUI ? "<thead><tr>\n" : "<tr>\n");
+            if (newUI)
+                renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 1, false);
 
             List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
@@ -87,8 +91,7 @@ public class CrosstabDataRegion extends DataRegion
                 {
                     if (_numMeasures != _numMemberMeasures || colDim.getMemberUrl(currentMember) != null)
                     {
-                        renderColumnGroupHeader(memberColumns.size(),
-                                getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
                     }
                 }
 
@@ -107,7 +110,7 @@ public class CrosstabDataRegion extends DataRegion
             }
 
             //end the col dimension member header row
-            out.write("</tr>\n");
+            out.write(newUI ? "</tr></thead>\n" : "</tr>\n");
         }
 
         //call the base class to finish rendering the headers
@@ -149,17 +152,34 @@ public class CrosstabDataRegion extends DataRegion
         if (groupWidth <= 0)
             return;
 
-        out.write("<td align=\"center\" colspan=\"");
-        out.write(String.valueOf(groupWidth));
-        out.write("\" rowspan=\"");
-        out.write(String.valueOf(groupHeight));
-        out.write("\" class=\"labkey-data-region");
-        if (alternate)
-            out.write(" labkey-alternate-col");
-        if (isShowBorders())
-            out.write(" labkey-show-borders");
-        out.write("\">\n");
-        out.write(caption == null ? "" : PageFlowUtil.filter(caption));
-        out.write("</td>\n");
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            out.write("<th colspan=\"");
+            out.write(String.valueOf(groupWidth));
+            out.write("\" class=\"labkey-data-region");
+            if (alternate)
+                out.write(" labkey-alternate-col");
+            if (isShowBorders())
+                out.write(" labkey-show-borders");
+            out.write(" labkey-group-column-header");
+            out.write("\">\n");
+            out.write(caption == null ? "" : PageFlowUtil.filter(caption));
+            out.write("</th>\n");
+        }
+        else
+        {
+            out.write("<td align=\"center\" colspan=\"");
+            out.write(String.valueOf(groupWidth));
+            out.write("\" rowspan=\"");
+            out.write(String.valueOf(groupHeight));
+            out.write("\" class=\"labkey-data-region");
+            if (alternate)
+                out.write(" labkey-alternate-col");
+            if (isShowBorders())
+                out.write(" labkey-show-borders");
+            out.write("\">\n");
+            out.write(caption == null ? "" : PageFlowUtil.filter(caption));
+            out.write("</td>\n");
+        }
     }
 }
