@@ -681,7 +681,7 @@ public abstract class DisplayColumn extends RenderColumn
             {
                 // 31304: click target should fill the entire cell
                 out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
-                out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
+                out.write("<ul class=\"dropdown-menu\">");
                 PopupMenuView.renderTree(navTree, out);
                 out.write("</ul>");
             }
