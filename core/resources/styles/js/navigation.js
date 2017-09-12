@@ -497,96 +497,67 @@
 
 +function($) {
     'use strict';
-    var hideTimeout, showTimeout, menuOpen = false;
+    var toggleTimeout = false,
+            openMenu = undefined;
 
     var toggle = $.fn.dropdown.Constructor.prototype.toggle;
     var toggleSelector = '.navbar-header [data-toggle="dropdown"]';
     var popupSelector = '.navbar-header .dropdown-menu';
 
-    function cancelHide() {
-        if (hideTimeout) {
-            clearTimeout(hideTimeout);
-            hideTimeout = false;
+    function cancelToggle() {
+        if (toggleTimeout) {
+            clearTimeout(toggleTimeout);
+            toggleTimeout = false;
         }
     }
 
-    function cancelShow() {
-        if (showTimeout) {
-            clearTimeout(showTimeout);
-            showTimeout = false;
-            // console.log('clear showTimeout');
-        }
-    }
+    function delayShowPopup(elm) {
+        if (openMenu) {
+            cancelToggle();
 
-    function delayHide(e) {
-        cancelHide();
-        cancelShow();
-        hideTimeout = setTimeout(doHide.bind(this, e), 500);
-    }
-
-    function delayShow(e) {
-        if (!showTimeout) {
-            // console.log('delayShow');
-            showTimeout = setTimeout(doShow.bind(this, e), 500);
-        }
-    }
-
-    function doHide(e) {
-        // console.log('hide!');
-        menuOpen = false;
-        toggle.call(this, e);
-    }
-
-    function doShow(e) {
-        // console.log('show!');
-        menuOpen = true;
-        // cancelShow();
-        toggle.call(this, e);
-    }
-
-    function onPopupEnter() {
-        cancelHide();
-    }
-
-    function onPopupLeave(e) {
-        delayHide.call(this, e);
-    }
-
-    function onToggleActive(e) {
-        if (e.type === 'click') {
-            // let bootstrap handle it
-            cancelHide();
-            cancelShow();
-            menuOpen = true;
-        }
-        else if (menuOpen) { // && !thisMenu
-            // show immediately
-            doShow.call(this, e);
+            // If the open menu is different from the menu I'm hovering over then close it and open mine.
+            // Otherwise, mine is already open, so do nothing.
+            if (openMenu !== elm) {
+                doToggle(openMenu);
+                doToggle(elm);
+            }
         }
         else {
-            // console.log('select -> delayShow!');
-            delayShow.call(this, e);
+            toggleTimeout = setTimeout(doToggle.bind(undefined, elm), 500);
         }
     }
 
-    function onToggleOut(e) {
-        if (menuOpen) {
-            delayHide.call(this, e);
+    function delayHidePopup() {
+        if (openMenu) {
+            // If there is a menu open, then give the user some time before closing it.
+            toggleTimeout = setTimeout(doToggle.bind(undefined, openMenu), 500);
         }
         else {
-            cancelShow();
+            // If there is not a menu open, then stop any attempt to show a menu
+            cancelToggle();
         }
     }
 
-    //
-    // $(document)
-    //         .on('click.bs.dropdown.data-api', function() {
-    //             // If anywhere besides the toggleSelector is clicked, assume the menu is closed.
-    //             menuOpen = false;
-    //         })
-    //         .on('click.bs.dropdown.data-api', toggleSelector, onToggleActive)
-    //         .on('mouseenter.bs.dropdown.data-api', toggleSelector, onToggleActive)
-    //         .on('mouseleave.bs.dropdown.data-api', toggleSelector, onToggleOut)
-    //         .on('mouseenter', popupSelector, onPopupEnter)
-    //         .on('mouseleave', popupSelector, onPopupLeave)
+    function doToggle(elm) {
+        openMenu = openMenu ? undefined : elm;
+        toggle.call(elm);
+    }
+
+    $(document)
+            .on('click.bs.dropdown.data-api', toggleSelector, function(){
+                openMenu = openMenu ? undefined : this;
+                cancelToggle(this);
+            })
+            .on('mouseenter.bs.dropdown.data-api', toggleSelector, function() {
+                delayShowPopup(this);
+            })
+            .on('mouseleave.bs.dropdown.data-api', toggleSelector, function(){
+                delayHidePopup(this);
+            })
+            .on('mouseenter', popupSelector, function(){
+                cancelToggle();
+            })
+            .on('mouseleave', popupSelector, function(){
+                delayHidePopup(openMenu);
+            })
 }(jQuery);
