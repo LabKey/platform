@@ -61,11 +61,9 @@
     final User user = getUser();
     final String focusId = bean.isInsert() ? "title" : "comment";
     final int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
-    final boolean newUI = PageFlowUtil.useExperimentalCoreUI();
     IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
     if (issueListDef == null)
         issueListDef = IssueManager.getIssueListDef(issue);
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef.getName());
 
     BindException errors = bean.getErrors();
     String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
@@ -112,8 +110,6 @@
 %>
 
 <script type="text/javascript">
-    var showLess = false;
-
     function filterRe(e, input, re)
     {
         if (e.isSpecialKey())
@@ -146,53 +142,7 @@
         return filterRe(e, input, /^[\d,\s]+$/);
     }
 
-    function showMoreTimestamps() {
-        var allStampsDiv = document.getElementById("allTimeStamps");
-        var stampExpandIcon = document.getElementById("stampExpandIcon");
-
-        if (!showLess) {
-            stampExpandIcon.className = 'fa fa-caret-up';
-            allStampsDiv.style.display = "block";
-        } else {
-            stampExpandIcon.className = 'fa fa-caret-down';
-            allStampsDiv.style.display = "none";
-        }
-
-        showLess = !showLess;
-    }
 </script>
-<% if (newUI) {%>
-<script type="text/javascript">
-    (function($){
-
-        var extraFields = [];
-
-        <%
-        ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
-        propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
-        for (DomainProperty prop : propertyArr)
-        {%>
-            extraFields.push(<%=q(prop.getName().toLowerCase())%>);
-        <%}%>
-
-        $(function() {
-            $("input[name='title']").attr("tabindex", "1");
-            $("select[name='assignedTo']").attr("tabindex", "2");
-            $("input[name='related']").attr("tabindex", "3");
-            $("textarea[name='notifyListArea']").attr("tabindex", "4");
-
-            for (var i=5; i < extraFields.length; i++){
-                var e = $("[name=" + extraFields[i] + "]");
-                if (e) {
-                    e.attr("tabindex", i);
-                }
-            }
-        });
-    })(jQuery);
-</script>
-<%}
-else
-{%>
 <script type="text/javascript">
     (function($){
 
@@ -234,11 +184,7 @@ else
         });
     })(jQuery);
 </script>
-<%}%>
-<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" layout="horizontal">
-    <% if (!newUI) {%>
-
-
+<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data">
     <table><%
         if (null != errors && 0 != errors.getErrorCount())
         {
@@ -253,11 +199,12 @@ else
             }
         %>
     </table>
-
     <table>
         <tr>
             <td align="right" valign="top"><%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= button("Cancel").href(cancelURL) %></td>
         </tr>
+    </table>
+    <table class="lk-fields-table">
         <tr><%
             if (bean.isInsert())
             {%>
@@ -265,23 +212,23 @@ else
             }
             else
             {%>
-            <td class="labkey-form-label">Issue <%=issue.getIssueId()%></td><%
-                }%>
+            <%=text(bean.renderLabel("Issue " + issue.getIssueId()))%><%
+            }%>
             <td colspan="3">
                 <%=text(bean.writeInput("title", issue.getTitle(), "id=title style=\"width:100%;\""))%>
             </td></tr>
         <tr>
-            <td class="labkey-form-label"><%=text(bean.getLabel("Status", true))%></td><td><%=h(issue.getStatus())%></td>
+            <%=text(bean.renderLabel(bean.getLabel("Status", false)))%><td><%=h(issue.getStatus())%></td>
             <td rowspan="<%=h(rowSpan)%>" valign="top">
-                <table>
-                    <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
-                    <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-                    <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+                <table class="lk-fields-table">
+                    <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+                    <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
+                    <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
                     <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isVisible("resolution"), bean.isReadOnly("resolution")))%>
                     <%
                         if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
                         {%>
-                    <tr><td class="labkey-form-label">Duplicate</td><td><%
+                    <tr><%=text(bean.renderLabel(bean.getLabel("Duplicate", false)))%><td><%
                         if (bean.isVisible("duplicate"))
                         {
                             if("Duplicate".equals(issue.getResolution()))
@@ -329,7 +276,7 @@ else
                             }%>
                     </td></tr><%
                     }%>
-                    <tr><td class="labkey-form-label"><%=text(bean.getLabel("Related", false))%></td><td>
+                    <tr><%=text(bean.renderLabel(bean.getLabel("Related", false)))%><td>
                                 <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related"))%>
 
                         <script type="text/javascript">
@@ -342,24 +289,23 @@ else
                     }%>
                 </table>
             </td>
-            <td valign="top" rowspan="<%=h(rowSpan)%>"><table style="width: 100%;">
-                <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
+            <td valign="top" rowspan="<%=h(rowSpan)%>"><table class="lk-fields-table" style="width: 100%;">
+                <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
                 if (bean.isVisible("notifyList"))
                 {%>
                 <tr>
-                    <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList", true))%><%=text(popup)%><br/><br/><%
+                    <%
+                        String notify = bean.getLabel("NotifyList", true) + popup + "<br/><br/>";
+
                         if (!user.isGuest())
                         {
                             if (bean.isInsert())
-                            {%>
-                        <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class))%><%
+                                notify += textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class));
+                            else
+                                notify += textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()));
                         }
-                        else
-                        {%>
-                        <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%><%
-                                }
-                            }%>
-                    </td>
+                    %>
+                    <%=text(bean.renderLabel(notify))%>
                     <td>
                         <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="4" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
                     </td>
@@ -367,7 +313,7 @@ else
             }
             else
             {%>
-                <tr><td class="labkey-form-label">Notify</td><td><%=text(bean.getNotifyList())%></td></tr><%
+                <tr><%=text(bean.renderLabel(bean.getLabel("Notify", false)))%><td><%=text(bean.getNotifyList())%></td></tr><%
                 }
                 for (DomainProperty prop : column2Props)
                 {%>
@@ -381,10 +327,12 @@ else
             {%>
         <%=text(bean.renderColumn(prop, getViewContext()))%><%
         }%>
-        <tr><td class="labkey-form-label"><%=bean.getLabel("Comment", bean.isInsert())%></td>
+        <tr><%=text(bean.renderLabel(bean.getLabel("Comment", bean.isInsert())))%>
             <td colspan="3">
-                <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
+                <textarea id="comment" name="comment" class="form-control" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
             </td></tr>
+    </table>
+    <table>
         <tr>
             <td align="right" valign="top"><%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= PageFlowUtil.button("Cancel").href(cancelURL)%></td>
         </tr>
@@ -394,244 +342,7 @@ else
         <tr><td><table id="filePickerTable"></table></td></tr>
         <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
-
-<%}
-else
-{%>
-    <table><%
-        if (null != errors && 0 != errors.getErrorCount())
-        {
-            for (ObjectError e : errors.getAllErrors())
-            {%>
-                <tr><td colspan=3><span class="labkey-error"><%=h(context.getMessage(e))%></span></td></tr><%
-            }
-        }
-        if (!bean.getRequiredFields().isEmpty())
-        {%>
-            <tr><td class="help-block">Fields marked with an asterisk * are required.</td></tr><%
-        }
-        %>
-    </table>
-    <br>
-    <% String placeHolderString = bean.getIssue().getIssueId() == 0 ? "Name this " + names.singularName: " "; %>
-
-    <div class="row">
-        <div class="col-sm-8">
-            <div class="form-group">
-                <label for="title" class="control-label col-md-1" style="padding-right: 5px;">Title *</label>
-                <div class="col-md-11">
-                    <input class="form-control" name="title" id="title" value="<%=h(issue.getTitle() == null ? "" : issue.getTitle())%>" placeholder="<%=h(placeHolderString)%>" tabindex="1">
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-4">
-            <div class="form-group">
-                <label class="col-md-3 control-label">Status</label>
-                <div class="col-md-9"  style="padding-top: 5px"><span><%=text(issue.getStatus())%></span></div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-5">
-            <%=text(bean.renderLargeInputColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
-            <%if (bean.isVisible("resolution"))
-            {%>
-                <%=text(bean.renderLargeInputColumn(propertyMap.get("resolution"), getViewContext(), true, bean.isReadOnly("resolution")))%>
-            <%}
-            if (issue.getIssueId() != 0)
-            {
-                Issue.IssueEvent m = issue.getMostRecentEvent(user);
-                String lastUpdatedStr = "";
-                String lastUpdatedTitleStr = "";
-                if (null != m)
-                {
-                    lastUpdatedStr = m.toString();
-                    lastUpdatedTitleStr = m.getFullTimestamp();
-                }
-
-            %>
-
-            <div style="margin: 10px 0;">
-                <div id="recentTimeStamp" title="<%=h(lastUpdatedTitleStr)%>"><div><strong>Recent Activity</strong></div><%=h(lastUpdatedStr)%>
-                    <a id="timestampsToggle" onclick="showMoreTimestamps()">
-                        <i id="stampExpandIcon" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
-                    </a>
-                </div>
-
-                <div id="allTimeStamps" style="display: none;">
-                    <%
-                       ArrayList<Issue.IssueEvent> eventArray = issue.getOrderedEventArray(user);
-
-                        for (int j = 1; j < eventArray.size(); j++)
-                        {
-                            Issue.IssueEvent e = eventArray.get(j);
-                            String stampString = e.toString();
-                    %>
-                    <div title="<%=h(e.getFullTimestamp())%>"><%=h(stampString)%></div>
-                    <%
-                        }
-                    %>
-                </div>
-            </div>
-            <%}%>
-        </div>
-        <div class="col-sm-3">
-            <div class="form-group">
-                <label class="col-md-5 col-lg-4 control-label">
-                    Related
-                </label>
-                <div class="col-md-7 col-lg-8">
-                    <%=text(bean.writeInput("related", issue.getRelated(), "id=\"related\" placeholder=\"ID #\""))%>
-                </div>
-            </div>
-
-            <%if (bean.isVisible("duplicate"))
-            {%>
-            <div class="form-group">
-                <label class="col-md-5 col-lg-4 control-label">
-                    Duplicate ID
-                </label>
-                <div class="col-md-7 col-lg-8">
-                <%if("Duplicate".equals(issue.getResolution()))
-                {
-                    //Enabled duplicate field.%>
-                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "type=\"number\" min=\"1\" placeholder=\"ID #\""))%>
-                <%}
-                else
-                {
-                    //Disabled duplicate field.%>
-                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "disabled"))%>
-            <%}%>
-                </div>
-            </div>
-            <script type="text/javascript">
-                var duplicateInput = document.getElementsByName('duplicate')[0];
-                var duplicateOrig = duplicateInput.value;
-                var resolutionSelect = document.getElementsByName('resolution')[0];
-                function updateDuplicateInput()
-                {
-                    // The options don't have an explicit value set, so look for the display text instead of
-                    // the value
-                    if (resolutionSelect.selectedIndex >= 0 &&
-                            resolutionSelect.options[resolutionSelect.selectedIndex].value === 'Duplicate')
-                    {
-                        duplicateInput.disabled = false;
-                    }
-                    else
-                    {
-                        duplicateInput.disabled = true;
-                        duplicateInput.value = duplicateOrig;
-                    }
-                }
-                if (window.addEventListener)
-                    resolutionSelect.addEventListener('change', updateDuplicateInput, false);
-                else if (window.attachEvent)
-                    resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-            </script>
-            <%}
-            else if(issue.getDuplicate() != null) {%>
-                <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a><%
-
-            }%>
-        </div>
-        <div class="col-sm-4">
-            <div class="form-group">
-                <label for="notifyList" class="control-label col-md-3">Notify List</label>
-                <div class="col-md-9" style="padding-right: 15px">
-                    <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="3" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
-                </div>
-            </div>
-        </div>
-    </div>
-    <hr>
-    <%
-        ArrayList<DomainProperty> propertyArr = new ArrayList<>(extraColumns);
-        propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
-        for (int j = 0; j < propertyArr.size(); j++)
-        {
-            DomainProperty prop = propertyArr.get(j);
-            if (j % 3 == 0)
-            { //begin row div
-    %>
-            <div class="row form-row">
-    <%       }%>
-
-    <div class="col-sm-4 form-large-label">
-        <%=text(bean.renderColumn(prop, getViewContext()))%>
-    </div>
-
-    <%
-            if (j % 3 == 2)
-            { //end row div
-    %>
-            </div>
-    <%
-            }
-    }
-    if (propertyArr.size() % 3 != 0)
-    {%>
-       </div>
-    <%}%>
-    <div class="row" style="padding: 0 15px">
-        <label class="control-label" for="commentArea">Comment</label>
-        <div>
-            <textarea id="commentArea" class="form-control" name="comment" cols="150" rows="8" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
-        </div>
-    </div>
-    <table style="display: inline-table">
-        <tr><td><table id="filePickerTableHead"></table></td></tr>
-        <tr><td><a href="javascript:addFilePicker('filePickerTableHead','filePickerLinked')" id="filePickerLinked"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
-    </table>
-    <div style="float: right; padding-top: 10px; display: inline-table;">
-        <%= button("Cancel").href(cancelURL) %>
-        <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
-    </div>
-    <% if (!issue.getComments().isEmpty()) {%>
-        <hr>
-    <%}%>
-    <%
-        if (bean.getCallbackURL() != null)
-        {
-    %>
-    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
-    <%
-        }
-
-        if (bean.getReturnURL() != null)
-        {
-    %>
-    <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/>
-    <%
-        }%>
-        <%if (issue.getIssueId() != 0 && !issue.getComments().isEmpty()) {%>
-            <labkey:panel type="portal">
-                <%for (Issue.Comment comment : issue.getComments())
-                    {%>
-                    <div class="currentIssue" style="display: inline">
-                        <strong class="comment-created-by">
-                            <%=h(comment.getCreatedByName(user))%>
-                        </strong>
-                        <br>
-                        <strong class="ccomment-created" title="<%=h(comment.getCreatedFullString())%>">
-                            <%=h(bean.writeDate(comment.getCreated()))%>
-                        </strong>
-                        <%
-                        if (!issue.getComments().contains(comment)) {%>
-                            <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
-                        }%>
-                        <%=comment.getComment()%>
-                        <%=bean.renderAttachments(context, comment)%>
-                        <hr>
-                    </div>
-                <%}%>
-            </labkey:panel>
-        <%}
-    }%>
-<%
-    if (!newUI)
-    {
-        for (Issue.Comment comment : issue.getComments())
-        {%>
+<%  for (Issue.Comment comment : issue.getComments()) {%>
     <hr>
     <table width="100%"><tr><td align="left"><b>
         <%=h(bean.writeDate(comment.getCreated()))%>
@@ -641,7 +352,6 @@ else
     </table>
     <%=text(comment.getComment())%>
     <%=text(bean.renderAttachments(context, comment))%><%
-    }
     }%>
 
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">

@@ -109,6 +109,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private RenderContext _renderContext;
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
+    boolean _newUI = PageFlowUtil.useExperimentalCoreUI();
 
     /**
      * A map of additional information to display on the issue's detail page. It will be displayed as a table row,
@@ -380,25 +381,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _tableInfo;
     }
 
-    public String renderLargeInputColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readonly) throws IOException
-    {
-        return renderColumn(prop, context, visible, readonly, false, true);
-    }
-
     public String renderColumn(DomainProperty prop, ViewContext context) throws IOException
     {
-        return renderColumn(prop, context, true, false, false, false);
+        return renderColumn(prop, context, true, false);
     }
 
     public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
     {
-        return renderColumn(prop, context, visible, readOnly, false, false);
-    }
-
-    public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly, boolean isLabelStacked, boolean isLargeInput) throws IOException
-    {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
@@ -410,23 +399,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 {
                     try (Writer writer = new StringWriter())
                     {
-                        if (!newUI)
-                            writer.append("<tr>");
-                        else
-                            writer.append("<div class=\"form-group\">");
-
-                        if (isLargeInput)
-                            writer.append(renderLargeLabel(prop, context, isLabelStacked));
-                        else
-                            writer.append(renderLabel(prop, context, isLabelStacked, false));
+                        writer.append("<tr>");
+                        writer.append(renderLabel(prop, context));
 
                         if (visible)
-                            writer.append(renderInput(prop, context, readOnly, isLargeInput));
+                            writer.append(renderInput(prop, context, readOnly));
 
-                        if (!newUI)
-                            writer.append("</tr>");
-                        else
-                            writer.append("</div>");
+                        writer.append("</tr>");
 
                         sb.append(writer);
                     }
@@ -437,18 +416,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
-    public String renderLargeLabel(DomainProperty prop, ViewContext context, boolean isLabelStacked) throws IOException {
-        return renderLabel(prop, context, isLabelStacked, true);
-    }
-
-    public String renderLabel(DomainProperty prop, ViewContext context)  throws IOException
+    public String renderLabel(DomainProperty prop, ViewContext context) throws IOException
     {
-        return renderLabel(prop, context, false, false);
-    }
-
-    public String renderLabel(DomainProperty prop, ViewContext context, boolean isLabelStacked, boolean isLarge) throws IOException
-    {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
@@ -463,27 +432,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        if (newUI && isLarge)
-                        {
-                            sb.append("<label class=\"col-md-4 col-lg-3 control-label\">");
-                            dc.renderTitle(renderContext, writer);
-                            sb.append(writer);
-                            if (getRequiredFields().contains("assignedto"))
-                                sb.append(" *");
-                            sb.append("</label>");
-                        }
-                        else if (isLabelStacked)
-                        {
-                            sb.append("<label class=\"control-label\">");
-                            dc.renderTitle(renderContext, writer);
-                            sb.append(writer);
-                            sb.append("</label>");
-                        }
-                        else
-                        {
-                            dc.renderDetailsCaptionCell(renderContext, writer, null);
-                            sb.append(writer);
-                        }
+                        if (_newUI)
+                            sb.append("<td>");
+                        dc.renderDetailsCaptionCell(renderContext, writer, _newUI ? "control-label" : null);
+                        sb.append(writer);
+                        if (_newUI)
+                            sb.append("</td>");
                     }
                     return sb.toString();
                 }
@@ -492,9 +446,26 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
-    public String renderInput(DomainProperty prop, ViewContext context, boolean readOnly, boolean isLargeInput) throws IOException
+    /**
+     * Render column label only
+     */
+    public String renderLabel(String label) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        final StringBuilder sb = new StringBuilder();
+        if (label != null)
+        {
+            if (_newUI)
+                sb.append("<td><label class=\"control-label\">").append(label).append("</label></td>");
+            else
+                sb.append("<td class=\"labkey-form-label\">").append(label).append("</td>");
+
+            return sb.toString();
+        }
+        return "";
+    }
+
+    public String renderInput(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException
+    {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
@@ -517,17 +488,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        if (!newUI)
-                            writer.append("<td>");
-                        else if (isLargeInput)
-                            writer.append("<div class=\"col-md-8 col-lg-9\">");
-                        else
-                            writer.append(readOnly ? "<div class=\"col-9\">" : "<div class=\"col-sm-9 col-lg-10\">");
+                        writer.append("<td>");
                         dc.render(renderContext, writer);
-                        if (!newUI)
-                            writer.append("</td>");
-                        else
-                            writer.append("</div>");
+                        writer.append("</td>");
                         sb.append(writer);
                     }
                     return sb.toString();
