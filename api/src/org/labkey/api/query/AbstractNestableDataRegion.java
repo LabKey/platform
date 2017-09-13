@@ -103,6 +103,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     {
         _nestedRegion = nestedRegion;
         _nestedRegion.setSettings(getSettings());
+        _nestedRegion.setShowPagination(false);
     }
 
     protected void renderNestedGrid(Writer out, RenderContext ctx, ResultSet nestedRS, int rowIndex)

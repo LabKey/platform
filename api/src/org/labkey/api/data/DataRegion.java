@@ -107,7 +107,6 @@ public class DataRegion extends DisplayElement
     private ButtonBar _detailsButtonBar = ButtonBar.BUTTON_BAR_DETAILS;
     private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
-    private boolean _fixedWidthColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
     private long _offset = 0;
     private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
@@ -543,17 +542,6 @@ public class DataRegion extends DisplayElement
             default:
                 _log.error("Setting button bar for non existent mode");
         }
-    }
-
-
-    public boolean getFixedWidthColumns()
-    {
-        return _fixedWidthColumns;
-    }
-
-    public void setFixedWidthColumns(boolean fixed)
-    {
-        _fixedWidthColumns = fixed;
     }
 
     public void setAllowHeaderLock(boolean allow)
@@ -1440,8 +1428,6 @@ public class DataRegion extends DisplayElement
         if (name != null)
             out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\"");
 
-        if (_fixedWidthColumns)
-            tableCls += " lk-region-fixed";
         if (isShowBorders())
             tableCls += " table-bordered";
 
@@ -1534,8 +1520,6 @@ public class DataRegion extends DisplayElement
 
         if (_aggregateResults != null && !_aggregateResults.isEmpty())
             out.write(" labkey-has-col-totals");
-        if (_fixedWidthColumns)
-            out.write(" labkey-fixed-width-columns");
         out.write("\"");
 
         out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");

@@ -132,7 +132,6 @@ public abstract class NestableQueryView extends QueryView
         // We render the expand/collapse UI as part of the record selector, so we always need to include them
         rgn.setShowRecordSelectors(true);
         rgn.setSettings(getSettings());
-        rgn.setFixedWidthColumns(true);
         return rgn;
     }
 }
