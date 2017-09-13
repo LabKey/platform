@@ -61,24 +61,25 @@
         }
     }
 %>
-<table>
+<h4>Base Columns</h4>
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
-<!--    <th>ID</th> -->
-        <th>Name</th>
-        <th>Label</th>
-        <th>Type</th>
-        <th>Format</th>
-        <th>Required</th>
-        <th>Allows MV</th>
-        <th>Description</th>
-    </tr><%
-
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Label</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Format</td>
+        <td class="labkey-column-header">Required</td>
+        <td class="labkey-column-header">Allows MV</td>
+        <td class="labkey-column-header">Description</td>
+    </tr>
+<%
+    int rowIndex = 0;
     for (ColumnInfo col : systemColumns)
     {
         String type = col.getFriendlyTypeName();
         if (col.getName().equalsIgnoreCase("modifiedby")||col.getName().equalsIgnoreCase("createdby"))
             type = "User (Integer)";
-        %><tr>
+        %><tr class="<%=getShadeRowClass(rowIndex % 2 == 0)%>">
             <td><%=h(col.getName())%></td>
             <td><%=h(col.getLabel())%></td>
             <td><%=h(type)%></td>
@@ -87,15 +88,28 @@
             <td align="center"><input type=checkbox disabled<%=checked(col.isMvEnabled())%>></td>
             <td><%=h(col.getDescription())%></td>
           </tr><%
+        rowIndex++;
     }
-
-%><tr><td colspan=6><hr height=1></td></tr><%
+%>
+</table>
+<h4>User Defined Columns</h4>
+<table class="labkey-data-region-legacy labkey-show-borders">
+    <tr>
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Label</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Format</td>
+        <td class="labkey-column-header">Required</td>
+        <td class="labkey-column-header">Allows MV</td>
+        <td class="labkey-column-header">Description</td>
+    </tr>
+<%
 
     for (ColumnInfo col : userColumns)
     {
         boolean isKeyColumn = (StringUtils.equalsIgnoreCase(col.getName(), dataset.getKeyPropertyName()));
 %>
-        <tr>
+        <tr class="<%=getShadeRowClass(rowIndex % 2 == 0)%>">
             <td><%=text(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=text(isKeyColumn ? "</b>" : "")%></td>
             <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
@@ -105,16 +119,16 @@
             <td><%=h(col.getDescription())%></td>
         </tr>
         <%
+        rowIndex++;
     }
 %>
 </table>
-
 <%
     if (getViewContext().hasPermission(AdminPermission.class))
     {
         if (dataset.getTypeURI() == null)
         {
-            %><%=textLink("Bulk import dataset schemas", BulkImportDataTypesAction.class)%><%
+            %><br/><%=textLink("Bulk import dataset schemas", BulkImportDataTypesAction.class)%><%
         }
     }
 %>

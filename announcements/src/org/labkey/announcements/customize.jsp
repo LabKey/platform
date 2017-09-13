@@ -32,14 +32,20 @@
 
 %><labkey:form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
 <%=generateReturnUrlFormField(bean.returnURL)%>
-<table>
+<table class="lk-fields-table">
     <tr>
         <td class="labkey-form-label">Board name</td>
-        <td><table><tr><td><input type="text" size="30" value="<%=h(settings.getBoardName())%>" name="boardName"></td><td>Custom term used in this folder to refer to the entire board.  Examples: "Discussions", "Announcements", "XYZ Study Consultations", "Message Board", "My Blog", etc.</td></tr></table></td>
+        <td>
+            Custom term used in this folder to refer to the entire board.  Examples: "Discussions", "Announcements", "XYZ Study Consultations", "Message Board", "My Blog", etc.<br/>
+            <input type="text" size="30" value="<%=h(settings.getBoardName())%>" name="boardName">
+        </td>
     </tr>
     <tr>
         <td class="labkey-form-label">Conversation name</td>
-        <td><table><tr><td><input type="text" size="30" value="<%=h(settings.getConversationName())%>" name="conversationName"></td><td>Custom term used in this folder to refer to a conversation.  Examples: "Thread", "Discussion", "Announcement", "Consultation", etc.</td></tr></table></td>
+        <td>
+            Custom term used in this folder to refer to a conversation.  Examples: "Thread", "Discussion", "Announcement", "Consultation", etc.<br/>
+            <input type="text" size="30" value="<%=h(settings.getConversationName())%>" name="conversationName">
+        </td>
     </tr>
     <tr>
         <td class="labkey-form-label">Conversation sorting</td>

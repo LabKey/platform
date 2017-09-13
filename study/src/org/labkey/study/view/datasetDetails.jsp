@@ -143,103 +143,119 @@ if (!pipelineSet)
 }
 %>
 
-<%
-    FrameFactoryClassic.startTitleFrame(out, "Dataset Properties", null, "100%", null);
-%>
-<table id="details" width="600px">
-    <tr>
-        <td class=labkey-form-label>Name</td>
-        <th align=left><%= h(dataset.getName()) %></th>
+<br/><br/>
 
-        <td class=labkey-form-label>ID</td>
-        <td align=left><%= dataset.getDatasetId() %></td>
-    </tr>
-    <tr>
-        <td class=labkey-form-label>Label</td>
-        <td><%= h(dataset.getLabel()) %></td>
+<div class="panel panel-default">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title pull-left">
+            Dataset Properties
+        </h3>
+    </div>
+    <div class="panel-body">
+        <table id="details" width="600px" class="lk-fields-table">
+            <tr>
+                <td class=labkey-form-label>Name</td>
+                <th align=left><%= h(dataset.getName()) %></th>
 
-        <td class=labkey-form-label>Category</td>
-        <td><%= h(dataset.getViewCategory() != null ? dataset.getViewCategory().getLabel() : null) %></td>
-    </tr>
-    <tr>
-        <td class=labkey-form-label>Cohort Association</td>
-        <td><%=h(dataset.getCohort() != null ? dataset.getCohort().getLabel() : "All")%></td>
+                <td class=labkey-form-label>ID</td>
+                <td align=left><%= dataset.getDatasetId() %></td>
+            </tr>
+            <tr>
+                <td class=labkey-form-label>Label</td>
+                <td><%= h(dataset.getLabel()) %></td>
 
-        <td class=labkey-form-label><%=h(visitManager.getLabel())%> Date Column</td>
-        <td><%= h(dataset.getVisitDateColumnName()) %></td>
-    </tr>
-    <tr>
-        <td class=labkey-form-label>Additional Key Column</td>
-        <td><%=h(dataset.getKeyPropertyName() != null ?
-                         h(dataset.getKeyPropertyName()) :
-                         dataset.getUseTimeKeyField() ? h(GWTDataset.TIME_KEY_FIELD_DISPLAY) :
-                         "None")%></td>
+                <td class=labkey-form-label>Category</td>
+                <td><%= h(dataset.getViewCategory() != null ? dataset.getViewCategory().getLabel() : null) %></td>
+            </tr>
+            <tr>
+                <td class=labkey-form-label>Cohort Association</td>
+                <td><%=h(dataset.getCohort() != null ? dataset.getCohort().getLabel() : "All")%></td>
 
-        <td class=labkey-form-label>Tag</td>
-        <td><%=h(dataset.getTag())%>
-        </td>
-    </tr>
-    <tr>
-        <td class=labkey-form-label>Demographic
-            Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
-                    StudyService.get().getSubjectNounSingular(c).toLowerCase() +
-                    " in the study.")%></td>
-        <td><%=text(dataset.isDemographicData() ? "true" : "false")%></td>
+                <td class=labkey-form-label><%=h(visitManager.getLabel())%> Date Column</td>
+                <td><%= h(dataset.getVisitDateColumnName()) %></td>
+            </tr>
+            <tr>
+                <td class=labkey-form-label>Additional Key Column</td>
+                <td><%=h(dataset.getKeyPropertyName() != null ?
+                                 h(dataset.getKeyPropertyName()) :
+                                 dataset.getUseTimeKeyField() ? h(GWTDataset.TIME_KEY_FIELD_DISPLAY) :
+                                 "None")%></td>
 
-        <td rowspan="2" class=labkey-form-label>Description</td>
-        <td rowspan="2"><%= h(dataset.getDescription()) %></td>
-    </tr>
-    <tr>
-        <td class=labkey-form-label>Show In Overview</td>
-        <td><%=text(dataset.isShowByDefault() ? "true" : "false")%></td>
-    </tr>
-    <tr>
-        <td class=labkey-form-label>Share Data</td>
-        <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
-    </tr>
-</table>
-<%
-    FrameFactoryClassic.endTitleFrame(out);
-%>
-<p>
-<%
-    JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
-    typeSummary.setTitle("Dataset Fields");
-    typeSummary.setFrame(WebPartView.FrameType.TITLE);
-    me.include(typeSummary, out);
-%>
+                <td class=labkey-form-label>Tag</td>
+                <td><%=h(dataset.getTag())%>
+                </td>
+            </tr>
+            <tr>
+                <td class=labkey-form-label>Demographic
+                    Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
+                            StudyService.get().getSubjectNounSingular(c).toLowerCase() +
+                            " in the study.")%></td>
+                <td><%=text(dataset.isDemographicData() ? "true" : "false")%></td>
+
+                <td rowspan="2" class=labkey-form-label>Description</td>
+                <td rowspan="2"><%= h(dataset.getDescription()) %></td>
+            </tr>
+            <tr>
+                <td class=labkey-form-label>Show In Overview</td>
+                <td><%=text(dataset.isShowByDefault() ? "true" : "false")%></td>
+            </tr>
+            <tr>
+                <td class=labkey-form-label>Share Data</td>
+                <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title pull-left">
+            Dataset Fields
+        </h3>
+    </div>
+    <div class="panel-body">
+        <%
+            JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
+            me.include(typeSummary, out);
+        %>
+    </div>
+</div>
 
 <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-<%
-        FrameFactoryClassic.startTitleFrame(out,"Visit Associations",null,"100%",null);
-    %>
-<table><%
-    List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
-    HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
-    for (VisitDataset vds : visitList)
-        visitMap.put(vds.getVisitRowId(), vds);
-    boolean hasVisitAssociations = false;
-    for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
-    {
-        VisitDataset vm = visitMap.get(visit.getRowId());
-        if (vm != null)
-        {
-            hasVisitAssociations = true;
-            VisitDatasetType type = vm.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL;
-            %><tr>
-                <td><%= h(visit.getDisplayString()) %></td>
-                <td><%=text(type == VisitDatasetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
-            </tr><%
-        }
-    }
-    if (!hasVisitAssociations)
-    {
-    %><tr><td><i>This dataset isn't explicitly associated with any visits.</i></td></tr><%
-    }
-%></table>
-<%
-    FrameFactoryClassic.endTitleFrame(out);
-%>
+<div class="panel panel-default">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title pull-left">
+            Visit Associations
+        </h3>
+    </div>
+    <div class="panel-body">
+        <table class="lk-fields-table"><%
+            List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
+            HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
+            for (VisitDataset vds : visitList)
+                visitMap.put(vds.getVisitRowId(), vds);
+            boolean hasVisitAssociations = false;
+            for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
+            {
+                VisitDataset vm = visitMap.get(visit.getRowId());
+                if (vm != null)
+                {
+                    hasVisitAssociations = true;
+                    VisitDatasetType type = vm.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL;
+                    %><tr>
+                        <td><%= h(visit.getDisplayString()) %></td>
+                        <td><%=text(type == VisitDatasetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
+                    </tr><%
+                }
+            }
+            if (!hasVisitAssociations)
+            {
+            %><tr><td>This dataset isn't explicitly associated with any visits.</td></tr><%
+            }
+        %>
+        </table>
+    </div>
+</div>
 <% } %>
 
 <script type="text/javascript">

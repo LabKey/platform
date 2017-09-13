@@ -1515,7 +1515,7 @@ public class AnnouncementsController extends SpringActionController
 
             setHelpTopic("createMessage");
             JspView view = new JspView("/org/labkey/announcements/emailPreferences.jsp");
-            view.setFrame(WebPartView.FrameType.PORTAL);
+            view.setFrame(WebPartView.FrameType.NONE);
             EmailPreferencesPage page = (EmailPreferencesPage)view.getPage();
             view.setTitle("Email Preferences");
             view.setShowTitle(false);
