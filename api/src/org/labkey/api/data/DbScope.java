@@ -1539,6 +1539,53 @@ public class DbScope
         String getId();
     }
 
+    /** A dummy object for swap-in usage when no transaction is actually desired */
+    public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
+    {
+        @Override
+        @NotNull
+        public <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
+        {
+            runnable.run();
+            return runnable;
+        }
+
+        @Override
+        public String getId()
+        {
+            return "-";
+        }
+
+        @Override
+        @NotNull
+        public Connection getConnection()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public void commit()
+        {
+        }
+
+        @Override
+        public void commitAndKeepConnection()
+        {
+        }
+
+        @Override
+        public boolean isAborted()
+        {
+            return false;
+        }
+    };
+
+
     private void popCurrentTransaction()
     {
         synchronized (_transaction)
