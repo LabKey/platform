@@ -1249,6 +1249,7 @@ public class DavController extends SpringActionController
 
                 if (status == WebdavStatus.SC_CREATED)
                 {
+                    WebdavResource newDest = resource.find(filename);       // #30569: get newly created resource object that now has metadata
                     PropfindAction action = new PropfindAction()
                     {
                         @Override
@@ -1263,7 +1264,7 @@ public class DavController extends SpringActionController
                             return new Pair<>(0,Boolean.FALSE);
                         }
                     };
-                    action.setResource(dest);
+                    action.setResource(newDest);
                     return action.doMethod();
                 }
                 return status;
