@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.PlateTemplate" %>
 <%@ page import="org.labkey.api.study.PlateTypeHandler" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -37,59 +36,72 @@
     List<? extends PlateTemplate> plateTemplates = me.getModelBean().getTemplates();
 %>
 <h4>Available Plate Templates</h4>
-<table>
+<table class="labkey-data-region-legacy labkey-show-borders">
+    <tr>
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">&nbsp;</td>
+    </tr>
 <%
+    int index = 0;
     boolean isAssayDesigner = c.hasPermission(getUser(), DesignAssayPermission.class);
     for (PlateTemplate template : plateTemplates)
     {
 %>
-    <tr>
+    <tr class="<%=getShadeRowClass(index % 2 == 0)%>">
         <td><%= h(template.getName()) %></td>
+        <td>
         <%
             if (isAssayDesigner || c.hasPermission(getUser(), UpdatePermission.class))
             {
         %>
-        <td><%= textLink("edit", new ActionURL(PlateController.DesignerAction.class, getContainer()).
+            <%= textLink("edit", new ActionURL(PlateController.DesignerAction.class, getContainer()).
                 addParameter("templateName", template.getName()).
-                addParameter("plateId", template.getRowId())) %></td>
+                addParameter("plateId", template.getRowId())) %>
         <%
             }
             if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
-        <td><%= textLink("edit a copy", new ActionURL(PlateController.DesignerAction.class, getContainer()).
+            <%= textLink("edit a copy", new ActionURL(PlateController.DesignerAction.class, getContainer()).
                 addParameter("copy", true).
                 addParameter("templateName", template.getName()).
-                addParameter("plateId", template.getRowId())) %></td>
+                addParameter("plateId", template.getRowId())) %>
         <%
             }
             if (c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
-        <td><%= textLink("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
+            <%= textLink("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
                 addParameter("templateName", template.getName()).
-                addParameter("plateId", template.getRowId())) %></td>
+                addParameter("plateId", template.getRowId())) %>
         <%
             }
             if (isAssayDesigner || c.hasPermission(getUser(), DeletePermission.class))
             {
         %>
-        <td><%= text(((plateTemplates.size() > 1) ?
+            <%= text(((plateTemplates.size() > 1) ?
                 textLink("delete", new ActionURL(PlateController.DeleteAction.class, getContainer()).
                         addParameter("templateName", template.getName()).
                         addParameter("plateId", template.getRowId()),
                         "return confirm('Permanently delete this plate template?')", null) :
-                "Cannot delete the final template.")) %></td>
+                        "Cannot delete the final template.")) %>
         <%
             }
         %>
+        </td>
     </tr>
 <%
+        index++;
     }
+%>
+</table>
+
+<%
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
 %>
-    <tr><td><br></td></tr>
+    <br/>
+    <h4>Create New Plate Templates</h4>
     <% for (PlateTypeHandler handler : PlateManager.get().getPlateTypeHandlers())
     {
         for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
@@ -106,22 +118,17 @@
             if (types == null || types.isEmpty())
             {
         %>
-            <tr>
-                <td colspan="4"><%= textLink("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%></td>
-            </tr>
+                <%= textLink("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%><br/>
         <%
             }
             for (String template : types)
             {
                 designerURL.replaceParameter("templateType", template);
             %>
-            <tr>
-                <td colspan="4"><%= textLink("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%></td>
-            </tr>
+                <%= textLink("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%><br/>
         <%  }
         }
     }%>
 <%
     }
 %>
-</table>

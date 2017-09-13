@@ -35,7 +35,6 @@ public class ExperimentUpdateView extends UpdateView
         super(drg, form, errors);
         drg.addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments,Created");
 
-        drg.setFixedWidthColumns(false);
         DisplayColumn col = drg.getDisplayColumn("RowId");
         col.setVisible(false);
         drg.getDisplayColumn("LSID").setVisible(false);

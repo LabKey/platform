@@ -12,10 +12,6 @@
     flex: 1 100%;
   }
 
-  .lk-region-fixed {
-    table-layout: fixed;
-  }
-
   .lk-region-section {
 
     display: none;
@@ -241,10 +237,6 @@
   }
 }
 
-table.labkey-fixed-width-columns {
-  table-layout: fixed;
-}
-
 .labkey-has-row-totals col, .labkey-has-col-totals col {
   border-right: solid 1px $lk-grid-inner-border-color;
   border-left: solid 1px $lk-grid-inner-border-color;
@@ -256,7 +248,7 @@ table.labkey-fixed-width-columns {
 }
 
 /* Used for the shaded alternate rows */
-.labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row, div.labkey-alternate-row {
+.labkey-alternate-row > td, .labkey-alternate-row > th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row, div.labkey-alternate-row {
   background-color: $lk-grid-row-alt-bg-color;
 }
 
