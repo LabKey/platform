@@ -537,20 +537,25 @@
     }
 
     $(document)
-            .on('click.bs.dropdown.data-api', toggleSelector, function(){
+            .on('click.bs.dropdown.data-api', function() {
+                // This click handler respects clicking anywhere on the page.
+                openMenu = undefined;
+                cancelToggle();
+            })
+            .on('click.bs.dropdown.data-api', toggleSelector, function() {
                 openMenu = openMenu ? undefined : this;
-                cancelToggle(this);
+                cancelToggle();
             })
             .on('mouseenter.bs.dropdown.data-api', toggleSelector, function() {
                 delayShowPopup(this);
             })
-            .on('mouseleave.bs.dropdown.data-api', toggleSelector, function(){
+            .on('mouseleave.bs.dropdown.data-api', toggleSelector, function() {
                 delayHidePopup(this);
             })
-            .on('mouseenter', popupSelector, function(){
+            .on('mouseenter', popupSelector, function() {
                 cancelToggle();
             })
-            .on('mouseleave', popupSelector, function(){
+            .on('mouseleave', popupSelector, function() {
                 delayHidePopup(openMenu);
             })
             .on('click', popupSelector, function(e) {
