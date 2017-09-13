@@ -44,6 +44,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class StatementUtils
     private TableInfo _table;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
     private Set<String> _skipColumnNames = null;
-    private Set<String> _dontUpdateColumnNames = null;
+    private Set<String> _dontUpdateColumnNames = new HashSet<>();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
     private boolean _allowUpdateAutoIncrement = false;
@@ -414,6 +415,7 @@ public class StatementUtils
         Set<String> done = Sets.newCaseInsensitiveHashSet();
 
         String objectIdVar = null;
+        String objectURIVar = null;
         String rowIdVar = null;
         String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
 
@@ -454,8 +456,8 @@ public class StatementUtils
         // exp.Objects INSERT
         //
 
-
         SQLFragment sqlfDeclare = new SQLFragment();
+        SQLFragment sqlfPreselectObject = new SQLFragment();
         SQLFragment sqlfInsertObject = new SQLFragment();
         SQLFragment sqlfSelectObject = new SQLFragment();
         SQLFragment sqlfObjectProperty = new SQLFragment();
@@ -465,6 +467,10 @@ public class StatementUtils
         DomainKind domainKind = _table.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
 
+        boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
+        if (hasObjectURIColumn)
+            _dontUpdateColumnNames.add(objectURIColumnName);
+
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
             properties = domain.getProperties();
@@ -473,16 +479,32 @@ public class StatementUtils
             {
                 if (!_dialect.isPostgreSQL() && !_dialect.isSqlServer())
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
-                if (Operation.merge == _operation)
-                    throw new IllegalStateException("Merge is not tested for extensible tables yet");
 
                 objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-                useVariables = _dialect.isPostgreSQL();
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
+                objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR)).append("(300);\n");
+                useVariables = _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
 
                 // Insert a new row in exp.Object if there isn't already a row for this object
+
+                // Grab the object's ObjectId based on the pk of the base table
+                if (hasObjectURIColumn)
+                {
+                    sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = (");
+                    sqlfPreselectObject.append("SELECT ").append(table.getColumn(objectURIColumnName).getSelectName());
+                    sqlfPreselectObject.append(" FROM ").append(table.getSelectName());
+                    sqlfPreselectObject.append(getPkWhereClause(keys));
+                    sqlfPreselectObject.append(");\n");
+                }
+
+                SQLFragment sqlfWhereObjectURI = new SQLFragment();
+                sqlfWhereObjectURI.append("((").append(objectURIVar).append(" IS NOT NULL AND ObjectURI = ").append(objectURIVar).append(")");
+                sqlfWhereObjectURI.append(" OR ObjectURI = ");
+                appendParameterOrVariable(sqlfWhereObjectURI, objecturiParameter);
+                sqlfWhereObjectURI.append(")");
 
                 // In the update case, it's still possible that there isn't a row in exp.Object - there might have been
                 // no properties in the domain when the row was originally inserted
@@ -493,17 +515,13 @@ public class StatementUtils
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
                 sqlfInsertObject.append(" AS ObjectURI WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);
-                sqlfInsertObject.append(" AND ObjectURI = ");
-                appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
-                sqlfInsertObject.append(");\n");
+                sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
 
-                // Grab the object's ObjectId
+                // re-grab the object's ObjectId, in case it was just inserted
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
-                sqlfSelectObject.append(" AND ObjectURI = ");
-                appendParameterOrVariable(sqlfSelectObject, objecturiParameter);
-                sqlfSelectObject.append(");\n");
+                sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
 
                 if (Operation.insert != _operation)
                 {
@@ -529,7 +547,6 @@ public class StatementUtils
 
         List<SQLFragment> cols = new ArrayList<>();
         List<SQLFragment> values = new ArrayList<>();
-
 
         if (_updateBuiltInColumns && Operation.update != _operation)
         {
@@ -557,7 +574,6 @@ public class StatementUtils
         }
 
         ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
-
         if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
             cols.add(new SQLFragment(colModifiedBy.getSelectName()));
@@ -566,7 +582,6 @@ public class StatementUtils
         }
 
         ColumnInfo colModified = table.getColumn("Modified");
-
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(new SQLFragment(colModified.getSelectName()));
@@ -672,10 +687,6 @@ public class StatementUtils
 
             if (_selectIds && null != autoIncrementColumn)
             {
-                if (Operation.merge == _operation)
-                {
-                    throw new IllegalArgumentException("Merge does not support the selectid option");
-                }
                 selectAutoIncrement = true;
                 if (null != objectIdVar)
                     rowIdVar = "_rowid_";
@@ -690,7 +701,7 @@ public class StatementUtils
         //
 
         SQLFragment sqlfUpdate = new SQLFragment();
-        SQLFragment sqlfWherePK = new SQLFragment();
+        SQLFragment sqlfWherePK = getPkWhereClause(keys);
 
         if (Operation.update == _operation || Operation.merge == _operation)
         {
@@ -709,27 +720,6 @@ public class StatementUtils
                 sqlfUpdate.append(" = ");
                 sqlfUpdate.append(values.get(i));
                 updateCount++;
-            }
-            sqlfWherePK.append("\nWHERE ");
-            String and = "";
-            for (Map.Entry<FieldKey, ColumnInfo> e : keys.entrySet())
-            {
-                ColumnInfo keyCol = e.getValue();
-                sqlfWherePK.append(and);
-                sqlfWherePK.append("(");
-                sqlfWherePK.append(keyCol.getSelectName());
-                sqlfWherePK.append(" = ");
-                appendParameterOrVariable(sqlfWherePK, keyCol);
-                if (keyCol.isNullable())
-                {
-                    sqlfWherePK.append(" OR ");
-                    sqlfWherePK.append(keyCol.getSelectName());
-                    sqlfWherePK.append(" IS NULL AND ");
-                    appendParameterOrVariable(sqlfWherePK, keyCol);
-                    sqlfWherePK.append(" IS NULL");
-                }
-                sqlfWherePK.append(")");
-                and = " AND ";
             }
             sqlfUpdate.append(sqlfWherePK);
             sqlfUpdate.append(";\n");
@@ -762,11 +752,6 @@ public class StatementUtils
 
         if (_selectIds && (null != objectIdVar || null != rowIdVar))
         {
-            if (Operation.merge == _operation)
-            {
-                throw new IllegalArgumentException("Merge does not support the selectid option");
-            }
-
             sqlfSelectIds = new SQLFragment("SELECT ");
             comma = "";
             if (null != rowIdVar)
@@ -777,7 +762,6 @@ public class StatementUtils
             if (null != objectIdVar)
                 sqlfSelectIds.append(comma).append(objectIdVar);
         }
-
 
         //
         // ObjectProperty
@@ -849,7 +833,7 @@ public class StatementUtils
         if (!useVariables)
         {
             SQLFragment script = new SQLFragment();
-            Stream.of(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
+            Stream.of(sqlfDeclare, sqlfPreselectObject, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(script::append);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
@@ -876,7 +860,7 @@ public class StatementUtils
                 sqlfDeclare.append(";\n");
             }
             SQLFragment script = new SQLFragment();
-            Stream.of(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
+            Stream.of(sqlfDeclare, sqlfPreselectObject, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(script::append);
             _log.debug(script.toDebugString());
@@ -938,7 +922,7 @@ public class StatementUtils
 
             fn.append("BEGIN\n");
             fn.append("-- ").append(_operation.name()).append("\n");
-            Stream.of(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty)
+            Stream.of(sqlfPreselectObject, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(fn::append);
             if (null == sqlfSelectIds)
@@ -981,6 +965,34 @@ public class StatementUtils
         return ret;
     }
 
+    private SQLFragment getPkWhereClause(LinkedHashMap<FieldKey,ColumnInfo> keys)
+    {
+        SQLFragment sqlfWherePK = new SQLFragment();
+        sqlfWherePK.append("\nWHERE ");
+        String and = "";
+        for (Map.Entry<FieldKey, ColumnInfo> e : keys.entrySet())
+        {
+            ColumnInfo keyCol = e.getValue();
+            ParameterHolder keyColPh = createParameter(keyCol);
+
+            sqlfWherePK.append(and);
+            sqlfWherePK.append("(");
+            sqlfWherePK.append(keyCol.getSelectName());
+            sqlfWherePK.append(" = ");
+            appendParameterOrVariable(sqlfWherePK, keyColPh);
+            if (keyCol.isNullable())
+            {
+                sqlfWherePK.append(" OR ");
+                sqlfWherePK.append(keyCol.getSelectName());
+                sqlfWherePK.append(" IS NULL AND ");
+                appendParameterOrVariable(sqlfWherePK, keyColPh);
+                sqlfWherePK.append(" IS NULL");
+            }
+            sqlfWherePK.append(")");
+            and = " AND ";
+        }
+        return sqlfWherePK;
+    }
 
     private String variableDeclaration(SQLFragment sqlfDeclare, ParameterHolder ph)
     {
