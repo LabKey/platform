@@ -58,12 +58,12 @@ public class ProgressReportTest extends ReportTest
         _expectedLuminexResults[0] = Arrays.asList("#Progress Report for Assay: Luminex");
         _expectedLuminexResults[1] = Arrays.asList("#");
         _expectedLuminexResults[2] = Arrays.asList("ParticipantId", "Baseline", "Month 1", "Month 2", "Month 3", "Month 4", "Month 5", "Month 6", "Month 7");
-        _expectedLuminexResults[3] = Arrays.asList("249318596", "collected", "unusable");
-        _expectedLuminexResults[4] = Arrays.asList("249320107", "unexpected");
-        _expectedLuminexResults[5] = Arrays.asList("249320127");
-        _expectedLuminexResults[6] = Arrays.asList("249320489", "not-collected");
-        _expectedLuminexResults[7] = Arrays.asList("249320897", "not-received");
-        _expectedLuminexResults[8] = Arrays.asList("249325717", "not-available");
+        _expectedLuminexResults[3] = Arrays.asList("249318596", "expected", "expected", "collected", "expected", "unusable", "expected", "expected", "expected");
+        _expectedLuminexResults[4] = Arrays.asList("249320107", "expected", "expected", "unexpected", "expected", "expected", "expected", "expected", "expected");
+        _expectedLuminexResults[5] = Arrays.asList("249320127", "expected", "expected", "expected", "expected", "expected", "expected", "expected", "expected");
+        _expectedLuminexResults[6] = Arrays.asList("249320489", "expected", "expected", "not-collected", "expected", "expected", "expected", "expected", "expected");
+        _expectedLuminexResults[7] = Arrays.asList("249320897", "expected", "expected", "not-received", "expected", "expected", "expected", "expected", "expected");
+        _expectedLuminexResults[8] = Arrays.asList("249325717", "expected", "not-available", "expected", "expected", "expected", "expected", "expected", "expected");
 
     }
 

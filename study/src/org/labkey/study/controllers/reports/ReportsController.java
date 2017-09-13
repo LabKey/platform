@@ -2055,6 +2055,11 @@ public class ReportsController extends BaseStudyController
                                 {
                                     row.put(visitLabelMap.get(visit), cell.get("status"));
                                 }
+                                else
+                                {
+                                    // default to expected
+                                    row.put(visitLabelMap.get(visit), AssayProgressReport.SPECIMEN_EXPECTED);
+                                }
                             }
                             rows.add(row);
                         }
