@@ -272,7 +272,7 @@ Ext4.define('File.panel.Browser', {
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
-                failure: LABKEY.Utils.displayAjaxErrorResponse,
+                failure: function() {},           // Do nothing on fail because pipeline.actions only for @files, not @cloud (30570)
                 scope: scope
             });
         },
