@@ -219,7 +219,7 @@ public class AssayTest extends AbstractAssayTest
     private void editResults()
     {
         // Verify that the results aren't editable by default
-        new ProjectMenu(getDriver()).navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         waitAndClickAndWait(Locator.linkWithText("view results"));
         DataRegionTable table = new DataRegionTable("Data", getDriver());
