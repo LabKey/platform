@@ -142,7 +142,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.management.modelmbean.XMLParseException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -175,6 +174,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
+
+import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
 
 public class QueryController extends SpringActionController
 {
@@ -3636,52 +3637,6 @@ public class QueryController extends SpringActionController
             return new ApiSimpleResponse(response);
         }
     }
-
-    /** A dummy object for swap-in usage when no transaction is actually desired */
-    public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
-    {
-        @Override
-        @NotNull
-        public <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
-        {
-            runnable.run();
-            return runnable;
-        }
-
-        @Override
-        public String getId()
-        {
-            return "-";
-        }
-
-        @Override
-        @NotNull
-        public Connection getConnection()
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void close()
-        {
-        }
-
-        @Override
-        public void commit()
-        {
-        }
-
-        @Override
-        public void commitAndKeepConnection()
-        {
-        }
-
-        @Override
-        public boolean isAborted()
-        {
-            return false;
-        }
-    };
 
     @RequiresNoPermission //will check below
     public class SaveRowsAction extends BaseSaveRowsAction
