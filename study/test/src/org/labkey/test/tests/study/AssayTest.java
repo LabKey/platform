@@ -25,7 +25,6 @@ import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.BVT;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.components.html.ProjectMenu;
 import org.labkey.test.pages.AssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
