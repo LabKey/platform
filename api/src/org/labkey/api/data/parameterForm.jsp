@@ -88,31 +88,36 @@ var decl = [
             var parameterForm = Ext4.create('Ext.form.Panel', {
                 renderTo: regionDomId,
                 border: false,
-                bodyStyle: 'padding: 5px',
+                bodyStyle: 'padding: 5px; background-color: transparent;',
                 items: items,
-                buttonAlign: 'left',
-                buttons: [{
-                    text: 'Submit',
-                    handler: function() {
-                        var valuesRaw = parameterForm.getForm().getValues();
-                        parameterForm.destroy();
-                        delete parameterForm;
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    dock: 'bottom',
+                    ui: 'footer',
+                    style: 'background-color: transparent;',
+                    items: [{
+                        text: 'Submit',
+                        handler: function() {
+                            var valuesRaw = parameterForm.getForm().getValues();
+                            parameterForm.destroy();
+                            delete parameterForm;
 
-                        var values = {};
-                        for (var i=0; i < decl.length; i++) {
-                            var parameter = dataRegionName + '.param.' + decl[i].name;
-                            values[parameter] = valuesRaw[parameter];
-                        }
+                            var values = {};
+                            for (var i=0; i < decl.length; i++) {
+                                var parameter = dataRegionName + '.param.' + decl[i].name;
+                                values[parameter] = valuesRaw[parameter];
+                            }
 
-                        var dataRegion = LABKEY.DataRegions[dataRegionName];
-                        if (dataRegion) {
-                            dataRegion.setParameters(values);
+                            var dataRegion = LABKEY.DataRegions[dataRegionName];
+                            if (dataRegion) {
+                                dataRegion.setParameters(values);
+                            }
+                            else {
+                                var query = Ext4.apply(LABKEY.ActionURL.getParameters() || {}, values);
+                                window.location.search = "?" + LABKEY.ActionURL.queryString(query);
+                            }
                         }
-                        else {
-                            var query = Ext4.apply(LABKEY.ActionURL.getParameters() || {}, values);
-                            window.location.search = "?" + LABKEY.ActionURL.queryString(query);
-                        }
-                    }
+                    }]
                 }]
             });
 
