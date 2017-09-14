@@ -63,6 +63,7 @@ public abstract class DisplayColumn extends RenderColumn
     protected boolean _nowrap = false;
     protected String _width = "60";
     protected String _linkTarget = null;
+    protected String _linkCls = null;
     protected String _excelFormatString = null;
     protected Format _format = null;
     protected Format _tsvFormat = null;
@@ -1227,6 +1228,16 @@ public abstract class DisplayColumn extends RenderColumn
     public String getLinkTarget()
     {
         return _linkTarget;
+    }
+
+    public void setLinkCls(String linkCls)
+    {
+        _linkCls = linkCls;
+    }
+
+    public String getLinkCls()
+    {
+        return _linkCls;
     }
 
     public String getExcelFormatString()

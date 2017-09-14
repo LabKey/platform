@@ -434,6 +434,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             setURL(url);
         }
         setURLTargetWindow(col.getURLTargetWindow());
+        setURLCls(col.getURLCls());
     }
 
 

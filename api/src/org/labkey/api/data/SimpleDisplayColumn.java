@@ -121,11 +121,17 @@ public class SimpleDisplayColumn extends DisplayColumn
             out.write(PageFlowUtil.filter(url));
 
             String linkTarget = getLinkTarget();
-
             if (null != linkTarget)
             {
                 out.write("' target='");
                 out.write(linkTarget);
+            }
+
+            String linkCls = getLinkCls();
+            if (null != linkCls)
+            {
+                out.write("' class='");
+                out.write(linkCls);
             }
 
             out.write("'>");

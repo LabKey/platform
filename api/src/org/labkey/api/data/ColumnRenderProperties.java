@@ -75,6 +75,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected boolean shownInDetailsView = true;
     protected StringExpression url;
     protected String urlTargetWindow;
+    protected String urlCls;
     protected Set<String> importAliases = new LinkedHashSet<>();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
@@ -288,6 +289,16 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setURLTargetWindow(String urlTargetWindow)
     {
         this.urlTargetWindow = urlTargetWindow;
+    }
+
+    public String getURLCls()
+    {
+        return urlCls;
+    }
+
+    public void setURLCls(String urlCls)
+    {
+        this.urlCls = urlCls;
     }
 
     public boolean isRecommendedVariable()

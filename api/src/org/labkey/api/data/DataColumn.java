@@ -86,6 +86,7 @@ public class DataColumn extends DisplayColumn
         if (null != url)
             super.setURLExpression(url);
         setLinkTarget(_boundColumn.getURLTargetWindow());
+        setLinkCls(_boundColumn.getURLCls());
         setFormatString(_displayColumn.getFormat());
         setTsvFormatString(_displayColumn.getTsvFormatString());
         setExcelFormatString(_displayColumn.getExcelFormatString());
@@ -328,11 +329,17 @@ public class DataColumn extends DisplayColumn
                 }
 
                 String linkTarget = getLinkTarget();
-
                 if (null != linkTarget)
                 {
                     out.write("\" target=\"");
                     out.write(linkTarget);
+                }
+
+                String linkCls = getLinkCls();
+                if (null != linkCls)
+                {
+                    out.write("\" class=\"");
+                    out.write(linkCls);
                 }
 
                 String css = getCssStyle(ctx);

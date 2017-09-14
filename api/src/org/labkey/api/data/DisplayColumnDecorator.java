@@ -526,6 +526,18 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public void setLinkCls(String linkCls)
+    {
+        _column.setLinkCls(linkCls);
+    }
+
+    @Override
+    public String getLinkCls()
+    {
+        return _column.getLinkCls();
+    }
+
+    @Override
     public String getExcelFormatString()
     {
         return _column.getExcelFormatString();
