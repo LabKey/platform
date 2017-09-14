@@ -24,6 +24,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     updateHandler: null,
     emptyText: null,
     updateConfig: null,
+    widthBuffer: 50,
     enterCompletesEdit: true,
     minLengthText: "The minimum length for this field is {0}",
     maxLengthText: "The maximum length for this field is {0}",
@@ -140,7 +141,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
               'padding-right', 'line-height', 'font-size',
               'font-family', 'font-weight', 'font-style');
 
-        styles.width = this.el.getWidth()-50 + "px";
+        styles.width = this.el.getWidth() - this.widthBuffer + "px";
         this.editor.setStyle(styles);
         this.sizingDiv.setStyle(styles);
 
