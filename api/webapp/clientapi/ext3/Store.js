@@ -48,6 +48,7 @@ Ext.namespace("LABKEY", "LABKEY.ext");
  * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
  * @param {Integer} [config.maxRows] The maximum number of rows returned by this query (defaults to showing all rows).
  * @param {Boolean} [config.ignoreFilter] True will ignore any filters applied as part of the view (defaults to false).
+ * @param {Object} [config.parameters] Specify parameters for parameterized queries.
  * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
  *      Supported values include:
  *       <ul>
@@ -142,10 +143,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 qsParams['query.sort'] = sInfo;
         }
 
-        if (config.parameters)
-        {
-            for (var n in config.parameters)
-                baseParams["query.param." + n] = config.parameters[n];
+        if (Ext.isObject(config.parameters)) {
+            for (var n in config.parameters) {
+                if (config.parameters.hasOwnProperty(n)) {
+                    baseParams["query.param." + n] = config.parameters[n];
+                }
+            }
         }
 
         //important...otherwise the base Ext.data.Store interprets it
