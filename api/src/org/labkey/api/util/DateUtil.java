@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.util.StringUtils;
 import org.junit.Assert;
@@ -1097,10 +1098,13 @@ validNum:       {
         double sec = -1;
     }
 
-    public static boolean isSignedDuration(String durationCandidate)
+    public static boolean isSignedDuration(@NotNull String durationCandidate)
     {
         try{
-
+            if(durationCandidate.isEmpty() || !(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
+            {
+                return false;
+            }
             _parseDuration(durationCandidate.substring(1));
             return true;
         }
