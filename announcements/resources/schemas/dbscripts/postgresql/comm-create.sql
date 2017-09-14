@@ -21,11 +21,11 @@ CREATE VIEW comm.Threads AS
         props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated,
         y.DiscussionSrcIdentifier, y.DiscussionSrcURL, y.CreatedBy, y.Created,
         y.modified, y.lastIndexed,
-        (SELECT COUNT(*) FROM comm.Announcements WHERE Parent = y.EntityId) AS ResponseCount FROM
+      (SELECT COUNT(*) FROM comm.Announcements WHERE Parent = y.EntityId AND Container = y.Container) AS ResponseCount FROM
     (
         SELECT *, CASE WHEN LastResponseId IS NULL THEN x.RowId ELSE LastResponseId END AS PropsId FROM
         (
-            SELECT *, (SELECT MAX(RowId) FROM comm.Announcements response WHERE response.Parent = message.EntityId) AS LastResponseId
+            SELECT *, (SELECT MAX(RowId) FROM comm.Announcements response WHERE response.Parent = message.EntityId AND response.Container = message.Container) AS LastResponseId
             FROM comm.Announcements message
             WHERE Parent IS NULL
         ) x
