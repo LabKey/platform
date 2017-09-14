@@ -47,6 +47,7 @@ import java.util.List;
 public abstract class AbstractStudyEntity<T>
         extends AbstractStudyCachable<T> implements StudyEntity, Serializable
 {
+    transient private Container _container;
     private String _containerId;
     protected String _entityId;
     protected String _label;
@@ -67,14 +68,15 @@ public abstract class AbstractStudyEntity<T>
 
     public Container getContainer()
     {
-        // NOTE: intentionally do not store reference to the Container object,
-        // because Containers stored in cached StudyEntities could become out of sync
-        return _containerId != null ? ContainerManager.getForId(_containerId) : null;
+        if (_container == null && _containerId != null)
+            _container = ContainerManager.getForId(_containerId);
+        return _container;
     }
 
     public void setContainer(Container container)
     {
         verifyMutability();
+        _container = container;
         _containerId = container == null ? null : container.getId();
     }
 
