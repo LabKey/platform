@@ -1014,15 +1014,37 @@ public class QueryController extends SpringActionController
             options.setErrorListener(xmlErrors);
             try
             {
+                // had a couple of real-world failures due to null pointers in this code, so it's time to be paranoid
                 if(target.ff_metadataText != null)
                 {
                     TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
-                    for (ColumnType column : tablesDoc.getTables().getTableArray()[0].getColumns().getColumnArray())
+                    if (tablesDoc != null)
                     {
-                        if (column.isSetPhi() || column.isSetProtected())
+                        TablesType tablesType = tablesDoc.getTables();
+                        if(tablesType != null)
                         {
-                            throw new IllegalArgumentException("PHI/protected metadata must not be set here.");
+                            TableType[] tableArray = tablesType.getTableArray();
+                            if (tableArray.length > 0)
+                            {
+                                TableType firstTable = tableArray[0];
+                                if(firstTable != null)
+                                {
+                                    TableType.Columns tableColumns = firstTable.getColumns();
+                                    if(tableColumns != null)
+                                    {
+                                        ColumnType[] tableColumnArray = tableColumns.getColumnArray();
+                                        for (ColumnType column : tableColumnArray)
+                                        {
+                                            if (column.isSetPhi() || column.isSetProtected())
+                                            {
+                                                throw new IllegalArgumentException("PHI/protected metadata must not be set here.");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
+
                     }
                 }
             }
