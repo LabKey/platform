@@ -159,7 +159,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt("/query/" + getProjectName() + "/" + STUDY1 + "/executeQuery.view?schemaName=study&query.queryName=PVString_Two");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        _customizeViewsHelper.addCustomizeViewColumn(new String[]{"PandaVisit", "Visit", "Folder"});
+        _customizeViewsHelper.addColumn(new String[]{"PandaVisit", "Visit", "Folder"});
         _customizeViewsHelper.saveCustomView("withfolder");
 
         log("Verify visit folder is project");

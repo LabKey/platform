@@ -507,7 +507,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         _customizeViewsHelper.openCustomizeViewPanel();
         assertTextNotPresent("not found", "Field not found");
-        _customizeViewsHelper.closeCustomizeViewPanel();
+        _customizeViewsHelper.closePanel();
 
         if (colFieldKeys.length > 0)
         {

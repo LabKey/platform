@@ -666,8 +666,8 @@ public class StudyTest extends StudyBaseTest
                 clickAndWait(Locator.linkWithText("verifyAssay"));
                 _extHelper.clickMenuButton("QC State", "All data");
                 _customizeViewsHelper.openCustomizeViewPanel();
-                _customizeViewsHelper.addCustomizeViewColumn("QCState", "QC State");
-                _customizeViewsHelper.addCustomizeViewSort("SampleId", "Ascending");
+                _customizeViewsHelper.addColumn("QCState", "QC State");
+                _customizeViewsHelper.addSort("SampleId", SortDirection.ASC);
                 _customizeViewsHelper.applyCustomView();
                 DataRegionTable table = new DataRegionTable("Dataset", this);
                 assertEquals(Arrays.asList("1234_A", "1234_B"), table.getColumnDataAsText("SampleId"));
