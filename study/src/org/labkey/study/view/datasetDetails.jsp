@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="gwt.client.org.labkey.study.dataset.client.model.GWTDataset"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.Permission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.Button" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -38,13 +39,11 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="gwt.client.org.labkey.study.dataset.client.model.GWTDataset" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
@@ -87,35 +86,32 @@ if (!shadowed.isEmpty())
     %><%=text(sb.toString())%><br><%
 }
 
+List<Button.ButtonBuilder> buttons = new ArrayList<>();
 if (permissions.contains(AdminPermission.class))
 {
-    ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, c);
-    viewDatasetURL.addParameter("datasetId", dataset.getDatasetId());
-
-    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, c);
-    updateDatasetURL.addParameter("datasetId", dataset.getDatasetId());
-
+    if (dataset.getType().equals(Dataset.TYPE_STANDARD))
+    {
+        ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, c);
+        viewDatasetURL.addParameter("datasetId", dataset.getDatasetId());
+        buttons.add(button("View Data").href(viewDatasetURL));
+    }
+    if (study.getTimepointType() != TimepointType.CONTINUOUS)
+    {
+        ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, c);
+        updateDatasetURL.addParameter("datasetId", dataset.getDatasetId());
+        buttons.add(button("Edit Associated " + visitManager.getPluralLabel()).href(updateDatasetURL));
+    }
     ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, c);
-
-    ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, c);
-    deleteDatasetURL.addParameter("id", dataset.getDatasetId());
-
-    %>
-    <br>
-<%  if (dataset.getType().equals(Dataset.TYPE_STANDARD)) { %>
-        <%= button("View Data").href(viewDatasetURL) %>
-<%  }
-    if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-        &nbsp;<%= button("Edit Associated " + visitManager.getPluralLabel()).href(updateDatasetURL) %>
-<%  } %>
-    &nbsp;<%= button("Manage Datasets").href(manageTypesURL) %><%
+    buttons.add(button("Manage Datasets").href(manageTypesURL));
     if (!isDatasetInherited)
     {
-        %>&nbsp;<%= button("Delete Dataset").href(deleteDatasetURL).onClick("return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
+        ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, c);
+        deleteDatasetURL.addParameter("id", dataset.getDatasetId());
+        buttons.add(button("Delete Dataset").href(deleteDatasetURL).onClick("return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')"));
     }
     if (user.hasRootAdminPermission() || dataset.canWrite(user))
     {
-        %>&nbsp;<a class="labkey-button" onClick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; truncateTable();"> <span>Delete All Rows</span></a><%
+        buttons.add(button("Delete All Rows").onClick("truncateTable();"));
     }
 }
 if (permissions.contains(UpdatePermission.class) && !isDatasetInherited)
@@ -126,25 +122,28 @@ if (permissions.contains(UpdatePermission.class) && !isDatasetInherited)
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, c);
     editTypeURL.addParameter("datasetId", dataset.getDatasetId());
 
-    %>&nbsp;<%= button("Show Import History").href(showHistoryURL) %>
-<%  if (dataset.getType().equals(Dataset.TYPE_STANDARD)) { %>
-        &nbsp;<%= button("Edit Definition").href(editTypeURL) %>
-<%  }
+    buttons.add(button("Show Import History").href(showHistoryURL));
+    if (dataset.getType().equals(Dataset.TYPE_STANDARD))
+    {
+        buttons.add(button("Edit Definition").href(editTypeURL));
+    }
     else if(dataset.getType().equals(Dataset.TYPE_PLACEHOLDER))
     {
-%>
-        <a class="labkey-button" href="#" onclick="showLinkDialog()"><span>Link or Define Dataset</span></a>
-<%
+        buttons.add(button("Link or Define Dataset").href("#").onClick("showLinkDialog();"));
     }
+}
+%><br/><%
+for (Button.ButtonBuilder bb : buttons)
+{
+    %><%= bb %> <%
 }
 if (!pipelineSet)
 {
     include(new StudyController.RequirePipelineView(study, false, (BindException) request.getAttribute("errors")), out);
 }
 %>
-
-<br/><br/>
-
+<br/>
+<br/>
 <div class="panel panel-default">
     <div class="panel-heading clearfix">
         <h3 class="panel-title pull-left">
