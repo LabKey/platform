@@ -54,7 +54,7 @@
 <style type="text/css" media="<%=isPrint ? "screen" : "print"%>">
     #headerpanel,
     div.labkey-app-bar,
-    #discussionMenuToggle,
+    .discussion-toggle,
     .labkey-wp-title-left,
     .labkey-wp-title-right,
     .report-filter-window-outer,

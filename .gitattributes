@@ -55,7 +55,6 @@ announcements/src/org/labkey/announcements/customizeAnnouncementWebPart.jsp -tex
 announcements/src/org/labkey/announcements/customizeDiscussionWebPart.jsp -text
 announcements/src/org/labkey/announcements/dailyDigest.txt -text
 announcements/src/org/labkey/announcements/discussionMenu.jsp -text
-announcements/src/org/labkey/announcements/discussionMenuAjax.jsp -text
 announcements/src/org/labkey/announcements/emailNotification.txt -text
 announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/insert.jsp -text

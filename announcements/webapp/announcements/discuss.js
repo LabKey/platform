@@ -85,13 +85,3 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
         }
     });
 };
-
-Ext4.onReady(function() {
-    Ext4.create('Ext.resizer.Resizer', {
-        el: Ext4.getBody(),
-        handles: 'se',
-        minWidth: 200,
-        minHeight: 100,
-        wrap: true
-    });
-});

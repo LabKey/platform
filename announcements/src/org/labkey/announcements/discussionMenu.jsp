@@ -63,20 +63,9 @@
         for (AnnouncementModel a : discussions)
             longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(c, a.getCreated()));
     }
-%>
-<style><!--
-.discuss-discuss-icon
-{
-    background-image:url(<%=getContextPath()%>/_images/message.png);
-}
-.discuss-email-icon
-{
-    background-image:url(<%=getContextPath()%>/_images/email.png);
-}
 
---></style>
+    String toggleId = "discussionAreaToggle" + getRequestScopedUID();
 
-<%
     if (PageFlowUtil.useExperimentalCoreUI())
     {
         String pageUrl = pageURL.clone().deleteScopeParameters("discussion").getLocalURIString();
@@ -124,7 +113,7 @@
             menu.addChild("Admin", customizeUrl);
         }
 %>
-    <div id="discussionMenuToggle" class="lk-menu-drop dropdown">
+    <div id="<%=h(toggleId)%>" class="lk-menu-drop dropdown discussion-toggle">
         <a class="labkey-link labkey-text-link" data-toggle="dropdown">Discussions</a>
 <%
     out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
@@ -137,6 +126,14 @@
     else
     {
 %>
+<style type="text/css">
+.discuss-discuss-icon {
+    background-image:url(<%=getContextPath()%>/_images/message.png);
+}
+.discuss-email-icon {
+    background-image:url(<%=getContextPath()%>/_images/email.png);
+}
+</style>
 <script type="text/javascript">
     if (discussionMenu)
         discussionMenu.menu.destroy();
@@ -201,20 +198,17 @@
         }
         %>]
     };
+        var toggleId = <%=PageFlowUtil.jsString(toggleId)%>;
 
-    function onShow()
-    {
-        if (!discussionMenu.menu)
-        {
-            discussionMenu.menu = Ext4.create('Ext.menu.Menu', discussionMenu.config);
-        }
-        discussionMenu.menu.showBy(Ext4.get('discussionMenuToggle'));
-    }
-
-    Ext4.onReady(function(){Ext4.get("discussionMenuToggle").on("click", onShow)});
-})();
+        Ext4.onReady(function(){Ext4.get(toggleId).on('click', function() {
+            if (!discussionMenu.menu) {
+                discussionMenu.menu = Ext4.create('Ext.menu.Menu', discussionMenu.config);
+            }
+            discussionMenu.menu.showBy(Ext4.get(toggleId));
+        })});
+    })();
 </script>
-<span id="discussionMenuToggle"><%
+<span id="<%=h(toggleId)%>" class="discussion-toggle"><%
     if (!discussions.isEmpty() && me.allowMultipleDiscussions)
     {
 %><%=PageFlowUtil.textLink("see discussions (" + discussions.size() + ")", "#", "return false;", "")%><%
