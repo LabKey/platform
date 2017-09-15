@@ -40,22 +40,18 @@
     issueDefs.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toSet()));
     String selected = pm.get(IssuesListView.ISSUE_LIST_DEF_NAME);
     String title = pm.get("title");
-    String singularName = IssueManager.getEntryTypeNames(getContainer(), selected != null ? selected : IssueListDef.DEFAULT_ISSUE_LIST_NAME).singularName;
     String titleLabel = "Optional title for the Issues List web part.";
-    String defaultTitle = h(singularName) + " List";
     if (webPart.getName().equalsIgnoreCase(IssuesSummaryWebPartFactory.NAME))
     {
         titleLabel = "Optional title for the Issues Summary web part.";
-        defaultTitle = h(singularName) + " Summary";
     }
 %>
-
 <labkey:form method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
-    <table>
+    <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Issue List Definition:</td>
             <td>
-                <select name="<%=IssuesListView.ISSUE_LIST_DEF_NAME%>">
+                <select name="<%=h(IssuesListView.ISSUE_LIST_DEF_NAME)%>">
                     <labkey:options value="<%=selected%>" set="<%=issueDefs%>"/>
                 </select>
             </td>
@@ -66,7 +62,7 @@
                 <input name="title" size="25" type="text" value="<%=text(null == title ? null : h(title) )%>">
             </td>
         </tr>
-    </table><p/>
+    </table>
     <labkey:button text="Submit"/>
 </labkey:form>
 

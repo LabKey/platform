@@ -65,20 +65,12 @@
     </tr>
 <% } %>
 </table>
-<% if (PageFlowUtil.useExperimentalCoreUI())
-{%>
-
-<div class="btn-group" role="group" style="margin-top: 8px">
-    <a class="btn btn-default" href="<%=h(getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open"))%>">
-        <%=h("view open " + names.pluralName.toLowerCase())%>
-    </a>
-    <a class="btn btn-default" href="<%=bean.insertURL%>">
-        <%=h("new " + names.singularName.toLowerCase())%>
-    </a>
+<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
+<div class="labkey-button-bar-separate">
+<%= button("view open " + names.pluralName.toLowerCase()).href(getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open")) %>
+<%= button("new " + names.singularName.toLowerCase()).href(bean.insertURL) %>
 </div>
-
-<%} else {%>
-
+<% } else { %>
 <%=textLink("view open " + names.pluralName, getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open"))%>
 <%=textLink("submit new " + names.singularName, bean.insertURL)%>
 <%

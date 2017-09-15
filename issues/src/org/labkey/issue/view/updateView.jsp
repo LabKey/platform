@@ -39,9 +39,9 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -93,7 +93,7 @@
     // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
     extraColumns.addAll(Stream.of("type", "area", "priority", "milestone")
             .filter(propertyMap::containsKey)
-            .map((Function<String, DomainProperty>) propertyMap::get)
+            .map(propertyMap::get)
             .collect(Collectors.toList()));
 
     //this is the rowspan used for the 2nd and 3rd columns
@@ -123,12 +123,14 @@
         {
             if (e.stopPropagation) {
                 e.stopPropagation();
-            } else {
+            }
+            else {
                 e.cancelBubble = true;
             }
             if (e.preventDefault) {
                 e.preventDefault();
-            } else {
+            }
+            else {
                 e.returnValue = false;
             }
             return false;
@@ -142,8 +144,6 @@
         return filterRe(e, input, /^[\d,\s]+$/);
     }
 
-</script>
-<script type="text/javascript">
     (function($){
 
         var column1 = [];
@@ -184,7 +184,7 @@
         });
     })(jQuery);
 </script>
-<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data">
+<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" layout="horizontal">
     <table><%
         if (null != errors && 0 != errors.getErrorCount())
         {
@@ -199,12 +199,11 @@
             }
         %>
     </table>
-    <table>
-        <tr>
-            <td align="right" valign="top"><%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= button("Cancel").href(cancelURL) %></td>
-        </tr>
-    </table>
-    <table class="lk-fields-table">
+    <div class="labkey-button-bar-separate">
+        <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
+        <%= button("Cancel").href(cancelURL) %>
+    </div>
+    <table class="lk-fields-table" style="margin-top:10px;">
         <tr><%
             if (bean.isInsert())
             {%>
@@ -327,23 +326,30 @@
             {%>
         <%=text(bean.renderColumn(prop, getViewContext()))%><%
         }%>
-        <tr><%=text(bean.renderLabel(bean.getLabel("Comment", bean.isInsert())))%>
-            <td colspan="3">
-                <textarea id="comment" name="comment" class="form-control" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
-            </td></tr>
-    </table>
-    <table>
         <tr>
-            <td align="right" valign="top"><%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= PageFlowUtil.button("Cancel").href(cancelURL)%></td>
+            <%=text(bean.renderLabel(bean.getLabel("Comment", bean.isInsert())))%>
+            <td colspan="3">
+                <textarea id="comment" name="comment" class="form-control" cols="150" rows="20" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
+            </td>
         </tr>
     </table>
-
-    <table>
+    <table style="margin-top:10px;">
         <tr><td><table id="filePickerTable"></table></td></tr>
         <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
-<%  for (Issue.Comment comment : issue.getComments()) {%>
-    <hr>
+    <div class="labkey-button-bar-separate" style="margin-bottom:10px">
+        <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
+        <%= button("Cancel").href(cancelURL)%>
+    </div>
+    <% final Collection<Issue.Comment> comments = issue.getComments();
+        if (comments.size() > 0) { boolean firstComment = true; %>
+    <labkey:panel>
+<%
+    for (Issue.Comment comment : comments) {
+        if (firstComment) {
+            firstComment = false;
+        }
+        else { %><hr><% } %>
     <table width="100%"><tr><td align="left"><b>
         <%=h(bean.writeDate(comment.getCreated()))%>
     </b></td><td align="right"><b>
@@ -353,6 +359,8 @@
     <%=text(comment.getComment())%>
     <%=text(bean.renderAttachments(context, comment))%><%
     }%>
+    </labkey:panel>
+    <% } %>
 
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">

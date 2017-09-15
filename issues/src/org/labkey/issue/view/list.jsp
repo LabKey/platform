@@ -35,21 +35,20 @@
 %>
 <span class="labkey-error"><%=h(request.getParameter("error"))%></span><br/>
 <%  } %>
-<%--<% if (false) { %>--%>
 <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
-<div class="row" style="margin-bottom: 15px;">
-    <div class="col-sm-7">
-        <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
-        <a class="btn btn-primary" role="button" href="<%=h(new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef).toString())%>">
-            <%=h("New " + names.singularName)%>
-        </a>
-        <% } %>
+<div style="display:inline-block;margin-bottom:10px;">
+    <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
+    <div style="float:left;">
+        <%= button("New " + names.singularName).href(new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef))%>
     </div>
-    <div class="col-sm-5">
+    <% } %>
+    <div style="float:left;margin-left:20px;">
         <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
-            <div class="input-group-pull-right">
-                <labkey:input name="issueId" placeholder="ID # or Search Term"/>
-                <%= button("Search").iconCls("search").submit(true) %>
+            <div class="input-group">
+                <labkey:input name="issueId" formGroup="false" placeholder="ID # or Search Term"/>
+                <div class="input-group-btn">
+                    <%= button("Search").addClass("btn btn-default").iconCls("search").submit(true) %>
+                </div>
             </div>
         </labkey:form>
     </div>

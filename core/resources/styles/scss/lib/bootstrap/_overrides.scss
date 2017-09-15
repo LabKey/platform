@@ -113,7 +113,10 @@
 }
 
 .control-label {
+  text-align: $lk-form-control-text-align;
   word-break: $lk-form-control-label-break;
+  white-space: nowrap;
+
   .has-error {
     color: $lk-form-group-error-color;
   }

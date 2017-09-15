@@ -54,7 +54,7 @@
     <% if (bean.getReturnUrl() != null) { %>
         <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>" />
     <% } %>
-    <table width="85%">
+    <table class="lk-fields-table" width="85%">
         <tr><td class="labkey-form-label" style="width: 85px">Email Type:</td>
             <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
 <%
@@ -98,7 +98,7 @@
         </tr>
         <tr><td colspan="2"><hr></td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td colspan="2"><table id="validSubstitutions" width="100%"></table></td></tr>
+        <tr><td colspan="2"><table id="validSubstitutions" class="lk-fields-table" width="100%"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on
             the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
