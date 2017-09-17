@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Holds both the SQL text and JDBC parameter values to use during invocation.
@@ -703,5 +704,32 @@ public class SQLFragment implements Appendable, CharSequence
         }
         SQLFragment other = (SQLFragment)obj;
         return getSQL().equals(other.getSQL()) && getParams().equals(other.getParams());
+    }
+
+    /**
+     * Joins the SQLFragments in the provided {@code Iterable} into a single SQLFragment. The SQL is joined by string
+     * concatenation using the provided separator. The parameters are combined to form the new parameter list.
+     *
+     * @param fragments SQLFragments to join together
+     * @param separator Separator to use on the SQL portion
+     * @return A new SQLFragment that joins all the SQLFragments
+     */
+    public static SQLFragment join(Iterable<SQLFragment> fragments, String separator)
+    {
+        if (separator.contains("?"))
+            throw new IllegalStateException("separator must not include a parameter marker");
+
+        // Join all the SQL statements
+        String sql = StreamSupport.stream(fragments.spliterator(), false)
+            .map(SQLFragment::getSQL)
+            .collect(Collectors.joining(separator));
+
+        // Collect all the parameters to a single list
+        List<?> params = StreamSupport.stream(fragments.spliterator(), false)
+            .map(SQLFragment::getParams)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+
+        return new SQLFragment(sql, params);
     }
 }

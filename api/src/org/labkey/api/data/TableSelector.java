@@ -68,9 +68,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     /*
         Select specified columns from a table. Note: many methods require a column collection that iterates in a predictable
         order; getValueMap(), fillValueMap(), getResultSet(), getResults(), and forEach(ForEachBlock<ResultSet>) will all
-        throw IllegalStateException if they are called after (for example) a HashSet<ColumnInfo> has been passed to this
-        constructor. Asking for a primitive typed array or collection will also throw, since we implicitly rely on column
-        order (we pick the first one).
+        throw IllegalStateException if they are called after (for example) a multi-element HashSet<ColumnInfo> has been
+        passed to this constructor. Asking for a primitive typed array or collection will also throw, since we implicitly
+        rely on column order (we return the values from the first one).
      */
     public TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
@@ -185,7 +185,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         - Collections of size 0 or 1
         - Non HashSets
-        - LinkedHashSet (which extend HashSet, so we need a separate check)
+        - LinkedHashSet (which extends HashSet, so we need a separate check)
 
     */
     private static boolean isStableOrdered(Collection<?> collection)
