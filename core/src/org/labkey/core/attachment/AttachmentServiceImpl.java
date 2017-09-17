@@ -719,23 +719,24 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             // The first query lists all the attachment types and the attachment counts for each. A separate select from
             // core.Documents for each type is needed to associate the Type values with the associated rows.
-            SQLFragment unionSql = new SQLFragment();
-            String union = "";
+            List<SQLFragment> selectStatements = new LinkedList<>();
 
             for (AttachmentType type : ATTACHMENT_TYPE_MAP.values())
             {
-                unionSql.append(union)
-                        // Adding unique column RowId ensures we get the proper count
-                        .append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
-                        .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
-                        .append(" WHERE ");
-                type.addWhereSql(unionSql, "d.Parent", "d.DocumentName");
-                unionSql.append("\n");
-                union = "UNION\n";
+                SQLFragment selectStatement = new SQLFragment();
+
+                // Adding unique column RowId ensures we get the proper count
+                selectStatement.append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
+                    .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
+                    .append(" WHERE ");
+                type.addWhereSql(selectStatement, "d.Parent", "d.DocumentName");
+                selectStatement.append("\n");
+
+                selectStatements.add(selectStatement);
             }
 
             SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
-            allSql.append(unionSql);
+            allSql.append(SQLFragment.join(selectStatements, "UNION\n"));
             allSql.append(") u\nGROUP BY Type\nORDER BY Type");
             String link = currentUrl.clone().deleteParameters().getLocalURIString() + "type=";
 

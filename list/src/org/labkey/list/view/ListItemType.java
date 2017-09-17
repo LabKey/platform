@@ -1,5 +1,6 @@
 package org.labkey.list.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.ContainerManager;
@@ -9,6 +10,8 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class ListItemType implements AttachmentType
@@ -33,32 +36,23 @@ public class ListItemType implements AttachmentType
     @Override
     public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
-        StringBuilder unionSql = new StringBuilder();
         ListService svc = ListService.get();
-
         assert null != svc;
+
+        List<String> selectStatements = new LinkedList<>();
 
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c -> {
             Map<String, ListDefinition> map = svc.getLists(c);
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                {
-                    unionSql.append("\n    SELECT EntityId AS ID FROM list.").append(domain.getStorageTableName());
-                    unionSql.append("\n    UNION");
-                }
+                    selectStatements.add("\n    SELECT EntityId AS ID FROM list." + domain.getStorageTableName());
             });
         });
 
-        if (unionSql.length() > 0)
-        {
-            sql.append(parentColumn).append(" IN (");
-            sql.append(unionSql.delete(unionSql.length() - 9, unionSql.length()));
-            sql.append(")");
-        }
+        if (selectStatements.isEmpty())
+            sql.append("1 = 0");  // No lists with attachment columns
         else
-        {
-            sql.append("1 = 0");   // No lists with attachment columns
-        }
+            sql.append(parentColumn).append(" IN (").append(StringUtils.join(selectStatements, "\n    UNION")).append(")");
     }
 }
