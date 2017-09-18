@@ -199,3 +199,42 @@ a div.x4-menu-item-icon.fa-users {
 .x4-panel-header-horizontal {
   box-shadow: none;
 }
+
+// layout container (i.e. splitter)
+.x4-border-layout-ct {
+  background-color: $lk-border-title-color;
+}
+
+// tab panel bar
+.x4-tab-bar-default, .x4-tab-bar-default-top {
+  background-color: $white;
+  border-color: $white;
+}
+.x4-tab-bar-strip-default {
+  border-color: $lk-tabstrip-border-color;
+  background-color: $white;
+}
+.x4-tab-default {
+  border-color: $lk-tabstrip-border-color;
+}
+.x4-tab-default-left, .x4-tab-default-right, .x4-tab-default-top {
+  border-bottom: 1px solid transparent;
+  background-color: $lk-inactive-tab-bg-color;
+}
+.x4-tab-default .x4-tab-inner {
+  color: $lk-inactive-tab-color;
+  font-size: 12px;
+  font-weight: normal;
+  opacity: 0.75;
+}
+.x4-tab-default .x4-tab-inner:hover {
+  opacity: 1;
+}
+.x4-tab-default-left-active, .x4-tab-default-right-active, .x4-tab-default-top-active {
+  border-bottom: 1px solid $lk-active-tab-bg-color;
+  background-color: $lk-active-tab-bg-color;
+}
+.x4-tab-default-active .x4-tab-glyph, .x4-tab-default-active .x4-tab-inner {
+  color: $lk-active-tab-color;
+  opacity: 1;
+}
