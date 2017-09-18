@@ -55,15 +55,15 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
             Map<String, String> propertyMap = webPart.getPropertyMap();
 
-            fileSet = propertyMap.get("fileSet");
-            path = propertyMap.get("path");
-            _rootOffset = propertyMap.get("rootOffset");
-            _title = propertyMap.get("title");
+            fileSet = propertyMap.get(FilesWebPart.FILESET_PROPERTY_NAME);
+            path = propertyMap.get(FilesWebPart.PATH_PROPERTY_NAME);
+            _rootOffset = propertyMap.get(FilesWebPart.ROOT_OFFSET_PROPERTY_NAME);
+            _title = propertyMap.get(FilesWebPart.TITLE_PROPERTY_NAME);
 
-            if(propertyMap.get("size") != null)
-                size = Integer.parseInt(propertyMap.get("size"));
+            if(propertyMap.get(FilesWebPart.SIZE_PROPERTY_NAME) != null)
+                size = Integer.parseInt(propertyMap.get(FilesWebPart.SIZE_PROPERTY_NAME));
 
-            _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get("folderTreeVisible"));
+            _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get(FilesWebPart.FOLDER_TREE_VISIBLE_PROPERTY_NAME));
 
             useFileSet = fileSet != null;
         }

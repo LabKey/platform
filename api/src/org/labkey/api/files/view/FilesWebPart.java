@@ -66,6 +66,13 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 {
     public static final String PART_NAME = "Files";
     public static final String DEFAULT_TITLE = "Files";
+    public static final String TITLE_PROPERTY_NAME = "title";
+    public static final String FILESET_PROPERTY_NAME = "fileSet";
+    public static final String SIZE_PROPERTY_NAME = "size";
+    public static final String PATH_PROPERTY_NAME = "path";
+    public static final String ROOT_OFFSET_PROPERTY_NAME = "rootOffset";
+    public static final String FOLDER_TREE_VISIBLE_PROPERTY_NAME = "folderTreeVisible";
+
     private static final Logger _log = Logger.getLogger(FilesWebPart.class);
 
     private boolean showAdmin = false;
@@ -137,18 +144,18 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
     {
-        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")));
+        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get(FILESET_PROPERTY_NAME)));
 
         CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
 
-        String size = webPartDescriptor.getPropertyMap().get("size");
+        String size = webPartDescriptor.getPropertyMap().get(SIZE_PROPERTY_NAME);
         if (size != null)
         {
             getModelBean().setHeight(Integer.parseInt(size));
         }
 
-        String title = webPartDescriptor.getPropertyMap().get("title");
+        String title = webPartDescriptor.getPropertyMap().get(TITLE_PROPERTY_NAME);
         if (title != null)
         {
             setTitle(title);
@@ -159,7 +166,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             getModelBean().setRootOffset(form.getRootOffset());
         }
 
-        String path = webPartDescriptor.getPropertyMap().get("path");
+        String path = webPartDescriptor.getPropertyMap().get(PATH_PROPERTY_NAME);
         if (null != path)
         {
             try
