@@ -1045,7 +1045,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 BuilderObjectFactory.TestCase.class,
                 ChecksumUtil.TestCase.class,
                 MaterializedQueryHelper.TestCase.class,
-                LabKeyScriptEngineManager.TestCase.class
+                LabKeyScriptEngineManager.TestCase.class,
+                ConvertHelper.TestCase.class
         ));
     }
 
