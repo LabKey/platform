@@ -763,7 +763,9 @@ validNum:       {
     public static long parseDateTime(String s)
     {
         //Issue 30004: Remote servers cannot use the database to lookup MonthDayOption, so default to MONTH_DAY
-        if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
+        boolean isNotRunningOnWebServer = PipelineJobService.get() == null ||
+                PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer;
+        if (isNotRunningOnWebServer)
         {
             return parseDateTime(s, MonthDayOption.MONTH_DAY);
         }

@@ -820,14 +820,19 @@ public class ConvertHelper implements PropertyEditorRegistrar
             Calendar cal = Calendar.getInstance();
             cal.setTime(new Date());
             cal.add(Calendar.DATE, 1);
-            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()).toString(),
-                    DateUtil.getDateOnly((Timestamp)convertedDate).toString());
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                    DateUtil.getDateOnly((Timestamp)convertedDate));
 
             convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "-2m0d");
             cal.setTime(new Date());
             cal.add(Calendar.MONTH, -2);
-            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()).toString(),
-                     DateUtil.getDateOnly((Timestamp)convertedDate).toString());
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                     DateUtil.getDateOnly((Timestamp)convertedDate));
+
+            convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "Thu Jun 10 00:00:00 PDT 1999");
+            cal.set(1999, Calendar.JUNE,10,0,0,0);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                     DateUtil.getDateOnly((Timestamp)convertedDate));
 
         }
 
