@@ -55,6 +55,7 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -2841,7 +2842,7 @@ public class SpecimenController extends BaseStudyController
                         TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                         StringBuilder tsvBuilder = new StringBuilder();
                         tsvWriter.write(tsvBuilder);
-                        formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(Charsets.UTF_8), "text/tsv"));
+                        formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(Charsets.UTF_8), TSVWriter.DELIM.TAB.contentType));
                     }
 
                     if (form.isSendXls())
@@ -2854,7 +2855,7 @@ public class SpecimenController extends BaseStudyController
                             ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                             xlsWriter.write(ostream);
                             ostream.flush();
-                            formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + ".xls", byteStream.toByteArray(), "application/vnd.ms-excel"));
+                            formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
                         }
                         finally
                         {
