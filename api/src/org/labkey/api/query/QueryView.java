@@ -2611,15 +2611,12 @@ public class QueryView extends WebPartView<Object>
                 ew.setMetadata(metadata);
                 ew.write(stream);
                 stream.flush();
-                String extension = ExcelWriter.ExcelDocumentType.xls.name().equalsIgnoreCase(docType.name()) ? "xls" : "xlsx";
+                String extension = docType.name();
                 String filename = includeTimestamp ?
                                     FileUtil.makeFileNameWithTimestamp(ew.getFilenamePrefix(), extension) :
                                     ew.getFilenamePrefix() + "." + extension;
                 ByteArrayAttachmentFile byteArrayAttachmentFile =
-                        new ByteArrayAttachmentFile(filename, byteStream.toByteArray(),
-                                                    ExcelWriter.ExcelDocumentType.xls.name().equalsIgnoreCase(docType.name()) ?
-                                                            "application/vnd.ms-excel" :
-                                                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                        new ByteArrayAttachmentFile(filename, byteStream.toByteArray(), docType.getMimeType());
 
                 if (null != rowsOut)
                     rowsOut.add(ew.getDataRowCount());
@@ -2673,11 +2670,11 @@ public class QueryView extends WebPartView<Object>
             if (null != commentLines)
                 tsvWriter.setFileHeader(commentLines);
             tsvWriter.write(tsvBuilder);
-            String extension = TSVWriter.DELIM.TAB.equals(delim) ? "tsv" : "csv";
+            String extension = delim.extension;
             String filename = includeTimestamp ?
                     FileUtil.makeFileNameWithTimestamp(tsvWriter.getFilenamePrefix(), extension) :
                     tsvWriter.getFilenamePrefix() + "." + extension;
-            String contentType = TSVWriter.DELIM.TAB.equals(delim) ? "text/tsv" : "text/csv";
+            String contentType = delim.contentType;
             ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(filename, tsvBuilder.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), contentType);
 
             if (null != rowsOut)
