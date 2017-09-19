@@ -66,7 +66,8 @@
                 });
 
                 for (var i = 0; i < groupings.length; i++) {
-                    html += "<div class='labkey-notification-type' id='notificationtype-" + groupings[i] + "'>" + LABKEY.Utils.encodeHtml(groupings[i]) + "</div>";
+                    html += "<div id='notificationtype-" + groupings[i] + "' class='labkey-notification-type'>";
+                    html += "<div class='labkey-notification-type-label'>" + LABKEY.Utils.encodeHtml(groupings[i]) + "</div>";
 
                     var groupRowIds = LABKEY.notifications.grouping[groupings[i]];
                     for (var j = 0; j < groupRowIds.length; j++) {
@@ -87,6 +88,7 @@
                                 + "   <div class='labkey-notification-body'>" + info.HtmlContent + "</div>"
                                 + "</div>";
                     }
+                    html += "</div>";
                 }
             }
             html += "</div>";
