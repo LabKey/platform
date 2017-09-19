@@ -388,43 +388,24 @@ li.labkey-indented
 div.labkey-completion {
   display:none;
   border: 1px solid #AAAAAA;
-  padding: 2px 2em 2px 2px;
-  position:fixed;
-  background-color:#FFFFFF;
+  padding: 2px;
+  position: absolute;
+  background-color: $lk-dropdown-bg-color;
   z-index:100;
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 200px;
-}
 
-table.labkey-completion {
-  border-spacing: 0;
-
-  td {
-    padding: 0;
+  .labkey-completion-highlight {
+    background-color: $lk-dropdown-link-hover-bg;
+    border: none;
+    color: $lk-dropdown-link-hover-color;
   }
-}
 
-table.labkey-completion-text
-{
-  width: 100%;
-  border-spacing: 0;
-
-  td, th {
-    padding: 0;
+  .labkey-completion-nohighlight {
+    background-color: $lk-dropdown-bg-color;
+    border: none;
   }
-}
-
-.labkey-completion-highlight, .labkey-completion td.labkey-completion-highlight
-{
-  background-color: $lk-grid-color;
-  border: none;
-}
-
-.labkey-completion-nohighlight, .labkey-completion td.labkey-completion-nohighlight
-{
-  background-color: #FFFFFF;
-  border: none;
 }
 
 /* This is used to adjust some views so that when elements are taken away, they still
