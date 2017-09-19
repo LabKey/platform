@@ -23,19 +23,26 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
+import org.labkey.test.components.dumbster.EmailRecordTable;
+import org.labkey.test.components.html.BootstrapMenu;
+import org.labkey.test.components.html.Checkbox;
+import org.labkey.test.components.html.Table;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
+import org.openqa.selenium.By;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class, FileBrowser.class})
 public class StudyExportTest extends StudyManualTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
     private static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     private static final String TEST_ADD_ENTRY = "999000000";
@@ -151,8 +158,19 @@ public class StudyExportTest extends StudyManualTest
 
         // verify dataset columns
         clickAndWait(Locator.linkWithText(MODIFIED_DATASET));
-        assertChecked(Locator.xpath("//tr[10]/td[6]/input"));
-        assertElementContains(Locator.xpath("//tr[10]/td[7]"), COLUMN_DESC);
+        Table baseColumns = new Table(getDriver(), Locator.tagWithText("h4", "Base Columns")
+                .followingSibling("table").waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT));
+        Checkbox mouseIdRequiredBox = new Checkbox(Locator.checkbox().findElement(
+            baseColumns.getDataAsElement(baseColumns.getRowIndex("Name", "MouseId"), baseColumns.getColumnIndex("Required"))));
+        assertTrue(mouseIdRequiredBox.isChecked());
+        Checkbox seqNumRequiredBox = new Checkbox(Locator.checkbox().findElement(
+                baseColumns.getDataAsElement(7, baseColumns.getColumnIndex("Required"))));
+        assertTrue(seqNumRequiredBox.isChecked());
+
+        Table userDefinedColumns = new Table(getDriver(), Locator.tagWithText("h4", "User Defined Columns")
+                .followingSibling("table").waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT));
+        String desc = userDefinedColumns.getDataAsText(3, 7); //QCREP_ID, Description
+        assertEquals("Description mismatch", COLUMN_DESC, desc);
         assertTextPresent(CATEGORY);
 
         // TODO: verify lookup
@@ -165,8 +183,8 @@ public class StudyExportTest extends StudyManualTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
         clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
-        _extHelper.clickMenuButton("Groups", "Cohorts", GROUP_2);
-        _extHelper.clickMenuButton("QC State", "All data");
+        BootstrapMenu.find(getDriver(),"Groups").clickSubMenu(true, "Cohorts", GROUP_2);
+        BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
         assertTextPresent(MODIFIED_PARTICIPANT);
 
         // verify visit display order
@@ -239,7 +257,7 @@ public class StudyExportTest extends StudyManualTest
         clickAndWait(Locator.linkWithText("Show individual vials"));
         assertElementPresent(Locator.linkWithText("999320016"));
         checkCheckbox(Locator.checkboxByName(".toggle"));
-        _extHelper.clickMenuButton("Request Options", "Create New Request");
+        BootstrapMenu.find(getDriver(), "Request Options").clickSubMenu(true,"Create New Request");
         assertTextPresent("HAQ0003Y-09", "BAQ00051-09");
         assertTextNotPresent("KAQ0003Q-01");
         selectOptionByText(Locator.name("destinationLocation"), "Duke University (Repository, Site Affiliated Lab, Clinic)");
@@ -314,7 +332,8 @@ public class StudyExportTest extends StudyManualTest
         // enable advanced study security
         selectOptionByValue(Locator.name("securityString"), "ADVANCED_READ");
         clickAndWait(Locator.lkButton("Update Type"));
-        waitForElements(Locator.tagWithName("table", "webpart"), 3);
+
+        waitForElements(Locator.tagWithName("div", "webpart"), 3);
 
         click(Locator.xpath("//td[.='Users']/..//input[@value='READ']"));
         clickAndWait(Locator.id("groupUpdateButton"));
@@ -323,13 +342,13 @@ public class StudyExportTest extends StudyManualTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
         clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
-        _extHelper.clickMenuButton("QC State", "All data");
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "All data");
         new DataRegionTable("Dataset", this).checkAll();
-        _extHelper.clickMenuButton("QC State", "Update state of selected rows");
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "Update state of selected rows");
         selectOptionByText(Locator.name("newState"), "clean");
         setFormElement(Locator.name("comments"), "This data is clean.");
         clickButton("Update Status");
-        _extHelper.clickMenuButton("QC State", "clean");
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "clean");
 
         // test specimen comments
         clickFolder(getFolderName());
@@ -338,7 +357,7 @@ public class StudyExportTest extends StudyManualTest
         clickAndWait(Locator.linkWithText("Plasma, Unknown Processing"));
         clickButton("Enable Comments/QC");
         new DataRegionTable("SpecimenDetail", this).checkAll();
-        _extHelper.clickMenuButton("Comments and QC", "Set Vial Comment or QC State for Selected");
+        BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
         setFormElement(Locator.name("comments"), "These vials are very important.");
         clickButton("Save Changes");
         assertTextPresent("These vials are very important.", 25);
@@ -347,7 +366,7 @@ public class StudyExportTest extends StudyManualTest
         specimenDetail.checkAll();
 
         doAndWaitForPageToLoad(() -> {
-                    _extHelper.clickMenuButton(false, "Comments and QC", "Clear Vial Comments for Selected");
+                    BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(false, "Clear Vial Comments for Selected");
                     acceptAlert(); // TODO: add check for expected alert text
                 },
                 WAIT_FOR_PAGE);
@@ -355,7 +374,7 @@ public class StudyExportTest extends StudyManualTest
         assertTextNotPresent("These vials are very important.");
         new DataRegionTable("SpecimenDetail", this).clearFilter("MouseId");
         assertTextPresent("These vials are very important.", 23);
-        _extHelper.clickMenuButton("Comments and QC", "Exit Comments and QC mode");
+       BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
 
         // import second archive, verify that that data is merged:
         SpecimenImporter importer = new SpecimenImporter(new File(getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_B), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 4);
@@ -371,8 +390,8 @@ public class StudyExportTest extends StudyManualTest
         // check to see that data in the specimen archive was merged correctly:
         clickFolder(getFolderName());
         clickAndWait(Locator.linkContainingText("By Individual Vial"));
-        waitForText("Paging");
-        _extHelper.clickMenuButton("Paging", "Show All");
+        specimenDetail.getPagingWidget().setPageSize(250, true);
+        specimenDetail.getPagingWidget().clickNextPage();
         assertTextPresent("DRT000XX-01");
         clickAndWait(Locator.linkWithText("Search"));
         waitForTextToDisappear("Loading");
@@ -437,10 +456,10 @@ public class StudyExportTest extends StudyManualTest
         clickAndWait(Locator.linkWithText("47 datasets"));
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
 
-        clickAndWait(Locator.linkWithText("edit"));
+        DataRegionTable.DataRegion(getDriver()).find().clickEditRow(0);
         setFormElement(Locator.name("quf_DEMbdt"), "2001-11-11");
         clickButton("Submit");
-        _extHelper.clickMenuButton("QC State", "unknown QC");
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "unknown QC");
         assertTextPresent("2001-11-11");
 
         log("Test adding a row to a dataset");
@@ -449,7 +468,7 @@ public class StudyExportTest extends StudyManualTest
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);
         setFormElement(Locator.name("quf_SequenceNum"), "123");
         clickButton("Submit");
-        _extHelper.clickMenuButton("QC State", "All data");
+        BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "All data");
         assertTextPresent(TEST_ADD_ENTRY);
 
         // Make sure that we can view its participant page immediately
@@ -462,7 +481,7 @@ public class StudyExportTest extends StudyManualTest
         log("Test deleting rows in a dataset");
         checkCheckbox(Locator.xpath("//input[contains(@value, '999320529')]"));
         doAndWaitForPageToLoad(() -> {
-                    clickButton("Delete", 0);
+                    DataRegionTable.DataRegion(getDriver()).find().clickHeaderButton("Delete");
                     acceptAlert(); // TODO: add check for expected alert text
                 },
                 WAIT_FOR_PAGE);
