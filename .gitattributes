@@ -903,10 +903,12 @@ experiment/src/org/labkey/experiment/api/DataClassDomainKind.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/DataLinkColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataClassAttachmentParent.java -text
 experiment/src/org/labkey/experiment/api/ExpDataClassDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataClassDataTestCase.java -text
 experiment/src/org/labkey/experiment/api/ExpDataClassImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataClassTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataClassType.java -text
 experiment/src/org/labkey/experiment/api/ExpDataFileColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataInputTableImpl.java -text

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -63,6 +64,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
+import org.labkey.experiment.api.ExpDataClassType;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
@@ -316,6 +318,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
         }
+
+        AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
     }
 
     @NotNull
