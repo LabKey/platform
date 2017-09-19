@@ -47,6 +47,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.issue.model.CustomColumn;
@@ -302,9 +303,8 @@ public class IssuesUpgradeCode implements UpgradeCode
                         else
                             _log.warn("Unable to mark field: '" + col.getName() + "' as required due to existing NULL values.");
                     }
-                    // Protected bit no longer exists, so this is commented out to avoid breaking build
-                    //if (!col.getPermission().equals(ReadPermission.class))
-                    //    prop.setProtected(true);
+                    if (!col.getPermission().equals(ReadPermission.class))
+                        prop.setPhi(PHI.Limited);
 
                     if (col.isPickList())
                     {
