@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.data.Builder;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.settings.AppProps;
 
 import java.io.UnsupportedEncodingException;
@@ -34,6 +35,8 @@ import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.repeat;
+
 /**
  * Life-sciences identifier (LSID). A structured URI to describe things like samples, data files, assay runs, and protocols.
  * User: migra
@@ -41,8 +44,6 @@ import java.util.regex.Pattern;
  */
 public class Lsid
 {
-    private static final Pattern LSID_REGEX = Pattern.compile("(?i)^urn:lsid:([^:]+):([^:]+):([^:]+)(?::(.*))?");
-
     private final String src;
     private final String authority;
     private final String namespace;
@@ -117,6 +118,30 @@ public class Lsid
         this.version = version;
         this.valid = valid;
         this.hashCode = this.toString().hashCode();
+    }
+
+    // Keep in sync with getSqlExpressionToExtractObjectId() (below)
+    private static final Pattern LSID_REGEX = Pattern.compile("(?i)^urn:lsid:([^:]+):([^:]+):([^:]+)(?::(.*))?");
+
+    // Keep in sync with LSID_REGEX (above)
+    public static String getSqlExpressionToExtractObjectId(String lsidExpression, SqlDialect dialect)
+    {
+        if (dialect.isPostgreSQL())
+        {
+            // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the third
+            // colon to the end of the string (or to the fourth colon, if present).
+            return "SUBSTRING(" + lsidExpression + " FROM '%urn:lsid:%:#\"%#\":?%' FOR '#')";
+        }
+
+        if (dialect.isSqlServer())
+        {
+            // SQL Server doesn't support regular expressions; this uses an unwieldy pattern to extract the objectid
+            String d = "[0-9a-f]"; // pattern for a single digit
+            String objectId = repeat(d, 8) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 12);
+            return "SUBSTRING(" + lsidExpression + ", PATINDEX('%:" + objectId + "%', " + lsidExpression + ") + 1, 36)";
+        }
+
+        throw new IllegalStateException("Unsupported SqlDialect: " + dialect.getProductName());
     }
 
     public String getSrc()
