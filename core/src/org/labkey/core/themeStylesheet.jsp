@@ -761,11 +761,11 @@ span.labkey-file-icon {
     background-color: #<%= primary %>;
     color: #<%= link %>;
 }
-.labkey-notification-title, .labkey-notification-type, .labkey-notification-createdby,
+.labkey-notification-title, .labkey-notification-type-label, .labkey-notification-createdby,
 .labkey-notification-clear-all, .labkey-notification-footer {
     color: #<%= link %>;
 }
-.labkey-notification-type {
+.labkey-notification-type-label {
     border-bottom-color: #<%= borderTitle %> !important;
 }
 .labkey-notification-close {
