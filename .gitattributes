@@ -138,6 +138,7 @@ api/src/org/labkey/api/attachments/AttachmentParentFactory.java -text
 api/src/org/labkey/api/attachments/AttachmentService.java -text
 api/src/org/labkey/api/attachments/AttachmentType.java -text
 api/src/org/labkey/api/attachments/BaseBackgroundImageAction.java -text
+api/src/org/labkey/api/attachments/BaseDownloadAction.java -text
 api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
 api/src/org/labkey/api/attachments/DocumentConversionService.java -text
 api/src/org/labkey/api/attachments/DocumentWriter.java -text
