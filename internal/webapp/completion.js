@@ -8,12 +8,16 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
     extend : 'Ext.Component',
 
+    completionUrl: undefined,
+
+    maxDivHeight: 190, // max height of the completion div before overflow
+
+    sharedStore: false,
+
     constructor : function(config) {
 
         Ext4.applyIf(config, {
-            sharedStore     : false,
-            sharedStoreId   : 'autocomplete-shared-store' + config.completionUrl,
-            maxDivHeight    : 190                         // max height of the completion div before overflow
+            sharedStoreId: 'autocomplete-shared-store' + config.completionUrl
         });
 
         this.completionTask = new Ext4.util.DelayedTask(this.complete, this);
@@ -34,7 +38,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         if (this.tagConfig)
         {
             this.fieldId = this.tagConfig.id || Ext4.id();
-            this.tagConfig['id'] = this.fieldId;
+            this.tagConfig.id = this.fieldId;
 
             this.html = Ext4.DomHelper.createHtml(this.tagConfig);
             this.html = this.html.concat(Ext4.DomHelper.createHtml({
@@ -58,24 +62,25 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         }
 
         this.listeners = {
-            render  :  {fn : function(cmp){
+            render: {
+                fn : function() {
+                    var wrapper = this.getEl().up('div.' + Ext4.resetCls);
+                    if (wrapper)
+                        wrapper.removeCls(Ext4.resetCls);
+                    this.completionDiv = Ext4.get(completionDiv);
+                    this.completionBody = Ext4.get(completionBodyDiv);
+                    this.completionField = Ext4.get(this.fieldId);
 
-                var wrapper = this.getEl().up('div.' + Ext4.resetCls);
-                if (wrapper)
-                    wrapper.removeCls(Ext4.resetCls);
-                this.completionDiv = Ext4.get(completionDiv);
-                this.completionBody = Ext4.get(completionBodyDiv);
-                this.completionField = Ext4.get(this.fieldId);
-
-                Ext4.EventManager.addListener(this.fieldId, 'keydown', this.onKeyDown, this);
-                Ext4.EventManager.addListener(this.fieldId, 'keyup', this.onKeyUp, this);
-                Ext4.EventManager.addListener(this.fieldId, 'blur', function(){this.hideCompletionTask.delay(250);}, this);
-
-            }, scope : this}
+                    Ext4.EventManager.addListener(this.fieldId, 'keydown', this.onKeyDown, this);
+                    Ext4.EventManager.addListener(this.fieldId, 'keyup', this.onKeyUp, this);
+                    Ext4.EventManager.addListener(this.fieldId, 'blur', function(){this.hideCompletionTask.delay(250);}, this);
+                },
+                scope : this
+            }
         };
 
         this.tpl = new Ext4.XTemplate(
-            '<table class="labkey-completion">',
+            '<table>',
                 '<tpl for=".">',
                 '<tr style="cursor:pointer">',
                     '<td  class="{style}" id="{["completionTR" + (xindex-1)]}">',
@@ -85,20 +90,17 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
             '</tpl></table>',
             {
                 getClickHandler : function(data, idx) {
-
-                    var fnTxt = "(function(cmp, id){" +
+                    return "(function(cmp, id){" +
                         "var cmp = Ext4.getCmp(cmp);" +
                         "if (cmp)" +
                             "cmp.selectOption(id);" +
                     "})('" + data.cmpId + "'," + idx + ")";
-
-                    return fnTxt;
                 }
             }
         );
         this.createCompletionStore();
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     createCompletionStore : function() {
@@ -110,8 +112,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
             this.completionStore = Ext4.data.StoreManager.lookup(storeId);
         }
 
-        if (!this.completionStore)
-        {
+        if (!this.completionStore) {
             // create the store for the completion records
             Ext4.define('LABKEY.data.Completions', {
                 extend : 'Ext.data.Model',
@@ -121,21 +122,20 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 ]
             });
 
-            var config = {
+            this.completionStore = Ext4.create('Ext.data.Store', {
                 model   : 'LABKEY.data.Completions',
                 autoLoad: true,
                 pageSize: 10000,
                 storeId : storeId,
                 proxy   : {
                     type   : 'ajax',
-                    url : this.completionUrl ,
+                    url : this.completionUrl,
                     reader : {
                         type : 'json',
                         root : 'completions'
                     }
                 }
-            }
-            this.completionStore = Ext4.create('Ext.data.Store', config);
+            });
         }
     },
 
@@ -143,11 +143,11 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     {
         var keynum = event.getKey();
 
-        return (keynum == Ext4.EventObject.DOWN ||
-                keynum == Ext4.EventObject.UP ||
-                keynum == Ext4.EventObject.ENTER ||
-                keynum == Ext4.EventObject.TAB ||
-                keynum == Ext4.EventObject.ESC);
+        return (keynum === Ext4.EventObject.DOWN ||
+                keynum === Ext4.EventObject.UP ||
+                keynum === Ext4.EventObject.ENTER ||
+                keynum === Ext4.EventObject.TAB ||
+                keynum === Ext4.EventObject.ESC);
     },
 
     onKeyDown : function(event, cmp)
@@ -223,7 +223,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
             this.completionDiv.scroll('down', el.getHeight() + (delta - this.maxDivHeight));
     },
 
-    onKeyUp : function(event, element, completionURLPrefix)
+    onKeyUp : function(event, element)
     {
         if (this.isCtrlKey(event))
             return false;
@@ -331,7 +331,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     hideCompletionDiv : function()
     {
         this.completionDiv.hide();
-        this.completionBody.update('');
+        // this.completionBody.update('');
     }
 });
 
