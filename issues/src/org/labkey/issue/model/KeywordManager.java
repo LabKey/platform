@@ -16,9 +16,7 @@
 package org.labkey.issue.model;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Selector;
@@ -73,34 +71,30 @@ public class KeywordManager
 
     private static Collection<Keyword> getKeywordsFromCache(final Container c, final ColumnType type)
     {
-        return KEYWORD_CACHE.get(getCacheKey(c, type), c, new CacheLoader<String, Collection<Keyword>>() {
-            @Override
-            public Collection<Keyword> load(String key, @Nullable Object argument)
+        return KEYWORD_CACHE.get(getCacheKey(c, type), c, (key, argument) -> {
+            assert type.getOrdinal() > 0;   // Ordinal 0 ==> no pick list (e.g., custom integer columns)
+
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("Type"), type.getOrdinal());
+            Sort sort = new Sort("Keyword");
+
+            Selector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort);
+            Collection<Keyword> keywords = selector.getCollection(Keyword.class);
+
+            if (keywords.isEmpty())
             {
-                assert type.getOrdinal() > 0;   // Ordinal 0 ==> no pick list (e.g., custom integer columns)
+                String[] initialValues = type.getInitialValues();
 
-                SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("Type"), type.getOrdinal());
-                Sort sort = new Sort("Keyword");
-
-                Selector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort);
-                Collection<Keyword> keywords = selector.getCollection(Keyword.class);
-
-                if (keywords.isEmpty())
+                if (initialValues.length > 0)
                 {
-                    String[] initialValues = type.getInitialValues();
-
-                    if (initialValues.length > 0)
-                    {
-                        // First reference in this container... save away initial values & default
-                        addKeyword(c, type, initialValues);
-                        setKeywordDefault(c, type, type.getInitialDefaultValue());
-                    }
-
-                    keywords = selector.getCollection(Keyword.class);
+                    // First reference in this container... save away initial values & default
+                    addKeyword(c, type, initialValues);
+                    setKeywordDefault(c, type, type.getInitialDefaultValue());
                 }
 
-                return Collections.unmodifiableCollection(keywords);
+                keywords = selector.getCollection(Keyword.class);
             }
+
+            return Collections.unmodifiableCollection(keywords);
         });
     }
 
@@ -162,78 +156,12 @@ public class KeywordManager
     }
 
 
-    public static void deleteKeyword(Container c, ColumnType type, String keyword)
-    {
-        //if inheriting settings from a different container, do not allow deleting
-        if(IssueManager.getInheritFromContainer(c) != null && (type.isStandard() || isCurrentColumnInherited(c, type)))
-            return;
-
-        Collection<Keyword> keywords;
-
-        synchronized (KEYWORD_LOCK)
-        {
-            new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(
-                    "DELETE FROM " + IssuesSchema.getInstance().getTableInfoIssueKeywords() + " WHERE Container = ? AND Type = ? AND Keyword = ?",
-                    c, type.getOrdinal(), keyword);
-            KEYWORD_CACHE.remove(getCacheKey(c, type));
-            keywords = getKeywords(c, type);
-        }
-
-        //Check to see if the last keyword of a required field was deleted, if so no longer make the field required.
-        if (keywords == null || keywords.isEmpty())
-        {
-            String columnName = type.getColumnName();
-            String requiredFields = IssueManager.getRequiredIssueFields(c);
-
-            if (null != columnName && requiredFields.contains(columnName))
-            {
-                //Here we want to remove the type from the required fields.
-                requiredFields = requiredFields.replace(columnName, "");
-                if (requiredFields.length() > 0)
-                {
-                    if (requiredFields.charAt(0) == ';')
-                    {
-                       requiredFields = requiredFields.substring(1);
-                    }
-                    else if (requiredFields.charAt(requiredFields.length()-1) == ';')
-                    {
-                       requiredFields = requiredFields.substring(0, requiredFields.length()-1);
-                    }
-                    else
-                    {
-                       requiredFields = requiredFields.replace(";;", ";");
-                    }
-                }
-
-                IssueManager.setRequiredIssueFields(c, requiredFields);
-            }
-        }
-    }
-
     private static boolean isCurrentColumnInherited(Container c, ColumnType type)
     {
         String colName = type.getColumnName();
         CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(c);
         CustomColumn customColumn = ccc.getCustomColumn(colName);
         return customColumn.isInherited();
-    }
-
-    public static String getKeywordOptions(final Container c, final ColumnType type)
-    {
-        Collection<Keyword> keywords = getKeywords(c, type);
-        StringBuilder sb = new StringBuilder(keywords.size() * 30);
-
-        if (type.allowBlank())
-            sb.append("<option></option>\n");
-
-        for (Keyword keyword : keywords)
-        {
-            sb.append("<option>");
-            sb.append(PageFlowUtil.filter(keyword.getKeyword()));
-            sb.append("</option>\n");
-        }
-
-        return sb.toString();
     }
 
 

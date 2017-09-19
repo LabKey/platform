@@ -19,9 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -98,7 +96,6 @@ public enum ColumnTypeEnum implements ColumnType
 
     private static final Map<String, ColumnTypeEnum> mapByColumnName = new CaseInsensitiveHashMap<>(15);
     private static final Map<Integer, ColumnTypeEnum> mapByOrdinal = new HashMap<>(15);
-    private static final Collection<ColumnTypeEnum> customStringColumns = new LinkedList<>();
     private static final String[] noKeywords = new String[0];
 
     static
@@ -107,9 +104,6 @@ public enum ColumnTypeEnum implements ColumnType
         {
             mapByColumnName.put(type.getColumnName(), type);
             mapByOrdinal.put(type.getOrdinal(), type);
-
-            if (type.isCustomString())
-                customStringColumns.add(type);
         }
     }
 
@@ -135,16 +129,6 @@ public enum ColumnTypeEnum implements ColumnType
     public boolean isStandard()
     {
         return _standard;
-    }
-
-    public boolean isCustomString()
-    {
-        return _customString;
-    }
-
-    public boolean isCustomInteger()
-    {
-        return _customInteger;
     }
 
     public boolean isCustom()
@@ -178,10 +162,5 @@ public enum ColumnTypeEnum implements ColumnType
     ColumnTypeEnum forOrdinal(int ordinal)
     {
         return mapByOrdinal.get(ordinal);
-    }
-
-    public static @NotNull Collection<ColumnTypeEnum> getCustomStringColumns()
-    {
-        return customStringColumns;
     }
 }
