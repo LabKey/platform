@@ -569,7 +569,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         final Container container = (Container) o;
 
-        return !(_id != null ? !_id.equals(container._id) : container._id != null);
+        return _id == null ? container._id == null : _id.equals(container._id);
     }
 
 

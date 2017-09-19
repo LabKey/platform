@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 
 /**
@@ -25,9 +27,9 @@ import java.io.Serializable;
  */
 public class Project implements Serializable
 {
-    private Container _c;
+    private @NotNull Container _c;
 
-    public Project(Container c)
+    public Project(@NotNull Container c)
     {
         if (!c.isProject())
             throw new IllegalStateException(c.getPath() + " is not a project");
@@ -52,13 +54,11 @@ public class Project implements Serializable
 
         Project project = (Project) o;
 
-        if (_c != null ? !_c.equals(project._c) : project._c != null) return false;
-
-        return true;
+        return _c.equals(project._c);
     }
 
     public int hashCode()
     {
-        return (_c != null ? _c.hashCode() : 0);
+        return _c.hashCode();
     }
 }
