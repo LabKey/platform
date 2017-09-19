@@ -123,24 +123,24 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         if (config.queryName && !config.sql)
             baseParams['query.queryName'] = config.queryName;
-        if (config.sql)
-        {
+        if (config.sql) {
             baseParams.sql = config.sql;
             config.updatable = false;
         }
-        if (config.sort)
-        {
+        if (config.sort) {
             baseParams['query.sort'] = config.sort;
 
-            if (config.sql)
+            if (config.sql) {
                 qsParams['query.sort'] = config.sort;
+            }
         }
         else if (config.sortInfo) {
-            var sInfo = ("DESC" == config.sortInfo.direction ? '-' : '') + config.sortInfo.field;
+            var sInfo = ('DESC' === config.sortInfo.direction ? '-' : '') + config.sortInfo.field;
             baseParams['query.sort'] = sInfo;
 
-            if (config.sql)
+            if (config.sql) {
                 qsParams['query.sort'] = sInfo;
+            }
         }
 
         if (Ext.isObject(config.parameters)) {
@@ -164,11 +164,10 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if (config.containerFilter)
             baseParams.containerFilter = config.containerFilter;
 
-        if(config.ignoreFilter)
+        if (config.ignoreFilter)
             baseParams['query.ignoreFilter'] = 1;
 
-        if(config.maxRows)
-        {
+        if (config.maxRows) {
             // Issue 16076, executeSql needs maxRows not query.maxRows.
             if (config.sql)
                 baseParams['maxRows'] = config.maxRows;
@@ -183,18 +182,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             updatable: true
         });
 
-        // Set of parameters that are reserved for query
-        this.queryParamSet = {
-            columns : true,
-            containerFilterName : true,
-            ignoreFilter : true,
-            maxRows : true,
-            param   : true,
-            queryName : true,
-            sort    : true,
-            viewName: true
-        };
-
         this.isLoading = false;
 
         LABKEY.ext.Store.superclass.constructor.call(this, {
@@ -202,10 +189,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             proxy: this.proxy ||
                     new Ext.data.HttpProxy(new Ext.data.Connection({
                         method: 'POST',
-                        url: (config.sql ? LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams)
-                                : LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)),
+                        url: (config.sql ? LABKEY.ActionURL.buildURL('query', 'executeSql.api', config.containerPath, qsParams)
+                                : LABKEY.ActionURL.buildURL('query', 'selectRows.api', config.containerPath)),
                         listeners: {
-                            beforerequest: {fn: this.onBeforeRequest, scope: this}
+                            beforerequest: {
+                                fn: this.onBeforeRequest,
+                                scope: this
+                            }
                         },
                         timeout: Ext.Ajax.timeout
                     })),
@@ -219,7 +209,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         this.on('update', this.onUpdate, this);
 
         //Add this here instead of using Ext.store to make sure above listeners are added before 1st load
-        if(config.autoLoad){
+        if (config.autoLoad) {
             this.load.defer(10, this, [ Ext.isObject(this.autoLoad) ? this.autoLoad : undefined ]);
         }
 
@@ -255,7 +245,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * @function
      * @memberOf LABKEY.ext.Store#
      * @param {Object} data The raw data object containing a properties for each field.
-     * @param {integer} [index] The index at which to insert the record. If not supplied, the new
+     * @param {number} [index] The index at which to insert the record. If not supplied, the new
      * record will be added to the end of the store.
      * @returns {Ext.data.Record} The new Ext.data.Record object.
      */
@@ -263,24 +253,25 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if (!this.updatable)
             throw "this LABKEY.ext.Store is not updatable!";
 
-        if(undefined == index)
+        if (undefined == index)
             index = this.getCount();
 
         var fields = this.reader.meta.fields;
 
         //if no data was passed, create a new object with
         //all nulls for the field values
-        if(!data)
+        if (!data) {
             data = {};
+        }
 
         //set any non-specified field to null
         //some bound control (like the grid) need a property
         //defined for each field
         var field;
-        for(var idx = 0; idx < fields.length; ++idx)
+        for (var idx = 0; idx < fields.length; ++idx)
         {
             field = fields[idx];
-            if(!data[field.name])
+            if (!data[field.name])
                 data[field.name] = null;
         }
 
@@ -304,12 +295,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if (!this.updatable)
             throw "this LABKEY.ext.Store is not updatable!";
 
-        if(!records || records.length == 0)
+        if (!records || records.length === 0)
             return;
 
         var deleteRowsKeys = [];
         var key;
-        for(var idx = 0; idx < records.length; ++idx)
+        for (var idx = 0; idx < records.length; ++idx)
         {
             key = {};
             key[this.idName] = records[idx].id;
@@ -331,38 +322,36 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     getChanges : function(records) {
         records = records || this.getModifiedRecords();
 
-        if(!records || records.length == 0)
+        if (!records || records.length === 0) {
             return [];
+        }
 
-        if (!this.updatable)
+        if (!this.updatable) {
             throw "this LABKEY.ext.Store is not updatable!";
+        }
 
         //build the json to send to the server
-        var record;
-        var insertCommand =
-        {
+        var insertCommand = {
             schemaName: this.schemaName,
             queryName: this.queryName,
-            command: "insertWithKeys",
+            command: 'insertWithKeys',
             rows: []
         };
-        var updateCommand =
-        {
+        var updateCommand = {
             schemaName: this.schemaName,
             queryName: this.queryName,
-            command: "updateChangingKeys",
+            command: 'updateChangingKeys',
             rows: []
         };
-        for(var idx = 0; idx < records.length; ++idx)
-        {
-            record = records[idx];
+        for (var idx = 0; idx < records.length; ++idx) {
+            var record = records[idx];
 
             //if we are already in the process of saving this record, just continue
-            if(record.saveOperationInProgress)
+            if (record.saveOperationInProgress)
                 continue;
 
             //NOTE: this check could possibly be eliminated since the form/server should do the same thing
-            if(!this.readyForSave(record))
+            if (!this.readyForSave(record))
                 continue;
 
             record.saveOperationInProgress = true;
@@ -393,8 +382,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             commands.push(updateCommand);
         }
 
-        for(var i=0;i<commands.length;i++){
-            if(commands[i].rows.length > 0 && false === this.fireEvent("beforecommit", records, commands[i].rows))
+        for (var i=0;i<commands.length;i++) {
+            if (commands[i].rows.length > 0 && false === this.fireEvent("beforecommit", records, commands[i].rows))
                 return [];
         }
 
@@ -431,7 +420,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         var records = this.getModifiedRecords();
         var commands = this.getChanges(records);
 
-        if (!commands.length){
+        if (!commands.length) {
             return false;
         }
 
@@ -475,15 +464,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      */
     getLookupStore : function(columnName, includeNullRecord)
     {
-        if(!this.lookupStores)
+        if (!this.lookupStores)
             this.lookupStores = {};
 
         var store = this.lookupStores[columnName];
-        if(!store)
+        if (!store)
         {
             //find the column metadata
             var fieldMeta = this.findFieldMeta(columnName);
-            if(!fieldMeta)
+            if (!fieldMeta)
                 return null;
 
             //create the lookup store and kick off a load
@@ -492,7 +481,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 queryName: fieldMeta.lookup.table,
                 containerPath: fieldMeta.lookup.containerPath || this.containerPath
             };
-            if(includeNullRecord)
+            if (includeNullRecord)
                 config.nullRecord = {
                     displayColumn: fieldMeta.lookup.displayColumn,
                     nullCaption: this.lookupNullCaption || "[none]"
@@ -563,54 +552,56 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             // These are filters that are defined by the view.
             LABKEY.Filter.appendFilterParams(params, this.getUserFilters());
 
-            var action = ("tsv" == format) ? "exportRowsTsv" : "exportRowsExcel";
+            var action = ('tsv' === format) ? 'exportRowsTsv' : 'exportRowsExcel';
             window.location = LABKEY.ActionURL.buildURL("query", action, this.containerPath, params);
         }
     },
 
     /*-- Private Methods --*/
 
-    onCommitSuccess : function(response, options) {
+    onCommitSuccess : function(response) {
         var json = this.getJson(response);
-        if(!json || !json.result) {
+        if (!json || !json.result) {
             return;
         }
 
-        for (var cmdIdx = 0; cmdIdx < json.result.length; ++cmdIdx)
-        {
+        for (var cmdIdx = 0; cmdIdx < json.result.length; ++cmdIdx) {
             this.processResponse(json.result[cmdIdx].rows);
         }
-        this.fireEvent("commitcomplete");
+        this.fireEvent('commitcomplete');
     },
 
-    processResponse : function(rows){
+    processResponse : function(rows) {
         var idCol = this.reader.jsonData.metaData.id;
         var row;
         var record;
-        for(var idx = 0; idx < rows.length; ++idx)
+        for (var idx = 0; idx < rows.length; ++idx)
         {
             row = rows[idx];
 
-            if(!row || !row.values)
+            if (!row || !row.values)
                 return;
 
             //find the record using the id sent to the server
             record = this.getById(row.oldKeys[this.reader.meta.id]);
-            if(!record)
+            if (!record)
                 return;
 
             //apply values from the result row to the sent record
-            for(var col in record.data)
+            for (var col in record.data)
             {
+                if (!record.data.hasOwnProperty(col)) {
+                    continue;
+                }
+
                 //since the sent record might contain columns form a related table,
                 //ensure that a value was actually returned for that column before trying to set it
-                if(undefined !== row.values[col]){
-                    var x = record.fields.get(col);
+                if (undefined !== row.values[col]) {
                     record.set(col, record.fields.get(col).convert(row.values[col], row.values));
                 }
 
                 //clear any displayValue there might be in the extended info
-                if(record.json && record.json[col])
+                if (record.json && record.json[col])
                     delete record.json[col].displayValue;
             }
 
@@ -618,7 +609,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             //HACK: this is using private data members of the base Store class. Unfortunately
             //Ext Store does not have a public API for updating the key value of a record
             //after it has been added to the store. This might break in future versions of Ext.
-            if(record.id != row.values[idCol])
+            if (record.id != row.values[idCol])
             {
                 record.id = row.values[idCol];
                 this.data.keys[this.data.indexOf(record)] = row.values[idCol];
@@ -637,16 +628,18 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     },
 
     getOnCommitFailure : function(records) {
-        return function(response, options) {
+        return function(response) {
             
-            for(var idx = 0; idx < records.length; ++idx)
+            for (var idx = 0; idx < records.length; ++idx) {
                 delete records[idx].saveOperationInProgress;
+            }
 
             var json = this.getJson(response);
             var message = (json && json.exception) ? json.exception : response.statusText;
 
-            if(false !== this.fireEvent("commitexception", message))
-                Ext.Msg.alert("Error During Save", "Could not save changes due to the following error:\n" + message);
+            if (false !== this.fireEvent('commitexception', message)) {
+                Ext.Msg.alert('Error During Save', 'Could not save changes due to the following error:\n' + message);
+            }
         };
     },
 
@@ -660,23 +653,23 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     findFieldMeta : function(columnName)
     {
         var fields = this.reader.meta.fields;
-        for(var idx = 0; idx < fields.length; ++idx)
-        {
-            if(fields[idx].name == columnName)
+        for (var idx = 0; idx < fields.length; ++idx) {
+            if (fields[idx].name === columnName) {
                 return fields[idx];
+            }
         }
         return null;
     },
 
     onBeforeRequest : function(connection, options) {
-        if (this.sql)
-        {
+        if (this.sql) {
             // need to adjust url
             var qsParams = {};
-            if (options.params['query.sort'])
+            if (options.params['query.sort']) {
                 qsParams['query.sort'] = options.params['query.sort'];
+            }
 
-            options.url = LABKEY.ActionURL.buildURL("query", "executeSql.api", this.containerPath, qsParams);
+            options.url = LABKEY.ActionURL.buildURL('query', 'executeSql.api', this.containerPath, qsParams);
         }
     },
 
@@ -685,8 +678,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         //the selectRows.api can't handle the 'sort' and 'dir' params
         //sent by Ext, so translate them into the expected form
-        if(options.params && options.params.sort) {
-            options.params['query.sort'] = "DESC" == options.params.dir
+        if (options.params && options.params.sort) {
+            options.params['query.sort'] = 'DESC' === options.params.dir
                     ? "-" + options.params.sort
                     : options.params.sort;
             delete options.params.sort;
@@ -707,7 +700,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         // remove all query filters in base parameters
         for (var param in this.baseParams) {
-            if (this.isFilterParam(param)) {
+            if (this.baseParams.hasOwnProperty(param) && this.isFilterParam(param)) {
                 delete this.baseParams[param];
             }
         }
@@ -720,10 +713,23 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     },
 
     isFilterParam : function(param) {
+        // Set of parameters that are reserved for query
+        var prefixes = {
+            columns: true,
+            containerFilterName: true,
+            ignoreFilter: true,
+            maxRows: true,
+            param: true,
+            queryName: true,
+            sort: true,
+            viewName: true
+        };
+
+        // 31656: Ensure query parameters are passed along
         if (Ext.isString(param)) {
-            if (param.indexOf('query.') == 0) {
-                var chkParam = param.replace('query.', '');
-                if (!this.queryParamSet[chkParam]) {
+            if (param.indexOf('query.') === 0) {
+                var prefix = param.replace('query.', '').split('.')[0];
+                if (!prefixes[prefix]) {
                     return true;
                 }
             }
@@ -731,14 +737,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         return false;
     },
 
-    onLoad : function(store, records, options) {
+    onLoad : function() {
         this.isLoading = false;
 
         //remember the name of the id column
         this.idName = this.reader.meta.id;
 
-        if(this.nullRecord)
-        {
+        if (this.nullRecord) {
             //create an extra record with a blank id column
             //and the null caption in the display column
             var data = {};
@@ -756,23 +761,21 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         this.isLoading = false;
         var loadError = {message: error};
 
-        if(response && response.getResponseHeader
+        if (response && response.getResponseHeader
                 && response.getResponseHeader("Content-Type").indexOf("application/json") >= 0)
         {
             var errorJson = Ext.util.JSON.decode(response.responseText);
-            if(errorJson && errorJson.exception)
+            if (errorJson && errorJson.exception)
                 loadError.message = errorJson.exception;
         }
 
         this.loadError = loadError;
     },
 
-    onUpdate : function(store, record, operation)
-    {
-        for(var field  in record.getChanges())
-        {
-            if(record.json && record.json[field])
-            {
+    onUpdate : function(store, record) {
+        var changes = record.getChanges();
+        for (var field in changes) {
+            if (changes.hasOwnProperty(field) && record.json && record.json[field]) {
                 delete record.json[field].displayValue;
                 delete record.json[field].mvValue;
             }
@@ -793,9 +796,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         //empty string, but this messes-up Lists in LabKey 8.2 and earlier
         var data = {};
         Ext.apply(data, record.data);
-        for(var field in data)
+        for (var field in data)
         {
-            if(null != data[field] && data[field].toString().length == 0)
+            if (null != data[field] && data[field].toString().length == 0)
                 data[field] = null;
         }
         return data;
@@ -816,15 +819,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             return true;
 
         var colmodel = this.reader.jsonData.columnModel;
-        if(!colmodel)
+        if (!colmodel)
             return true;
 
         var col;
-        for(var idx = 0; idx < colmodel.length; ++idx)
+        for (var idx = 0; idx < colmodel.length; ++idx)
         {
             col = colmodel[idx];
 
-            if(col.dataIndex != this.reader.meta.id && col.required && !record.data[col.dataIndex])
+            if (col.dataIndex != this.reader.meta.id && col.required && !record.data[col.dataIndex])
                 return false;
         }
 
