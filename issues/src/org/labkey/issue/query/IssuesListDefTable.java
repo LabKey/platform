@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -32,6 +33,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -65,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 4/10/16.
@@ -131,6 +134,69 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 return new MultiValueInputColumn(colInfo, inputValues);
             }
         });
+
+        ColumnInfo domainContainer = new AliasedColumn(this, "DomainContainer", _rootTable.getColumn("RowId"));
+        domainContainer.setRequired(false);
+        domainContainer.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    private Container getContainer(RenderContext ctx)
+                    {
+                        String c = (String)ctx.get("Container");
+                        Integer rowId = (Integer)ctx.get("RowId");
+
+                        if (c != null && rowId != null)
+                        {
+                            Container container = ContainerManager.getForId(c);
+                            if (container != null)
+                            {
+                                IssueListDef issueListDef = IssueManager.getIssueListDef(container, rowId);
+                                if (issueListDef != null)
+                                {
+                                    return issueListDef.getDomainContainer(getUserSchema().getUser());
+                                }
+                            }
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+
+                        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Container"));
+                        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "RowId"));
+                    }
+
+                    @Override
+                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    {
+                        Container c = getContainer(ctx);
+                        if (c != null)
+                        {
+                            if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
+                            {
+                                out.write("<a href=\"");
+                                out.write(c.getStartURL(getUserSchema().getUser()).getLocalURIString());
+                                out.write("\">");
+                                out.write(PageFlowUtil.filter(c.getName()));
+                                out.write("</a>");
+                            }
+                            else
+                                out.write(PageFlowUtil.filter(c.getName()));
+                        }
+                        else
+                            super.renderGridCellContents(ctx, out);
+                    }
+                };
+            }
+        });
+        addColumn(domainContainer);
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Created")));
         UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))));
