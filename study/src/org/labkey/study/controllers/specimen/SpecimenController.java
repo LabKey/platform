@@ -38,7 +38,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
@@ -115,16 +116,16 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.SpecimenRequestStatus;
-import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Vial;
-import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
@@ -137,6 +138,17 @@ import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
+import org.labkey.study.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.study.security.permissions.ManageNewRequestFormPermission;
+import org.labkey.study.security.permissions.ManageNotificationsPermission;
+import org.labkey.study.security.permissions.ManageRequestRequirementsPermission;
+import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
+import org.labkey.study.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
@@ -158,17 +170,6 @@ import org.labkey.study.specimen.settings.DisplaySettings;
 import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.specimen.settings.RequestNotificationSettings;
 import org.labkey.study.specimen.settings.StatusSettings;
-import org.labkey.study.security.permissions.ManageDisplaySettingsPermission;
-import org.labkey.study.security.permissions.ManageNewRequestFormPermission;
-import org.labkey.study.security.permissions.ManageNotificationsPermission;
-import org.labkey.study.security.permissions.ManageRequestRequirementsPermission;
-import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
-import org.labkey.study.security.permissions.ManageRequestStatusesPermission;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -4074,24 +4075,22 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<SpecimentEventAttachmentForm>
+    public class DownloadAction extends BaseDownloadAction<SpecimentEventAttachmentForm>
     {
-        public ModelAndView getView(SpecimentEventAttachmentForm form, BindException errors) throws Exception
+        @Nullable
+        @Override
+        public Pair<AttachmentParent, String> getAttachment(SpecimentEventAttachmentForm form)
         {
             SpecimenRequestEvent event = SpecimenManager.getInstance().getRequestEvent(getContainer(), form.getEventId());
             if (event == null)
                 throw new NotFoundException("Specimen event not found");
 
-            AttachmentService.get().download(getViewContext().getResponse(), event, form.getName());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new Pair<>(event, form.getName());
         }
     }
+
 
     @RequiresPermission(AdminPermission.class)
     public class ShowManageRepositorySettingsAction extends SimpleViewAction

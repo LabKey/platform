@@ -38,7 +38,9 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -87,6 +89,7 @@ import org.labkey.api.util.Button;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -1360,9 +1363,11 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<IssueAttachmentForm>
+    public class DownloadAction extends BaseDownloadAction<IssueAttachmentForm>
     {
-        public ModelAndView getView(final IssueAttachmentForm form, BindException errors) throws Exception
+        @Nullable
+        @Override
+        public Pair<AttachmentParent, String> getAttachment(IssueAttachmentForm form)
         {
             if (form.getIssueId() == null || form.getEntityId() == null)
                 throw new NotFoundException();
@@ -1386,20 +1391,7 @@ public class IssuesController extends SpringActionController
             // so push it in here. The Comment select already verified that c is the correct container.
             comment.setContainerId(c.getId());
 
-            getPageConfig().setTemplate(PageConfig.Template.None);
-
-            return new HttpView()
-            {
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
-                {
-                    AttachmentService.get().download(response, new CommentAttachmentParent(comment), form.getName());
-                }
-            };
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new Pair<>(new CommentAttachmentParent(comment), form.getName());
         }
     }
 
