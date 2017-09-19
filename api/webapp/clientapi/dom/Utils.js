@@ -269,7 +269,7 @@ LABKEY.Utils = new function(impl, $) {
      */
     impl.setWebpartTitle = function(title, webPartId)
     {
-        $('table#webpart_' + webPartId + ' span[class=labkey-wp-title-text]').html(LABKEY.Utils.encodeHtml(title));
+        $('#webpart_' + webPartId + ' span.labkey-wp-title-text').html(LABKEY.Utils.encodeHtml(title));
     };
 
     /**
