@@ -447,38 +447,6 @@ span.labkey-help-pop-up
   border: 5px solid $lk-webpart-color;
 }
 
-/* Login screen*/
-.auth-header {
-  font-size: 14pt;
-}
-
-.auth-form {
-  padding: 10px 20px;
-}
-
-.auth-form-body {
-  margin-top: 15px;
-
-  input[type="text"],
-  input[type="password"] {
-    width: 350px;
-    border: 1px solid #A0A0A0;
-    vertical-align: middle;
-    padding: 7px 8px;
-  }
-}
-
-.auth-item {
-  margin-top: 15px;
-}
-
-.input-block {
-  display: block;
-  width: 100%;
-  margin-top: 5px;
-  margin-bottom: 15px;
-}
-
 /* Used for the middle part of full-screen pages */
 .labkey-dialog-body
 {

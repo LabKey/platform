@@ -4,8 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-(function ($)
-{
+(function($) {
     // bind triggers, page init, etc
     function onReady() {
         // on document ready
@@ -18,9 +17,10 @@
     }
 
     function authenticateUser() {
-        if (document.getElementById('remember').checked == true) {
+        if (document.getElementById('remember').checked === true) {
             LABKEY.Utils.setCookie('email', encodeURIComponent(document.getElementById('email').value), true, 360);
-        } else {
+        }
+        else {
             LABKEY.Utils.deleteCookie('email', true);
         }
         LABKEY.Ajax.request({
@@ -33,19 +33,18 @@
                 approvedTermsOfUse: document.getElementById('approvedTermsOfUse').checked,
                 termsOfUseType: document.getElementById('termsOfUseType').value,
                 returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
-                urlHash: document.getElementById('urlhash'),
-                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                urlHash: document.getElementById('urlhash')
             },
-            success: LABKEY.Utils.getCallbackWrapper(function (response) {
-                if(response && response.returnUrl){
+            success: LABKEY.Utils.getCallbackWrapper(function(response) {
+                if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
             }, this),
-            failure: LABKEY.Utils.getCallbackWrapper(function (response) {
-                if(document.getElementById('errors') && response && response.exception) {
+            failure: LABKEY.Utils.getCallbackWrapper(function(response) {
+                if (document.getElementById('errors') && response && response.exception) {
                     document.getElementById('errors').innerHTML = response.exception;
                 }
-                if(response && response.returnUrl){
+                if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
             }, this)
@@ -60,8 +59,7 @@
                 approvedTermsOfUse: document.getElementById('approvedTermsOfUse').checked,
                 termsOfUseType: document.getElementById('termsOfUseType').value,
                 returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
-                urlHash: document.getElementById('urlhash'),
-                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                urlHash: document.getElementById('urlhash')
             },
             success: function () {
                 window.location = LABKEY.ActionURL.getParameter("returnUrl")
@@ -82,8 +80,7 @@
                 method: 'POST',
                 params: {
                     returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
-                    urlHash: document.getElementById('urlhash'),
-                    'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                    urlHash: document.getElementById('urlhash')
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {
@@ -119,8 +116,7 @@
                 method: 'POST',
                 params: {
                     returnUrl: returnURL,
-                    urlHash: document.getElementById('urlhash'),
-                    'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                    urlHash: document.getElementById('urlhash')
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {
@@ -131,7 +127,16 @@
                         if (response && response.otherLoginMechanismsContent)
                         {
                             otherLoginSections[0].hidden = false;
-                            otherLoginContents[0].innerHTML = response.otherLoginMechanismsContent;
+                            if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true) {
+                                otherLoginContents[0].innerHTML = [
+                                    '<ul class="sso-list">',
+                                    response.otherLoginMechanismsContent,
+                                    '</ul>'
+                                ].join('');
+                            }
+                            else {
+                                otherLoginContents[0].innerHTML = response.otherLoginMechanismsContent;
+                            }
                         }
                         else
                         {
@@ -162,7 +167,7 @@
             if (h) {
                 h.value = window.location.hash;
             }
-        };
+        }
 
         // Issue 22094: Clear password on login page after session timeout has been exceeded
         var timeout = 86400000;
@@ -194,23 +199,18 @@
         var h = document.getElementById('email');
         if (h && LABKEY.Utils.getCookie("email")) {
             h.value = decodeURIComponent(LABKEY.Utils.getCookie("email"));
-        };
+        }
         h = document.getElementById('remember');
-        if (h && LABKEY.Utils.getCookie("email")) {
-            h.checked = true;
-        } else {
-            h.checked = false;
-        };
+        h.checked = h && LABKEY.Utils.getCookie("email");
 
-        // set autofocus to email field if email is blank otherwise set it to passowrd field
-        if (!document.getElementById('email').value)
-        {
+        // set autofocus to email field if email is blank otherwise set it to password field
+        if (!document.getElementById('email').value) {
             document.getElementById('email').focus();
-        } else {
+        }
+        else {
             document.getElementById('password').focus();
         }
     }
 
     $(onReady);
-
 })(jQuery);

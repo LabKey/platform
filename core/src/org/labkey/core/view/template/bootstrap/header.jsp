@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
 <%@ page import="org.labkey.api.view.HtmlView" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -159,6 +160,12 @@
             </li>
 <% } %>
 <% if (!isRealUser && pageConfig.shouldIncludeLoginLink()) { %>
+            <%
+                final String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(getActionURL());
+                if (null != authLogoHtml) {
+            %>
+            <%= authLogoHtml /* TODO: currently expected to generate <li> tags, could expose set of links instead  */ %>
+            <%  } %>
             <li>
                 <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">
                     <span>Sign In</span>
