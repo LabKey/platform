@@ -30,6 +30,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.ChartHelper;
@@ -64,6 +65,7 @@ import static org.labkey.test.util.PasswordUtil.getUsername;
 @Category({Specimen.class, DailyC.class})
 public class StudyTest extends StudyBaseTest
 {
+    {setIsBootstrapWhitelisted(true);}
     protected String datasetLink = datasetCount + " datasets";
     protected static final String DEMOGRAPHICS_DESCRIPTION = "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     protected static final String DEMOGRAPHICS_TITLE = "DEM-1: Demographics";
@@ -228,7 +230,7 @@ public class StudyTest extends StudyBaseTest
         Locator filterSearchText = Locator.xpath("//input[@name='filterSearch']");
         setFormElement(filterSearchText, "a");
         setFormElement(filterSearchText, "abbrev");
-        setFormElement(Locator.xpath("//input[@type='text']"), "abbrevi");
+        setFormElement(filterSearchText, "abbrevi");
         fireEvent(filterSearchText, SeleniumEvent.change);
         sleep(1000);
 
@@ -344,7 +346,9 @@ public class StudyTest extends StudyBaseTest
             assertTextPresent("Dataset: DEM-1: Demographics");
             clickAndWait(Locator.linkContainingText("Dataset:"));
 
-            _extHelper.clickMenuButton(false, "Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
+            BootstrapMenu.find(getDriver(),"Groups")
+                    .clickSubMenu(false,
+                            "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
             _extHelper.waitForExtDialog("Selection Error");
             assertTextPresent("At least one " + SUBJECT_NOUN + " must be selected");
             clickButtonContainingText("OK", 0);
@@ -358,7 +362,8 @@ public class StudyTest extends StudyBaseTest
 
         // verify the selected list of identifiers is passed to the participant group wizard
         String[] selectedIDs = new String[]{"999320016","999320518","999320529","999320541","999320533"};
-        _extHelper.clickMenuButton(false, "Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
+        BootstrapMenu.find(getDriver(), "Groups")
+                .clickSubMenu(false, "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
         _extHelper.waitForExtDialog("Define " + SUBJECT_NOUN + " Group");
         verifySubjectIDsInWizard(selectedIDs);
 
@@ -368,7 +373,7 @@ public class StudyTest extends StudyBaseTest
 
         if(!isQuickTest())
         {
-            _extHelper.clickMenuButton("Groups", "Participant Group from Grid");
+            BootstrapMenu.find(getDriver(), "Groups").clickSubMenu(true, "Participant Group from Grid");
             waitForElement(Locator.paginationText(selectedIDs.length));
             assertTextPresent(selectedIDs);
         }
@@ -648,7 +653,7 @@ public class StudyTest extends StudyBaseTest
             clickAndWait(Locator.linkWithText("verifyAssay"));
             assertTextPresent("QC State");
             assertTextNotPresent("1234_B");
-            _extHelper.clickMenuButton("QC State", "All data");
+            BootstrapMenu.find(getDriver(), "QC State").clickSubMenu( true,"All data");
             clickButton("QC State", 0);
             assertTextPresent("unknown QC", "1234_B");
 
@@ -664,7 +669,7 @@ public class StudyTest extends StudyBaseTest
             {
                 // Verify current state
                 clickAndWait(Locator.linkWithText("verifyAssay"));
-                _extHelper.clickMenuButton("QC State", "All data");
+                BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
                 _customizeViewsHelper.openCustomizeViewPanel();
                 _customizeViewsHelper.addColumn("QCState", "QC State");
                 _customizeViewsHelper.addSort("SampleId", SortDirection.ASC);
@@ -677,7 +682,7 @@ public class StudyTest extends StudyBaseTest
 
                 // Update the first row
                 String newText = "more new text";
-                clickAndWait(Locator.linkWithText("edit").index(0));
+                clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
                 setFormElement(Locator.input("quf_TextField"), newText);
                 clickButton("Submit");
                 List<String> updatedTextField = Arrays.asList(newText, textField.get(0));
@@ -702,12 +707,12 @@ public class StudyTest extends StudyBaseTest
             _customizeViewsHelper.openCustomizeViewPanel();
             _customizeViewsHelper.addCustomizeViewColumn("Bad Name", "Bad Name");
             _customizeViewsHelper.applyCustomView();
-            _extHelper.clickMenuButton("QC State", "All data");
-            clickAndWait(Locator.linkWithText("edit").index(0));
+            BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
+            clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
             setFormElement(Locator.input("quf_Bad Name"), "Updatable Value");
             clickButton("Submit");
             assertTextPresent("Updatable Value");
-            clickAndWait(Locator.linkWithText("edit").index(0));
+            clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
             assertFormElementEquals(Locator.input("quf_Bad Name"), "Updatable Value");
             setFormElement(Locator.input("quf_Bad Name"), "Updatable Value11");
             clickButton("Submit");
@@ -753,8 +758,10 @@ public class StudyTest extends StudyBaseTest
 
 
         log("verify presence of \"create new request\" button");
-        clickButton("Request Options", 0);
-        assertElementPresent(Locator.tagWithText("span", "Create New Request"));
+        BootstrapMenu menu = BootstrapMenu.find(getDriver(),"Request Options");
+        menu.expand();
+        assertTrue("expect 'Create New Request' menu item to be present",
+                menu.findVisibleMenuItems().stream().anyMatch((a)-> a.getText().equalsIgnoreCase("Create New Request")));
     }
 
     protected void verifyParticipantComments()
@@ -830,7 +837,7 @@ public class StudyTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("Blood (Whole)"));
         clickButton("Enable Comments/QC");
         log("manage participant comments directly");
-        _extHelper.clickMenuButton("Comments and QC", "Manage Mouse Comments");
+        BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true,"Manage Mouse Comments");
 
         int datasetAuditEventCount = getDatasetAuditEventCount(); //inserting a new event should increase this by 1;
         DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        setFormElement(Locator.name("quf_MouseId"), "999320812");
@@ -852,22 +859,22 @@ public class StudyTest extends StudyBaseTest
         specimenDetail.setFilter("GlobalUniqueId", "Equals", "AAA07XK5-01");
         checkCheckbox(Locator.name(".toggle"));
         clickButton("Enable Comments/QC");
-        _extHelper.clickMenuButton("Comments and QC", "Set Vial Comment or QC State for Selected");
+        BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
         setFormElement(Locator.name("comments"), "Vial Comment");
         clickButton("Save Changes");
 
         checkCheckbox(Locator.name(".toggle"));
-        _extHelper.clickMenuButton("Comments and QC", "Set Vial Comment or QC State for Selected");
-        _extHelper.clickMenuButton("Copy or Move Comment(s)", "Copy", "To Mouse", "999320812");
+        BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
+        BootstrapMenu.find(getDriver(),"Copy or Move Comment(s)").clickSubMenu(true, "Copy", "To Mouse", "999320812");
         setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Copied PTID Comment");
         clickButton("Submit");
         assertTextPresent("Copied PTID Comment");
 
         checkCheckbox(Locator.name(".toggle"));
-        _extHelper.clickMenuButton("Comments and QC", "Set Vial Comment or QC State for Selected");
+        BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
         doAndWaitForPageToLoad(() ->
         {
-            _extHelper.clickMenuButton(false, "Copy or Move Comment(s)", "Move", "To Mouse", "999320812");
+            BootstrapMenu.find(getDriver(), "Copy or Move Comment(s)").clickSubMenu(false, "Move", "To Mouse", "999320812");
             acceptAlert();
         });
         setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Moved PTID Comment");
@@ -937,7 +944,6 @@ public class StudyTest extends StudyBaseTest
         DataRegionTable drt = new DataRegionTable("Dataset", this);
         DataRegionExportHelper exportHelper = new DataRegionExportHelper(drt);
         exportHelper.exportText();
-        scrollIntoView(Locators.ADMIN_MENU);
         goToAdminConsole().clickAuditLog();
         doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("view"), "Query export events"));
 
@@ -950,7 +956,7 @@ public class StudyTest extends StudyBaseTest
             log("Checking column: "+ columnAndValue[0]);
             assertEquals(columnAndValue[1], auditTable.getDataAsText(0, columnAndValue[0]).replace(": Demographics",""));
         }
-        clickAndWait(Locator.linkContainingText("details"));
+        auditTable.clickRowDetails(0);
 
         popLocation();
     }
@@ -971,7 +977,7 @@ public class StudyTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("Manage Visits"));
 
         // test optional/required/not associated
-        clickAndWait(Locator.linkWithText("edit").index(1));
+        clickAndWait(Locator.tagWithAttribute("a", "data-original-title", "edit").index(1));
         selectOption("datasetStatus", 0, "NOT_ASSOCIATED");
         selectOption("datasetStatus", 1, "NOT_ASSOCIATED");
         selectOption("datasetStatus", 2, "NOT_ASSOCIATED");
@@ -982,7 +988,7 @@ public class StudyTest extends StudyBaseTest
         selectOption("datasetStatus", 7, "REQUIRED");
         selectOption("datasetStatus", 8, "REQUIRED");
         clickButton("Save");
-        clickAndWait(Locator.linkWithText("edit").index(1));
+        clickAndWait(Locator.tagWithAttribute("a", "data-original-title", "edit").index(1));
         selectOption("datasetStatus", 0, "NOT_ASSOCIATED");
         selectOption("datasetStatus", 1, "OPTIONAL");
         selectOption("datasetStatus", 2, "REQUIRED");
@@ -993,7 +999,7 @@ public class StudyTest extends StudyBaseTest
         selectOption("datasetStatus", 7, "OPTIONAL");
         selectOption("datasetStatus", 8, "REQUIRED");
         clickButton("Save");
-        clickAndWait(Locator.linkWithText("edit").index(1));
+        clickAndWait(Locator.tagWithAttribute("a", "data-original-title", "edit").index(1));
         assertSelectOption("datasetStatus", 0, "NOT_ASSOCIATED");
         assertSelectOption("datasetStatus", 1, "OPTIONAL");
         assertSelectOption("datasetStatus", 2, "REQUIRED");
@@ -1187,10 +1193,10 @@ public class StudyTest extends StudyBaseTest
         clickButton("View Data");
 
         // Edit 1 item changing sequence from 101; then edit again and change back and set VisitDay to something
-        clickAndWait(Locator.linkWithText("edit").index(0));
+        clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
         setFormElement(Locator.input("quf_SequenceNum"), "100");
         clickButton("Submit");
-        clickAndWait(Locator.linkWithText("edit").index(0));
+        clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));
         setFormElement(Locator.input("quf_SequenceNum"), "101");
         setFormElement(Locator.input("quf_VisitDay"), "102");
         clickButton("Submit");
