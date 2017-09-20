@@ -84,7 +84,7 @@
 %>
 <nav class="labkey-page-nav">
     <div class="container">
-        <div class="navbar-header">
+        <div id="nav_dropdowns" class="navbar-header">
             <ul class="nav">
                 <li id="project-mobile" class="dropdown" style="display: none;">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -171,8 +171,8 @@
 %>
             </ul>
         </div>
-        <div class="lk-nav-tabs-ct">
-            <ul class="nav lk-nav-tabs hidden-sm hidden-xs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>">
+        <div id="nav_tabs" class="lk-nav-tabs-ct">
+            <ul class="nav lk-nav-tabs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>">
                 <%
                     if (tabs.size() > 1 || isPageAdminMode)
                     {
@@ -218,7 +218,7 @@
                     }
                 %>
             </ul>
-            <ul class="nav lk-nav-tabs hidden-md hidden-lg pull-right">
+            <ul class="nav lk-nav-tabs pull-right">
                 <%
                     // Generate selected tab
                     if (tabs.size() > 1 || isPageAdminMode)
@@ -282,5 +282,43 @@
             }
         %>
     });
+    +function($) {
+        "use strict";
+        var container = $('.labkey-page-nav');
+        var rightSide = $('#nav_dropdowns');
+        var leftTabs_Separate = $('#nav_tabs > .nav.lk-nav-tabs').first();
+        var leftTabs_Collapsed = $('#nav_tabs > .nav.lk-nav-tabs').eq(1);
+
+        var leftTabs_SeparateWidth;
+        var rightSideWidth;
+
+        var toggleNavTabs = function() {
+            // The 40 here is the padding is because there is 20px of padding to each side of navbar.
+            if (leftTabs_SeparateWidth + rightSideWidth + 40 > container[0].offsetWidth) {
+                leftTabs_Separate.hide();
+                leftTabs_Collapsed.show();
+            }
+            else {
+                leftTabs_Separate.show();
+                leftTabs_Collapsed.hide();
+            }
+        };
+
+        var resizeTimer;
+
+        //The timeout set up here is to throttle because the resize event fires continuously while
+        // actively resizing.
+        $(window).on('resize', function(){
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(toggleNavTabs, 100);
+        });
+
+        $(window).ready(function() {
+            // This 15 is due to padding assigned to on the ".labkey-page-nav .lk-nav-tabs-ct" class.
+            leftTabs_SeparateWidth = leftTabs_Separate[0].offsetWidth + 15;
+            rightSideWidth = rightSide[0].offsetWidth;
+            toggleNavTabs();
+        });
+    }(jQuery)
 </script>
 <% } %>
