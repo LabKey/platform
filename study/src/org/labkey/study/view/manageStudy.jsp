@@ -78,6 +78,10 @@
     .lk-study-prop-desc {
         width: 450px;
     }
+
+    .publish-radio-option .x-column {
+        padding-left: 1px;
+    }
 </style>
 
 <%
