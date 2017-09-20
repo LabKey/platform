@@ -131,7 +131,7 @@ Ext.onReady(function(){
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'container', layout: 'hbox', items:[
-            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove PHI Protected Columns At Or Above:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions'},
+            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Exclude Columns At This PHI Level And Higher:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions'},
             {xtype: 'combo', triggerAction: 'all', mode: 'local', name: 'exportPhiLevel', itemId: 'exportPhiLevelCombo', allowBlank: false, displayField: 'name', valueField: 'value', value: 'Limited', editable: false, validateOnBlur: false, width: 100,
                 store: new Ext.data.ArrayStore({
                     fields: ['value', 'name'],
