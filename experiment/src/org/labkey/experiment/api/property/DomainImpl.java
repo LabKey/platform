@@ -476,13 +476,13 @@ public class DomainImpl implements Domain
                         }
                     }
 
-                    if (impl.getSortOrder() != null)
+                    if (impl.getSortOrder() != null && impl.getSortOrder() != -1)
                     {
-                        impl.save(user, _dd, impl.getSortOrder());      // Always save to preserve order
+                        impl.save(user, _dd, impl.getSortOrder());  // Manually set order
                     }
                     else
                     {
-                        impl.save(user, _dd, sortOrder++);
+                        impl.save(user, _dd, sortOrder++);  // Automatically preserve order
                     }
                 }
             }

@@ -5842,8 +5842,12 @@ public class ExperimentServiceImpl implements ExperimentService
         prop.setLookupSchema((String)obj.get("lookupSchema"));
         prop.setLookupQuery((String)obj.get("lookupQuery"));
         prop.setImportAliases((String)obj.get("importAliases"));
-        prop.setSortOrder((Integer)obj.get("sortOrder"));
         prop.setURL((String)obj.get("url"));
+
+        Integer sortOrder = (Integer)obj.get("sortOrder");
+        if (sortOrder != null)
+            prop.setSortOrder(sortOrder.intValue());
+
         if (obj.has("scale"))
             prop.setScale((Integer)obj.get("scale"));
 

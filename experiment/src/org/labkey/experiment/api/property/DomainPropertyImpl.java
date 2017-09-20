@@ -78,8 +78,7 @@ public class DomainPropertyImpl implements DomainProperty
         _domain = type;
         _pd = pd.clone();
         _formats = formats;
-        if (pd.getSortOrder() != null)
-            _sortOrder = pd.getSortOrder();
+        _sortOrder = pd.getSortOrder();
     }
 
     public int getPropertyId()
