@@ -65,6 +65,7 @@ public class DomainPropertyImpl implements DomainProperty
     boolean _schemaImport;
     List<PropertyValidatorImpl> _validators;
     List<ConditionalFormat> _formats;
+    Integer _sortOrder;
 
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
@@ -77,6 +78,8 @@ public class DomainPropertyImpl implements DomainProperty
         _domain = type;
         _pd = pd.clone();
         _formats = formats;
+        if (pd.getSortOrder() != null)
+            _sortOrder = pd.getSortOrder();
     }
 
     public int getPropertyId()
@@ -152,6 +155,16 @@ public class DomainPropertyImpl implements DomainProperty
     public boolean isShownInUpdateView()
     {
         return _pd.isShownInUpdateView();
+    }
+
+    public Integer getSortOrder()
+    {
+        return _sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder)
+    {
+        this._sortOrder = sortOrder;
     }
 
     @Override
