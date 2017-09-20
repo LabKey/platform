@@ -254,6 +254,7 @@ public class DomainUtil
         StringExpression url = prop.getPropertyDescriptor().getURL();
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
+        gwtProp.setSortOrder(prop.getSortOrder());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())

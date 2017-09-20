@@ -2156,7 +2156,7 @@ public class OntologyManager
             return result;
         }
 
-        SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
+        SQLFragment sql = new SQLFragment(" SELECT PDM.SortOrder, PD.*,Required " +
                 " FROM " + getTinfoPropertyDescriptor() + " PD " +
                 "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
                 "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
