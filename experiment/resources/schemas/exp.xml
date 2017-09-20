@@ -425,6 +425,7 @@
       <column columnName="Modified"/>
       <column columnName="ModifiedBy"/>
       <column columnName="Scale"/>
+      <column columnName="RedactedText"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">
