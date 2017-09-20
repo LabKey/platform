@@ -76,7 +76,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
-    private IntegerProperty sortOrder = new IntegerProperty(0);
+    private IntegerProperty sortOrder = new IntegerProperty(-1);  // -1 will cause the default sorting behavior
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -135,7 +135,9 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDisableEditing(s.getDisableEditing());
         setScale(s.getScale());
         setRedactedText(s.getRedactedText());
-        setSortOrder(s.getSortOrder());
+
+        if (s.getSortOrder() != null)
+            setSortOrder(s.getSortOrder());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -399,7 +401,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         return sortOrder.getInteger();
     }
 
-    public void setSortOrder(Integer sortOrder)
+    public void setSortOrder(int sortOrder)
     {
         this.sortOrder.setInt(sortOrder);
     }
