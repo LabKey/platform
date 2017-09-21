@@ -199,8 +199,7 @@ public class ProgressReportTest extends ReportTest
 
     private void createProgressReport(String reportName)
     {
-        goToManageViews();
-        clickAddReport("Assay Progress Report");
+        goToManageViews().clickAddReport("Assay Progress Report");
 
         ProgressReportConfigPage config = new ProgressReportConfigPage(getDriver());
         config.setReportName(reportName);
@@ -257,13 +256,6 @@ public class ProgressReportTest extends ReportTest
         clickAndWait(Locator.linkWithText("Create and Edit Source"));
         setCodeEditorValue("queryText", sql);
         clickButton("Save & Finish");
-    }
-
-    protected void clickAddReport(String reportName)
-    {
-        new BootstrapMenu(getDriver(), Locator.tagWithClassContaining("div","lk-menu-drop")
-                .withDescendant(Locator.id("PopupText").withText("Add Report")).waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT))
-                .clickMenuButton(true, false, reportName);
     }
 
     public static class Locators
