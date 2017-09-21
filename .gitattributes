@@ -327,7 +327,11 @@ core/resources/styles/scss/lib/ext4/_all.scss -text
 core/resources/styles/scss/lib/ext4/_ext4.scss -text
 core/resources/styles/scss/lib/ext4/_overrides.scss -text
 core/resources/styles/scss/lib/ext4/_variables.scss -text
+core/resources/themes/harvest/_variables.scss -text
+core/resources/themes/leaf/_variables.scss -text
 core/resources/themes/madison/_variables.scss -text
+core/resources/themes/mono/_variables.scss -text
+core/resources/themes/ocean/_variables.scss -text
 core/resources/themes/overcast/_variables.scss -text
 core/resources/themes/seattle/_variables.scss -text
 core/resources/views/ModulePropertyAdmin.html -text

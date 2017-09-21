@@ -1,0 +1,163 @@
+//== Paths
+//
+
+//== Colors
+//
+$Leaf-header: #789e47;
+$Leaf-accent: #597530;
+$Leaf-page-bkgd: #f7f7f7;
+$Leaf-gray-blue: #dadfe1;
+$Leaf-gray-darker: #646569;
+$Leaf-gray-darkest: #282728;
+$Leaf-body-font: #494949;
+$Leaf-anchor-color: #0479a8;
+$Leaf-gray-footer-text: #adadad;
+$Leaf-gray-footer-text-hover: #f9f9f9;
+$Leaf-white: #FFFFFF;
+
+$lk-text-color: $Leaf-body-font;
+
+//== Forms / States
+//
+$lk-state-warning-text: $Leaf-body-font;
+$lk-state-warning-bg: $Leaf-gray-blue;
+$lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
+
+//== Body
+//
+$lk-body-bg-color: $Leaf-page-bkgd;
+$lk-brand-primary: $Leaf-header;
+
+//== Buttons
+//
+$lk-button-bg-color: $Leaf-white;
+$lk-button-bg-color-hover: $Leaf-accent;
+$lk-button-border-color: $Leaf-accent;
+$lk-button-border-color-hover: $Leaf-accent;
+$lk-button-border-size: 2px;
+
+$lk-button-color: $Leaf-accent;
+$lk-button-color-hover: $Leaf-page-bkgd;
+
+$lk-button-primary-bg-color: $Leaf-accent;
+$lk-button-primary-bg-color-hover: $Leaf-accent;
+$lk-button-primary-color: $Leaf-page-bkgd;
+$lk-button-primary-color-hover: $Leaf-page-bkgd;
+$lk-button-primary-border-size: 2px;
+$lk-button-primary-border-color: $Leaf-page-bkgd;
+$lk-button-primary-border-color-hover: $Leaf-gray-blue;
+
+$lk-bar-button-color: $Leaf-anchor-color;
+$lk-bar-button-color-hover: $Leaf-gray-darkest;
+$lk-bar-button-border-color-hover: $Leaf-gray-blue;
+
+//== Dropdowns
+//
+$lk-dropdown-bg-color: $Leaf-page-bkgd;
+$lk-dropdown-link-hover-color: $Leaf-page-bkgd;
+$lk-dropdown-link-hover-bg: $Leaf-accent;
+
+//== Grids
+//
+$lk-grid-row-bg-color: $Leaf-page-bkgd;
+$lk-grid-row-alt-bg-color: $Leaf-gray-blue;
+$lk-grid-row-color-hover: $Leaf-gray-footer-text;
+$lk-grid-row-select-color: $Leaf-anchor-color;
+$lk-grid-row-select-color-hover: $Leaf-gray-footer-text;
+$lk-grid-row-select-text-color: $Leaf-page-bkgd;
+$lk-grid-row-select-link-color: $Leaf-gray-blue;
+
+$lk-grid-filter-border-color: $Leaf-accent;
+$lk-grid-sort-icon-color: $Leaf-page-bkgd;
+
+//== Header
+//
+$lk-page-header-bg-color: $Leaf-header;
+$lk-page-header-text-color: $Leaf-page-bkgd;
+$lk-page-header-icon-color: $Leaf-page-bkgd;
+$lk-page-header-font-hover-color: $Leaf-gray-blue;
+$lk-page-header-icon-hover-color: $Leaf-gray-blue;
+
+//== Links
+//
+$lk-link-color: $Leaf-anchor-color;
+$lk-text-link-color: $Leaf-accent;
+$lk-text-link-color-hover: $Leaf-gray-darkest;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $Leaf-accent;
+$lk-page-nav-text-color: $Leaf-page-bkgd;
+$lk-page-nav-active-bg-color: $Leaf-page-bkgd;
+$lk-page-nav-active-text-color: $Leaf-accent;
+$lk-page-nav-dropdown-item-bg-color: $Leaf-page-bkgd;
+$lk-page-nav-dropdown-item-text-color: $Leaf-accent;
+$lk-page-nav-dropdown-highlight-item-bg-color: $Leaf-accent;
+$lk-page-nav-dropdown-highlight-item-text-color: $Leaf-page-bkgd;
+$lk-page-nav-dropdown-icon-color: $Leaf-accent;
+$lk-page-nav-secondary-tab-bg-color: $Leaf-gray-blue;
+$lk-page-nav-secondary-tab-text-color: $Leaf-accent;
+$lk-page-nav-primary-tab-bg-color: $Leaf-page-bkgd;
+$lk-page-nav-primary-tab-text-color: $Leaf-accent;
+
+//== Panels
+//
+$lk-panel-bg-color: $Leaf-white;
+$lk-panel-default-text: $Leaf-accent;
+$lk-panel-default-border: $Leaf-gray-darker;
+
+//== Portals
+//
+$lk-webpart-accent-color: $Leaf-header;
+$lk-webpart-title-hover-color: $Leaf-anchor-color;
+
+//== Tabs (Bootstrap tabs (Export data set dropdown))
+//
+$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-secondary-text-color: $Leaf-anchor-color;
+
+//== Tool Icons
+//
+$lk-tool-icon-color: $Leaf-accent;
+
+//== Tooltips
+//
+$lk-tooltip-bg-color: $Leaf-gray-darkest;
+$lk-tooltip-text-color: $Leaf-page-bkgd;
+$lk-tooltip-opacity: 1;
+
+// TODO: Merge Ext specific styles with those above.
+//== Ext4
+//== Ext4 - Buttons
+//
+$lk-x4-button-default-base-color-disabled: $Leaf-header;
+$lk-x4-btn-group-inner-border-base-color: $Leaf-header;
+
+//== Ext4 - Forms
+//
+$lk-x4-form-field-focus-border-base-color: $Leaf-header;
+
+//== Ext4- Grids
+//
+$lk-x4-grid-row-cell-selected-border-base-color: $Leaf-header;
+
+//== Ext4 - Layout
+//
+$lk-x4-accordion-header-background-color: $Leaf-page-bkgd;
+$lk-x4-border-layout-ct-background-base-color: $Leaf-header;
+
+//== Ext4 - Panel
+//
+$lk-x4-panel-header-background-color: $Leaf-header;
+$lk-x4-panel-header-background-gradient-base-color: $Leaf-header;
+$lk-x4-panel-header-inner-border-base-color: $Leaf-header;
+$lk-x4-panel-frame-base-color: $Leaf-header;
+
+//== Ext4 - Toolbars
+//
+$lk-x4-toolbar-separator-base-color: $Leaf-header;
+
+//== Ext4 - Windows
+//
+$lk-x4-window-background-color: $Leaf-header;
+$lk-x4-window-base-color: $Leaf-header;

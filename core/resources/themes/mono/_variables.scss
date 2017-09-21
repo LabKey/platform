@@ -1,0 +1,163 @@
+//== Paths
+//
+
+//== Colors
+//
+$Mono-header: #7f7f7f;
+$Mono-accent: #4c4c4c;
+$Mono-page-bkgd: #f7f7f7;
+$Mono-gray-blue: #dadfe1;
+$Mono-gray-darker: #646569;
+$Mono-gray-darkest: #282728;
+$Mono-body-font: #494949;
+$Mono-anchor-color: #0479a8;
+$Mono-gray-footer-text: #adadad;
+$Mono-gray-footer-text-hover: #f9f9f9;
+$Mono-white: #FFFFFF;
+
+$lk-text-color: $Mono-body-font;
+
+//== Forms / States
+//
+$lk-state-warning-text: $Mono-body-font;
+$lk-state-warning-bg: $Mono-gray-blue;
+$lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
+
+//== Body
+//
+$lk-body-bg-color: $Mono-page-bkgd;
+$lk-brand-primary: $Mono-header;
+
+//== Buttons
+//
+$lk-button-bg-color: $Mono-white;
+$lk-button-bg-color-hover: $Mono-header;
+$lk-button-border-color: $Mono-header;
+$lk-button-border-color-hover: $Mono-header;
+$lk-button-border-size: 2px;
+
+$lk-button-color: $Mono-header;
+$lk-button-color-hover: $Mono-page-bkgd;
+
+$lk-button-primary-bg-color: $Mono-header;
+$lk-button-primary-bg-color-hover: $Mono-header;
+$lk-button-primary-color: $Mono-page-bkgd;
+$lk-button-primary-color-hover: $Mono-page-bkgd;
+$lk-button-primary-border-size: 2px;
+$lk-button-primary-border-color: $Mono-page-bkgd;
+$lk-button-primary-border-color-hover: $Mono-gray-blue;
+
+$lk-bar-button-color: $Mono-anchor-color;
+$lk-bar-button-color-hover: $Mono-gray-darkest;
+$lk-bar-button-border-color-hover: $Mono-gray-blue;
+
+//== Dropdowns
+//
+$lk-dropdown-bg-color: $Mono-page-bkgd;
+$lk-dropdown-link-hover-color: $Mono-page-bkgd;
+$lk-dropdown-link-hover-bg: $Mono-accent;
+
+//== Grids
+//
+$lk-grid-row-bg-color: $Mono-page-bkgd;
+$lk-grid-row-alt-bg-color: $Mono-gray-blue;
+$lk-grid-row-color-hover: $Mono-gray-footer-text;
+$lk-grid-row-select-color: $Mono-anchor-color;
+$lk-grid-row-select-color-hover: $Mono-gray-footer-text;
+$lk-grid-row-select-text-color: $Mono-page-bkgd;
+$lk-grid-row-select-link-color: $Mono-gray-blue;
+
+$lk-grid-filter-border-color: $Mono-accent;
+$lk-grid-sort-icon-color: $Mono-page-bkgd;
+
+//== Header
+//
+$lk-page-header-bg-color: $Mono-header;
+$lk-page-header-text-color: $Mono-page-bkgd;
+$lk-page-header-icon-color: $Mono-page-bkgd;
+$lk-page-header-font-hover-color: $Mono-gray-blue;
+$lk-page-header-icon-hover-color: $Mono-gray-blue;
+
+//== Links
+//
+$lk-link-color: $Mono-anchor-color;
+$lk-text-link-color: $Mono-accent;
+$lk-text-link-color-hover: $Mono-gray-darkest;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $Mono-accent;
+$lk-page-nav-text-color: $Mono-page-bkgd;
+$lk-page-nav-active-bg-color: $Mono-page-bkgd;
+$lk-page-nav-active-text-color: $Mono-accent;
+$lk-page-nav-dropdown-item-bg-color: $Mono-page-bkgd;
+$lk-page-nav-dropdown-item-text-color: $Mono-accent;
+$lk-page-nav-dropdown-highlight-item-bg-color: $Mono-accent;
+$lk-page-nav-dropdown-highlight-item-text-color: $Mono-page-bkgd;
+$lk-page-nav-dropdown-icon-color: $Mono-accent;
+$lk-page-nav-secondary-tab-bg-color: $Mono-gray-blue;
+$lk-page-nav-secondary-tab-text-color: $Mono-accent;
+$lk-page-nav-primary-tab-bg-color: $Mono-page-bkgd;
+$lk-page-nav-primary-tab-text-color: $Mono-accent;
+
+//== Panels
+//
+$lk-panel-bg-color: $Mono-white;
+$lk-panel-default-text: $Mono-accent;
+$lk-panel-default-border: $Mono-gray-darker;
+
+//== Portals
+//
+$lk-webpart-accent-color: $Mono-header;
+$lk-webpart-title-hover-color: $Mono-anchor-color;
+
+//== Tabs (Bootstrap tabs (Export data set dropdown))
+//
+$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-secondary-text-color: $Mono-anchor-color;
+
+//== Tool Icons
+//
+$lk-tool-icon-color: $Mono-accent;
+
+//== Tooltips
+//
+$lk-tooltip-bg-color: $Mono-gray-darkest;
+$lk-tooltip-text-color: $Mono-page-bkgd;
+$lk-tooltip-opacity: 1;
+
+// TODO: Merge Ext specific styles with those above.
+//== Ext4
+//== Ext4 - Buttons
+//
+$lk-x4-button-default-base-color-disabled: $Mono-header;
+$lk-x4-btn-group-inner-border-base-color: $Mono-header;
+
+//== Ext4 - Forms
+//
+$lk-x4-form-field-focus-border-base-color: $Mono-header;
+
+//== Ext4- Grids
+//
+$lk-x4-grid-row-cell-selected-border-base-color: $Mono-header;
+
+//== Ext4 - Layout
+//
+$lk-x4-accordion-header-background-color: $Mono-page-bkgd;
+$lk-x4-border-layout-ct-background-base-color: $Mono-header;
+
+//== Ext4 - Panel
+//
+$lk-x4-panel-header-background-color: $Mono-header;
+$lk-x4-panel-header-background-gradient-base-color: $Mono-header;
+$lk-x4-panel-header-inner-border-base-color: $Mono-header;
+$lk-x4-panel-frame-base-color: $Mono-header;
+
+//== Ext4 - Toolbars
+//
+$lk-x4-toolbar-separator-base-color: $Mono-header;
+
+//== Ext4 - Windows
+//
+$lk-x4-window-background-color: $Mono-header;
+$lk-x4-window-base-color: $Mono-header;

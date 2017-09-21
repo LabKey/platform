@@ -1,0 +1,163 @@
+//== Paths
+//
+
+//== Colors
+//
+$Harvest-header: #f7862a;
+$Harvest-accent: #e86130;
+$Harvest-page-bkgd: #f7f7f7;
+$Harvest-gray-blue: #dadfe1;
+$Harvest-gray-darker: #646569;
+$Harvest-gray-darkest: #282728;
+$Harvest-body-font: #494949;
+$Harvest-anchor-color: #0479a8;
+$Harvest-gray-footer-text: #adadad;
+$Harvest-gray-footer-text-hover: #f9f9f9;
+$Harvest-white: #FFFFFF;
+
+$lk-text-color: $Harvest-body-font;
+
+//== Forms / States
+//
+$lk-state-warning-text: $Harvest-body-font;
+$lk-state-warning-bg: $Harvest-gray-blue;
+$lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
+
+//== Body
+//
+$lk-body-bg-color: $Harvest-page-bkgd;
+$lk-brand-primary: $Harvest-header;
+
+//== Buttons
+//
+$lk-button-bg-color: $Harvest-white;
+$lk-button-bg-color-hover: $Harvest-header;
+$lk-button-border-color: $Harvest-header;
+$lk-button-border-color-hover: $Harvest-header;
+$lk-button-border-size: 2px;
+
+$lk-button-color: $Harvest-header;
+$lk-button-color-hover: $Harvest-page-bkgd;
+
+$lk-button-primary-bg-color: $Harvest-header;
+$lk-button-primary-bg-color-hover: $Harvest-header;
+$lk-button-primary-color: $Harvest-page-bkgd;
+$lk-button-primary-color-hover: $Harvest-page-bkgd;
+$lk-button-primary-border-size: 2px;
+$lk-button-primary-border-color: $Harvest-page-bkgd;
+$lk-button-primary-border-color-hover: $Harvest-gray-blue;
+
+$lk-bar-button-color: $Harvest-anchor-color;
+$lk-bar-button-color-hover: $Harvest-gray-darkest;
+$lk-bar-button-border-color-hover: $Harvest-gray-blue;
+
+//== Dropdowns
+//
+$lk-dropdown-bg-color: $Harvest-page-bkgd;
+$lk-dropdown-link-hover-color: $Harvest-page-bkgd;
+$lk-dropdown-link-hover-bg: $Harvest-accent;
+
+//== Grids
+//
+$lk-grid-row-bg-color: $Harvest-page-bkgd;
+$lk-grid-row-alt-bg-color: $Harvest-gray-blue;
+$lk-grid-row-color-hover: $Harvest-gray-footer-text;
+$lk-grid-row-select-color: $Harvest-anchor-color;
+$lk-grid-row-select-color-hover: $Harvest-gray-footer-text;
+$lk-grid-row-select-text-color: $Harvest-page-bkgd;
+$lk-grid-row-select-link-color: $Harvest-gray-blue;
+
+$lk-grid-filter-border-color: $Harvest-accent;
+$lk-grid-sort-icon-color: $Harvest-page-bkgd;
+
+//== Header
+//
+$lk-page-header-bg-color: $Harvest-header;
+$lk-page-header-text-color: $Harvest-page-bkgd;
+$lk-page-header-icon-color: $Harvest-page-bkgd;
+$lk-page-header-font-hover-color: $Harvest-gray-blue;
+$lk-page-header-icon-hover-color: $Harvest-gray-blue;
+
+//== Links
+//
+$lk-link-color: $Harvest-anchor-color;
+$lk-text-link-color: $Harvest-accent;
+$lk-text-link-color-hover: $Harvest-gray-darkest;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $Harvest-accent;
+$lk-page-nav-text-color: $Harvest-page-bkgd;
+$lk-page-nav-active-bg-color: $Harvest-page-bkgd;
+$lk-page-nav-active-text-color: $Harvest-accent;
+$lk-page-nav-dropdown-item-bg-color: $Harvest-page-bkgd;
+$lk-page-nav-dropdown-item-text-color: $Harvest-accent;
+$lk-page-nav-dropdown-highlight-item-bg-color: $Harvest-accent;
+$lk-page-nav-dropdown-highlight-item-text-color: $Harvest-page-bkgd;
+$lk-page-nav-dropdown-icon-color: $Harvest-accent;
+$lk-page-nav-secondary-tab-bg-color: $Harvest-gray-blue;
+$lk-page-nav-secondary-tab-text-color: $Harvest-accent;
+$lk-page-nav-primary-tab-bg-color: $Harvest-page-bkgd;
+$lk-page-nav-primary-tab-text-color: $Harvest-accent;
+
+//== Panels
+//
+$lk-panel-bg-color: $Harvest-white;
+$lk-panel-default-text: $Harvest-accent;
+$lk-panel-default-border: $Harvest-gray-darker;
+
+//== Portals
+//
+$lk-webpart-accent-color: $Harvest-header;
+$lk-webpart-title-hover-color: $Harvest-anchor-color;
+
+//== Tabs (Bootstrap tabs (Export data set dropdown))
+//
+$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-secondary-text-color: $Harvest-anchor-color;
+
+//== Tool Icons
+//
+$lk-tool-icon-color: $Harvest-accent;
+
+//== Tooltips
+//
+$lk-tooltip-bg-color: $Harvest-gray-darkest;
+$lk-tooltip-text-color: $Harvest-page-bkgd;
+$lk-tooltip-opacity: 1;
+
+// TODO: Merge Ext specific styles with those above.
+//== Ext4
+//== Ext4 - Buttons
+//
+$lk-x4-button-default-base-color-disabled: $Harvest-header;
+$lk-x4-btn-group-inner-border-base-color: $Harvest-header;
+
+//== Ext4 - Forms
+//
+$lk-x4-form-field-focus-border-base-color: $Harvest-header;
+
+//== Ext4- Grids
+//
+$lk-x4-grid-row-cell-selected-border-base-color: $Harvest-header;
+
+//== Ext4 - Layout
+//
+$lk-x4-accordion-header-background-color: $Harvest-page-bkgd;
+$lk-x4-border-layout-ct-background-base-color: $Harvest-header;
+
+//== Ext4 - Panel
+//
+$lk-x4-panel-header-background-color: $Harvest-header;
+$lk-x4-panel-header-background-gradient-base-color: $Harvest-header;
+$lk-x4-panel-header-inner-border-base-color: $Harvest-header;
+$lk-x4-panel-frame-base-color: $Harvest-header;
+
+//== Ext4 - Toolbars
+//
+$lk-x4-toolbar-separator-base-color: $Harvest-header;
+
+//== Ext4 - Windows
+//
+$lk-x4-window-background-color: $Harvest-header;
+$lk-x4-window-base-color: $Harvest-header;
