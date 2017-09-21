@@ -562,3 +562,40 @@
                 e.stopPropagation();
             });
 }(jQuery);
+
++function($) {
+    'use strict';
+
+    var nav_menus;
+    var nav_tabs_separate;
+    var nav_tabs_collapsed;
+    var nav_container_widths = { menus: 0, tabs: 0 };
+
+    var toggleNavTabs = function() {
+        var nav_container = $('.labkey-page-nav > .container');
+
+        if (nav_container_widths.menus == 0 && nav_menus.length) {
+            nav_container_widths.menus = nav_menus.width();
+        }
+        if (nav_container_widths.tabs == 0 && nav_tabs_separate.length) {
+            nav_container_widths.tabs = nav_tabs_separate.width();
+        }
+
+        if (nav_container.length) {
+            var showCollapsed = nav_container.width() < (nav_container_widths.menus + nav_container_widths.tabs + 20);
+            showCollapsed && nav_tabs_separate ? nav_tabs_separate.hide() : nav_tabs_separate.show();
+            showCollapsed && nav_tabs_collapsed ? nav_tabs_collapsed.show() : nav_tabs_collapsed.hide();
+        }
+    };
+
+    $(window).on('resize', function(){
+        toggleNavTabs();
+    });
+
+    $(document).ready(function() {
+        nav_menus = $('#nav_dropdowns');
+        nav_tabs_collapsed = $('#nav_tabs > #lk-nav-tabs-collapsed');
+        nav_tabs_separate = $('#nav_tabs > #lk-nav-tabs-separate');
+        toggleNavTabs();
+    });
+}(jQuery);
