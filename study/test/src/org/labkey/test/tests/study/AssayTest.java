@@ -303,17 +303,14 @@ public class AssayTest extends AbstractAssayTest
         designerPage.addDataField("Flags", "Flags", FieldDefinition.ColumnType.Flag);
 
         // Set some to required
-        setRequired("Batch Fields", TEST_ASSAY_SET_PREDEFINED_PROP_COUNT);
-        setRequired("Batch Fields", TEST_ASSAY_SET_PREDEFINED_PROP_COUNT+1);
-        setRequired("Run Fields", 0);
-        setRequired("Data Fields", 0);
-        setRequired("Data Fields", TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2);
+        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().required.set(true);
+        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT+1).properties().selectValidatorsTab().required.set(true);
+        designerPage.runFields().selectField(0).properties().selectValidatorsTab().required.set(true);
+        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().required.set(true);
+        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().required.set(true);
 
         // import aliases
-        _listHelper.clickRow(getPropertyXPathContains("Data Fields"), TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3);
-        click(Locator.xpath(getPropertyXPathContains("Data Fields") + "//span[contains(@class,'x-tab-strip-text') and text()='Advanced']"));
-        waitForElement(Locator.xpath(getPropertyXPathContains("Data Fields") + "//input[@id='importAliases']"), WAIT_FOR_JAVASCRIPT);
-        setFormElement(Locator.xpath(getPropertyXPathContains("Data Fields") + "//input[@id='importAliases']"), TEST_ASSAY_DATA_ALIASED_PROP_NAME);
+        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().importAliasesInput.set(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
 
         designerPage.save();
     }
