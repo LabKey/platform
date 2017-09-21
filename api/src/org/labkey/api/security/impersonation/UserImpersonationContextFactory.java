@@ -87,7 +87,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
 
         // setAuthenticatedUser clears the session; caller will add the factory (including the admin's session attributes)
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);
-        SecurityManager.setAuthenticatedUser(request, impersonatedUser);
+        SecurityManager.setAuthenticatedUser(request, impersonatedUser, false);
         User adminUser = getAdminUser();
 
         UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
@@ -103,7 +103,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     @Override
     public void stopImpersonating(HttpServletRequest request)
     {
-        SessionHelper.clearSession(request);
+        SessionHelper.clearSession(request, false);
         restoreSessionAttributes(request.getSession(true));
 
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);
@@ -120,7 +120,6 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
             UserManager.UserAuditEvent event2 = new UserManager.UserAuditEvent(project.getId(),
                     adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail(), adminUser);
             AuditLogService.get().addEvent(adminUser, event2);
-
         }
     }
 

@@ -175,9 +175,9 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     }
 
 
-    public void clearSession(Set<String> attributesToPreserve)
+    public void clearSession(boolean invalidate, Set<String> attributesToPreserve)
     {
-        SessionHelper.clearSession((HttpServletRequest) getRequest(), attributesToPreserve);
+        SessionHelper.clearSession((HttpServletRequest) getRequest(), invalidate, attributesToPreserve);
         _session = null;
     }
 

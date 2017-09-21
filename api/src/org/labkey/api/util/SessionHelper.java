@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.LockManager;
@@ -98,27 +99,29 @@ public class SessionHelper
 
 
     /**
-     * Clears all session attributes.
+     * Clears all session attributes and optionally invalidates the session.
      *
      * @param request Current user request
+     * @param invalidate If true, invalidates the session. Otherwise, just clears all attributes.
      */
-    public static void clearSession(@NotNull HttpServletRequest request)
+    public static void clearSession(@NotNull HttpServletRequest request, boolean invalidate)
     {
-        clearSession(request, Collections.emptySet());
+        clearSession(request, invalidate, Collections.emptySet());
     }
 
 
     /**
-     * Clears all session attributes, except for those specified in attributesToPreserve.
+     * Clears all session attributes, except for those specified in attributesToPreserve. Optionally invalidates the session.
      *
      * @param request Current user request
+     * @param invalidate If true, invalidates the session. Otherwise, just clears all attributes.
      * @param attributesToPreserve Names of attributes to preserve in the session
      */
-    public static void clearSession(@NotNull HttpServletRequest request, @NotNull Set<String> attributesToPreserve)
+    public static void clearSession(@NotNull HttpServletRequest request, boolean invalidate, @NotNull Set<String> attributesToPreserve)
     {
         if (request instanceof AuthenticatedRequest)
         {
-            ((AuthenticatedRequest)request).clearSession(attributesToPreserve);
+            ((AuthenticatedRequest)request).clearSession(invalidate, attributesToPreserve);
         }
         else
         {
@@ -126,21 +129,31 @@ public class SessionHelper
 
             if (null != oldSession)
             {
-                if (attributesToPreserve.isEmpty())
-                {
-                    oldSession.invalidate();
-                }
-                else
+                if (invalidate)
                 {
                     Map<String, Object> map = new HashMap<>();
+
                     attributesToPreserve.forEach(name -> {
                         Object value = oldSession.getAttribute(name);
                         if (null != value)
                             map.put(name, value);
                     });
+
                     oldSession.invalidate();
+
                     HttpSession newSession = request.getSession(true);
                     map.forEach(newSession::setAttribute);
+                }
+                else
+                {
+                    synchronized (getSessionLock(oldSession))
+                    {
+                        // Clear all the attributes, skipping attributesToPreserve
+                        IteratorUtils.asIterator(oldSession.getAttributeNames()).forEachRemaining(name -> {
+                            if (!attributesToPreserve.contains(name))
+                                oldSession.removeAttribute(name);
+                        });
+                    }
                 }
             }
         }

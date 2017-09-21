@@ -1284,7 +1284,7 @@ public class AuthenticationManager
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
         // Prep the new session and set the user attribute
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser);
+        session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser, true);
 
         if (session.isNew() && !primaryAuthUser.isGuest())
         {

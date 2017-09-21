@@ -491,7 +491,7 @@ public class SecurityManager
             if (transformSessionId != null && TRANSFORM_SESSIONID_MAP.get(transformSessionId) != null)
             {
                 u = UserManager.getUser(TRANSFORM_SESSIONID_MAP.get(transformSessionId));
-                SecurityManager.setAuthenticatedUser(request, u);
+                SecurityManager.setAuthenticatedUser(request, u, true);
             }
         }
 
@@ -522,9 +522,9 @@ public class SecurityManager
     }
 
 
-    public static HttpSession setAuthenticatedUser(HttpServletRequest request, User user)
+    public static HttpSession setAuthenticatedUser(HttpServletRequest request, User user, boolean invalidate)
     {
-        SessionHelper.clearSession(request, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));      // Clear out preliminary auth state (guest / previous user session was cleared on login page)
+        SessionHelper.clearSession(request, invalidate, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
             ((AuthenticatedRequest)request).convertToLoggedInSession();
 
@@ -539,7 +539,7 @@ public class SecurityManager
     public static void logoutUser(HttpServletRequest request, User user)
     {
         AuthenticationManager.logout(user, request);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
-        SessionHelper.clearSession(request);
+        SessionHelper.clearSession(request, true);
     }
 
 
