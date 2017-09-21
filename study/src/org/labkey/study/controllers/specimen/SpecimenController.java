@@ -4060,7 +4060,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    public static class SpecimentEventAttachmentForm extends AttachmentForm
+    public static class SpecimenEventAttachmentForm extends AttachmentForm
     {
         private int _eventId;
 
@@ -4077,11 +4077,10 @@ public class SpecimenController extends BaseStudyController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends BaseDownloadAction<SpecimentEventAttachmentForm>
+    public class DownloadAction extends BaseDownloadAction<SpecimenEventAttachmentForm>
     {
-        @Nullable
         @Override
-        public Pair<AttachmentParent, String> getAttachment(SpecimentEventAttachmentForm form)
+        public @Nullable Pair<AttachmentParent, String> getAttachment(SpecimenEventAttachmentForm form)
         {
             SpecimenRequestEvent event = SpecimenManager.getInstance().getRequestEvent(getContainer(), form.getEventId());
             if (event == null)

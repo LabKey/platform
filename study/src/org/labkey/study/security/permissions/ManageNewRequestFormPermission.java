@@ -28,7 +28,7 @@ public class ManageNewRequestFormPermission extends AbstractPermission
     public ManageNewRequestFormPermission()
     {
         super("Manage New Request Form",
-                "Allows management of the form shown during a new speciment request",
+                "Allows management of the form shown during a new specimen request",
                 StudyModule.class);
     }
 }
