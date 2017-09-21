@@ -190,10 +190,14 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getDefaultScale();
     }
 
+    @Override
     public PHI getPHI()
     {
         return _pd.getPHI();
     }
+
+    @Override
+    public String getRedactedText() { return _pd.getRedactedText(); }
 
     @Override
     public boolean isExcludeFromShifting()
@@ -359,6 +363,14 @@ public class DomainPropertyImpl implements DomainProperty
         if (!isEdited() && getPHI() == phi)
             return;
         edit().setPHI(phi);
+    }
+
+    @Override
+    public void setRedactedText(String redactedText)
+    {
+        if (!isEdited() && getRedactedText() == redactedText)
+            return;
+        edit().setRedactedText(redactedText);
     }
 
     @Override
