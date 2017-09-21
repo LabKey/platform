@@ -16,9 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
 
 /**
  * User: adam
@@ -26,28 +24,34 @@ import org.labkey.api.attachments.AttachmentType;
  * Time: 9:05:32 PM
  */
 
-// TODO: Make abstract, remove deprecated constructor, remove getAttachmentType()
-public class AttachmentParentEntity extends Entity implements AttachmentParent
+// Convenience base class for Entities that need to be an AttachmentParent. This should remain an abstract class.
+public abstract class EntityAttachmentParent implements AttachmentParent
 {
-    @Deprecated
-    public AttachmentParentEntity()
+    private final String _containerId;
+    private final String _entityId;
+
+    // Don't use this constructor, unless absolutely necessary. Make sure permissions have been checked on both
+    // ContainerId and EntityId (that it's in the current container and represents the correct object type).
+    protected EntityAttachmentParent(String containerId, String entityId)
     {
+        _containerId = containerId;
+        _entityId = entityId;
     }
 
-    protected AttachmentParentEntity(Entity entity)
+    protected EntityAttachmentParent(Entity entity)
     {
         this(entity.getContainerId(), entity.getEntityId());
     }
 
-    protected AttachmentParentEntity(String containerId, String entityId)
+    @Override
+    public String getContainerId()
     {
-        setContainer(containerId);
-        setEntityId(entityId);
+        return _containerId;
     }
 
     @Override
-    public @NotNull AttachmentType getAttachmentType()
+    public String getEntityId()
     {
-        return AttachmentType.UNKNOWN;
+        return _entityId;
     }
 }
