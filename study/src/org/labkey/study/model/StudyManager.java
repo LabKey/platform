@@ -90,6 +90,8 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.IndexTask;
+import org.labkey.api.search.SearchService.LastIndexedClause;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -4564,7 +4566,7 @@ public class StudyManager
     }
 
 
-    public static void indexDatasets(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public static void indexDatasets(IndexTask task, Container c, Date modifiedSince)
     {
         SearchService ss = SearchService.get();
         if (null == ss)
@@ -4597,7 +4599,7 @@ public class StudyManager
         });
     }
 
-    private static void indexDataset(@Nullable SearchService.IndexTask task, DatasetDefinition dsd)
+    private static void indexDataset(@Nullable IndexTask task, DatasetDefinition dsd)
     {
         if (dsd.getType().equals(Dataset.TYPE_PLACEHOLDER))
             return;
@@ -4650,7 +4652,7 @@ public class StudyManager
         task.addResource(r, SearchService.PRIORITY.item);
     }
 
-    public static void indexParticipants(final SearchService.IndexTask task, @NotNull final Container c, @Nullable List<String> ptids)
+    public static void indexParticipants(final IndexTask task, @NotNull final Container c, @Nullable List<String> ptids)
     {
         if (null != ptids && ptids.size() == 0)
             return;
@@ -4665,9 +4667,7 @@ public class StudyManager
                 if (list.size() == BATCH_SIZE)
                 {
                     final ArrayList<String> l = list;
-                    Runnable r = new Runnable(){ @Override public void run() {
-                        indexParticipants(task, c, l);
-                    }};
+                    Runnable r = () -> indexParticipants(task, c, l);
                     task.addRunnable(r, SearchService.PRIORITY.bulk);
                     list = new ArrayList<>(BATCH_SIZE);
                 }
@@ -4681,71 +4681,71 @@ public class StudyManager
             return;
         final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
 
-        SQLFragment f = new SQLFragment("SELECT Container, ParticipantId FROM " + StudySchema.getInstance().getTableInfoParticipant().getSelectName());
+        SQLFragment f = new SQLFragment();
 
-        String prefix = " WHERE ";
-
-        f.append(prefix).append(" Container = ?");
+        f.append("SELECT Container, ParticipantId FROM ");
+        f.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
+        f.append(" WHERE Container = ?");
         f.add(c);
-        prefix = " AND ";
 
         if (null != ptids)
         {
-            f.append(prefix).append(" ParticipantId ");
+            f.append(" AND ParticipantId ");
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
+
+        // TODO: This won't work because the Participant table lacks Created and Modified columns. See #31139.
+//        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, null).toSQLFragment(null, null);
+//        if (!lastIndexedFragment.isEmpty())
+//            f.append(" AND ").append(lastIndexedFragment);
 
         final ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
         indexURL.setExtraPath(c.getId());
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
         executeURL.setExtraPath(c.getId());
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(new Selector.ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(rs -> {
+            final String ptid = rs.getString(2);
+            String displayTitle = "Study " + study.getLabel() + " -- " +
+                    StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + ptid;
+            ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(ptid));
+            Path p = new Path(c.getId(), ptid);
+            String docid = "participant:" + p.toString();
+
+            String uniqueIds = ptid;
+
+            // Add all participant aliases as high priority uniqueIds
+            Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
+
+            if (!aliasMap.isEmpty())
+                uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
+
+            Map<String, Object> props = new HashMap<>();
+            props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
+            props.put(SearchService.PROPERTY.title.toString(), displayTitle);
+            props.put(SearchService.PROPERTY.identifiersHi.toString(), uniqueIds);
+            props.put(SearchService.PROPERTY.navtrail.toString(), nav);
+
+            // Index a barebones participant document for now TODO: Figure out if it's safe to include demographic data or not (can all study users see it?)
+
+            // SimpleDocument
+            SimpleDocumentResource r = new SimpleDocumentResource(
+                    p, docid,
+                    c.getId(),
+                    "text/plain",
+                    displayTitle,
+                    execute, props
+            )
             {
-                final String ptid = rs.getString(2);
-                String displayTitle = "Study " + study.getLabel() + " -- " +
-                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + ptid;
-                ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(ptid));
-                Path p = new Path(c.getId(), ptid);
-                String docid = "participant:" + p.toString();
-
-                String uniqueIds = ptid;
-
-                // Add all participant alias as high priority uniqueIds
-                Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
-
-                if (!aliasMap.isEmpty())
-                    uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
-
-                Map<String, Object> props = new HashMap<>();
-                props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
-                props.put(SearchService.PROPERTY.title.toString(), displayTitle);
-                props.put(SearchService.PROPERTY.identifiersHi.toString(), uniqueIds);
-                props.put(SearchService.PROPERTY.navtrail.toString(), nav);
-
-                // Index a barebones participant document for now TODO: Figure out if it's safe to include demographic data or not (can all study users see it?)
-
-                // SimpleDocument
-                SimpleDocumentResource r = new SimpleDocumentResource(
-                        p, docid,
-                        c.getId(),
-                        "text/plain",
-                        displayTitle,
-                        execute, props
-                )
+                @Override
+                public void setLastIndexed(long ms, long modified)
                 {
-                    @Override
-                    public void setLastIndexed(long ms, long modified)
-                    {
-                        StudySchema ss = StudySchema.getInstance();
-                        new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
-                            " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, ptid);
-                    }
-                };
-                task.addResource(r, SearchService.PRIORITY.item);
-            }
+                    StudySchema ss = StudySchema.getInstance();
+                    new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
+                        " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, ptid);
+                }
+            };
+            task.addResource(r, SearchService.PRIORITY.item);
         });
     }
 
@@ -4757,7 +4757,7 @@ public class StudyManager
 
     final static WeakHashMap<Container,Runnable> _lastEnumerate = new WeakHashMap<>();
 
-    public static void _enumerateDocuments(SearchService.IndexTask t, final Container c)
+    public static void _enumerateDocuments(IndexTask t, final Container c)
     {
         if (null == c)
             return;
@@ -4765,8 +4765,8 @@ public class StudyManager
         final SearchService ss = SearchService.get();
         if (ss == null)
             return;
-        final SearchService.IndexTask defaultTask = ss.defaultTask();
-        final SearchService.IndexTask task = null==t ? defaultTask : t;
+        final IndexTask defaultTask = ss.defaultTask();
+        final IndexTask task = null==t ? defaultTask : t;
 
         Runnable runEnumerate = new Runnable()
         {
@@ -4809,7 +4809,7 @@ public class StudyManager
     }
 
 
-    public static void _enumerateProtocolDocuments(SearchService.IndexTask task, @NotNull Study study)
+    public static void _enumerateProtocolDocuments(IndexTask task, @NotNull Study study)
     {
         AttachmentParent parent = ((StudyImpl)study).getProtocolDocumentAttachmentParent();
         if (null == parent)
