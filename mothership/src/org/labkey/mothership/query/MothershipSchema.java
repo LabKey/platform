@@ -23,8 +23,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -220,6 +218,8 @@ public class MothershipSchema extends UserSchema
     public TableInfo createServerInstallationTable()
     {
         FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoServerInstallation(), this);
+        result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
+        result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
@@ -317,14 +317,10 @@ public class MothershipSchema extends UserSchema
     {
         FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
         result.setUpdateURL(AbstractTableInfo.LINK_DISABLER);
+        result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
+        result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getColumn("StackTrace").setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new StackTraceDisplayColumn(colInfo);
-            }
-        });
+        result.getColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
         LookupForeignKey softwareReleaseFK = new LookupForeignKey("SoftwareReleaseId")
         {
@@ -421,23 +417,17 @@ public class MothershipSchema extends UserSchema
         FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getColumn("URL").setDisplayColumnFactory(new DisplayColumnFactory()
+        result.getColumn("URL").setDisplayColumnFactory(colInfo ->
         {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                DataColumn result = new DataColumn(colInfo);
-                result.setURLExpression(StringExpressionFactory.create("${URL}", false));
-                return result;
-            }
+            DataColumn result1 = new DataColumn(colInfo);
+            result1.setURLExpression(StringExpressionFactory.create("${URL}", false));
+            return result1;
         });
-        result.getColumn("ReferrerURL").setDisplayColumnFactory(new DisplayColumnFactory()
+        result.getColumn("ReferrerURL").setDisplayColumnFactory(colInfo ->
         {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                DataColumn result = new DataColumn(colInfo);
-                result.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
-                return result;
-            }
+            DataColumn result12 = new DataColumn(colInfo);
+            result12.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
+            return result12;
         });
 
         // Container column is on another table so join to it to filter appropriately
@@ -523,7 +513,7 @@ public class MothershipSchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (EXCEPTION_STACK_TRACE_TABLE_NAME.equals(settings.getQueryName()))
         {
