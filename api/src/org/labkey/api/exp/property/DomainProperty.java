@@ -54,6 +54,7 @@ public interface DomainProperty extends ImportAliasable
     boolean isRecommendedVariable();
     DefaultScaleType getDefaultScale();
     PHI getPHI();
+    String getRedactedText();
     boolean isExcludeFromShifting();
     boolean isMvEnabledForDrop();
 
@@ -80,6 +81,7 @@ public interface DomainProperty extends ImportAliasable
     void setRecommendedVariable(boolean isRecommendedVariable);
     void setDefaultScale(DefaultScaleType defaultScale);
     void setPhi(PHI phi);
+    void setRedactedText(String redactedText);
     void setExcludeFromShifting(boolean isExcludeFromShifting);
     void setScale(int scale);
 

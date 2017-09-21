@@ -80,6 +80,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected PHI phi = PHI.NotPHI;
+    protected String redactedText = null;
     protected Boolean isExcludeFromShifting = false;
 
     protected FieldKey crosstabColumnDimension;
@@ -113,6 +114,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.facetingBehaviorType = facetingBehaviorType;
         to.crosstabColumnMember = crosstabColumnMember;
         to.phi = phi;
+        to.redactedText = redactedText;
         to.isExcludeFromShifting = isExcludeFromShifting;
         to.scale = scale;
         to.propertyURI = propertyURI;
@@ -697,6 +699,16 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public PHI getPHI()
     {
         return phi;
+    }
+
+    public String getRedactedText()
+    {
+        return redactedText;
+    }
+
+    public void setRedactedText(String redactedText)
+    {
+        this.redactedText = redactedText;
     }
 
     public boolean isExcludeFromShifting()

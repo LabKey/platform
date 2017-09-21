@@ -1474,7 +1474,7 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, excludefromshifting)\n");
+                "phi, redactedText, excludefromshifting)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as ontolotyuri, " +
@@ -1511,6 +1511,7 @@ public class OntologyManager
                 "{fn now()} as modified, " +
                 "? as facetingbehaviortype, " +
                 "? as phi, " +
+                "? as redactedText, " +
                 "? as excludefromshifting\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
 
@@ -1549,6 +1550,7 @@ public class OntologyManager
         // modified
         sql.add(pd.getFacetingBehaviorType());
         sql.add(pd.getPHI());
+        sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
         // WHERE
         sql.add(pd.getPropertyURI());
@@ -2721,6 +2723,7 @@ public class OntologyManager
         p.setLookup(lookup);
         p.setFacetingBehavior(pd.getFacetingBehaviorType());
         p.setPhi(pd.getPHI());
+        p.setRedactedText(pd.getRedactedText());
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
     }
 
@@ -2803,6 +2806,7 @@ public class OntologyManager
                 if (phiParsed != null)
                     phi = phiParsed;
             }
+            String redactedText = (String) m.get("RedactedText");
             boolean isExcludeFromShifting = m.get("ExcludeFromShifting") != null && ((Boolean) m.get("ExcludeFromShifting")).booleanValue();
 
             PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
@@ -2880,6 +2884,7 @@ public class OntologyManager
             pd.setLookupQuery(lookupQuery);
             pd.setFacetingBehaviorType(facetingBehavior);
             pd.setPHI(phi);
+            pd.setRedactedText(redactedText);
             pd.setExcludeFromShifting(isExcludeFromShifting);
         }
         return pd;

@@ -254,6 +254,7 @@ public class DomainUtil
         StringExpression url = prop.getPropertyDescriptor().getURL();
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
+        gwtProp.setRedactedText(prop.getRedactedText());
 
         if ( prop.getSortOrder() != null)
             gwtProp.setSortOrder(prop.getSortOrder());
