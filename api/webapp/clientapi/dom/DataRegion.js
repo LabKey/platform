@@ -2860,6 +2860,7 @@ if (!LABKEY.DataRegions) {
         var config = {
             schemaName: region.schemaName,
             queryName: region.queryName,
+            containerPath: region.containerPath,
             revert: true,
             success: function(json) {
                 _onViewDelete(region, true /* success */, json);
@@ -3118,6 +3119,7 @@ if (!LABKEY.DataRegions) {
             queryName: region.queryName,
             viewName: viewName,
             initializeMissingView: false,
+            containerPath: region.containerPath,
             success: function (json) {
                 // Display an error if there was an issue error getting the query details
                 if (json.exception) {

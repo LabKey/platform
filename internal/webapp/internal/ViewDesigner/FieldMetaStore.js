@@ -32,6 +32,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
             schema: config.schemaName,
             query: config.queryName,
             view: config.viewName,
+            containerPath: config.containerPath,
             reader: {
                 type: 'json',
                 root: 'columns',
@@ -86,6 +87,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
             schema: config.schemaName,
             query: config.queryName,
             view: config.viewName,
+            containerPath: config.containerPath,
             reader: {
                 type: 'json',
                 root: 'columns',

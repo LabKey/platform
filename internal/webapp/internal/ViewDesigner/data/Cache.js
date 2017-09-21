@@ -101,6 +101,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.QueryDetailsCache', {
             LABKEY.Query.getQueryDetails({
                 schemaName: keyConfig.schema,
                 queryName: keyConfig.query,
+                containerPath: keyConfig.containerPath,
                 fk: keyConfig.fk,
                 success: function(result) {
                     this.populateCache(key, result);
@@ -123,7 +124,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.QueryDetailsProxy', {
             params = {
                 schema: this.schema,
                 query: this.query,
-                view: this.view
+                view: this.view,
+                containerPath: this.containerPath
             },
             cacheCallback = this.createCacheCallback(request, operation, callback, scope);
 
