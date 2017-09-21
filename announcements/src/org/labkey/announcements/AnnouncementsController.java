@@ -53,6 +53,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
@@ -127,11 +128,9 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -560,84 +559,60 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public abstract class AttachmentAction extends FormViewAction<AttachmentForm>
-    {
-        AttachmentAction()
-        {
-            super(AttachmentForm.class);
-        }
-
-        public ModelAndView getView(AttachmentForm form, boolean reshow, BindException errors) throws Exception
-        {
-            AnnouncementModel ann = getAnnouncement(form);
-            verifyPermissions(ann);
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            return getAttachmentView(form, ann.getAttachmentParent());
-        }
-
-        public boolean handlePost(AttachmentForm attachmentForm, BindException errors) throws Exception
-        {
-            return true;
-        }
-
-        public ActionURL getSuccessURL(AttachmentForm attachmentForm)
-        {
-            return null;
-        }
-
-        public abstract ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception;
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        public void validateCommand(AttachmentForm target, Errors errors)
-        {
-        }
-
-        // Further permissions check (ensure non-editors are on the member list in secure board, handle owner-update, etc.)
-        // Most actions require update permission
-        protected void verifyPermissions(AnnouncementModel ann) throws ServletException
-        {
-            if (!getPermissions().allowUpdate(ann))
-            {
-                throw new UnauthorizedException();
-            }
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends AttachmentAction
+    public class DownloadAction extends BaseDownloadAction<AttachmentForm>
     {
-        public ModelAndView getAttachmentView(final AttachmentForm form, final AttachmentParent parent) throws Exception
-        {
-            return new HttpView()
-            {
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
-                {
-                    AttachmentService.get().download(response, parent, form.getName());
-                }
-            };
-        }
-
-        // Override since this action only requires read permission
-        @Override
-        protected void verifyPermissions(AnnouncementModel ann) throws ServletException
+        protected void verifyPermissions(AnnouncementModel ann)
         {
             if (!getPermissions().allowRead(ann))
             {
                 throw new UnauthorizedException();
             }
         }
+
+        @Nullable
+        @Override
+        public Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
+        {
+            AnnouncementModel ann = getAnnouncement(form);
+            verifyPermissions(ann);
+
+            return new Pair<>(ann.getAttachmentParent(), form.getName());
+        }
     }
 
+
     @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class DeleteAttachmentAction extends AttachmentAction
+    public class DeleteAttachmentAction extends SimpleViewAction<AttachmentForm>
     {
         public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
         {
             return AttachmentService.get().delete(parent, form.getName(), getUser());
+        }
+
+        // Permissions check (ensure non-editors are on the member list in secure board, handle owner-update, etc.)
+        protected void verifyPermissions(AnnouncementModel ann)
+        {
+            if (!getPermissions().allowUpdate(ann))
+            {
+                throw new UnauthorizedException();
+            }
+        }
+
+        @Override
+        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        {
+            AnnouncementModel ann = getAnnouncement(form);
+            verifyPermissions(ann);
+            getPageConfig().setTemplate(PageConfig.Template.None);
+
+            return AttachmentService.get().delete(ann.getAttachmentParent(), form.getName(), getUser());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -1585,7 +1560,7 @@ public class AnnouncementsController extends SpringActionController
         return emailOption;
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(AdminPermission.class)  // TODO: Seems to be unused... delete?
     public class SetDefaultEmailOptionsAction extends RedirectAction<EmailDefaultSettingsForm>
     {
         public boolean doAction(EmailDefaultSettingsForm form, BindException errors) throws Exception
@@ -1839,7 +1814,7 @@ public class AnnouncementsController extends SpringActionController
             _memberListIds = memberListIds;
         }
 
-        AnnouncementModel selectAnnouncement() throws SQLException
+        AnnouncementModel selectAnnouncement()
         {
             if (null == _selectedAnnouncementModel)
             {
@@ -2132,10 +2107,10 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-
+    // TODO: Appears to be unused... delete?
     public static class AnnouncementEmailDefaults extends JspView<AnnouncementEmailDefaults.EmailDefaultsBean>
     {
-        public AnnouncementEmailDefaults(Container c, URLHelper returnURL) throws SQLException
+        public AnnouncementEmailDefaults(Container c, URLHelper returnURL)
         {
             super("/org/labkey/announcements/announcementEmailDefaults.jsp", new EmailDefaultsBean(c, returnURL));
         }
@@ -2146,7 +2121,7 @@ public class AnnouncementsController extends SpringActionController
             public int defaultEmailOption;
             public URLHelper returnURL;
 
-            private EmailDefaultsBean(Container c, URLHelper returnURL) throws SQLException
+            private EmailDefaultsBean(Container c, URLHelper returnURL)
             {
                 emailOptionsList = Arrays.asList(AnnouncementManager.getEmailOptions());
                 defaultEmailOption = AnnouncementManager.getDefaultEmailOption(c);

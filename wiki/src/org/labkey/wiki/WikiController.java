@@ -34,7 +34,9 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -105,11 +107,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -644,70 +643,17 @@ public class WikiController extends SpringActionController
         return true;
     }
 
-    private Wiki getWiki(AttachmentForm form) throws ServletException, SQLException
-    {
-        Wiki wiki = getWikiManager().getWikiByEntityId(getContainer(), form.getEntityId());
-        if (null == wiki)
-            throw new NotFoundException("Unable to find wiki page");
-
-        return wiki;
-    }
-
-
-    //
-    // CONSIDER: roll these up into one action with a switch!
-    // (two actually, download() for backwards compatibility
-    //
-    // use FormViewAction since we need to handle files
-
-    public abstract class AttachmentAction extends FormViewAction<AttachmentForm>
-    {
-        AttachmentAction()
-        {
-            super(AttachmentForm.class);
-        }
-
-        public ModelAndView getView(AttachmentForm form, boolean reshow, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.None);
-            Wiki wiki = getWiki(form);
-            return getAttachmentView(form, wiki);
-        }
-
-        public boolean handlePost(AttachmentForm attachmentForm, BindException errors) throws Exception
-        {
-            return true;
-        }
-
-        public ActionURL getSuccessURL(AttachmentForm attachmentForm)
-        {
-            return null;
-        }
-
-        public abstract ModelAndView getAttachmentView(AttachmentForm form, Wiki wiki) throws Exception;
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        public void validateCommand(AttachmentForm target, Errors errors)
-        {
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends AttachmentAction
+    public class DownloadAction extends BaseDownloadAction<AttachmentForm>
     {
-        public ModelAndView getAttachmentView(final AttachmentForm form, final Wiki wiki) throws Exception
+        @Override
+        public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
-            return new HttpView()
-            {
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
-                {
-                    AttachmentService.get().download(response, wiki.getAttachmentParent(), form.getName());
-                }
-            };
+            Wiki wiki = getWikiManager().getWikiByEntityId(getContainer(), form.getEntityId());
+            if (null == wiki)
+                throw new NotFoundException("Unable to find wiki page");
+
+            return new Pair<>(wiki.getAttachmentParent(), form.getName());
         }
     }
 
@@ -940,7 +886,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private void displayWikiModuleInDestContainer(Container cDest) throws SQLException
+    private void displayWikiModuleInDestContainer(Container cDest)
     {
         Set<Module> activeModules = new HashSet<>(cDest.getActiveModules());
         Module module = ModuleLoader.getInstance().getModule("Wiki");

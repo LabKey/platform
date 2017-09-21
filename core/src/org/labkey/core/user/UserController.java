@@ -30,7 +30,8 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -63,6 +64,7 @@ import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LoginUrls;
@@ -76,7 +78,6 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
@@ -101,6 +102,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -857,9 +859,10 @@ public class UserController extends SpringActionController
     }
 
     @RequiresLogin
-    public class AttachmentDownloadAction extends SimpleViewAction<AttachmentForm>
+    public class AttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        @Override
+        public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
             User user = UserManager.getUser(form.getUserId());
@@ -872,13 +875,7 @@ public class UserController extends SpringActionController
                 throw new IllegalArgumentException("Unable to download user attachment");
             }
 
-            AttachmentService.get().download(getViewContext().getResponse(), new AvatarThumbnailProvider(user), form.getName());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new Pair<>(new AvatarThumbnailProvider(user), form.getName());
         }
     }
 

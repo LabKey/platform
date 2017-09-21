@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -1299,9 +1300,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             {
                 if (isAttachmentProperty(entry.getKey()) && oldRow.get(entry.getKey()) != null)
                 {
-                    AttachmentParentEntity parent = new AttachmentParentEntity();
-                    parent.setEntityId(lsid.getObjectId());
-                    parent.setContainer(c.getId());
+                    AttachmentParent parent = new ExpDataClassAttachmentParent(c, lsid);
 
                     AttachmentService.get().deleteAttachment(parent, (String) oldRow.get(entry.getKey()), user);
                 }
@@ -1331,10 +1330,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 if (!attachmentFiles.isEmpty())
                 {
                     Lsid lsid = new Lsid(lsidStr);
-
-                    AttachmentParentEntity parent = new AttachmentParentEntity();
-                    parent.setEntityId(lsid.getObjectId());
-                    parent.setContainer(c.getId());
+                    AttachmentParent parent = new ExpDataClassAttachmentParent(c, lsid);
 
                     try
                     {

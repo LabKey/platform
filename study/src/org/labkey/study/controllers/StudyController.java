@@ -38,7 +38,9 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
@@ -3031,18 +3033,13 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ProtocolDocumentDownloadAction extends SimpleViewAction<AttachmentForm>
+    public class ProtocolDocumentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        @Override
+        public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            AttachmentService.get().download(getViewContext().getResponse(), study.getProtocolDocumentAttachmentParent(), form.getName());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new Pair<>(study.getProtocolDocumentAttachmentParent(), form.getName());
         }
     }
 

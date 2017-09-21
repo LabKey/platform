@@ -2,9 +2,9 @@ package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
-import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.EntityAttachmentParent;
 
-public class AnnouncementAttachmentParent extends AttachmentParentEntity
+public class AnnouncementAttachmentParent extends EntityAttachmentParent
 {
     public AnnouncementAttachmentParent(AnnouncementModel ann)
     {

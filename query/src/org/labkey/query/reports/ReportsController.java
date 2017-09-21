@@ -44,7 +44,9 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -1595,9 +1597,10 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<AttachmentForm>
+    public class DownloadAction extends BaseDownloadAction<AttachmentForm>
     {
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        @Override
+        public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
             Report report = ReportService.get().getReportByEntityId(getContainer(), form.getEntityId());
 
@@ -1606,15 +1609,7 @@ public class ReportsController extends SpringActionController
                 throw new NotFoundException("Unable to find report");
             }
 
-            if (report instanceof RReport || report instanceof AttachmentReport)
-                AttachmentService.get().download(getViewContext().getResponse(), report, form.getName());
-
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return report instanceof RReport || report instanceof AttachmentReport ? new Pair<>(report, form.getName()) : null;
         }
     }
 

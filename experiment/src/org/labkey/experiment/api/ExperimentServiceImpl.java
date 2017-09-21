@@ -3848,10 +3848,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (String lsidStr : lsids)
         {
             Lsid lsid = Lsid.parse(lsidStr);
-
-            AttachmentParentEntity parent = new AttachmentParentEntity();
-            parent.setContainer(container.getId());
-            parent.setEntityId(lsid.getObjectId());
+            AttachmentParent parent = new ExpDataClassAttachmentParent(container, lsid);
             attachmentParents.add(parent);
         }
 

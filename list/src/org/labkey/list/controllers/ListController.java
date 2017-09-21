@@ -39,7 +39,7 @@ import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
@@ -93,7 +93,6 @@ import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpPostRedirectView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -121,7 +120,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -895,10 +893,13 @@ public class ListController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends SimpleViewAction<ListAttachmentForm>
+    public class DownloadAction extends BaseDownloadAction<ListAttachmentForm>
     {
-        public ModelAndView getView(final ListAttachmentForm form, BindException errors) throws Exception
+        @Nullable
+        @Override
+        public Pair<AttachmentParent, String> getAttachment(ListAttachmentForm form)
         {
             ListDefinitionImpl listDef = (ListDefinitionImpl)ListService.get().getList(getContainer(), form.getListId());
             if (listDef == null)
@@ -907,22 +908,9 @@ public class ListController extends SpringActionController
             if (!listDef.hasListItemForEntityId(form.getEntityId(), getUser()))
                 throw new NotFoundException("List does not have an item for the entityid");
 
-            getPageConfig().setTemplate(PageConfig.Template.None);
+            AttachmentParent parent = new ListItemAttachmentParent(form.getEntityId(), getContainer());
 
-            final AttachmentParent parent = new ListItemAttachmentParent(form.getEntityId(), getContainer());
-
-            return new HttpView()
-            {
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
-                {
-                    AttachmentService.get().download(response, parent, form.getName());
-                }
-            };
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new Pair<>(parent, form.getName());
         }
     }
 

@@ -17,9 +17,7 @@ package org.labkey.issue.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;

@@ -29,7 +29,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
@@ -149,6 +150,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
@@ -177,7 +179,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
@@ -1228,36 +1229,19 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DataClassAttachmentDownloadAction extends SimpleViewAction<DataClassAttachmentForm>
+    public class DataClassAttachmentDownloadAction extends BaseDownloadAction<DataClassAttachmentForm>
     {
-        public ModelAndView getView(DataClassAttachmentForm form, BindException errors) throws Exception
+        @Nullable
+        @Override
+        public Pair<AttachmentParent, String> getAttachment(DataClassAttachmentForm form)
         {
             if (form.getLsid() == null || form.getName() == null)
-                return new HtmlView("Error: missing required param 'lsid' or 'name'.");
-
-            getPageConfig().setTemplate(PageConfig.Template.None);
+                throw new NotFoundException("Error: missing required param 'lsid' or 'name'.");
 
             Lsid lsid = new Lsid(form.getLsid());
-            AttachmentParentEntity parent = new AttachmentParentEntity();
-            parent.setEntityId(lsid.getObjectId());
-            parent.setContainer(getContainer().getId());
-            return getAttachmentView(form, parent);
-        }
+            AttachmentParent parent = new ExpDataClassAttachmentParent(getContainer(), lsid);
 
-        private ModelAndView getAttachmentView(final DataClassAttachmentForm form, final AttachmentParentEntity parent) throws Exception
-        {
-            return new HttpView()
-            {
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
-                {
-                    AttachmentService.get().download(response, parent, form.getName());
-                }
-            };
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new Pair<>(parent, form.getName());
         }
     }
 

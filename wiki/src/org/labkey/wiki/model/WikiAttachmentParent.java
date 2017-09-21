@@ -2,9 +2,9 @@ package org.labkey.wiki.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
-import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.EntityAttachmentParent;
 
-public class WikiAttachmentParent extends AttachmentParentEntity
+public class WikiAttachmentParent extends EntityAttachmentParent
 {
     WikiAttachmentParent(Wiki wiki)
     {
