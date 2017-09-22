@@ -1477,6 +1477,18 @@ div span.labkey-main-menu-icon {
   border-spacing: 2px;
 }
 
+.panel-frameless:hover .labkey-frameless-wp-icon {
+  display: block;
+  opacity: 0.5;
+}
+
+.labkey-frameless-wp-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: none;
+}
+
 @import "components/header";
 @import "components/navigation";
 @import "components/menu";

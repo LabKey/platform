@@ -302,10 +302,20 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         public void renderPortalBody(PrintWriter out)
         {
             out.print("<div id=\"WebPartView" + System.identityHashCode(this) + "\"");
+            out.print(" style=\"");
             if (getConfig()._collapsed && getConfig()._isCollapsible)
-                out.print(" style=\"display: none\"");
-            if (null != getConfig()._className)
-                out.print(" class=\"" + getConfig()._className + "\">");
+                out.print("display: none;");
+            if (getConfig()._showfloatingCustomBtn && !PageFlowUtil.isPageAdminMode(getContext()))
+                out.print(" position: relative;");
+            out.print("\"");
+            if (!StringUtils.isEmpty(getConfig()._className))
+                out.print(" class=\"" + getConfig()._className + "\"");
+            out.print(">");
+
+            if (getConfig()._showfloatingCustomBtn && !PageFlowUtil.isPageAdminMode(getContext()))
+            {
+                super.renderFloatingCustomButton(out);
+            }
         }
 
         @Override

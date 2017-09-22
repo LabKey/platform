@@ -204,6 +204,9 @@ public abstract class BaseWikiView extends JspView<Object>
 
             if (wiki.getContainerId().equals(getViewContext().getContainer().getId()))
             {
+                NavTree standardEdit = new NavTree("Edit", updateContentURL.toString(), null, "fa fa-pencil");
+                addFloatingButton(standardEdit); // used by frameless webpart only
+
                 if (useInlineEditor)
                 {
                     // Include wiki.js as a client dependency only for inline editing
@@ -228,8 +231,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 else
                 {
                     // other render types get the standard editor
-                    NavTree edit = new NavTree("Edit", updateContentURL.toString(), null, "fa fa-pencil");
-                    addCustomMenu(edit);
+                    addCustomMenu(standardEdit);
                 }
             }
         }

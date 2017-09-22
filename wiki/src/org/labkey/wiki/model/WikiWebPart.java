@@ -44,5 +44,8 @@ public class WikiWebPart extends BaseWikiView
         name = (name != null) ? name : "default";
 
         init(c, name);
+
+        // display edit pencil in frameless webpart
+        setShowFloatingCustomBtn(true);
     }
 }
