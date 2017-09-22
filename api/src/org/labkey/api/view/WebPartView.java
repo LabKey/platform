@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -42,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
@@ -100,44 +100,45 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         {
             cssScripts.addAll(d.getCssPaths(container));
             implicitCssScripts.addAll(d.getCssPaths(container));
-            implicitCssScripts.addAll(d.getCssPaths(container, !AppProps.getInstance().isDevMode()));
         }
-        implicitCssScripts.addAll(PageFlowUtil.getExtJSStylesheets(container, dependencies));
+
+        final Set<String> extCSSIncludes = PageFlowUtil.getExtJSStylesheets(container, dependencies);
+        if (!extCSSIncludes.isEmpty())
+        {
+            cssScripts.addAll(extCSSIncludes);
+            implicitCssScripts.addAll(extCSSIncludes);
+        }
 
         getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
 
-        return new ApiResponse()
+        return writer ->
         {
-            @Override
-            public void render(ApiResponseWriter writer) throws Exception
+            MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
+            mr.setCharacterEncoding("UTF-8");
+            try
             {
-                MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
-                mr.setCharacterEncoding("UTF-8");
-                try
-                {
-                    WebPartView.this.render(request, mr);
-                }
-                catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
-                {
-                    LOG.warn("Failed in renderToApiResponse() - " + e.getMessage() + " for URL " + getViewContext().getActionURL());
-                    throw e;
-                }
+                WebPartView.this.render(request, mr);
+            }
+            catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
+            {
+                LOG.warn("Failed in renderToApiResponse() - " + e.getMessage() + " for URL " + getViewContext().getActionURL());
+                throw e;
+            }
 
-                if (mr.getStatus() != HttpServletResponse.SC_OK)
-                {
-                    WebPartView.this.render(request, getViewContext().getResponse());
-                }
-                else // 21477: Query editor fails to display simple errors
-                {
-                    writer.startResponse();
-                    writer.writeProperty("html", mr.getContentAsString());
-                    writer.writeProperty("requiredJsScripts", includes);
-                    writer.writeProperty("implicitJsIncludes", implicitIncludes);
-                    writer.writeProperty("requiredCssScripts", cssScripts);
-                    writer.writeProperty("implicitCssIncludes", implicitCssScripts);
-                    writer.writeProperty("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-                    writer.endResponse();
-                }
+            if (mr.getStatus() != HttpServletResponse.SC_OK)
+            {
+                WebPartView.this.render(request, getViewContext().getResponse());
+            }
+            else // 21477: Query editor fails to display simple errors
+            {
+                writer.startResponse();
+                writer.writeProperty("html", mr.getContentAsString());
+                writer.writeProperty("requiredJsScripts", includes);
+                writer.writeProperty("implicitJsIncludes", implicitIncludes);
+                writer.writeProperty("requiredCssScripts", cssScripts);
+                writer.writeProperty("implicitCssIncludes", implicitCssScripts);
+                writer.writeProperty("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
+                writer.endResponse();
             }
         };
     }
