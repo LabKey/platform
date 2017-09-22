@@ -24,10 +24,14 @@
     Map<String,Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
 %>
     <table id="dataregion_Gen Runs" class="labkey-data-region-legacy labkey-show-borders">
-        <colgroup><col><col></colgroup>
-        <tr><th><b>Module name</b></th><th><b>Stack trace</b></th></tr>
+        <tr>
+            <td class="labkey-column-header">Module name</td>
+            <td class="labkey-column-header">Stack trace</td>
+        </tr>
 
 <%
+    int rowIndex = 0;
+
     for(Map.Entry<String,Throwable> entry : moduleFailures.entrySet())
     {
         Throwable throwable = entry.getValue();
@@ -49,7 +53,7 @@
             }
         }
 %>
-        <tr>
+        <tr class="<%=getShadeRowClass(rowIndex % 1 == 0)%>">
             <td valign="top"><strong><pre><%=entry.getKey()%></pre></strong></td>
             <td valign="top"><% if (message != null) { %>
                 <strong class="labkey-error"><pre><%= h(message) %></pre></strong>
@@ -65,7 +69,7 @@
 
         </tr>
 <%
-
+        rowIndex++;
     }
 %>
 
