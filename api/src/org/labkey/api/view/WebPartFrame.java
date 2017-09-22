@@ -54,6 +54,8 @@ public interface WebPartFrame
         public boolean _collapsed = false;
         public NavTree _portalLinks = new NavTree();
         public String _rootId = null;
+        public boolean _showfloatingCustomBtn  = false; // for frameless webpart only
+        public List<NavTree> _floatingBtns = null;
     }
 
     void doStartTag(PrintWriter out);

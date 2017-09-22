@@ -342,6 +342,23 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             renderMenuWithFontImage(title, menu, out, imageCls);
         }
 
+        public void renderFloatingCustomButton(PrintWriter out)
+        {
+            // Render custom buttons (e.g. wiki edit)
+            if (config._floatingBtns != null)
+            {
+                Iterator itr = config._floatingBtns.iterator();
+                NavTree current;
+                while (itr.hasNext())
+                {
+                    current = (NavTree) itr.next();
+
+                    if (!current.hasChildren()) // floating dropdown not yet supported
+                        renderCustomButton(current, out, true);
+                }
+            }
+        }
+
         public void renderPortalMenu(PrintWriter out, String title)
         {
             List<NavTree> links = null == config._portalLinks ? Collections.emptyList() : config._portalLinks.getChildren();
@@ -483,6 +500,11 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
         public void renderCustomButton(NavTree current, PrintWriter out)
         {
+            renderCustomButton(current, out, false);
+        }
+
+        public void renderCustomButton(NavTree current, PrintWriter out, boolean isFramelessFloatingBtn)
+        {
             String linkHref = current.getHref();
             String linkText = current.getText();
             String script = current.getScript();
@@ -491,12 +513,16 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             {
                 out.print("<span class=\"");
                 out.print(getWebpartIconBtnInactiveCls());
+                if (isFramelessFloatingBtn)
+                    out.print(" labkey-frameless-wp-icon");
                 out.print("\">");
             }
             else
             {
                 out.print("<span class=\"");
                 out.print(getWebpartIconBtnActiveCls());
+                if (isFramelessFloatingBtn)
+                    out.print(" labkey-frameless-wp-icon");
                 out.print("\">");
 
                 if (StringUtils.isEmpty(linkHref))

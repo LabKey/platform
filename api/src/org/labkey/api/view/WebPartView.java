@@ -264,6 +264,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         _frameConfig._customMenus.add(tree);
     }
 
+    public void addFloatingButton(NavTree tree)
+    {
+        if (_frameConfig._floatingBtns == null)
+            _frameConfig._floatingBtns = new ArrayList<>();
+        _frameConfig._floatingBtns.add(tree);
+    }
+
     public void setShowTitle(boolean showTitle)
     {
         _frameConfig._showTitle = showTitle;
@@ -309,6 +316,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         _frameConfig._isWebpart = isWebPart;
     }
 
+    public boolean isShowFloatingCustomBtn()
+    {
+        return _frameConfig._showfloatingCustomBtn;
+    }
+
+    public void setShowFloatingCustomBtn(boolean floatCustomMenu)
+    {
+        _frameConfig._showfloatingCustomBtn = floatCustomMenu;
+    }
 
     protected WebPartFrame getWebPartFrame()
     {
