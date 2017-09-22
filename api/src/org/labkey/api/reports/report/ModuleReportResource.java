@@ -17,12 +17,18 @@ package org.labkey.api.reports.report;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * User: dax
@@ -67,6 +73,13 @@ public class ModuleReportResource
             {
                 String xml = getFileContents(_metaDataFile);
                 d = _reportDescriptor.setDescriptorFromXML(xml);
+                String createdDateStr = _reportDescriptor.getProperty(ReportDescriptor.Prop.moduleReportCreatedDate.name());
+                if (createdDateStr != null)
+                {
+                    DateFormat format = new SimpleDateFormat(DateUtil.getDateFormatString(ContainerManager.getRoot()));
+                    Date createdDate = format.parse(createdDateStr);
+                    _reportDescriptor.setCreated(createdDate);
+                }
             }
             catch(IOException e)
             {
@@ -75,6 +88,10 @@ public class ModuleReportResource
             catch(XmlException e)
             {
                 Logger.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile.getPath(), e);
+            }
+            catch (ParseException e)
+            {
+                Logger.getLogger(ModuleReportResource.class).warn("Unable to parse moduleReportCreatedDate from file " + _sourceFile.getPath(), e);
             }
         }
         return d;

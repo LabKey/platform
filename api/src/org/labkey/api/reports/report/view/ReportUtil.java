@@ -45,11 +45,13 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -192,6 +194,47 @@ public class ReportUtil
         return url;
     }
 
+    public static URLHelper getModuleImageUrl(Container c, Report r, ImageType type)
+    {
+        Resource imageFile = getModuleImageFile(r, type.getFilename());
+        if (null != imageFile)
+        {
+            ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlModuleThumbnail(c);
+            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
+            url.addParameter("imageFilePrefix", type.getFilename());
+            return url;
+        }
+        return null;
+    }
+
+    public static Resource getModuleImageFile(Report r, String fileTypePrefix)
+    {
+        if (!(r.getDescriptor().isModuleBased() && r.getDescriptor() instanceof ModuleReportDescriptor))
+            return null;
+
+        ModuleReportDescriptor descriptor = (ModuleReportDescriptor) r.getDescriptor();
+        Resource parent = descriptor.getSourceFile().parent();
+        if (null == parent)
+            return null;
+        Resource attachmentDir = parent.find(ReportUtil.getSerializedName(r.getDescriptor()));
+        if (null == attachmentDir)
+            return null;
+        String imageFileName = null;
+        for (String fileName : attachmentDir.listNames())
+        {
+            if (fileName.equals(fileTypePrefix) || fileName.startsWith(fileTypePrefix + "."))
+            {
+                imageFileName = fileName;
+                break;
+            }
+        }
+
+        if (null == imageFileName)
+            return null;
+
+        return attachmentDir.find(imageFileName);
+    }
+
     // Consider: combine these two methods... need standard way to get static thumbnail and icon url
     public static URLHelper getThumbnailUrl(Container c, Report r)
     {
@@ -201,10 +244,14 @@ public class ReportUtil
         {
             return dynamicURL;
         }
-        else
+        else if (r.getDescriptor().isModuleBased())
         {
-            return ThumbnailUtil.getStaticThumbnailURL(r, ImageType.Large);
+            URLHelper moduleURL = getModuleImageUrl(c, r, ImageType.Large);
+            if (null != moduleURL)
+                return moduleURL;
         }
+
+        return ThumbnailUtil.getStaticThumbnailURL(r, ImageType.Large);
     }
 
     public static URLHelper getIconUrl(Container c, Report r)
@@ -215,11 +262,14 @@ public class ReportUtil
         {
             return dynamicURL;
         }
-        else
+        else if (r.getDescriptor().isModuleBased())
         {
-            String path = ReportService.get().getIconPath(r);
-            return new ResourceURL(path);
+            URLHelper moduleURL = getModuleImageUrl(c, r, ImageType.Small);
+            if (null != moduleURL)
+                return moduleURL;
         }
+        String path = ReportService.get().getIconPath(r);
+        return new ResourceURL(path);
     }
 
     public static String getIconCls(Report r)
