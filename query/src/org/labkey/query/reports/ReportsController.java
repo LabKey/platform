@@ -108,6 +108,8 @@ import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.resource.FileResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -211,6 +213,11 @@ public class ReportsController extends SpringActionController
         public ActionURL urlDownloadData(Container c)
         {
             return new ActionURL(DownloadInputDataAction.class, c);
+        }
+
+        public ActionURL urlModuleThumbnail(Container c)
+        {
+            return new ActionURL(DownloadModuleReportThumbnailAction.class, c);
         }
 
         public ActionURL urlRunReport(Container c)
@@ -2029,6 +2036,49 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Update Attachment Report");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class DownloadModuleReportThumbnailAction extends SimpleViewAction<ModuleReportForm>
+    {
+        public ModelAndView getView(ModuleReportForm form, BindException errors) throws Exception
+        {
+            ReportIdentifier reportId = form.getReportId();
+            String imageFilePrefix = form.getImageFilePrefix();
+            if (null == reportId)
+                throw new NotFoundException("ReportId not specified");
+
+            Report report = reportId.getReport(getViewContext());
+            if (null == report)
+                throw new NotFoundException("Report not found");
+
+            Resource imageResource = ReportUtil.getModuleImageFile(report, imageFilePrefix);
+
+            if (null != imageResource)
+                PageFlowUtil.streamFile(getViewContext().getResponse(), ((FileResource) imageResource).getFile(), true);
+
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class ModuleReportForm extends DataViewEditForm
+    {
+        private String imageFilePrefix;
+
+        public String getImageFilePrefix()
+        {
+            return imageFilePrefix;
+        }
+
+        public void setImageFilePrefix(String fileName)
+        {
+            this.imageFilePrefix = fileName;
         }
     }
 
