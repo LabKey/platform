@@ -566,6 +566,7 @@
 +function($) {
     'use strict';
 
+    var nav_ready = false;
     var nav_menus;
     var nav_tabs_separate;
     var nav_tabs_collapsed;
@@ -589,13 +590,16 @@
     };
 
     $(window).on('resize', function(){
-        toggleNavTabs();
+        if (nav_ready) {
+            toggleNavTabs();
+        }
     });
 
     $(document).ready(function() {
         nav_menus = $('#nav_dropdowns');
         nav_tabs_collapsed = $('#nav_tabs > #lk-nav-tabs-collapsed');
         nav_tabs_separate = $('#nav_tabs > #lk-nav-tabs-separate');
+        nav_ready = true;
         toggleNavTabs();
     });
 }(jQuery);
