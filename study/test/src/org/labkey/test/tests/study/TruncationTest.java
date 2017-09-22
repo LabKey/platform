@@ -24,12 +24,16 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.pages.DatasetPropertiesPage;
+import org.labkey.test.pages.ManageDatasetsPage;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 @Category({DailyA.class, Specimen.class})
 public class TruncationTest extends BaseWebDriverTest
@@ -92,12 +96,15 @@ public class TruncationTest extends BaseWebDriverTest
     {
         goToProjectHome();
         waitAndClickAndWait(Locator.linkContainingText("Manage Datasets"));
-        waitAndClickAndWait(Locator.linkContainingText("DEM-1"));
-        waitAndClick(Locator.lkButton("Delete All Rows"));
-        waitAndClick(Ext4Helper.Locators.ext4Button("Yes"));
-        waitForText("24 rows deleted");
-        click(Ext4Helper.Locators.ext4Button("OK"));
-        clickAndWait(Locator.linkContainingText("View Data"));
+        DatasetPropertiesPage.ResultWindow resultWindow = new ManageDatasetsPage(getDriver())
+                .selectDatasetByName("DEM-1")
+                .deleteAllRows();
+
+        assertEquals("Truncation result", "24 rows deleted", resultWindow.getMessage());
+        resultWindow
+                .accept()
+                .clickViewData();
+
         waitForText("No data to show.");
     }
 
