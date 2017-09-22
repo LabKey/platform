@@ -309,7 +309,7 @@ for (Module module : allModules)
     if (active || enabled)
     {
         %>
-        <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules[<%= i %>]"
+        <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules"
                title="<%= h(module.getTabName(context))%>"
                value="<%= h(module.getName())%>"
                <%=disabled(!enabled)%><%=checked(active)%>
