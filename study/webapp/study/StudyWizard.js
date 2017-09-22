@@ -2022,7 +2022,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 'Shift date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days)',
                 'shiftDates']);
         }
-        availablePublishOptions.push(['Remove PHI Protected Columns',
+        availablePublishOptions.push(['Exclude Columns At This PHI Level And Higher',
             'Exclude all dataset, list, and specimen columns that are tagged at a certain PHI level or higher (see below)',
             'removePhiColumns']);
         availablePublishOptions.push(['Mask Clinic Names',
@@ -2083,7 +2083,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 align: 'left'
             },
             items: [
-                new Ext.form.Label({html: 'PHI Level For Publishing:'}),
+                new Ext.form.Label({html: 'Exclude Columns At This PHI Level And Higher:'}),
                 this.publishPhiRadioGroup
             ]
         });

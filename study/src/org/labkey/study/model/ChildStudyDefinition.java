@@ -386,7 +386,7 @@ public class ChildStudyDefinition
         if (isShiftDates())
             publishOptions.add("Shift Participant Dates");
         if (isRemovePhiColumns())
-            publishOptions.add("Remove PHI Protected Columns At Or Above " + getExportPhiLevel().name());
+            publishOptions.add("Exclude Columns At This PHI Level And Higher: " + getExportPhiLevel().name());
         if (isMaskClinic())
             publishOptions.add("Mask Clinic Names");
         return publishOptions.toArray(new String[publishOptions.size()]);
