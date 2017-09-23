@@ -85,6 +85,12 @@ public class ValidationException extends Exception implements Iterable<Validatio
         addErrors(errors);
     }
 
+    public ValidationException(Collection<ValidationError> errors, int rowNumber)
+    {
+        addErrors(errors);
+        _rowNumber = rowNumber;
+    }
+
     public ValidationException(Map<String, Object> map)
     {
         this(map, null, null, null, -1);

@@ -58,10 +58,10 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -79,6 +79,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -499,7 +500,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, ContainerFilterable dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver) throws IOException, ValidationException, ExperimentException
+    private Map<ExpMaterial, String> checkData(Container container, User user, ContainerFilterable dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+            throws IOException, ValidationException, ExperimentException
     {
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
@@ -628,8 +630,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Set<String> wrongTypes = new HashSet<>();
 
-        StringBuilder errorSB = new StringBuilder();
-
         Map<ExpMaterial, String> materialInputs = new LinkedHashMap<>();
 
         Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
@@ -639,8 +639,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<>();
         ValidatorContext validatorContext = new ValidatorContext(container, user);
 
+        int rowNum = 0;
         for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext();)
         {
+            rowNum++;
+            Collection<ValidationError> errors = new ArrayList<>();
+
             Map<String, Object> originalMap = iter.next();
             Map<String, Object> map = new CaseInsensitiveHashMap<>(caseMapping);
             // Rekey the map, resolving aliases to the actual property names
@@ -668,9 +672,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     for (ColumnValidator validator : validatorMap.get(pd))
                     {
-                        String error = validator.validate(1, o, validatorContext);
+                        String error = validator.validate(rowNum, o, validatorContext);
                         if (error != null)
-                            errorSB.append(error).append('.');
+                            errors.add(new PropertyValidationError(error, pd.getName()));
                     }
                 }
 
@@ -695,11 +699,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     Set<Study> studies = StudyService.get().findStudy(o, null);
                     if (studies.isEmpty())
                     {
-                        errorSB.append("Couldn't resolve ").append(pd.getName()).append(" '").append(o.toString()).append("' to a study folder.");
+                        errors.add(new PropertyValidationError("Couldn't resolve " + pd.getName() + " '" + o.toString() + "' to a study folder.", pd.getName()));
                     }
                     else if (studies.size() > 1)
                     {
-                        errorSB.append("Ambiguous ").append(pd.getName()).append(" '").append(o.toString()).append("'.");
+                        errors.add(new PropertyValidationError("Ambiguous " + pd.getName() + " '" + o.toString() + "'.", pd.getName()));
                     }
                     if (!studies.isEmpty())
                     {
@@ -725,7 +729,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         {
                             String columnName = pd.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
-                            errorSB.append(columnName).append(" must be a valid MV indicator.");
+                            errors.add(new PropertyValidationError(columnName + " must be a valid MV indicator.", columnName));
                         }
                     }
 
@@ -757,7 +761,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                     catch (ConversionException ex)
                     {
-                        errorSB.append("Failed to convert '").append(pd.getName()).append("': ").append(ex.getMessage());
+                        errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': " + ex.getMessage(), pd.getName()));
                     }
 
                     if (o != remapped)
@@ -771,8 +775,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (!valueMissing && o == ERROR_VALUE && !wrongTypes.contains(pd.getName()))
                 {
                     wrongTypes.add(pd.getName());
-                    errorSB.append(pd.getName()).append(" must be of type ");
-                    errorSB.append(ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())).append(". ");
+                    errors.add(new PropertyValidationError(pd.getName() + " must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType()) + ".", pd.getName()));
                 }
 
                 // Collect sample names or ids for each of the SampleSet lookup columns
@@ -793,10 +796,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            if (errorSB.length() != 0)
-            {
-                throw new ValidationException("There are errors in the uploaded data: " + errorSB.toString());
-            }
+            if (!errors.isEmpty())
+                throw new ValidationException(errors, rowNum);
 
             ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
             if (participantPD != null && map.get(participantPD.getName()) == null)
