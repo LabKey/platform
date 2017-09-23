@@ -412,7 +412,7 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA2);
         clickButton("Save and Finish");
 
-        assertTextPresent("There are errors in the uploaded data: VisitID must be of type Number (Double)");
+        assertTextPresent("VisitID must be of type Number (Double)");
         assertTextPresent(PROTOCOL_DOC2.getName());
         assertFormElementEquals(Locator.name("name"), TEST_RUN2);
         assertFormElementEquals(Locator.name("comments"), TEST_RUN2_COMMENTS);
