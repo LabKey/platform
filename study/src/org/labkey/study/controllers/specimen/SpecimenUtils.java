@@ -195,22 +195,21 @@ public class SpecimenUtils
             {
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
-                    String dataRegionName = gridView.getSettings().getDataRegionName();
+                    final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
                     String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class,
                             Collections.singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
                                     getViewContext().getActionURL().getLocalURIString()));
 
                     requestMenuButton.addMenuItem("Create New Request", null,
-                            "if (verifySelected(LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form, '" + createRequestURL +
-                            "', 'post', 'rows')) LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form.submit();");
+                            "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
+                            "', 'post', 'rows')) " + jsRegionObject + ".form.submit();");
 
                     if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class) ||
                             SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request", null,
-                                "if (verifySelected(LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form, '#', " +
-                                "'get', 'rows')) showRequestWindow(LABKEY.DataRegions['" +
-                                dataRegionName + "'].getChecked(), '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
+                                "if (verifySelected(" + jsRegionObject + ".form, '#', " +
+                                "'get', 'rows')) showRequestWindow(" + jsRegionObject + ".getChecked(), '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
                                 : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');");
                     }
                 }
@@ -231,19 +230,19 @@ public class SpecimenUtils
             if (commentsMode)
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
-                String dataRegionName = gridView.getSettings().getDataRegionName();
+                final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
                 String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class);
                 NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
-                        "if (verifySelected(LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form, '" + setCommentsURL +
-                        "', 'post', 'rows')) LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form.submit(); return false;");
+                        "if (verifySelected(" + jsRegionObject + ".form, '" + setCommentsURL +
+                        "', 'post', 'rows')) " + jsRegionObject + ".form.submit(); return false;");
                 setItem.setId("Comments:Set");
 
                 String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class);
                 NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected", "#",
-                        "if (verifySelected(LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form, '" + clearCommentsURL +
+                        "if (verifySelected(" + jsRegionObject + ".form, '" + clearCommentsURL +
                         "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  " +
                                 (manualQCEnabled ? "Quality control states will remain unchanged.  " : "" )+ "Continue?')) " +
-                                "LABKEY.DataRegions[" + PageFlowUtil.jsString(dataRegionName) + "].form.submit();\nreturn false;");
+                                jsRegionObject + ".form.submit();\nreturn false;");
                 clearItem.setId("Comments:Clear");
 
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();

@@ -26,6 +26,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.MenuButton;
@@ -191,7 +192,7 @@ public class ParticipantGroupManager
         String[] colFilterParamNames = context.getActionURL().getKeysByPrefix(dataRegionName + ".");
         Map<String, String> colFilters = new HashMap<>();
         Set<ParticipantGroup> selected = new HashSet<>();
-        // Build up a case-insensititive set of all columns that are being filtered.
+        // Build up a case-insensitive set of all columns that are being filtered.
         // We'll use this to identify any existing participant list filters.
         for (String colFilterParamName : colFilterParamNames)
         {
@@ -361,7 +362,7 @@ public class ParticipantGroupManager
     private String getRemoveSelectionScript(String dataRegionName, Study study, Collection<ParticipantCategoryImpl> categories)
     {
         StringBuilder script = new StringBuilder();
-        script.append("LABKEY.DataRegions['").append(dataRegionName).append("']._removeCohortGroupFilters(");
+        script.append(DataRegion.getJavaScriptObjectReference(dataRegionName)).append("._removeCohortGroupFilters(");
         script.append(PageFlowUtil.jsString(study.getSubjectColumnName()));
 
         if (categories.size() > 0)
@@ -382,28 +383,25 @@ public class ParticipantGroupManager
 
     private String getSelectionScript(String dataRegionName, Pair<FieldKey, String> filterColValue)
     {
-        StringBuilder script = new StringBuilder();
-        script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilter(")
-              .append(getFilterScript(filterColValue))
-              .append(");");
-        return script.toString();
+        return DataRegion.getJavaScriptObjectReference(dataRegionName) +
+                ".replaceFilter(" + getFilterScript(filterColValue) + ");";
     }
 
     private String getSelectionReplaceScript(String dataRegionName, Pair<FieldKey, String> filterColValue, String match)
     {
-        StringBuilder script = new StringBuilder();
-        script.append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceFilterMatch(")
-              .append(getFilterScript(filterColValue))
-              .append(", ").append(PageFlowUtil.jsString(match + "/")).append(");");
-        return script.toString();
+        return DataRegion.getJavaScriptObjectReference(dataRegionName) +
+                ".replaceFilterMatch(" + getFilterScript(filterColValue) + "," +
+                PageFlowUtil.jsString(match + "/") + ");";
     }
 
     private StringBuilder getFilterScript(Pair<FieldKey, String> filterColValue)
     {
         StringBuilder script = new StringBuilder();
         script.append("LABKEY.Filter.create(")
-              .append(PageFlowUtil.jsString(filterColValue.first.toString())).append(", ").append(PageFlowUtil.jsString(filterColValue.second))
-              .append(", LABKEY.Filter.Types.EQUAL)");
+                .append(PageFlowUtil.jsString(filterColValue.first.toString()))
+                .append(", ")
+                .append(PageFlowUtil.jsString(filterColValue.second))
+                .append(", LABKEY.Filter.Types.EQUAL)");
         return script;
     }
 

@@ -18,6 +18,7 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -267,7 +268,7 @@ public class CohortManager
     {
         StringBuilder script = new StringBuilder();
         script.append("(function() { ")
-              .append("LABKEY.DataRegions['").append(dataRegionName).append("']._replaceAdvCohortFilter(")
+              .append(DataRegion.getJavaScriptObjectReference(dataRegionName)).append("._replaceAdvCohortFilter(")
               .append("LABKEY.Filter.create('")
               .append(filterColValue.first).append("', '").append(filterColValue.second)
               .append("', LABKEY.Filter.Types.EQUAL)")

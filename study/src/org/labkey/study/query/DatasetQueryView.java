@@ -495,7 +495,7 @@ public class DatasetQueryView extends StudyQueryView
         ActionButton btn = new ActionButton("Filter");
         btn.setIconCls("filter");
         btn.setActionType(ActionButton.Action.SCRIPT);
-        btn.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].showFaceting(); return false;");
+        btn.setScript(DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".showFaceting(); return false;");
         return btn;
     }
 
@@ -516,8 +516,8 @@ public class DatasetQueryView extends StudyQueryView
         {
             button.addSeparator();
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
-            NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].form, \"" +
-                    updateAction.getLocalURIString() + "\", \"post\", \"rows\")) LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].form.submit()");
+            NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
+                    updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
             updateItem.setId("QCState:updateSelected");
 
             button.addMenuItem("Manage states", new ActionURL(StudyController.ManageQCStatesAction.class,
