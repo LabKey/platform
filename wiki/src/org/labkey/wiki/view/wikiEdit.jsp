@@ -290,7 +290,7 @@
                         <td># H1 | ## H2 | ### H3</td>
                     </tr>
                     <tr>
-                        <td>Bold Text</td>
+                        <td>Bold text</td>
                         <td>**use double asterisks**</td>
                     </tr>
                     <tr>
@@ -298,11 +298,15 @@
                         <td>_use underlines_</td>
                     </tr>
                     <tr>
-                        <td>links</td>
+                        <td>Links</td>
                         <td>[I'm an inline-style link with title](https://www.google.com "Google's Homepage")</td>
                     </tr>
                     <tr>
-                        <td>code</td>
+                        <td>Images</td>
+                        <td>![I'm an attached image](logo.jpg)</td>
+                    </tr>
+                    <tr>
+                        <td>Code</td>
                         <td>``` js
                             var foo = function (bar) {
                             return bar++;
@@ -310,7 +314,7 @@
                             ``` </td>
                     </tr>
                     <tr>
-                        <td>lists</td>
+                        <td>Lists</td>
                         <td>Create a list by starting a line with '+', '-', or '*'</td>
                     </tr>
                 </table>
