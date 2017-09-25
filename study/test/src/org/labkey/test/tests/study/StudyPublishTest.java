@@ -350,7 +350,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            clickButton("View Data");
+            mashButton("View Data");
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -359,7 +359,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            clickButton("View Data");
+            mashButton("View Data");
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
