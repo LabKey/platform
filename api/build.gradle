@@ -25,6 +25,7 @@ List apache = [
         "commons-discovery:commons-discovery:${commonsDiscoveryVersion}",
         "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
         "commons-io:commons-io:${commonsIoVersion}",
+        "org.apache.commons:commons-compress:${commonsCompressVersion}",
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
         "org.apache.commons:commons-math3:${commonsMath3Version}",
         "commons-net:commons-net:${commonsNetVersion}",
@@ -127,10 +128,7 @@ dependencies {
   // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
   compile "javax.servlet:servlet-api:${servletApiVersion}"
   compile "com.sun.mail:javax.mail:${javaxMailVersion}"
-  // picard brings in a version of servlet-api and a very old one at that, so we excluded it
-  external("com.github.broadinstitute:picard:${picardLibVersion}") {
-      exclude group: "javax.servlet", module: "servlet-api"
-  }
+
   external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api
       exclude group: "org.json", module:"json"
