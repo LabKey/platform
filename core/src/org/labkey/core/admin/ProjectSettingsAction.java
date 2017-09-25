@@ -320,7 +320,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         }
 
         // Cloud settings
-        AdminController.setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
+        AdminController.setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore(), errors);
 
         return true;
     }

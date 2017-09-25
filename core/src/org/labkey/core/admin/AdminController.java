@@ -17,6 +17,7 @@ package org.labkey.core.admin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -4963,7 +4964,7 @@ public class AdminController extends SpringActionController
             }
 
             // Cloud settings
-            setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore());
+            setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore(), errors);
 
             return true;
         }
@@ -5002,7 +5003,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static void setEnabledCloudStores(ViewContext ctx, String[] enabledCloudStores)
+    public static void setEnabledCloudStores(ViewContext ctx, String[] enabledCloudStores, BindException errors)
     {
         CloudStoreService cloud = CloudStoreService.get();
         if (cloud != null)
@@ -5010,7 +5011,19 @@ public class AdminController extends SpringActionController
             Set<String> enabled = Collections.emptySet();
             if (enabledCloudStores != null)
                 enabled = new HashSet<>(Arrays.asList(enabledCloudStores));
-            cloud.setEnabledCloudStores(ctx.getContainer(), enabled);
+            try
+            {
+                cloud.setEnabledCloudStores(ctx.getContainer(), enabled);
+            }
+            catch (UncheckedExecutionException e)
+            {
+                // UncheckedExecutionException with cause org.jclouds.blobstore.ContainerNotFoundException
+                // is what BlobStore hands us if bucket (S3 container) does not exist
+                if (null != e.getCause())
+                    errors.reject(ERROR_MSG, e.getCause().getMessage());
+                else
+                    throw e;
+            }
         }
     }
 
