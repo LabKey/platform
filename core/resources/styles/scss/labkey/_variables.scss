@@ -327,7 +327,8 @@ $lk-panel-danger-heading-bg: $lk-state-danger-bg !default;
 //== Portals
 //
 $lk-webpart-accent-color: $lk-secondary-brand-color !default; // theme variable
-$lk-webpart-title-color: $lk-panel-default-text;
+$lk-webpart-border-top: 3px solid $lk-webpart-accent-color !default;
+$lk-webpart-title-color: $lk-panel-default-text !default;
 $lk-webpart-title-hover-color: $lk-brand-color !default; // theme variable
 
 $lk-portal-content-left-flex: 8 !default;

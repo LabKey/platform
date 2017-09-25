@@ -1,13 +1,11 @@
 .panel-portal {
   @include panel-variant($panel-default-border, $panel-default-text, $panel-bg, $panel-default-border);
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20);
-  border-top-color: $lk-webpart-accent-color;
-  border-top-width: 3px;
+  border-top: $lk-webpart-border-top;
 
   .panel-portal {
     @include panel-variant($panel-default-border, $panel-bg, $lk-webpart-accent-color, $panel-default-border);
-    border-top-color: $lk-webpart-accent-color;
-    border-top-width: 3px;
+    border-top: $lk-webpart-border-top;
 
     .labkey-anchor-disabled {
       color: $panel-bg !important;

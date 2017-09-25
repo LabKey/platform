@@ -9,17 +9,21 @@ $Madison-page-bkgd: #f7f7f7;
 $Madison-gray-blue: #dadfe1;
 $Madison-gray-darker: #646569;
 $Madison-gray-darkest: #282728;
-$Madison-body-font: #494949;
+$Madison-body-font-color: #494949;
 $Madison-anchor-color: #0479a8;
 $Madison-gray-footer-text: #adadad;
 $Madison-gray-footer-text-hover: #f9f9f9;
 $Madison-white: #FFFFFF;
 
-$lk-text-color: $Madison-body-font;
+$lk-text-color: $Madison-body-font-color;
+$lk-link-color: $Madison-anchor-color;
 
 //== Forms / States
 //
-$lk-state-warning-text: $Madison-body-font;
+$lk-form-label-color: $Madison-gray-darkest;
+$lk-form-label-bg-color: darken($Madison-page-bkgd, 15%);
+
+$lk-state-warning-text: $Madison-body-font-color;
 $lk-state-warning-bg: $Madison-gray-blue;
 $lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
 
@@ -34,20 +38,20 @@ $lk-button-bg-color: $Madison-white;
 $lk-button-bg-color-hover: $Madison-red;
 $lk-button-border-color: $Madison-red;
 $lk-button-border-color-hover: $Madison-red;
-$lk-button-border-size: 2px;
 
 $lk-button-color: $Madison-red;
 $lk-button-color-hover: $Madison-page-bkgd;
+
+$lk-button-disabled-opacity: 0.5;
 
 $lk-button-primary-bg-color: $Madison-red;
 $lk-button-primary-bg-color-hover: $Madison-red;
 $lk-button-primary-color: $Madison-page-bkgd;
 $lk-button-primary-color-hover: $Madison-page-bkgd;
-$lk-button-primary-border-size: 2px;
 $lk-button-primary-border-color: $Madison-page-bkgd;
 $lk-button-primary-border-color-hover: $Madison-gray-blue;
 
-$lk-bar-button-color: $Madison-anchor-color;
+$lk-bar-button-color: $Madison-body-font-color;
 $lk-bar-button-color-hover: $Madison-gray-darkest;
 $lk-bar-button-border-color-hover: $Madison-gray-blue;
 
@@ -104,12 +108,14 @@ $lk-page-nav-primary-tab-text-color: $Madison-red-dark;
 //
 $lk-panel-bg-color: $Madison-white;
 $lk-panel-default-text: $Madison-red;
-$lk-panel-default-border: $Madison-gray-darker;
+$lk-panel-default-border: darken($Madison-page-bkgd, 15%);
 
 //== Portals
 //
 $lk-webpart-accent-color: $Madison-red;
-$lk-webpart-title-hover-color: $Madison-anchor-color;
+$lk-webpart-border-top: 2px solid $lk-webpart-accent-color;
+$lk-webpart-title-color: $Madison-body-font-color;
+$lk-webpart-title-hover-color: $lk-webpart-title-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //

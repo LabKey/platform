@@ -75,7 +75,7 @@
     }
 
     &.disabled, &.labkey-disabled-button, &[disabled] {
-      cursor: not-allowed;
+      cursor: not-allowed !important;
       opacity: $lk-button-disabled-opacity;
 
       &:active,
