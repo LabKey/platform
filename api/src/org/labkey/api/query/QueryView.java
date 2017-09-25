@@ -1357,18 +1357,20 @@ public class QueryView extends WebPartView<Object>
                 // We don't know if record selectors are showing until render time so we
                 // need to add in the Show Selected/Unselected menu items at this time.
                 DataRegion rgn = ctx.getCurrentRegion();
+                final String jsObject = rgn.getJavaScriptObjectReference();
+
                 if (rgn.getShowRecordSelectors(ctx) || showingSelected || showingUnselected)
                 {
                     NavTree item = addMenuItem("Show Selected", null,
-                            "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showSelected()", showingSelected);
+                            jsObject + ".showSelected()", showingSelected);
                     item.setId("Page Size:Selected");
                     item = addMenuItem("Show Unselected", null,
-                            "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showUnselected()", showingUnselected);
+                            jsObject + ".showUnselected()", showingUnselected);
                     item.setId("Page Size:Unselected");
                 }
 
                 NavTree item = addMenuItem("Show All", null,
-                        "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showAll()", showingAll);
+                        jsObject + ".showAll()", showingAll);
                 item.setId("Page Size:All");
 
                 super.render(ctx, out);
@@ -1399,12 +1401,12 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        String regionName = getDataRegionName();
+        final String jsObject = DataRegion.getJavaScriptObjectReference(getDataRegionName());
         for (Integer pageSize : sizes)
         {
             boolean checked = (pageSize == maxRows);
             NavTree item = pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", null,
-                    "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
+                    jsObject + ".setMaxRows(" + String.valueOf(pageSize) + ")", checked);
             item.setId("Page Size:" + pageSize);
         }
 
@@ -1718,12 +1720,12 @@ public class QueryView extends WebPartView<Object>
 
     protected String getChangeViewScript(String viewName)
     {
-        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView({type:'view', viewName:" + PageFlowUtil.jsString(viewName) + "});";
+        return DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".changeView({type:'view', viewName:" + PageFlowUtil.jsString(viewName) + "});";
     }
 
     protected String getChangeReportScript(String reportId)
     {
-        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView({type:'report', reportId:" + PageFlowUtil.jsString(reportId) + "});";
+        return DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".changeView({type:'report', reportId:" + PageFlowUtil.jsString(reportId) + "});";
     }
 
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
@@ -1985,7 +1987,7 @@ public class QueryView extends WebPartView<Object>
 
             NavTree customizeView = new NavTree("Customize Grid");
             customizeView.setId(getBaseMenuId() + ":GridViews:Customize Grid");
-            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" + ".toggleShowCustomizeView();");
+            customizeView.setScript(DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".toggleShowCustomizeView();");
             customizeView.setImageCls("fa fa-pencil");
             button.addMenuItem(customizeView);
         }

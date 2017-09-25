@@ -283,10 +283,9 @@ public class DataColumn extends DisplayColumn
         if (_filterColumn == null)
             return;
 
-        String regionName = PageFlowUtil.jsString(ctx.getCurrentRegion().getName());
+        String regionName = ctx.getCurrentRegion().getName();
         String columnName = PageFlowUtil.jsString(_boundColumn.getFieldKey().toString());
-
-        out.write("LABKEY.DataRegions[" + regionName + "]._openFilter(" + columnName + ");");
+        out.write(DataRegion.getJavaScriptObjectReference(regionName) + "._openFilter(" + columnName + ");");
     }
 
     @Override
@@ -294,18 +293,18 @@ public class DataColumn extends DisplayColumn
     {
         if (_filterColumn == null)
             return "";
-        String tableName = ctx.getCurrentRegion().getName();
+
+        String regionName = ctx.getCurrentRegion().getName();
         String fieldKey = _filterColumn.getFieldKey().toString();
-        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(tableName) + "]" +
-                ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + ")";
+        return DataRegion.getJavaScriptObjectReference(regionName) + ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + ")";
     }
 
     @Override
     public String getClearSortScript(RenderContext ctx)
     {
-        String tableName = PageFlowUtil.jsString(ctx.getCurrentRegion().getName());
+        String regionName = ctx.getCurrentRegion().getName();
         String fieldKey = _displayColumn.getFieldKey().toString();
-        return "LABKEY.DataRegions[" + tableName + "].clearSort(" + PageFlowUtil.jsString(fieldKey) + ");";
+        return DataRegion.getJavaScriptObjectReference(regionName) + ".clearSort(" + PageFlowUtil.jsString(fieldKey) + ");";
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -851,7 +850,7 @@ public class DataColumn extends DisplayColumn
 
         String regionName = ctx.getCurrentRegion().getName();
         String fieldKey = _displayColumn.getFieldKey().toString();
-        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "]" +
+        return DataRegion.getJavaScriptObjectReference(regionName) +
                 ".changeSort(" + PageFlowUtil.jsString(fieldKey) + ", '" + h(sort.getDir()) + "')";
     }
 

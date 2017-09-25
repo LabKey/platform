@@ -980,7 +980,7 @@ public class DataRegion extends DisplayElement
                 headerMessage.append(PageFlowUtil.filter(entry.getValue()));
             }
             headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Clear All").href("#")
-                    .onClick("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].clearAllParameters(); return false;"));
+                    .onClick(getJavaScriptObjectReference() + ".clearAllParameters(); return false;"));
             sectionSeparator = "<br/><br/>";
         }
 
@@ -990,7 +990,7 @@ public class DataRegion extends DisplayElement
             headerMessage.append("<span class=\"labkey-strong\">Filter:</span>&nbsp;");
             headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
             headerMessage.append(PageFlowUtil.button("Clear All").href("#")
-                    .onClick("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].clearAllFilters(); return false;"));
+                    .onClick(getJavaScriptObjectReference() + ".clearAllFilters(); return false;"));
         }
     }
 
@@ -1172,7 +1172,7 @@ public class DataRegion extends DisplayElement
         out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\" style=\"display:none\">");
         out.write("<td colspan=\"2\" class=\"labkey-dataregion-msgbox\">");
         out.write("<span class=\"labkey-dataregion-msg-toggle fa fa-minus\" "
-                + "onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].toggleMessageArea();\" "
+                + "onclick=\"" + getJavaScriptObjectReference() + ".toggleMessageArea();\" "
                 + "title=\"Collapse message\" alt=\"close\"></span>");
         out.write("<div></div>");
         out.write("</td>");
@@ -1875,14 +1875,15 @@ public class DataRegion extends DisplayElement
 
             if (showRecordSelectors)
             {
+                final String jsObject = getJavaScriptObjectReference();
                 NavTree navtree = new NavTree();
 
                 NavTree selectAll = new NavTree("Select All");
-                selectAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectAll();");
+                selectAll.setScript(jsObject + ".selectAll();");
                 navtree.addChild(selectAll);
 
                 NavTree selectNone = new NavTree("Select None");
-                selectNone.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectNone();");
+                selectNone.setScript(jsObject + ".selectNone();");
                 navtree.addChild(selectNone);
 
                 navtree.addSeparator();
@@ -1890,28 +1891,28 @@ public class DataRegion extends DisplayElement
                 if (getShowRows() != ShowRows.PAGINATED)
                 {
                     NavTree showPaginated = new NavTree("Show Paginated");
-                    showPaginated.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showPaged();");
+                    showPaginated.setScript(jsObject + ".showPaged();");
                     navtree.addChild(showPaginated);
                 }
 
                 if (getShowRows() != ShowRows.SELECTED)
                 {
                     NavTree showSelected = new NavTree("Show Selected");
-                    showSelected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showSelected();");
+                    showSelected.setScript(jsObject + ".showSelected();");
                     navtree.addChild(showSelected);
                 }
 
                 if (getShowRows() != ShowRows.UNSELECTED)
                 {
                     NavTree showUnselected = new NavTree("Show Unselected");
-                    showUnselected.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showUnselected();");
+                    showUnselected.setScript(jsObject + ".showUnselected();");
                     navtree.addChild(showUnselected);
                 }
 
                 if (getShowRows() != ShowRows.ALL)
                 {
                     NavTree showAll = new NavTree("Show All");
-                    showAll.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showAll();");
+                    showAll.setScript(jsObject + ".showAll();");
                     navtree.addChild(showAll);
                 }
 
@@ -3209,12 +3210,12 @@ public class DataRegion extends DisplayElement
                     clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter());
 
                     String fieldKey = fieldKeys.get(0).toString();
-                    String region = "LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]";
+                    String jsObject = getJavaScriptObjectReference();
                     ContextAction.Builder action = new ContextAction.Builder()
                             .iconCls("filter")
                             // TODO: Only allow open if the column is available to the region...new scenario for UX
-                            .onClick(region + "._openFilter(" + PageFlowUtil.jsString(fieldKey) + ", arguments[0]); return false;")
-                            .onClose(region + ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
+                            .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(fieldKey) + ", arguments[0]); return false;")
+                            .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
                             .text(caption.toString())
                             .tooltip(caption.toString());
                     _contextActions.add(action.build());
@@ -3278,13 +3279,11 @@ public class DataRegion extends DisplayElement
 
     private void prepareView(RenderContext ctx)
     {
-        if (ctx.getView() != null)
+        if (ctx.getView() != null && ctx.getView().getLabel() != null)
         {
-            String region = "LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]";
-
             ContextAction.Builder action = new ContextAction.Builder()
                     .iconCls("table")
-                    .onClick(region + ".showCustomizeView(); return false;")
+                    .onClick(getJavaScriptObjectReference() + ".showCustomizeView(); return false;")
                     .text(ctx.getView().getLabel());
             _viewActions.add(action.build());
         }
@@ -3421,6 +3420,16 @@ public class DataRegion extends DisplayElement
     public String getJavascriptFormReference()
     {
         return "document.forms[" + PageFlowUtil.jsString(getFormId()) + "]";
+    }
+
+    public String getJavaScriptObjectReference()
+    {
+        return getJavaScriptObjectReference(getName());
+    }
+
+    public static String getJavaScriptObjectReference(final String regionName)
+    {
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "]";
     }
 
     public boolean isShowBorders()

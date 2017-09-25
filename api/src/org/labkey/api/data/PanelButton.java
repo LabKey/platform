@@ -77,7 +77,7 @@ public class PanelButton extends ActionButton
                 .dropdown(true)
                 .href("javascript:void(0)")
                 .iconCls(getIconCls())
-                .onClick("(function(el) { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el); })(this);")
+                .onClick("(function(el) { " + DataRegion.getJavaScriptObjectReference(_dataRegionName) + ".showButtonPanel(el); })(this);")
                 .attributes(attributes)
                 .toString();
 
