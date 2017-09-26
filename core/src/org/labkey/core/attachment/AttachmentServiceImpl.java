@@ -37,6 +37,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
@@ -827,17 +828,18 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     {
         SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
         addSelectAllEntityIdsSql(sql, Sets.newCaseInsensitiveHashSet("Audit"));
-        sql.append(") c ON EntityId = Parent\nORDER BY TableName, DocumentName");
+        sql.append(") c ON EntityId = Parent\nORDER BY TableName, DocumentName, Container");
 
         return getResultSetView(sql, "Probable Attachment Parents", null);
     }
 
-    // Creates a two-column query of EntityId and table name that selects from every EntityId column in the labkey database:
-    // - Enumerate all schemas in the labkey scope looking for tables that include an EntityId column. These are the candidates.
-    // - Create a UNION query that selects all EntityIds in the candidate tables along with a constant column that includes the table name.
+    // Creates a two-column query of ID and table name that selects from every possible attachment parent column in the labkey database:
+    // - Enumerate all tables in all schemas in the labkey scope
+    // - Enumerate columns and identify potential attachment parents (currently, EntityId columns and ObjectIds extracted from LSIDs)
+    // - Create a UNION query that selects the candidate ids along with a constant column that lists the table name
     private void addSelectAllEntityIdsSql(SQLFragment sql, Set<String> schemasToIgnore)
     {
-        List<ColumnInfo> entityIdColumns = new LinkedList<>();
+        List<String> selectStatements = new LinkedList<>();
 
         DbScope.getLabKeyScope().getSchemaNames().stream()
             .filter(schemaName->!schemasToIgnore.contains(schemaName)) // Exclude any passed in schema names
@@ -847,23 +849,35 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or fake-o tables)
                 .map(SchemaTableInfo::getColumns)
                 .flatMap(Collection::stream)
-                .filter(c->StringUtils.containsIgnoreCase(c.getName(), "EntityId"))
                 .filter(ColumnRenderProperties::isStringType)
-                .forEach(entityIdColumns::add)
+                .forEach(c->addSelectStatement(selectStatements, c))
             );
 
-        boolean first = true;
+        sql.append(StringUtils.join(selectStatements, "    UNION\n"));
+    }
 
-        for (ColumnInfo column : entityIdColumns)
+    private void addSelectStatement(List<String> selectStatements, ColumnInfo column)
+    {
+        String expression;
+        String where = null;
+
+        if (StringUtils.containsIgnoreCase(column.getName(), "EntityId"))
         {
-            if (first)
-                first = false;
-            else
-                sql.append("    UNION\n");
-
-            TableInfo table = column.getParentTable();
-            sql.append("    SELECT ").append(column.getSelectName()).append(" AS EntityId, '").append(table.getSelectName()).append("' AS TableName FROM ").append(table.getSelectName()).append("\n");
+            expression = column.getSelectName();
         }
+        else if (StringUtils.endsWithIgnoreCase(column.getName(), "LSID"))
+        {
+            Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectName(), column.getSqlDialect());
+            expression = pair.first;
+            where = pair.second;
+        }
+        else
+        {
+            return;
+        }
+
+        TableInfo table = column.getParentTable();
+        selectStatements.add("    SELECT " + expression + " AS EntityId, '" + table.getSelectName() + "' AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
     }
 
     private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable String link)

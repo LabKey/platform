@@ -14,6 +14,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -42,8 +43,12 @@ public class ExpDataClassType implements AttachmentType
     {
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
 
-        // Get a dialect-specific expression that can extract an ObjectId from the LSID column
-        String expressionToExtractObjectId = Lsid.getSqlExpressionToExtractObjectId("LSID", tableInfo.getSqlDialect());
+        // Get a dialect-specific expression that can extract an ObjectId from the LSID column and a WHERE clause to
+        // filter the rows to LSIDs containing ObjectIds
+        Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId("LSID", tableInfo.getSqlDialect());
+        String expressionToExtractObjectId = pair.first;
+        String where = pair.second;
+
         List<String> selectStatements = new LinkedList<>();
 
         // Enumerate the rows in exp.DataClass
@@ -56,7 +61,7 @@ public class ExpDataClassType implements AttachmentType
             // Add a select for the ObjectIds in this ExpDataClass if the domain includes an attachment column. ExpDataClass attachments
             // use the LSID's ObjectId as the attachment parent EntityId, so we need to use a SQL expression to extract it.
             if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                selectStatements.add("\n    SELECT " + expressionToExtractObjectId + " AS ID FROM expdataclass." + domain.getStorageTableName());
+                selectStatements.add("\n    SELECT " + expressionToExtractObjectId + " AS ID FROM expdataclass." + domain.getStorageTableName() + " WHERE " + where);
         });
 
         if (selectStatements.isEmpty())
