@@ -74,11 +74,19 @@ public class ModuleReportResource
                 String xml = getFileContents(_metaDataFile);
                 d = _reportDescriptor.setDescriptorFromXML(xml);
                 String createdDateStr = _reportDescriptor.getProperty(ReportDescriptor.Prop.moduleReportCreatedDate.name());
+
                 if (createdDateStr != null)
                 {
                     DateFormat format = new SimpleDateFormat(DateUtil.getDateFormatString(ContainerManager.getRoot()));
-                    Date createdDate = format.parse(createdDateStr);
-                    _reportDescriptor.setCreated(createdDate);
+                    try
+                    {
+                        Date createdDate = format.parse(createdDateStr);
+                        _reportDescriptor.setCreated(createdDate);
+                    }
+                    catch (ParseException e)
+                    {
+                        Logger.getLogger(ModuleReportResource.class).warn("Unable to parse moduleReportCreatedDate \"" + createdDateStr + "\" from file " + _sourceFile.getPath(), e);
+                    }
                 }
             }
             catch(IOException e)
@@ -88,10 +96,6 @@ public class ModuleReportResource
             catch(XmlException e)
             {
                 Logger.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile.getPath(), e);
-            }
-            catch (ParseException e)
-            {
-                Logger.getLogger(ModuleReportResource.class).warn("Unable to parse moduleReportCreatedDate from file " + _sourceFile.getPath(), e);
             }
         }
         return d;
