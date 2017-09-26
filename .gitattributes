@@ -56,7 +56,6 @@ api/src/org/labkey/api/action/HasViewContext.java -text
 api/src/org/labkey/api/action/IgnoresAllocationTracking.java -text
 api/src/org/labkey/api/action/InterfaceAction.java -text
 api/src/org/labkey/api/action/LabKeyError.java -text
-api/src/org/labkey/api/action/LabKey_Error.java -text
 api/src/org/labkey/api/action/Marshal.java -text
 api/src/org/labkey/api/action/Marshaller.java -text
 api/src/org/labkey/api/action/MutatingApiAction.java -text
