@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
+ * Query-exposed schema for the pipeline module.
  * User: jeckels
  * Date: Dec 18, 2009
  */
@@ -115,14 +116,11 @@ public class PipelineQuerySchema extends UserSchema
             }
 
             table.getColumn("RowId").setURL(DetailsURL.fromString(urlExp));
-            table.getColumn("Status").setDisplayColumnFactory(new DisplayColumnFactory()
+            table.getColumn("Status").setDisplayColumnFactory(colInfo ->
             {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    DataColumn result = new DataColumn(colInfo);
-                    result.setNoWrap(true);
-                    return result;
-                }
+                DataColumn result = new DataColumn(colInfo);
+                result.setNoWrap(true);
+                return result;
             });
 
             table.getColumn("Description").setDisplayColumnFactory(new DisplayColumnFactory()

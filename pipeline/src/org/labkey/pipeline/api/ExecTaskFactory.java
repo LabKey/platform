@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
@@ -122,9 +121,8 @@ public class ExecTaskFactory extends SimpleTaskFactory
 
         // TODO: Better parsing: handle quoting and whitespace in tokens
         String[] parts = command.split(" ");
-        for (int i = 0; i < parts.length; i++)
+        for (String part : parts)
         {
-            String part = parts[i];
             part = part.trim();
             if (part.length() == 0)
                 continue;
@@ -153,7 +151,6 @@ public class ExecTaskFactory extends SimpleTaskFactory
                 }
                 else if (inputs.containsKey(key))
                 {
-                    TaskPath taskPath = inputs.get(key);
                     // TODO: Get help, switch, optional/required settings
                     PathInLine path = new PathInLine();
                     path.setFunction(WorkDirectory.Function.input);
@@ -162,7 +159,6 @@ public class ExecTaskFactory extends SimpleTaskFactory
                 }
                 else if (outputs.containsKey(key))
                 {
-                    TaskPath taskPath = outputs.get(key);
                     PathInLine path = new PathInLine();
                     path.setFunction(WorkDirectory.Function.output);
                     path.setKey(key);

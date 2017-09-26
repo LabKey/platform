@@ -65,6 +65,7 @@ import java.util.Map;
 
 
 /**
+ * Manages pipeline root configurations and notification emails for job success and failures.
  */
 public class PipelineManager
 {

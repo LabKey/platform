@@ -82,9 +82,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-/**
- * <code>PipelineJobServiceImpl</code>
- */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";

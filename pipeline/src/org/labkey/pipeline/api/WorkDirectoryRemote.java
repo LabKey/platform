@@ -39,7 +39,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Used to copy files from (and back to) a remote file system so that they can be used directly on the local file system 
+ * Used to copy files from (and back to) a remote file system so that they can be used directly on the local file system,
+ * improving performance on high-latency and/or low-bandwidth network file systems
  *
  * @author jeckels
  */

@@ -41,10 +41,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: jeckels
-* Date: Jun 17, 2008
-*/
+/**
+ * User: jeckels
+ * Date: Jun 17, 2008
+ */
 public abstract class AbstractWorkDirectory implements WorkDirectory
 {
     private static final Logger LOG = Logger.getLogger(AbstractWorkDirectory.class);

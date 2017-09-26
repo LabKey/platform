@@ -67,7 +67,7 @@ import java.util.Set;
  * Date: 11/18/13
  *
  * SimpleTaskFactory is a base class for creating file-based module task definitions.
- * Modules register a XMLBean SchemaType with a XMLBeanTaskFactoryFactory to create concerte TaskFactory types.
+ * Modules register a XMLBean SchemaType with a XMLBeanTaskFactoryFactory to create concrete TaskFactory types.
  * CONSIDER: Move to API or Internal so other modules can create subclasses.
  *
  * @see ExecTaskFactory
@@ -105,8 +105,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         factory.setDeclaringModule(module);
         factory.setModuleTaskPath(tasksDir);
 
-        Map<String, JobParamToCommandArgs> params = createInputParams(xtask.getInputs());
-        factory._params = params;
+        factory._params = createInputParams(xtask.getInputs());
 
         Map<String, TaskPath> inputs = createInputPaths(xtask.getInputs());
         factory.setInputPaths(inputs);
@@ -308,7 +307,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         assert xfile.isSetSuffixes();
 
         //noinspection unchecked
-        List<String> suffixes = new ArrayList<String>(xfile.getSuffixes());
+        List<String> suffixes = new ArrayList<>(xfile.getSuffixes());
 
         boolean dir = xfile.isSetDirectory() && xfile.getDirectory();
 
@@ -323,8 +322,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
         if (suffixes.size() > 0)
             defaultSuffix = suffixes.get(0);
 
-        FileType ft = new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentTypes);
-        return ft;
+        return new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentTypes);
     }
 
     /**

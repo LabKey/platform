@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
+ * should exit with a zero exit code in the case of success.
  * User: jeckels
  * Date: Apr 8, 2008
  */

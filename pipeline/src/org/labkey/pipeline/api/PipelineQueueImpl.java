@@ -39,9 +39,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Runs all jobs in the web server with a simple thread pool.
  */
 public class PipelineQueueImpl extends AbstractPipelineQueue
 {
@@ -53,7 +55,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
     // This is the list of jobs that have been submitted to JobRunner-- they
     // may be either running or pending.
-    private final HashSet<PipelineJob> _submitted = new HashSet<>();
+    private final Set<PipelineJob> _submitted = new HashSet<>();
 
     private final JobRunner _runner = new JobRunner("Pipeline", MAX_RUNNING_JOBS);
 

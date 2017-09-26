@@ -24,7 +24,8 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * <code>WorkDirectoryLocal</code>
+ * Implementation that creates a temp directory into which files are copied to avoid writing partial (and thus mangled)
+ * result files directly to their intended target in the case of failures
  *
  * @author brendanx
  */

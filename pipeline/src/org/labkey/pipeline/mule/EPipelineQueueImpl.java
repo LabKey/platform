@@ -51,10 +51,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * EPipelineQueueImpl class
- * <p/>
- * Enterprise pipeline queue uses Mule to place jobs on a message queue.
- * <p/>
+ * Enterprise pipeline queue uses Mule to place jobs on a JMS message queue.
+
  * Created: Sep 28, 2007
  *
  * @author bmaclean
