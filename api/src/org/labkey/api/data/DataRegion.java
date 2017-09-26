@@ -551,7 +551,7 @@ public class DataRegion extends DisplayElement
 
     public boolean getAllowHeaderLock()
     {
-        return _allowHeaderLock && !PageFlowUtil.useExperimentalCoreUI();
+        return _allowHeaderLock;
     }
 
     public final String getDomId()
@@ -1977,7 +1977,7 @@ public class DataRegion extends DisplayElement
 
         out.write("</tr>\n");
 
-        if (this.getAllowHeaderLock())
+        if (!newUI && this.getAllowHeaderLock())
         {
             out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row-spacer") + "\">");
 

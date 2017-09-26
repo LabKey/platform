@@ -2185,7 +2185,12 @@ if (!LABKEY.DataRegions) {
      */
     var _initHeaderLocking = function() {
         if (this._allowHeaderLock === true) {
-            this.hLock = new HeaderLock(this);
+            if (NEW_UI) {
+                this.hLock = new NewHeaderLock(this);
+            }
+            else {
+                this.hLock = new HeaderLock(this);
+            }
         }
     };
 
@@ -3688,6 +3693,158 @@ if (!LABKEY.DataRegions) {
                 }
             }
         });
+    };
+
+    var NewHeaderLock = function(region) {
+
+        // init
+        if (!region.headerLock()) {
+            region._allowHeaderLock = false;
+            return;
+        }
+
+        this.region = region;
+
+        var table = $('#' + region.domId);
+        var firstRow = table.find('tr.labkey-alternate-row').first().children('td');
+
+        // If no data rows exist just turn off header locking
+        if (firstRow.length === 0) {
+            firstRow = table.find('tr.labkey-row').first().children('td');
+            if (firstRow.length === 0) {
+                region._allowHeaderLock = false;
+                return;
+            }
+        }
+
+        var me = this,
+            timeout;
+
+        var BOTTOM_OFFSET = 100;
+        var HEADER_CONSTANT = 93;
+        // TODO: Determine offset based on page layout
+
+        var headerRowId = region.domId + '-column-header-row';
+        var headerRow = $('#' + headerRowId);
+
+        if (!headerRow) {
+            region._allowHeaderLock = false;
+            return;
+        }
+
+        var locked = false;
+        var lastLeft = 0;
+        var pos = [ 0, 0, 0, 0 ];
+
+        // init
+        var floatRow = headerRow
+                .clone()
+                // TODO: Possibly namespace all the ids underneath
+                .attr('id', headerRowId + '-float')
+                .css({
+                    'box-shadow': '0 4px 4px #DCDCDC',
+                    display: 'none',
+                    position: 'fixed',
+                    top: HEADER_CONSTANT,
+                    'z-index': 9000 // 13229
+                });
+
+        floatRow.insertAfter(headerRow);
+
+        var disable = function() {
+            me.region._allowHeaderLock = false;
+
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+
+            $(window)
+                    .unbind('load', domTask)
+                    .unbind('resize', resizeTask)
+                    .unbind('scroll', onScroll);
+            $(document)
+                    .unbind('DOMNodeInserted', domTask);
+        };
+
+        /**
+         * Configures the 'pos' array containing the following values:
+         * [0] - X-coordinate of the top of the object relative to the offset parent.
+         * [1] - Y-coordinate of the top of the object relative to the offset parent.
+         * [2] - Y-coordinate of the bottom of the object.
+         * This method assumes interaction with the Header of the Data Region.
+         */
+        var loadPosition = function() {
+            var header = headerRow.offset() || {top: 0};
+            var table = $('#' + region.domId);
+
+            var bottom = header.top + table.height() - HEADER_CONSTANT - BOTTOM_OFFSET;
+
+            pos = [ header.left, header.top - HEADER_CONSTANT, bottom ];
+        };
+
+        loadPosition();
+
+        var onResize = function() {
+            loadPosition();
+            var sub_h = headerRow.find('th');
+
+            floatRow.width(headerRow.width()).find('th').each(function(i, el) {
+                $(el).width($(sub_h[i]).width());
+            });
+        };
+
+        /**
+         * WARNING: This function is called often. Performance implications for each line.
+         */
+        var onScroll = function() {
+            if (window.pageYOffset >= pos[1] && window.pageYOffset < pos[2]) {
+                var newLeft = pos[0] - window.pageXOffset;
+                if (!locked) {
+                    locked = true;
+                    floatRow.css({
+                        display: 'table-row',
+                        left: newLeft
+                    });
+                }
+                else if (lastLeft !== newLeft) {
+                    floatRow.css('left', newLeft);
+                }
+                floatRow.css({
+                    top: HEADER_CONSTANT
+                });
+                lastLeft = newLeft;
+            }
+            else if (locked && window.pageYOffset >= pos[2]) {
+                floatRow.css({
+                    top: pos[2] - window.pageYOffset + HEADER_CONSTANT
+                });
+            }
+            else if (locked) {
+                locked = false;
+                floatRow.hide();
+            }
+        };
+
+        var resizeTask = function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(onResize, 110);
+        };
+
+        var domTask = function() {
+            resizeTask();
+            onScroll();
+        };
+
+        $(window)
+                .one('load', domTask)
+                .on('resize', resizeTask)
+                .on('scroll', onScroll);
+        $(document)
+                .on('DOMNodeInserted', domTask); // 13121
+
+        return {
+            disable: disable
+        }
     };
 
     var HeaderLock = function(region) {
