@@ -66,6 +66,11 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         if (-1 != betaIdx)
             databaseProductVersion = StringUtils.left(databaseProductVersion, betaIdx);
 
+        int rcIdx = databaseProductVersion.indexOf("rc");
+
+        if (-1 != rcIdx)
+            databaseProductVersion = StringUtils.left(databaseProductVersion, rcIdx);
+
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
 
         // Get the appropriate dialect and stash version information
@@ -108,7 +113,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (96 == version)
                 return new PostgreSql96Dialect();
 
-            if (logWarnings)
+            if (version > 100 && logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
             return new PostgreSql100Dialect();
