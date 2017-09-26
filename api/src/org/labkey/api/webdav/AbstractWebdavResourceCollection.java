@@ -28,9 +28,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Convenience base class for WebDav entities that contain other collections or file-style resources.
  * User: matthewb
  * Date: Oct 22, 2008
- * Time: 2:49:44 PM
  */
 public abstract class AbstractWebdavResourceCollection extends AbstractWebdavResource
 {

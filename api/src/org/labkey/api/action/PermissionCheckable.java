@@ -19,6 +19,9 @@ package org.labkey.api.action;
 import org.labkey.api.view.UnauthorizedException;
 
 /**
+ * Interface for {@link Action} classes that want to handle permission checks
+ * in a way that's more complex than allowed by the standard
+ * {@link org.labkey.api.security.RequiresPermission} style of annotations.
  * User: jeckels
  * Date: Apr 9, 2008
  */

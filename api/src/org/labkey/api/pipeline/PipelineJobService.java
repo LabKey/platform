@@ -24,7 +24,7 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 /**
- * <code>PipelineJobService</code> exposes the interface for dealing with
+ * Exposes the interface for dealing with
  * TaskPipelines and TaskFactories.  It is kept separate from the PipelineService,
  * because it must be available on remote machines running Tasks and TaskPipelines
  * under the Mule server.

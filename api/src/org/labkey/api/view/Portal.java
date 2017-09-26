@@ -86,6 +86,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * Manages the configuration of portal pages, which can be configured by admins to show
+ * a desired set of {@link WebPartView} sections.
+ */
 public class Portal
 {
     private static final Logger LOG = Logger.getLogger(Portal.class);

@@ -21,9 +21,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
+ * Base class for WebDav entities, typically backed by rows in the database, that are exposed
+ * as if they are files. An example is a custom SQL query created through the schema browser, stored
+ * in the query.queryDef table, that is exposed via WebDav as if it were a .sql file in a virtual file system.
  * User: matthewb
  * Date: Oct 22, 2008
- * Time: 3:00:19 PM
  */
 public abstract class AbstractDocumentResource extends AbstractWebdavResource
 {

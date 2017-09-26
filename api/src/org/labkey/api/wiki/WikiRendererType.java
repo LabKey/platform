@@ -21,9 +21,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 
 /**
+ * All of the different types of raw wiki content that can then be rendered to HTML or other views.
  * User: Tamra Myers
  * Date: Aug 17, 2006
- * Time: 6:09:38 PM
  */
 public enum WikiRendererType
 {

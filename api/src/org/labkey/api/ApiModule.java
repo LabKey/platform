@@ -34,6 +34,9 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
+ * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
+ * resource types within LabKey Server.
+ *
  * Created by susanh on 1/19/17.
  */
 public class ApiModule extends CodeOnlyModule

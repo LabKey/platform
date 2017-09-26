@@ -22,9 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
+ * Manages state for a tree where nodes may be collapsed or expanded, like a {@link org.labkey.api.data.Container}
+ * hierarchy or a set of wiki documents.
  * User: brittp
  * Date: Apr 10, 2007
- * Time: 1:54:56 PM
  */
 public interface Collapsible
 {

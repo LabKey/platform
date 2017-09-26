@@ -43,7 +43,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-
+/**
+ *
+ * @param <ModelBean> the class to use as the data model for configuration
+ */
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 {
     public enum FrameType

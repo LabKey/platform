@@ -21,6 +21,10 @@ import org.labkey.api.security.User;
 
 import java.util.List;
 
+/**
+ * PipelineQueues accept submissions of jobs and some of their basic management. Implementations might run all work in
+ * a single location, such as the web server, or know how to hand jobs off to remote computing resources.
+ */
 public interface PipelineQueue
 {
     /**

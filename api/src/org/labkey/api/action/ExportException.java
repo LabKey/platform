@@ -18,6 +18,9 @@ package org.labkey.api.action;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
+ * Thrown to indicate that there was a problem performing an export, when the intent was to streaming the results back
+ * to the client. Attempts to render a view with the error info back to the client, assuming a partial response
+ * hasn't yet been committed.
  * User: jeckels
  * Date: Nov 11, 2008
  */

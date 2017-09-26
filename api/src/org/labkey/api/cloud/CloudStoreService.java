@@ -28,6 +28,7 @@ import java.util.Set;
  */
 public interface CloudStoreService
 {
+    /** Root node for containers that are exposing cloud-backed storage in WebDAV */
     String CLOUD_NAME = "@cloud";
 
     static CloudStoreService get()

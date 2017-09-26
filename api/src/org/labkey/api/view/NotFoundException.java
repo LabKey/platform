@@ -19,6 +19,10 @@ import org.labkey.api.util.SkipMothershipLogging;
 
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Throw to indicate that the client has referred to a resource that does not exist. Uncaught, this will
+ * bubble up to the top level and be returned via a 404 HTTP response code.
+ */
 public class NotFoundException extends RuntimeException implements SkipMothershipLogging
 {
     public NotFoundException()

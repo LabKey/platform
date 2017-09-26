@@ -25,7 +25,11 @@ import org.springframework.validation.Errors;
 import java.io.IOException;
 import java.io.Writer;
 
-/** Renders a grid (table with separate columns for each field, and rows for each separate element */
+/**
+ * Renders a grid (table with separate columns for each field, and rows for each separate element
+ * Modern code should not generally create a GridView directly - it should go through a {@link org.labkey.api.query.QueryView}
+ * instead, which will in turn create a GridView.
+ */
 public class GridView extends DataView
 {
     public GridView(DataRegion dataRegion, Errors errors)

@@ -23,7 +23,9 @@ import org.labkey.api.security.User;
 
 import javax.servlet.http.HttpServletRequest;
 
-
+/**
+ * Utility base class for the form bean that actions use to bind their HTTP parameter values.
+ */
 public class ViewForm extends ReturnUrlForm implements HasViewContext
 {
     protected User _user;

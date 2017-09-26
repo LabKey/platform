@@ -26,9 +26,10 @@ import org.labkey.api.services.ServiceRegistry;
 import java.util.Set;
 
 /**
+ * Renders the contents of a database column in one of the supported {@link WikiRendererType} formats, as specified
+ * by another column (referenced via the renderTypeColumnName constructor argument
  * User: markigra
  * Date: 10/25/11
- * Time: 7:57 PM
  */
 public class WikiRendererDisplayColumn extends DataColumn
 {

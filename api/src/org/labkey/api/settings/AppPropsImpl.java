@@ -47,6 +47,7 @@ import java.util.Set;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 /**
+ * Mutable backing implementation for server-side application settings.
  * User: jeckels
  * Date: Jun 21, 2012
  */

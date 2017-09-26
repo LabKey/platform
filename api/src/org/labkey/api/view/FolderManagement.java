@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 /**
  * User: klum
  * Date: Jan 17, 2011
- * Time: 10:36:02 AM
  */
 public class FolderManagement
 {

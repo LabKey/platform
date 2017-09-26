@@ -23,7 +23,16 @@ import org.labkey.api.util.SkipMothershipLogging;
  */
 public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
 {
-    public enum Type { redirectToLogin, sendBasicAuth, sendUnauthorized };
+    /** Options for how the client should be informed of not being allowed to see a resource */
+    public enum Type
+    {
+        /** Redirect the browser to a different URL to render a login form */
+        redirectToLogin,
+        /** Send a 401, but signal that the server would accept HTTP BasicAuth credentials */
+        sendBasicAuth,
+        /** Send a 401 and don't solicit BasicAuth credentials */
+        sendUnauthorized
+    };
 
     Type _type = Type.redirectToLogin;
 

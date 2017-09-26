@@ -25,9 +25,9 @@ import org.labkey.api.security.User;
 import java.util.Map;
 
 /**
+ * Base class for configuration properties persisted through the "prop" schema.
  * User: adam
  * Date: Aug 2, 2008
- * Time: 11:13:39 AM
  */
 public abstract class AbstractSettingsGroup
 {
@@ -69,8 +69,8 @@ public abstract class AbstractSettingsGroup
 
     protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
     {
-        Map props = getProperties(c);
-        String value = (String) props.get(name);
+        Map<String, String> props = getProperties(c);
+        String value = props.get(name);
         return value != null ? value : defaultValue;
     }
 

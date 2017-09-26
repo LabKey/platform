@@ -17,12 +17,11 @@
 package org.labkey.api.wiki;
 
 /**
+ * Something that knows how to render "raw" wiki content into HTML that could be passed directly to a web browser.
  * User: Tamra Myers
  * Date: Aug 16, 2006
- * Time: 11:57:19 AM
  */
 public interface WikiRenderer
 {
-    // TODO: Pass in "wiki page", "message", "issue", etc. so we can tailor any error messages
     FormattedHtml format(String text);
 }

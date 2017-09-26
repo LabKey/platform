@@ -25,11 +25,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
+ * Base class for action that never want to serve up a regular HTTP response, and always
+ * want to redirect the client to a differnet URL, perhaps after performing some work.
+ *
  * User: adamr
  * Date: September 19, 2007
- * Time: 9:15:37 AM
- *
- * Simple action that mimics old style Beehive actions (to an extent).  Handles post or get, plus redirect.
  */
 public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 {

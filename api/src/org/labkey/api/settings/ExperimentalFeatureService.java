@@ -26,7 +26,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.labkey.api.settings.AppPropsImpl.EXPERIMENTAL_FEATURE_PREFIX;
 
-
+/**
+ * Manages the list of experimental features that can be enabled or disabled within a given deployment,
+ * and their current state. Generally speaking, they are not considered production-ready to be turned on, and will
+ * be disabled by default.
+ */
 public interface ExperimentalFeatureService
 {
     void addFeatureListener(String feature, ExperimentFeatureListener listener);

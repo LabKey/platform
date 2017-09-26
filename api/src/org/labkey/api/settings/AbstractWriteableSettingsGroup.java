@@ -28,9 +28,9 @@ import org.labkey.api.util.PageFlowUtil;
 import java.util.Map;
 
 /**
+ * Subclass of {@link AbstractSettingsGroup} that allows mutating the property values.
  * User: adam
  * Date: Aug 2, 2008
- * Time: 11:36:03 AM
  */
 public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGroup
 {

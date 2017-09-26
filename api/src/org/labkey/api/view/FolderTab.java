@@ -35,10 +35,9 @@ import java.util.Set;
 /**
  * A FolderTab is a UI element at the top of the page that allows users to navigate to other key pages.
  * They are backed by one of the {@link TAB_TYPE} values.
-* User: brittp
-* Date: Sep 15, 2011
-* Time: 4:15:32 PM
-*/
+ * User: brittp
+ * Date: Sep 15, 2011
+ */
 public abstract class FolderTab
 {
     private final String _name;

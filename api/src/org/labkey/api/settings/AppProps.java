@@ -191,8 +191,17 @@ public interface AppProps
      */
     String getAdministratorContactHTML();
 
+    /**
+     * Whether to use the newer, and preferred, container-relative style of URLs of the form
+     * /contextPath/container/controller-action.view, or the older controller-relative style like
+     * /contextPath/controller/container/action.view
+     */
     boolean getUseContainerRelativeURL();
 
+    /**
+     * @return if server has been explicitly configured to use container-style URLs, or false if it is
+     * falling back to the default setting
+     */
     boolean isSetUseContainerRelativeURL();
 
     boolean isAllowSessionKeys();

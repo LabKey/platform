@@ -31,8 +31,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Base class for actions that just want to accept a file by HTTP upload.
- * Writes error messages directly back to the stream as text
+ * Base class for actions that want to accept a file by HTTP upload.
+ * Writes error messages directly back to the stream as plain text
  * User: jeckels
  * Date: Jan 19, 2009
  */
