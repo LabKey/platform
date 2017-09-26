@@ -111,8 +111,8 @@ public class TruncationTest extends BaseWebDriverTest
     @Test
     public void testTruncateVisibility()
     {
-        impersonateRole("Editor");
         goToProjectHome();
+        impersonateRole("Editor");
         clickAndWait(Locator.linkWithText(LIST_NAME));
         assertTextNotPresent("Delete All Rows");
         stopImpersonating();
