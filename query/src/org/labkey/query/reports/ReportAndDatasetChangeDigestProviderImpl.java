@@ -36,6 +36,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -167,7 +168,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
         template.init(form.getContainer(), form.getReports());
 
         EmailMessage msg = ems.createMessage(LookAndFeelProperties.getInstance(form.getContainer()).getSystemEmailAddress(),
-                new String[]{form.getUser().getEmail()}, template.renderSubject(form.getContainer()));
+                Collections.singletonList(form.getUser().getEmail()), template.renderSubject(form.getContainer()));
         msg.setSenderName(template.renderSenderName(form.getContainer()));
         msg.addContent(MimeType.HTML, template.renderBody(form.getContainer()));
 

@@ -172,7 +172,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 {
                     FileDigestForm form = new FileDigestForm(user, c, recordMap);
                     EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(),
-                            new String[]{user.getEmail()}, subject);
+                            Collections.singletonList(user.getEmail()), subject);
 
                     // TODO: This approach means normal context isn't set on the JSPs, e.g., getContainer() returns null.
                     // Perhaps we should use a mock ViewContext, like we do with email notifications

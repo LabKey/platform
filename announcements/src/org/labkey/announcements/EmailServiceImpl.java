@@ -86,7 +86,7 @@ public class EmailServiceImpl implements EmailService
             try
             {
                 MimeMessage mm = msg.createMessage();
-                emailer.addMessage(Arrays.asList(msg.getTo()), mm);
+                emailer.addMessage(msg.getTo(), mm);
             }
             catch (MessagingException e)
             {
@@ -98,7 +98,7 @@ public class EmailServiceImpl implements EmailService
     }
 
     @Override
-    public EmailMessage createMessage(String from, String[] to, String subject)
+    public EmailMessage createMessage(String from, List<String> to, String subject)
     {
         return new EmailMessageImpl(from, to, subject);
     }
@@ -166,7 +166,7 @@ public class EmailServiceImpl implements EmailService
     private static class EmailMessageImpl implements EmailMessage
     {
         private final String _from;
-        private final Map<Message.RecipientType, String[]> _recipients = new HashMap<>();
+        private final Map<Message.RecipientType, List<String>> _recipients = new HashMap<>();
         private final String _subject;
         private final Map<MimeType, String> _contentMap = new HashMap<>();
         private final Map<String, String> _headers = new HashMap<>();
@@ -174,7 +174,7 @@ public class EmailServiceImpl implements EmailService
         private List<File> _files;
         private String _senderName;
 
-        public EmailMessageImpl(String from, String[] to, String subject)
+        public EmailMessageImpl(String from, List<String> to, String subject)
         {
             _from = from;
             _recipients.put(Message.RecipientType.TO, to);
@@ -191,13 +191,13 @@ public class EmailServiceImpl implements EmailService
             _senderName = senderName;
         }
 
-        public String[] getTo()
+        public List<String> getTo()
         {
             if (_recipients.containsKey(Message.RecipientType.TO))
             {
                 return _recipients.get(Message.RecipientType.TO);
             }
-            return new String[0];
+            return Collections.emptyList();
         }
 
         public String getSubject()
@@ -270,7 +270,7 @@ public class EmailServiceImpl implements EmailService
                 throw new MessagingException(e.getMessage(), e);
             }
 
-            for (Entry<Message.RecipientType, String[]> entry : _recipients.entrySet())
+            for (Entry<Message.RecipientType, List<String>> entry : _recipients.entrySet())
             {
                 List<InternetAddress> addresses = new ArrayList<>();
 
@@ -381,7 +381,7 @@ public class EmailServiceImpl implements EmailService
         private EmailMessage getBaseMessage()
         {
             EmailMessage msg = EmailService.get().createMessage("test@example.com",
-                new String[]{"to@example.com"},
+                Collections.singletonList("to@example.com"),
                 "JUnit Test Email");
             msg.addContent(MimeType.HTML, "This is a test email.");
 
