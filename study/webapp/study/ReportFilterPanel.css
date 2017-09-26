@@ -107,3 +107,14 @@
 .rpf .paging-toolbar {
     background: transparent;
  }
+
+/* Wrapping container selectors for dataset faceted filtering (dataregion/panel/Facet.js) */
+.dataset-facet-filter-ct {
+    float: left;
+    width: 275px;
+}
+
+.dataset-facet-filter-region-ct {
+    float: right;
+    width: calc(100% - 275px);
+}

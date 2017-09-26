@@ -17,6 +17,7 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
+import org.labkey.test.components.PagingWidget;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.TimeChartWizard;
@@ -52,6 +54,7 @@ import static org.labkey.test.components.ext4.Window.Window;
 @Category({DailyA.class})
 public class StudyDatasetsTest extends BaseWebDriverTest
 {
+    {setIsBootstrapWhitelisted(true);}
     private static final String CATEGORY1 = "Category1";
     private static final String GROUP1A = "Group1A";
     private static final String GROUP1B = "Group1B";
@@ -223,7 +226,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForText("Dataset Properties");
         clickButtonContainingText("View Data");
         waitForText("All data");
-        _extHelper.clickMenuButton("Insert", "Import Bulk Data");
+        new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         waitForText("Copy/paste text");
         setFormElement(Locator.xpath("//textarea"), header + tsv);
         clickButton("Submit", 0);
@@ -307,9 +310,11 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         DataRegionTable dataregion = new DataRegionTable(regionName, getDriver());
         DatasetFacetPanel facetPanel = dataregion.openSideFilterPanel();
 
+        PagingWidget pagingWidget = dataregion.getPagingWidget();
+
         waitForElement(Locator.paginationText(24));
         facetPanel.clickGroupLabel(GROUP1A);
-        waitForElementToDisappear(Locator.css(".labkey-pagination"), WAIT_FOR_JAVASCRIPT);
+        Assert.assertFalse(pagingWidget.getComponentElement().isDisplayed());
         waitForElement(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
