@@ -163,7 +163,7 @@ public class CrosstabDataRegion extends DataRegion
                 out.write(" labkey-show-borders");
             out.write(" labkey-group-column-header");
             out.write("\">\n");
-            out.write(caption == null ? "" : PageFlowUtil.filter(caption));
+            out.write(caption == null ? "" : caption);
             out.write("</th>\n");
         }
         else
@@ -178,7 +178,7 @@ public class CrosstabDataRegion extends DataRegion
             if (isShowBorders())
                 out.write(" labkey-show-borders");
             out.write("\">\n");
-            out.write(caption == null ? "" : PageFlowUtil.filter(caption));
+            out.write(caption == null ? "" : caption);
             out.write("</td>\n");
         }
     }
