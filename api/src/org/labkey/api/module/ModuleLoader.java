@@ -123,6 +123,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
+ * Drives the process of initializing all of the modules at startup time and otherwise managing their life cycle.
  * User: migra
  * Date: Jul 13, 2005
  */

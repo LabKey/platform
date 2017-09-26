@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 
 /**
- * Html view based on HTML source stored in a module's ./resources/views directory.
+ * HTML web part based on .html file stored in a module's ./resources/views directory.
  * User: Dave
  * Date: Jan 23, 2009
  */

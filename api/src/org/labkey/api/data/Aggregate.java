@@ -32,9 +32,10 @@ import java.util.Date;
 import java.util.Map;
 
 /**
+ * Configuration to track that a column should be displayed with summary information about its content, such as
+ * its maximum value or the sum of all of its values.
  * User: brittp
  * Date: Aug 6, 2006
- * Time: 3:36:42 PM
  */
 public class Aggregate
 {

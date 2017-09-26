@@ -139,7 +139,7 @@ public class ContainerManager
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
     public static final String TABFOLDER_CHILDREN_DELETED = "tabChildrenDeleted";
 
-    // enum of properties you can see in property change events
+    /** enum of properties you can see in property change events */
     public enum Property
     {
         Name,
@@ -1654,7 +1654,7 @@ public class ContainerManager
     }
 
 
-    // Retrieve entire container hierarchy
+    /** Retrieve entire container hierarchy */
     public static MultiValuedMap<Container, Container> getContainerTree()
     {
         final MultiValuedMap<Container, Container> mm = new ArrayListValuedHashMap<>();

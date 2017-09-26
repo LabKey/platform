@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: klum
@@ -33,7 +34,7 @@ public interface EmailService
         return ServiceRegistry.get().getService(EmailService.class);
     }
 
-    EmailMessage createMessage(String from, String[] to, String subject);
+    EmailMessage createMessage(String from, List<String> to, String subject);
 
     /**
      * Sends multiple email messages asynchronously in a background thread

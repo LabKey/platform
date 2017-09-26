@@ -24,9 +24,9 @@ import org.labkey.api.view.NotFoundException;
 import java.util.List;
 
 /**
+ * Helper wrapper over a standard SimpleFilter that sets up a filter on the table's primary key.
  * User: arauch
  * Date: Jan 11, 2005
- * Time: 8:05:38 AM
  */
 public class PkFilter extends SimpleFilter
 {

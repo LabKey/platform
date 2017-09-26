@@ -16,9 +16,9 @@
 package org.labkey.api.notification;
 
 /**
+ * Represents a preference for email subscriptions, such as getting daily digests or individual messages.
  * User: klum
  * Date: Apr 23, 2010
- * Time: 11:05:07 AM
  */
 public abstract class EmailPref
 {

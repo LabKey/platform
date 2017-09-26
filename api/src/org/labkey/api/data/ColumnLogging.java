@@ -16,11 +16,15 @@
 package org.labkey.api.data;
 
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * Tracks columns that should be logged when a query is executed as part of PHI access or similar.
+ */
 public class ColumnLogging implements Comparable<ColumnLogging>
 {
     private final boolean _shouldLogName;
@@ -43,19 +47,19 @@ public class ColumnLogging implements Comparable<ColumnLogging>
         this(false, columnFieldKey, parentTable, Collections.emptySet(), "");
     }
 
-    // If true, then this column's name should be logged when used in a query
+    /** If true, then this column's name should be logged when used in a query */
     public boolean shouldLogName()
     {
         return _shouldLogName;
     }
 
-    // Returns set of field keys for column's whose data should be logged when a query is logged; example is PatientId FK to MRN
+    /** Returns set of field keys for column's whose data should be logged when a query is logged; example is PatientId FK to MRN */
     public Set<FieldKey> getDataLoggingColumns()
     {
         return _dataLoggingColumns;
     }
 
-    // Returns comment to be added to the audit event (typically only the first logged column is asked for this)
+    /** Returns comment to be added to the audit event (typically only the first logged column is asked for this) */
     public String getLoggingComment()
     {
         return _loggingComment;
@@ -77,7 +81,7 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     }
 
     @Override
-    public int compareTo(ColumnLogging o)
+    public int compareTo(@NotNull ColumnLogging o)
     {
         int ret = this.getOriginalTableName().compareToIgnoreCase(o.getOriginalTableName());
         if (0 == ret)

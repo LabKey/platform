@@ -53,19 +53,18 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
+ * Comparison operators that can be used to create filters over columns.
+ *
+ * WARNING: Keep in sync and in order with all other client apis and docs:
+ * - server: CompareType.java
+ * - java: Filter.java
+ * - js: Filter.js
+ * - R: makeFilter.R, makeFilter.Rd
+ * - SAS: labkeymakefilter.sas, labkey.org SAS docs
+ * - Python & Perl don't have an filter operator enum
  * User: brittp
  * Date: Oct 10, 2006
- * Time: 4:44:45 PM
  */
-
-// WARNING: Keep in sync and in order with all other client apis and docs:
-// - server: CompareType.java
-// - java: Filter.java
-// - js: Filter.js
-// - R: makeFilter.R, makeFilter.Rd
-// - SAS: labkeymakefilter.sas, labkey.org SAS docs
-// - Python & Perl don't have an filter operator enum
-
 public abstract class CompareType
 {
     //

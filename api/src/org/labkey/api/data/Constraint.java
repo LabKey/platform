@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 
 /**
+ * Models a database constraint on a particular table, such as a primary key or UNIQUE constraint.
  * Created by Marty on 7/22/2016.
  */
 public class Constraint
@@ -97,34 +98,35 @@ public class Constraint
 
     public enum CONSTRAINT_TYPES
     {
-        UNIQUE,
-        PRIMARYKEY;
-
-        public String getAbbrev()
+        UNIQUE
         {
-            switch (this)
+            @Override
+            public String getAbbrev()
             {
-                case UNIQUE:
-                    return "UQ";
-                case PRIMARYKEY:
-                    return "pk";
+                return "UQ";
             }
 
-            return "";
-        }
-
-        @Override
-        public String toString()
-        {
-            switch (this)
+            @Override
+            public String toString()
             {
-                case UNIQUE:
-                    return "UNIQUE";
-                case PRIMARYKEY:
-                    return "PRIMARY KEY";
+                return "UNIQUE";
+            }
+        },
+        PRIMARYKEY
+        {
+            @Override
+            public String getAbbrev()
+            {
+                return "pk";
             }
 
-            return "";
-        }
+            @Override
+            public String toString()
+            {
+                return "PRIMARY KEY";
+            }
+        };
+
+        public abstract String getAbbrev();
     }
 }

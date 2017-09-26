@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Executor;
 
 /**
+ * Wrapper over another JDBC Connection object that provides logging for errors and some tracking of usage.
  * User: jeckels
  * Date: Dec 7, 2005
  */

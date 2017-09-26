@@ -21,9 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 
 /**
+ * Thin wrapper over a {@link Container} that is a project.
  * User: adam
  * Date: Apr 2, 2008
- * Time: 8:45:15 PM
  */
 public class Project implements Serializable
 {

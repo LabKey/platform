@@ -19,10 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.permissions.Permission;
 
 /**
-* User: adam
-* Date: 1/17/14
-* Time: 3:20 PM
-*/
+ * Captures the diferent levels of access a user might have to view some, all, or no PHI data.
+ *
+ * User: adam
+ * Date: 1/17/14
+ */
 public enum PHI
 {
     NotPHI(0, null),

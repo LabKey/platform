@@ -17,22 +17,22 @@ package org.labkey.api.notification;
 
 import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.view.HttpView;
-import java.io.File;
-import java.util.List;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.List;
 
 /**
+ * Utility implementation for building up outgoing emails
  * User: klum
  * Date: Apr 21, 2010
- * Time: 10:57:29 AM
  */
 public interface EmailMessage
 {
     String getFrom();
-    String[] getTo();
+    List<String> getTo();
     String getSubject();
 
     // TODO: Unused... delete?

@@ -23,6 +23,9 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Wraps a JDBC {@link ResultSet} to expose it as an {@link Iterator} of maps.
+ */
 public class ResultSetIterator implements Iterator<Map<String, Object>>
 {
     private final ResultSet _rs;
