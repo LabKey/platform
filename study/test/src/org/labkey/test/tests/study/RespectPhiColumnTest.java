@@ -214,11 +214,9 @@ public class RespectPhiColumnTest extends StudyBaseTest
     {
         super.initializeFolder();
 
-        log("Turn on 'Compliance' for this folder. Needed to get the PHI reports.");
-        clickFolder(getFolderName());
-        goToFolderManagement().goToFolderTypePane();
-        checkCheckbox(Locator.checkboxByTitle("Compliance"));
-        clickButton("Update Folder");
+        // Not really using the feature that is enabled by the compliance module.
+        // If the plan is to do that thent he TeamCity script will need to be updated to include that module
+        // in the DailyC runs.
     }
 
     private void createLists()
