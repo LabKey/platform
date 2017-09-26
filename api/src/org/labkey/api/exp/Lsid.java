@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.data.Builder;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Pair;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -124,13 +125,16 @@ public class Lsid
     private static final Pattern LSID_REGEX = Pattern.compile("(?i)^urn:lsid:([^:]+):([^:]+):([^:]+)(?::(.*))?");
 
     // Keep in sync with LSID_REGEX (above)
-    public static String getSqlExpressionToExtractObjectId(String lsidExpression, SqlDialect dialect)
+    public static Pair<String, String> getSqlExpressionToExtractObjectId(String lsidExpression, SqlDialect dialect)
     {
         if (dialect.isPostgreSQL())
         {
             // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the third
             // colon to the end of the string (or to the fourth colon, if present).
-            return "SUBSTRING(" + lsidExpression + " FROM '%urn:lsid:%:#\"%#\":?%' FOR '#')";
+            String expression = "SUBSTRING(" + lsidExpression + " FROM '%urn:lsid:%:#\"%#\":?%' FOR '#')";
+            String where = lsidExpression + " SIMILAR TO '%urn:lsid:%:[0-9a-f\\-]{36}:?%'";
+
+            return new Pair<>(expression, where);
         }
 
         if (dialect.isSqlServer())
@@ -138,7 +142,11 @@ public class Lsid
             // SQL Server doesn't support regular expressions; this uses an unwieldy pattern to extract the objectid
             String d = "[0-9a-f]"; // pattern for a single digit
             String objectId = repeat(d, 8) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 4) + "-" + repeat(d, 12);
-            return "SUBSTRING(" + lsidExpression + ", PATINDEX('%:" + objectId + "%', " + lsidExpression + ") + 1, 36)";
+
+            String expression = "SUBSTRING(" + lsidExpression + ", PATINDEX('%:" + objectId + "%', " + lsidExpression + ") + 1, 36)";
+            String where = lsidExpression + " LIKE '%urn:lsid:%:" + objectId + "%'";
+
+            return new Pair<>(expression, where);
         }
 
         throw new IllegalStateException("Unsupported SqlDialect: " + dialect.getProductName());
