@@ -62,7 +62,7 @@ public class PathMapperImpl implements PathMapper
 
     public PathMapperImpl(Map<String, String> pathMap)
     {
-        pathMap.forEach((remote, local) -> _pathMap.put(StringUtils.removeEnd(remote, "/"), StringUtils.removeEnd(local, "/")));
+        setPathMap(pathMap);
     }
     
     public PathMapperImpl(Map<String, String> pathMap, boolean remoteIgnoreCase, boolean localIgnoreCase)
@@ -79,7 +79,7 @@ public class PathMapperImpl implements PathMapper
 
     public void setPathMap(Map<String, String> pathMap)
     {
-        _pathMap = pathMap;
+        pathMap.forEach((remote, local) -> _pathMap.put(StringUtils.removeEnd(remote, "/"), StringUtils.removeEnd(local, "/")));
     }
 
     public boolean isRemoteIgnoreCase()
