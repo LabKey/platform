@@ -132,7 +132,7 @@ public class RespectPhiColumnTest extends StudyBaseTest
     private static String RESTRICTED_PHI_PROJECT_NAME = "PHI_Restricted";
     private static String NO_PHI_PROJECT_NAME = "PHI_None";
 
-    private static PortalHelper _portalHelper;
+    private PortalHelper _portalHelper;
 
     @Override
     protected BrowserType bestBrowser()
@@ -184,7 +184,7 @@ public class RespectPhiColumnTest extends StudyBaseTest
 
         initTest.doCleanup(false);
 
-        _portalHelper = new PortalHelper(initTest.getDriver());
+        initTest._portalHelper = new PortalHelper(initTest.getDriver());
 
         initTest.initializeFolder();
         initTest.clickFolder(initTest.getFolderName());
@@ -403,6 +403,9 @@ public class RespectPhiColumnTest extends StudyBaseTest
     private boolean validateExportedList(String projectName, String listName, List<ListColumnInfo> listColumnsInfo, PropertiesEditor.PhiSelectType exportSetting)
     {
         boolean pass = true;
+
+        // I think this might be needed if an earlier test failed. Just want to make sure I have a clean reference.
+        _portalHelper = new PortalHelper(getDriver());
 
         goToProjectHome(projectName);
         _portalHelper.goToManageLists();
