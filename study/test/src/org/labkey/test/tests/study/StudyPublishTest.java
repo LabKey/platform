@@ -170,7 +170,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         super.doCleanup(afterTest);
         _containerHelper.deleteProject(PUB2_NAME, afterTest, 1000000);
 
-        deleteUsers(false, PUBLISH_FOLDER_ADMIN, PUBLISH_SUB_FOLDER_ADMIN);
+        _userHelper.deleteUsers(false, PUBLISH_FOLDER_ADMIN, PUBLISH_SUB_FOLDER_ADMIN);
     }
 
     @Override
@@ -343,9 +343,9 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Verify correct published datasets
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         if (datasets.length > 0)
-            assertEquals("Unexpected number of datasets", datasets.length + dependentDatasets.length, getElementCount(Locator.xpath("//td[contains(@class, 'datasets')]//tr")) - 1);
+            assertEquals("Unexpected number of datasets", datasets.length + dependentDatasets.length, Locator.xpath("//td[contains(@class, 'datasets')]//tr").findElements(getDriver()).size() - 1);
         else // All visits were published
-            assertEquals("Unexpected number of datasets", 48, getElementCount(Locator.xpath("//td[contains(@class, 'datasets')]//tr")) - 1);
+            assertEquals("Unexpected number of datasets", 48, Locator.xpath("//td[contains(@class, 'datasets')]//tr").findElements(getDriver()).size() - 1);
         for (String dataset: datasets)
         {
             pushLocation();
@@ -369,9 +369,9 @@ public class StudyPublishTest extends StudyPHIExportTest
         goToManageStudy();
         clickAndWait(Locator.linkWithText("Manage Visits"));
         if (visits.length > 0)
-            assertEquals("Unexpected number of visits", visits.length, getElementCount(Locator.xpath("//table[@id = 'visits']/tbody/tr")) - 1);
+            assertEquals("Unexpected number of visits", visits.length, Locator.xpath("//table[@id = 'visits']/tbody/tr").findElements(getDriver()).size() - 1);
         else // All visits were published
-            assertEquals("Unexpected number of visits", visitCount, getElementCount(Locator.xpath("//table[@id = 'visits']/tbody/tr")) - 1);
+            assertEquals("Unexpected number of visits", visitCount, Locator.xpath("//table[@id = 'visits']/tbody/tr").findElements(getDriver()).size() - 1);
 
         assertTextPresent(visits);
 
@@ -414,7 +414,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             }
 
             String viewXpath = "//tr[contains(@class, 'x4-grid-tree-node-leaf')]";
-            assertEquals("Unexpected number of views/reports", views.length + reports.length, getElementCount(Locator.xpath(viewXpath)));
+            assertEquals("Unexpected number of views/reports", views.length + reports.length, Locator.xpath(viewXpath).findElements(getDriver()).size());
         }
 
         // Verify published reports/views
@@ -480,15 +480,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             for (String list : lists)
             {
                 String listHref = Locator.linkWithText(list).findElement(getDriver()).getAttribute("href");
-                int response = 0;
-                try
-                {
-                    response = WebTestHelper.getHttpGetResponse(listHref);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
+                int response = WebTestHelper.getHttpResponse(listHref).getResponseCode();
                 if (HttpStatus.SC_OK != response)
                 {
                     // Fail with a useful screenshot
@@ -534,7 +526,8 @@ public class StudyPublishTest extends StudyPHIExportTest
                 if (response.getRowCount().intValue() > 0)
                 {
                     // Fail with a useful screenshot
-                    t1.setFilter(field, (removePhiColumns ? "Is Not Blank" : "Is Blank"), null);
+                    t1.ensureColumnPresent(field);
+                    t1.setFilter(field, (removePhiColumns ? Filter.Operator.NONBLANK.getDisplayValue() : Filter.Operator.ISBLANK.getDisplayValue()), null);
                     assertTextPresent("No data to show.");
                     fail("This should be unreachable. SelectRows response had unexpected rows but DataRegion did not");
                 }
@@ -543,7 +536,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             // verify that the vials are filtered by the correct ptids and visits
             _customizeViewsHelper.openCustomizeViewPanel();
             _customizeViewsHelper.showHiddenItems();
-            _customizeViewsHelper.addCustomizeViewColumn("SequenceNum");
+            _customizeViewsHelper.addColumn("SequenceNum");
             _customizeViewsHelper.applyCustomView();
             DataRegionTable t2 = new DataRegionTable("SpecimenDetail", this);
             if (!alternateIDs) // we only know the IDs if they are not alternateIDs
@@ -976,7 +969,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         goToProjectHome();
         clickFolder(getFolderName());
-        addWebPart("Wiki");
+        portalHelper.addWebPart("Wiki");
         waitForElement(Locator.xpath("//a[text()='Create a new wiki page']"));
         click(Locator.xpath("//a[text()='Create a new wiki page']"));
         waitForElement(Locator.xpath("//input[@name='name']"));
@@ -1152,8 +1145,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyDataRegion(colsToCheck);
 
         // verify users with only partial admin permissions
-        createUser(PUBLISH_FOLDER_ADMIN, null, true);
-        createUser(PUBLISH_SUB_FOLDER_ADMIN, null, true);
+        _userHelper.createUser(PUBLISH_FOLDER_ADMIN, true);
+        _userHelper.createUser(PUBLISH_SUB_FOLDER_ADMIN, true);
 
         // verify the case where a user has admin access to a folder but not to a subfolder
         log("verify permissions for a top level folder admin");
