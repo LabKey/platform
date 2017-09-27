@@ -1,6 +1,9 @@
 package org.labkey.test.tests.study;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -129,7 +132,7 @@ public class RespectPhiColumnTest extends StudyBaseTest
     private static String RESTRICTED_PHI_PROJECT_NAME = "PHI_Restricted";
     private static String NO_PHI_PROJECT_NAME = "PHI_None";
 
-    private PortalHelper _portalHelper;
+    private static PortalHelper _portalHelper;
 
     @Override
     protected BrowserType bestBrowser()
@@ -156,56 +159,45 @@ public class RespectPhiColumnTest extends StudyBaseTest
     }
 
     @Override
-    protected void doVerifySteps()
-    {
-
-        log("Verify that exporting with Full PHI gives the expected results.");
-        boolean pass = verifyExport(FULL_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.PHI);
-        if(!pass)
-            log("!!!!!!!!!!!!!!! Exporting with 'Full PHI' failed. !!!!!!!!!!!!!!!");
-
-        log("Verify that exporting with Limited PHI gives the expected results.");
-        pass = pass && verifyExport(LIMITED_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.Limited);
-        if(!pass)
-            log("!!!!!!!!!!!!!!! Exporting with 'Limited PHI' failed. !!!!!!!!!!!!!!!");
-
-        log("Verify that exporting with Restricted PHI gives the expected results.");
-        pass = pass && verifyExport(RESTRICTED_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.Restricted);
-        if(!pass)
-            log("!!!!!!!!!!!!!!! Exporting with 'Restricted PHI' failed. !!!!!!!!!!!!!!!");
-
-        log("Verify that exporting with No PHI gives the expected results.");
-        pass = pass && verifyExport(NO_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.NotPHI);
-        if(!pass)
-            log("!!!!!!!!!!!!!!! Exporting with 'Not PHI' failed. !!!!!!!!!!!!!!!");
-
-        Assert.assertTrue("There were failures in the test review the log to validate.", pass);
-    }
+    protected void doCreateSteps() {}
 
     @Override
-    protected void doCreateSteps()
-    {
+    protected void doVerifySteps(){}
 
-        super.doCleanup(false);
+    @Test @Ignore
+    public void testSteps() {}
+
+    @Override
+    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+    {
+        super.doCleanup(afterTest);
         _containerHelper.deleteProject(FULL_PHI_PROJECT_NAME, false);
         _containerHelper.deleteProject(LIMITED_PHI_PROJECT_NAME, false);
         _containerHelper.deleteProject(RESTRICTED_PHI_PROJECT_NAME, false);
         _containerHelper.deleteProject(NO_PHI_PROJECT_NAME, false);
+    }
 
-        _portalHelper = new PortalHelper(getDriver());
+    @BeforeClass
+    public static void doSetup()
+    {
+        RespectPhiColumnTest initTest = (RespectPhiColumnTest)getCurrentTest();
 
-        initializeFolder();
-        clickFolder(getFolderName());
+        initTest.doCleanup(false);
 
-        importStudyFromZip(STUDY_ARCHIVE);
+        _portalHelper = new PortalHelper(initTest.getDriver());
+
+        initTest.initializeFolder();
+        initTest.clickFolder(initTest.getFolderName());
+
+        initTest.importStudyFromZip(STUDY_ARCHIVE);
 
         // This study does not have a list. So need to create one.
-        createLists();
+        initTest.createLists();
 
         // Set a few of the columns to PHI levels.
-        setPhiColumnsOnDatasets();
+        initTest.setPhiColumnsOnDatasets();
 
-        setPhiColumnsOnSpecimens();
+        initTest.setPhiColumnsOnSpecimens();
 
     }
 
@@ -215,8 +207,7 @@ public class RespectPhiColumnTest extends StudyBaseTest
         super.initializeFolder();
 
         // Not really using the feature that is enabled by the compliance module.
-        // If the plan is to do that thent he TeamCity script will need to be updated to include that module
-        // in the DailyC runs.
+        // If that needs to be implemented then this test should be moved to the compliance module.
     }
 
     private void createLists()
@@ -319,14 +310,32 @@ public class RespectPhiColumnTest extends StudyBaseTest
         }
     }
 
-    @Override
-    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+    @Test
+    public void verifyFullPHI()
     {
-        super.doCleanup(afterTest);
-        _containerHelper.deleteProject(FULL_PHI_PROJECT_NAME, false);
-        _containerHelper.deleteProject(LIMITED_PHI_PROJECT_NAME, false);
-        _containerHelper.deleteProject(RESTRICTED_PHI_PROJECT_NAME, false);
-        _containerHelper.deleteProject(NO_PHI_PROJECT_NAME, false);
+        log("Verify that exporting with Full PHI gives the expected results.");
+        Assert.assertTrue("There were failures when exporting with Full PHI. Review the log to see details.", verifyExport(FULL_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.PHI));
+    }
+
+    @Test
+    public void verifyLimitedPHI()
+    {
+        log("Verify that exporting with Limited PHI gives the expected results.");
+        Assert.assertTrue("There were failures when exporting with Limited PHI. Review the log to see details.", verifyExport(LIMITED_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.Limited));
+    }
+
+    @Test
+    public void verifyRestrictedPHI()
+    {
+        log("Verify that exporting with Restricted PHI gives the expected results.");
+        Assert.assertTrue("There were failures when exporting with Restricted PHI. Review the log to see details.", verifyExport(RESTRICTED_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.Restricted));
+    }
+
+    @Test
+    public void verifyNoPHI()
+    {
+        log("Verify that exporting with No PHI gives the expected results.");
+        Assert.assertTrue("There were failures when exporting with No PHI. Review the log to see details.", verifyExport(NO_PHI_PROJECT_NAME, PropertiesEditor.PhiSelectType.NotPHI));
     }
 
     protected File exportOriginStudy(PropertiesEditor.PhiSelectType exportPhiLevel)
@@ -440,13 +449,10 @@ public class RespectPhiColumnTest extends StudyBaseTest
         boolean pass = true;
 
         goToProjectHome(projectName);
-        _studyHelper.goToManageDatasets();
-
-        waitAndClickAndWait(Locator.linkWithText(datasetName));
-
-        DatasetPropertiesPage propertiesPage = new DatasetPropertiesPage(getDriver());
-
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
+        EditDatasetDefinitionPage editDatasetDefinitionPage = _studyHelper
+                .goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickEditDefinition();
 
         List<String> getListedFields = getFieldNamesShown(editDatasetDefinitionPage.getFieldsEditor("Dataset Fields").getFields());
 
@@ -512,17 +518,11 @@ public class RespectPhiColumnTest extends StudyBaseTest
 
         for(String fieldName : expectedFields.keySet())
         {
-            List<String> columnData = vialsDataRegion.getColumnDataAsText(fieldName);
-            StringBuilder checkSum = new StringBuilder();
-            for(String cellData : columnData)
-            {
-                checkSum.append(cellData.trim());
-            }
 
+            vialsDataRegion.setFilter(fieldName, "Is Not Blank");
             if((exportSetting == PropertiesEditor.PhiSelectType.NotPHI) || (expectedFields.get(fieldName).getRank() < exportSetting.getRank()))
             {
-                // Check for fields that should be there.
-                if(checkSum.length() == 0)
+                if (vialsDataRegion.getDataRowCount() == 0)
                 {
                     pass = false;
                     log("************** For the field '" + fieldName.trim().toLowerCase() + "' in specimens there was no data, there should have been something. **************");
@@ -531,13 +531,14 @@ public class RespectPhiColumnTest extends StudyBaseTest
             else if(expectedFields.get(fieldName).getRank() >= exportSetting.getRank())
             {
                 // Else check that fields that should not be there are not there.
-                if(checkSum.length() > 0)
+                if (vialsDataRegion.getDataRowCount() != 0)
                 {
                     pass = false;
                     log("************** The field '" + fieldName.trim().toLowerCase() + "' in specimens has data, there should not be any. **************");
                 }
             }
-
+            // Remove the filter.
+            vialsDataRegion.clearAllFilters(fieldName);
         }
 
         return pass;
