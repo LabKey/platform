@@ -2117,7 +2117,7 @@ public class PageFlowUtil
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
         ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, new LinkedHashSet<ClientDependency>());
+        return jsInitObject(context, new LinkedHashSet<>());
     }
 
     public static JSONObject jsInitObject(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)

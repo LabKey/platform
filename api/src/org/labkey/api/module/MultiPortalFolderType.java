@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -28,7 +27,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
@@ -171,29 +169,26 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                             Container folderContainer = folderTab.getContainerTab(container, ctx.getUser());
                             assert (null != folderContainer);        // we checked above here
                             FolderType folderType = folderContainer.getFolderType();        // get type from container because it may be different from original
-                            if (null != folderType)
+                            folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited
+                            boolean foundSelected = false;
+                            List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType, false);
+                            for (FolderTab subTab : subTabs)
                             {
-                                folderType.clearActivePortalPage();         // There may have been a previous page set the last time the container tab was visited
-                                boolean foundSelected = false;
-                                List<FolderTab> subTabs = getFolderTabs(folderContainer, folderType, false);
-                                for (FolderTab subTab : subTabs)
+                                if (FolderTab.TAB_TYPE.Container == subTab.getTabType())
+                                    continue;       // Don't add container tabs at the second level
+                                if (!subTab.isVisible(folderContainer, ctx.getUser()))
+                                    continue;
+                                NavTree subNav = new NavTree(subTab.getCaption(ctx), subTab.getURL(folderContainer, ctx.getUser()));
+                                subContainerTabs.add(subNav);
+                                if (subTab.isSelectedPage(ctx))         // Use original context to determine whether to select
                                 {
-                                    if (FolderTab.TAB_TYPE.Container == subTab.getTabType())
-                                        continue;       // Don't add container tabs at the second level
-                                    if (!subTab.isVisible(folderContainer, ctx.getUser()))
-                                        continue;
-                                    NavTree subNav = new NavTree(subTab.getCaption(ctx), subTab.getURL(folderContainer, ctx.getUser()));
-                                    subContainerTabs.add(subNav);
-                                    if (subTab.isSelectedPage(ctx))         // Use original context to determine whether to select
-                                    {
-                                        subNav.setSelected(true);
-                                        foundSelected = true;
-                                    }
+                                    subNav.setSelected(true);
+                                    foundSelected = true;
                                 }
-
-                                if (!foundSelected && nav.getChildCount() > 0 && !subContainerTabs.isEmpty())
-                                    subContainerTabs.get(0).setSelected(true);
                             }
+
+                            if (!foundSelected && nav.getChildCount() > 0 && !subContainerTabs.isEmpty())
+                                subContainerTabs.get(0).setSelected(true);
                         }
                     }
                 }
