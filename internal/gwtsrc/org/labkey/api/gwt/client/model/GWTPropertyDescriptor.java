@@ -76,7 +76,6 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
-    private IntegerProperty sortOrder = new IntegerProperty(-1);  // -1 will cause the default sorting behavior
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -135,9 +134,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDisableEditing(s.getDisableEditing());
         setScale(s.getScale());
         setRedactedText(s.getRedactedText());
-
-        if (s.getSortOrder() != null)
-            setSortOrder(s.getSortOrder());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -396,16 +392,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         dimension.setBool(isDimension);
     }
 
-    public Integer getSortOrder()
-    {
-        return sortOrder.getInteger();
-    }
-
-    public void setSortOrder(int sortOrder)
-    {
-        this.sortOrder.setInt(sortOrder);
-    }
-
     public boolean isRecommendedVariable()
     {
         return recommendedVariable.booleanValue();
@@ -590,7 +576,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (!StringUtils.equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
         if (getPHI() != null ? !getPHI().equals(that.getPHI()) : that.getPHI() != null) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
-        if(!getSortOrder().equals(that.getSortOrder())) return false;
 
         if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
         if (!getConditionalFormats().equals(that.getConditionalFormats()))
@@ -640,7 +625,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (phi.getString() != null ? phi.hashCode() : 0);
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
         result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
-        result = 31 * result + (sortOrder.getInteger() != null ? sortOrder.getInteger().hashCode() : 0);
         result = 31 * result + (redactedText.getString() != null ? redactedText.getString().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
@@ -686,7 +670,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("phi".equals(prop)) return phi;
         if ("excludeFromShifting".equals(prop)) return isExcludeFromShifting;
         if ("scale".equals(prop)) return scale;
-        if ("sortOrder".equals(prop)) return sortOrder;
         if ("redactedText".equals(prop)) return redactedText;
 
         return null;

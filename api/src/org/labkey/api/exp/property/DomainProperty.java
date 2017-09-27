@@ -38,8 +38,6 @@ public interface DomainProperty extends ImportAliasable
     String getDescription();
     String getFormat();
     String getConceptURI();
-    Integer getSortOrder();
-    void setSortOrder(Integer sortOrder);
 
     Domain getDomain();
     IPropertyType getType();

@@ -256,9 +256,6 @@ public class DomainUtil
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
 
-        if ( prop.getSortOrder() != null)
-            gwtProp.setSortOrder(prop.getSortOrder());
-
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())
         {

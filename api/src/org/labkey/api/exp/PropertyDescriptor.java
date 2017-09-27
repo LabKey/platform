@@ -57,7 +57,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     private String lookupContainer;
     private String lookupSchema;
     private String lookupQuery;
-    private Integer sortOrder;
     private boolean mvEnabled;
 
     private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
@@ -307,16 +306,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public void setProject(Container proj) {
         this.project = proj;
-    }
-
-    public Integer getSortOrder()
-    {
-        return sortOrder;
-    }
-
-    public void setSortOrder(Integer sortOrder)
-    {
-        this.sortOrder = sortOrder;
     }
 
     @Override
