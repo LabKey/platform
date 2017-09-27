@@ -5842,9 +5842,6 @@ public class ExperimentServiceImpl implements ExperimentService
         prop.setURL((String)obj.get("url"));
         prop.setRedactedText((String)obj.get("redactedText"));
 
-        if (obj.has("sortOrder"))
-            prop.setSortOrder(obj.getInt("sortOrder"));
-
         if (obj.has("scale"))
             prop.setScale((Integer)obj.get("scale"));
 

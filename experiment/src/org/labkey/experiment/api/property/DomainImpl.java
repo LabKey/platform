@@ -476,14 +476,7 @@ public class DomainImpl implements Domain
                         }
                     }
 
-                    if (impl.getSortOrder() != null && impl.getSortOrder() != -1)
-                    {
-                        impl.save(user, _dd, impl.getSortOrder());  // Manually set order
-                    }
-                    else
-                    {
-                        impl.save(user, _dd, sortOrder++);  // Automatically preserve order
-                    }
+                    impl.save(user, _dd, sortOrder++);  // Automatically preserve order
                 }
             }
 
@@ -495,14 +488,7 @@ public class DomainImpl implements Domain
                 int order = entry.getValue().getValue().intValue();
                 domainProperty.setName(name);
                 generateStorageColumnName(domainProperty._pd);
-                if (domainProperty.getSortOrder() != null)
-                {
-                    domainProperty.save(user, _dd, domainProperty.getSortOrder());
-                }
-                else
-                {
-                    domainProperty.save(user, _dd, order);
-                }
+                domainProperty.save(user, _dd, order);
             }
 
             _new = false;
