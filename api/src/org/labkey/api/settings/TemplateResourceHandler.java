@@ -50,7 +50,7 @@ public enum TemplateResourceHandler
         protected String getDefaultLink(Container c)
         {
             if (PageFlowUtil.useExperimentalCoreUI())
-                return "/_images/lk-noTAG-" + PageFlowUtil.resolveThemeName(c) + ".svg";
+                return "/_images/lk-noTAG-" + resolveLogoThemeName(c) + ".svg";
 
             return "/_images/defaultlogo.png";
         }
@@ -91,7 +91,7 @@ public enum TemplateResourceHandler
         protected String getDefaultLink(Container c)
         {
             if (PageFlowUtil.useExperimentalCoreUI())
-                return "/_images/mobile-logo-" + PageFlowUtil.resolveThemeName(c) + ".svg";
+                return "/_images/mobile-logo-" + resolveLogoThemeName(c) + ".svg";
 
             return "/_images/defaultlogo.png";
         }
@@ -162,6 +162,14 @@ public enum TemplateResourceHandler
     abstract protected String getResourceName();
     abstract protected String getDefaultLink(Container c);
     abstract protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException;
+
+    private static String resolveLogoThemeName(Container c)
+    {
+        String themeName = PageFlowUtil.resolveThemeName(c);
+        if ("seattle".equalsIgnoreCase(themeName))
+            return "seattle";
+        return "overcast";
+    }
 
     private Calendar getExpiration()
     {
