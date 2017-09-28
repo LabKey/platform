@@ -91,7 +91,7 @@ public final class NavigationFolderTree extends NavTreeMenu
     private void renderLink(NavTree nav, String pathToHere, String rootId,
                             ViewContext context, List<Container> lineage, PrintWriter out) throws URISyntaxException
     {
-        boolean expanded = !lineage.isEmpty() &&
+        boolean expanded = !lineage.isEmpty() && null != nav.getHref() &&
                 nav.getHref().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(lineage.get(0)).toString());
         if (expanded)
         {
