@@ -172,7 +172,7 @@
             </ul>
         </div>
         <div id="nav_tabs" class="lk-nav-tabs-ct">
-            <ul id="lk-nav-tabs-separate" class="nav lk-nav-tabs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>">
+            <ul id="lk-nav-tabs-separate" class="nav lk-nav-tabs pull-right <%=h(isPageAdminMode ? "lk-nav-tabs-admin" : "")%>" style="opacity: 0;">
                 <%
                     if (tabs.size() > 1 || isPageAdminMode)
                     {

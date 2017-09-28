@@ -595,9 +595,15 @@
         }
 
         if (nav_container.length) {
-            var showCollapsed = nav_container.width() < (nav_container_widths.menus + nav_container_widths.tabs + 20);
+            var showCollapsed = !LABKEY.pageAdminMode && nav_container.width() < (nav_container_widths.menus + nav_container_widths.tabs + 20);
             showCollapsed && nav_tabs_separate ? nav_tabs_separate.hide() : nav_tabs_separate.show();
             showCollapsed && nav_tabs_collapsed ? nav_tabs_collapsed.show() : nav_tabs_collapsed.hide();
+        }
+
+        // using opacity 0 as a way to get the tabs width without showing it, so change that back now
+        // that we have decided which to show/hide between the separate/collapsed tabs
+        if (nav_tabs_separate) {
+            nav_tabs_separate.css('opacity', 1);
         }
     };
 
