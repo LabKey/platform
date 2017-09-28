@@ -304,7 +304,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
 
         // Go to published study
-        projectMenu().navigateToFolder(projectName, name);
+        projectMenu().navigateToMenuLink(projectName, name);
 
         //Assert webparts/wikis are present
         waitForElement(Locator.xpath("//div[@name='webpart']"));

@@ -160,7 +160,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         // snapshot over a custom view
         // test automatic updates by altering the source dataset
         log("create a snapshot over a custom view");
-        navigateToFolder(getProjectName(), getStudyLabel());
+        navigateToMenuLink(getProjectName(), getStudyLabel());
         clickAndWait(Locator.linkWithText("APX-1: Abbreviated Physical Exam"));
         _customizeViewsHelper.openCustomizeViewPanel();
 
@@ -171,13 +171,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         assertTextNotPresent("Slovakian");
 
         log("test automatic updates for a joined snapshot view");
-        navigateToFolder(getProjectName(), getStudyLabel());
+        navigateToMenuLink(getProjectName(), getStudyLabel());
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         table.clickEditRow(table.getRowIndex("Mouse Id", "999320016"));
         setFormElement(Locator.name("quf_DEMraco"), "Slovakian");
         clickButton("Submit");
 
-        navigateToFolder(getProjectName(), getStudyLabel());
+        navigateToMenuLink(getProjectName(), getStudyLabel());
         clickAndWait(Locator.linkWithText(APX_SNAPSHOT));
         table.clickHeaderMenu("QC State", "All data");
         waitForSnapshotUpdate("Slovakian");

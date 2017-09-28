@@ -181,7 +181,7 @@ public class AssayTest extends AbstractAssayTest
     @LogMethod
     private void verifyRunDeletionRecallsDatasetRows()
     {
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         DataRegionTable assayRuns = new DataRegionTable("Runs", this);
         assayRuns.checkCheckbox(0);
@@ -197,7 +197,7 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("3 row(s) were recalled to the assay: ");
 
         // Verify that the deleted run data is gone from the dataset
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
         clickAndWait(Locator.linkWithText("1 dataset"));
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         assertTextPresent("AAA07XMC-04", TEST_RUN1);
@@ -218,7 +218,7 @@ public class AssayTest extends AbstractAssayTest
     private void editResults()
     {
         // Verify that the results aren't editable by default
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         waitAndClickAndWait(Locator.linkWithText("view results"));
         DataRegionTable table = new DataRegionTable("Data", getDriver());
@@ -232,7 +232,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Save & Close");
 
         // Try an edit
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
         DataRegionTable dataTable = new DataRegionTable("Data", getDriver());
@@ -337,7 +337,7 @@ public class AssayTest extends AbstractAssayTest
     private void uploadRuns(String folder, String asUser)
     {
         log("Uploading runs into folder " + folder + " as user " + asUser);
-        navigateToFolder(getProjectName(), folder);
+        navigateToMenuLink(getProjectName(), folder);
         impersonate(asUser);
 
         clickAndWait(Locator.linkWithText("Assay List"));
@@ -519,7 +519,7 @@ public class AssayTest extends AbstractAssayTest
     private void publishData()
     {
         log("Prepare visit map to check PTID counts in study navigator.");
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -532,7 +532,7 @@ public class AssayTest extends AbstractAssayTest
 
         //impersonate the PI
         impersonate(TEST_ASSAY_USR_PI1);
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 
@@ -607,7 +607,7 @@ public class AssayTest extends AbstractAssayTest
                 "18");
 
         // test recall
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         waitAndClickAndWait(Locator.linkWithText("view copy-to-study history"));
 
@@ -646,7 +646,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Prepare visit map to check PTID counts in study navigator.");
 
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY3);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDY3);
 
         clickAndWait(Locator.linkWithText("Manage"));
         clickAndWait(Locator.linkWithText("Manage Timepoints"));
@@ -660,7 +660,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.tagWithAttribute("a", "data-original-title", "edit"), 1);
 
         //select the Lab1 folder and view all the data for the test assay
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 
@@ -747,7 +747,7 @@ public class AssayTest extends AbstractAssayTest
     {
         log("Prepare visit map to check PTID counts in study navigator.");
 
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
 
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
@@ -761,7 +761,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Import");
 
         //select the Lab1 folder and view all the data for the test assay
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
 
@@ -855,7 +855,7 @@ public class AssayTest extends AbstractAssayTest
         designerPage.save();
 
         //ensure that label has changed in run data in Lab 1 folder
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickAndWait(Locator.linkWithText(TEST_RUN1));
         assertTextPresent(TEST_ASSAY_DATA_PROP_NAME + "edit");
@@ -907,7 +907,7 @@ public class AssayTest extends AbstractAssayTest
         verifySpecimensPresent(3, 2, 3);
 
         log("Testing assay-study linkage");
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
         portalHelper.addWebPart("Datasets");
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         clickButton("View Source Assay", defaultWaitForPage);
@@ -942,7 +942,7 @@ public class AssayTest extends AbstractAssayTest
     @LogMethod
     private void verifyStudyList()
     {
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDIES);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDIES);
         portalHelper.addWebPart("Study List");
         assertElementPresent(Locator.linkWithText(TEST_ASSAY_FLDR_STUDY1 + " Study"));
         assertElementPresent(Locator.linkWithText(TEST_ASSAY_FLDR_STUDY2 + " Study"));
@@ -964,7 +964,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Submit");
 
         //verify study properties (grid view)
-        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDIES);
+        navigateToMenuLink(getProjectName(), TEST_ASSAY_FLDR_STUDIES);
         DataRegionTable table = new DataRegionTable("qwpStudies", this);
         assertEquals("Studies not sorted correctly.", TEST_ASSAY_FLDR_STUDY1 + " Study", table.getDataAsText(0, "Label"));
         assertEquals("Failed to set study investigator.", INVESTIGATOR, table.getDataAsText(0, "Investigator"));
