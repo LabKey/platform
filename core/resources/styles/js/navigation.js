@@ -187,7 +187,19 @@
                 var config = {
                     renderTo: id,
                     partName: partName,
-                    frame: 'none'
+                    frame: 'none',
+                    failure  : function(response) {
+                        // Show a better error to the user than just a generic Unauthorized dialog
+                        if (response.status == 401) {
+                            document.getElementById(id).innerHTML = '<div style="padding: 5px">You do not have permission to view this data. You have likely been logged out.'
+                                    + (this.loginUrl != null ? ' Please <a href="' + this.loginUrl + '">log in</a> again.' : ' Please <a href="#" onclick="location.reload();">reload</a> the page.') + "</div>";
+                        }
+                        else {
+                            if (window.console && window.console.log) {
+                                window.console.log(response);
+                            }
+                        }
+                    },
                 };
 
                 if (menus[safeName]) {
