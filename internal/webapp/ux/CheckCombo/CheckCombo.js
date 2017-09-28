@@ -105,8 +105,8 @@ Ext4.define('Ext.ux.CheckCombo', {
                         {
                             records.push(record);
                         });
-                        picker.checkAllEl.addCls(Ext4.baseCSSPrefix + 'boundlist-selected');
                         this.select(records);
+                        picker.checkAllEl.addCls(Ext4.baseCSSPrefix + 'boundlist-selected');
                         this.fireEvent('select', this, records);
                     }
                 }, this);
