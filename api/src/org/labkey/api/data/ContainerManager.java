@@ -1586,8 +1586,10 @@ public class ContainerManager
     private static void navTreeManageUncache(Container c)
     {
         // UNDONE: NavTreeManager should register a ContainerListener
-        Container project = c.getProject();
         NavTreeManager.uncacheTree(PROJECT_LIST_ID);
+        NavTreeManager.uncacheTree(getRoot().getId());
+
+        Container project = c.getProject();
         if (project != null)
         {
             NavTreeManager.uncacheTree(project.getId());
