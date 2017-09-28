@@ -141,6 +141,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
+import org.labkey.api.view.menu.NavigationFolderTree;
 import org.labkey.api.view.template.FrameFactoryClassic;
 import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.view.template.TemplateFactoryClassic;
@@ -194,6 +195,7 @@ import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
 import org.labkey.core.project.FolderNavigationForm;
+import org.labkey.core.project.NavigationFolderForm;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -531,12 +533,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    FolderNavigationForm form = getForm(portalCtx);
+                    NavigationFolderForm form = getForm(portalCtx);
 
-                    final FolderMenu folders = new FolderMenu(portalCtx);
+                    final NavigationFolderTree folders = new NavigationFolderTree(portalCtx);
                     form.setFolderMenu(folders);
 
-                    JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
+                    JspView<NavigationFolderForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
                     view.setTitle("Beta Navigation");
                     view.setFrame(WebPartView.FrameType.NONE);
                     return view;
@@ -548,9 +550,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return false;
                 }
 
-                private FolderNavigationForm getForm(ViewContext context)
+                private NavigationFolderForm getForm(ViewContext context)
                 {
-                    FolderNavigationForm form = new FolderNavigationForm();
+                    NavigationFolderForm form = new NavigationFolderForm();
                     form.setPortalContext(context);
                     return form;
                 }

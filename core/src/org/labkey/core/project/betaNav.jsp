@@ -16,16 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.project.FolderNavigationForm" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.core.project.NavigationFolderForm" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -38,11 +38,11 @@
     }
 %>
 <%
-    JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
-    FolderNavigationForm form = me.getModelBean();
-
     Container c = getContainer();
     ActionURL startURL = c.getStartURL(getUser()); // 30975: Return to startURL due to async view context
+
+    JspView<NavigationFolderForm> me = (JspView<NavigationFolderForm>) HttpView.currentView();
+    NavigationFolderForm form = me.getModelBean();
 
     ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(null);
     createProjectURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
@@ -52,37 +52,21 @@
 
     ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 
-    NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
+    List<Container> navTrailContainers = ContainerManager.containersToRootList(c);
 %>
 <div class="beta-nav">
-    <div class="list-content">
-        <div class="project-list-container iScroll">
-            <p class="title">Projects</p>
-            <div class="project-list" style="max-height: 375px; overflow-x: hidden;">
-                <ul>
-                <%
-                    for (NavTree p : projects.getChildren())
-                    {
-                        String projectTitle = p.getText();
-                        String projectDisplay = projectTitle;
-                        if (projectDisplay.length() > 28) {
-                            projectDisplay = projectDisplay.substring(0, 28) + "...";
-                        }
-                %>
-                    <li data-submenu-id="<%=h(projectTitle.toLowerCase())%>">
-                        <a data-field="<%=h(projectTitle)%>" title="<%=h(projectTitle)%>" href="<%=h(p.getHref())%>"><%=h(projectDisplay)%></a>
-                    </li>
-                <%
-                    }
-                %>
-                </ul>
-            </div>
+    <div class="beta-folder-tree">
+        <div class="beta-nav-trail">
+            <%
+                for (Container curr : navTrailContainers) {
+            %>
+            <a href="<%=h(curr.getStartURL(getUser()))%>"> <%=h(curr.getName())%></a> /
+            <%
+                }
+            %>
         </div>
-        <div class="folder-list-container">
-            <p class="title">Project Folders & Pages</p>
-            <div id="folder-tree-wrap" class="beta-folder-tree">
-                <% me.include(form.getFolderMenu(), out); %>
-            </div>
+        <div class="folder-nav">
+            <% me.include(form.getFolderMenu(), out); %>
         </div>
     </div>
 </div>
@@ -91,9 +75,12 @@
     if (getUser().hasRootAdminPermission())
     {
 %>
-        <span class="button-icon">
+        <span class="beta-nav-button-icon">
             <a href="<%=createProjectURL%>" title="New Project">
-                <img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" />
+                <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
+                    <span class="fa fa-folder-open-o fa-stack-2x labkey-main-menu-icon" alt="New Project"></span>
+                    <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
+                </span>
             </a>
         </span>
 <%
@@ -106,7 +93,7 @@
             <a href="<%=createFolderURL%>" title="New Subfolder">
                 <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
                     <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
-                    <span class="fa fa-plus-circle fa-stack-1x"></span>
+                    <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
                 </span>
             </a>
         </span>
@@ -135,94 +122,21 @@
     +function($) {
         'use strict';
 
-        var cache = [];
-
         var toggle = function() {
-            var p = $(this).parent();
-            if (p && p.length) {
-                var collapse = true;
-                if (p.hasClass('expand-folder')) {
-                    // collapse the tree
-                    p.removeClass('expand-folder').addClass('collapse-folder');
-                }
-                else {
-                    // expand the tree
-                    p.removeClass('collapse-folder').addClass('expand-folder');
-                    collapse = false;
-                }
+            var folderListItem = $(this).parent();
 
-                p.children('a').each(function() {
-                    LABKEY.Utils.notifyExpandCollapse($(this).attr('expandurl'), collapse);
-                });
+            if (folderListItem && folderListItem.length) {
+                folderListItem.toggleClass('expand-folder');
+                folderListItem.toggleClass('collapse-folder');
             }
-        };
-
-        var requestProject = function(el) {
-            var link = $(el);
-            if (link) {
-                var name = link.data('field');
-
-                if (name) {
-                    name = decodeURIComponent(name);
-                    if (cache[name]) {
-                        $('#folder-tree-wrap').html(cache[name]);
-                    }
-                    else {
-                        LABKEY.Ajax.request({
-                            url: LABKEY.ActionURL.buildURL('project', 'getFolderNavigation', null, {projectName: name}),
-                            success: function (response) {
-                                var data = JSON.parse(response.responseText);
-                                // add result to the cache
-                                cache[name] = data.html;
-                                $('#folder-tree-wrap').html(data.html);
-                            }
-                        });
-                    }
-                }
-            }
-
-            return false;
         };
 
         $(function() {
-            $('.beta-nav').on('click', '.clbl span.marked', toggle);
+            var folderMenu = $('.beta-nav');
+            var selected = folderMenu.find('.nav-tree-selected');
+            selected[0].scrollIntoView(false);
 
-            var projectList = $('.beta-nav .project-list');
-            projectList.find('ul').menuAim({
-                activate: function(row) {
-                    var $row = $(row);
-                    $row.addClass('last-active');
-
-                    var links = $(row).children('a');
-                    if (links.length) {
-                        requestProject(links[0]);
-                    }
-                },
-                deactivate: function(row) {
-                    $(row).removeClass('last-active');
-                }
-            });
-
-            <% if (c.getProject() != null && !c.isRoot()) { %>
-                var l = projectList.find('li[data-submenu-id="<%=h(c.getProject().getName().toLowerCase())%>"]');
-                if (l.length) {
-                    l.trigger('mouseenter');
-
-                    // scroll the selected project into view
-                    var projectListBottom = projectList.offset().top + projectList.height();
-                    if (l.offset().top > projectListBottom) {
-                        projectList.scrollTop(l.offset().top - projectListBottom + 50);
-                    }
-                }
-
-                // scroll the selected folder into view
-                var folderList = $('.beta-nav .beta-folder-tree');
-                var folderListBottom = folderList.offset().top + folderList.height();
-                var s = folderList.find('.nav-tree-selected');
-                if (s.offset().top > folderListBottom) {
-                    folderList.scrollTop(s.offset().top - folderListBottom + 50);
-                }
-            <% } %>
+            folderMenu.on('click', '.clbl span.marked', toggle);
 
             var p = document.getElementById('permalink');
             var pvis = document.getElementById('permalink_vis');

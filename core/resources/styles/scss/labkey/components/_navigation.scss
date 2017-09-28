@@ -305,6 +305,13 @@
   white-space: nowrap;
   overflow: hidden;
 
+  .beta-nav-trail {
+    padding-top: 10px;
+    padding-left: 20px;
+    padding-bottom: 20px;
+    border-bottom: solid $dropdown-divider-bg 1px;
+  }
+
   .list-content {
     display: inline-flex;
 
