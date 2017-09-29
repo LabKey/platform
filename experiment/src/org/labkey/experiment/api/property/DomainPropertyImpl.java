@@ -45,14 +45,11 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class DomainPropertyImpl implements DomainProperty
@@ -614,23 +611,17 @@ public class DomainPropertyImpl implements DomainProperty
                 boolean propRenamed = !_pdOld.getName().equals(_pd.getName());
                 boolean propResized = _pd.isStringType() && _pdOld.getScale() != _pd.getScale();
 
+                // Drop first, so rename doesn't have to worry about it
+                if (mvDropped)
+                    StorageProvisioner.dropMvIndicator(this, _pdOld);
+
                 if (propRenamed)
-                {
-                    Map<DomainProperty, PropertyDescriptor> renames = new HashMap<>();
-                    renames.put(this, _pdOld);
-                    StorageProvisioner.renameProperties(this.getDomain(), renames);
-                }
+                    StorageProvisioner.renameProperty(this.getDomain(), this, _pdOld, mvDropped);
 
                 if (propResized)
-                {
-                    StorageProvisioner.resizeProperties(this.getDomain(), Pair.of(this, _pdOld.getScale()));
-                }
+                    StorageProvisioner.resizeProperty(this.getDomain(), this, _pdOld.getScale());
 
-                // Drop the MV column after it's been renamed to be in sync with any potential column name
-                // changes
-                if (mvDropped)
-                    StorageProvisioner.dropMvIndicator(this);
-                else if (mvAdded)
+                if (mvAdded)
                     StorageProvisioner.addMvIndicator(this);
             }
         }

@@ -104,7 +104,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 if (domainProperty.isMvEnabled())
                 {
-                    result.put(PropertyStorageSpec.getMvIndicatorColumnName(domainProperty.getName()), domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                    result.put(PropertyStorageSpec.getMvIndicatorDisplayColumnName(domainProperty.getName()), domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX);
                 }
             }
         }

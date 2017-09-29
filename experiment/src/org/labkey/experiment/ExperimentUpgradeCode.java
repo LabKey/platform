@@ -15,9 +15,14 @@
  */
 package org.labkey.experiment;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -25,8 +30,15 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Map;
@@ -37,6 +49,8 @@ import java.util.Map;
  */
 public class ExperimentUpgradeCode implements UpgradeCode
 {
+    private static final Logger LOG = Logger.getLogger(ExperimentUpgradeCode.class);
+
     /** Called from exp-16.31-16.32.sql */
     public static void cleanupQuotedAliases(ModuleContext context) throws Exception
     {
@@ -128,4 +142,59 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
+    /** Called from exp-17.23-17.24.sql */
+    public static void saveMvIndicatorStorageNames(ModuleContext context) throws Exception
+    {
+        if (context.isNewInstall())
+            return;
+
+        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(container -> {
+            PropertyService.get().getDomains(container).forEach(domain -> {
+                upgradeDomainForMvIndicators(domain, context);
+            });
+        });
+    }
+
+    private static void upgradeDomainForMvIndicators(Domain domain, ModuleContext context)
+    {
+        User user = context.getUpgradeUser();
+        try
+        {
+            for (DomainProperty domainProp : domain.getProperties())
+            {
+                PropertyDescriptor pd = domainProp.getPropertyDescriptor();
+                if (pd.isMvEnabled())
+                {
+                    ColumnInfo mvColumn = getMvIndicatorColumn(domain, pd);
+                    if (null != mvColumn)
+                    {
+                        pd.setMvIndicatorStorageColumnName(mvColumn.getName());
+                        Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            LOG.error("Upgrade for domain '" + domain.getName() + "' failed: " + e.getMessage());
+        }
+    }
+
+    public static ColumnInfo getMvIndicatorColumn(Domain domain, PropertyDescriptor prop)
+    {
+        TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(domain.getStorageTableName());
+        ColumnInfo mvColumn = storageTable.getColumn(prop.getStorageColumnName() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+        if (null == mvColumn)
+        {
+            for(String mvColumnName : PropertyStorageSpec.getLegacyMvIndicatorStorageColumnNames(prop))
+            {
+                mvColumn = storageTable.getColumn(mvColumnName);
+                if (null != mvColumn)
+                    break;
+            }
+            if (null == mvColumn)
+                LOG.error("No MV column found for '" + prop.getName() + "' in table '" + domain.getName() + "'");
+        }
+        return mvColumn;
+    }
 }
