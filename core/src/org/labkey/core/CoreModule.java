@@ -141,7 +141,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
-import org.labkey.api.view.menu.NavigationFolderTree;
 import org.labkey.api.view.template.FrameFactoryClassic;
 import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.view.template.TemplateFactoryClassic;
@@ -195,7 +194,6 @@ import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
 import org.labkey.core.project.FolderNavigationForm;
-import org.labkey.core.project.NavigationFolderForm;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -355,6 +353,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminConsole.addExperimentalFeatureFlag(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, "Core UI Migration",
                 "Use the templates and styling being built during the core UI migration.", false);
+        AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
+                "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
@@ -531,12 +531,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    NavigationFolderForm form = getForm(portalCtx);
+                    FolderNavigationForm form = getForm(portalCtx);
 
-                    final NavigationFolderTree folders = new NavigationFolderTree(portalCtx);
+                    final FolderMenu folders = new FolderMenu(portalCtx);
                     form.setFolderMenu(folders);
 
-                    JspView<NavigationFolderForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
+                    JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
                     view.setTitle("Beta Navigation");
                     view.setFrame(WebPartView.FrameType.NONE);
                     return view;
@@ -548,9 +548,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return false;
                 }
 
-                private NavigationFolderForm getForm(ViewContext context)
+                private FolderNavigationForm getForm(ViewContext context)
                 {
-                    NavigationFolderForm form = new NavigationFolderForm();
+                    FolderNavigationForm form = new FolderNavigationForm();
                     form.setPortalContext(context);
                     return form;
                 }

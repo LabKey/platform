@@ -80,6 +80,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -1758,6 +1759,31 @@ public class ProjectController extends SpringActionController
         public void setContainerPath(String containerPath)
         {
             _containerPath = containerPath;
+        }
+    }
+
+    // Only needed for the Combined Navigation Experimental Feature
+    @RequiresPermission(ReadPermission.class)
+    public class getFolderNavigationAction extends ApiAction<GetWebPartForm>
+    {
+        @Override
+        public ApiResponse execute(GetWebPartForm form, BindException errors) throws Exception
+        {
+
+            HttpServletRequest request = getViewContext().getRequest();
+
+            // TODO: Use entityid
+            Container project = ContainerManager.getForPath("/" + request.getParameter("projectName"));
+
+            ViewContext vc = new ViewContext(getViewContext());
+            if (null != project)
+                vc.setContainer(project);
+
+            FolderMenu menu = new FolderMenu(vc);
+
+            getPageConfig().setTemplate(PageConfig.Template.None);
+
+            return menu.renderToApiResponse();
         }
     }
 

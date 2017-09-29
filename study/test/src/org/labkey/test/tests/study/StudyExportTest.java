@@ -463,10 +463,7 @@ public class StudyExportTest extends StudyManualTest
         assertTextPresent("2001-11-11");
 
         log("Test adding a row to a dataset");
-        DataRegionTable.DataRegion(this.getDriver())
-                .find()
-                .clickInsertNewRow();
-        clickButton("Submit");
+        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        clickButton("Submit");
         assertTextPresent("This field is required");
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);
         setFormElement(Locator.name("quf_SequenceNum"), "123");
