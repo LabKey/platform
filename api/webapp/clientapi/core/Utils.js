@@ -816,6 +816,9 @@ LABKEY.Utils = new function()
 
         onReady: function(config) {
             console.warn('onReady: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
+            if (typeof config === "function") {
+                config();
+            }
         },
 
         /**
