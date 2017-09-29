@@ -22,6 +22,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.api.analytics.AnalyticsService" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     BootstrapTemplate me = (BootstrapTemplate) HttpView.currentView();
@@ -50,6 +53,22 @@
     <% } else { %>
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model.getClientDependencies()) %>
     <% } %>
+    <% if (null != model.getRssUrl()) { %>
+    <link href="<%=text(model.getRssUrl().getEncodedLocalURIString())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
+    <% } %>
+    <% if (model.getAllowTrackingScript())
+       {
+           String script = AnalyticsService.getTrackingScript();
+           if (StringUtils.isNotEmpty(script))
+           {
+               if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+               {
+                    %><!-- see <%= text(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
+               }
+               %><%=text(script)%><%
+           }
+       }
+    %>
 </head>
 <body onload="<%=h(onLoad)%>" class="<%=h(BootstrapTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
