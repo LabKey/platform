@@ -350,10 +350,9 @@ public class StorageProvisioner
         change.execute();
     }
 
-    public static void dropMvIndicator(DomainProperty... props)
+    public static void dropMvIndicator(DomainProperty prop, PropertyDescriptor pd)
     {
-        assert (props.length > 0);
-        Domain domain = props[0].getDomain();
+        Domain domain = prop.getDomain();
 
         // should be in a transaction with propertydescriptor changes
         assert getScope(domain).isTransactionActive();
@@ -361,19 +360,15 @@ public class StorageProvisioner
         TableChange change = new TableChange(domain, ChangeType.DropColumns);
         TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(domain.getStorageTableName());
 
-        for (DomainProperty prop : props)
-        {
-            change.addColumn(getPropStorageSpecForMvColumn(storageTable, prop.getPropertyDescriptor(),
-                                                           "No MV column found for '" + prop.getName() + "' in table '" + domain.getName() + "'"));
-        }
+        change.addColumn(getPropStorageSpecForMvColumn(storageTable, pd,
+                                                       "No MV column found for '" + pd.getName() + "' in table '" + domain.getName() + "'"));
 
         change.execute();
     }
 
-    public static void addMvIndicator(DomainProperty... props)
+    public static void addMvIndicator(DomainProperty prop)
     {
-        assert (props.length > 0);
-        Domain domain = props[0].getDomain();
+        Domain domain = prop.getDomain();
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
@@ -386,10 +381,7 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(domain, ChangeType.AddColumns, tableName);
 
-        for (DomainProperty prop : props)
-        {
-            change.addColumn(makeMvColumn(prop));
-        }
+        change.addColumn(makeMvColumn(prop));
 
         change.execute();
     }
@@ -448,10 +440,7 @@ public class StorageProvisioner
         change.execute();
     }
 
-    /**
-     * @param propsRenamed map where keys are the current properties including the new names, values are the old PropertyDescriptors
-     */
-    public static void renameProperties(Domain domain, Map<DomainProperty, PropertyDescriptor> propsRenamed)
+    public static void renameProperty(Domain domain, DomainProperty domainProperty, PropertyDescriptor oldPropDescriptor, boolean mvDropped)
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -465,36 +454,32 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
-        for (Map.Entry<DomainProperty, PropertyDescriptor> rename : propsRenamed.entrySet())
+        PropertyDescriptor newPropDescriptor = domainProperty.getPropertyDescriptor();
+        PropertyStorageSpec prop = new PropertyStorageSpec(newPropDescriptor);
+        String oldPropName = oldPropDescriptor.getName();
+        String oldColumnName = oldPropDescriptor.getStorageColumnName();
+
+        renamePropChange.addColumnRename(oldColumnName, newPropDescriptor.getStorageColumnName());
+
+        if (!allowRenameOfColumnsDuringUpgrade)
         {
-            PropertyDescriptor newPropDescriptor = rename.getKey().getPropertyDescriptor();
-            PropertyDescriptor oldPropDescriptor = rename.getValue();
-            PropertyStorageSpec prop = new PropertyStorageSpec(newPropDescriptor);
-            String oldPropName = oldPropDescriptor.getName();
-            String oldColumnName = oldPropDescriptor.getStorageColumnName();
-
-            renamePropChange.addColumnRename(oldColumnName, newPropDescriptor.getStorageColumnName());
-
-            if (!allowRenameOfColumnsDuringUpgrade)
+            if (base.contains(oldPropName))
             {
-                if (base.contains(oldPropName))
-                {
-                    throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
-                }
-                else if (base.contains(prop.getName()))
-                {
-                    throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
-                }
+                throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
             }
-
-            // Rename the MV column if it already exists. We'll handle removing it later if the new version
-            // of the column doesn't have MV enabled
-            if (rename.getValue().isMvEnabled())
+            else if (base.contains(prop.getName()))
             {
-                TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(domain.getStorageTableName());
-                ColumnInfo mvColumn = getMvIndicatorColumn(storageTable, oldPropDescriptor, "No MV column found for '" + oldPropDescriptor.getName() + "' in table '" + domain.getName() + "'");
-                renamePropChange.addColumnRename(mvColumn.getName(), PropertyStorageSpec.getMvIndicatorStorageColumnName(newPropDescriptor));
+                throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
             }
+        }
+
+        // Rename the MV column if it already exists. We'll handle removing it later if the new version
+        // of the column doesn't have MV enabled
+        if (oldPropDescriptor.isMvEnabled() && !mvDropped)
+        {
+            TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(domain.getStorageTableName());
+            ColumnInfo mvColumn = getMvIndicatorColumn(storageTable, oldPropDescriptor, "No MV column found for '" + oldPropDescriptor.getName() + "' in table '" + domain.getName() + "'");
+            renamePropChange.addColumnRename(mvColumn.getName(), newPropDescriptor.getMvIndicatorStorageColumnName());
         }
 
         renamePropChange.execute();
@@ -503,7 +488,7 @@ public class StorageProvisioner
     @NotNull
     public static ColumnInfo getMvIndicatorColumn(TableInfo storageTable, PropertyDescriptor prop, String errMessage)
     {
-        ColumnInfo mvColumn = storageTable.getColumn(PropertyStorageSpec.getMvIndicatorStorageColumnName(prop));
+        ColumnInfo mvColumn = storageTable.getColumn(prop.getMvIndicatorStorageColumnName());
         if (null == mvColumn)
         {
             for(String mvColumnName : PropertyStorageSpec.getLegacyMvIndicatorStorageColumnNames(prop))
@@ -521,9 +506,8 @@ public class StorageProvisioner
     /**
      * Generate and execute the appropriate SQL statements to resize properties
      * @param domain to execute within
-     * @param properties set of properties to resize along with the old scale
      */
-    public static void resizeProperties(Domain domain, Pair<DomainProperty, Integer>... properties) throws ChangePropertyDescriptorException
+    public static void resizeProperty(Domain domain, DomainProperty prop, Integer scale) throws ChangePropertyDescriptorException
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -538,12 +522,8 @@ public class StorageProvisioner
         kind.getBaseProperties(domain).forEach(s ->
                 base.add(s.getName()));
 
-        for (Pair<DomainProperty, Integer> pair : properties)
-        {
-            DomainProperty prop = pair.first;
-            if (!base.contains(prop.getName()))
-                resizePropChange.addColumnResize(prop.getPropertyDescriptor(), pair.second);
-        }
+        if (!base.contains(prop.getName()))
+            resizePropChange.addColumnResize(prop.getPropertyDescriptor(), scale);
 
         resizePropChange.execute();
     }
@@ -1358,7 +1338,7 @@ public class StorageProvisioner
                     status.fix = "Create column '" + domainProp.getName() + "'";
                     status.hasProblem = true;
                 }
-                String mvColName = PropertyStorageSpec.getMvIndicatorColumnName(propDescriptor);
+                String mvColName = PropertyStorageSpec.getMvIndicatorDisplayColumnName(propDescriptor);
                 if (hardColumnNames.remove(mvColName))
                     status.mvColName = mvColName;
                 if (null == status.mvColName && domainProp.isMvEnabled())
@@ -1389,7 +1369,7 @@ public class StorageProvisioner
                     status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
                     status.hasProblem = true;
                 }
-                String mvColName = PropertyStorageSpec.getMvIndicatorColumnName(spec);
+                String mvColName = PropertyStorageSpec.getMvIndicatorDisplayColumnName(spec);
                 if (hardColumnNames.remove(mvColName))
                     status.mvColName = mvColName;
                 if (null == status.mvColName && spec.isMvEnabled())
@@ -1418,8 +1398,8 @@ public class StorageProvisioner
 
                 hardColumnNames.remove(name);
                 status.colName = name;
-                if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorColumnName(name)))
-                    status.mvColName = PropertyStorageSpec.getMvIndicatorColumnName(name);
+                if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorDisplayColumnName(name)))
+                    status.mvColName = PropertyStorageSpec.getMvIndicatorDisplayColumnName(name);
                 status.fix = "Delete column '" + name + "'" + (null == status.mvColName ? "" : " and column '" + status.mvColName + "'");
                 status.hasProblem = true;
             }
@@ -1623,7 +1603,7 @@ public class StorageProvisioner
         private final Container container = JunitUtil.getTestContainer();
         private final String notNullPropName = "a_" + System.currentTimeMillis();
         private final String propNameB = "b_" + System.currentTimeMillis();
-        private final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorColumnName(propNameB).toLowerCase();
+        private final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorDisplayColumnName(propNameB).toLowerCase();
 
         private Domain domain;
 
@@ -1750,7 +1730,7 @@ renaming a property AND toggling mvindicator on in the same change.
             addPropertyB();
             DomainProperty propB = domain.getPropertyByName(propNameB);
             String newName = "new_" + propNameB;
-            String newMvName = PropertyStorageSpec.getMvIndicatorColumnName(newName);
+            String newMvName = PropertyStorageSpec.getMvIndicatorDisplayColumnName(newName);
             propB.setName(newName);
             propB.setMvEnabled(true);
             domain.save(new User());

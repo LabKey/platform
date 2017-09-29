@@ -1474,7 +1474,7 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting)\n");
+                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as ontolotyuri, " +
@@ -1512,7 +1512,8 @@ public class OntologyManager
                 "? as facetingbehaviortype, " +
                 "? as phi, " +
                 "? as redactedText, " +
-                "? as excludefromshifting\n");
+                "? as excludefromshifting, " +
+                "? as mvindicatorstoragecolumnname\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
 
         sql.add(pd.getPropertyURI());
@@ -1552,6 +1553,7 @@ public class OntologyManager
         sql.add(pd.getPHI());
         sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
+        sql.add(pd.getMvIndicatorStorageColumnName());
         // WHERE
         sql.add(pd.getPropertyURI());
         sql.add(pd.getContainer());

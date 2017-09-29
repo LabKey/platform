@@ -58,6 +58,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     private String lookupSchema;
     private String lookupQuery;
     private boolean mvEnabled;
+    private String mvIndicatorStorageColumnName;        // only valid if mvEnabled
 
     private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
 
@@ -177,6 +178,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     public void setStorageColumnName(String storageColumnName)
     {
         this.storageColumnName = storageColumnName;
+        if (mvEnabled)
+            mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
+
     }
 
     public String getLegalSelectName(SqlDialect dialect)
@@ -349,7 +353,19 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public void setMvEnabled(boolean mvEnabled)
     {
-        this.mvEnabled = mvEnabled;
+        if (this.mvEnabled != mvEnabled)
+        {
+            if (mvEnabled && null != storageColumnName)
+                this.mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
+            else
+                this.mvIndicatorStorageColumnName = null;
+            this.mvEnabled = mvEnabled;
+        }
+    }
+
+    private String makeMvIndicatorStorageColumnName()
+    {
+        return storageColumnName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }
 
     /** Need the string version of this method because it's called by reflection and must match by name */
@@ -460,6 +476,17 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     public String getURI()
     {
         return getPropertyURI();
+    }
+
+    public String getMvIndicatorStorageColumnName()
+    {
+        return mvIndicatorStorageColumnName;
+    }
+
+    // Should only be used during upgrade and bean
+    public void setMvIndicatorStorageColumnName(String mvIndicatorStorageColumnName)
+    {
+        this.mvIndicatorStorageColumnName = mvIndicatorStorageColumnName;
     }
 }
 
