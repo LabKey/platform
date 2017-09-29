@@ -47,10 +47,12 @@ public class ZipFile extends AbstractVirtualFile
     private final String _path;
     private final PrintWriter _pw;
     private final boolean _shouldCloseOutputStream;
+    private File _root;
 
     public ZipFile(File root, String name) throws FileNotFoundException
     {
         this(getOutputStream(root, name), true);
+        _root = root;
     }
 
     public ZipFile(HttpServletResponse response, String name) throws IOException
@@ -93,7 +95,7 @@ public class ZipFile extends AbstractVirtualFile
 
     public String getLocation()
     {
-        return "ZipFile stream.";
+        return _root != null ? _root.getAbsolutePath():"ZipFile stream.";
     }
 
     public PrintWriter getPrintWriter(String path) throws IOException

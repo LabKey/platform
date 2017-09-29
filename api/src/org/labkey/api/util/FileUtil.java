@@ -802,6 +802,11 @@ quickScan:
         return makeLegalName(prefix + "_" + getTimestamp() + "." + extension);
     }
 
+    public static String makeFileNameWithTimestamp(String prefix)
+    {
+        return makeLegalName(prefix + "_" + getTimestamp());
+    }
+
 
     private static long lastTime = 0;
     private static final Object timeLock = new Object();
