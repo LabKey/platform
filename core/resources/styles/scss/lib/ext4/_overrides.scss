@@ -56,10 +56,17 @@
 {
   border-bottom: 1px solid #AAAAAA !important;
   border-right: 1px solid #DDDDDD !important;
+  background-color: $lk-grid-header-bar-bg-color;
+}
+
+.x4-grid-header-ct
+{
+  background-color: $lk-grid-header-bar-bg-color;
 }
 
 .x4-column-header-over
 {
+  background-color: $lk-grid-header-bar-bg-color-portal;
   background-image: none !important;
   cursor: pointer !important;
 }
