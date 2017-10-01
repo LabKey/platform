@@ -19,6 +19,8 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -26,8 +28,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -102,8 +102,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
 
-    @NotNull
-    private final DatasetDefinition _dsd;
+    private final @NotNull DatasetDefinition _dsd;
+    private final @NotNull TableRules _rules;
 
     private TableInfo _fromTable;
     private ContainerFilterable _assayResultTable;
@@ -121,7 +121,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         setDescription("Contains up to one row of " + nameLabel + " data for each " + keyDescription + (keyDescription.contains("/") ? " combination." : "."));
         _dsd = dsd;
         _title = dsd.getLabel();
-
+        _rules = TableRulesManager.get().getTableRules(getContainer(), schema.getUser());
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
         Domain dd = _dsd.getDomain();
@@ -166,27 +166,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 ColumnInfo column = new AliasedColumn(this, subjectColName, baseColumn);
                 column.setInputType("text");
                 // TODO, need a way for a lookup to have a "text" input
-                column.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        DataColumn dataColumn = new DataColumn(colInfo, false);
-                        dataColumn.setInputType("text");
-                        return dataColumn;
-                    }
+                column.setDisplayColumnFactory(colInfo -> {
+                    DataColumn dataColumn = new DataColumn(colInfo, false);
+                    dataColumn.setInputType("text");
+                    return dataColumn;
                 });
 
                 column.setFk(new ParticipantForeignKey());
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
-                    column.setDisplayColumnFactory(new DisplayColumnFactory() {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo column)
-                        {
-                            return new PtidObfuscatingDisplayColumn(column);
-                        }
-                    });
+                    column.setDisplayColumnFactory(PtidObfuscatingDisplayColumn::new);
                 }
 
                 addColumn(column);
@@ -241,13 +231,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
                 qcStateColumn.setFk(new QueryForeignKey(QueryService.get().getUserSchema(schema.getUser(), getContainer(), "core"), getContainer(), "QCState","RowId", "Label"));
-                qcStateColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new QCStateDisplayColumn(colInfo);
-                    }
-                });
+                qcStateColumn.setDisplayColumnFactory(QCStateDisplayColumn::new);
 
                 qcStateColumn.setDimension(false);
 
@@ -279,7 +263,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
                 if (baseColumn.isHidden())
                     col.setHidden(true);
-                // "Date" is not in default column-list, but shouldn't automatcially be hidden either
+                // "Date" is not in default column-list, but shouldn't automatically be hidden either
                 if (!isVisibleByDefault(baseColumn) && !"Date".equalsIgnoreCase(baseColumn.getName()))
                     col.setHidden(true);
 
@@ -295,17 +279,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // MvIndicator has the same propertyURI as the value column, but should not copy the value column's foreign key
                     if (!col.isMvIndicatorColumn() && null != dp && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
                         col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
- 
-                    
+
+
                     if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
                     {
-                        col.setDisplayColumnFactory(new DisplayColumnFactory() {
-                            public DisplayColumn createRenderer(ColumnInfo colInfo)
-                            {
-                                DataColumn dc = new DataColumn(colInfo);
-                                dc.setPreserveNewlines(true);
-                                return dc;
-                            }
+                        col.setDisplayColumnFactory(colInfo -> {
+                            DataColumn dc = new DataColumn(colInfo);
+                            dc.setPreserveNewlines(true);
+                            return dc;
                         });
                     }
                 }
@@ -342,7 +323,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         ColumnInfo dsRowIdColumn = getColumn("dsrowid");
 
         // Importing old study may not have this column
-        if(dsRowIdColumn != null)
+        if (dsRowIdColumn != null)
         {
             dsRowIdColumn.setHidden(true);
             dsRowIdColumn.setKeyField(false);
@@ -351,7 +332,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             getColumn("dsrowid").setHidden(true);
         }
 
-        if(null!=_userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container"))
+        if (null != _userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container"))
             addContainerColumn(true);
 
         ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
@@ -435,6 +416,19 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         addFolderColumn();
     }
 
+    @Override
+    public ColumnInfo addColumn(ColumnInfo column)
+    {
+        ColumnInfo ret = column;
+
+        if (_rules.getColumnInfoFilter().test(column))
+        {
+            ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
+            ret = super.addColumn(transformed);
+        }
+
+        return ret;
+    }
 
     List<FieldKey> _assayDefaultVisibleColumns = null;
 
@@ -471,7 +465,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
             ExpProtocol protocol = _dsd.getAssayProtocol();
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            if(null != provider)
+            if (null != provider)
             {
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
                 defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
@@ -485,13 +479,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public boolean hasContainerColumn()
     {
-        return null!=_rootTable.getColumn("container");
+        return null != _rootTable.getColumn("container");
     }
 
     @Override
     public String getContainerFilterColumn()
     {
-        if(null == _rootTable.getColumn("container"))
+        if (null == _rootTable.getColumn("container"))
                 return null;
 
         return "Container";
@@ -504,7 +498,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         if (getColumn("Folder") == null)
         {
             ColumnInfo ci = _rootTable.getColumn("Container");
-            if(null == ci)
+            if (null == ci)
             {
                 ci = getColumn("Container");
             }
@@ -728,7 +722,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         else
         {
             TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            sqlf.append("(SELECT " + innerAlias + ".*, PV.VisitRowId");
+            sqlf.append("(SELECT ").append(innerAlias).append(".*, PV.VisitRowId");
             if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
                 sqlf.append(", PV.Day");
             SQLFragment from = getRealTable().getFromSQL(innerAlias);
@@ -736,7 +730,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     .append("\n" + "    ON ").append(innerAlias).append(".ParticipantId=PV.ParticipantId AND ")
                     .append(innerAlias).append(".SequenceNum=PV.SequenceNum");
 
-            if(null!=this.getRealTable().getColumn("container"))
+            if (null != getRealTable().getColumn("container"))
             {
                 sqlf.append(" AND PV.Container =  ").append(innerAlias).append(".Container");
             }
