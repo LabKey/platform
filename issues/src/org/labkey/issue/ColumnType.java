@@ -28,8 +28,6 @@ public interface ColumnType
     boolean isStandard();
     boolean isCustom();
 
-    // Most pick lists display a blank entry
-    boolean allowBlank();
     @NotNull String[] getInitialValues();
     @NotNull String getInitialDefaultValue();
 }

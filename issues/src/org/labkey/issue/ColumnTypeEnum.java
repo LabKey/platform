@@ -52,12 +52,6 @@ public enum ColumnTypeEnum implements ColumnType
         {
             return "3";
         }
-
-        @Override
-        public boolean allowBlank()
-        {
-            return false;
-        }
     },
     RESOLUTION(7, "resolution", false)
     {
@@ -73,12 +67,6 @@ public enum ColumnTypeEnum implements ColumnType
         public String getInitialDefaultValue()
         {
             return "Fixed";
-        }
-
-        @Override
-        public boolean allowBlank()
-        {
-            return false;
         }
     },
     STRING1(4, "string1", false),
@@ -134,12 +122,6 @@ public enum ColumnTypeEnum implements ColumnType
     public boolean isCustom()
     {
         return _customString || _customInteger;
-    }
-
-    // Most pick lists display a blank entry
-    public boolean allowBlank()
-    {
-        return true;
     }
 
     public @NotNull String[] getInitialValues()
