@@ -156,7 +156,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -245,9 +244,7 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoExperimentRun(), filter, null);
 
         final List<ExpRunImpl> runs = new ArrayList<>(rowids.size());
-        selector.forEach(run -> {
-            runs.add(new ExpRunImpl(run));
-        }, ExperimentRun.class);
+        selector.forEach(run -> runs.add(new ExpRunImpl(run)), ExperimentRun.class);
 
         return runs;
     }
@@ -268,14 +265,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Set<String> roles = getDataInputRoles(container, ContainerFilter.CURRENT);
         // Remove case-only dupes
         Set<String> dedupedRoles = new CaseInsensitiveHashSet();
-        for (Iterator<String> i = roles.iterator(); i.hasNext(); )
-        {
-            String role = i.next();
-            if (!dedupedRoles.add(role))
-            {
-                i.remove();
-            }
-        }
+        roles.removeIf(role -> !dedupedRoles.add(role));
 
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunFilesAction.class, container);
         return new JspView<>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
@@ -476,11 +466,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     f = new File(new URI(source.getCanonicalDataFileURL(f.getAbsolutePath())));
                     path = FileUtil.relativizeUnix(source.getRoot(), f, false);
                 }
-                catch (URISyntaxException e)
-                {
-                    path = f.toString();
-                }
-                catch (IOException e)
+                catch (URISyntaxException | IOException e)
                 {
                     path = f.toString();
                 }
@@ -561,9 +547,7 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
         final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
-        selector.forEach(material -> {
-            materials.add(new ExpMaterialImpl(material));
-        }, Material.class);
+        selector.forEach(material -> materials.add(new ExpMaterialImpl(material)), Material.class);
 
         return materials;
     }
@@ -1902,7 +1886,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Map<String, String> flattenPairs(List<Pair<String, String>> runsAndRoles)
     {
         Map<String, String> runLsidToRoleMap = new HashMap<>();
-        runsAndRoles.stream().forEach(pair -> runLsidToRoleMap.put(pair.first, pair.second));
+        runsAndRoles.forEach(pair -> runLsidToRoleMap.put(pair.first, pair.second));
         return runLsidToRoleMap;
     }
 
@@ -2135,7 +2119,6 @@ public class ExperimentServiceImpl implements ExperimentService
     SQLFragment materializeNodesCTE(String selectNodes)
     {
         final DbSchema exp = getExpSchema();
-        final long now = System.currentTimeMillis();
 
         synchronized (initEdgesLock)
         {
@@ -2380,7 +2363,8 @@ public class ExperimentServiceImpl implements ExperimentService
             return;
         }
 
-        AttachmentService.get().deleteAttachments(run);
+        // TODO: All we ever do is delete attachments associated with ExpRunImpl... we never add or display them (!?)
+        AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
         run.deleteProtocolApplications(datasToDelete, user);
 
@@ -2981,8 +2965,8 @@ public class ExperimentServiceImpl implements ExperimentService
         Protocol[] protocols = new SqlSelector(getExpSchema(), sql).getArray(Protocol.class);
 
         sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
-        sql.append(" WHERE (ChildProtocolId IN (" + protocolIds + ")");
-        sql.append(" OR ParentProtocolId IN (" + protocolIds + ") );");
+        sql.append(" WHERE (ChildProtocolId IN (").append(protocolIds).append(")");
+        sql.append(" OR ParentProtocolId IN (").append(protocolIds).append(") );");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
 
         try (DbScope.Transaction transaction = ensureTransaction())

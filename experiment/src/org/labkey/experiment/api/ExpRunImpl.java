@@ -18,10 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -70,7 +67,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun, AttachmentParent
+public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
     private boolean _populated;
 
@@ -96,21 +93,25 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         super(run);
     }
 
+    @Override
     public URLHelper detailsURL()
     {
         return ExperimentController.getRunGraphURL(getContainer(), getRowId());
     }
 
+    @Override
     public Container getContainer()
     {
         return _object.getContainer();
     }
 
+    @Override
     public int getRowId()
     {
         return _object.getRowId();
     }
 
+    @Override
     public List<ExpExperimentImpl> getExperiments()
     {
         final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
@@ -121,8 +122,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return ExpExperimentImpl.fromExperiments(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
     }
 
-    @Nullable
-    public ExpExperimentImpl getBatch()
+    @Override
+    public @Nullable ExpExperimentImpl getBatch()
     {
         if (_object.getBatchId() == null)
             return null;
@@ -159,11 +160,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _object.setBatchId(batchId);
     }
 
+    @Override
     public ExpProtocolImpl getProtocol()
     {
         return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
     }
 
+    @Override
     public List<ExpDataImpl> getOutputDatas(@Nullable DataType type)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -175,6 +178,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
+    @Override
     public List<ExpDataImpl> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)
     {
         SQLFragment sql = new SQLFragment();
@@ -197,6 +201,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return ExpDataImpl.fromDatas(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Data.class));
     }
 
+    @Override
     public File getFilePathRoot()
     {
         if (_object.getFilePathRoot() == null)
@@ -206,17 +211,20 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return new File(_object.getFilePathRoot());
     }
 
+    @Override
     public void setFilePathRoot(File file)
     {
         ensureUnlocked();
         _object.setFilePathRoot(file == null ? null : file.getAbsolutePath());
     }
 
+    @Override
     public String urlFlag(boolean flagged)
     {
         return AppProps.getInstance().getContextPath() + "/Experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
     }
 
+    @Override
     public void save(User user)
     {
         boolean newRun = getRowId() == 0;
@@ -225,6 +233,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
     }
 
+    @Override
     public void delete(User user)
     {
         if (!getContainer().hasPermission(user, DeletePermission.class))
@@ -234,11 +243,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, getRowId());
     }
 
+    @Override
     public void setProtocol(ExpProtocol protocol)
     {
         _object.setProtocolLSID(protocol.getLSID());
     }
 
+    @Override
     public ExpProtocolApplicationImpl addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType appType, String name)
     {
         return addProtocolApplication(user, action, appType, name, null, null, null);
@@ -273,40 +284,47 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return new ExpProtocolApplicationImpl(pa);
     }
 
+    @Override
     public String getComments()
     {
         return _object.getComments();
     }
 
+    @Override
     public void setComments(String comments)
     {
         ensureUnlocked();
         _object.setComments(comments);
     }
 
+    @Override
     public void setEntityId(String entityId)
     {
         ensureUnlocked();
         _object.setEntityId(entityId);
     }
 
+    @Override
     public String getEntityId()
     {
         return _object.getEntityId();
     }
 
 
+    @Override
     public void setContainer(Container container)
     {
         _object.setContainer(container);
     }
 
+    @Override
     public void setJobId(Integer jobId)
     {
         ensureUnlocked();
         _object.setJobId(jobId);
     }
 
+    @Override
     public Integer getJobId()
     {
         return _object.getJobId();
@@ -318,41 +336,48 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _protocolSteps = protocolSteps;
     }
 
+    @Override
     public Map<ExpMaterial, String> getMaterialInputs()
     {
         ensureFullyPopulated();
         return _materialInputs;
     }
 
+    @Override
     public Map<ExpData, String> getDataInputs()
     {
         ensureFullyPopulated();
         return _dataInputs;
     }
 
+    @Override
     public List<ExpMaterial> getMaterialOutputs()
     {
         ensureFullyPopulated();
         return _materialOutputs;
     }
 
+    @Override
     public List<ExpData> getDataOutputs()
     {
         ensureFullyPopulated();
         return _dataOutputs;
     }
 
+    @Override
     public List<ExpProtocolApplicationImpl> getProtocolApplications()
     {
         ensureFullyPopulated();
         return _protocolSteps;
     }
 
+    @Override
     public ExpProtocolApplication getInputProtocolApplication()
     {
         return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRun);
     }
 
+    @Nullable
     private ExpProtocolApplication findProtocolApplication(ExpProtocol.ApplicationType type)
     {
         for (ExpProtocolApplicationImpl expProtocolApplication : getProtocolApplications())
@@ -365,11 +390,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return null;
     }
 
+    @Override
     public ExpProtocolApplication getOutputProtocolApplication()
     {
         return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRunOutput);
     }
 
+    @Override
     public void deleteProtocolApplications(User user)
     {
         ensureUnlocked();
@@ -736,6 +763,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         setProtocolApplications(allPA);
     }
 
+    @Override
     public List<ExpDataImpl> getAllDataUsedByRun()
     {
         SQLFragment sql = new SQLFragment();
@@ -748,13 +776,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         sql.append(" where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
         sql.add(getRowId());
         return ExpDataImpl.fromDatas(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArrayList(Data.class));
-    }
-
-
-    @Override
-    public String getContainerId()
-    {
-        return _object.getContainer().getId();
     }
 
 
@@ -844,6 +865,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _object.setCreated(created);
     }
 
+    @Override
     public void setCreatedBy(User user)
     {
         _object.setCreatedBy(user == null ? 0 : user.getUserId());
@@ -865,11 +887,5 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         return false;
-    }
-
-    @Override
-    public @NotNull AttachmentType getAttachmentType()
-    {
-        return AttachmentType.UNKNOWN;
     }
 }

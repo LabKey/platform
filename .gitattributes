@@ -939,6 +939,7 @@ experiment/src/org/labkey/experiment/api/ExpProtocolApplicationTableImpl.java -t
 experiment/src/org/labkey/experiment/api/ExpProtocolImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpQCFlagTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpRunAttachmentParent.java -text
 experiment/src/org/labkey/experiment/api/ExpRunGroupMapTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunInputImpl.java -text
