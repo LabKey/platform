@@ -34,6 +34,5 @@ public interface ExperimentRunTypeSource
      *                  designs)
      * @return all the run types that may be present in the container
      */
-    @NotNull
-    public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container);
+    @NotNull Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container);
 }

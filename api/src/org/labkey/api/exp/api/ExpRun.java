@@ -28,26 +28,25 @@ import java.util.Map;
 public interface ExpRun extends ExpObject
 {
     /** @return the experiments (AKA run groups in the UI) of which this run is a member */
-    public List<? extends ExpExperiment> getExperiments();
+    List<? extends ExpExperiment> getExperiments();
 
-    @Nullable
-    public ExpExperiment getBatch();
-    public ExpProtocol getProtocol();
+    @Nullable ExpExperiment getBatch();
+    ExpProtocol getProtocol();
 
     /**
      * @param type an optional filter for the type of data
      */
-    public List<? extends ExpData> getOutputDatas(@Nullable DataType type);
+    List<? extends ExpData> getOutputDatas(@Nullable DataType type);
     /**
      * @param inputRole if null, don't filter by input role. If non-null, filter to only the specified role
      * @param appType if null, don't filter by type. If non-null, filter to only the specified type
      */
-    public List<? extends ExpData> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
-    public File getFilePathRoot();
-    public void setFilePathRoot(File filePathRoot);
-    public void setProtocol(ExpProtocol protocol);
-    public void setJobId(Integer jobId);
-    public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
+    List<? extends ExpData> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
+    File getFilePathRoot();
+    void setFilePathRoot(File filePathRoot);
+    void setProtocol(ExpProtocol protocol);
+    void setJobId(Integer jobId);
+    ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
     
     /** Stored in the exp.experimentrun table */
     // TODO - Merge this with getComment() (backed by ontology manager) on ExpObject
@@ -81,7 +80,7 @@ public interface ExpRun extends ExpObject
      * including top-level inputs and outputs, as well as intermediate files
      */
     List<? extends ExpData> getAllDataUsedByRun();
-    public Integer getJobId();
+    Integer getJobId();
 
     List<? extends ExpProtocolApplication> getProtocolApplications();
 
@@ -106,7 +105,7 @@ public interface ExpRun extends ExpObject
     List<? extends ExpRun> getReplacesRuns();
 
     /** Archive data files associated with the run, primarily used when a file is deleted. */
-    public void archiveDataFiles(User user);
+    void archiveDataFiles(User user);
 
     void setCreated(Date created);
     void setCreatedBy(User user);

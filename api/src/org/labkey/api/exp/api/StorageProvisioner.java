@@ -28,29 +28,10 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Constraint;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseTableType;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumnFactory;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableChange.ChangeType;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -103,7 +84,6 @@ public class StorageProvisioner
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
     private static boolean allowRenameOfColumnsDuringUpgrade = false;  // TODO: Remove this? No longer used because dataset migration code is gone.
-
 
     private static String _create(DbScope scope, DomainKind kind, Domain domain)
     {
@@ -568,7 +548,7 @@ public class StorageProvisioner
             String scn = dp.getPropertyDescriptor().getStorageColumnName();
             String name = dp.getName();
             if (null != scn && !scn.equals(name))
-                map.put(scn,name);
+                map.put(scn, name);
         }
 
         VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map);

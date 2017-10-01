@@ -26,5 +26,5 @@ import java.util.List;
 public interface ExperimentMaterialListener
 {
     /** Invoked immediately prior to the exp.material row being deleted */
-    public void beforeDelete(List<? extends ExpMaterial> materials);
+    void beforeDelete(List<? extends ExpMaterial> materials);
 }

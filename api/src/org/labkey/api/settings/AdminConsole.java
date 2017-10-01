@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 /**
- * Manages registration for links to be shown in the Admin Console, as well as experiment features that can
+ * Manages registration for links to be shown in the Admin Console, as well as experimental features that can
  * be enabled/disabled.
  * User: adam
  * Date: Jul 23, 2008

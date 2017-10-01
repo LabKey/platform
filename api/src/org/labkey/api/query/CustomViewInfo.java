@@ -56,7 +56,7 @@ public interface CustomViewInfo
 
         private PropertyName.Enum _xmlEnum;
 
-        private ColumnProperty(PropertyName.Enum xmlEnum)
+        ColumnProperty(PropertyName.Enum xmlEnum)
         {
             _xmlEnum = xmlEnum;
         }
