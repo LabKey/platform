@@ -283,7 +283,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (substudy.getContainer().equals(getContainer()))
             return this;
         assert isShared();
-        DatasetDefinition sub = this.createMutable();
+        DatasetDefinition sub = createMutable();
         assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
@@ -726,7 +726,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _domain = null;
             if (null == getTypeURI())
             {
-                DatasetDefinition d = this.createMutable();
+                DatasetDefinition d = createMutable();
                 d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
                 d.save(null);
             }
@@ -1263,7 +1263,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
             
-            // PartipantId
+            // ParticipantId
 
             {
                 // StudyData columns
@@ -1288,7 +1288,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("Container","lsid","ParticipantSequenceNum","sourcelsid","Created","CreatedBy","Modified","ModifiedBy", "dsrowid"))
+            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid"))
             {
                 ColumnInfo col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1539,7 +1539,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         public CaseInsensitiveHashMap<String> remapSchemaColumns()
         {
-             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
             
             // why did I add an underscore to the stored mv indicators???
             for (ColumnInfo col : getColumns())
@@ -1671,9 +1671,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public Domain refreshDomain()
     {
-        this._domain = null;
-        this._domain = getDomain();
-        return this._domain;
+        return _domain = getDomain();
     }
     
 
@@ -1895,7 +1893,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             error.append(getKeyTypeDescription());
             error.append(".  ");
 
-            error.append("Duplicates were found in the " + (checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ") + "imported data.");
+            error.append("Duplicates were found in the ").append(checkDuplicates == CheckForDuplicates.sourceOnly ? "" : "database or ").append("imported data.");
             errors.addRowError(new ValidationException(error.toString()));
 
             int errorCount = 0;
@@ -2030,7 +2028,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public Object getManagedKeyLock()
     {
         if (null == _managedKeyLock)
-            _managedKeyLock = (this.getEntityId() + ".MANAGED_KEY_LOCK").intern();
+            _managedKeyLock = (getEntityId() + ".MANAGED_KEY_LOCK").intern();
         return _managedKeyLock;
     }
 

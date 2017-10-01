@@ -447,6 +447,7 @@ public class IssuesQuerySchema extends UserSchema
             return null;
         }
 
+        @NotNull
         @Override
         public Date getCreated()
         {
@@ -459,24 +460,28 @@ public class IssuesQuerySchema extends UserSchema
             return null;
         }
 
+        @NotNull
         @Override
         public Date getModified()
         {
             return new Date();
         }
 
+        @NotNull
         @Override
         public String getSchemaName()
         {
             return _queryDef.getSchema().getSchemaName();
         }
 
+        @NotNull
         @Override
         public SchemaKey getSchemaPath()
         {
             return _queryDef.getSchema().getSchemaPath();
         }
 
+        @NotNull
         @Override
         public String getQueryName()
         {
