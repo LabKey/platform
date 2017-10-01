@@ -232,7 +232,12 @@ api/src/org/labkey/api/collections/Sets.java -text
 api/src/org/labkey/api/collections/SparseBitSet.java -text
 api/src/org/labkey/api/collections/SwapQueue.java -text
 api/src/org/labkey/api/collections/ValueComparableMap.java -text
+api/src/org/labkey/api/compliance/ColumnInfoFilter.java -text
+api/src/org/labkey/api/compliance/ColumnInfoTransformer.java -text
 api/src/org/labkey/api/compliance/ComplianceService.java -text
+api/src/org/labkey/api/compliance/TableRules.java -text
+api/src/org/labkey/api/compliance/TableRulesManager.java -text
+api/src/org/labkey/api/compliance/TableRulesProvider.java -text
 api/src/org/labkey/api/concurrent/CountingSemaphore.java -text
 api/src/org/labkey/api/data/AES.java -text
 api/src/org/labkey/api/data/AJAXDetailsDisplayColumn.java -text

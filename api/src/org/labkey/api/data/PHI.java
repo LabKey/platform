@@ -16,10 +16,11 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 
 /**
- * Captures the diferent levels of access a user might have to view some, all, or no PHI data.
+ * Captures the different levels of access a user might have to view some, all, or no PHI data.
  *
  * User: adam
  * Date: 1/17/14
@@ -40,29 +41,44 @@ public enum PHI
         return null;
     }
 
-    private final int rank;
-    private final Class<? extends Permission> permission;
+    private final int _rank;
+    private final Class<? extends Permission> _permission;
 
     PHI(int rank, @Nullable Class<? extends Permission> permission)
     {
-        this.rank = rank;
-        this.permission = permission;
+        _rank = rank;
+        _permission = permission;
     }
     public int getRank() {
-        return rank;
+        return _rank;
     }
     public boolean isLevelAllowed(PHI level)
     {
-        return this.rank <= level.getRank();
+        return _rank <= level.getRank();
     }
     public boolean isExportLevelAllowed(PHI level)
     {
-        return this.rank < level.getRank();
+        return _rank < level.getRank();
     }
 
     @Nullable
     public Class<? extends Permission> getRequiredPermission()
     {
-        return this.permission;
+        return _permission;
+    }
+
+    // Find the maximum PHI permission this user has in this container
+    public static PHI determinePhiAllowed(Container c, User user)
+    {
+        if (c.hasPermission(user, RestrictedPHIPermission.class))
+            return Restricted;
+
+        if (c.hasPermission(user, FullPHIPermission.class))
+            return PHI;
+
+        if (c.hasPermission(user, LimitedPHIPermission.class))
+            return Limited;
+
+        return NotPHI;
     }
 }
