@@ -127,6 +127,12 @@ public abstract class AbstractParamReplacement implements ParamReplacement
         _files.add(file);
     }
 
+    @Override
+    public void clearFiles()
+    {
+        _files.clear();
+    }
+
     @Nullable
     @Override
     public String getRegex()

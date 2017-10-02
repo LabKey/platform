@@ -16,11 +16,13 @@
 
 package org.labkey.api.reports.report;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -38,7 +40,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +56,7 @@ public class RReportJob extends PipelineJob implements Serializable
     public static final String LOG_FILE_NAME = "report.log";
     private ReportIdentifier _reportId;
     private RReportBean _form;
+    private static final ThreadLocal<String> _jobIdentifier = new ThreadLocal<String>();
 
     public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId, PipeRoot root)
     {
@@ -75,9 +77,22 @@ public class RReportJob extends PipelineJob implements Serializable
         RReport report = getReport();
         if (report != null)
         {
+            _jobIdentifier.set(getJobGUID());
             File logFile = new File(report.getReportDir(executingContainerId), LOG_FILE_NAME);
             setLogFile(logFile);
         }
+    }
+
+    @Override
+    public boolean setQueue(PipelineQueue queue, TaskStatus initialState)
+    {
+        _jobIdentifier.remove();
+        return super.setQueue(queue, initialState);
+    }
+
+    public static String getJobIdentifier()
+    {
+        return _jobIdentifier.get();
     }
 
     public ActionURL getStatusHref()
@@ -123,6 +138,7 @@ public class RReportJob extends PipelineJob implements Serializable
 
     public void run()
     {
+        _jobIdentifier.set(getJobGUID());
         setStatus(PROCESSING_STATUS, "Job started at: " + DateUtil.nowISO());
         RReport report = getReport();
         info("Running R report job '" + report.getDescriptor().getReportName() + "'");
@@ -162,6 +178,7 @@ public class RReportJob extends PipelineJob implements Serializable
                         // Stop the transform session to avoid leaving lots of them active
                         SecurityManager.endTransformSession(sessionId);
                     }
+                    _jobIdentifier.remove();
                 }
             }
         }
@@ -201,8 +218,49 @@ public class RReportJob extends PipelineJob implements Serializable
         if (outputSubst.size() > 0)
         {
             // write the output substitution map to disk so we can render the view later
-            File file = new File(report.getReportDir(this.getContainerId()), RReport.SUBSTITUTION_MAP);
-            ParamReplacementSvc.get().toFile(outputSubst, file);
+            File reportDir = report.getReportDir(this.getContainerId());
+            File substitutionMap;
+
+            if (reportDir.getName().equals(getJobIdentifier()))
+            {
+                File parentDir = reportDir.getParentFile();
+                // clean up the destination folder
+                for (File file : parentDir.listFiles())
+                {
+                    if (!file.isDirectory())
+                        file.delete();
+                }
+
+                // rewrite the parameter replacement files to point to the destination folder
+                for (ParamReplacement replacement : outputSubst)
+                {
+                    List<File> newFiles = new ArrayList<>();
+                    for (File file : replacement.getFiles())
+                    {
+                        File newFile = new File(parentDir, file.getName());
+                        FileUtils.moveFile(file, newFile);
+                        newFiles.add(newFile);
+                    }
+
+                    replacement.clearFiles();
+                    for (File file : newFiles)
+                    {
+                        replacement.addFile(file);
+                    }
+                }
+
+                // move the remaining files and delete the pipeline specific directory
+                for (File file : reportDir.listFiles())
+                {
+                    File newFile = new File(parentDir, file.getName());
+                    FileUtils.moveFile(file, newFile);
+                }
+                FileUtils.deleteDirectory(reportDir);
+                substitutionMap = new File(reportDir.getParent(), RReport.SUBSTITUTION_MAP);
+            }
+            else
+                substitutionMap = new File(reportDir, RReport.SUBSTITUTION_MAP);
+            ParamReplacementSvc.get().toFile(outputSubst, substitutionMap);
         }
     }
 }

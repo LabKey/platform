@@ -16,19 +16,16 @@
 
 package org.labkey.api.reports.report.view;
 
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
 
-import java.io.*;
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: Karl Lum
@@ -47,27 +44,18 @@ public class RenderBackgroundRReportView extends HttpView
     {
         if (_report != null)
         {
-            File logFile = new File(_report.getReportDir(this.getViewContext().getContainer().getId()), RReportJob.LOG_FILE_NAME);
             VBox view = new VBox();
             view.addView(new JspView<>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", _report));
 
-            if (logFile.exists())
-            {
-                PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
-                if (statusFile != null)
-                {
-                    File filePath = new File(statusFile.getFilePath());
-                    File substitutionMap = new File(filePath.getParentFile(), RReport.SUBSTITUTION_MAP);
+            File substitutionMap = new File(_report.getReportDir(this.getViewContext().getContainer().getId()), RReport.SUBSTITUTION_MAP);
 
-                    // if the job is complete, show the results of the job
-                    if (substitutionMap.exists())
-                    {
-                        Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
-                        VBox innerView = new VBox();
-                        view.addView(innerView);
-                        RReport.renderViews(_report, view, outputSubst, false);
-                    }
-                }
+            // if the job is complete, show the results of the job
+            if (substitutionMap.exists())
+            {
+                Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
+                VBox innerView = new VBox();
+                view.addView(innerView);
+                RReport.renderViews(_report, view, outputSubst, false);
             }
             include(view);
         }

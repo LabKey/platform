@@ -280,7 +280,13 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         File tempFolder;
 
         if (isPipeline)
-            tempFolder = new File(tempRoot, executingContainerId + File.separator + "Report_" + reportId);
+        {
+            String identifier = RReportJob.getJobIdentifier();
+            if (identifier != null)
+                tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, identifier);
+            else
+                tempFolder = new File(tempRoot, executingContainerId + File.separator + "Report_" + reportId);
+        }
         else
             tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + executingContainerId + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
 

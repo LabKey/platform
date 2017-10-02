@@ -354,23 +354,12 @@ public class ParamReplacementSvc
 
     public void toFile(List<ParamReplacement> outputSubst, File file) throws Exception
      {
-/*
          try (PrintWriter bw = PrintWriters.getPrintWriter(file))
          {
-             outputSubst
-                 .stream()
-                 .filter(output -> output.getName() != null && output.getFile() != null)
-                 .forEach(output -> bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n'));
-         }
-*/
-
-         try (PrintWriter bw = PrintWriters.getPrintWriter(file))
-         {
-             outputSubst
-                     .stream()
-                     .filter(output -> output.getName() != null)
-                     .forEach(output -> output.getFiles().stream().filter(outputFile -> outputFile != null)
-                             .forEach(outputFile -> bw.write(output.getId() + '\t' + output.getName() + '\t' + outputFile.getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n')));
+             outputSubst.stream().
+                     filter(output -> output.getName() != null).
+                     forEach(output -> output.getFiles().stream().filter(outputFile -> outputFile != null).
+                     forEach(outputFile -> bw.write(output.getId() + '\t' + output.getName() + '\t' + outputFile.getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n')));
          }
      }
 

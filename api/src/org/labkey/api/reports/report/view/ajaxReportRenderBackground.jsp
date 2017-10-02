@@ -16,14 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
@@ -37,8 +36,6 @@
     ActionURL startReportURL = PageFlowUtil.urlProvider(QueryUrls.class).urlStartBackgroundRReport(context.cloneActionURL(), String.valueOf(bean.getReportId()));
 %>
 <script type="text/javascript">
-    var timer;
-
     function startJob()
     {
         Ext4.Ajax.request({

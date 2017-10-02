@@ -75,6 +75,7 @@ public interface ParamReplacement
      */
     void addFile(File file);
     List<File> getFiles();
+    void clearFiles();
 
     String toString();
 
