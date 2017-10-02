@@ -1305,6 +1305,7 @@ public class DataRegion extends DisplayElement
 
         renderFormBegin(ctx, out, ctx.getMode());
 
+        out.write("<table><tr><td>");
         if (shouldRenderHeader(renderButtons))
         {
             renderHeader(ctx, out, renderButtons);
@@ -1312,8 +1313,10 @@ public class DataRegion extends DisplayElement
 
         renderMessages(ctx, out);
 
+        out.write("</td></tr>");
         if (!_errorCreatingResults)
             _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
+        out.write("</table>");
 
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
         renderAnalyticsProvidersScripts(ctx, out);
@@ -1414,6 +1417,7 @@ public class DataRegion extends DisplayElement
 
     private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
+        out.write("<tr><td>");
         out.write("<div class=\"lk-region-ct\">");
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-bar lk-region-section north\"></div>");
 
@@ -1446,6 +1450,7 @@ public class DataRegion extends DisplayElement
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-bar lk-region-section east\"></div>");
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-bar lk-region-section south\"></div>");
         out.write("</div>");
+        out.write("</td></tr>");
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
