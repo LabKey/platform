@@ -1671,7 +1671,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public Domain refreshDomain()
     {
-        return _domain = getDomain();
+        _domain = null;
+        _domain = getDomain();
+        return _domain;
     }
     
 
