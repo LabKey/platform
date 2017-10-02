@@ -144,11 +144,10 @@ public class MothershipTest extends BaseWebDriverTest
         insertPage.save();
         Integer newIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
         assertNotEquals("Didn't create a new issue.", highestIssueId, newIssueId);
-        showExceptionsPage = new ShowExceptionsPage(getDriver());
-        exceptionSummary = showExceptionsPage.exceptionSummary();
-        detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
-        Integer bugNumber = Integer.parseInt(detailsPage.bugNumber().get());
-        assertEquals("Exception's related issue not set", newIssueId, bugNumber);
+        detailsPage = ShowExceptionsPage.beginAt(this)
+                .exceptionSummary()
+                .clickStackTrace(stackTraceId);
+        assertEquals("Exception's related issue not set", newIssueId.toString(), detailsPage.bugNumber().get());
     }
 
     @Test
@@ -268,8 +267,6 @@ public class MothershipTest extends BaseWebDriverTest
         _mothershipHelper.resetStackTrace(stackTraceId);
         return stackTraceId;
     }
-
-
 
     @Override
     protected BrowserType bestBrowser()
