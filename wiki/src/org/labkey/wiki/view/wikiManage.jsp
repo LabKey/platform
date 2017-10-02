@@ -101,7 +101,7 @@
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table><tr>
-  <td><table>
+  <td><table class="lk-fields-table">
 <%
     FieldError nameError = errors.getFieldError("name");
 	if (null != nameError)
@@ -111,18 +111,18 @@
   %>
     <tr>
       <td class='labkey-form-label'><label for="name">Name</label></td>
-      <td><input type="text" style="width:400px" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
+      <td><input type="text" style="width:420px" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
     </tr>
     <tr>
-      <td></td><td style="width:400px">WARNING: Changing a page's name will break any links to the page.</td>
+      <td></td><td style="width:420px">WARNING: Changing a page's name will break any links to the page.</td>
     </tr>
     <tr>
       <td class='labkey-form-label'><label for="title">Title</label></td>
-      <td><input type="text" style="width:400px" name="title" id="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
+      <td><input type="text" style="width:420px" name="title" id="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
     </tr>
     <tr>
       <td class='labkey-form-label'><label for="parent">Parent</label></td>
-      <td><select name="parent" id="parent" style="width:403px" onChange="document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>; submit();">
+      <td><select name="parent" id="parent" style="width:420px" onChange="document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>; submit();">
         <option<%=selected(wiki.getParent() == -1)%> value="-1">[none]</option><%
 
     for (WikiTree possibleParent : bean.possibleParents)
@@ -146,7 +146,7 @@
         <td>
             <table>
                 <tr>
-                    <td><select name="siblings" id="siblings" size="10"><%
+                    <td><select name="siblings" id="siblings" size="10" style="width: 320px;"><%
                          for (WikiTree sibling : bean.siblings)
                         {
                     %>
@@ -155,9 +155,9 @@
                         %>
                     </select></td>
                     <td valign="top" >
-                        <%= button("Move Up").attributes("style='width:200px'").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
-                        <br><br>
-                        <%= button("Move Down").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <%= button("Move Up").attributes("style='width:100px'").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <br/>
+                        <%= button("Move Down").attributes("style='width:100px'").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
                     </td>
                 </tr>
             </table>

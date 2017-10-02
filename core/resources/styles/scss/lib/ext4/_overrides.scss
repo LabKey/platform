@@ -142,9 +142,20 @@ div.facet_header .x4-panel-header-text
   border-width: 0 !important;
 }
 
+// Progress bar
 .x4-progress-default
 {
   background-color: #ffffff;
+}
+
+.x4-progress-default .x4-progress-bar-default {
+  background-color: $lk-secondary-brand-color;
+}
+.x4-progress-default {
+  border-color: $lk-secondary-brand-color;
+}
+.x4-progress-default .x4-progress-text-back {
+  color: $lk-text-color;
 }
 
 a.x4-menu-item-link {

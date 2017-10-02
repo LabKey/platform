@@ -250,8 +250,8 @@ public abstract class BaseWikiView extends JspView<Object>
                 menu.addChild("Edit", updateContentURL.toString(), null, "fa fa-pencil");
             if (null != newURL)
                 menu.addChild("New", newURL.toString());
-            if (null != customizeURL)
-                setCustomize(new NavTree("", customizeURL.toString()));
+            //if (null != customizeURL)
+            //    setCustomize(new NavTree("", customizeURL.toString()));
             if (null != manageURL)
                 menu.addChild("Manage", manageURL);
             if (null != versionsURL)

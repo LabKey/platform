@@ -28,23 +28,19 @@
 %>
 <% // Post to current action; URL includes pageId and index parameters %>
 <labkey:form name="frmCustomize" method="post">
-<table>
+    <table>
+        <tr>
+            <td>Select the display type for the study list.</td>
+            <td>
+                <select name="displayType">
+                    <option value="grid"<%=selected("grid".equals(displayType))%>>Grid</option>
+                    <option value="details"<%=selected(null == displayType || "details".equals(displayType))%>>Details</option>
+                </select>
+            </td>
+         </tr>
     <tr>
-        <td>
-        Select the display type for the study list.
-        </td>
-        <td>
-        <select name="displayType">
-            <option value="grid"<%=selected("grid".equals(displayType))%>>Grid</option>
-            <option value="details"<%=selected(null == displayType || "details".equals(displayType))%>>Details</option>
-        </select>
-        </td>
-     </tr>
-<tr>
-    <td colspan=2 align="right">
-        <%= button("Submit").submit(true) %>
-        <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
-    </td>
-</tr>
-</table>
+    </table>
+    <br/>
+    <%= button("Submit").submit(true) %>
+    <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
 </labkey:form>

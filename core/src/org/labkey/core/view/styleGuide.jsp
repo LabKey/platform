@@ -50,7 +50,7 @@
 </div>
 <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9">
     <labkey:panel id="type" className="lk-sg-section">
-        <h1 class="page-header">Typography</h1>
+        <h1 class="labkey-page-section-header">Typography</h1>
         <table>
             <tbody>
                 <tr><td><h1>h1. LabKey Heading</h1></td></tr>
@@ -84,7 +84,7 @@
         <%--</ul>--%>
     <%--</div>--%>
     <div class="lk-sg-section">
-        <h2 class="page-header">Typography</h2>
+        <h2 class="labkey-page-section-header">Typography</h2>
         <h3>Headings</h3>
         <p>Displays all the headers</p>
         <div class="lk-sg-example lk-sg-example-typography">
@@ -112,7 +112,7 @@
         </div>
     </div>
     <labkey:panel id="buttons" className="lk-sg-section">
-        <h1 class="page-header">Buttons</h1>
+        <h1 class="labkey-page-section-header">Buttons</h1>
         <p>btn-default buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
         <div class="lk-sg-example">
             <a class="btn btn-default" href="#" role="button">Link</a>
@@ -173,7 +173,7 @@
         </div>
     </labkey:panel>
     <labkey:panel id="forms" className="lk-sg-section">
-        <h1 class="page-header">Forms</h1>
+        <h1 class="labkey-page-section-header">Forms</h1>
         <h2>Horizontal form</h2>
         <div class="lk-sg-example">
             <labkey:form action="some-action" layout="horizontal">
@@ -264,7 +264,7 @@
         </div>
     </labkey:panel>
     <labkey:panel id="ext3" className="lk-sg-section">
-        <h1 class="page-header">ExtJS 3.4.1</h1>
+        <h1 class="labkey-page-section-header">ExtJS 3.4.1</h1>
         <div class="lk-sg-example">
             <div class="lk-sg-example-ext3">
                 <div id="ext3-panel" class="extContainer"></div>
@@ -326,7 +326,7 @@
         </div>
     </labkey:panel>
     <labkey:panel id="ext4" className="lk-sg-section">
-        <h1 class="page-header">ExtJS 4.2.1</h1>
+        <h1 class="labkey-page-section-header">ExtJS 4.2.1</h1>
         <div class="lk-sg-example">
             <div class="lk-sg-example-ext4">
                 <div id="ext4-panel"></div>

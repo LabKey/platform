@@ -63,11 +63,7 @@
         </select>
         </td>
      </tr>
-<tr>
-    <td colspan=2 align="right">
-        <%= button("Submit").submit(true) %>
-        <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
-    </td>
-</tr>
 </table>
+<%= button("Submit").submit(true) %>
+<%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
 </labkey:form>

@@ -68,7 +68,7 @@
 </div>
 <div class="col-sm-12 col-md-9">
     <labkey:panel id="info" className="lk-admin-section">
-        <h3 class="page-header">Server Information</h3>
+        <h3 class="labkey-page-section-header">Server Information</h3>
         <h4>Core Database Configuration</h4>
         <table class="labkey-data-region-legacy labkey-show-borders">
             <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
@@ -101,7 +101,7 @@
         </table>
     </labkey:panel>
     <labkey:panel id="links" className="lk-admin-section">
-        <h3 class="page-header">Admin Console Links</h3>
+        <h3 class="labkey-page-section-header">Admin Console Links</h3>
         <%
             for (SettingsLinkType type : SettingsLinkType.values())
             {
@@ -121,7 +121,7 @@
         } %>
     </labkey:panel>
     <labkey:panel id="modules" className="lk-admin-section">
-        <h3 class="page-header">Module Information</h3>
+        <h3 class="labkey-page-section-header">Module Information</h3>
         <%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%>
         <br/><br/>
         <table><%
@@ -208,7 +208,7 @@
         </table>
     </labkey:panel>
     <labkey:panel id="users" className="lk-admin-section">
-        <h3 class="page-header">Active Users in the Last Hour</h3>
+        <h3 class="labkey-page-section-header">Active Users in the Last Hour</h3>
         <table class="labkey-data-region-legacy labkey-show-borders">
             <tr><td class="labkey-column-header">User</td><td class="labkey-column-header">Last Activity</td></tr>
             <%

@@ -88,6 +88,10 @@ legend {
   }
 }
 
+.print-template-body .lk-body-ct {
+  padding-top: 15px; // header not displayed
+}
+
 .lk-body-title-folder {
   color: #555;
   padding-left: 10px;
@@ -668,6 +672,12 @@ td.labkey-crumb-trail {
 {
   font-size: 26px;
   line-height: 1.25;
+}
+
+.labkey-page-section-header {
+  padding-bottom: (($line-height-computed / 2) - 1);
+  margin: 0 0 $line-height-computed;
+  border-bottom: 1px solid $page-header-border-color;
 }
 
 @import "components/oldWebpart";

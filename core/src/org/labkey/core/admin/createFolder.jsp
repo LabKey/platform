@@ -308,15 +308,15 @@
                     style: 'padding-left: 15px;'
                 }],
                 buttons: [{
-                    text: 'Next',
-                    cls: 'labkey-button',
-                    handler: doSubmit
-                },{
                     text: 'Cancel',
                     cls: 'labkey-button',
                     handler: function(btn) {
                         window.location = <%= PageFlowUtil.jsString(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer())).toString()) %>;
                     }
+                },{
+                    text: 'Next',
+                    cls: 'labkey-button',
+                    handler: doSubmit
                 }],
                 renderModules: function() {
                     var target = this.down('#additionalTypeInfo');

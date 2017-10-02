@@ -458,7 +458,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
                     WebPartView v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
                     v.setView("menubar", new VBox());
-                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true, true);
+                    Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true, true, false);
 
                     return v;
                 case "files":

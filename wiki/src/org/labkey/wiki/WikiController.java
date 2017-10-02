@@ -1497,23 +1497,24 @@ public class WikiController extends SpringActionController
             if (!perms.allowUpdate(_wiki))
                 throw new UnauthorizedException("You do not have permissions to view the history for this page!");
 
-            GridView gridView = new WikiVersionsGrid(_wiki, _wikiversion, errors);
-
             LinkBarView lb = new LinkBarView(
                     new Pair<>("return to page", getViewContext().cloneActionURL().setAction(PageAction.class).toString()),
                     new Pair<>("view current version", getViewContext().cloneActionURL().setAction(VersionAction.class).toString())
                     );
-            lb.setDrawLine(true);
-            lb.setFrame(WebPartView.FrameType.NONE);
-            lb.setTitle("History");
+            GridView gridView = new WikiVersionsGrid(_wiki, _wikiversion, errors);
+            VBox historyView = new VBox(lb, gridView);
+            historyView.setFrame(WebPartView.FrameType.PORTAL);
+            historyView.setTitle("History");
 
-            VBox view = new VBox(lb, gridView);
+            VBox view = new VBox(historyView);
+
             Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (wiki != null)
                 view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki.getAttachmentParent()));
             getPageConfig().setNoIndex();
             getPageConfig().setNoFollow();
             setHelpTopic("wikiUserGuide#history");
+
             return view;
         }
 

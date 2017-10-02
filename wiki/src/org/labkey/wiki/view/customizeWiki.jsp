@@ -164,7 +164,7 @@ function restoreDefaultPage()
 <labkey:form id="change-wiki-form" className="col-md-6 col-lg-5" method="POST">
     <labkey:select
             label="Folder containing the page to display"
-            message="You can also <a href=\"javascript:restoreDefaultPage();\">restore to this folders default page.</a>"
+            message="You can also <a href=\"javascript:restoreDefaultPage();\">restore to this folder's default page.</a>"
             name="webPartContainer"
             onKeyUp="updatePageList();"
             onChange="updatePageList();">

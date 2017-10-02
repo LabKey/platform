@@ -62,11 +62,6 @@
             window.location = LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId : 'menubar'});
         };
 
-        var customizeForm = customizeMenu(submitFunction, cancelFunction, 'someUniqueElement2', bean);
-
-        Ext.EventManager.onWindowResize(function(w) {
-            LABKEY.ext.Utils.resizeToViewport(customizeForm, Math.min(w, 800));
-        });
-        Ext.EventManager.fireWindowResize();
+        customizeMenu(submitFunction, cancelFunction, 'someUniqueElement2', bean);
     });
 </script>

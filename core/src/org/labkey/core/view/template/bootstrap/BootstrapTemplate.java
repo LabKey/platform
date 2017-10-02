@@ -320,6 +320,9 @@ public class BootstrapTemplate extends HomeTemplate
             case Dialog:
                 templateCls = "dialog";
                 break;
+            case Print:
+                templateCls = "print";
+                break;
             default:
                 templateCls = "default";
         }

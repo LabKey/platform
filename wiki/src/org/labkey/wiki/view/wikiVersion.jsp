@@ -73,20 +73,21 @@ else
                 <%= button("Make Current").submit(true) %></labkey:form></td></tr><%
         }%>
 
+       <tr><td colspan=2>&nbsp;</td></tr>
        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
+       <tr><td colspan=2>&nbsp;</td></tr>
        <tr>
-           <td align=left>
-               <i>created by:</i> <%=h(bean.createdBy)%><br>
-               <i>date:</i> <%=formatDateTime(bean.created)%><br>
+           <td align="left">
+               <%=textLink("page", bean.pageURL)%>&nbsp;<%=textLink("history", bean.versionsURL)%>&nbsp;<%=textLink("source", bean.sourceURL)%>
            </td>
-           <td align=right>
-               <%=textLink("page", bean.pageURL)%>&nbsp;<%=textLink("history", bean.versionsURL)%>&nbsp;<%=textLink("source", bean.sourceURL)%>&nbsp;<%
+           <td align="right">
+<%
 
         WikiVersion[] versions = WikiSelectManager.getAllVersions(bean.wiki);
 
         if (versions.length > 1)
         {
-            MenuButton compare = new MenuButton("Compare With...");
+            MenuButton compare = new MenuButton("Compare With ...");
             String baseCompareLink = bean.compareLink + "&version1=" + nCurVersion;
 
             for (int i = versions.length - 1; i >= 0; i--)
@@ -104,7 +105,16 @@ else
 
             compare.render(new RenderContext(getViewContext()), out);
         }
-
+    %>
+            </td>
+       </tr>
+       <tr>
+            <td align="left">
+                <i>Created by:</i> <%=h(bean.createdBy)%>,
+                <i>Date:</i> <%=formatDateTime(bean.created)%>
+            </td>
+            <td align="right">
+    <%
         out.print(text("[versions:"));
 
         for (WikiVersion v : versions)
@@ -121,7 +131,9 @@ else
         }
         out.print(text("]"));
     }%>
-    </td></tr></table>
+            </td>
+        </tr>
+</table>
     <%
 }%>
 <!--/wiki-->
