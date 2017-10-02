@@ -816,63 +816,72 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         items: [menuRadioGroup]
     });
 
+    var submitBtn = new Ext.Button({
+        text: 'Submit',
+        id: 'btn_submit',
+        handler: function(){
+            var isChoiceListQuery = menuRadioGroup.getValue().getRawValue() === 'list';
+            var form = null;
+            if(isChoiceListQuery){
+                form = formSQV.getForm();
+            } else {
+                form = formFolders.getForm();
+            }
+
+            if (form && !form.isValid()){
+                Ext.Msg.alert(title, 'Please complete all required fields.');
+                return false;
+            }
+
+            var viewName = "";
+            var viewRecord = viewCombo.getValue();
+            if (viewRecord != defaultViewLabel)
+                viewName = viewRecord;
+
+            submitFunction({
+                schemaName : schemaCombo.getValue(),
+                queryName : queryCombo.getValue(),
+                viewName: viewName,
+                folderName: folderCombo.getValue(),
+                columnName: columnCombo.getValue(),
+                title: titleField.getValue(),
+                url: urlField.getValue(),
+                choiceListQuery: isChoiceListQuery,
+                rootFolder: rootFolderCombo.getValue(),
+                folderTypes: folderTypesCombo.getValue(),
+                includeAllDescendants: includeAllDescendantsCheckbox.checked,
+                currentProjectOnly: currentProjectOnlyCheckbox.checked,
+                pageId: pageId,
+                webPartIndex: webPartIndex
+            });
+        }
+    });
+
+    var cancelBtn = new Ext.Button({
+        text: 'Cancel',
+        id: 'btn_cancel',
+        handler: function(){cancelFunction(); formWinPanel.doLayout();}
+    });
+
+    var btnGroupPanel = new Ext.Panel({
+        layout: {type: 'hbox'},
+        border: false,
+        items: [submitBtn, {/* spacer */ width: 5, border: false}, cancelBtn]
+    });
+
     var formWinPanel = new Ext.Panel({
         border: false,
         layout: 'form',
         timeout: Ext.Ajax.timeout,
         labelSeparator: '',
-        items: [titleField, formMenuSelectPanel, formSQV, formFolders, urlField]
+        items: [titleField, formMenuSelectPanel, formSQV, formFolders, urlField, btnGroupPanel]
     });
 
     var customizePanel = new Ext.Panel({
         renderTo: renderToDiv,
         border: false,
-        items: formWinPanel,
-        resizable: true,
-        buttons: [{
-            text: 'Submit',
-            id: 'btn_submit',
-            handler: function(){
-                var isChoiceListQuery = menuRadioGroup.getValue().getRawValue() === 'list';
-                var form = null;
-                if(isChoiceListQuery){
-                    form = formSQV.getForm();
-                } else {
-                    form = formFolders.getForm();
-                }
-
-                if (form && !form.isValid()){
-                    Ext.Msg.alert(title, 'Please complete all required fields.');
-                    return false;
-                }
-
-                var viewName = "";
-                var viewRecord = viewCombo.getValue();
-                if (viewRecord != defaultViewLabel)
-                    viewName = viewRecord;
-
-                submitFunction({
-                    schemaName : schemaCombo.getValue(),
-                    queryName : queryCombo.getValue(),
-                    viewName: viewName,
-                    folderName: folderCombo.getValue(),
-                    columnName: columnCombo.getValue(),
-                    title: titleField.getValue(),
-                    url: urlField.getValue(),
-                    choiceListQuery: isChoiceListQuery,
-                    rootFolder: rootFolderCombo.getValue(),
-                    folderTypes: folderTypesCombo.getValue(),
-                    includeAllDescendants: includeAllDescendantsCheckbox.checked,
-                    currentProjectOnly: currentProjectOnlyCheckbox.checked,
-                    pageId: pageId,
-                    webPartIndex: webPartIndex
-                });
-            }
-        },{
-            text: 'Cancel',
-            id: 'btn_cancel',
-            handler: function(){cancelFunction(); formWinPanel.doLayout();}
-        }]
+        autoScroll: true,
+        items: formWinPanel
     });
 
     LABKEY.Security.getFolderTypes({

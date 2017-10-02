@@ -1026,11 +1026,12 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView) throws Exception
     {
         boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
-        populatePortalView(context, id, template, printView, canCustomize, false);
+        populatePortalView(context, id, template, printView, canCustomize, false, true);
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView, boolean canCustomize, boolean alwaysShowCustomize) throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+                          boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame) throws Exception
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         List<WebPart> parts = getParts(context.getContainer(), id, context);
@@ -1088,7 +1089,7 @@ public class Portal
                         if (!part.isPermanent())
                             navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
 
-                        if (PageFlowUtil.useExperimentalCoreUI())
+                        if (PageFlowUtil.useExperimentalCoreUI() && allowHideFrame)
                         {
                             if (part.hasFrame())
                                 navTree.addChild("Hide Frame", getToggleFrameURL(context, part), null, "fa fa-eye-slash");
