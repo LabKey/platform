@@ -509,8 +509,9 @@ public class StudyPublishTest extends StudyPHIExportTest
             DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
             for (String field : SPECIMEN_PHI_FIELDS)
             {
+                Filter.Operator filterOperator = removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK;
                 SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
-                command.setFilters(Arrays.asList(new Filter(field, null, removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK)));
+                command.setFilters(Arrays.asList(new Filter(field, null, filterOperator)));
                 Connection connection = createDefaultConnection(true);
                 SelectRowsResponse response;
 
@@ -527,9 +528,9 @@ public class StudyPublishTest extends StudyPHIExportTest
                 {
                     // Fail with a useful screenshot
                     t1.ensureColumnPresent(field);
-                    t1.setFilter(field, (removePhiColumns ? Filter.Operator.NONBLANK.getDisplayValue() : Filter.Operator.ISBLANK.getDisplayValue()), null);
-                    assertTextPresent("No data to show.");
-                    fail("This should be unreachable. SelectRows response had unexpected rows but DataRegion did not");
+                    t1.setFilter(field, filterOperator.getDisplayValue(), null);
+                    assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount(), t1.getDataRowCount());
+                    fail("PHI column was not exported as expected: " + (removePhiColumns ? "PHI not removed" : "PHI removed") + " for " + field);
                 }
             }
 
