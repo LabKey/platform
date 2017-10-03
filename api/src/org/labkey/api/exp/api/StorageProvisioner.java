@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
@@ -556,7 +557,7 @@ public class StorageProvisioner
         for (ColumnInfo from : sti.getColumns())
         {
             String name = StringUtils.defaultString(map.get(from.getName()), from.getName());
-            ColumnInfo to = new AliasedColumn(wrapper, name, from)
+            ColumnInfo to = new AliasedColumn(wrapper, new FieldKey(null, name), from, true)
             {
                 @Override
                 public String getSelectName()
