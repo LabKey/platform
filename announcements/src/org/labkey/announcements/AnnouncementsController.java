@@ -38,6 +38,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -590,14 +591,10 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
+    // Invoked by discuss.js
     @RequiresNoPermission    // Permission checking done in verifyPermissions() to handle owner-update, etc.
-    public class DeleteAttachmentAction extends SimpleViewAction<AttachmentForm>
+    public class DeleteAttachmentAction extends MutatingApiAction<AttachmentForm>
     {
-        public ModelAndView getAttachmentView(AttachmentForm form, AttachmentParent parent) throws Exception
-        {
-            return AttachmentService.get().delete(parent, form.getName(), getUser());
-        }
-
         // Permissions check (ensure non-editors are on the member list in secure board, handle owner-update, etc.)
         protected void verifyPermissions(AnnouncementModel ann)
         {
@@ -608,19 +605,16 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        public Object execute(AttachmentForm form, BindException errors) throws Exception
         {
             AnnouncementModel ann = getAnnouncement(form);
             verifyPermissions(ann);
-            getPageConfig().setTemplate(PageConfig.Template.None);
+            AttachmentService.get().deleteAttachment(ann.getAttachmentParent(), form.getName(), getUser());
 
-            return AttachmentService.get().delete(ann.getAttachmentParent(), form.getName(), getUser());
-        }
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", !errors.hasErrors());
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return response;
         }
     }
 
@@ -656,9 +650,8 @@ public class AnnouncementsController extends SpringActionController
 
     public static ActionURL getAdminURL(Container c, URLHelper returnUrl)
     {
-        ActionURL url = new ActionURL(CustomizeAction.class, c);
-        url.addReturnURL(returnUrl);
-        return url;
+        return new ActionURL(CustomizeAction.class, c)
+            .addReturnURL(returnUrl);
     }
 
 
