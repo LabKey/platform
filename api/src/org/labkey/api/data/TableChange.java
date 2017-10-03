@@ -112,22 +112,21 @@ public class TableChange
                 case AddColumns:
                 case DropColumns:
                 case ResizeColumns:
-                    valid |= !getColumns().isEmpty();
+                    valid = !getColumns().isEmpty();
                     break;
                 case RenameColumns:
-                    valid |= !getColumnRenames().isEmpty();
+                    valid = !getColumnRenames().isEmpty();
                     break;
                 case DropIndices:
                 case AddIndices:
-                    valid |= !getIndexedColumns().isEmpty();
+                    valid = !getIndexedColumns().isEmpty();
                     break;
                 case DropIndicesByName:
-                    valid |= !getIndicesToBeDroppedByName().isEmpty();
+                    valid = !getIndicesToBeDroppedByName().isEmpty();
                     break;
                 case AddConstraints:
                 case DropConstraints:
-                    valid |= !getConstraints().isEmpty();
-
+                    valid = !getConstraints().isEmpty();
             }
         }
         return valid;
