@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.DeleteThreadAction" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.DownloadAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
@@ -127,17 +126,18 @@ if (null != announcementModel.getBody())
 
 %>
 <tr>
-    <td colspan="3" class="labkey-force-word-break"><%=text(announcementModel.translateBody(c))%></td>
+    <td colspan="3" class="labkey-force-word-break"><%=text(announcementModel.translateBody())%></td>
 </tr><%
 
 if (!announcementModel.getAttachments().isEmpty())
 { %>
 <tr>
     <td colspan="3"><div><%
-
         for (Attachment d : announcementModel.getAttachments())
-        { %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        {
+            ActionURL downloadURL = AnnouncementsController.getDownloadURL(announcementModel, d.getName());
+        %>
+        <a href="<%=h(downloadURL)%>"><img alt="" src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         } %>
     </div></td>
 </tr><%
@@ -211,15 +211,17 @@ if (!announcementModel.getResponses().isEmpty())
             </tr><%
             } %>
             <tr>
-                <td colspan="2"><%=r.translateBody(c)%></td>
+                <td colspan="2"><%=r.translateBody()%></td>
             </tr><%
             if (!r.getAttachments().isEmpty())
             { %>
             <tr>
                 <td colspan="2"><div><%
                 for (Attachment rd : r.getAttachments())
-                { %>
-                    <a href="<%=h(rd.getDownloadUrl(DownloadAction.class))%>"><img alt="" src="<%=getWebappURL(rd.getFileIcon())%>">&nbsp;<%=h(rd.getName())%></a>&nbsp;<%
+                {
+                    ActionURL downloadURL = AnnouncementsController.getDownloadURL(r, rd.getName());
+                %>
+                    <a href="<%=h(downloadURL)%>"><img alt="" src="<%=getWebappURL(rd.getFileIcon())%>">&nbsp;<%=h(rd.getName())%></a>&nbsp;<%
                 }
                 %>
                 </div></td>

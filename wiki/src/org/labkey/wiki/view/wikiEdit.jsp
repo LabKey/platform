@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
-<%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -65,10 +65,11 @@
             sep = "";
             for (Attachment att : model.getWiki().getAttachments())
             {
+                ActionURL downloadURL = WikiController.getDownloadURL(getContainer(), model.getWiki(), att.getName());
                 %>
                     <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
                              iconUrl: <%=PageFlowUtil.jsString(getViewContext().getContextPath() + att.getFileIcon())%>,
-                             downloadUrl: <%=PageFlowUtil.jsString(att.getDownloadUrl(DownloadAction.class).toString())%>
+                             downloadUrl: <%=PageFlowUtil.jsString(downloadURL.toString())%>
                             }
                 <%
                 sep = ",";

@@ -1353,11 +1353,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             if (null != _downloadUrl)
                 return _downloadUrl.getLocalURIString();
-            String download = _parent.getDownloadURL(context, getName());
-            if (null != download)
-                return download;
-            download = super.getExecuteHref(context);
-            return download;
+            return super.getExecuteHref(context);
         }
 
         public boolean exists()

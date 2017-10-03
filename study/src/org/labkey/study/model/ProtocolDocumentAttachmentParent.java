@@ -4,9 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.study.Study;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.StudyController;
 
 public class ProtocolDocumentAttachmentParent implements AttachmentParent
 {
@@ -15,14 +12,6 @@ public class ProtocolDocumentAttachmentParent implements AttachmentParent
     public ProtocolDocumentAttachmentParent(@NotNull Study study)
     {
         _study = (StudyImpl)study;
-    }
-
-    @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, _study.getContainer());
-        download.addParameter("name", name);
-        return download.getLocalURIString(false);
     }
 
     @Override

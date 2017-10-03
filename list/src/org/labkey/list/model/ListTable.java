@@ -238,11 +238,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                         {
                             col.setURL(StringExpressionFactory.createURL(
-                                    new ActionURL(ListController.DownloadAction.class, schema.getContainer())
-                                            .addParameter("listId", listDef.getListId())
-                                            .addParameter("entityId", "${EntityId}")
-                                            .addParameter("name", "${" + col.getName() + "}"))
-                            );
+                                ListController.getDownloadURL(listDef, "${EntityId}", "${" + col.getName() + "}")
+                            ));
                         }
                     }
 

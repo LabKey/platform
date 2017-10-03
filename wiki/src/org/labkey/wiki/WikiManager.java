@@ -408,7 +408,7 @@ public class WikiManager implements WikiService
         String attachPrefix = null;
 
         if (null != wiki.getEntityId())
-            attachPrefix = wiki.getAttachmentLink("");
+            attachPrefix = WikiController.getDownloadURL(wiki.lookupContainer(), wiki, "").getLocalURIString();
 
         Map<String, String> nameTitleMap = WikiSelectManager.getNameTitleMap(c);
 

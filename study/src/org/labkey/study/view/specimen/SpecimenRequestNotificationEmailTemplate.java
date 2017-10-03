@@ -15,7 +15,6 @@
  */
 package org.labkey.study.view.specimen;
 
-import org.apache.commons.io.IOUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -141,8 +140,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 for (Attachment att : attachments)
                 {
                     sb.append("<a href=\"");
-                    sb.append(PageFlowUtil.filter(_notification.getBaseServerURI()));
-                    sb.append(att.getDownloadUrl(SpecimenController.DownloadAction.class).addParameter("eventId", _notification.getEvent().getRowId()));
+                    sb.append(PageFlowUtil.filter(SpecimenController.getDownloadURL(_notification.getEvent(), att.getName()).getURIString()));
                     sb.append("\">");
                     sb.append(PageFlowUtil.filter(att.getName()));
                     sb.append("</a><br>");

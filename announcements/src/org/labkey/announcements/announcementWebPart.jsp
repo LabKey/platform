@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart.MessagesBean" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.DownloadAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -61,15 +62,16 @@
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
-    <tr><td colspan=3 class="labkey-force-word-break"><%=h(a.translateBody(c))%></td></tr>
+    <tr><td colspan=3 class="labkey-force-word-break"><%=h(a.translateBody())%></td></tr>
 <%
     if (!a.getAttachments().isEmpty())
         { %>
     <tr><td colspan=3><%
         for (Attachment d : a.getAttachments())
         {
+            ActionURL downloadURL = AnnouncementsController.getDownloadURL(a, d.getName());
     %>
-        <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getContextPath()%><%=h(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+        <a href="<%=h(downloadURL)%>"><img src="<%=getContextPath()%><%=h(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         }
         %>
     </td></tr>

@@ -18,12 +18,11 @@ package org.labkey.announcements.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.announcements.AnnouncementsController.DownloadAction;
+import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
@@ -250,11 +249,11 @@ public class AnnouncementModel extends Entity implements Serializable
         return new ActionURL(ThreadAction.class, container);
     }
 
-    public String translateBody(Container container)
+    public String translateBody()
     {
-        DownloadURL urlAttach = new DownloadURL(DownloadAction.class, container, getEntityId(), "");
+        ActionURL attachPrefix = AnnouncementsController.getDownloadURL(this, "");
 
-        return getFormattedHtml(urlAttach.getLocalURIString());
+        return getFormattedHtml(attachPrefix.getLocalURIString());
     }
 
     //returns string corresponding to name of enum entry

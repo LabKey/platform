@@ -20,9 +20,10 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.model.BaseWikiView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -123,7 +124,9 @@ else
 
         for (Attachment a : wiki.getAttachments())
         {
-            %><a href="<%=h(a.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getContextPath()%><%=h(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
+            ActionURL downloadURL = WikiController.getDownloadURL(getContainer(), wiki, a.getName());
+
+        %><a href="<%=h(downloadURL)%>"><img src="<%=getContextPath()%><%=h(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
         }
     }
 }

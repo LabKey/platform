@@ -523,7 +523,6 @@ public class SpecimenUtils
     public static class NotificationBean
     {
         private User _user;
-        private String _baseServerURI;
         private String _specimenList;
         private String _studyName;
         private String _requestURI;
@@ -534,7 +533,6 @@ public class SpecimenUtils
         {
             _notification = notification;
             _user = context.getUser();
-            _baseServerURI = context.getActionURL().getBaseServerURI();
             if (null != specimenList)
             {
                 _specimenList = specimenList;
@@ -589,11 +587,6 @@ public class SpecimenUtils
         public String getEventDescription()
         {
             return _notification.getEventSummary();
-        }
-
-        public String getBaseServerURI()
-        {
-            return _baseServerURI;
         }
 
         public String getRequestDescription()
@@ -667,7 +660,7 @@ public class SpecimenUtils
         }
         if (null != locationIntersection)
             return locationIntersection;
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses) throws ServletException
@@ -906,7 +899,7 @@ public class SpecimenUtils
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            Map cols = ctx.getRow();
+            Map<String, Object> cols = ctx.getRow();
             SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(cols);
             Collection<Attachment> attachments = AttachmentService.get().getAttachments(event);
 
@@ -914,7 +907,7 @@ public class SpecimenUtils
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(attachment.getDownloadUrl(SpecimenController.DownloadAction.class).addParameter("eventId", event.getRowId())) + "\">");
+                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenController.getDownloadURL(event, attachment.getName())) + "\">");
                     out.write("<img src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">&nbsp;");
                     out.write(PageFlowUtil.filter(attachment.getName()));
                     out.write("</a><br>");

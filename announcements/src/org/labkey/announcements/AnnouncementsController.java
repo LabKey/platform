@@ -559,6 +559,14 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
+    public static ActionURL getDownloadURL(AnnouncementModel ann, String filename)
+    {
+        return new ActionURL(DownloadAction.class, ann.lookupContainer())
+            .addParameter("entityId", ann.getEntityId())
+            .addParameter("name", filename);
+    }
+
+
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<AttachmentForm>
     {
@@ -2578,8 +2586,7 @@ public class AnnouncementsController extends SpringActionController
             init(c, ann, url, perm, true, false);
         }
         
-        public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print)
-                throws ServletException
+        public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print) throws ServletException
         {
             this();
             AnnouncementModel ann = findThread(c, (String)form.get("rowId"), (String)form.get("entityId"));

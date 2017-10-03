@@ -48,7 +48,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.query.reports.ReportsController.DownloadAction;
 import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
 import javax.imageio.ImageIO;
@@ -116,7 +115,7 @@ public class AttachmentReport extends BaseRedirectReport
         // Uploaded attachment attachment report type
         Attachment latest = getLatestVersion();
         if (null != latest)
-            return latest.getDownloadUrl(DownloadAction.class).getLocalURIString();
+            return ReportsController.getDownloadURL(this, latest).getLocalURIString();
 
         return null;
     }

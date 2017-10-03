@@ -275,76 +275,72 @@ public class AnnouncementManager
     // Render and send all the email notifications on a background thread, #13143
     private static void sendNotificationEmails(final AnnouncementModel a, final WikiRendererType currentRendererType, final Container c, final User user)
     {
-        Thread renderAndEmailThread = new Thread() {
-            @Override
-            public void run()
+        Thread renderAndEmailThread = new Thread(() -> {
+            DiscussionService.Settings settings = DiscussionService.get().getSettings(c);
+
+            boolean isResponse = null != a.getParent();
+            AnnouncementModel parent = a;
+            if (isResponse)
+                parent = AnnouncementManager.getAnnouncement(c, a.getParent());
+
+            //  See bug #6585 -- thread might have been deleted already
+            if (null == parent)
+                return;
+
+            // Send a notification email to everyone on the member list.
+            IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
+            Set<User> recipients = sel.getNotificationUsers(a);
+
+            if (!recipients.isEmpty())
             {
-                DiscussionService.Settings settings = DiscussionService.get().getSettings(c);
+                BulkEmailer emailer = new BulkEmailer(user);
 
-                boolean isResponse = null != a.getParent();
-                AnnouncementModel parent = a;
-                if (isResponse)
-                    parent = AnnouncementManager.getAnnouncement(c, a.getParent());
+                String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
 
-                //  See bug #6585 -- thread might have been deleted already
-                if (null == parent)
-                    return;
+                List<Integer> memberList = a.getMemberListIds();
 
-                // Send a notification email to everyone on the member list.
-                IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
-                Set<User> recipients = sel.getNotificationUsers(a);
-
-                if (!recipients.isEmpty())
+                for (User recipient : recipients)
                 {
-                    BulkEmailer emailer = new BulkEmailer(user);
-
-                    String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                    String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-
-                    List<Integer> memberList = a.getMemberListIds();
-
-                    for (User recipient : recipients)
+                    // Make sure the user hasn't lost their permission to read in this container since they were
+                    // subscribed
+                    if (c.hasPermission(recipient, ReadPermission.class))
                     {
-                        // Make sure the user hasn't lost their permission to read in this container since they were
-                        // subscribed
-                        if (c.hasPermission(recipient, ReadPermission.class))
+                        Permissions perm = AnnouncementsController.getPermissions(c, recipient, settings);
+                        ActionURL changePreferenceURL;
+                        EmailNotificationBean.Reason reason;
+
+                        if (memberList.contains(recipient.getUserId()))
                         {
-                            Permissions perm = AnnouncementsController.getPermissions(c, recipient, settings);
-                            ActionURL changePreferenceURL;
-                            EmailNotificationBean.Reason reason;
+                            reason = EmailNotificationBean.Reason.memberList;
+                            changePreferenceURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
+                            changePreferenceURL.addParameter("userId", String.valueOf(recipient.getUserId()));
+                            changePreferenceURL.addParameter("messageId", String.valueOf(parent.getRowId()));
+                        }
+                        else
+                        {
+                            reason = EmailNotificationBean.Reason.signedUp;
+                            changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
+                        }
 
-                            if (memberList.contains(recipient.getUserId()))
-                            {
-                                reason = EmailNotificationBean.Reason.memberList;
-                                changePreferenceURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
-                                changePreferenceURL.addParameter("userId", String.valueOf(recipient.getUserId()));
-                                changePreferenceURL.addParameter("messageId", String.valueOf(parent.getRowId()));
-                            }
-                            else
-                            {
-                                reason = EmailNotificationBean.Reason.signedUp;
-                                changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
-                            }
+                        try
+                        {
+                            MailHelper.MultipartMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason, user);
+                            m.setHeader("References", references);
+                            m.setHeader("Message-ID", messageId);
 
-                            try
-                            {
-                                MailHelper.MultipartMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason, user);
-                                m.setHeader("References", references);
-                                m.setHeader("Message-ID", messageId);
-
-                                emailer.addMessage(recipient.getEmail(), m);
-                            }
-                            catch (Exception e)
-                            {
-                                ExceptionUtil.logExceptionToMothership(null, e);
-                            }
+                            emailer.addMessage(recipient.getEmail(), m);
+                        }
+                        catch (Exception e)
+                        {
+                            ExceptionUtil.logExceptionToMothership(null, e);
                         }
                     }
-
-                    emailer.run();  // We're already in a background thread... no need to start another one
                 }
+
+                emailer.run();  // We're already in a background thread... no need to start another one
             }
-        };
+        });
 
         renderAndEmailThread.start();
     }
@@ -617,10 +613,10 @@ public class AnnouncementManager
                     props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
                     props.put(SearchService.PROPERTY.title.toString(), ann.getTitle());  // Title is fine for both indexing and displaying
 
-                    StringBuilder html = new StringBuilder(ann.translateBody(c));
+                    StringBuilder html = new StringBuilder(ann.translateBody());
 
                     for (AnnouncementModel response : ann.getResponses())
-                        html.append(" ").append(response.translateBody(c));
+                        html.append(" ").append(response.translateBody());
 
                     SimpleDocumentResource sdr = new SimpleDocumentResource(
                             new Path(docid),
@@ -685,8 +681,6 @@ public class AnnouncementManager
         if (!annIds.isEmpty())
         {
             List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
-            ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
-            url.setExtraPath(containerId);
             ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
             urlThread.setExtraPath(containerId);
 
@@ -695,9 +689,7 @@ public class AnnouncementManager
                 String entityId = pair.first;
                 String documentName = pair.second;
                 AnnouncementModel ann = map.get(entityId);
-                ActionURL attachmentUrl = url.clone()
-                        .replaceParameter("entityId", entityId)
-                        .replaceParameter("name", documentName);
+                ActionURL attachmentUrl = AnnouncementsController.getDownloadURL(ann, documentName);
                 attachmentUrl.setExtraPath(ann.getContainerId());
 
                 String e = StringUtils.isEmpty(ann.getParent()) ? ann.getEntityId() : ann.getParent();
@@ -969,8 +961,8 @@ public class AnnouncementManager
 
         public void init(EmailNotificationBean notification, User sender)
         {
-            this.notificationBean = notification;
-            this.setOriginatingUser(sender);
+            notificationBean = notification;
+            setOriginatingUser(sender);
             initReason();
             initAttachments();
         }
@@ -1021,19 +1013,19 @@ public class AnnouncementManager
                 sb.append("Attachments: ");
                 for (Attachment attachment : announcementModel.getAttachments())
                 {
+                    ActionURL downloadURL = AnnouncementsController.getDownloadURL(announcementModel, attachment.getName());
                     sb.append(separator);
                     separator = ", ";
-                    sb.append("<a href=\"").append((attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class).getURIString())).append("\">").append(PageFlowUtil.filter(attachment.getName())).append("</a>");
+                    sb.append("<a href=\"").append(PageFlowUtil.filter(downloadURL.getURIString())).append("\">").append(PageFlowUtil.filter(attachment.getName())).append("</a>");
                 }
             }
-            this.attachments = sb.toString();
+            attachments = sb.toString();
             messageUrl = announcementModel.getParent() == null ? notificationBean.threadURL.getURIString() : notificationBean.threadParentURL.getURIString();
         }
     }
 
     public static class EmailNotificationBean
     {
-        private final Container c;
         private final User recipient;
         private final ActionURL threadURL;
         private final ActionURL threadParentURL;
@@ -1055,7 +1047,6 @@ public class AnnouncementManager
                                      User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
-            this.c = c;
             this.recipient = recipient;
             this.threadURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", a.getRowId());
             this.threadParentURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", parent.getRowId());

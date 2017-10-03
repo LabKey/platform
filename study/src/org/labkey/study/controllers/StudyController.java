@@ -3032,6 +3032,14 @@ public class StudyController extends BaseStudyController
         return new TableSelector(datasetTable, Collections.singleton("SourceLsid"), sourceLsidFilter, null).exists();
     }
 
+    public static ActionURL getProtocolDocumentDownloadURL(Container c, String name)
+    {
+        ActionURL url = new ActionURL(ProtocolDocumentDownloadAction.class, c);
+        url.addParameter("name", name);
+
+        return url;
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class ProtocolDocumentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {

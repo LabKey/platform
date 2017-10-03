@@ -164,7 +164,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -296,12 +295,6 @@ public class ReportsController extends SpringActionController
             url.addParameter("revision", null != revision ? revision : 0);
 
             return url;
-        }
-
-        @Override
-        public Class<? extends Controller> getDownloadClass()
-        {
-            return DownloadAction.class;
         }
 
         @Override
@@ -1602,6 +1595,13 @@ public class ReportsController extends SpringActionController
         }
     }
 
+
+    public static ActionURL getDownloadURL(Report report, Attachment attachment)
+    {
+        return new ActionURL(DownloadAction.class, ContainerManager.getForId(report.getContainerId()))
+            .addParameter("entityId", report.getEntityId())
+            .addParameter("name", attachment.getName());
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<AttachmentForm>

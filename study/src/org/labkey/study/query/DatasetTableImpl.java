@@ -416,6 +416,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         addFolderColumn();
     }
 
+    // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
     @Override
     public ColumnInfo addColumn(ColumnInfo column)
     {

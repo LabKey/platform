@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart.MessagesBean" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.DownloadAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -37,7 +36,6 @@
     AnnouncementWebPart me = (AnnouncementWebPart) HttpView.currentView();
     MessagesBean bean = me.getModelBean();
     Container c = getContainer();
-    User user = getUser();
     String tableId = "table" + getRequestScopedUID();
     int maxHeight=120;
 %>
@@ -181,7 +179,7 @@ for (AnnouncementModel a : bean.announcementModels)
     </tr>
     <tr><td colspan=3 class="message labkey-force-word-break <%=bean.isPrint?"message-expanded":"message-collapsed"%>">
         <div class="message-container">
-            <div class="message-text"><%=a.translateBody(c)%></div><%
+            <div class="message-text"><%=a.translateBody()%></div><%
             if (!bean.isPrint)
             {
                 %><div class="message-overflow"><div class="message-more"><div class="labkey-wp-text-buttons"><a href="#more" style="font-weight:normal;" onclick="return messageMore(this);">more&#9660;</a></div></div></div><%
@@ -195,7 +193,8 @@ for (AnnouncementModel a : bean.announcementModels)
         %><tr><td colspan=3><%
         for (Attachment d : a.getAttachments())
         {
-            %><a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
+            ActionURL downloadURL = AnnouncementsController.getDownloadURL(a, d.getName());
+            %><a href="<%=h(downloadURL)%>"><img src="<%=getWebappURL(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         }
         %></td></tr><%
     }

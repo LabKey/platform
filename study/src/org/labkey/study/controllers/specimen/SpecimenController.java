@@ -37,7 +37,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
@@ -1258,7 +1257,7 @@ public class SpecimenController extends BaseStudyController
             if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
                 ActionButton insertButton = new ActionButton(SpecimenController.ShowCreateSampleRequestAction.class, "Create New Request", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                grid.setButtons(Collections.singletonList((DisplayElement) insertButton));
+                grid.setButtons(Collections.singletonList(insertButton));
             }
             else
                 grid.setButtons(Collections.emptyList());
@@ -4060,9 +4059,10 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    public static class SpecimenEventAttachmentForm extends AttachmentForm
+    public static class SpecimenEventAttachmentForm
     {
         private int _eventId;
+        private String _name;
 
         public int getEventId()
         {
@@ -4073,8 +4073,25 @@ public class SpecimenController extends BaseStudyController
         {
             _eventId = eventId;
         }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
     }
 
+
+    public static ActionURL getDownloadURL(SpecimenRequestEvent event, String name)
+    {
+        return new ActionURL(DownloadAction.class, event.getContainer())
+            .addParameter("eventId", event.getRowId())
+            .addParameter("name", name);
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<SpecimenEventAttachmentForm>

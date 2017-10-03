@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.attachments.Attachment"%>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.pipeline.PipelineService"%>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -29,7 +30,6 @@
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudySummaryWebPartFactory.StudySummaryBean> me = (JspView<StudySummaryWebPartFactory.StudySummaryBean>) HttpView.currentView();
@@ -110,8 +110,8 @@
                     {
                         Attachment attachment = protocolDocs.get(0);
                 %>
-                <a href="<%= h(attachment.getDownloadUrl(StudyController.ProtocolDocumentDownloadAction.class).getLocalURIString()) %>">
-                    <img src="<%= getViewContext().getContextPath() + attachment.getFileIcon() %>" alt="[<%= h(attachment.getName()) %>]">
+                <a href="<%=h(StudyController.getProtocolDocumentDownloadURL(c, attachment.getName()))%>">
+                    <img src="<%=getWebappURL(attachment.getFileIcon())%>" alt="[<%= h(attachment.getName()) %>]">
                     Study Protocol Document
                 </a>
                 <%
@@ -124,8 +124,8 @@
                         for (Attachment doc : protocolDocs)
                         {
                 %>
-                    <br><a href="<%= h(doc.getDownloadUrl(StudyController.ProtocolDocumentDownloadAction.class).getLocalURIString()) %>">
-                        <img src="<%= getViewContext().getContextPath() + doc.getFileIcon() %>" alt="[<%= h(doc.getName()) %>]">
+                    <br><a href="<%=h(StudyController.getProtocolDocumentDownloadURL(c, doc.getName()))%>">
+                        <img src="<%=getWebappURL(doc.getFileIcon())%>" alt="[<%= h(doc.getName()) %>]">
                         <%= h(h(doc.getName())) %>
                     </a><%
                         }
@@ -170,7 +170,6 @@
                     out.write("</p>");
                 }
             %>
-
         </td>
     </tr>
 </table>

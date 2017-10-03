@@ -643,6 +643,13 @@ public class WikiController extends SpringActionController
         return true;
     }
 
+    public static ActionURL getDownloadURL(Container c, Wiki wiki, String filename)
+    {
+        return new ActionURL(DownloadAction.class, c)
+            .addParameter("entityId", wiki.getEntityId())
+            .addParameter("name", filename);
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<AttachmentForm>
     {
@@ -2493,10 +2500,11 @@ public class WikiController extends SpringActionController
             {
                 for (Attachment att : wikiUpdated.getAttachments())
                 {
+                    ActionURL downloadURL = getDownloadURL(getContainer(), wikiUpdated, att.getName());
                     Map<String, Object> attProps = new HashMap<>();
                     attProps.put("name", att.getName());
                     attProps.put("iconUrl", getViewContext().getContextPath() + att.getFileIcon());
-                    attProps.put("downloadUrl", att.getDownloadUrl(DownloadAction.class).toString());
+                    attProps.put("downloadUrl", downloadURL.toString());
                     attachments.add(attProps);
                 }
             }

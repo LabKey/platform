@@ -618,8 +618,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 //Get documentName and downloadUrl
                 String documentName = attachment.getName();
-                ActionURL downloadUrl = attachment.getDownloadUrl(ListController.DownloadAction.class)
-                    .replaceParameter("listId", String.valueOf(list.getListId()));
+                ActionURL downloadUrl = ListController.getDownloadURL(list, rowEntityId, documentName);
 
                 //Generate searchable resource
                 String displayTitle = title + " attachment file \"" + documentName + "\"";

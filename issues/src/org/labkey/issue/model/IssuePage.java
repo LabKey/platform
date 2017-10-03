@@ -538,11 +538,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return writeInput(field, value, "tabIndex=\"" + tabIndex + "\"");
     }
 
-    public boolean hasKeywords(ColumnType type)
-    {
-        return !KeywordManager.getKeywords(_c, type).isEmpty();
-    }
-
     public boolean isVisible(String field)
     {
         return _visible.contains(field);
@@ -658,9 +653,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             for (Attachment a : attachments)
             {
                 Issue issue = comment.getIssue();
+                ActionURL download = IssuesController.getDownloadURL(issue, comment, a);
                 sb.append("<tr><td>");
                 sb.append("<a href=\"");
-                sb.append(PageFlowUtil.filter(a.getDownloadUrl(DownloadAction.class).addParameter("issueId", issue.getIssueId())));
+                sb.append(PageFlowUtil.filter(download));
                 sb.append("\" target=\"_blank\"><img src=\"");
                 sb.append(context.getRequest().getContextPath());
                 sb.append(PageFlowUtil.filter(a.getFileIcon()));

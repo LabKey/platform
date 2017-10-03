@@ -37,6 +37,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -116,6 +117,7 @@ import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.CommentAttachmentParent;
+import org.labkey.issue.model.Issue.Comment;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
@@ -1361,6 +1363,13 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    public static ActionURL getDownloadURL(Issue issue, Comment comment, Attachment attachment)
+    {
+        return new ActionURL(DownloadAction.class, issue.lookupContainer())
+            .addParameter("issueId", issue.getIssueId())
+            .addParameter("entityId", comment.getEntityId())
+            .addParameter("name", attachment.getName());
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<IssueAttachmentForm>
@@ -1383,7 +1392,7 @@ public class IssuesController extends SpringActionController
             TableSelector ts = new TableSelector(table, table.getColumns("EntityId"), filter, null);
 
             // Verifies that IssueId, EntityId, and Container are all correct
-            final Issue.Comment comment = ts.getObject(Issue.Comment.class);
+            final Comment comment = ts.getObject(Comment.class);
             if (comment == null)
                 throw new NotFoundException("Issue comment not found");
 
@@ -2091,7 +2100,7 @@ public class IssuesController extends SpringActionController
 
             JSONArray comments = new JSONArray();
             jsonIssue.put("comments", comments);
-            for (Issue.Comment c : issue.getComments())
+            for (Comment c : issue.getComments())
             {
                 JSONObject jsonComment = new JSONObject(new BeanMap(c));
                 jsonComment.put("createdByName", c.getCreatedByName(user));

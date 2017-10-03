@@ -894,6 +894,14 @@ public class ListController extends SpringActionController
     }
 
 
+    public static ActionURL getDownloadURL(ListDefinition list, String rowEntityId, String name)
+    {
+        return new ActionURL(DownloadAction.class, list.getContainer())
+            .addParameter("listId", list.getListId())
+            .addParameter("entityId", rowEntityId)
+            .addParameter("name", name);
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<ListAttachmentForm>
     {

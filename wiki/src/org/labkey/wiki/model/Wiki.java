@@ -19,13 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.WikiController;
-import org.labkey.wiki.WikiController.DownloadAction;
 import org.labkey.wiki.WikiController.ManageAction;
 import org.labkey.wiki.WikiController.PageAction;
 import org.labkey.wiki.WikiController.VersionsAction;
@@ -95,13 +93,6 @@ public class Wiki extends Entity implements Serializable
             return null;
 
         return getWikiURL(ManageAction.class, _name);
-    }
-
-
-    public String getAttachmentLink(String document)
-    {
-        DownloadURL urlDownload = new DownloadURL(DownloadAction.class, lookupContainer(), getEntityId(), document);
-        return urlDownload.getLocalURIString();
     }
 
 

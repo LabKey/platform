@@ -91,7 +91,6 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
-import org.labkey.api.search.SearchService.LastIndexedClause;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -4817,18 +4816,19 @@ public class StudyManager
 
         ActionURL begin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(study.getContainer());
         String nav = NavTree.toJS(Collections.singleton(new NavTree("study", begin)), null, false).toString();
-        ActionURL download = new ActionURL(StudyController.ProtocolDocumentDownloadAction.class, study.getContainer());
         AttachmentService serv = AttachmentService.get();
         Path p = study.getContainer().getParsedPath().append("@study");
 
         for (Attachment att : serv.getAttachments(parent))
         {
+            ActionURL download = StudyController.getProtocolDocumentDownloadURL(study.getContainer(), att.getName());
+
             WebdavResource r = serv.getDocumentResource
             (
-                    p.append(att.getName()),
-                    download.clone().addParameter("name", att.getName()),
-                    "\"" + att.getName() + "\" -- Protocol document attached to study " + study.getLabel(),
-                    parent, att.getName(), SearchService.fileCategory
+                p.append(att.getName()),
+                download,
+                "\"" + att.getName() + "\" -- Protocol document attached to study " + study.getLabel(),
+                parent, att.getName(), SearchService.fileCategory
             );
             r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
             task.addResource(r, SearchService.PRIORITY.item);
