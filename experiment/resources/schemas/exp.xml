@@ -426,6 +426,7 @@
       <column columnName="ModifiedBy"/>
       <column columnName="Scale"/>
       <column columnName="RedactedText"/>
+      <column columnName="MvIndicatorStorageColumnName"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">
