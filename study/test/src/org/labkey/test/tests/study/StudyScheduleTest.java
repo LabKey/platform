@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.study;
 
+import com.google.common.base.Function;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -26,8 +27,12 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
+import javax.annotation.Nullable;
 import java.io.File;
 
 @Category({DailyC.class})
@@ -330,8 +335,24 @@ public class StudyScheduleTest extends StudyBaseTest
         log("linking dataset: " + name + " to type: " + type + "from dataset details.");
 
         clickAndWait(Locator.linkContainingText(name));
-        waitAndClick(Locator.xpath("//span[text()='Link or Define Dataset']"));
-        waitForElement(Locator.xpath("//div[contains(@class, 'x4-form-display-field')][text()='Define " + name + "']"), WAIT_FOR_JAVASCRIPT);
+        WebElement linkButton = Locator.xpath("//span[text()='Link or Define Dataset']").waitForElement(shortWait());
+        // Workaround for unresponsive dataset details buttons
+        shortWait().until(new Function<WebDriver, WebElement>()
+        {
+            @Nullable
+            @Override
+            public WebElement apply(@Nullable WebDriver input)
+            {
+                try
+                {
+                    linkButton.click();
+                }
+                catch (WebDriverException ignore) {}
+
+                return Locator.xpath("//div[contains(@class, 'x4-form-display-field')][text()='Define " + name + "']")
+                        .findElementOrNull(getDriver());
+            }
+        });
 
         linkDataset(name, type, targetDataset);
     }
