@@ -3745,8 +3745,7 @@ if (!LABKEY.DataRegions) {
                     'box-shadow': '0 4px 4px #DCDCDC',
                     display: 'none',
                     position: 'fixed',
-                    top: HEADER_CONSTANT,
-                    'z-index': 9000 // 13229
+                    top: HEADER_CONSTANT
                 });
 
         floatRow.insertAfter(headerRow);
