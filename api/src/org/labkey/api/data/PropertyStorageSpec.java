@@ -388,6 +388,7 @@ public class PropertyStorageSpec
         List<String> columnNames = new ArrayList<>();
         columnNames.add(rootProp.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
         columnNames.add(rootProp.getName().substring(0, Math.min(rootProp.getName().length(), 60)) + "_MV");
+        columnNames.add((rootProp.getStorageColumnName() + "_" + MvColumn.MV_INDICATOR_SUFFIX).substring(0, Math.min(rootProp.getName().length(), 63)));
         return columnNames;
     }
 
