@@ -27,6 +27,7 @@ import org.labkey.test.tests.study.StudyTest;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.Maps;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.WikiHelper;
@@ -349,21 +350,17 @@ public abstract class SearchTest extends StudyTest
 
         // Create new issue.
         goToModule("Issues");
-        clickButton("New Issue");
-        setFormElement(Locator.name("title"), ISSUE_TITLE);
-        selectOptionByText(Locator.name("type"), "UFO");
-        selectOptionByText(Locator.name("area"), "Area51");
-        selectOptionByText(Locator.name("priority"), "1");
-        setFormElement(Locator.id("commentArea"), ISSUE_BODY);
-        selectOptionByText(Locator.name("assignedTo"), displayNameFromEmail(USER1));
-        click(Locator.linkWithText("Attach a file"));
         File file = TestFileUtils.getSampleData("fileTypes/tsv_sample.tsv");
-        setFormElement(Locator.name("formFiles[00]"), file);
-        clickButton("Save");
+        issuesHelper.addIssue(ISSUE_TITLE, _userHelper.getDisplayNameForEmail(USER1),
+                Maps.of("type", "UFO",
+                        "area", "Area51",
+                        "priority", "1",
+                        "comment", ISSUE_BODY),
+                file);
 
         _searchHelper.enqueueSearchItem(ISSUE_TITLE, Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem(ISSUE_BODY, Locator.linkContainingText(ISSUE_TITLE));
-        _searchHelper.enqueueSearchItem(displayNameFromEmail(USER1), Locator.linkContainingText(ISSUE_TITLE));
+        _searchHelper.enqueueSearchItem(_userHelper.getDisplayNameForEmail(USER1), Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("Area51", Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("UFO", Locator.linkContainingText(ISSUE_TITLE));
         // TODO: 9583: Index issue attachments
