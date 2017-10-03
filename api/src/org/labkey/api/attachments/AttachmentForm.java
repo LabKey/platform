@@ -26,24 +26,20 @@ public class AttachmentForm
     private String _entityId = null;
     private String _name = null;
 
-
     public String getEntityId()
     {
         return _entityId;
     }
-
 
     public void setEntityId(String entityId)
     {
         _entityId = entityId;
     }
 
-
     public String getName()
     {
         return _name;
     }
-
 
     public void setName(String name)
     {

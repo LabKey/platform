@@ -16,18 +16,14 @@
 
 package org.labkey.api.attachments;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;
 import java.io.File;
@@ -114,13 +110,6 @@ public class Attachment implements Serializable
     public Attachment()
     {
         MemTracker.getInstance().put(this);
-    }
-
-
-    public ActionURL getDownloadUrl(Class<? extends Controller> actionClass)
-    {
-        Container c = ContainerManager.getForId(getContainer());
-        return new DownloadURL(actionClass, c, getParent(), getName());
     }
 
 

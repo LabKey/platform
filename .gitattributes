@@ -141,7 +141,6 @@ api/src/org/labkey/api/attachments/BaseDownloadAction.java -text
 api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
 api/src/org/labkey/api/attachments/DocumentConversionService.java -text
 api/src/org/labkey/api/attachments/DocumentWriter.java -text
-api/src/org/labkey/api/attachments/DownloadURL.java -text
 api/src/org/labkey/api/attachments/FileAttachmentFile.java -text
 api/src/org/labkey/api/attachments/InputStreamAttachmentFile.java -text
 api/src/org/labkey/api/attachments/LookAndFeelResourceAttachmentParent.java -text

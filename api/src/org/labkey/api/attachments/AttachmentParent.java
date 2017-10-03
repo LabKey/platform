@@ -18,7 +18,6 @@ package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.view.ViewContext;
 
 /**
  * User: adam
@@ -30,11 +29,6 @@ public interface AttachmentParent
     String getEntityId();
     String getContainerId();
     @NotNull AttachmentType getAttachmentType();
-
-    default String getDownloadURL(ViewContext context, String name)
-    {
-        return null;
-    }
 
     default SecurityPolicy getSecurityPolicy()
     {

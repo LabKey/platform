@@ -146,12 +146,6 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
     }
 
     @Override
-    public String getDownloadURL(ViewContext context, String name)
-    {
-        return _provider.getDownloadURL(context, name);
-    }
-
-    @Override
     public @NotNull AttachmentType getAttachmentType()
     {
         return _provider.getAttachmentType();
