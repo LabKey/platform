@@ -529,7 +529,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                     // Fail with a useful screenshot
                     t1.ensureColumnPresent(field);
                     t1.setFilter(field, filterOperator.getDisplayValue(), null);
-                    assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount(), t1.getDataRowCount());
+                    assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount().intValue(), t1.getDataRowCount());
                     fail("PHI column was not exported as expected: " + (removePhiColumns ? "PHI not removed" : "PHI removed") + " for " + field);
                 }
             }
