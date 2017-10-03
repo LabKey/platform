@@ -17,7 +17,6 @@ package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -63,54 +62,6 @@ import java.util.Set;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    private void _copy(Study study, TableInfo from, TableInfo to, boolean hasIdentity)
-    {
-        SQLFragment sqlfCols = new SQLFragment();
-        String comma = "";
-
-        // Only include columns in BOTH tables in the sql
-        Set<String> toColumnNames = new HashSet<>();
-        for (ColumnInfo col : to.getColumns())
-        {
-            toColumnNames.add(col.getName().toLowerCase());
-        }
-
-        for (ColumnInfo col : from.getColumns())
-        {
-            if (toColumnNames.contains(col.getName().toLowerCase()))
-            {
-                sqlfCols.append(comma);
-                sqlfCols.append(col.getSelectName());
-                comma = ",";
-            }
-        }
-
-        SQLFragment f = new SQLFragment();
-        if (to.getSqlDialect().isSqlServer() && hasIdentity)
-        {
-            f.append("SET IDENTITY_INSERT ").append(to.getSelectName()).append(" ON;");
-        }
-        f.append("INSERT INTO ").append(to.getSelectName()).append(" (").append(sqlfCols).append(")\n");
-        f.append("SELECT ").append(sqlfCols).append(" FROM ").append(from.getFromSQL("x")).append("\n");
-        f.append("WHERE Container=?;");
-        f.add(study.getContainer());
-        if (to.getSqlDialect().isSqlServer() && hasIdentity)
-        {
-            f.append("SET IDENTITY_INSERT ").append(to.getSelectName()).append(" OFF;");
-        }
-        else if (to.getSqlDialect().isPostgreSQL() && hasIdentity)
-        {
-            SQLFragment resetSeq = new SQLFragment();
-            resetSeq.append("SELECT setval(\n");
-            resetSeq.append("  pg_get_serial_sequence('").append(to.getSelectName()).append("', 'rowid'),\n");
-            resetSeq.append("  (SELECT MAX(rowid) FROM ").append(to.getSelectName()).append(") + 1");
-            resetSeq.append(");\n");
-            f.append(resetSeq);
-        }
-
-        new SqlExecutor(StudySchema.getInstance().getScope()).execute(f);
-    }
 
 
     // Invoked by study-16.10-16.20.sql
