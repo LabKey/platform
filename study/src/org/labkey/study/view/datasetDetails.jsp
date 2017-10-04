@@ -44,7 +44,14 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+    }
+%>
 <%
     JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
     DatasetDefinition dataset = me.getModelBean();
@@ -256,10 +263,6 @@ if (!pipelineSet)
     </div>
 </div>
 <% } %>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
-</script>
 
 <script type="text/javascript">
     function truncateTable()
