@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
@@ -665,12 +666,13 @@ public class DbSchema
 
     public static class DDLMethodsTestCase extends Assert
     {
+        private final TestSchema test = TestSchema.getInstance();
+        private final String tempTableName = test.getSchema().getSqlDialect().getTempTablePrefix() + "TTemp";
+
         @Test
         public void testDDLMethods() throws Exception
         {
-            TestSchema test = TestSchema.getInstance();
             DbSchema testSchema = test.getSchema();
-            String tempTableName = testSchema.getSqlDialect().getTempTablePrefix() + "TTemp";
 
             // create test objects
             //start with cleanup
@@ -735,6 +737,12 @@ public class DbSchema
 
             testSchema.getSqlDialect().dropSchema(testSchema, "testdrop2");
             testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+        }
+
+        @After
+        public void cleanup()
+        {
+            test.getSchema().dropTableIfExists(tempTableName);
         }
     }
 
