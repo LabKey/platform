@@ -25,7 +25,6 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
@@ -37,9 +36,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentForm;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -87,17 +85,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -108,11 +103,9 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -121,10 +114,8 @@ import org.labkey.filecontent.message.ShortMessageDigest;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -508,143 +499,6 @@ public class FileContentController extends SpringActionController
         }
     }
 
-
-   @RequiresPermission(InsertPermission.class)
-   public class AddAttachmentAction extends FormViewAction<AttachmentForm>
-   {
-       HttpView _closeView = null;
-
-       public void validateCommand(AttachmentForm target, Errors errors)
-       {
-       }
-
-       public ModelAndView getView(AttachmentForm form, boolean reshow, BindException errors) throws Exception
-       {
-           getPageConfig().setTemplate(PageConfig.Template.None);
-
-           try
-           {
-                return AttachmentService.get().getAddAttachmentView(getContainer(), getAttachmentParent(form), errors);
-           }
-           catch (NotFoundException x)
-           {
-                return ExceptionUtil.getErrorView(HttpServletResponse.SC_NOT_FOUND, x.getMessage(), x, getViewContext().getRequest(), false, true);
-           }
-           catch (UnauthorizedException x)
-           {
-                return ExceptionUtil.getErrorView(HttpServletResponse.SC_UNAUTHORIZED, x.getMessage(), x, getViewContext().getRequest(), false, true);
-           }
-       }
-
-       public boolean handlePost(AttachmentForm form, BindException errors) throws Exception
-       {
-           Map<String, MultipartFile> fileMap = getFileMap();
-           if (fileMap.size() > 0 && !getUser().isDeveloper())
-           {
-               for (MultipartFile formFile : fileMap.values())
-               {
-                   String contentType = new MimeMap().getContentTypeFor(formFile.getName());
-                   if (formFile.getContentType().contains("html") || (null != contentType && contentType.contains("html")))
-                   {
-                       //This relies on storing whole file in memory. Generally OK for text files like this.
-                       String html = new String(formFile.getBytes(), StringUtilsLabKey.DEFAULT_CHARSET);
-                       List<String> validateErrors = new ArrayList<>();
-                       List<String> safetyWarnings = new ArrayList<>();
-                       PageFlowUtil.validateHtml(html, validateErrors, safetyWarnings);
-                       if (safetyWarnings.size() > 0)
-                       {
-                           addError(errors, "HTML Pages cannot contain script unless uploaded by a site administrator.");
-                           return false;
-                       }
-                   }
-               }
-           }
-
-           try
-           {
-               _closeView = AttachmentService.get().add(getAttachmentParent(form), SpringAttachmentFile.createList(fileMap), getUser());
-           }
-           catch (NotFoundException x)
-           {
-               _closeView = ExceptionUtil.getErrorView(HttpServletResponse.SC_NOT_FOUND, x.getMessage(), x, getViewContext().getRequest(), false, true);
-           }
-
-           return true;
-       }
-
-       public ModelAndView getSuccessView(AttachmentForm attachmentForm)
-       {
-           getPageConfig().setTemplate(PageConfig.Template.None);
-           return _closeView;
-       }
-
-       public ActionURL getSuccessURL(AttachmentForm attachmentForm)
-       {
-           return null;
-       }
-
-       public NavTree appendNavTrail(NavTree root)
-       {
-           return null;
-       }
-   }
-
-
-   @RequiresPermission(DeletePermission.class)
-   public class DeleteAttachmentAction extends ConfirmAction<AttachmentForm>
-   {
-       HttpView _closeView = null;
-
-       public String getConfirmText()
-       {
-           return "Delete";
-       }
-
-       @Override
-       public boolean isPopupConfirmation()
-       {
-           return true;
-       }
-
-       public ModelAndView getConfirmView(AttachmentForm form, BindException errors) throws Exception
-       {
-           getPageConfig().setShowHeader(false);
-           return new HtmlView("Delete file " + form.getName() + "?");
-       }
-
-       public boolean handlePost(AttachmentForm form, BindException errors) throws Exception
-       {
-           try
-           {
-               _closeView = AttachmentService.get().delete(getAttachmentParent(form), form.getName(), getUser());
-           }
-           catch (NotFoundException e)
-           {
-               _closeView = ExceptionUtil.getErrorView(HttpServletResponse.SC_NOT_FOUND, e.getMessage(), e, getViewContext().getRequest(), false, true);
-           }
-           return true;
-       }
-
-       public void validateCommand(AttachmentForm target, Errors errors)
-       {
-       }
-
-       public ActionURL getSuccessURL(AttachmentForm attachmentForm)
-       {
-           return null;
-       }
-
-       public ModelAndView getSuccessView(AttachmentForm form)
-       {
-           getPageConfig().setTemplate(PageConfig.Template.None);
-           return _closeView;
-       }
-
-       public ActionURL getFailURL(AttachmentForm attachmentForm, BindException errors)
-       {
-           return null;
-       }
-   }
 
    @RequiresPermission(AdminOperationsPermission.class)
    public class ShowAdminAction extends FormViewAction<FileContentForm>
@@ -1805,14 +1659,8 @@ public class FileContentController extends SpringActionController
 
             // @RequiresPermission(InsertPermission.class)
             assertForInsertPermission(user,
-                controller.new AddAttachmentAction(),
                 controller.new UpdateFilePropsAction(),
                 controller.new SaveCustomFilePropsAction()
-            );
-
-            // @RequiresPermission(DeletePermission.class)
-            assertForUpdateOrDeletePermission(user,
-                controller.new DeleteAttachmentAction()
             );
 
             // @RequiresPermission(AdminPermission.class)

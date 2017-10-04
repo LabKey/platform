@@ -77,7 +77,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.WebdavResolver;
@@ -132,40 +131,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         ContainerManager.addContainerListener(this);
     }
 
-
-    @Override
-    @Deprecated
-    public HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser)
-    {
-        String message = null;
-
-        if (!files.isEmpty())
-        {
-            try
-            {
-                addAttachments(parent, files, auditUser);
-                message = getErrorHtml(files);
-            }
-            catch (IOException ioe)
-            {
-                message = ioe.getMessage() + "<br><br>";
-            }
-        }
-        HttpView v = new RefreshParentView(message);
-
-        DialogTemplate template = new DialogTemplate(v);
-        template.getModelBean().setShowHeader(false);
-
-        return template;
-    }
-
-    @Override
-    @Deprecated
-    public HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException
-    {
-        deleteAttachment(parent, name, auditUser);
-        return new RefreshParentView();
-    }
 
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename) throws ServletException, IOException
@@ -255,41 +220,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return view;
         }
         return null;
-    }
-
-    @Override
-    public HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors)
-    {
-        checkSecurityPolicy(parent);
-        HttpView view = new AddAttachmentView(parent, errors);
-        DialogTemplate template = new DialogTemplate(view);
-        template.getModelBean().setTitle("Add Attachment");
-        template.getModelBean().setShowHeader(false);
-        return template;
-    }
-
-    private static class RefreshParentView extends JspView<String>
-    {
-        private RefreshParentView()
-        {
-            this(null);
-        }
-
-        private RefreshParentView(String message)
-        {
-            super("/org/labkey/core/attachment/refreshParent.jsp", message);
-            setFrame(FrameType.NONE);
-        }
-    }
-
-
-    public static class AddAttachmentView extends JspView<String>
-    {
-        private AddAttachmentView(AttachmentParent parent, BindException errors)
-        {
-            super("/org/labkey/core/attachment/addAttachment.jsp", parent.getEntityId(), errors);
-            setFrame(FrameType.NONE);
-        }
     }
 
 
@@ -500,7 +430,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         new SqlExecutor(coreTables().getSchema()).execute(sqlRename(parent, oldName, newName));
 
-        // rename the file in the filesystem only if an Attachment director and the db rename succeded
+        // rename the file in the filesystem only if an Attachment directory and the db rename succeeded
         if (null != dir)
             src.renameTo(dest);
 
@@ -517,7 +447,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         checkSecurityPolicy(auditUser, parent);
         a.setName(newName);
         DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
-        addAttachments(parent, Collections.singletonList((AttachmentFile)file), auditUser);
+        addAttachments(parent, Collections.singletonList(file), auditUser);
     }
 
     @Override
@@ -1461,9 +1391,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             }
             catch (AttachmentService.DuplicateFilenameException x)
             {
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
+                throw new IOException(x);
             }
             finally
             {

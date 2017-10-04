@@ -466,7 +466,6 @@ core/src/org/labkey/core/analytics/analyticsSettings.jsp -text
 core/src/org/labkey/core/attachment/AttachmentCache.java -text
 core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
 core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
-core/src/org/labkey/core/attachment/refreshParent.jsp -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
 core/src/org/labkey/core/authentication/ldap/LdapAuthenticationManager.java -text
 core/src/org/labkey/core/authentication/ldap/LdapAuthenticationProvider.java -text
