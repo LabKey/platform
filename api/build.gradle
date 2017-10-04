@@ -82,7 +82,7 @@ List others = [
         "flyingsaucer:core-renderer:${flyingsaucerVersion}",
         "com.google.guava:guava:${guavaVersion}",
         "net.sf.jtidy:jtidy:${jtidyVersion}",
-        "jexcelapi:jxl:${jxlVersion}",
+        "net.sourceforge.jexcelapi:jxl:${jxlVersion}",
         "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
         "org.objenesis:objenesis:${objenesisVersion}",
         "com.opencsv:opencsv:${opencsvVersion}",
