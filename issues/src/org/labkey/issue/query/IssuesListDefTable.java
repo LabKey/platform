@@ -137,6 +137,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 
         ColumnInfo domainContainer = new AliasedColumn(this, "DomainContainer", _rootTable.getColumn("RowId"));
         domainContainer.setRequired(false);
+        domainContainer.setKeyField(false);
         domainContainer.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
