@@ -37,7 +37,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,15 +63,6 @@ public interface AttachmentService
     }
 
     void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
-
-    // Use the void-returning methods addAttachments and deleteAttachments instead
-    @Deprecated
-    HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
-
-    @Deprecated
-    HttpView delete(AttachmentParent parent, String name, User auditUser) throws SQLException;
-
-    HttpView getAddAttachmentView(Container container, AttachmentParent parent, BindException errors);
 
     HttpView getHistoryView(ViewContext context, AttachmentParent parent);
 
