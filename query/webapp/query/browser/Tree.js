@@ -113,7 +113,10 @@ Ext4.define('LABKEY.query.browser.Tree', {
         params.showHidden = showHidden;
 
         var url = LABKEY.ActionURL.buildURL('query', 'begin', null, params);
-        window.location.href = url + window.location.hash;
+        if (showHidden)
+            window.location.href = url + window.location.hash;
+        else
+            window.location.href = url;
 
         // TODO: Cannot show/hide nodes in ExtJS 4.2.1 -- Optimially, use TreeStore.filter() in ExtJS 4.2.3
 //        this.getRootNode().cascadeBy(function(node) {
