@@ -224,6 +224,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
 
+        table.ensureColumnPresent("SequenceNum");
         assertEquals("Dataset does not reflect changes in source study.", 21, table.getDataRowCount());
         assertTextPresent(SEQ_NUMBER + ".0");
         table.getColumnDataAsText("Sequence Num");
