@@ -1277,6 +1277,7 @@ public class DataRegion extends DisplayElement
             addMessage(getMissingCaptionMessage());
         }
 
+        boolean useTableWrap = useTableWrap();
         boolean showRecordSelectors = getShowRecordSelectors(ctx);
 
         List<DisplayColumn> renderers = getDisplayColumns();
@@ -1305,6 +1306,8 @@ public class DataRegion extends DisplayElement
 
         renderFormBegin(ctx, out, ctx.getMode());
 
+        if (useTableWrap)
+            out.write("<table><tbody><tr><td>");
         if (shouldRenderHeader(renderButtons))
         {
             renderHeader(ctx, out, renderButtons);
@@ -1312,8 +1315,18 @@ public class DataRegion extends DisplayElement
 
         renderMessages(ctx, out);
 
+        if (useTableWrap)
+            out.write("</td></tr>");
         if (!_errorCreatingResults)
+        {
+            if (useTableWrap)
+                out.write("<tr><td>");
             _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
+            if (useTableWrap)
+                out.write("</td></tr>");
+        }
+        if (useTableWrap)
+            out.write("</tbody></table>");
 
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
         renderAnalyticsProvidersScripts(ctx, out);
@@ -1446,6 +1459,7 @@ public class DataRegion extends DisplayElement
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-bar lk-region-section east\"></div>");
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-bar lk-region-section south\"></div>");
         out.write("</div>");
+        out.write("</td></tr>");
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
@@ -3464,6 +3478,12 @@ public class DataRegion extends DisplayElement
     }
 
     protected boolean usesResultSet()
+    {
+        return true;
+    }
+
+    // Wraps the header and data in a table element to allow either to control the display width.
+    protected boolean useTableWrap()
     {
         return true;
     }

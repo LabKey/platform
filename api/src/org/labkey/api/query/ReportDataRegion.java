@@ -203,4 +203,10 @@ public class ReportDataRegion extends DataRegion
     {
         return false;
     }
+
+    @Override
+    protected boolean useTableWrap()
+    {
+        return false;
+    }
 }
