@@ -36,8 +36,6 @@ import java.util.List;
 */
 public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
 {
-    public static final String EXPERIMENTAL_NAV = "experimental-navigation";
-
     private static final Logger LOG = Logger.getLogger(MenuBarView.class);
 
     public MenuBarView(ViewContext ctx, PageConfig page)

@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -47,9 +46,8 @@
     ViewContext context = getViewContext();
     Container c = getContainer();
 
-    boolean showExperimentalNavigation = AppProps.getInstance().isExperimentalFeatureEnabled(MenuBarView.EXPERIMENTAL_NAV);
-    boolean showProjectNavigation = showExperimentalNavigation || context.isShowFolders();
-    boolean showFolderNavigation = !showExperimentalNavigation && c != null && !c.isRoot() && c.getProject() != null && context.isShowFolders();
+    boolean showProjectNavigation = context.isShowFolders();
+    boolean showFolderNavigation = c != null && !c.isRoot() && c.getProject() != null && context.isShowFolders();
     Container p = c.getProject();
     String projectTitle = "";
     if (null != p)
@@ -68,7 +66,7 @@
     if (showProjectNavigation)
     {
 %>
-        <li id="<%=text(showExperimentalNavigation ? "betaBar" : "projectBar")%>" class="menu-projects"></li>
+        <li id="<%=text("projectBar")%>" class="menu-projects"></li>
 <%
     }
 
@@ -126,8 +124,8 @@
             var loginUrl = <%= PageFlowUtil.jsString(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getContainer(), getActionURL()).toString()) %>;
 
             HoverNavigation._project = new HoverNavigation({
-                hoverElem : '<%=text(showExperimentalNavigation ? "betaBar" : "projectBar")%>',
-                webPartName : '<%=text(showExperimentalNavigation ? "betanav" : "projectnav")%>',
+                hoverElem : '<%=text("projectBar")%>',
+                webPartName : '<%=text("projectnav")%>',
                 webPartUrl: LABKEY.ActionURL.buildURL('project', 'getNavigationPart'),
                 loginUrl: loginUrl
             });

@@ -7886,7 +7886,6 @@ internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
 internal/webapp/miniprofiler.lib.xml -text
 internal/webapp/mothership.js -text
-internal/webapp/nav/betanav.css -text
 internal/webapp/pipeline/AnalyzeForm.js -text
 internal/webapp/slider/css/boxsizing.htc -text
 internal/webapp/slider/css/handle.horizontal.hover.png -text

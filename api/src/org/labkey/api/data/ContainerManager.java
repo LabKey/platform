@@ -1120,7 +1120,7 @@ public class ContainerManager
                     continue;
 
                 SecurityPolicy policy = f.getPolicy();
-                boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)));
+                boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)) || (!f.hasPermission(user, ReadPermission.class)));
 
                 //Always put the project and current container in...
                 if (skip && !f.equals(project) && !f.equals(c))
@@ -1586,8 +1586,10 @@ public class ContainerManager
     private static void navTreeManageUncache(Container c)
     {
         // UNDONE: NavTreeManager should register a ContainerListener
-        Container project = c.getProject();
         NavTreeManager.uncacheTree(PROJECT_LIST_ID);
+        NavTreeManager.uncacheTree(getRoot().getId());
+
+        Container project = c.getProject();
         if (project != null)
         {
             NavTreeManager.uncacheTree(project.getId());
