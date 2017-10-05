@@ -248,9 +248,8 @@ public class StudyScheduleTest extends StudyBaseTest
         {
             // verify a placeholder dataset cannot be edited from the manage dataset page
             clickFolder(_folderName);
-            goToManageStudy();
-            clickAndWait(Locator.linkWithText("Manage Datasets"));
-            clickAndWait(Locator.linkWithText(name));
+            _studyHelper.goToManageDatasets()
+                    .selectDatasetByName(name);
 
             assertTextNotPresent("View Data", "Edit Definition");
             goToStudySchedule();

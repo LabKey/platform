@@ -313,24 +313,21 @@ public class QuerySnapshotTest extends StudyBaseTest
     @LogMethod
     private void changeDatasetLabel(@LoggedParam String datasetName, @LoggedParam String newLabel)
     {
-        _studyHelper.goToManageDatasets();
-        waitAndClick(Locator.linkContainingText(datasetName));
-        waitForText("Edit Definition");
-        clickButton("Edit Definition");
-        waitForElement(Locator.xpath("//input[@name='dsLabel']"));
-        setFormElement(Locator.xpath("//input[@name='dsLabel']"), newLabel);
-        clickButton("Save");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickEditDefinition()
+                .setDatasetLabel(newLabel)
+                .save();
     }
 
     @LogMethod
     private void changeDatasetName(@LoggedParam String datasetName, @LoggedParam String newName)
     {
-        _studyHelper.goToManageDatasets();
-        waitAndClickAndWait(Locator.linkContainingText(datasetName));
-        mashButton("Edit Definition");
-        waitForElement(Locator.xpath("//input[@name='dsName']"));
-        setFormElement(Locator.xpath("//input[@name='dsName']"), newName);
-        clickButton("Save");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickEditDefinition()
+                .setDatasetName(newName)
+                .save();
     }
 
     @LogMethod

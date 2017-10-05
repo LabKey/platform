@@ -216,10 +216,11 @@ public class AncillaryStudyTest extends StudyBaseTest
 
         log("Verify changes in Ancillary Study. (insert)");
         clickFolder(STUDY_NAME);
-        _studyHelper.goToManageDatasets();
-        clickAndWait(Locator.linkWithText(DATASETS[0]));
-        clickButton("View Data");
-        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
+        DataRegionTable table = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(DATASETS[0])
+                .clickViewData()
+                .getDataRegion();
+
         table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
@@ -239,9 +240,9 @@ public class AncillaryStudyTest extends StudyBaseTest
 
         log("Verify changes in Ancillary Study. (modify)");
         clickFolder(STUDY_NAME);
-        _studyHelper.goToManageDatasets();
-        clickAndWait(Locator.linkWithText(DATASETS[0]));
-        clickButton("View Data");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(DATASETS[0])
+                .clickViewData();
         table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
@@ -262,9 +263,9 @@ public class AncillaryStudyTest extends StudyBaseTest
 
         log("Verify changes in Ancillary Study. (delete)");
         clickFolder(STUDY_NAME);
-        _studyHelper.goToManageDatasets();
-        clickAndWait(Locator.linkWithText(DATASETS[0]));
-        clickButton("View Data");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(DATASETS[0])
+                .clickViewData();
         table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");

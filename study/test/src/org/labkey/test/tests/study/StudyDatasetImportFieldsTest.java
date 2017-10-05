@@ -18,6 +18,8 @@ package org.labkey.test.tests.study;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.pages.DatasetPropertiesPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 
@@ -67,40 +69,38 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
     @Override
     protected void doVerifySteps() throws Exception
     {
-        clickButton("Create Study", 0);
+        clickButton("Create Study");
         waitForText(FOLDER_NAME + " Study");
-        clickButton("Create Study", 0);
-        waitForText("Manage Datasets");
-        _studyHelper.goToManageDatasets();
-        click(Locator.linkWithText("Create New Dataset"));
-        waitForElement(Locator.name("typeName"));
-        setFormElement(Locator.name("typeName"), "Test Dataset");
-        clickButton("Next", 0);
+        clickButton("Create Study");
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName("Test Dataset")
+                .submit();
         waitForElement(Locator.name("ff_name0"));
         setFormElement(Locator.name("ff_name0"), INITIAL_COL);
-        clickButton("Save", 0);
-        waitForElement(Locator.linkWithText("View Data"));
-        click(Locator.linkWithText("View Data"));
-        waitForText("Insert");
-        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        waitForElement(Locator.name("quf_ParticipantId"));
+        editDatasetPage
+                .save()
+                .clickViewData();
+        DataRegionTable.DataRegion(getDriver()).find().clickInsertNewRow();
+        waitForElement(Locator.name("quf_ParticipantId"));
         setFormElement(Locator.name("quf_ParticipantId"), "47");
         setFormElement(Locator.name("quf_SequenceNum"), "47");
         setFormElement(Locator.name("quf_date"), "4/25/2014");
         setFormElement(Locator.name("quf_Test Field"), INITIAL_COL_VAL);
-        clickButton("Submit", 0);
+        clickButton("Submit");
         waitForText("Participant ID");
         assertTextPresent(INITIAL_COL_VAL);
         _extHelper.clickMenuButton(true, "Manage");
-        waitForText("Edit Definition");
-        click(Locator.linkWithText("Edit Definition"));
+        editDatasetPage = new DatasetPropertiesPage(getDriver())
+                .clickEditDefinition();
         waitForText("Import Fields");
         clickButton("Import Fields", "WARNING");
         setFormElement(Locator.id("schemaImportBox"), "Property\n" + REPLACEMENT_COL);
         clickButton("Import", 0);
         waitForText(REPLACEMENT_COL);
-        clickButton("Save", 0);
-        waitForText("View Data");
-        click(Locator.linkWithText("View Data"));
+        editDatasetPage
+                .save()
+                .clickViewData();
         //waitForText("47");
         waitForText("No data to show.");
         assertTextPresent(REPLACEMENT_COL);

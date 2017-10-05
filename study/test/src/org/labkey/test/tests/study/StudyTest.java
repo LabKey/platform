@@ -30,8 +30,11 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionExportHelper;
@@ -183,12 +186,11 @@ public class StudyTest extends StudyBaseTest
     @LogMethod
     protected void verifyAliasReplacement()
     {
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Manage Datasets"));
-        waitAndClickAndWait(Locator.linkWithText("Quality Control Report"));
-        waitAndClickAndWait(Locator.linkWithText("View Data"));
-        // Add a new row to the dataset
-        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByLabel("Quality Control Report")
+                .clickViewData()
+                .getDataRegion()
+                .clickInsertNewRow();
         setFormElement(Locator.name("quf_MouseId"), "888208905");
         setFormElement(Locator.name("quf_SequenceNum"), "1");
         setFormElement(Locator.name("quf_QCREP_ID"), "42");
@@ -697,13 +699,12 @@ public class StudyTest extends StudyBaseTest
 
             // Test Bad Field Names -- #13607
             clickButton("Manage");
-            clickButton("Edit Definition");
-            Locator.XPathLocator nameField = Locator.xpath("//input[starts-with(@name, 'ff_name')]");
-            waitForElement(nameField);
-            int newFieldIndex = getElementCount(nameField);
-            _listHelper.addField("Dataset Fields", "Bad Name", "Bad Name", ListHelper.ListColumnType.String);
-            clickButton("Save");
-            clickButton("View Data");
+            EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+            editDatasetPage.getFieldsEditor()
+                    .addField(new FieldDefinition("Bad Name").setLabel("Bad Name").setType(FieldDefinition.ColumnType.String));
+            editDatasetPage
+                    .save()
+                    .clickViewData();
             _customizeViewsHelper.openCustomizeViewPanel();
             _customizeViewsHelper.addCustomizeViewColumn("Bad Name", "Bad Name");
             _customizeViewsHelper.applyCustomView();
@@ -1030,10 +1031,10 @@ public class StudyTest extends StudyBaseTest
         assertTableCellTextEquals("details", 4, 3, getDemographicsDescription());
 
         // "Demographics Data" bit needs to be false for the rest of the test
-        setDemographicsBit("DEM-1: Demographics", false);
+        setDemographicsBit("DEM-1: Demographics", false)
+                .clickViewData();
 
         log("verify ");
-        clickButtonContainingText("View Data");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
         assertTrue("Could not find column \"MOUSEVISIT/MOUSEID\"", _customizeViewsHelper.isColumnPresent("MOUSEVISIT/MOUSEID"));
@@ -1181,16 +1182,18 @@ public class StudyTest extends StudyBaseTest
     protected void verifyParticipantVisitDay()
     {
         clickFolder(getFolderName());
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Manage Datasets"));
-        waitAndClickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
-        clickButton("Edit Definition");
-        waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
-        _listHelper.addField("Dataset Fields", "VisitDay", "VisitDay", ListHelper.ListColumnType.Integer);
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByLabel(DEMOGRAPHICS_TITLE)
+                .clickEditDefinition();
+        editDatasetPage
+                .getFieldsEditor()
+                .addField(new FieldDefinition("VisitDay").setLabel("VisitDay").setType(FieldDefinition.ColumnType.Integer));
         Locator element3 = Locator.gwtListBoxByLabel("Visit Date Column");
         selectOptionByValue(element3, "DEMdt");
-        clickButton("Save");
-        clickButton("View Data");
+
+        editDatasetPage
+                .save()
+                .clickViewData();
 
         // Edit 1 item changing sequence from 101; then edit again and change back and set VisitDay to something
         clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));

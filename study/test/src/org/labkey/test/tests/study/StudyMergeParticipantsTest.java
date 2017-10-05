@@ -20,6 +20,8 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.CreateDatasetPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -153,18 +155,20 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
     {
 
         // Create alias dataset and insert some data
-        _studyHelper.goToManageDatasets();
-        clickAndWait(Locator.linkContainingText("Create New Dataset"));
-        setFormElement(Locator.name("typeName"), ALIAS_DATASET);
-        clickButton("Next", "Import Fields");
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName(ALIAS_DATASET)
+                .submit();
         clickButton("Import Fields", "Paste tab-delimited");
         setFormElement(Locator.name("tsv"), "Property\tNotNull\n" + ALIAS_COLUMN + "\tTRUE\n" + SOURCE_COLUMN + "\tTRUE");
         clickButton("Import", ALIAS_COLUMN);
         click(Locator.radioButtonById("button_dataField"));
         selectOptionByValue(Locator.id("list_dataField"), SOURCE_COLUMN);
-        clickButton("Save");
-        clickButton("View Data");
-        DataRegionTable.DataRegion(getDriver()).find().clickImportBulkData();
+        editDatasetPage
+                .save()
+                .clickViewData()
+                .getDataRegion()
+                .clickImportBulkData();
         setFormElement(Locator.name("text"), "participantId\tdate\t" + ALIAS_COLUMN + "\t" + SOURCE_COLUMN + "\n" + PTID_WITH_ALIAS + "\t1/3/2014\tabc123\t" + ALIAS_SOURCE_1);
         clickButton("Submit", "Dataset: " + ALIAS_DATASET + ", All Visits");
 

@@ -36,6 +36,7 @@ import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.SiteNavBar;
+import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.search.SearchResultsPage;
 import org.labkey.test.util.DataRegionTable;
@@ -350,7 +351,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            mashButton("View Data");
+            new DatasetPropertiesPage(getDriver()).clickViewData();
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -359,7 +360,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            mashButton("View Data");
+            new DatasetPropertiesPage(getDriver()).clickViewData();
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -959,10 +960,9 @@ public class StudyPublishTest extends StudyPHIExportTest
 
     private void createRView(String name, String dataset, boolean shareView)
     {
-        goToManageStudy();
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText(dataset));
-        clickButton("View Data");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByLabel(dataset)
+                .clickViewData();
         new RReportHelper(this).createRReport(name, shareView);
     }
 

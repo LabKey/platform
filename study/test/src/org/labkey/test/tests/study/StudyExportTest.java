@@ -23,10 +23,12 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
+import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.dumbster.EmailRecordTable;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -542,13 +544,11 @@ public class StudyExportTest extends StudyManualTest
     protected void setDatasetCategory(String dataset, String category)
     {
         clickFolder(getFolderName());
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText(dataset));
-        clickButton("Edit Definition");
-        waitForElement(Locator.name("dsCategory"), WAIT_FOR_PAGE);
-        setFormElement(Locator.name("dsCategory"), category);
-        clickButton("Save");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(dataset)
+                .clickEditDefinition()
+                .setCategory(category)
+                .save();
     }
 
     private void modifyVisits()
@@ -570,19 +570,16 @@ public class StudyExportTest extends StudyManualTest
 
     private void modifyDatasetColumn(String dataset)
     {
-        clickFolder(getFolderName());
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText(dataset));
-        clickButton("Edit Definition");
-        waitAndClick(Locator.name("ff_label0"));
-        click(Locator.xpath("//span[contains(@class,'x-tab-strip-text') and text()='Advanced']"));
-        waitForElement(Locator.name("mvEnabled"), WAIT_FOR_JAVASCRIPT);
-        checkCheckbox(Locator.checkboxByName("mvEnabled"));
-        click(Locator.xpath("//span[contains(@class,'x-tab-strip-text') and text()='Display']"));
-        setFormElement(Locator.id("propertyDescription"), COLUMN_DESC);
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(dataset)
+                .clickEditDefinition();
+
+        PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
+        fieldRow.properties().selectDisplayTab().description.set(COLUMN_DESC);
+        fieldRow.properties().selectAdvancedTab().mvEnabledCheckbox.check();
+
+        editDatasetPage.save();
         // TODO: add lookups for current & other folders
-        clickButton("Save");
     }
 
     private void setFormatStrings()

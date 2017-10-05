@@ -27,6 +27,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
@@ -125,22 +126,22 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         log("Do Setup: create simple dataset with one ptid and one visit");
         clickFolder(getFolderName());
-        _studyHelper.goToManageDatasets();
-        waitForText("Create New Dataset");
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-        waitForElement(Locator.name("typeName"));
-        setFormElement(Locator.name("typeName"), TEST_DATASET_NAME);
-        clickButton("Next");
-        waitForElement(Locator.name("ff_name0"));
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+                .goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName(TEST_DATASET_NAME)
+                .submit();
         _listHelper.deleteField("Dataset Fields", 0);
         _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer);
         // Format "TestDate" as "Date"
         _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
         // "TestDateTime" format will default to date-time
         _listHelper.addField("Dataset Fields", "TestDateTime", "TestDateTime", ListHelper.ListColumnType.DateTime);
-        clickButton("Save");
-        clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickImportBulkData();
+        editDatasetPage
+                .save()
+                .clickViewData()
+                .getDataRegion()
+                .clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");

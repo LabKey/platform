@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
@@ -169,13 +170,11 @@ public abstract class StudyManualTest extends StudyTest
     protected void setDemographicsDescription()
     {
         clickFolder(getFolderName());
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        clickButtonContainingText("Edit Definition");
-        waitForElement(Locator.name("description"), WAIT_FOR_JAVASCRIPT);
-        setFormElement(Locator.name("description"), DEMOGRAPHICS_DESCRIPTION);
-        clickButton("Save");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName("DEM-1")
+                .clickEditDefinition()
+                .setDescription(DEMOGRAPHICS_DESCRIPTION)
+                .save();
     }
 
 
@@ -202,11 +201,10 @@ public abstract class StudyManualTest extends StudyTest
     protected void createCustomAssays()
     {
         clickFolder(getFolderName());
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-        setFormElement(Locator.name("typeName"), "verifyAssay");
-        clickButton("Next");
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName("verifyAssay")
+                .submit();
 
         waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
 
@@ -231,11 +229,12 @@ public abstract class StudyManualTest extends StudyTest
         waitForElement(Locator.id("importAliases"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.id("importAliases"), "aliasedColumn");
 
-        clickButton("Save");
-        waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
-        clickButton("View Data");
+        editDatasetPage
+                .save()
+                .clickViewData()
+                .getDataRegion()
+                .clickImportBulkData();
 
-        new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         setFormElement(Locator.name("text"), _tsv + "\n" + errorRow);
         _listHelper.submitImportTsv_error("Could not convert 'badvisitd'");

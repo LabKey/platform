@@ -19,10 +19,15 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.pages.DatasetPropertiesPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class})
 public class StudyDatasetReloadTest extends StudyBaseTest
@@ -68,9 +73,8 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         assertElementPresent(Locator.tagWithText("td", "Staff Code").append("/../td/input[last()][@checked]"));     // MV
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][not(@checked)]"));  // MV
 
-        mashButton("Edit Definition");
-        waitForElement(Locator.name("description"), WAIT_FOR_JAVASCRIPT);
-        assertNotChecked(Locator.checkboxByName("demographicData"));
+        EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+        assertFalse("Study import set demographics bit incorrectly", editDatasetPage.isDemographicsData());
 
         goToManageStudy();
         clickButton("Reload Study");
@@ -85,9 +89,8 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         assertTextNotPresent("StaffCode", "DoubleNum");
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][@checked]"));  // MV
 
-        mashButton("Edit Definition");
-        waitForElement(Locator.name("description"), WAIT_FOR_JAVASCRIPT);
-        assertChecked(Locator.checkboxByName("demographicData"));
+        editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+        assertTrue("Study import set demographics bit incorrectly", editDatasetPage.isDemographicsData());
     }
 
 

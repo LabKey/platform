@@ -190,11 +190,10 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
 
     protected void testCannotSetAdditionalKeyForDemographics()
     {
-        goToDataset(getFolderName(),DEMOGRAPHICS_DATASET);
-        DataRegionTable dataSet = new DataRegionTable("Dataset",getDriver());
-        dataSet.clickHeaderButton("Manage");
-        waitAndClickAndWait(Locator.lkButton("Edit Definition"));
-        EditDatasetDefinitionPage editDatasetDefinitionPage = new EditDatasetDefinitionPage(getDriver());
+        EditDatasetDefinitionPage editDatasetDefinitionPage =
+                goToDataset(getFolderName(), DEMOGRAPHICS_DATASET)
+                        .clickManageDataset()
+                        .clickEditDefinition();
         Assert.assertFalse("Additional Key None should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalFieldNoneEnabled());
         Assert.assertFalse("Additional Key Data Field should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalKeyDataFieldEnabled());
         Assert.assertFalse("Additional Key Managed Field should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalKeyManagedEnabled());

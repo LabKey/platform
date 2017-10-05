@@ -24,6 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.pages.DesignerController.DesignerTester;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -217,17 +218,18 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         assertTextPresent("Day 12");
-        clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-        setFormElement(Locator.name("typeName"), "Simple");
-        clickButton("Next");
-        waitForElement(Locator.name("ff_name0"), WAIT_FOR_JAVASCRIPT);
-        _listHelper.setColumnName(0, "Value");
-        clickButton("Save");
-        waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
-        clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickImportBulkData();
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+                .goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName("Simple")
+                .submit();
+        editDatasetPage.getFieldsEditor()
+                .selectField(0).setName("Value");
+        editDatasetPage
+                .save()
+                .clickViewData()
+                .getDataRegion()
+                .clickImportBulkData();
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
 
         _customizeViewsHelper.openCustomizeViewPanel();

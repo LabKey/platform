@@ -31,6 +31,7 @@ import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PagingWidget;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -186,23 +187,20 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void renameDataset(String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
     {
-        _studyHelper.goToManageDatasets();
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(orgName)
+                .clickEditDefinition();
 
-        waitForElement(Locator.xpath("//a[text()='" + orgName + "']"));
-        click(Locator.xpath("//a[text()='" + orgName + "']"));
-        waitForText("Edit Definition");
-        clickButton("Edit Definition");
-
-        waitForElement(Locator.xpath("//input[@name='dsName']"));
-        setFormElement(Locator.xpath("//input[@name='dsName']"), newName);
-        setFormElement(Locator.xpath("//input[@name='dsLabel']"), newLabel);
+        editDatasetPage
+                .setDatasetName(newName)
+                .setDatasetLabel(newLabel);
 
         for (String fieldName : fieldNames)
         {
             assertTextPresent(fieldName);
         }
 
-        clickButton("Save");
+        editDatasetPage.save();
 
         // fix dataset label references in report and view mappings
         for (Map.Entry<String, String> entry : EXPECTED_REPORTS.entrySet())
@@ -220,11 +218,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void importDatasetData(String datasetName, String header, String tsv, String msg)
     {
-        _studyHelper.goToManageDatasets();
-        waitForElement(Locator.xpath("//a[text()='" + datasetName + "']"));
-        click(Locator.xpath("//a[text()='" + datasetName + "']"));
-        waitForText("Dataset Properties");
-        clickButtonContainingText("View Data");
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickViewData();
         waitForText("All data");
         new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         waitForText("Copy/paste text");
@@ -236,12 +232,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void deleteFields(String name)
     {
-        _studyHelper.goToManageDatasets();
-
-        waitForElement(Locator.xpath("//a[text()='" + name + "']"));
-        click(Locator.xpath("//a[text()='" + name + "']"));
-        waitForText("Edit Definition");
-        clickButton("Edit Definition");
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(name)
+                .clickEditDefinition();
 
         waitForElement(Locator.xpath("//div[@id='partdelete_2']"));
         click(Locator.id("partdelete_2"));
@@ -258,12 +251,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void checkFieldsPresent(String name, String... items)
     {
-        _studyHelper.goToManageDatasets();
-
-        waitForElement(Locator.xpath("//a[text()='" + name + "']"));
-        click(Locator.xpath("//a[text()='" + name + "']"));
-        waitForText("Edit Definition");
-        clickButton("Edit Definition");
+        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(name)
+                .clickEditDefinition();
 
         for (String item : items)
         {
@@ -276,15 +266,10 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     {
         clickProject(getProjectName());
         clickFolder(getFolderName());
-        _studyHelper.goToManageDatasets();
-        waitForElement(Locator.xpath("//a[text()='" + name + "']"));
-        click(Locator.xpath("//a[text()='" + name + "']"));
-        waitForText("Dataset Properties");
-        clickButtonContainingText("View Data");
-        for (String item : items)
-        {
-            waitForText(item);
-        }
+        _studyHelper.goToManageDatasets()
+                .selectDatasetByName(name)
+                .clickViewData();
+        waitForText(items);
     }
 
     @LogMethod
