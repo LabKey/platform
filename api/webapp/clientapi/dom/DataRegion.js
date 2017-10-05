@@ -3717,24 +3717,23 @@ if (!LABKEY.DataRegions) {
             }
         }
 
-        var me = this,
-            timeout;
-
-        var BOTTOM_OFFSET = 100;
-        var HEADER_CONSTANT = 93;
-        // TODO: Determine offset based on page layout
-
         var headerRowId = region.domId + '-column-header-row';
         var headerRow = $('#' + headerRowId);
+        var pageHeader = $('.lk-header-ct');
 
-        if (!headerRow) {
+        if (headerRow.length === 0 || pageHeader.length === 0) {
             region._allowHeaderLock = false;
             return;
         }
 
-        var locked = false;
-        var lastLeft = 0;
-        var pos = [ 0, 0, 0, 0 ];
+        var BOTTOM_OFFSET = 100;
+        var HEADER_CONSTANT = pageHeader.height();
+
+        var me = this,
+            timeout,
+            locked = false,
+            lastLeft = 0,
+            pos = [ 0, 0, 0, 0 ];
 
         // init
         var floatRow = headerRow
