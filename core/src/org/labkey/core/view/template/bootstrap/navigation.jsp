@@ -55,6 +55,7 @@
     List<NavTree> tabs = model.getTabs();
     LinkedHashSet<Pair<String, Portal.WebPart>> menus = new LinkedHashSet<>();
     boolean isPageAdminMode = PageFlowUtil.isPageAdminMode(getViewContext()) && !c.isRoot();
+    boolean isMobile = false; // disabled mobile until experience is refined
 
     // process custom menus
     for (Portal.WebPart menu : model.getCustomMenus())
@@ -79,13 +80,12 @@
 
         menus.add(new Pair<>(caption, menu));
     }
-
-    // TODO need support for sub-tabs of a container tab (see example in TabTest)
 %>
 <nav class="labkey-page-nav">
     <div class="container">
         <div id="nav_dropdowns" class="navbar-header">
             <ul class="nav">
+                <% if (isMobile) { %>
                 <li id="project-mobile" class="dropdown" style="display: none;">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
 <%
@@ -146,29 +146,19 @@
                         <ul class="mobiledrop-menu dropdown-menu lk-dropdown-menu-area"></ul>
                     </ul>
                 </li>
-<%
-                if (context.isShowFolders())
-                {
-%>
-                <li class="dropdown" data-webpart="BetaNav" data-name="BetaNav">
+                <% } if (context.isShowFolders()) { %>
+                <li class="dropdown" data-webpart="FolderNav" data-name="FolderNav">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
                     </a>
                     <ul class="dropdown-menu"></ul>
                 </li>
-<%
-                }
-
-                for (Pair<String, Portal.WebPart> pair : menus)
-                {
-%>
+                <% } for (Pair<String, Portal.WebPart> pair : menus) { %>
                 <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
-<%
-                }
-%>
+                <% } %>
             </ul>
         </div>
         <div id="nav_tabs" class="lk-nav-tabs-ct">

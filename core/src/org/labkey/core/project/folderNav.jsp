@@ -24,9 +24,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -42,13 +43,23 @@
     Container c = getContainer();
     List<Container> containers = ContainerManager.containersToRootList(c);
     int size = containers.size();
+    boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
-    ActionURL createFolderURL = new ActionURL(AdminController.CreateFolderAction.class, c);
-    createFolderURL.addParameter(ActionURL.Param.returnUrl, c.getStartURL(user).toString());
+    ActionURL startURL = c.getStartURL(getUser()); // 30975: Return to startURL due to async view context
+
+    ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(null);
+    createProjectURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
+
+    ActionURL createFolderURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, null);
+    createFolderURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
+
+    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 %>
 <%!
     public _HtmlString getTrailSeparator()
     {
+        if (PageFlowUtil.useExperimentalCoreUI())
+            return _hs("&nbsp;/&nbsp;");
         return _hs("&nbsp;<img src=\"" + getWebappURL("/_images/arrow_breadcrumb.png") + "\" alt=\"\">&nbsp;");
     }
 
@@ -61,12 +72,7 @@
         return _hs("<span>" + h(c.getTitle()) + "</span>" + getTrailSeparator());
     }
 %>
-<div>
-<%
-    // Only show the nav trail if subfolders exist
-    if (size > 1)
-    {
-%>
+<% if (size > 1) { // Only show the nav trail if subfolders exist %>
     <div class="folder-trail">
         <%
             if (size < 5)
@@ -94,13 +100,67 @@
             }
         %>
     </div>
-<%
-    }
-%>
-    <div id="folder-tree-wrap" class="folder-tree">
-        <% me.include(form.getFolderMenu(), out); %>
-    </div>
+<% } if (newUI) {%>
+<div class="folder-tree"><% me.include(form.getFolderMenu(), out); %></div>
+<div class="folder-menu-buttons">
+    <% if (getUser().hasRootAdminPermission()) { %>
+    <span class="folder-menu-button-icon">
+        <a href="<%=createProjectURL%>" title="New Project">
+            <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
+                <span class="fa fa-folder-open-o fa-stack-2x labkey-main-menu-icon" alt="New Project"></span>
+                <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
+            </span>
+        </a>
+    </span>
+    <% } if (c.hasPermission(getUser(), AdminPermission.class)) {%>
+    <span class="folder-menu-button-icon" style="margin-left: 2px">
+        <a href="<%=createFolderURL%>" title="New Subfolder">
+            <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
+                <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
+                <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
+            </span>
+        </a>
+    </span>
+    <span class="folder-menu-button-icon" style="margin-left: 6px;">
+        <a href="<%=folderManagementURL%>" title="Folder Management">
+            <span class="fa fa-gear" alt="Folder Management"></span>
+        </a>
+    </span>
+    <% } if (!c.isRoot()) { %>
+    <span class="folder-menu-button-icon" style="margin-left: -2px">
+            <a id="permalink_vis" href="#" title="Permalink Page">
+                <span class="fa fa-link" alt="Permalink Page"></span>
+            </a>
+        </span>
+    <% } %>
 </div>
+<script type="text/javascript">
+    +function($) {
+        'use strict';
+
+        var toggle = function() {
+            $(this).parent().toggleClass('expand-folder').toggleClass('collapse-folder');
+        };
+
+        $(function() {
+            var menu = $('.folder-tree');
+            var s = menu.find('.nav-tree-selected');
+            if (s && s.length > 0) {
+                try { s[0].scrollIntoView({block: 'center'}); } catch(e) { s[0].scrollIntoView(); /* default support */ }
+            }
+
+            menu.on('click', '.clbl span.marked', toggle);
+
+            var p = document.getElementById('permalink');
+            var pvis = document.getElementById('permalink_vis');
+            if (p && pvis) {
+                pvis.href = p.href;
+            }
+        });
+    }(jQuery);
+</script>
+<% } else { %>
+<div id="folder-tree-wrap" class="folder-tree"><% me.include(form.getFolderMenu(), out); %></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
 
@@ -184,3 +244,4 @@
         })();
     </script>
 </div>
+<%  } %>

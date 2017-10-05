@@ -142,7 +142,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.FrameFactoryClassic;
-import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.view.template.TemplateFactoryClassic;
 import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
@@ -353,8 +352,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminConsole.addExperimentalFeatureFlag(PageFlowUtil.EXPERIMENTAL_MIGRATE_CORE_UI, "Core UI Migration",
                 "Use the templates and styling being built during the core UI migration.", false);
-        AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
-                "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
@@ -405,8 +402,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     FolderNavigationForm form = getForm(portalCtx);
 
-                    final FolderMenu folders = new FolderMenu(portalCtx);
-                    form.setFolderMenu(folders);
+                    form.setFolderMenu(new FolderMenu(portalCtx));
 
                     JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/folderNav.jsp", form);
                     view.setTitle("Folder Navigation");
@@ -524,35 +520,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     view.setTitle(form.getTitle());
                     view.setFrame(WebPartView.FrameType.PORTAL);
                     return view;
-                }
-            },
-            new BaseWebPartFactory("BetaNav")
-            {
-                @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
-                {
-                    FolderNavigationForm form = getForm(portalCtx);
-
-                    final FolderMenu folders = new FolderMenu(portalCtx);
-                    form.setFolderMenu(folders);
-
-                    JspView<FolderNavigationForm> view = new JspView<>("/org/labkey/core/project/betaNav.jsp", form);
-                    view.setTitle("Beta Navigation");
-                    view.setFrame(WebPartView.FrameType.NONE);
-                    return view;
-                }
-
-                @Override
-                public boolean isAvailable(Container c, String location)
-                {
-                    return false;
-                }
-
-                private FolderNavigationForm getForm(ViewContext context)
-                {
-                    FolderNavigationForm form = new FolderNavigationForm();
-                    form.setPortalContext(context);
-                    return form;
                 }
             },
             new BaseWebPartFactory("MenuProjectNav")
