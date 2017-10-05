@@ -17,9 +17,13 @@
 package org.labkey.api.files.view;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.data.Container;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -148,6 +152,19 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         public void setTitle(String title)
         {
             _title = title;
+        }
+
+        public List<String> getEnabledCloudStores(Container container)
+        {
+            List<String> cloudStoreNames = new ArrayList<>();
+            CloudStoreService cloud = CloudStoreService.get();
+            if (cloud != null)
+            {
+                for (String store : cloud.getEnabledCloudStores(container))
+                    if (CloudStoreService.get().containerFolderExists(store, container))
+                        cloudStoreNames.add(store);
+            }
+            return cloudStoreNames;
         }
     }
 }

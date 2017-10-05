@@ -27,7 +27,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -38,12 +38,7 @@
     FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
     Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
-    Collection<String> cloudStoreNames = Collections.emptyList();
-    CloudStoreService cloud = CloudStoreService.get();
-    if (cloud != null)
-    {
-        cloudStoreNames = cloud.getEnabledCloudStores(getContainer());
-    }
+    List<String> cloudStoreNames = form.getEnabledCloudStores(getContainer());
 
     boolean small = false;
     boolean medium = false;

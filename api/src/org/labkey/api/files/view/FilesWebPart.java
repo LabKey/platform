@@ -589,8 +589,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _statePrefix = statePrefix;
         }
 
-        public boolean isRootValid()
+        public boolean isRootValid(Container container)
         {
+            if (isCloudRootPath(_rootPath))
+            {
+                return isCloudStoreEnabled(_rootPath, container);
+            }
             return (_rootDirectory != null && _rootDirectory.exists());
         }
 
@@ -643,5 +647,34 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             this._isListing = listing;
         }
+    }
+
+    private static final String CLOUD_PATTERN = "%40cloud/";
+    private static boolean isCloudStoreEnabled(String path, Container container)
+    {
+        int cloudIndex = StringUtils.indexOf(path, CLOUD_PATTERN);
+        if (-1 != cloudIndex)
+        {
+            String config = StringUtils.substring(path, cloudIndex + CLOUD_PATTERN.length());
+            int slashIndex = StringUtils.indexOf(config, "/");
+            if (-1 != slashIndex)
+                config = StringUtils.substring(config, 0, slashIndex);
+
+            for (String store : CloudStoreService.get().getEnabledCloudStores(getContextContainer()))
+            {
+                if (config.equalsIgnoreCase(store))
+                {
+                    // Store is enabled; if non-null then it exists
+                    return CloudStoreService.get().containerFolderExists(store, container);
+                }
+            }
+            return false;
+        }
+        return true;    // Not cloud store
+    }
+
+    private static boolean isCloudRootPath(String path)
+    {
+        return -1 != StringUtils.indexOf(path, CLOUD_PATTERN);
     }
 }

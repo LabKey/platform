@@ -52,6 +52,11 @@ public interface CloudStoreService
     boolean isEnabled(String storeName, Container container);
 
     /**
+     * Returns true if bucket associated with store exists.
+     */
+    boolean containerFolderExists(String storeName, Container container);
+
+    /**
      * Returns a list of all store names.
      */
     public Collection<String> getCloudStores();

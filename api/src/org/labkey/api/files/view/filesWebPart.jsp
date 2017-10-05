@@ -49,7 +49,7 @@
     File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=projConfig%>">project settings</a> view.
 <%
     }
-    else if (!bean.isRootValid())
+    else if (!bean.isRootValid(c))
     {
 %>
     <span class="labkey-error">
