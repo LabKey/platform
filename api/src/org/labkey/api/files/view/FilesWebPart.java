@@ -430,7 +430,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private Integer _height = null;
         private boolean _isListing;
 
-        public enum actions {
+        public enum actions
+        {
             download,
             deletePath,
             renamePath,
@@ -591,9 +592,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public boolean isRootValid(Container container)
         {
-            if (isCloudRootPath(_rootPath))
+            if (isCloudRootPath())
             {
-                return isCloudStoreEnabled(_rootPath, container);
+                return isCloudStoreEnabled(container);
             }
             return (_rootDirectory != null && _rootDirectory.exists());
         }
@@ -647,34 +648,35 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             this._isListing = listing;
         }
-    }
 
-    private static final String CLOUD_PATTERN = "%40cloud/";
-    private static boolean isCloudStoreEnabled(String path, Container container)
-    {
-        int cloudIndex = StringUtils.indexOf(path, CLOUD_PATTERN);
-        if (-1 != cloudIndex)
+        private static final String CLOUD_PATTERN = "%40cloud/";
+
+        private boolean isCloudStoreEnabled(Container container)
         {
-            String config = StringUtils.substring(path, cloudIndex + CLOUD_PATTERN.length());
-            int slashIndex = StringUtils.indexOf(config, "/");
-            if (-1 != slashIndex)
-                config = StringUtils.substring(config, 0, slashIndex);
-
-            for (String store : CloudStoreService.get().getEnabledCloudStores(getContextContainer()))
+            int cloudIndex = StringUtils.indexOf(_rootPath, CLOUD_PATTERN);
+            if (-1 != cloudIndex)
             {
-                if (config.equalsIgnoreCase(store))
-                {
-                    // Store is enabled; if non-null then it exists
-                    return CloudStoreService.get().containerFolderExists(store, container);
-                }
-            }
-            return false;
-        }
-        return true;    // Not cloud store
-    }
+                String config = StringUtils.substring(_rootPath, cloudIndex + CLOUD_PATTERN.length());
+                int slashIndex = StringUtils.indexOf(config, "/");
+                if (-1 != slashIndex)
+                    config = StringUtils.substring(config, 0, slashIndex);
 
-    private static boolean isCloudRootPath(String path)
-    {
-        return -1 != StringUtils.indexOf(path, CLOUD_PATTERN);
+                for (String store : CloudStoreService.get().getEnabledCloudStores(getContextContainer()))
+                {
+                    if (config.equalsIgnoreCase(store))
+                    {
+                        // Store is enabled; if non-null then it exists
+                        return CloudStoreService.get().containerFolderExists(store, container);
+                    }
+                }
+                return false;
+            }
+            return true;    // Not cloud store
+        }
+
+        public boolean isCloudRootPath()
+        {
+            return -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN);
+        }
     }
 }

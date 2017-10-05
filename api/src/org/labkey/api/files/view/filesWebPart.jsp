@@ -51,12 +51,24 @@
     }
     else if (!bean.isRootValid(c))
     {
+        if (bean.isCloudRootPath())
+        {
+%>
+    <span class="labkey-error">
+        The cloud config for this web part is invalid. It may not exist or may have been configured incorrectly.<br>
+        <%=text("Contact your administrator to address this problem.")%>
+    </span>
+<%
+        }
+        else
+        {
 %>
     <span class="labkey-error">
         The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
         <%=text(c.hasPermission(getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
     </span>
 <%
+        }
     }
     else
     {
