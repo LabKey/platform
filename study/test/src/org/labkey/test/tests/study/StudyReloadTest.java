@@ -55,23 +55,11 @@ public class StudyReloadTest extends StudyBaseTest
         assertTextPresent("id006", "additional_column", "1234566");
         //text that was present in original but removed in the update
         assertTextNotPresent("original_column_numeric");
-        verifyProtectedColumn();
 
         //verify skipping query validation during reload
         reloadStudyFromZip(TestFileUtils.getSampleData("studyreload/edited.zip"), false, 3);
         new PipelineStatusTable(this).clickStatusLink(0);
         checkQueryValidationInLog(false);
-    }
-
-    private void verifyProtectedColumn()
-    {
-        _extHelper.clickMenuButton(true, "Manage");
-        clickButtonContainingText("Edit Definition");
-        Locator.NameLocator ff_name1 = Locator.name("ff_name1");
-        waitForElement(ff_name1);
-        click(ff_name1);
-        click(Locator.linkContainingText("Advanced"));
-        assertEquals("on", getAttribute(Locator.name("protected"), "value"));
     }
 
     private void checkQueryValidationInLog(boolean expectQueryValidation)
