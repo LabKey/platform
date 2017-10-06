@@ -145,6 +145,7 @@ Ext4.onReady(function() {
     var panelCfg = {
         id: 'projects-panel-<%=webPartId%>',
         iconField: 'iconurl',
+        iconCls: LABKEY.experimental.useExperimentalCoreUI ? 'fa-folder-open' : '',
         labelField: 'DisplayName',
         urlField: 'url',
         region : 'center',
@@ -193,6 +194,7 @@ Ext4.onReady(function() {
         autoResize: false,
         border   : false, frame : false,
         style    : 'background-color: transparent;',
+        cls      : 'labkey-projects-container',
         items    : [panel]
     });
 });

@@ -118,13 +118,13 @@ $lk-button-bg-color-hover: $lk-accent-color !default; // theme variable
 $lk-button-border-color: $lk-accent-color !default; // theme variable
 $lk-button-border-color-hover: $lk-accent-color !default; // theme variable
 $lk-button-border-radius: 0 !default;
-$lk-button-border-size: 1px !default; // theme variable
+$lk-button-border-size: 2px !default; // theme variable
 $lk-button-color: $lk-accent-color !default; // theme variable
 $lk-button-color-hover: $white !default; // theme variable
 $lk-button-font-family: $lk-body-font-family !default; // theme variable
 $lk-button-font-weight: bold !default;
 $lk-button-letter-spacing: 0.5px !default;
-$lk-button-padding: $lk-padding-base-vertical $lk-padding-base-horizontal !default;
+$lk-button-padding: 3px $lk-padding-base-horizontal !default;
 $lk-button-text-transform: uppercase !default;
 
 $lk-button-primary-bg-color: $lk-accent-color !default; // theme variable
@@ -136,6 +136,7 @@ $lk-button-primary-border-size: 1px !default; // theme variable
 $lk-button-primary-border-color: darken($lk-button-primary-bg-color, 5%) !default; // theme variable
 $lk-button-primary-border-color-hover: ($lk-brand-color, 5%) !default; // theme variable
 
+$lk-button-disabled-color: #AAAAAA !default;
 $lk-button-disabled-cursor: not-allowed !default;
 $lk-button-disabled-opacity: 0.65 !default;
 
@@ -157,6 +158,7 @@ $lk-dialog-body-bg-color: $white !default;
 //== Dropdowns
 //
 $lk-dropdown-bg-color: $white !default; // theme variable
+$lk-dropdown-border-color: rgba(0,0,0,.15) !default;
 $lk-dropdown-font-size: $lk-font-size-base !default;
 $lk-dropdown-link-color: $gray-dark !default;
 $lk-dropdown-link-hover-color: $white !default; // theme variable

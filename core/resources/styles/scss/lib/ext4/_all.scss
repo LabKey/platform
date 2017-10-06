@@ -1945,6 +1945,8 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
   }
 
   opacity: $lk-button-disabled-opacity;
+  color: $lk-button-disabled-color;
+  border-color: $lk-button-disabled-color;
 
   .x4-frame-tl,
   .x4-frame-bl,
@@ -1962,6 +1964,10 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 
   .x4-frame-mc {
     background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-fbg.gif');
+  }
+
+  .x4-btn-inner {
+    color: $lk-button-disabled-color;
   }
 }
 
