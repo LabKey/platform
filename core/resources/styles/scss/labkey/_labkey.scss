@@ -1411,6 +1411,19 @@ div span.labkey-main-menu-icon {
   display: none;
 }
 
+.labkey-projects-container {
+  .fa-folder-open {
+    color: $lk-theme-dark-accent;
+  }
+  .thumb-wrap {
+    &:hover {
+      .fa-folder-open {
+        color: $lk-theme-light-accent;
+      }
+    }
+  }
+}
+
 @import "components/header";
 @import "components/navigation";
 @import "components/menu";
