@@ -9649,7 +9649,7 @@ a.x4-color-picker-item:hover {
   border-bottom-color: $grid-row-cell-selected-border-color;
   background-color: $lk-dropdown-link-hover-bg;
 
-  .x4-tree-node-text {
+  .x4-tree-node-text, .x4-tree-icon, .x4-grid-cell-inner, a, td {
     color: $lk-grid-row-select-color-hover;
   }
 }

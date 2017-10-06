@@ -38,6 +38,8 @@ $lk-primary-bg-color: #F8F8F8 !default;
 $lk-border-title-color: #676767 !default;
 $lk-webpart-color: #E0E6EA !default;
 
+$lk-gray-blue: #dadfe1 !default;
+
 //== Fonts
 //
 $lk-font-size-base: 14px !default;
@@ -235,7 +237,7 @@ $lk-page-header-bg-color: $white !default; // theme variable
 $lk-page-header-text-color: $lk-brand-color !default; // theme variable
 $lk-page-header-icon-color: $lk-brand-color !default; // theme variable
 $lk-page-header-font-hover-color: $lk-brand-color !default; // theme variable
-$lk-page-header-icon-hover-color: $lk-brand-color !default; // theme variable
+$lk-page-header-icon-hover-color: $lk-gray-blue !default; // theme variable
 $lk-page-header-icon-size: 20px !default; //TODO: investigate
 $lk-page-header-padding: 12px 0 !default; //TODO: investigate
 $lk-page-header-navbar-nav-padding: 5px 8px !default; //TODO: investigate
