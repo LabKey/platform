@@ -960,7 +960,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Manage New Request Form"));
         log("Export Request forms");
         setFormElement(Locator.tagWithAttribute("input", "value", "Assay Plan"), "Assay Plan-1");
-        click(Locator.tag("img").withAttributeContaining("src", "downarrow.gif").index(2));
+        click(Locator.tagWithClass("i", "fa fa-arrow-down").index(2));
         clickButton("Add New Input", 0);
 
         Locator input1 = Locator.xpath("(//input[@type='text' and @name='title'])[4]");
