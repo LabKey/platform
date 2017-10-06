@@ -10,6 +10,7 @@
     @param (string) [labelPosition] The initial labPosition, either 'bottom' or 'side' (defaults to bottom)
     @param (object) [store] The Ext4 store holding the data
     @param (string) [iconField] The field name in the store holding the URL to the icon
+    @param (string) [iconCls] The font-awesome class used for all icons, if provided, will ignore iconField
     @param (string [labelField] The field holding the value to be used as the label.
     @param {string} [tooltipField] The field holding the value to be used as a tooltip
     @param (string) [urlField] The field name holding the URL for each icon
@@ -144,8 +145,8 @@ Ext4.define('LABKEY.ext.IconPanel', {
                         '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>',
                         'style="width: {thumbWidth};" class="tool-icon thumb-wrap thumb-wrap-{labelPosition}">',
                         '<a ' + '<tpl if="url">href="{url}"</tpl>' + '>',
-                        '<tpl if="useDefaultIconUrl">',
-                            '<div class="thumb-img-{labelPosition}"><span class="fa fa-folder-open {imageSize}"></span></div>',
+                        '<tpl if="iconCls">',
+                            '<div class="thumb-img-{labelPosition}"><span class="fa {iconCls} {imageSize}"></span></div>',
                         '<tpl else>',
                             '<div class="thumb-img-{labelPosition}"><img src="{iconurl}" style="width: {imageSize}px;height: {imageSize}px;" class="thumb-{iconSize}"></div>',
                         '</tpl>',
@@ -173,9 +174,11 @@ Ext4.define('LABKEY.ext.IconPanel', {
                 var panel = this.up('panel');
                 var item = Ext4.apply({}, this.renderData);
 
-                if(panel.iconField){
+                if (panel.iconCls) {
+                    item.iconCls = panel.iconCls;
+                }
+                else if(panel.iconField){
                     item.iconurl = d[panel.iconField];
-                    item.useDefaultIconUrl = item.iconurl === "";
                 }
                 if(panel.labelField)
                     item.label = d[panel.labelField];
@@ -186,7 +189,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
 
                 var multiplier = 1.66;
                 var imageSizePx = this.imageSizeMap[this.renderData.iconSize];
-                item.imageSize = item.useDefaultIconUrl ? this.faImageSizeMap[this.renderData.iconSize] : imageSizePx;
+                item.imageSize = item.iconurl == null ? this.faImageSizeMap[this.renderData.iconSize] : imageSizePx;
                 item.thumbWidth = item.labelPosition=='bottom' ? imageSizePx * multiplier + 'px':  '100%';
                 item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(Math.ceil(imageSizePx * multiplier)) : 1;
                 return item;

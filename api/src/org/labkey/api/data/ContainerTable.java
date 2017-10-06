@@ -281,7 +281,8 @@ public class ContainerTable extends FilteredTable<UserSchema>
             FolderType ft = c.getFolderType();
             Path iconPath = Path.parse(ft.getFolderIconPath());
 
-            if (iconPath.toString().equals(DefaultFolderType.DEFAULT_FOLDER_ICON_PATH))
+            //TODO support folder type icons in new UI
+            if (PageFlowUtil.useExperimentalCoreUI() && iconPath.toString().equals(DefaultFolderType.DEFAULT_FOLDER_ICON_PATH))
             {
                 return "";
             }
