@@ -52,7 +52,7 @@ public class FolderMenu extends NavTreeMenu
         {
             if (context.getContainer() != null)
             {
-                return Collections.singletonList(ContainerManager.getFolderListForUser(ContainerManager.getRoot(), getRootContext()));
+                return Collections.singletonList(ContainerManager.getFolderListForUser(ContainerManager.getRoot(), context));
             }
 
             return null;
