@@ -400,6 +400,24 @@ public class ContainerManager
         }
     }
 
+    public static void checkContainerValidity(Container c) throws ContainerException
+    {
+        // Check container for validity; in rare cases user may have changed their custom folderType.xml and caused
+        // duplicate subfolders (same name) to exist
+        // Get list of child containers that are not container tabs, but match container tabs; these are bad
+        FolderType folderType = ContainerManager.getFolderType(c);
+        List<String> errorStrings = new ArrayList<>();
+        List<Container> childTabFoldersNonMatchingTypes = new ArrayList<>();
+        List<Container> containersMatchingTabs = ContainerManager.findAndCheckContainersMatchingTabs(c, folderType, childTabFoldersNonMatchingTypes, errorStrings);
+        if (!containersMatchingTabs.isEmpty())
+        {
+            throw new Container.ContainerException("Folder " + c.getPath() +
+                   " has a subfolder with the same name as a container tab folder, which is an invalid state." +
+                   " This may have been caused by changing the folder type's tabs after this folder was set to its folder type." +
+                   " An administrator should either delete the offending subfolder or change the folder's folder type.\n");
+        }
+    }
+
     public static List<Container> findAndCheckContainersMatchingTabs(Container c, FolderType folderType,
                                                                      List<Container> childTabFoldersNonMatchingTypes, List<String> errorStrings)
     {
