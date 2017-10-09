@@ -545,7 +545,7 @@ public class StudyExportTest extends StudyManualTest
     {
         clickFolder(getFolderName());
         _studyHelper.goToManageDatasets()
-                .selectDatasetByName(dataset)
+                .selectDatasetByLabel(dataset)
                 .clickEditDefinition()
                 .setCategory(category)
                 .save();
