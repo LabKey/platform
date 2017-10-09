@@ -167,14 +167,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.beans.Introspector;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -4302,15 +4299,13 @@ public class AdminController extends SpringActionController
                 }
                 case 2:
                 {
-                    // Write to stream first, so any error can be reported properly
-                    try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); OutputStream outputStream = new BufferedOutputStream(baos))
+                    try
                     {
-                        try (ZipFile zip = new ZipFile(outputStream, true))
+                        ContainerManager.checkContainerValidity(container);
+                        try (ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
                         {
                             writer.write(container, ctx, zip);
                         }
-
-                        PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"), baos.toByteArray(), false);
                     }
                     catch (Container.ContainerException e)
                     {
