@@ -360,8 +360,17 @@
     <%=text(bean.renderAttachments(context, comment))%><%
     }%>
     </labkey:panel>
-    <% } %>
+    <% }
 
+    if (bean.getCallbackURL() != null)
+    {%>
+        <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/><%
+    }
+
+    if (bean.getReturnURL() != null)
+    {%>
+        <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/><%
+    }%>
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
