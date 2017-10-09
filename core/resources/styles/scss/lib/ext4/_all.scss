@@ -1945,8 +1945,6 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
   }
 
   opacity: $lk-button-disabled-opacity;
-  color: $lk-button-disabled-color;
-  border-color: $lk-button-disabled-color;
 
   .x4-frame-tl,
   .x4-frame-bl,
@@ -1964,10 +1962,6 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 
   .x4-frame-mc {
     background-image: url('#{$ext4-images-dir}/btn/btn-default-small-disabled-fbg.gif');
-  }
-
-  .x4-btn-inner {
-    color: $lk-button-disabled-color;
   }
 }
 
@@ -9649,7 +9643,7 @@ a.x4-color-picker-item:hover {
   border-bottom-color: $grid-row-cell-selected-border-color;
   background-color: $lk-dropdown-link-hover-bg;
 
-  .x4-tree-node-text, .x4-tree-icon, .x4-grid-cell-inner, a, td {
+  .x4-tree-node-text {
     color: $lk-grid-row-select-color-hover;
   }
 }

@@ -148,14 +148,17 @@ div.facet_header .x4-panel-header-text
   background-color: #ffffff;
 }
 
-.x4-progress-default .x4-progress-bar-default {
-  background-color: $lk-secondary-brand-color;
-}
 .x4-progress-default {
-  border-color: $lk-secondary-brand-color;
-}
-.x4-progress-default .x4-progress-text-back {
-  color: $lk-text-color;
+  border-color: $lk-button-color;
+
+  .x4-progress-bar-default {
+    background-color: $lk-button-color;
+    background-image: none !important;
+  }
+
+  .x4-progress-text-back {
+    color: $lk-text-color;
+  }
 }
 
 a.x4-menu-item-link {
@@ -256,4 +259,18 @@ a div.x4-menu-item-icon.fa-users {
 .x4-tab-default-active .x4-tab-glyph, .x4-tab-default-active .x4-tab-inner {
   color: $lk-active-tab-color;
   opacity: 1;
+}
+
+.x4-btn-default-small-disabled {
+  color: $lk-button-disabled-color;
+  border-color: $lk-button-disabled-color;
+  .x4-btn-inner {
+    color: $lk-button-disabled-color;
+  }
+}
+
+.x4-grid-row-selected .x4-grid-td {
+  .x4-tree-icon, .x4-grid-cell-inner, a, td {
+    color: $lk-grid-row-select-color-hover;
+  }
 }

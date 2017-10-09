@@ -21,6 +21,11 @@ $lk-theme-light-accent: $Madison-red;
 $lk-text-color: $Madison-body-font-color;
 $lk-link-color: $Madison-anchor-color;
 
+$lk-danger-color: #5d0a8a;
+$lk-state-danger-text: #5d0a8a;
+$lk-state-danger-bg: #5d0a8a;
+$lk-state-danger-border: #5d0a8a;
+
 //== Forms / States
 //
 $lk-form-label-color: $Madison-gray-darkest;
@@ -67,8 +72,6 @@ $lk-dropdown-link-hover-bg: $Madison-red-dark;
 //== Grids
 //
 $lk-grid-row-bg-color: $Madison-page-bkgd;
-$lk-grid-row-alt-bg-color: $Madison-gray-blue;
-$lk-grid-row-color-hover: $Madison-gray-footer-text;
 $lk-grid-row-select-color: $Madison-anchor-color;
 $lk-grid-row-select-text-color: $Madison-page-bkgd;
 $lk-grid-row-select-link-color: $Madison-gray-blue;
