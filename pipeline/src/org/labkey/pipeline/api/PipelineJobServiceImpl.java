@@ -52,6 +52,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -969,22 +970,26 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
             LOG.info(factoryCount + " task factories defined in all modules");
 
-            // Make sure the cache retrieves the expected number of pipelines and factories from a couple test modules, if present
+            // Make sure the cache retrieves the expected number of pipelines and factories from a couple test modules,
+            // if an R engine is configured and the test modules are present
 
-            Module pipelinetest = ModuleLoader.getInstance().getModule("pipelinetest");
-
-            if (null != pipelinetest)
+            if (RReport.isEnabled())
             {
-                assertEquals("Task pipelines from pipelinetest module", 6, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
-                assertEquals("Task factories from pipelinetest module", 3, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
-            }
+                Module pipelinetest = ModuleLoader.getInstance().getModule("pipelinetest");
 
-            Module pipelinetest2 = ModuleLoader.getInstance().getModule("pipelinetest2");
+                if (null != pipelinetest)
+                {
+                    assertEquals("Task pipelines from pipelinetest module", 6, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task factories from pipelinetest module", 3, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
+                }
 
-            if (null != pipelinetest2)
-            {
-                assertEquals("Task pipelines from pipelinetest2 module", 2, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest2).size());
-                assertEquals("Task factories from pipelinetest2 module", 2, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest2).size());
+                Module pipelinetest2 = ModuleLoader.getInstance().getModule("pipelinetest2");
+
+                if (null != pipelinetest2)
+                {
+                    assertEquals("Task pipelines from pipelinetest2 module", 2, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest2).size());
+                    assertEquals("Task factories from pipelinetest2 module", 2, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest2).size());
+                }
             }
         }
 
