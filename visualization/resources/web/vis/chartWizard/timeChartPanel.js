@@ -8,7 +8,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     extend : 'Ext.panel.Panel',
 
     cls : 'time-chart-panel',
-    minWidth: 875,
+    minWidth: 900,
     border : false,
     layout: 'border',
     bodyStyle: 'background-color: white;',

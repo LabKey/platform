@@ -9,7 +9,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     cls : 'generic-chart-panel',
     layout : 'fit',
     editable : false,
-    minWidth : 800,
+    minWidth : 900,
 
     initialSelection : null,
     savedReportInfo : null,

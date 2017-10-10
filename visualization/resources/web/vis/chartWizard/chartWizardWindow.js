@@ -16,6 +16,11 @@ Ext4.define('LABKEY.vis.ChartWizardWindow', {
         {
             if (this.panelToMask)
                 this.panelToMask.getEl().mask();
+
+            // Issue 30864: narrow window results in left size of dialogs being cut off
+            if (this.getX() < 0) {
+                this.setPagePosition(10);
+            }
         },
         hide: function()
         {
@@ -63,7 +68,7 @@ Ext4.define('LABKEY.vis.ChartWizardPanel', {
                 cls: 'region-panel button-bar',
                 border: false,
                 ui: 'footer',
-                defaults: {width: 65},
+                defaults: {minWidth: 70},
                 items: this.bottomButtons
             });
         }
