@@ -2959,13 +2959,8 @@ public class SecurityManager
                 "access to your data on the web site.  To complete the registration process, simply click the link below or " +
                 "copy it to your browser's address bar.  You will then be asked to choose a password.\n\n" +
                 "^verificationURL^\n\n" +
-                "Note: The link above should appear on one line, starting with 'http' and ending with your email address.  Some " +
-                "email systems may break this link into multiple lines, causing the verification to fail.  If this happens, " +
-                "you'll need to paste the parts into the address bar of your browser to form the full link.\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^.  When you visit the home page " +
-                "and log in with your new password you will see a list of projects on the left side of the page.  Click those " +
-                "links to visit your projects.\n\n" +
-                "If you have any questions don't hesitate to contact the ^siteShortName^ team at ^systemEmail^.";
+                "The ^siteShortName^ home page is ^homePageURL^.  If you have any questions don't hesitate to " +
+                "contact the ^siteShortName^ team at ^systemEmail^.";
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationEmailTemplate()
@@ -3009,9 +3004,7 @@ public class SecurityManager
                 "to specify a new password.  Click the link below or copy it to your browser's address bar.  You will then be " +
                 "asked to enter a new password.\n\n" +
                 "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^.  When you visit the home page and log " +
-                "in with your new password you will see a list of projects on the left side of the page.  Click those links to " +
-                "visit your projects.";
+                "The ^siteShortName^ home page is ^homePageURL^.";
 
         public PasswordResetEmailTemplate()
         {

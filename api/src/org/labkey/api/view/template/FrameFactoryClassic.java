@@ -16,6 +16,7 @@
 package org.labkey.api.view.template;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -637,6 +638,52 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         }
     }
 
+    public static void startPanelFrame(Writer out, String title)
+    {
+        startPanelFrame(out, title, null, true);
+    }
+
+    public static void startPanelFrame(Writer out, String title, @Nullable Integer width, boolean useDefault)
+    {
+        if (!PageFlowUtil.useExperimentalCoreUI())
+        {
+            startTitleFrame(out, title, null, width != null ? width.toString() : null, null);
+            return;
+        }
+
+        try
+        {
+            String panelTypeCls = useDefault ? "panel-default" : "panel-portal";
+            String style = width != null ? "width: " + width + "px;" : "";
+            out.write("<div class=\"panel " + panelTypeCls + "\" style=\"" + style + "\">");
+            out.write(" <div class=\"panel-heading clearfix\">");
+            out.write("  <h3 class=\"panel-title pull-left\">" + PageFlowUtil.filter(title) + "</h3>");
+            out.write(" </div>");
+            out.write(" <div class=\"panel-body\">");
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    public static void endPanelFrame(Writer out)
+    {
+        if (!PageFlowUtil.useExperimentalCoreUI())
+        {
+            endTitleFrame(out);
+            return;
+        }
+
+        try
+        {
+            out.write("</div></div>");
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
 
     private void renderMenu(NavTree menu, PrintWriter out)
     {

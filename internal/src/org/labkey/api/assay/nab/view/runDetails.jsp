@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -45,26 +46,13 @@
     if (bean.needsNotesView())
     {
 %>
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix">
-            <h3 class="panel-title pull-left">
-                Notes
-            </h3>
-        </div>
-        <div class="panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Notes");%>
             <% me.include(bean.getRunNotesView(), out); %>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 <%
     }
 %>
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix">
-            <h3 class="panel-title pull-left">
-                Run Summary<%= h(assay.getRunName() != null ? ": " + assay.getRunName() : "") %>
-            </h3>
-        </div>
-        <div class="panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Run Summary" + (assay.getRunName() != null ? ": " + assay.getRunName() : ""));%>
             <% me.include(bean.getRunPropertiesView(), out); %>
             <br/>
             <table>
@@ -83,45 +71,23 @@
             </table>
             <br/>
             <% me.include(bean.getSamplePropertiesView(), out); %>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix">
-            <h3 class="panel-title pull-left">
-                <%=h(bean.getSampleNoun())%> Information
-            </h3>
-        </div>
-        <div class="panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, bean.getSampleNoun() + "Information");%>
             <% me.include(bean.getSampleDilutionsView(), out); %>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix">
-            <h3 class="panel-title pull-left">
-                Plate Data
-            </h3>
-        </div>
-        <div class="panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Plate Data");%>
             <% me.include(bean.getPlateDataView(), out); %>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 
 <%
     if (!bean.isPrintView() && writer)
     {
 %>
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix">
-            <h3 class="panel-title pull-left">
-                Discussions
-            </h3>
-        </div>
-        <div class="panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Discussions");%>
             <% me.include(bean.getDiscussionView(getViewContext()), out); %>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 <%
     }
 %>
