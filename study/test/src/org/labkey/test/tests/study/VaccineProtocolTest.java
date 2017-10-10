@@ -176,7 +176,6 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         setFormElement(Locator.name("quf_Value"), "One");
         submit();
 
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
         setupPipeline(getProjectName());
         defineAssay(getProjectName());
         uploadRun();
@@ -186,7 +185,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickButton("Copy to Study");
         clickButton("Next");
         clickButton("Copy to Study");
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
+        navigateToFolder(getProjectName(), STUDY_FOLDER);
 
         portalHelper.addWebPart("Datasets");
         clickAndWait(Locator.linkWithText("TestAssay1"));
@@ -215,7 +214,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
             fail("TestAssay1 table not present");
 */
 
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
+        navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         assertTextPresent("Day 12");
         EditDatasetDefinitionPage editDatasetPage = _studyHelper
@@ -236,22 +235,22 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         _customizeViewsHelper.addCustomizeViewColumn("Day");
         _customizeViewsHelper.applyCustomView();
         assertTextPresent("-120", "320");
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
+        navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         assertTextPresent("Day 320");
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Manage Timepoints"));
         setFormElement(Locator.name("startDate"), "2007-11-01");
         submit();
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
+        navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         //Make sure our guy picked up the new study start date
         assertTextPresent("Day 16");
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
+        navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Subjects"));
         DataRegionTable.findDataRegion(this).clickImportBulkData();
         _listHelper.submitTsvData("participantid\tDate\tCohort\tStartDate\nPnew\t11/7/2007\tPlacebo\t11/7/2007");
-        projectMenu().navigateToFolder(getProjectName(), STUDY_FOLDER);
+        navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         //Make sure our guy picked up the his personal start date
         assertTextPresent("Day 10");
