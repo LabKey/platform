@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -125,7 +126,18 @@ public class FolderMenu extends NavTreeMenu
         if (null != nav.getText())
             pathToHere = pathToHere + "/" + nav.getEscapedKey();
 
-        out.print("<li " + (hasChildren ? "class=\"clbl" + (shouldExpand ? " expand-folder" : " collapse-folder") + "\"" : "") + ">");
+        List<String> liCls = new ArrayList<>();
+        liCls.add("folder-tree-node");
+        if (hasChildren)
+        {
+            liCls.add("clbl");
+            if (shouldExpand)
+                liCls.add("expand-folder");
+            else
+                liCls.add("collapse-folder");
+        }
+
+        out.print("<li" + (!liCls.isEmpty() ? " class=\"" + String.join(" ", liCls) + "\"" : "") + ">");
 
         out.print("<span");
         if (hasChildren)
