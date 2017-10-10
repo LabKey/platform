@@ -237,11 +237,21 @@
                             {
                                 boolean show = isPageAdminMode || !tab.isDisabled();
 
-                                if (show && null != tab.getText() && tab.getText().length() > 0 && !tab.isSelected())
+                                if (show && null != tab.getText() && tab.getText().length() > 0)
                                 {
                         %>
                         <li>
-                            <a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%></a>
+                            <a href="<%=h(tab.getHref())%>">
+                                <% if (tab.isSelected())
+                                   {
+                                        %><b><%=h(tab.getText())%></b><%
+                                   }
+                                   else
+                                   {
+                                        %><%=h(tab.getText())%><%
+                                   }
+                                %>
+                            </a>
                         </li>
                         <%
                                 }
