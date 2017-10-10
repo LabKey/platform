@@ -18,11 +18,9 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -36,18 +34,15 @@
 <labkey:form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
-<table width="800px">
-    <tr>
-        <td>
     <%
-        FrameFactoryClassic.startTitleFrame(out, "Currently Defined Dataset QC States", null, "100%", null);
+        FrameFactoryClassic.startPanelFrame(out, "Currently Defined Dataset QC States");
     %>
         <table class="lk-fields-table">
             <tr>
                 <th>&nbsp;</th>
-                <th>State Name</th>
-                <th>State Description</th>
-                <th>Public Data<%= helpPopup("Public Data", "The 'Public Data' setting determines whether data in each QC state is shown to users by default.") %></th>
+                <th><b>State Name</b></th>
+                <th><b>State Description</b></th>
+                <th nowrap><b>Public Data<%= helpPopup("Public Data", "The 'Public Data' setting determines whether data in each QC state is shown to users by default.") %></b></th>
                 <th>&nbsp;</th>
             </tr>
                 <td>&nbsp;</td>
@@ -85,7 +80,7 @@
                 }
             %>
             <tr>
-                <th align="right">New dataset QC state:</th>
+                <td nowrap>New dataset QC state:</td>
                 <td><input type="text" name="newLabel" size="30"></td>
                 <td><input type="text" name="newDescription" size="50"></td>
                 <td align="center"><input type="checkbox" name="newPublicData" CHECKED></td>
@@ -103,10 +98,11 @@
             </tr>
         </table>
         <%
-            FrameFactoryClassic.endTitleFrame(out);
-            FrameFactoryClassic.startTitleFrame(out, "Default states for dataset data", null, "100%", null);
+            FrameFactoryClassic.endPanelFrame(out);
+            
+            FrameFactoryClassic.startPanelFrame(out, "Default states for dataset data");
         %>
-        <table width="100%" cellspacing="4">
+        <table class="lk-fields-table">
             <tr>
                 <td colspan="2">These settings allow different default QC states depending on data source.
                     If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>
@@ -168,10 +164,11 @@
             </tr>
         </table>
         <%
-            FrameFactoryClassic.endTitleFrame(out);
-            FrameFactoryClassic.startTitleFrame(out, "Data visibility", null, "100%", null);
+            FrameFactoryClassic.endPanelFrame(out);
+            
+            FrameFactoryClassic.startPanelFrame(out, "Data visibility");
         %>
-    <table width="100%" cellspacing="4">
+    <table class="lk-fields-table">
         <tr>
             <td colspan="2">This setting determines whether users see non-public data by default.
                 Users can always explicitly choose to see data in any QC state.</td>
@@ -188,12 +185,8 @@
     </table>
 
         <%
-            FrameFactoryClassic.endTitleFrame(out);
+            FrameFactoryClassic.endPanelFrame(out);
         %>
-        </td>
-    </tr>
-</table>
-<br/>
 <%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
 <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 </labkey:form>

@@ -57,6 +57,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -153,13 +154,7 @@
     if (c.hasPermission(user, AdminPermission.class))
     {
 %>
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title pull-left">
-                    General Study Settings
-                </h3>
-            </div>
-            <div class="panel-body">
+            <%FrameFactoryClassic.startPanelFrame(out, "General Study Settings");%>
                 <table class="lk-fields-table lk-manage-study-table">
                     <tr>
                         <td class="lk-study-prop-label">Study Properties</td>
@@ -308,20 +303,13 @@
                                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
                     </tr>
                 </table>
-            </div>
-        </div>
+            <%FrameFactoryClassic.endPanelFrame(out);%>
 
 <%
         if (!study.hasSourceStudy() && !study.isSnapshotStudy())
         {
 %>
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title pull-left">
-                    Specimen Repository Settings
-                </h3>
-            </div>
-            <div class="panel-body">
+            <%FrameFactoryClassic.startPanelFrame(out, "Specimen Repository Settings");%>
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
@@ -362,8 +350,7 @@
                             }
                 %>
                 </table>
-            </div>
-        </div>
+            <%FrameFactoryClassic.endPanelFrame(out);%>
         <%
         }
         else
@@ -380,13 +367,7 @@
         if (study.getRepositorySettings().isEnableRequests())
         {
     %>
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title pull-left">
-                    Specimen Request Settings
-                </h3>
-            </div>
-            <div class="panel-body">
+            <%FrameFactoryClassic.startPanelFrame(out, "Specimen Request Settings");%>
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>
@@ -427,8 +408,7 @@
                                 new ActionURL(SpecimenController.ConfigureRequestabilityRulesAction.class, c)) %></td>
                     </tr>
                 </table>
-            </div>
-        </div>
+            <%FrameFactoryClassic.endPanelFrame(out);%>
 <%
         }
     }

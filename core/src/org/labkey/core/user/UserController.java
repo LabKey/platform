@@ -2221,9 +2221,6 @@ public class UserController extends SpringActionController
                 "To complete the process of changing your account's email address from ^currentEmailAddress^ to ^newEmailAddress^, " +
                 "simply click the link below or copy it to your browser's address bar.\n\n" +
                 "^verificationURL^\n\n" +
-                "Note: The link above should appear on one line, starting with 'http' and ending with 'true'.  Some " +
-                "email systems may break this link into multiple lines, causing the verification to fail.  If this happens, " +
-                "you'll need to paste the parts into the address bar of your browser to form the full link.\n\n" +
                 "This step confirms that you are the owner of the new email account.  After you click the link, you will need " +
                 "to use the new email address when logging into the server.";
         String _currentEmailAddress;

@@ -98,7 +98,7 @@
         </tr>
         <tr><td colspan="2"><hr></td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td colspan="2"><table id="validSubstitutions" class="lk-fields-table" width="100%"></table></td></tr>
+        <tr><td colspan="2"><table id="validSubstitutions" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on
             the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
@@ -218,29 +218,30 @@
 
         row = table.insertRow(table.rows.length);
         cell = row.insertCell(0);
-        cell.className = "labkey-form-label";
-        cell.innerHTML = '<strong>Parameter Name</strong>';
+        cell.className = "labkey-column-header";
+        cell.innerHTML = "Parameter Name";
 
         cell = row.insertCell(1);
-        cell.className = "labkey-form-label";
-        cell.innerHTML = '<strong>Type</strong>';
+        cell.className = "labkey-column-header";
+        cell.innerHTML = "Type";
 
         cell = row.insertCell(2);
-        cell.className = "labkey-form-label";
-        cell.innerHTML = "<strong>Description</strong>";
+        cell.className = "labkey-column-header";
+        cell.innerHTML = "Description";
 
         cell = row.insertCell(3);
-        cell.className = "labkey-form-label";
-        cell.innerHTML = "<strong>Current Value</strong>";
+        cell.className = "labkey-column-header";
+        cell.innerHTML = "Current Value";
 
         if (record && record.replacements != undefined)
         {
             for (var i = 0; i < record.replacements.length; i++)
             {
                 row = table.insertRow(table.rows.length);
+                row.className = i % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+
                 cell = row.insertCell(0);
-                cell.className = "labkey-form-label";
-                cell.innerHTML = record.replacements[i].paramName;
+                cell.innerHTML = "<b>" + record.replacements[i].paramName + "</b>";
 
                 cell = row.insertCell(1);
                 cell.innerHTML = record.replacements[i].valueType;

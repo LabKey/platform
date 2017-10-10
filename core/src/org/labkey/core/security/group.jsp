@@ -123,7 +123,7 @@
 
 </script>
 
-<labkey:form id="groupMembersForm" action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
+<labkey:form id="groupMembersForm" action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST" layout="horizontal">
 <%
 if (bean.messages.size() > 0)
 {
@@ -264,7 +264,7 @@ else
 %><br>
 <div id="add-members">
 <span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
-    <labkey:autoCompleteTextArea name="names" url="<%=h(completionUrl.getLocalURIString())%>" rows="8" cols="60"/>
+    <labkey:autoCompleteTextArea name="names" url="<%=h(completionUrl.getLocalURIString())%>" rows="8" cols="70"/>
     <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.ldapDomain))
 {
@@ -272,7 +272,7 @@ if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.
 }
 %> users.<br><br>
 <span style="font-weight:bold">Include a message</span> with the new user mail (optional):<br>
-    <textarea rows="8" cols="60" name="mailPrefix"></textarea><br>
+    <textarea rows="8" cols="72" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
 <br>
 <%= button("Update Group Membership").submit(true).onClick("return confirmRemoveUsers();") %>

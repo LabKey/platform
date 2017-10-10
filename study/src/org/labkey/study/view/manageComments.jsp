@@ -24,15 +24,12 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -94,9 +91,7 @@
 
     <input type="hidden" name="reshow" value="true">
 
-    <%
-        FrameFactoryClassic.startTitleFrame(out, subjectNounSingle + " Comment Assignment");
-    %>
+    <div style="font-weight: bold; padding-top: 20px;"><%=h(subjectNounSingle)%> Comment Assignment</div>
     <table>
         <tr>
             <th align="right">Comment
@@ -146,9 +141,9 @@
             </td>
         </tr>
     </table>
+
+    <div style="font-weight: bold; padding-top: 20px;"><%=h(subjectNounSingle)%>/Visit Comment Assignment</div>
     <%
-        FrameFactoryClassic.endTitleFrame(out);
-        FrameFactoryClassic.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
 
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
@@ -216,7 +211,6 @@
         </tr>
     </table>
     <%
-            FrameFactoryClassic.endTitleFrame(out);
         }
     %>
 </labkey:form>

@@ -22,28 +22,28 @@
     <cacheSize>0</cacheSize><!-- Unlimited, since size scales with Container count -->
     <columns>
       <column columnName="Label">
-        <description>The long/friendly name of each study.</description>
+        <description>The display label of the study.</description>
       </column>
       <column columnName="Container">
-        <description>The container of each study.</description>
+        <description>The container for the study.</description>
       </column>
       <column columnName="entityid">
-        <description>A unique string ID for each study.</description>
+        <description>A unique string ID for the study.</description>
       </column>
       <column columnName="TimepointType">
         <description>Whether the study uses visits, relative dates, or continuous dates.  TimepointType may be VISIT, DATE, or CONTINUOUS.</description>
       </column>
       <column columnName="StartDate">
-        <description>The start date of each study.  Note that subjects can also have start dates.</description>
+        <description>The start date of the study.  Note that subjects can also have individual start dates.</description>
       </column>
       <column columnName="EndDate">
-        <description>The end date of each study.</description>
+        <description>The end date of the study.</description>
       </column>
       <column columnName="DefaultTimepointDuration">
         <description>The number of days an automatically created timepoint should span.</description>
       </column>
       <column columnName="SecurityType">
-        <description>Security type for each study, indicating how dataset read/write access is determined.</description>
+        <description>The security type for the study. Indicates how dataset read/write access is determined.</description>
       </column>
       <column columnName="participantcohortdatasetid">
         <description>The ID of the study dataset that contains data for automatic subject cohort assignment.</description>
@@ -52,7 +52,7 @@
         <description>The name of the property/field in the subject cohort dataset that contains the subject's cohort name.</description>
       </column>
       <column columnName="manualCohortAssignment">
-        <description>Whether each study uses manual (versus automatic) cohort assignment.</description>
+        <description>Whether the study uses manual (versus automatic) cohort assignment.</description>
       </column>
       <column columnName="LSID"/>
       <column columnName="BlankQCStatePublic">
@@ -62,7 +62,7 @@
         <description>The default quality control state to be applied to data imported via the pipeline.</description>
       </column>
       <column columnName="DefaultAssayQCState">
-        <description>The default quality control state to be applied to assay data copied to each study.</description>
+        <description>The default quality control state to be applied to assay data copied to the study.</description>
       </column>
       <column columnName="DefaultDirectEntryQCState">
         <description>The default quality control state to be applied to data manually edited within the study.</description>
@@ -71,10 +71,10 @@
         <description>Whether private data (as indicated by the data's quality control state) is visible by default.</description>
       </column>
       <column columnName="AllowReload">
-        <description>Whether each study can be reloaded from disk-based files.</description>
+        <description>Whether the study can be reloaded from disk-based files.</description>
       </column>
       <column columnName="ReloadInterval">
-        <description>How frequently automatic reloads of each study should take place.</description>
+        <description>How frequently automatic reloads of the study should take place.</description>
       </column>
       <column columnName="LastReload">
         <description>The timestamp of the most recent study reload.</description>
@@ -107,13 +107,13 @@
         <description>The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".</description>
       </column>
       <column columnName="Description">
-        <description>A short description of the study.</description>
+        <description>The description of the study to show on the Overview tab. Content will be rendered using the selected description Render Type.</description>
       </column>
       <column columnName="DescriptionRendererType">
-        <description>Format of description.</description>
+        <description>The render type format for the description when displayed on the Overview tab.</description>
       </column>
       <column columnName="ProtocolDocumentEntityId">
-        <description>The entity id used to generate the attachment parent for the study protocol document.</description>
+        <description>The entity id used to generate the attachment parent of the study protocol document.</description>
       </column>
       <column columnName="SourceStudyContainerId">
         <description>The entity id of the study container from which this study was derived.  Will be null if a study is not an ancillary study.</description>
@@ -161,7 +161,7 @@
         <description>Name of the column in the selected participant alias dataset that contains the alias value.</description>
       </column>
       <column columnName="AssayPlan">
-        <description>The description of the assay plan for the study.</description>
+        <description>The assay plan for the study.</description>
       </column>
       <column columnName="ShareDatasetDefinitions">
       </column>

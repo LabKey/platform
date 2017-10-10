@@ -45,6 +45,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
@@ -151,13 +152,7 @@ if (!pipelineSet)
 %>
 <br/>
 <br/>
-<div class="panel panel-default">
-    <div class="panel-heading clearfix">
-        <h3 class="panel-title pull-left">
-            Dataset Properties
-        </h3>
-    </div>
-    <div class="panel-body">
+    <%FrameFactoryClassic.startPanelFrame(out, "Dataset Properties");%>
         <table id="details" width="600px" class="lk-fields-table">
             <tr>
                 <td class=labkey-form-label>Name</td>
@@ -210,31 +205,17 @@ if (!pipelineSet)
                 <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
             </tr>
         </table>
-    </div>
-</div>
+    <%FrameFactoryClassic.endPanelFrame(out);%>
 
-<div class="panel panel-default">
-    <div class="panel-heading clearfix">
-        <h3 class="panel-title pull-left">
-            Dataset Fields
-        </h3>
-    </div>
-    <div class="panel-body">
+    <%FrameFactoryClassic.startPanelFrame(out, "Dataset Fields");%>
         <%
             JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
             me.include(typeSummary, out);
         %>
-    </div>
-</div>
+    <%FrameFactoryClassic.endPanelFrame(out);%>
 
 <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-<div class="panel panel-default">
-    <div class="panel-heading clearfix">
-        <h3 class="panel-title pull-left">
-            Visit Associations
-        </h3>
-    </div>
-    <div class="panel-body">
+    <%FrameFactoryClassic.startPanelFrame(out, "Visit Associations");%>
         <table class="lk-fields-table"><%
             List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
             HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
@@ -260,8 +241,7 @@ if (!pipelineSet)
             }
         %>
         </table>
-    </div>
-</div>
+    <%FrameFactoryClassic.endPanelFrame(out);%>
 <% } %>
 
 <script type="text/javascript">

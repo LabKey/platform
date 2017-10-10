@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -54,11 +55,7 @@ function verifyNewRequirement(prefix)
 }
 </script>
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
-            Requirements of Each Originating Lab
-        </h3></div>
-        <div class=" panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Requirements of Each Originating Lab");%>
             <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
                     <td class="labkey-column-header">&nbsp;</td>
@@ -99,14 +96,9 @@ function verifyNewRequirement(prefix)
                     <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('originator');") %></td>
                 </tr>
             </table>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
-            Requirements of Each Providing Lab
-        </h3></div>
-        <div class=" panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Requirements of Each Providing Lab");%>
             <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
                     <td class="labkey-column-header">&nbsp;</td>
@@ -147,15 +139,9 @@ function verifyNewRequirement(prefix)
                     <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('provider');") %></td>
                 </tr>
             </table>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 
-
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
-            Requirements of Receiving Lab
-        </h3></div>
-        <div class=" panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "Requirements of Receiving Lab");%>
             <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
                     <td class="labkey-column-header">&nbsp;</td>
@@ -196,14 +182,9 @@ function verifyNewRequirement(prefix)
                     <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('receiver');") %></td>
                 </tr>
             </table>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
 
-    <div class="panel panel-default">
-        <div class="panel-heading clearfix"><h3 class="panel-title pull-left">
-            General Requirements
-        </h3></div>
-        <div class=" panel-body">
+        <%FrameFactoryClassic.startPanelFrame(out, "General Requirements");%>
             <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
                     <td class="labkey-column-header">&nbsp;</td>
@@ -244,8 +225,7 @@ function verifyNewRequirement(prefix)
                     <td><%= button("Add Requirement").submit(true).onClick("return verifyNewRequirement('general');") %></td>
                 </tr>
             </table>
-        </div>
-    </div>
+        <%FrameFactoryClassic.endPanelFrame(out);%>
     <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getContainer()).getLocalURIString()%>">
 </labkey:form>
 <%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, getContainer())) %>

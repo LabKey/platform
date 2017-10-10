@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.UpdateParticipantVisitsAction" %>
@@ -26,7 +25,6 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -46,7 +44,7 @@
     }
 %>
 
-<table>
+<table style="margin-bottom: 20px;">
     <tr>
         <td>View study schedule.</td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
@@ -68,7 +66,7 @@
 </table>
 
 <%
-    FrameFactoryClassic.startTitleFrame(out, "Timepoint Configuration", null, "600", null);
+    FrameFactoryClassic.startPanelFrame(out, "Timepoint Configuration", 800, true);
 %>
 <labkey:form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
    Data in this study is grouped using date-based timepoints rather than visit ids.
@@ -117,13 +115,11 @@
     <%= generateBackButton() %>
 </labkey:form>
 <%
-    FrameFactoryClassic.endTitleFrame(out);
+    FrameFactoryClassic.endPanelFrame(out);
 %>
 
 <% if (timepoints.size() > 0) { %>
-<%
-    FrameFactoryClassic.startTitleFrame(out, "Timepoints", null, "900", null);
-%>
+<%FrameFactoryClassic.startPanelFrame(out, "Timepoints", 800, true);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.</p>
 <table class="labkey-data-region-legacy labkey-show-borders">
@@ -170,7 +166,5 @@ assign dataset data to the correct timepoints.</p>
 <%  }
 %>
 </table>
-<%
-    FrameFactoryClassic.endTitleFrame(out);
-%>
+<%FrameFactoryClassic.endPanelFrame(out);%>
 <% } %>

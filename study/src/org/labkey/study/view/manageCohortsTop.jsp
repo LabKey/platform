@@ -21,14 +21,11 @@
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -48,8 +45,10 @@
         // do advanced cohort calculations for continuous studies.  This support could be added in the future.
         if (study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            FrameFactoryClassic.startTitleFrame(out, "Assignment Mode", null, "100%", null);
     %>
+    <div class="labkey-announcement-title" style="padding-top: 0;">
+        <span>Assignment Mode</span>
+    </div>
     <script type="text/javascript">
         function setAdvanced(advanced)
         {
@@ -84,13 +83,14 @@
     change cohorts mid-study. Note that advanced cohort management requires automatic assignment via a study
     dataset.<br>
     <%
-            FrameFactoryClassic.endTitleFrame(out);
         }
 
         if (!study.isAdvancedCohorts())
         {
-            FrameFactoryClassic.startTitleFrame(out, "Assignment Type", null, "100%", null);
     %>
+    <div class="labkey-announcement-title">
+        <span>Assignment Type</span>
+    </div>
     <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
            id="manualCohortAssignmentDisabled"
            value="false"<%=checked(!study.isManualCohortAssignment())%>>Automatic: cohort assignments will be
@@ -101,12 +101,13 @@
     by hand.
 
     <%
-            FrameFactoryClassic.endTitleFrame(out);
         }
         if (!study.isManualCohortAssignment())
         { // If it's automatic, we need to include the dataset selection widgets
-            FrameFactoryClassic.startTitleFrame(out, "Automatic " + subjectNounSingle + "/Cohort Assignment", null, "100%", null);
     %>
+    <div class="labkey-announcement-title">
+        <span>Automatic <%=h(subjectNounSingle)%>/Cohort Assignment</span>
+    </div>
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
     <table class="lk-fields-table">
         <tr>
@@ -167,15 +168,13 @@
             </td>
         </tr>
         <tr>
-            <td>&nbsp;</td>
-            <td>
+            <td colspan="2">
                 <%= button("Update Assignments").submit(true).onClick("document.manageCohorts.updateParticipants.value='true'; return true;") %>
                 <%= button("Clear Assignments").submit(true).onClick("if (confirm('Are you sure you want to clear cohort information for all " + h(subjectNounPlural) + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;") %>
             </td>
         </tr>
     </table>
     <%
-            FrameFactoryClassic.endTitleFrame(out);
         }
     %>
 

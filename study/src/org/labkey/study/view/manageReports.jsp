@@ -102,7 +102,7 @@
             continue;
         if (bean.isWideView() && reportCount >= reportsPerColumn && maxColumns > 0)
         {
-            out.print("</td><td valign=\"top\">");
+            out.print("</td><td valign=\"top\" style=\"padding-left: 20px;\">");
             reportCount = 0;
             maxColumns--;
         }
@@ -160,17 +160,12 @@
     {
         if (!bean.getAdminView())
         {
-            int paddingTop = countSection==0?0:30;
-            FrameFactoryClassic.startTitleFrame(out, title, null, "100%", null,paddingTop);
+            FrameFactoryClassic.startPanelFrame(out, title);
             out.write("<table class=\"lk-fields-table\">");
         }
         else
         {
-            // labkey-announcement-title has too much whitespace for first element
-            if (countSection==0)
-                out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" style=\"padding-top:0;\" align=left><span>");
-            else
-                out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
+            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
             out.write(h(title) + " " + countSection);
             out.write("</span></td></tr>");
             out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
@@ -183,7 +178,7 @@
         if (!bean.getAdminView())
         {
             out.write("</table>");
-            FrameFactoryClassic.endTitleFrame(out);
+            FrameFactoryClassic.endPanelFrame(out);
         }
     }
 %>
