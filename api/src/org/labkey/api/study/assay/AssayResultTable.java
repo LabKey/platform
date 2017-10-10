@@ -40,6 +40,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
@@ -119,6 +120,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 // If this is an OORIndicator and there's a matching value column in the same table, don't add this column
                 col = null;
             }
+            else if (baseColumn.isMvIndicatorColumn())
+            {
+                col = null;     // skip and instead add AliasedColumn below
+            }
             else
             {
                 col = wrapColumn(baseColumn);
@@ -153,6 +158,21 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 {
                     ColumnInfo rawValueCol = createRawValueColumn(baseColumn, col, RawValueColumn.RAW_VALUE_SUFFIX, "Raw Value", "This column contains the raw value itself, regardless of any missing value indicators that may have been set.");
                     addColumn(rawValueCol);
+
+                    Domain domain = schema.getProvider().getResultsDomain(schema.getProtocol());
+                    PropertyDescriptor pd = domain.getPropertyByName(col.getName()).getPropertyDescriptor();
+                    ColumnInfo mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                                                            StorageProvisioner.getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + col.getName() + "' in list '" + getName() + "'"));
+                    // MV indicators are strings
+                    mvColumn.setLabel(col.getLabel() + " MV Indicator");
+                    mvColumn.setSqlTypeName("VARCHAR");
+                    mvColumn.setPropertyURI(col.getPropertyURI());
+                    mvColumn.setNullable(true);
+                    mvColumn.setUserEditable(false);
+                    mvColumn.setHidden(true);
+                    mvColumn.setMvIndicatorColumn(true);
+                    addColumn(mvColumn);
+                    col.setMvColumnName(FieldKey.fromParts(mvColumn.getFieldKey()));        // So we find it correctly for display
                 }
 
                 if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(col.getName()))
