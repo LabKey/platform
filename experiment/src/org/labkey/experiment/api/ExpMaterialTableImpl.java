@@ -310,7 +310,17 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         ColumnInfo nameCol = addColumn(ExpMaterialTable.Column.Name);
         if (ss != null && ss.hasNameAsIdCol())
         {
-            nameCol.setNullable(false);
+            // Show the Name field but don't mark is as required when using name expressions
+            if (ss.hasNameExpression())
+            {
+                nameCol.setNullable(true);
+                String desc = appendNameExpressionDescription(nameCol.getDescription(), ss.getNameExpression());
+                nameCol.setDescription(desc);
+            }
+            else
+            {
+                nameCol.setNullable(false);
+            }
             nameCol.setDisplayColumnFactory(new IdColumnRendererFactory());
         }
         else
@@ -412,6 +422,20 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     public Domain getDomain()
     {
         return _ss == null ? null : _ss.getType();
+    }
+
+    public static String appendNameExpressionDescription(String currentDescription, String nameExpression)
+    {
+        if (nameExpression == null)
+            return currentDescription;
+
+        StringBuilder sb = new StringBuilder();
+        if (currentDescription != null && !currentDescription.isEmpty())
+            sb.append(currentDescription).append("\n");
+
+        sb.append("If not provided, a unique name will be generated from the expression:\n");
+        sb.append(nameExpression);
+        return sb.toString();
     }
 
     private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)

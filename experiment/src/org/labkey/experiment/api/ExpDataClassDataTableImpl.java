@@ -107,9 +107,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 {
     private static final Logger LOG = Logger.getLogger(ExpDataClassDataTableImpl.class);
 
-    private ExpDataClassImpl _dataClass;
+    private @NotNull ExpDataClassImpl _dataClass;
 
-    public ExpDataClassDataTableImpl(String name, UserSchema schema, ExpDataClassImpl dataClass)
+    public ExpDataClassDataTableImpl(String name, UserSchema schema, @NotNull ExpDataClassImpl dataClass)
     {
         super(name, ExperimentService.get().getTinfoData(), schema, dataClass);
         _dataClass = dataClass;
@@ -159,6 +159,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             {
                 ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
+                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), _dataClass.getNameExpression());
+                c.setDescription(desc);
                 return c;
             }
 

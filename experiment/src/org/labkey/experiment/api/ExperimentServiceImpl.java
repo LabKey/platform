@@ -1077,7 +1077,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ExpDataClass dataClass)
+    public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, @NotNull ExpDataClass dataClass)
     {
         return new ExpDataClassDataTableImpl(name, schema, (ExpDataClassImpl)dataClass);
     }
