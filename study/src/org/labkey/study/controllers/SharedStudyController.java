@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -40,6 +41,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -199,17 +202,20 @@ public class SharedStudyController extends BaseStudyController
             }
             else
             {
+                SharedStudyContainerFilterForm data = new SharedStudyContainerFilterForm();
                 Object o = getViewContext().getSession().getAttribute(key);
                 if (o instanceof List)
                 {
-                    SharedStudyContainerFilterForm data = new SharedStudyContainerFilterForm();
                     data.setContainers((List)o);
-                    return success(data);
                 }
                 else
                 {
-                    return success(null);
+                    DataspaceContainerFilter dcf = new DataspaceContainerFilter(getUser(), getContainer());
+                    Collection<GUID> c = dcf.getIds(getContainer());
+                    if (null != c)
+                        data.setContainers(new ArrayList<>(dcf.getIds(getContainer())));
                 }
+                return success(data);
             }
         }
     }
