@@ -217,7 +217,7 @@ public abstract class SearchTest extends StudyTest
 
     private void checkSyntaxErrorMessage(String... expectedPhrases)
     {
-        String errorText = getText(Locator.css("#searchResults + table"));
+        String errorText = getText(Locator.css("div.alert-warning table"));
         // We want our nice, custom error messages to appear
         for (String phrase : expectedPhrases)
         {
