@@ -30,7 +30,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
-import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
@@ -203,7 +202,7 @@ public class StudyTest extends StudyBaseTest
     protected void verifyPermissionsRestrictions()
     {
         clickProject(getProjectName());
-        createUser(authorUser, null, true);
+        _userHelper.createUser(authorUser, true);
         _permissionsHelper.setUserPermissions(authorUser, "Author");
         impersonate(authorUser);
         beginAt(specimenUrl);
