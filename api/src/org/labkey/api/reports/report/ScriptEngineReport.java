@@ -273,6 +273,11 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public File getReportDir(@NotNull String executingContainerId)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
+        return getReportDir(executingContainerId, isPipeline);
+    }
+
+    protected File getReportDir(@NotNull String executingContainerId, boolean isPipeline)
+    {
 
         File tempRoot = getTempRoot(getDescriptor());
         String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
