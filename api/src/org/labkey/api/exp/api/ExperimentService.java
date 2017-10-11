@@ -287,7 +287,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
     ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
     ExpDataClassTable createDataClassTable(String name, UserSchema schema);
-    ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ExpDataClass dataClass);
+    ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, @NotNull ExpDataClass dataClass);
     ExpProtocolTable createProtocolTable(String name, UserSchema schema);
     ExpExperimentTable createExperimentTable(String name, UserSchema schema);
     ExpMaterialTable createMaterialTable(String name, UserSchema schema);
