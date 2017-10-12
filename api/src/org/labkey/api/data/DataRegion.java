@@ -1025,8 +1025,8 @@ public class DataRegion extends DisplayElement
             _renderPaginationNew(ctx, out);
             out.write("</div>");
             _renderDrawer(ctx, out);
-            _renderContextBar(ctx, out);
             _renderViewBar(ctx, out);
+            _renderContextBar(ctx, out);
         }
         else
         {
@@ -3255,6 +3255,7 @@ public class DataRegion extends DisplayElement
         {
             if (newUI)
             {
+                prepareParameters(ctx);
                 prepareFilters(ctx);
             }
             else
@@ -3289,6 +3290,25 @@ public class DataRegion extends DisplayElement
         }
 
         return messages;
+    }
+
+    private void prepareParameters(RenderContext ctx)
+    {
+        Map<String, Object> parameters = getQueryParameters();
+
+        if (!parameters.isEmpty())
+        {
+            for (Map.Entry<String, Object> entry : parameters.entrySet())
+            {
+                String text = entry.getKey() + " = " + entry.getValue();
+
+                ContextAction.Builder action = new ContextAction.Builder()
+                        .iconCls("question")
+                        .text(text);
+
+                _contextActions.add(action.build());
+            }
+        }
     }
 
     private void prepareView(RenderContext ctx)

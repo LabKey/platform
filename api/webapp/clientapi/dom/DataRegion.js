@@ -1794,13 +1794,32 @@ if (!LABKEY.DataRegions) {
         var ctxBar = _getContextBarSelector(this);
         ctxBar.find('.labkey-button-bar').remove();
 
-        if (ctxBar.find('.fa-filter').length >= 2) {
-            ctxBar.append([
-                '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
-                '<span class="labkey-button ctx-clear-all">Clear All</span>',
-                '</div>'
-            ].join(''));
+        var numFilters = ctxBar.find('.fa-filter').length;
+        var numParams = ctxBar.find('.fa-question').length;
 
+        var html = [];
+
+        if (numParams > 0) {
+            html = html.concat([
+                '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
+                '<span class="labkey-button ctx-clear-var">Clear Variables</span>',
+                '</div>'
+            ])
+        }
+
+        if (numFilters >= 2) {
+            html = html.concat([
+                '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
+                '<span class="labkey-button ctx-clear-all">' +
+                (numParams > 0 ? 'Clear Filters' : 'Clear All') +
+                '</span>',
+                '</div>'
+            ]);
+        }
+
+        if (html.length) {
+            ctxBar.append(html.join(''));
+            ctxBar.find('.ctx-clear-var').off('click').on('click', $.proxy(this.clearAllParameters, this));
             ctxBar.find('.ctx-clear-all').off('click').on('click', $.proxy(this.clearAllFilters, this));
         }
     };
