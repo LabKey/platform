@@ -1712,6 +1712,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @IgnoresTermsOfUse  // Used by folder management, which is used to configure important terms/compliance settings (e.g., active modules)
     public class GetContainerInfoAction extends ApiAction<ContainerInfoForm>
     {
         @Override

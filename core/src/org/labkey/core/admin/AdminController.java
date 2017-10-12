@@ -4776,6 +4776,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
+    @IgnoresTermsOfUse  // At the moment, compliance configuration is very sensitive to active modules, so allow those adjustments
     public class FolderTypeAction extends FolderManagementViewPostAction<FolderTypeForm>
     {
         private ActionURL _successURL = null;
