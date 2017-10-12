@@ -2111,6 +2111,13 @@ public class DavController extends SpringActionController
                             xml.writeProperty(null, "collection", "1");
                             xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
                         }
+
+                        if (isFileSystemFileOrDirectory(resource))
+                        {
+                            String absolutePath = resource.getAbsolutePath(getUser());
+                            if (null != absolutePath)
+                                xml.writeProperty(null, "absolutePath", absolutePath);
+                        }
                     }
 
                     StringBuilder methodsAllowed = determineMethodsAllowed(resource);
@@ -2160,6 +2167,8 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
+                        if (isFileSystemFileOrDirectory(resource))
+                            xml.writeElement(null, "absolutePath", XMLWriter.NO_CONTENT);
                         //xml.writeElement(null, "directget", XMLWriter.NO_CONTENT);
                     }
                     //xml.writeElement(null, "directput", XMLWriter.NO_CONTENT);
@@ -2299,6 +2308,19 @@ public class DavController extends SpringActionController
                             else
                             {
                                 xml.writeProperty(null, "getcontenttype", resource.getContentType());
+                            }
+                        }
+                        else if (property.equals("absolutePath"))
+                        {
+                            if (!exists)
+                            {
+                                propertiesNotFound.add(property);
+                            }
+                            else if (isFileSystemFileOrDirectory(resource))
+                            {
+                                String absolutePath = resource.getAbsolutePath(getUser());
+                                if (null != absolutePath)
+                                    xml.writeProperty(null, "absolutePath", absolutePath);
                             }
                         }
                         else if (property.equals("getetag"))
@@ -2679,6 +2701,14 @@ public class DavController extends SpringActionController
         {
             xml.sendData();
         }
+
+        private boolean isFileSystemFileOrDirectory(WebdavResource resource)
+        {
+            if (resource.isFile())
+                return true;
+            File file = resource.getFile();
+            return null != file && file.isDirectory();
+        }
     }
 
 
@@ -2757,6 +2787,9 @@ public class DavController extends SpringActionController
                 if (contentType != null)
                     json.key("contenttype").value(contentType);
                 json.key("etag").value(resource.getETag());
+                String absolutePath = resource.getAbsolutePath(getUser());
+                if (null != absolutePath)
+                    json.key("absolutePath").value(absolutePath);
 
                 // UNDONE: Don't calculate directget URL for every item -- it may be expensive to generate.
                 // UNDONE: Client doesn't support handling directget yet

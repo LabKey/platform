@@ -82,7 +82,8 @@ Ext4.define('File.panel.Toolbar', {
                     {id : 7, sortable : true},                      // description
                     {id : 8, sortable : false, sortDisabled : true},                     // usages
                     {id : 9, sortable : false, sortDisabled : true, hidden : true},      // download link
-                    {id : 10, sortable : false, sortDisabled : true, hidden : true}      // file extension
+                    {id : 10, sortable : false, sortDisabled : true, hidden : true},      // file extension
+                    {id : 11, sortable : false, sortDisabled : true, hidden : true}      // absolute path
                 ]
             }
         });
@@ -147,7 +148,7 @@ Ext4.define('File.panel.Toolbar', {
 
         var columnData = [];
         var baseColumnNames = ['Row Checker', 'File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
-                'Usages', 'Download Link', 'File Extension'];
+                'Usages', 'Download Link', 'File Extension', 'Absolute File Path'];
         if (this.useCustomProps) {
             for (var i = 0; i < this.fileProperties.length; i++) {
                 if (this.fileProperties[i].label)

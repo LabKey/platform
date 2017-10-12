@@ -45,6 +45,7 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
             "description",
             "actionHref",
             "fileExt",
+            "absolutePath",
             FileQueryUpdateService.KEY_COL_ID
     ));
     private static final Set<String> _reservedFieldSet;

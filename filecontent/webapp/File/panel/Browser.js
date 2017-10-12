@@ -1024,6 +1024,15 @@ Ext4.define('File.panel.Browser', {
                     hidden: true,
                     height : 20,
                     renderer: Ext4.htmlEncode
+                },
+                absolutePath: {
+                    header: "Absolute File Path",
+                    flex: 1,
+                    dataIndex: 'absolutePath',
+                    sortable: !this.bufferFiles,
+                    hidden: true,
+                    height : 20,
+                    renderer: Ext4.htmlEncode
                 }
             };
         }
@@ -1053,7 +1062,7 @@ Ext4.define('File.panel.Browser', {
         else {
             columnNames = [
                 'iconfacls', 'name', 'lastmodified', 'size',
-                'createdby', 'description', 'actions', 'fileLink', 'fileExt'
+                'createdby', 'description', 'actions', 'fileLink', 'fileExt', 'absolutePath'
             ];
         }
 
@@ -2392,6 +2401,9 @@ Ext4.define('File.panel.Browser', {
                     '<tr><th>Size:</th><td>{size:this.renderSize}</td></tr>' +
                 '</tpl>' +
                 '<tr><th>WebDav URL:</th><td colspan="3"><a target="_blank" href="{[Ext.util.Format.htmlEncode(values.href||values.uri)]}">{[Ext.util.Format.htmlEncode(values.href||values.uri)]}</a></td></tr>' +
+                '<tpl if="absolutePath != undefined && absolutePath">' +
+                    '<tr><th>Absolute Path:</th><td>{absolutePath}</td></tr>' +
+                '</tpl>' +
            '</table>',
         {
             renderDate : function(d) {
