@@ -218,6 +218,11 @@
 
 .chart-layout-panel .revert-label-button {
     padding: 2px;
+    border: solid 1px #a9a9a9;
+}
+
+.chart-wizard-dialog .revert-label-button:hover {
+    background: #a9a9a9;
 }
 
 .chart-layout-panel .revert-label-button .x4-btn-icon-el {

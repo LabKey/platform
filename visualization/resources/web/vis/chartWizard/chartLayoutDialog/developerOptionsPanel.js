@@ -320,16 +320,15 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         {
             return 'Your code should define a single function to be called when a data point in the chart is clicked. '
                 + 'The function will be called with the following parameters:<br/>'
-                + '<ul>'
-                + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
-                + '<div style="margin-left: 40px;">{</div>'
-                + '<div style="margin-left: 60px;">YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
-                + '<div style="margin-left: 40px;">}</div>'
-                + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot. Example:</li>'
-                + '<div style="margin-left: 40px;">{</div>'
-                + '<div style="margin-left: 60px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
-                + '<div style="margin-left: 40px;">}</div>'
-                + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
+                + '<br/><b>data:</b> the set of data values for the selected data point.'
+                + '<br/>Example: {'
+                + '<div style="margin-left: 80px;">YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
+                + '<div style="margin-left: 60px;">}</div>'
+                + '<br/><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot.'
+                + '<br/>Example: {'
+                + '<div style="margin-left: 80px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
+                + '<div style="margin-left: 60px;">}</div>'
+                + '<br/><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)';
         }
     }
 });

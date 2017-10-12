@@ -66,7 +66,7 @@
     }
 %>
 
-<table name="reportDetails" id="reportDetails">
+<table name="reportDetails" id="reportDetails" class="lk-fields-table">
     <tr class="labkey-wp-header">
     </tr>
 

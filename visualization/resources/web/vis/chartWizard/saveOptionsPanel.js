@@ -10,7 +10,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     cls: 'chart-wizard-panel save-chart-panel',
     mainTitle: 'Save',
     border: false,
-    height: 475,
+    height: 490,
     width: 505,
 
     constructor : function(config){

@@ -78,7 +78,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                 fieldLabel: 'Time Interval',
                 disabled: this.isVisitBased,
                 labelWidth: 110,
-                width: 185,
+                width: 295,
                 padding: '0 0 0 5px',
                 store: Ext4.create('Ext.data.ArrayStore', {
                     fields: ['value'],
