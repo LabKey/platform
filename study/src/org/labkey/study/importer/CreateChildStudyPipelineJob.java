@@ -258,9 +258,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 importDatasetData(context, _form, sourceStudy, destStudy, snapshot, datasets, participantGroups, vf, _errors, studyImportContext);
 
                 // import the specimen data and settings
-                importSpecimenData(destStudy, vf);
                 importSpecimenMetadata(_errors, vf, studyImportContext);
                 importSpecimenSettings(_errors, vf, studyImportContext);
+                importSpecimenData(destStudy, vf);
 
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
                 importCohortSettings(_errors, vf, studyImportContext);
