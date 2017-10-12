@@ -88,7 +88,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             "999321029", "999321033"};
 
     private final String[] DATASETS = {"RCB-1: Reactogenicity-Baseline", "RCM-1: Reactogenicity-Early Assessment", "RCE-1: Reactogenicity-Day 0", "RCH-1: Reactogenicity-Day 1", "RCF-1: Reactogenicity-Day 2", "RCT-1: Reactogenicity-Day 3", "CPS-1: Screening Chemistry Panel", "DEM-1: Demographics"};
-    private final String REPORT_DATASET = "RCB-1: Reactogenicity-Baseline";
+    private final String REPORT_DATASET = "RCB-1";
     private final String UNPUBLISHED_REPORT_DATASET = "AE-1";
     private final String DATE_SHIFT_DATASET_LABEL = "CPS-1: Screening Chemistry Panel";
     private final String DATE_SHIFT_DATASET = "CPS-1";
@@ -958,10 +958,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         waitForElement(Locator.xpath("id('participant-report-panel-1-body')/div[contains(@style, 'display: none')]"), WAIT_FOR_JAVASCRIPT); // Edit panel should be hidden
     }
 
-    private void createRView(String name, String dataset, boolean shareView)
+    private void createRView(String name, String datasetName, boolean shareView)
     {
         _studyHelper.goToManageDatasets()
-                .selectDatasetByLabel(dataset)
+                .selectDatasetByName(datasetName)
                 .clickViewData();
         new RReportHelper(this).createRReport(name, shareView);
     }
