@@ -286,7 +286,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             }
 
             handleProtocolApplications(context, protocol, batch, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
-            AssayPublishService.get().autoCopyResults(protocol, run, context.getUser(), context.getContainer());
+            ExperimentService.get().onRunDataCreated(protocol, run, context.getContainer(), context.getUser());
         }
 
         return run;

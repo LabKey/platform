@@ -357,14 +357,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
-            List<String> copyErrors = AssayPublishService.get().autoCopyResults(context.getProtocol(), run, context.getUser(), context.getContainer());
-            if (!copyErrors.isEmpty())
+            List<ValidationException> errors = ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
+            if (!errors.isEmpty())
             {
                 StringBuilder errorMessage = new StringBuilder();
-                for (String copyError : copyErrors)
+                for (ValidationException e : errors)
                 {
-                    errorMessage.append(copyError);
-                    errorMessage.append("\n");
+                    errorMessage.append(e.getMessage()).append("\n");
                 }
                 throw new ExperimentException(errorMessage.toString());
             }

@@ -15,7 +15,12 @@
  */
 package org.labkey.api.exp.api;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: vsharma
@@ -24,5 +29,20 @@ import org.labkey.api.security.User;
 public interface ExperimentListener
 {
     /** Called before deleting a row from exp.experiment */
-    void beforeExperimentDeleted(ExpExperiment experiment, User user);
+    default void beforeExperimentDeleted(ExpExperiment experiment, User user){}
+
+    // called after the experiment run is created (and saved)
+    default List<ValidationException> afterRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    {
+        return Collections.emptyList();
+    }
+
+    // called after run data is uploaded
+    default List<ValidationException> afterResultDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    {
+        return Collections.emptyList();
+    }
+
+    // called before the experiment run is deleted
+    default void beforeRunDelete(ExpProtocol protocol, ExpRun run){}
 }
