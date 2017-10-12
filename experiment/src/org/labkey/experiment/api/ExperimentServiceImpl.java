@@ -2363,6 +2363,11 @@ public class ExperimentServiceImpl implements ExperimentService
             return;
         }
 
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.beforeRunDelete(run.getProtocol(), run);
+        }
+
         // TODO: All we ever do is delete attachments associated with ExpRunImpl... we never add or display them (!?)
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
@@ -3248,7 +3253,7 @@ public class ExperimentServiceImpl implements ExperimentService
             OntologyManager.deleteOntologyObjects(experiment.getContainer(), experiment.getLSID());
 
             // Inform the listeners.
-            for(ExperimentListener listener: _listeners)
+            for (ExperimentListener listener: _listeners)
             {
                 listener.beforeExperimentDeleted(experiment, user);
             }
@@ -5864,6 +5869,25 @@ public class ExperimentServiceImpl implements ExperimentService
         _listeners.add(listener);
     }
 
+    public List<ValidationException> onBeforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    {
+        List<ValidationException> errors = new ArrayList<>();
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.afterRunCreated(protocol, run, container, user);
+        }
+        return errors;
+    }
+
+    public List<ValidationException> onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    {
+        List<ValidationException> errors = new ArrayList<>();
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.afterResultDataCreated(protocol, run, container, user);
+        }
+        return errors;
+    }
 
     public static class TestCase extends Assert
     {

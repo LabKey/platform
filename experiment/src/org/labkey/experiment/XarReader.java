@@ -347,7 +347,7 @@ public class XarReader extends AbstractXarImporter
 
         for (ExpRun loadedRun : _loadedRuns)
         {
-            AssayPublishService.get().autoCopyResults(loadedRun.getProtocol(), loadedRun, getUser(), getContainer());
+            ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
         }
     }
 

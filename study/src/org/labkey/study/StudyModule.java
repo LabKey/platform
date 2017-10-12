@@ -70,6 +70,7 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.ExperimentListenerImpl;
 import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
@@ -286,6 +287,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
 
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+        ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
+        
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());

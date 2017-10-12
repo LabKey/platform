@@ -228,6 +228,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void save(User user)
     {
         boolean newRun = getRowId() == 0;
+        ExperimentService.get().onBeforeRunCreated(getProtocol(), this, getContainer(), user);
         save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
         if (newRun)
             ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
