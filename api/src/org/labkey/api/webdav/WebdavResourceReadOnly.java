@@ -165,6 +165,12 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
+    public String getAbsolutePath(User user)
+    {
+        return null;
+    }
+
+    @Override
     @NotNull
     public String getHref(ViewContext context)
     {

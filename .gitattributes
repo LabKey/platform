@@ -1285,6 +1285,7 @@ api/src/org/labkey/api/security/roles/Role.java -text
 api/src/org/labkey/api/security/roles/RoleConverter.java -text
 api/src/org/labkey/api/security/roles/RoleManager.java -text
 api/src/org/labkey/api/security/roles/SeeEmailAddressesRole.java -text
+api/src/org/labkey/api/security/roles/SeeFilePathsRole.java -text
 api/src/org/labkey/api/security/roles/SharedViewEditorRole.java -text
 api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
@@ -1748,6 +1749,7 @@ api/src/org/labkey/api/webdav/WebdavResolver.java -text
 api/src/org/labkey/api/webdav/WebdavResource.java -text
 api/src/org/labkey/api/webdav/WebdavResourceReadOnly.java -text
 api/src/org/labkey/api/webdav/WebdavService.java -text
+api/src/org/labkey/api/webdav/permissions/SeeFilePathsPermission.java -text
 api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiChangeListener.java -text

@@ -135,7 +135,7 @@ LABKEY.FileSystem.BROWSER_EVENTS = {
     movecomplete:'movecomplete',
     deletestarted:'deletestarted',
     deletecomplete:'deletecomplete'
-}
+};
 
 LABKEY.FileSystem.FOLDER_ICON = LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif";
 
@@ -292,7 +292,7 @@ LABKEY.FileSystem.Util = new function(){
             }
         }
     }
-}
+};
 
 /**
  * This is a base class that is extended by LABKEY.FileSystem.WebdavFileSystem and others.  It is not intended to be used directly.
@@ -319,10 +319,11 @@ LABKEY.FileSystem.Util = new function(){
     <li>iconHref(string, optional)</li>
     <li>actionHref(string, optional)</li>
     <li>contentType(string, optional)</li>
+    <li>absolutePath(string, optional)</li>
  */
 LABKEY.FileSystem.AbstractFileSystem = function(config){
     LABKEY.FileSystem.AbstractFileSystem.superclass.constructor.apply(this, arguments);
-}
+};
 
 Ext.extend(LABKEY.FileSystem.AbstractFileSystem, Ext.util.Observable, {
 
@@ -1333,7 +1334,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
         };
 
         this.propNames = ["creationdate", "displayname", "createdby", "getlastmodified", "modifiedby", "getcontentlength",
-                     "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref", "options"];
+                     "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref", "options", "absolutePath"];
 
         if (config.extraPropNames && config.extraPropNames.length)
             this.propNames = this.propNames.concat(config.extraPropNames);
@@ -1396,6 +1397,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
             {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
+            {name: 'absolutePath', mapping: 'propstat/prop/absolutePath', type: 'string'},
             {name: 'iconHref'},
             {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
             {name: 'options'}

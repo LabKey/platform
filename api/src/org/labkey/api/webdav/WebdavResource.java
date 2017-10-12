@@ -86,6 +86,8 @@ public interface WebdavResource extends Resource
 
     long getContentLength() throws IOException;
 
+    String getAbsolutePath(User user);
+
     @NotNull
     String getHref(ViewContext context);
 

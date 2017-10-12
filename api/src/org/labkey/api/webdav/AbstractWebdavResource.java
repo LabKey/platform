@@ -158,6 +158,10 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return PageFlowUtil.getContentTypeFor(getName());
     }
 
+    public String getAbsolutePath(User user)
+    {
+        return null;
+    }
 
     @NotNull
     public String getHref(ViewContext context)

@@ -46,6 +46,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -271,6 +272,16 @@ public class FileSystemResource extends AbstractWebdavResource
         return new FileInputStream(getFile());
     }
 
+    @Override
+    public String getAbsolutePath(User user)
+    {
+        if (SecurityManager.canSeeFilePaths(getContainer(), user))
+        {
+            File file = getFile();
+            return null != file ? file.getAbsolutePath() : null;
+        }
+        return null;
+    }
 
     public long copyFrom(User user, FileStream is) throws IOException
     {

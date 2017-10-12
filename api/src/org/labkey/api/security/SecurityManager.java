@@ -93,6 +93,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
@@ -3066,6 +3067,11 @@ public class SecurityManager
         // check on the current container filter will return true
         //
         return user.hasRootPermission(CanSeeAuditLogPermission.class);
+    }
+
+    public static boolean canSeeFilePaths(Container c, User user)
+    {
+        return c.hasPermission(user, SeeFilePathsPermission.class) || user.hasRootPermission(SeeFilePathsPermission.class);
     }
 
     public static void adminRotatePassword(String rawEmail, BindException errors, Container c, User user) throws Exception
