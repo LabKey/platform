@@ -8605,6 +8605,51 @@ public class AdminController extends SpringActionController
         }
     }
 
+
+    public static class ValueForm
+    {
+        private String _value;
+
+        public String getValue()
+        {
+            return _value;
+        }
+
+        public void setValue(String value)
+        {
+            _value = value;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    static public class ToggleCSRFAction extends MutatingApiAction<ValueForm>
+    {
+        @Override
+        public void validateForm(ValueForm valueForm, Errors errors)
+        {
+            if (!Arrays.asList("POST","ADMINONLY").contains(valueForm.getValue()))
+                errors.reject(ERROR_MSG,"value should be POST or ADMINONLY");
+        }
+
+        @Override
+        public Object execute(ValueForm valueForm, BindException errors) throws Exception
+        {
+            if (!AppProps.getInstance().isDevMode())
+                throw new UnsupportedOperationException("only allowed in dev mode");
+            String old = AppProps.getInstance().getCSRFCheck();
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setCSRFCheck(valueForm.getValue());
+            props.save();
+            JSONObject ret = new JSONObject();
+            ret.put("success",true);
+            ret.put("previousValue", old);
+            ret.put("currentValue",  AppProps.getInstance().getCSRFCheck());
+            return ret;
+        }
+    }
+
+
     static class MothershipReportSelectionForm
     {
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
