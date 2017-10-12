@@ -417,7 +417,7 @@ public class PipelineController extends SpringActionController
 
         public BrowseWebPart(Path startPath)
         {
-            super(getContextContainer(), null);
+            super(getContextContainer(), null, null);
 
             FilesForm bean = getModelBean();
             ViewContext context = getViewContext();

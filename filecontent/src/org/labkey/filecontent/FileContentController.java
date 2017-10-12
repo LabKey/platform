@@ -452,7 +452,7 @@ public class FileContentController extends SpringActionController
 
         public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
         {
-            FilesWebPart part = new FilesWebPart(getContainer(), form.getFileSetName());
+            FilesWebPart part = new FilesWebPart(getContainer(), form.getFileSetName(), form.getFileRootName());
 
             if (null != form.getPath())
             {
@@ -1433,6 +1433,7 @@ public class FileContentController extends SpringActionController
         private String rootOffset;
         private String message;
         private String fileSetName;
+        private String fileRootName;
         private String path;
         private Boolean folderTreeVisible;
 
@@ -1494,6 +1495,16 @@ public class FileContentController extends SpringActionController
         public void setFolderTreeVisible(Boolean folderTreeVisible)
         {
             this.folderTreeVisible = folderTreeVisible;
+        }
+
+        public String getFileRootName()
+        {
+            return fileRootName;
+        }
+
+        public void setFileRootName(String fileRootName)
+        {
+            this.fileRootName = fileRootName;
         }
     }
 

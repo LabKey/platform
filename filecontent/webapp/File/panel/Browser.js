@@ -212,6 +212,12 @@ Ext4.define('File.panel.Browser', {
     showFolderTree : true,
 
     /**
+     * Hide grid and details
+     * @cfg {Boolean} showFolderTreeOnly
+     */
+    showFolderTreeOnly: false,
+
+    /**
      * @cfg {Boolean} showProperties
      */
     showProperties : false,
@@ -446,7 +452,9 @@ Ext4.define('File.panel.Browser', {
 
         this._initFolderOffset(this.fileSystem.getOffsetURL());
 
-        this.updateActions();
+        if (!this.showFolderTreeOnly) {
+            this.updateActions();
+        }
 
         if (this.showToolbar) {
             this.configureToolbar();
@@ -1152,14 +1160,17 @@ Ext4.define('File.panel.Browser', {
             items.push(this.getFolderTreeCfg());
         //}
 
-        items.push(this.getGridCfg());
+        if (!this.showFolderTreeOnly)
+        {
+            items.push(this.getGridCfg());
 
-        if (this.showUpload === true) {
-            items.push(this.getUploadPanel());
-        }
+            if (this.showUpload === true) {
+                items.push(this.getUploadPanel());
+            }
 
-        if (this.showDetails === true) {
-            items.push(this.getDetailPanel());
+            if (this.showDetails === true) {
+                items.push(this.getDetailPanel());
+            }
         }
 
         return items;
@@ -1340,7 +1351,9 @@ Ext4.define('File.panel.Browser', {
         //
         this.on('pipelineconfigured', function() { this.clearGridSelection(); }, this, {single: true});
 
-        this.updateActions();
+        if (!this.showFolderTreeOnly) {
+            this.updateActions();
+        }
     },
 
     getFolderTreeStoreCfg : function(configs) {
@@ -1431,14 +1444,14 @@ Ext4.define('File.panel.Browser', {
             itemId : 'treenav',
             region : 'west',
             cls : 'themed-panel treenav-panel',
-            width : 225,
+            width : options.width ? options.width : 225,
             store : store,
             hidden: options.hidden,
             collapsed: options.collapsed,
-            collapsible : true,
+            collapsible : !this.showFolderTreeOnly,
             collapseMode : 'mini',
-            split : true,
-            useArrows : true,
+            split : !this.showFolderTreeOnly,
+            useArrows : !this.showFolderTreeOnly,
             border: false,
             listeners : {
                 beforerender : function(t) { this.tree = t; },
@@ -1460,9 +1473,14 @@ Ext4.define('File.panel.Browser', {
             }
         });
 
+        var isWebDav = this.isWebDav;
         treeStore.getProxy().read(operation, function(s) {
             if (s.success) {
                 treeStore.getRootNode().set('options', s.resultSet.records[0].get('options'));
+            }
+            else if (!isWebDav && s.error && s.error.status === 404)
+            {
+                Ext4.Msg.alert("Error", "File root directory configured for this web part could not be found.");
             }
 
             if (this.showUpload) {
