@@ -19,6 +19,9 @@ package org.labkey.api.files.view;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
@@ -42,6 +45,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
     public static class CustomizeWebPartForm
     {
         private String fileSet;
+        private String fileRoot; // webdav node id
         private String path;
         private boolean useFileSet;
         private boolean _folderTreeVisible;
@@ -59,7 +63,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
             Map<String, String> propertyMap = webPart.getPropertyMap();
 
-            fileSet = propertyMap.get(FilesWebPart.FILESET_PROPERTY_NAME);
+            fileSet = propertyMap.get(FilesWebPart.FILESET_PROPERTY_NAME); // legacy file root
             path = propertyMap.get(FilesWebPart.PATH_PROPERTY_NAME);
             _rootOffset = propertyMap.get(FilesWebPart.ROOT_OFFSET_PROPERTY_NAME);
             _title = propertyMap.get(FilesWebPart.TITLE_PROPERTY_NAME);
@@ -68,6 +72,9 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
                 size = Integer.parseInt(propertyMap.get(FilesWebPart.SIZE_PROPERTY_NAME));
 
             _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get(FilesWebPart.FOLDER_TREE_VISIBLE_PROPERTY_NAME));
+
+            String davFileRoot = propertyMap.get(FilesWebPart.FILE_ROOT_PROPERTY_NAME);
+            fileRoot = getDavTreeFileRoot(davFileRoot, fileSet, getContextContainer());
 
             useFileSet = fileSet != null;
         }
@@ -166,5 +173,43 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             }
             return cloudStoreNames;
         }
+
+        public String getFileRoot()
+        {
+            return fileRoot;
+        }
+
+        public void setFileRoot(String fileRoot)
+        {
+            this.fileRoot = fileRoot;
+        }
     }
+
+    public static String getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
+    {
+        if (fileRoot != null)
+        {
+            return c.getEncodedPath() + fileRoot;
+        }
+        else if (legacyFileRoot != null) // legacy file root
+        {
+            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                return FilesWebPart.getRootPath(c, root != null && root.isDefault() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
+            }
+            else if (legacyFileRoot.startsWith(CloudStoreService.CLOUD_NAME))
+            {
+                // UNDONE: Configure filebrowser to not expand by default since even listing store contents costs money.
+                String storeName = legacyFileRoot.substring((CloudStoreService.CLOUD_NAME + "/").length());
+                return FilesWebPart.getRootPath(c, CloudStoreService.CLOUD_NAME, storeName, true);
+            }
+            else
+            {
+                return FilesWebPart.getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot, true);
+            }
+        }
+        return FilesWebPart.getRootPath(c, FileContentService.FILES_LINK, null, true);
+    }
+
 }

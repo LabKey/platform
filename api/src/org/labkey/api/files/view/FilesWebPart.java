@@ -67,7 +67,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     public static final String PART_NAME = "Files";
     public static final String DEFAULT_TITLE = "Files";
     public static final String TITLE_PROPERTY_NAME = "title";
-    public static final String FILESET_PROPERTY_NAME = "fileSet";
+    public static final String FILESET_PROPERTY_NAME = "fileSet"; // legacy file foot, could be null, @pipeline, @cloud*, or fileset names
+    public static final String FILE_ROOT_PROPERTY_NAME = "fileRoot"; // new file root, could be any child node on the container's webdav tree
     public static final String SIZE_PROPERTY_NAME = "size";
     public static final String PATH_PROPERTY_NAME = "path";
     public static final String ROOT_OFFSET_PROPERTY_NAME = "rootOffset";
@@ -82,7 +83,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     private static final String JSP = "/org/labkey/api/files/view/filesWebPart.jsp";
 
-    public FilesWebPart(Container c, @Nullable String fileSet)
+    public FilesWebPart(Container c, @Nullable String legacyFileRoot, @Nullable String fileRoot)
     {
         super(JSP);
         container = c;
@@ -92,32 +93,40 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
         setBodyClass("labkey-wp-nopadding");
 
-        if (fileSet != null)
+        if (fileRoot != null)
         {
-            if (fileSet.equals(FileContentService.PIPELINE_LINK))
+            if (fileRoot.startsWith(FileContentService.PIPELINE_LINK))
+            {
+                _isPipelineFiles = true;
+            }
+
+            getModelBean().setRootPath(getWebPartFolderRootPath(c, fileRoot));
+        }
+        else if (legacyFileRoot != null) // legacy file root
+        {
+            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
             {
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
                 if (root != null)
                 {
                     getModelBean().setRootPath(root.getWebdavURL());
-                    getModelBean().setRootDirectory(root.getRootPath());
                 }
                 setTitleHref(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c));
                 setTitle("Pipeline Files");
             }
-            else if (fileSet.startsWith(CloudStoreService.CLOUD_NAME))
+            else if (legacyFileRoot.startsWith(CloudStoreService.CLOUD_NAME))
             {
                 // UNDONE: Configure filebrowser to not expand by default since even listing store contents costs money.
-                String storeName = fileSet.substring((CloudStoreService.CLOUD_NAME + "/").length());
+                String storeName = legacyFileRoot.substring((CloudStoreService.CLOUD_NAME + "/").length());
                 getModelBean().setRootPath(getRootPath(c, CloudStoreService.CLOUD_NAME, storeName));
                 setTitle(storeName);
-                setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", fileSet));
+                setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", legacyFileRoot));
             }
             else
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                AttachmentDirectory dir = svc.getRegisteredDirectory(c, fileSet);
+                AttachmentDirectory dir = svc.getRegisteredDirectory(c, legacyFileRoot);
 
                 if (dir != null)
                 {
@@ -132,10 +141,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                         throw new RuntimeException(e);
                     }
                 }
-                getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, fileSet));
-                setTitle(fileSet);
-                setFileSet(fileSet);
-                setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", fileSet));
+                getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot));
+                setTitle(legacyFileRoot);
+                setFileSet(legacyFileRoot);
+                setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", legacyFileRoot));
             }
         }
 
@@ -144,7 +153,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
     {
-        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get(FILESET_PROPERTY_NAME)));
+        this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get(FILESET_PROPERTY_NAME)), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get(FILE_ROOT_PROPERTY_NAME)));
 
         CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
@@ -304,7 +313,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     public static String getRootPath(Container c, @Nullable String davName, @Nullable String fileset)
     {
-        String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
+        return getRootPath(c, davName, fileset, false);
+    }
+
+    public static String getRootPath(Container c, @Nullable String davName, @Nullable String fileset, boolean skipDavPrefix)
+    {
+        String webdavPrefix = skipDavPrefix ? "" : AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
         String rootPath = webdavPrefix + c.getEncodedPath();
 
         if (davName != null)
@@ -313,6 +327,20 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             if (fileset != null)
                 rootPath += "/" + fileset;
         }
+
+        if (!rootPath.endsWith("/"))
+            rootPath += "/";
+
+        return rootPath;
+    }
+
+    public static String getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
+    {
+        String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
+        String rootPath = webdavPrefix + c.getEncodedPath();
+
+        if (folderFileRoot != null)
+            rootPath += "/" + folderFileRoot;
 
         if (!rootPath.endsWith("/"))
             rootPath += "/";
