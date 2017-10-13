@@ -63,6 +63,7 @@ public class QueryUpdateForm extends TableViewForm
         }
     }
 
+    @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String name)
     {
         if (name.length() < PREFIX.length())
@@ -80,6 +81,7 @@ public class QueryUpdateForm extends TableViewForm
     {
         _successUrl = s;
     }
+
     public String getSuccessUrl()
     {
         return _successUrl;

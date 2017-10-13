@@ -25,6 +25,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
@@ -722,6 +723,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return column.getPropertyName();
     }
 
+    @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String name)
     {
         return null == getTable() ? null : getTable().getColumn(name);
