@@ -347,6 +347,10 @@
     cursor: pointer;
   }
 
+  span.noread:hover {
+    cursor: default; // 31835
+  }
+
   .clbl span.marked {
     padding: 0 0 0 10px;
     margin: 0 3px;
