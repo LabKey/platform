@@ -73,7 +73,7 @@
             <% me.include(bean.getSamplePropertiesView(), out); %>
         <%FrameFactoryClassic.endPanelFrame(out);%>
 
-        <%FrameFactoryClassic.startPanelFrame(out, bean.getSampleNoun() + "Information");%>
+        <%FrameFactoryClassic.startPanelFrame(out, bean.getSampleNoun() + " Information");%>
             <% me.include(bean.getSampleDilutionsView(), out); %>
         <%FrameFactoryClassic.endPanelFrame(out);%>
 
