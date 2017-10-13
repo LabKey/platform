@@ -85,6 +85,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -5830,6 +5831,11 @@ public class ExperimentServiceImpl implements ExperimentService
         prop.setImportAliases((String)obj.get("importAliases"));
         prop.setURL((String)obj.get("url"));
         prop.setRedactedText((String)obj.get("redactedText"));
+        prop.setDefaultValue((String)obj.get("defaultValue"));
+
+        String defaultValueType = ((String)obj.get("defaultValueType"));
+        if (defaultValueType != null)
+            prop.setDefaultValueType(DefaultValueType.valueOf(defaultValueType));
 
         if (obj.has("scale"))
             prop.setScale((Integer)obj.get("scale"));
