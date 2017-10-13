@@ -525,7 +525,8 @@ public class StudyPublishTest extends StudyPHIExportTest
                     throw new RuntimeException(e);
                 }
 
-                if (response.getRowCount().intValue() > 0)
+                if ((removePhiColumns && (response.getRowCount().intValue() != 0))
+                        || (!removePhiColumns && (response.getRowCount().intValue() != 10)))
                 {
                     // Fail with a useful screenshot
                     t1.ensureColumnPresent(field);
