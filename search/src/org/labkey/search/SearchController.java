@@ -556,7 +556,7 @@ public class SearchController extends SpringActionController
             final String query = form.getQueryString();
             final JSONObject response = new JSONObject();
             Object[] arr = new Object[0];
-            int totalHits = 0;
+            long totalHits = 0;
 
             if (null != StringUtils.trimToNull(query))
             {

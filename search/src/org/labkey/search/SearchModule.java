@@ -68,7 +68,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 17.20;
+        return 17.21;
     }
 
     public boolean hasScripts()
@@ -134,14 +134,11 @@ public class SearchModule extends DefaultModule
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
-            // Note: We upgraded to Lucene 6.x in 16.2. If they release and we upgrade to 7.x before 18.3, then the ss.clear() call
-            // below may fail. If so, consider switching the clear() mechanism to wipe out the index directory of all files instead.
+            // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade Lucene (the indexing library) to a new version.
+            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 17.21);
 
             // Update the version number below to force a clear and rebuild of the index. This is used when we change our indexing content or methodology.
-            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 16.13);
-
-            // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade the indexing library to a new version.
-            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 16.31);
+            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 17.21);
 
             // don't start the crawler or clear the index until all the modules are done starting up
             ContextListener.addStartupListener(new StartupListener()
@@ -154,16 +151,16 @@ public class SearchModule extends DefaultModule
 
                 public void moduleStartupComplete(ServletContext servletContext)
                 {
-                    if (clearIndex)
-                    {
-                        // Legal to call clear() before we start the SearchService
-                        ss.clear();
-                    }
-
                     if (upgradeIndex)
                     {
                         // Must call upgradeIndex() before we start the SearchService
                         ss.upgradeIndex();
+                    }
+
+                    if (clearIndex)
+                    {
+                        // Legal to call clear() before we start the SearchService
+                        ss.clear();
                     }
                 }
             });

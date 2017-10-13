@@ -176,8 +176,8 @@
         {
             SearchResult result = searchConfig.getSearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, offset, hitsPerPage);
 
-            int hits = result.totalHits;
-            int pageCount = (int)Math.ceil((double)hits / hitsPerPage);
+            long hits = result.totalHits;
+            long pageCount = (long)Math.ceil((double)hits / hitsPerPage);
 
             %>
             <table class="labkey-search-results-counts" cellspacing=0 cellpadding=0 width=100%>
@@ -441,7 +441,7 @@ NavTree getDocumentContext(Container c, SearchService.SearchHit hit)
 }
 
 
-String getResultsSummary(int totalHits, @Nullable String description, @NotNull String resultName, @NotNull String resultNamePlural, @Nullable String nonZeroInstruction)
+String getResultsSummary(long totalHits, @Nullable String description, @NotNull String resultName, @NotNull String resultNamePlural, @Nullable String nonZeroInstruction)
 {
     StringBuilder sb = new StringBuilder("Found ");
     sb.append(Formats.commaf0.format(totalHits));

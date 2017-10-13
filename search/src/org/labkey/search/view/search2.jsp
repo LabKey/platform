@@ -138,7 +138,7 @@
         return new NavTree(text, url);
     }
 
-    String getPageSummary(int totalHits, @NotNull SearchResultTemplate template, int hitsPerPage, int pageNo, int pageCount)
+    String getPageSummary(long totalHits, @NotNull SearchResultTemplate template, int hitsPerPage, int pageNo, int pageCount)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -158,7 +158,7 @@
         return sb.toString();
     }
 
-    String getResultsSummary(int totalHits, @NotNull SearchResultTemplate template)
+    String getResultsSummary(long totalHits, @NotNull SearchResultTemplate template)
     {
         StringBuilder sb = new StringBuilder("Found ")
                 .append(Formats.commaf0.format(totalHits))
@@ -407,7 +407,7 @@
     <div class="panel panel-portal">
         <div class="panel-body">
             <%
-                int hits = result.totalHits;
+                long hits = result.totalHits;
                 int pageCount = (int)Math.ceil((double)hits / hitsPerPage);
             %>
             <div class="labkey-search-results-counts">

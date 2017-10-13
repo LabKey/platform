@@ -218,8 +218,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         title,            // This is just the display title. keywordsMed is used to index title/subject terms.
         summary,
         url,
-        container,        // Used in two places: stored field in documents (used for low volume purposes, delete and results display) and field in doc values (for high volume security filtering)
-        resourceId,
+        container,        // Used as stored field in documents (used for low volume purposes, delete and results display). See securityIds below.
+        securityContext,  // Stored in DocValues and used in SecurityQuery, which filters every search query. Format is <containerId>(|<resourceId>), where resourceId is optional (and rarely used)
         uniqueId,
         navtrail
     }
@@ -599,8 +599,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAME.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
             doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
 
-            doc.add(new SortedDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
-
             // === Index and analyze, don't store ===
 
             // We're using the LabKeyAnalyzer, which is a PerFieldAnalyzerWrapper that ensures categories and identifier fields
@@ -627,9 +625,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new StoredField(FIELD_NAME.url.toString(), url));
             if (null != props.get(PROPERTY.navtrail.toString()))
                 doc.add(new StoredField(FIELD_NAME.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString())));
+
+            // === Store security context in DocValues field ===
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
-            if (null != resourceId && !resourceId.equals(r.getContainerId()))
-                doc.add(new SortedDocValuesField(FIELD_NAME.resourceId.toString(), new BytesRef(resourceId)));
+            String securityContext = r.getContainerId() + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
+            doc.add(new SortedDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
 
             // === Custom properties: Index and analyze, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
@@ -1213,7 +1213,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    private int getDocCount(Query query) throws IOException
+
+
+    private long getDocCount(Query query) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
 

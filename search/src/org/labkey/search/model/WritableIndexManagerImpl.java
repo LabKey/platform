@@ -18,7 +18,6 @@ package org.labkey.search.model;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexGate;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -284,8 +283,10 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         try
         {
-            IndexGate.FormatDetails formatDetails = IndexGate.getIndexFormat(_directory);
-            return formatDetails.genericName;
+//            IndexGate.FormatDetails formatDetails = IndexGate.getIndexFormat(_directory);
+//            return formatDetails.genericName;
+            // TODO: Use new Lucene 7.x API to retrieve format info
+            return "Unknown";
         }
         catch (Exception e)
         {

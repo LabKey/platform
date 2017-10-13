@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+
 /*
 * User: adam
 * Date: Dec 16, 2009
@@ -99,9 +101,9 @@ class SecurityQuery extends Query
 
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException
+    public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException
     {
-        return new ConstantScoreWeight(this)
+        return new ConstantScoreWeight(this, boost)
         {
             @Override
             public Scorer scorer(LeafReaderContext context) throws IOException
@@ -113,45 +115,39 @@ class SecurityQuery extends Query
                 int maxDoc = reader.maxDoc();
                 FixedBitSet bits = new FixedBitSet(maxDoc);
 
-                SortedDocValues containerDocValues = reader.getSortedDocValues(FIELD_NAME.container.name());
-                SortedDocValues resourceDocValues = reader.getSortedDocValues(FIELD_NAME.resourceId.name());
-                BytesRef bytesRef;
+                SortedDocValues securityContextDocValues = reader.getSortedDocValues(FIELD_NAME.securityContext.name());
 
                 try
                 {
-                    for (int i = 0; i < maxDoc; i++)
+                    int doc;
+
+                    // Can be null, if no documents (e.g., shortly after bootstrap or clear index)
+                    if (null != securityContextDocValues)
                     {
-                        bytesRef = containerDocValues.get(i);
-                        String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
-
-                        if (!_containerIds.containsKey(containerId))
-                            continue;
-
-                        // Can be null, if no documents have a resource ID (e.g., shortly after bootstrap)
-                        if (null != resourceDocValues)
+                        while (NO_MORE_DOCS != (doc = securityContextDocValues.nextDoc()))
                         {
-                            bytesRef = resourceDocValues.get(i);
-                            String resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
+                            BytesRef bytesRef = securityContextDocValues.binaryValue();
+                            String securityContext = StringUtils.trimToNull(bytesRef.utf8ToString());
 
-                            if (null != resourceId && !resourceId.equals(containerId))
+                            final String containerId;
+                            final String resourceId;
+
+                            // SecurityContext is usually just a container ID, but in some cases it adds a resource ID.
+                            if (securityContext.length() > 36)
                             {
-                                if (!_containerIds.containsKey(resourceId))
-                                {
-                                    Boolean canRead = _securableResourceIds.get(resourceId);
-                                    if (null == canRead)
-                                    {
-                                        SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
-                                        SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-                                        canRead = p.hasPermission(_user, ReadPermission.class);
-                                        _securableResourceIds.put(resourceId, canRead);
-                                    }
-                                    if (!canRead)
-                                        continue;
-                                }
+                                containerId = securityContext.substring(0, 36);
+                                resourceId = securityContext.substring(37);
                             }
-                        }
+                            else
+                            {
+                                containerId = securityContext;
+                                resourceId = null;
+                            }
 
-                        bits.set(i);
+                            // Must have read permission on the container (always). Must also have read permissions on resource ID, if non-null.
+                            if (_containerIds.containsKey(containerId) && (null == resourceId || canReadResource(resourceId, containerId)))
+                                bits.set(doc);
+                        }
                     }
 
                     return new ConstantScoreScorer(this, score(), new BitSetIterator(bits, bits.approximateCardinality()));
@@ -162,6 +158,26 @@ class SecurityQuery extends Query
                 }
             }
         };
+    }
+
+    private boolean canReadResource(String resourceId, String containerId)
+    {
+        assert !resourceId.equals(containerId);
+
+        if (_containerIds.containsKey(resourceId))
+            return true;
+
+        Boolean canRead = _securableResourceIds.get(resourceId);
+
+        if (null == canRead)
+        {
+            SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
+            SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
+            canRead = p.hasPermission(_user, ReadPermission.class);
+            _securableResourceIds.put(resourceId, canRead);
+        }
+
+        return canRead;
     }
 
     @Override

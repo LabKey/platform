@@ -2,11 +2,13 @@ configurations {
    tika { transitive = false } // we don't want all of the jars that tika depends on to be copied, #30592
 }
 
+ext.luceneVersion="7.0.1"
+
 dependencies {
-   external 'org.apache.lucene:lucene-analyzers-common:6.6.1'
-   external 'org.apache.lucene:lucene-core:6.6.1'
-   external 'org.apache.lucene:lucene-queryparser:6.6.1'
-   external 'org.apache.lucene:lucene-backward-codecs:6.6.1'
+   external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
+   external "org.apache.lucene:lucene-core:${luceneVersion}"
+   external "org.apache.lucene:lucene-queryparser:${luceneVersion}"
+   external "org.apache.lucene:lucene-backward-codecs:${luceneVersion}"
    tika "org.apache.tika:tika-app:${tikaVersion}"
 }
 
