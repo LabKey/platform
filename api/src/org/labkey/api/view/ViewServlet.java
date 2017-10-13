@@ -184,14 +184,14 @@ public class ViewServlet extends HttpServlet
             }
             catch (Exception x)
             {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid URL");
+                ExceptionUtil.handleException(request, response, new NotFoundException("Invalid URL"), null, false);
                 return;
             }
 
             Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
             if (module == null)
             {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server module registered to handle request for controller: " + url.getController());
+                ExceptionUtil.handleException(request, response, new NotFoundException("No LabKey Server module registered to handle request for controller: " + url.getController()), null, false);
                 return;
             }
 

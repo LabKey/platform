@@ -47,6 +47,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -56,6 +57,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -1194,7 +1196,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         if (controller == null)
         {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server controller registered to handle request: " + url.getController());
+            ExceptionUtil.handleException(request, response, new NotFoundException("No LabKey Server controller registered to handle request: " + url.getController()), null, false);
             return;
         }
 

@@ -21,7 +21,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -491,8 +495,7 @@ public class ExceptionUtil
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        SearchService ss = SearchService.get();
-        return handleException(request, response, ex, message, startupFailure, ss, LOG);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG);
     }
 
     static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
@@ -563,8 +566,6 @@ public class ExceptionUtil
 
         User user = (User) request.getUserPrincipal();
         boolean isGET = "GET".equals(request.getMethod());
-
-        ErrorView errorView;
         Map<String, String> headers = new TreeMap<>();
 
         if (ViewServlet.isShuttingDown())
@@ -667,8 +668,6 @@ public class ExceptionUtil
             message = responseStatus + ": Unexpected server error";
         }
 
-        errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
-
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
         if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED &&
                 responseStatus != HttpServletResponse.SC_FORBIDDEN &&
@@ -677,19 +676,8 @@ public class ExceptionUtil
             log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
-        if (ex instanceof UnauthorizedException)
-        {
-            if (ex instanceof ForbiddenProjectException)
-            {
-                // Not allowed in the project... don't offer Home or Folder buttons
-                errorView.setIncludeHomeButton(false);
-                errorView.setIncludeFolderButton(false);
-            }
-
-            // Provide "Stop Impersonating" button if unauthorized while impersonating
-            if (user.isImpersonated())
-                errorView.setIncludeStopImpersonatingButton(true);
-        }
+        boolean isJSON = request.getContentType() != null && request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON);
+        boolean isXML = request.getContentType() != null && request.getContentType().contains(ApiXmlWriter.CONTENT_TYPE);
 
         if (response.isCommitted())
         {
@@ -713,8 +701,58 @@ public class ExceptionUtil
                 }
             }
         }
+        // TODO: Possibly respect "respFormat" parameter as found in ApiAction first?
+        else if (isJSON || isXML)
+        {
+            try
+            {
+                response.setContentType(request.getContentType());
+                response.setCharacterEncoding("utf-8");
+
+                if (null == responseStatusMessage)
+                    response.setStatus(responseStatus);
+                else
+                    response.setStatus(responseStatus, responseStatusMessage);
+
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    response.addHeader(entry.getKey(), entry.getValue());
+
+                ApiSimpleResponse errorResponse = new ApiSimpleResponse("success", false);
+
+                if (responseStatusMessage != null)
+                    errorResponse.put("exception", responseStatusMessage);
+
+                ApiResponseWriter writer;
+                if (isJSON)
+                    writer = ApiResponseWriter.Format.JSON.createWriter(response, null);
+                else
+                    writer = ApiResponseWriter.Format.XML.createWriter(response, null);
+
+                errorResponse.render(writer);
+            }
+            catch (Exception x)
+            {
+                log.error("Global.handleException", x);
+            }
+        }
         else
         {
+            ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
+
+            if (ex instanceof UnauthorizedException)
+            {
+                if (ex instanceof ForbiddenProjectException)
+                {
+                    // Not allowed in the project... don't offer Home or Folder buttons
+                    errorView.setIncludeHomeButton(false);
+                    errorView.setIncludeFolderButton(false);
+                }
+
+                // Provide "Stop Impersonating" button if unauthorized while impersonating
+                if (user.isImpersonated())
+                    errorView.setIncludeStopImpersonatingButton(true);
+            }
+
             try
             {
                 response.setContentType("text/html");
@@ -725,7 +763,6 @@ public class ExceptionUtil
                 for (Map.Entry<String, String> entry : headers.entrySet())
                     response.addHeader(entry.getKey(), entry.getValue());
                 errorView.render(request, response);
-                return null;
             }
             catch (IllegalStateException ignored)
             {
