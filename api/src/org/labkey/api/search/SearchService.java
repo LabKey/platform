@@ -225,7 +225,7 @@ public interface SearchService
     
     class SearchResult
     {
-        public int totalHits;
+        public long totalHits;
         public List<SearchHit> hits;
     }
 
