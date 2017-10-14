@@ -42,6 +42,8 @@ public class WebdavService
     CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
     private Set<String> _preGzippedExtensions = new CaseInsensitiveHashSet();
 
+    private static final List<WebdavResolver> _rootResolvers = new CopyOnWriteArrayList<>();
+
     final static WebdavService _instance;
     static
     {
@@ -59,13 +61,21 @@ public class WebdavService
     {
         _resolver = r;
     }
-    
 
     public WebdavResolver getResolver()
     {
         return _resolver;
     }
 
+    public List<WebdavResolver> getRootResolvers()
+    {
+        return _rootResolvers;
+    }
+
+    public void registerRootResolver(WebdavResolver webdavResolver)
+    {
+        _rootResolvers.add(webdavResolver);
+    }
 
     @Nullable
     public WebdavResource lookup(Path path)
@@ -97,16 +107,9 @@ public class WebdavService
 
     final private static Path _path = Path.parse("/_webdav/");
 
-    final private static Path _userPath = Path.parse("/_users/");
-
     public static Path getPath()
     {
         return _path;
-    }
-
-    public static Path getUserPath()
-    {
-        return _userPath;
     }
 
     public WebdavResource lookupHref(String href) throws URISyntaxException

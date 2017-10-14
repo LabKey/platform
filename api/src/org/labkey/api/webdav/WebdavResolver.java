@@ -63,6 +63,11 @@ public interface WebdavResolver extends Resolver
         return true;
     }
 
+    default boolean isStaticContent()
+    {
+        return true;
+    }
+
     interface History
     {
         User getUser();

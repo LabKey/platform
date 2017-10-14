@@ -40,7 +40,7 @@ import java.util.Set;
 /**
  * Created by iansigmon on 6/20/16.
  */
-public class UserResolverImpl implements WebdavResolver
+public class UserResolverImpl extends AbstractWebdavResolver
 {
     static UserResolverImpl _instance = new UserResolverImpl(Path.parse(UsersCollectionResource.USERS_LINK));
     final Path _rootPath;
@@ -57,7 +57,7 @@ public class UserResolverImpl implements WebdavResolver
 
     private AbstractWebdavResourceCollection _root;
 
-    synchronized WebdavResource getRoot()
+    protected synchronized WebdavResource getRoot()
     {
         if (null == _root)
         {
@@ -83,41 +83,6 @@ public class UserResolverImpl implements WebdavResolver
     public Path getRootPath()
     {
         return _rootPath;
-    }
-
-    @Nullable
-    @Override
-    public LookupResult lookupEx(Path fullPath)
-    {
-        if (fullPath == null || !fullPath.startsWith(getRootPath()))
-            return null;
-        Path path = getRootPath().relativize(fullPath).normalize();
-
-        WebdavResource root = getRoot();
-        if (path.size() == 0)
-            return new LookupResult(this,root);
-
-        // start at the root and work down, to avoid lots of cache misses
-        WebdavResource resource = root;
-        for (String name : path)
-        {
-            WebdavResource r = resource.find(name);
-            // short circuit the descent at last web folder
-            if (null == r  || r instanceof WebdavResolverImpl.UnboundResource)
-                return new LookupResult(this,new WebdavResolverImpl.UnboundResource(fullPath));
-            resource = r;
-        }
-
-        if (null == resource)
-            resource = new WebdavResolverImpl.UnboundResource(fullPath);
-        return new LookupResult(this,resource);
-    }
-
-    @Nullable
-    @Override
-    public WebdavResource welcome()
-    {
-        return lookup(Path.rootPath);
     }
 
     @Override

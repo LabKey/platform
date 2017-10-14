@@ -7056,6 +7056,7 @@ internal/src/org/labkey/api/view/LinkBarView.java -text
 internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
+internal/src/org/labkey/api/webdav/AbstractWebdavResolver.java -text
 internal/src/org/labkey/api/webdav/FileSystemBatchAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text

@@ -16,7 +16,6 @@
 
 package org.labkey.api.webdav;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,37 +23,25 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 
 
 /**
@@ -62,7 +49,7 @@ import java.util.TreeSet;
  * Date: Apr 28, 2008
  * Time: 2:07:13 PM
  */
-public class WebdavResolverImpl implements WebdavResolver
+public class WebdavResolverImpl extends AbstractWebdavResolver
 {
     static WebdavResolverImpl _instance = new WebdavResolverImpl(WebdavService.getPath());
 
@@ -84,49 +71,18 @@ public class WebdavResolverImpl implements WebdavResolver
         return false;
     }
 
-    public WebdavResource welcome()
-    {
-        return lookup(Path.rootPath);
-    }
-
     public Path getRootPath()
     {
         return _rootPath;
     }
 
-    public LookupResult lookupEx(Path fullPath)
-    {
-        if (fullPath == null || !fullPath.startsWith(getRootPath()))
-            return null;
-        Path path = getRootPath().relativize(fullPath).normalize();
+    WebDavFolderResource _root = null;
 
-        WebdavResource root = getRoot();
-        if (path.size() == 0)
-            return new LookupResult(this,root);
-
-        // start at the root and work down, to avoid lots of cache misses
-        WebdavResource resource = root;
-        for (String name : path)
-        {
-            WebdavResource r = resource.find(name);
-            // short circuit the descent at last web folder
-            if (null == r  || r instanceof UnboundResource)
-                return new LookupResult(this,new UnboundResource(fullPath));
-            resource = r;
-        }
-        if (null == resource)
-            resource = new UnboundResource(fullPath);
-        return new LookupResult(this,resource);
-    }
-
-
-    WebFolderResource _root = null;
-
-    synchronized WebdavResource getRoot()
+    protected synchronized WebdavResource getRoot()
     {
         if (null == _root)
         {
-            _root = new WebFolderResource(this, ContainerManager.getRoot())
+            _root = new WebDavFolderResource(this, ContainerManager.getRoot())
             {
                 @Override
                 public boolean canList(User user, boolean forRead)
@@ -143,7 +99,6 @@ public class WebdavResolverImpl implements WebdavResolver
     {
         return "webdav";
     }
-
 
     private class WebdavListener extends ContainerManager.AbstractContainerListener
     {
@@ -245,142 +200,16 @@ public class WebdavResolverImpl implements WebdavResolver
         }
     }
 
-    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
+    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
     // end up with just one of these.
     private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders");
 
-    public class WebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
+    public class WebDavFolderResource extends WebFolderResource
     {
-        WebdavResolver _resolver;
-        final Container _c;
-        ArrayList<String> _children = null;
-
-        WebFolderResource(WebdavResolver resolver, Container c)
+        WebDavFolderResource(WebdavResolver resolver, Container c)
         {
-            super(resolver.getRootPath().append(c.getParsedPath()), resolver);
-            _resolver = resolver;
-            _c = c;
-            _containerId = c.getId();
-            setPolicy(c.getPolicy());
+            super(resolver, c);
         }
-
-        @Override
-        public long getCreated()
-        {
-            return null != _c && null != _c.getCreated() ? _c.getCreated().getTime() : Long.MIN_VALUE;
-        }
-
-        @Override
-        public User getCreatedBy()
-        {
-            return UserManager.getUser(_c.getCreatedBy());
-        }
-
-        @Override
-        public long getLastModified()
-        {
-            return getCreated();
-        }
-
-        @Override
-        public User getModifiedBy()
-        {
-            return getCreatedBy();
-        }
-
-        @Override
-        public String getExecuteHref(ViewContext context)
-        {
-            // context
-            Path contextPath = null==context ? AppProps.getInstance().getParsedContextPath() : Path.parse(context.getContextPath());
-            // _webdav
-            Path path = contextPath.append(getPath().get(0)).append(getContainerId());
-            return path.encode("/", "/");
-        }
-
-        public Container getContainer()
-        {
-            return _c;
-        }
-
-        public boolean exists()
-        {
-            return true;
-        }
-
-        public boolean isCollection()
-        {
-            return exists();
-        }
-
-        public synchronized List<String> getWebFoldersNames()
-        {
-            if (null == _children)
-            {
-                List<Container> list = ContainerManager.getChildren(_c);
-                ArrayList<String> children = new ArrayList<>(list.size() + 2);
-                for (Container aList : list)
-                    children.add(aList.getName());
-
-                for (WebdavService.Provider p : WebdavService.get().getProviders())
-                {
-                    Set<String> s = p.addChildren(this);
-                    if (s != null)
-                        children.addAll(s);
-                }
-                // providers might not be registred if !isStartupComplete();
-                if (!ModuleLoader.getInstance().isStartupComplete())
-                    return children;
-                _children = children;
-            }
-            return _children;
-        }
-
-
-        @Override 
-        public boolean canCreateCollection(User user, boolean forCreate)
-        {
-            return false;
-        }
-
-        @Override
-        public boolean canCreate(User user, boolean forCreate)
-        {
-            return false;
-//            return null != _attachmentResource && _attachmentResource.canCreate(user);
-        }
-
-        @Override
-        public boolean canRename(User user, boolean forRename)
-        {
-            return false;
-        }
-
-        @Override
-        public boolean canDelete(User user, boolean forDelete, List<String> message)
-        {
-            return false;
-        }
-
-        @Override
-        public boolean canWrite(User user, boolean forWrite)
-        {
-            return false;
-        }
-
-
-        @NotNull
-        public Collection<String> listNames()
-        {
-            Set<String> set = new TreeSet<>();
-//            if (null != _attachmentResource)
-//                set.addAll(_attachmentResource.listNames());
-            set.addAll(getWebFoldersNames());
-            ArrayList<String> list = new ArrayList<>(set);
-            Collections.sort(list);
-            return list;
-        }
-
 
         public WebdavResource find(String child)
         {
@@ -408,7 +237,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
                 if (c != null)
                 {
-                    resource = new WebFolderResource(_resolver, c);
+                    resource = new WebDavFolderResource(_resolver, c);
                 }
                 else
                 {
@@ -428,89 +257,6 @@ public class WebdavResolverImpl implements WebdavResolver
             }
 
             return new UnboundResource(this.getPath().append(child));
-        }
-    }
-
-
-    public static class UnboundResource extends AbstractWebdavResource
-    {
-        UnboundResource(String path)
-        {
-            super(Path.parse(path));
-        }
-
-        UnboundResource(Path path)
-        {
-            super(path);
-        }
-
-        public boolean exists()
-        {
-            return false;
-        }
-
-        public boolean isCollection()
-        {
-            return false;
-        }
-
-        public boolean isFile()
-        {
-            return false;
-        }
-
-        @Override
-        public Set<Class<? extends Permission>> getPermissions(User user)
-        {
-            return Collections.emptySet();
-        }
-
-
-
-        public WebdavResource find(String name)
-        {
-            return new UnboundResource(this.getPath().append(name));
-        }
-
-        public Collection<String> listNames()
-        {
-            return Collections.emptyList();
-        }
-
-        public Collection<WebdavResource> list()
-        {
-            return Collections.emptyList();
-        }
-
-        public long getCreated()
-        {
-            return Long.MIN_VALUE;
-        }
-
-        public long getLastModified()
-        {
-            return Long.MIN_VALUE;
-        }
-
-        public InputStream getInputStream(User user) throws IOException
-        {
-            return null;
-        }
-
-        public long copyFrom(User user, FileStream in) throws IOException
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public long getContentLength()
-        {
-            return 0;
-        }
-
-        @NotNull
-        public Collection<History> getHistory()
-        {
-            return Collections.emptyList();
         }
     }
 

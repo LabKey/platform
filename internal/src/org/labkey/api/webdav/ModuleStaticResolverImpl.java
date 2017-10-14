@@ -210,17 +210,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
             // This is so '_webdav' shows up as a child when someone does a propfind on '/'
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-            {
-                _root = new StaticResource(null, Path.emptyPath, roots,
-                            new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()),
-                            new SymbolicLink(UserResolverImpl.get().getRootPath(), UserResolverImpl.get()));
-            }
-            else
-            {
-                _root = new StaticResource(null, Path.emptyPath, roots,
-                            new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()));
-            }
+            List<WebdavResource> webdavResources = new ArrayList<>();
+            WebdavService.get().getRootResolvers().forEach(webdavResolver ->
+                webdavResources.add(new SymbolicLink(webdavResolver.getRootPath(), webdavResolver))
+            );
+            _root = new StaticResource(null, Path.emptyPath, roots, webdavResources);
             initialized.set(true);
         }
     }
@@ -373,11 +367,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     {
         WebdavResource _parent;
         List<File> _files;
-        WebdavResource[] _additional; // for _webdav
+        List<WebdavResource> _additional; // for _webdav
 
         final Object _lock = new Object();
 
-        StaticResource(WebdavResource parent, Path path, List<File> files, WebdavResource... addl)
+        StaticResource(WebdavResource parent, Path path, List<File> files, List<WebdavResource> addl)
         {
             super(path);
             this._parent = parent;
@@ -438,11 +432,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                     for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
                     {
                         Path path = getPath().append(e.getKey());
-                        children.put(e.getKey(), new StaticResource(this, path, e.getValue()));
+                        children.put(e.getKey(), new StaticResource(this, path, e.getValue(), null));
                     }
 
-                    for (WebdavResource r : _additional)
-                        children.put(r.getName(),r);
+                    if (_additional != null)
+                    {
+                        for (WebdavResource r : _additional)
+                            children.put(r.getName(),r);
+                    }
 
                     Map<String,Pair<Path,String>> shortcuts = getShortcuts(getPath());
                     for (Map.Entry<String,Pair<Path,String>> e : shortcuts.entrySet())
@@ -510,7 +507,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                     // might not be case sensitive, but this is just devmode
                     File f = new File(dir,name);
                     if (f.exists())
-                        return new StaticResource(this, getPath().append(f.getName()), new ArrayList<>(Collections.singletonList(f)));
+                        return new StaticResource(this, getPath().append(f.getName()), new ArrayList<>(Collections.singletonList(f)), null);
                 }
             }
             return r;
