@@ -433,7 +433,9 @@ Ext4.define('File.panel.Browser', {
         if (this.useHistory) {
 
             // safety check for now to make sure the browser is in WebDav
-            if (LABKEY.ActionURL.getController() !== '_webdav' && LABKEY.ActionURL.getController() !== '') {
+            if (LABKEY.ActionURL.getController() !== '_webdav'
+                    && LABKEY.ActionURL.getController() !== ''
+                    && LABKEY.ActionURL.getController() !== '_webfiles') {
                 this.useHistory = false;
                 console.warn('File Browser: Using history is only supported in WebDav view at this time.');
             }

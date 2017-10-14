@@ -83,9 +83,9 @@ public class WikiWebdavProvider implements WebdavService.Provider
     // currently addChildren is called only for web folders
     public Set<String> addChildren(@NotNull WebdavResource target)
     {
-        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebDavFolderResource))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
+        WebdavResolverImpl.WebDavFolderResource folder = (WebdavResolverImpl.WebDavFolderResource) target;
         Container c = folder.getContainer();
         return hasWiki(c) ? PageFlowUtil.set(WIKI_NAME) : null;
     }
@@ -95,9 +95,9 @@ public class WikiWebdavProvider implements WebdavService.Provider
     {
         if (!WIKI_NAME.equalsIgnoreCase(name))
             return null;
-        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebDavFolderResource))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
+        WebdavResolverImpl.WebDavFolderResource folder = (WebdavResolverImpl.WebDavFolderResource) parent;
         Container c = folder.getContainer();
         return WIKI_NAME.equals(name) ? new WikiProviderResource(folder,c) : null;
     }

@@ -19,6 +19,10 @@
 
         extend: 'File.system.Abstract',
 
+        statics: {
+            rootOptions: ['_webdav', '_users', '_webfiles']
+        },
+
         constructor: function (config)
         {
             Ext4.apply(this, config,
@@ -35,13 +39,12 @@
             this.pageId = LABKEY.Utils.generateUUID();
 
             // this is the webdav "extended context path", e.g. the root of the webdav file tree
-            // usually one of /labkey/_webdav, /labkey/_users, /_webdav, /_users
+            // usually one of /labkey/_webdav, /labkey/_users, /labkey/_webfiles, /_webdav, /_users, /_webfiles
             if (!this.contextUrl)
             {
-                if (this.rootPath.indexOf(LABKEY.contextPath + "/_webdav/") == 0)
-                    this.contextUrl = LABKEY.contextPath + "/_webdav";
-                else if (this.rootPath.indexOf(LABKEY.contextPath + "/_users/") == 0)
-                    this.contextUrl = LABKEY.contextPath + "/_users";
+                var rootContextUrl = this.getRootContextUrl();
+                if (rootContextUrl)
+                    this.contextUrl = rootContextUrl;
             }
 
             // '/home/@files' -- a stripped version of the rootPath
@@ -61,6 +64,19 @@
             this.callParent([config]);
 
             this.init(config);
+        },
+
+        getRootContextUrl: function()
+        {
+            var url = null, rootPath = this.rootPath;
+            Ext4.each(File.system.Webdav.rootOptions, function (root) {
+                if (rootPath.indexOf(LABKEY.contextPath + "/" + root + "/") == 0)
+                {
+                    url = LABKEY.contextPath + "/" + root;
+                    return false;
+                }
+            });
+            return url;
         },
 
         changeFromURL : function(rawURL)

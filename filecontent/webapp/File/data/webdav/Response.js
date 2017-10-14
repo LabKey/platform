@@ -55,7 +55,11 @@ Ext4.define('File.data.webdav.XMLResponse', {
             return uri ? uri.href : '';
         }},
         {
-            name : 'id', mapping : 'path', convert : function(val) { return val.indexOf('/_webdav')==0 ? val.substring(8) : val.indexOf("/_users")==0 ? val.substring(7) : val; }
+            name : 'id', mapping : 'path', convert : function(val) {
+                return val.indexOf('/_webdav')==0 ?
+                        val.substring(8) : val.indexOf("/_users")==0 ?
+                                val.substring(7) : val.indexOf("/_webfiles")==0 ?
+                                        val.substring(10) : val; }
         },{
             name : 'path'
         },{

@@ -93,7 +93,6 @@ import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.DirectRequest;
-import org.labkey.api.webdav.UserResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -4541,11 +4540,6 @@ public class DavController extends SpringActionController
         }
     }
 
-
-    static Path servletPrefix = WebdavService.getPath();
-    static Path userPrefix = WebdavService.getUserPath();
-
-
     /** allow html listing of this resource */
     private boolean allowHtmlListing(Path path) throws DavException
     {
@@ -4600,8 +4594,12 @@ public class DavController extends SpringActionController
 
     boolean isStaticContent(Path path)
     {
-        //If path starts with _webdav or _users return false
-        return !(path.startsWith(servletPrefix) || path.startsWith(userPrefix));
+        final Boolean[] isStatic = {true};
+        WebdavService.get().getRootResolvers().forEach(webdavResolver -> {
+            if (!webdavResolver.isStaticContent() && path.startsWith(webdavResolver.getRootPath()))
+                isStatic[0] = false;
+        });
+        return isStatic[0];
     }
 
 
@@ -5699,6 +5697,16 @@ public class DavController extends SpringActionController
         }
     }
 
+    public Path getResourceRootPath(WebdavResource resource)
+    {
+        final Path[] rootPath = new Path[1];
+        WebdavService.get().getRootResolvers().forEach(webdavResolver -> {
+            if (resource.getPath().startsWith(webdavResolver.getRootPath()))
+                rootPath[0] = webdavResolver.getRootPath();
+        });
+        return rootPath[0];
+    }
+
     WebdavStatus listHtml(WebdavResource resource)
     {
         if (!ModuleLoader.getInstance().isStartupComplete())
@@ -5709,10 +5717,9 @@ public class DavController extends SpringActionController
             ListPage page = new ListPage();
             page.resource = resource;
             page.loginURL = getLoginURL();
-            if (resource.getPath().startsWith(WebdavResolverImpl.get().getRootPath()))
-                page.root = WebdavResolverImpl.get().getRootPath();
-            else if (resource.getPath().startsWith(UserResolverImpl.get().getRootPath()))
-                page.root = UserResolverImpl.get().getRootPath();
+            Path resourceRootPath = getResourceRootPath(resource);
+            if (resourceRootPath != null)
+                page.root = resourceRootPath;
 
             PageConfig config = new PageConfig(resource.getPath() + "-- webdav");
 
