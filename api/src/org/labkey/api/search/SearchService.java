@@ -280,7 +280,7 @@ public interface SearchService
         }
     }
 
-    String getIndexFormatDescription();
+    Map<String, String> getIndexFormatProperties();
 
     List<Pair<String, String>> getDirectoryTypes();
 
