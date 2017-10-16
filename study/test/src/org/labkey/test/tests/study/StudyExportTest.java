@@ -571,7 +571,7 @@ public class StudyExportTest extends StudyManualTest
     private void modifyDatasetColumn(String dataset)
     {
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
-                .selectDatasetByName(dataset)
+                .selectDatasetByLabel(dataset)
                 .clickEditDefinition();
 
         PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
