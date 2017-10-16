@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -45,10 +46,7 @@ else
     %><p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
             <tr>
-                <td colspan="2">Index Format: <%=h(ss.getIndexFormatDescription())%></td>
-            </tr>
-            <tr>
-                <td>Path to full-text search index:</td>
+                <td>Path to full-text search index:&nbsp;</td>
                 <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>
             </tr><%
         if (hasAdminOpsPerms)
@@ -60,6 +58,23 @@ else
             %>
         </table>
     </labkey:form></p>
+
+<p><table>
+<tr>
+    <td colspan="2">Current Index Properties:</td>
+</tr>
+    <%
+        for (Map.Entry e : ss.getIndexFormatProperties().entrySet())
+        {
+    %>
+    <tr>
+        <td><%=h(e.getKey())%>:&nbsp;</td><td><%=h(e.getValue())%></td>
+    </tr>
+    <%
+        }
+    %>
+</table>
+</p>
 
     <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table><%

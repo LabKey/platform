@@ -24,6 +24,8 @@ import org.apache.lucene.store.Directory;
 import org.labkey.api.search.SearchMisconfiguredException;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /*
@@ -89,9 +91,9 @@ public class NoopWritableIndex implements WritableIndexManager
     }
 
     @Override
-    public String getIndexFormatDescription()
+    public Map<String, String> getIndexFormatProperties()
     {
-        return "No-op index";
+        return Collections.singletonMap("Format", "No-op index");
     }
 
     @Override

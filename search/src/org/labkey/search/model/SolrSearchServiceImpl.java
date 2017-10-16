@@ -24,6 +24,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.WebPartView;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -93,9 +94,9 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    public String getIndexFormatDescription()
+    public Map<String, String> getIndexFormatProperties()
     {
-        return "Solr Index";
+        return Collections.singletonMap("Format", "Solr Index");
     }
 
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)

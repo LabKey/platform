@@ -161,9 +161,9 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public String getIndexFormatDescription()
+    public Map<String, String> getIndexFormatProperties()
     {
-        return "No-op implementation";
+        return Collections.singletonMap("Format", "No-op implementation");
     }
 
     @Override

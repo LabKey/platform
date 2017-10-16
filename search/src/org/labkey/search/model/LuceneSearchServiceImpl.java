@@ -218,7 +218,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         title,            // This is just the display title. keywordsMed is used to index title/subject terms.
         summary,
         url,
-        container,        // Used as stored field in documents (used for low volume purposes, delete and results display). See securityIds below.
+        container,        // Used as stored field in documents (used for low volume purposes, delete and results display). See securityContext below.
         securityContext,  // Stored in DocValues and used in SecurityQuery, which filters every search query. Format is <containerId>(|<resourceId>), where resourceId is optional (and rarely used)
         uniqueId,
         navtrail
@@ -256,9 +256,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     @Override
-    public String getIndexFormatDescription()
+    public Map<String, String> getIndexFormatProperties()
     {
-        return _indexManager.getIndexFormatDescription();
+        return _indexManager.getIndexFormatProperties();
     }
 
     @Override

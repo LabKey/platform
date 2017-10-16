@@ -15,12 +15,14 @@
  */
 package org.labkey.search.model;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -33,6 +35,8 @@ import org.labkey.api.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: adam
@@ -279,18 +283,20 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
 
     @Override
-    public String getIndexFormatDescription()
+    public Map<String, String> getIndexFormatProperties()
     {
         try
         {
-//            IndexGate.FormatDetails formatDetails = IndexGate.getIndexFormat(_directory);
-//            return formatDetails.genericName;
-            // TODO: Use new Lucene 7.x API to retrieve format info
-            return "Unknown";
+            SegmentInfos segmentInfos = SegmentInfos.readLatestCommit(_directory);
+            return ImmutableMap.of(
+                "Index created major version", Integer.toString(segmentInfos.getIndexCreatedVersionMajor()),
+                "Minimum segment version", segmentInfos.getMinSegmentLuceneVersion().toString(),
+                "Latest commit version", segmentInfos.getCommitLuceneVersion().toString()
+            );
         }
         catch (Exception e)
         {
-            return "Unknown";
+            return Collections.singletonMap("Format", "Unknown");
         }
     }
 

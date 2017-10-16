@@ -22,6 +22,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
+import java.util.Map;
 
 /*
 * User: adam
@@ -46,7 +47,7 @@ public interface WritableIndexManager
 
     void close() throws IOException, InterruptedException;
 
-    String getIndexFormatDescription();
+    Map<String, String> getIndexFormatProperties();
 
     Directory getCurrentDirectory();
 
