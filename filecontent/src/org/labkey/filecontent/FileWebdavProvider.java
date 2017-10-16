@@ -32,9 +32,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.webdav.AbstractWebdavResolver;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.FileSystemResource;
+import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -56,9 +56,9 @@ public class FileWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target)
     {
-        if (!(target instanceof AbstractWebdavResolver.AbstractWebFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
-        AbstractWebdavResolver.AbstractWebFolderResource folder = (AbstractWebdavResolver.AbstractWebFolderResource) target;
+        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
@@ -89,9 +89,9 @@ public class FileWebdavProvider implements WebdavService.Provider
 
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!(parent instanceof AbstractWebdavResolver.AbstractWebFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
-        AbstractWebdavResolver.AbstractWebFolderResource folder = (AbstractWebdavResolver.AbstractWebFolderResource) parent;
+        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
 
         if (FileContentService.FILE_SETS_LINK.equalsIgnoreCase(name))

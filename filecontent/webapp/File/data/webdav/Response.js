@@ -45,6 +45,12 @@ Ext4.define('File.data.webdav.XMLResponse', {
             if (!Ext4.isIE && !rec.uriOBJECT)
                 try {rec.uriOBJECT = uri;} catch (e) {}
             return uri;
+        },
+        getConvertedID: function(val) {
+            return val.indexOf('/_webdav')==0 ?
+                    val.substring(8) : val.indexOf("/_users")==0 ?
+                            val.substring(7) : val.indexOf("/_webfiles")==0 ?
+                                    val.substring(10) : val;
         }
     },
 
@@ -56,10 +62,8 @@ Ext4.define('File.data.webdav.XMLResponse', {
         }},
         {
             name : 'id', mapping : 'path', convert : function(val) {
-                return val.indexOf('/_webdav')==0 ?
-                        val.substring(8) : val.indexOf("/_users")==0 ?
-                                val.substring(7) : val.indexOf("/_webfiles")==0 ?
-                                        val.substring(10) : val; }
+                return File.data.webdav.XMLResponse.getConvertedID(val);
+            }
         },{
             name : 'path'
         },{
@@ -106,7 +110,10 @@ Ext4.define('File.data.webdav.JSONResponse', {
         {name : 'actions'},
         {name : 'etag'},
         {name : 'href'},
-        {name : 'id', convert : function(val) { return val.indexOf('/_webdav')==0 ? val.substring(8) : val.indexOf("/_users")==0 ? val.substring(7) : val; }},
+        {name : 'id', convert : function(val) {
+                return File.data.webdav.XMLResponse.getConvertedID(val);
+            }
+        },
         {name : 'lastmodified', type : 'date'},
         {name : 'leaf', type : 'boolean'},
         {name : 'size', type : 'int'},
