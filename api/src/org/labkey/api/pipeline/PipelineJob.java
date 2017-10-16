@@ -75,6 +75,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -1054,6 +1057,22 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /////////////////////////////////////////////////////////////////////////
     // Support for running processes
+
+    @Nullable
+    private PrintWriter createPrintWriter(@Nullable File outputFile, boolean append) throws PipelineJobException
+    {
+        if (outputFile == null)
+            return null;
+
+        try
+        {
+            return new PrintWriter(new BufferedWriter(new FileWriter(outputFile, append)));
+        }
+        catch (IOException e)
+        {
+            throw new PipelineJobException("Could not create the " + outputFile + " file.", e);
+        }
+    }
     
     public void runSubProcess(ProcessBuilder pb, File dirWork) throws PipelineJobException
     {
@@ -1067,6 +1086,12 @@ abstract public class PipelineJob extends Job implements Serializable
     public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval, boolean append)
             throws PipelineJobException
     {
+        runSubProcess(pb, dirWork, outputFile, logLineInterval, append, 0, null);
+    }
+
+    public void runSubProcess(ProcessBuilder pb, File dirWork, File outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
+            throws PipelineJobException
+    {
         Process proc;
 
         String commandName = pb.command().get(0);
@@ -1074,134 +1099,150 @@ abstract public class PipelineJob extends Job implements Serializable
                 Math.max(commandName.lastIndexOf('/'), commandName.lastIndexOf('\\')) + 1);
         header(commandName + " output");
 
-        PrintWriter fileWriter = null;
+        // Update PATH environment variable to make sure all files in the tools
+        // directory and the directory of the executable or on the path.
+        String toolDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
+        if (!StringUtils.isEmpty(toolDir))
+        {
+            String path = System.getenv("PATH");
+            if (path == null)
+            {
+                path = toolDir;
+            }
+            else
+            {
+                path = toolDir + File.pathSeparatorChar + path;
+            }
+
+            // If the command has a path, then prepend its parent directory to the PATH
+            // environment variable as well.
+            String exePath = pb.command().get(0);
+            if (exePath != null && !"".equals(exePath) && exePath.indexOf(File.separatorChar) != -1)
+            {
+                File fileExe = new File(exePath);
+                String exeDir = fileExe.getParent();
+                if (!exeDir.equals(toolDir) && fileExe.exists())
+                    path = fileExe.getParent() + File.pathSeparatorChar + path;
+            }
+
+            pb.environment().put("PATH", path);
+
+            String dyld = System.getenv("DYLD_LIBRARY_PATH");
+            if (dyld == null)
+            {
+                dyld = toolDir;
+            }
+            else
+            {
+                dyld = toolDir + File.pathSeparatorChar + dyld;
+            }
+            pb.environment().put("DYLD_LIBRARY_PATH", dyld);
+        }
+
+        // tell more modern TPP tools to run headless (so no perl calls etc) bpratt 4-14-09
+        pb.environment().put("XML_ONLY", "1");
+        // tell TPP tools not to mess with tmpdirs, we handle this at higher level
+        pb.environment().put("WEBSERVER_TMP","");
+
         try
         {
-            try
-            {
-                if(outputFile != null)
+            pb.directory(dirWork);
+
+            // TODO: Errors should go to log even when output is redirected to a file.
+            pb.redirectErrorStream(true);
+
+            info("Working directory is " + dirWork.getAbsolutePath());
+            info("running: " + StringUtils.join(pb.command().iterator(), " "));
+
+            proc = pb.start();
+        }
+        catch (SecurityException se)
+        {
+            throw new PipelineJobException("Failed starting process '" + pb.command() + "'. Permissions do not allow execution.", se);
+        }
+        catch (IOException eio)
+        {
+            Map<String, String> env = pb.environment();
+            String path = env.get("PATH");
+            if(path == null) path = env.get("Path");
+            throw new PipelineJobException("Failed starting process '" + pb.command() + "'", eio);
+        }
+
+
+        // create thread pool for collecting the process output
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+
+        try (PrintWriter fileWriter = createPrintWriter(outputFile, append))
+        {
+            // collect output using separate thread so we can enforce a timeout on the process
+            Future<Integer> output = pool.submit(() -> {
+                try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
                 {
-                    fileWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile, append)));
-                }
-            }
-            catch(IOException e)
-            {
-                throw new PipelineJobException("Could not create the " + outputFile + " file.", e);
-            }
-
-            // Update PATH environment variable to make sure all files in the tools
-            // directory and the directory of the executable or on the path.
-            String toolDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
-            if (!StringUtils.isEmpty(toolDir))
-            {
-                String path = System.getenv("PATH");
-                if (path == null)
-                {
-                    path = toolDir;
-                }
-                else
-                {
-                    path = toolDir + File.pathSeparatorChar + path;
-                }
-
-                // If the command has a path, then prepend its parent directory to the PATH
-                // environment variable as well.
-                String exePath = pb.command().get(0);
-                if (exePath != null && !"".equals(exePath) && exePath.indexOf(File.separatorChar) != -1)
-                {
-                    File fileExe = new File(exePath);
-                    String exeDir = fileExe.getParent();
-                    if (!exeDir.equals(toolDir) && fileExe.exists())
-                        path = fileExe.getParent() + File.pathSeparatorChar + path;
-                }
-
-                pb.environment().put("PATH", path);
-
-                String dyld = System.getenv("DYLD_LIBRARY_PATH");
-                if (dyld == null)
-                {
-                    dyld = toolDir;
-                }
-                else
-                {
-                    dyld = toolDir + File.pathSeparatorChar + dyld;
-                }
-                pb.environment().put("DYLD_LIBRARY_PATH", dyld);
-            }
-
-            // tell more modern TPP tools to run headless (so no perl calls etc) bpratt 4-14-09
-            pb.environment().put("XML_ONLY", "1");
-            // tell TPP tools not to mess with tmpdirs, we handle this at higher level
-            pb.environment().put("WEBSERVER_TMP","");
-
-            try
-            {
-                pb.directory(dirWork);
-
-                // TODO: Errors should go to log even when output is redirected to a file.
-                pb.redirectErrorStream(true);
-
-                info("Working directory is " + dirWork.getAbsolutePath());
-                info("running: " + StringUtils.join(pb.command().iterator(), " "));
-
-                proc = pb.start();
-            }
-            catch (SecurityException se)
-            {
-                throw new PipelineJobException("Failed starting process '" + pb.command() + "'. Permissions do not allow execution.", se);
-            }
-            catch (IOException eio)
-            {
-                Map<String, String> env = pb.environment();
-                String path = env.get("PATH");
-                if(path == null) path = env.get("Path");
-                throw new PipelineJobException("Failed starting process '" + pb.command() + "'", eio);
-            }
-
-            try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
-            {
-                String line;
-                int count = 0;
-                while ((line = procReader.readLine()) != null)
-                {
-                    count++;
-                    if(fileWriter == null)
-                        info(line);
-                    else
+                    String line;
+                    int count = 0;
+                    while ((line = procReader.readLine()) != null)
                     {
-                        if (logLineInterval > 0 && count < logLineInterval)
+                        count++;
+                        if (fileWriter == null)
                             info(line);
-                        else if (count == logLineInterval)
-                            info("Writing additional tool output lines to " + outputFile.getName());
-                        fileWriter.println(line);
+                        else
+                        {
+                            if (logLineInterval > 0 && count < logLineInterval)
+                                info(line);
+                            else if (count == logLineInterval)
+                                info("Writing additional tool output lines to " + outputFile.getName());
+                            fileWriter.println(line);
+                        }
+                    }
+                    return count;
+                }
+            });
+
+            try
+            {
+                if (timeout > 0)
+                {
+                    if (!proc.waitFor(timeout, timeoutUnit))
+                    {
+                        proc.destroyForcibly().waitFor();
+
+                        error("Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase());
                     }
                 }
+                else
+                {
+                    proc.waitFor();
+                }
+
+                int result = proc.exitValue();
+                if (result != 0)
+                {
+                    throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
+                }
+
+                int count = output.get();
                 if (fileWriter != null)
                     info(count + " lines written total to " + outputFile.getName());
             }
-            catch (IOException eio)
+            catch (InterruptedException ei)
             {
-                throw new PipelineJobException("Failed writing output for process in '" + dirWork.getPath() + "'.", eio);
+                throw new PipelineJobException("Interrupted process for '" + dirWork.getPath() + "'.", ei);
+            }
+            catch (ExecutionException e)
+            {
+                // Exception thrown in output collecting thread
+                Throwable cause = e.getCause();
+                if (cause instanceof IOException)
+                    throw new PipelineJobException("Failed writing output for process in '" + dirWork.getPath() + "'.", cause);
+
+                throw new PipelineJobException(cause);
             }
         }
         finally
         {
-            if (fileWriter != null)
-                fileWriter.close();
+            pool.shutdownNow();
         }
 
-        try
-        {
-            int result = proc.waitFor();
-            if (result != 0)
-            {
-                throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
-            }
-        }
-        catch (InterruptedException ei)
-        {
-            throw new PipelineJobException("Interrupted process for '" + dirWork.getPath() + "'.", ei);
-        }
     }
 
     /////////////////////////////////////////////////////////////////////////

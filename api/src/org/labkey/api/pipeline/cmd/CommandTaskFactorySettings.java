@@ -44,6 +44,8 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     private Boolean _preview;
     private String _actionableInput;
     private String _installPath;
+    // optional timeout in seconds
+    private Integer _timeout;
 
     public CommandTaskFactorySettings(String name)
     {
@@ -265,6 +267,16 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     public String getInstallPath()
     {
         return _installPath;
+    }
+
+    public Integer getTimeout()
+    {
+        return _timeout;
+    }
+
+    public void setTimeout(Integer timeout)
+    {
+        _timeout = timeout;
     }
 
     public Map<String, String> getEnvironment()

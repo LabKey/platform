@@ -30,6 +30,11 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,6 +56,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine
     public static final String SCRIPT_NAME_REPLACEMENT = "${scriptName}";
     /** The location of the post-replacement script file */
     public static final String REWRITTEN_SCRIPT_FILE = "rewrittenScriptFile";
+    /** Timeout in seconds. */
+    public static final String TIMEOUT = "external.script.engine.timeout";
 
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
@@ -102,11 +109,13 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         ProcessBuilder pb = new ProcessBuilder(params);
         pb = pb.directory(getWorkingDir(context));
 
+        final long timeout = getTimeout(context);
+
         StringBuffer output = new StringBuffer();
 
         try (CustomTiming t = MiniProfiler.custom("exec", StringUtils.join(pb.command(), " ")))
         {
-            int exitCode = runProcess(context, pb, output);
+            int exitCode = runProcess(context, pb, output, timeout, TimeUnit.SECONDS);
             if (exitCode != 0)
             {
                 throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ").\n" + output.toString());
@@ -166,6 +175,15 @@ public class ExternalScriptEngine extends AbstractScriptEngine
                 _workingDirectory.mkdirs();
         }
         return _workingDirectory;
+    }
+
+    protected long getTimeout(ScriptContext context)
+    {
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+        if (bindings.get(TIMEOUT) instanceof Number)
+            return ((Number)bindings.get(TIMEOUT)).longValue();
+
+        return 0;
     }
 
     /**
@@ -268,7 +286,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
      * Execute the external script engine in separate process
      * @return the exit code for the invocation - 0 if the process completed successfully.
      */
-    protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output)
+    protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
     {
         Process proc;
         try
@@ -289,50 +307,79 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
         // Write script process output to the provided writer
         // if the writer isn't the original writer (a PrintWriter over the tomcat console).
-        Writer writer = context.getWriter();
-        if (writer == _originalWriter)
-            writer = null;
+        Writer writer = context.getWriter() == _originalWriter ? null : context.getWriter();
 
-        BufferedReader procReader = null;
+        // create thread pool for collecting the process output
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+
+        // collect output using separate thread so we can enforce a timeout on the process
+        Future<Integer> out = pool.submit(() -> {
+            try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
+            {
+                String line;
+                int count = 0;
+                while ((line = procReader.readLine()) != null)
+                {
+                    count++;
+                    output.append(line);
+                    output.append('\n');
+                    if (writer != null)
+                    {
+                        writer.write(line);
+                        writer.write('\n');
+                        // flush after every write so LogPrintWriter will forward the message to the Log4j Logger
+                        writer.flush();
+                    }
+                }
+                if (writer != null)
+                    writer.flush();
+                return count;
+            }
+        });
+
         try
         {
-            procReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            String line;
-            while ((line = procReader.readLine()) != null)
+            if (timeout > 0)
             {
-                output.append(line);
-                output.append('\n');
-                if (writer != null)
+                if (!proc.waitFor(timeout, timeoutUnit))
                 {
-                    writer.write(line);
-                    writer.write('\n');
-                    // flush after every write so LogPrintWriter will forward the message to the Log4j Logger
-                    writer.flush();
+                    proc.destroyForcibly().waitFor();
+
+                    String msg = "Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase() + "\n";
+                    output.append(msg);
+                    if (writer != null)
+                        writer.write(msg);
                 }
             }
-            if (writer != null)
-                writer.flush();
-        }
-        catch (IOException eio)
-        {
-            throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", eio);
-        }
-        finally
-        {
-            if (procReader != null)
-                try {procReader.close();} catch(IOException ignored) {}
-        }
+            else
+            {
+                proc.waitFor();
+            }
 
-        try
-        {
-            int code = proc.waitFor();
+            int code = proc.exitValue();
+
             appendConsoleOutput(context, output);
 
+            int count = out.get();
+
             return code;
+        }
+        catch (IOException ex)
+        {
+            throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", ex);
         }
         catch (InterruptedException ei)
         {
             throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
+        }
+        catch (ExecutionException ex)
+        {
+            // Exception thrown in output collecting thread
+            Throwable cause = ex.getCause();
+            if (cause instanceof IOException)
+                throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", cause);
+
+            throw new RuntimeException(cause);
         }
     }
 
