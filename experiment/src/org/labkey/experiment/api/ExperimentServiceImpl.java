@@ -3072,7 +3072,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // Notify that a delete is about to happen
             for (ExperimentMaterialListener materialListener : _materialListeners)
             {
-                materialListener.beforeDelete(materials);
+                materialListener.beforeDelete(materials, container, user);
             }
 
             for (ExpMaterial material : materials)
@@ -5875,16 +5875,18 @@ public class ExperimentServiceImpl implements ExperimentService
         _listeners.add(listener);
     }
 
+    @Override
     public List<ValidationException> onBeforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
     {
         List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            listener.afterRunCreated(protocol, run, container, user);
+            listener.beforeRunCreated(protocol, run, container, user);
         }
         return errors;
     }
 
+    @Override
     public List<ValidationException> onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
     {
         List<ValidationException> errors = new ArrayList<>();
@@ -5893,6 +5895,15 @@ public class ExperimentServiceImpl implements ExperimentService
             listener.afterResultDataCreated(protocol, run, container, user);
         }
         return errors;
+    }
+
+    @Override
+    public void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user)
+    {
+        for (ExperimentMaterialListener listener : _materialListeners)
+        {
+            listener.afterCreate(materials, container, user);
+        }
     }
 
     public static class TestCase extends Assert

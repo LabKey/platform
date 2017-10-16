@@ -1005,6 +1005,7 @@ public class UploadSamplesHelper
         private MaterialSource _source;
         private final Set<String> _reusedMaterialLSIDs;
         private List<ExpMaterial> _materials = new ArrayList<>();
+        private int _currentRow = 0;
 
         MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
         {
@@ -1047,6 +1048,17 @@ public class UploadSamplesHelper
 
         public void afterBatchInsert(int currentRow) throws SQLException
         {
+            List<ExpMaterial> materials = new ArrayList<>();
+            for (int i = _currentRow; i < currentRow; i++)
+            {
+                ExpMaterial material = _materials.get(i);
+                if (material != null)
+                    materials.add(material);
+            }
+
+            if (!materials.isEmpty())
+                ExperimentService.get().onMaterialsCreated(materials, _container, _user);
+            _currentRow = currentRow;
         }
 
 
