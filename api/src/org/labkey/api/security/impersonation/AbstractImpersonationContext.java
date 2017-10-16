@@ -17,10 +17,11 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -35,9 +36,9 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
 {
     private final User _adminUser;
     private final @Nullable Container _project;
-    private final URLHelper _returnURL;
+    private final ActionURL _returnURL;
 
-    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, URLHelper returnURL)
+    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, ActionURL returnURL)
     {
         _adminUser = adminUser;
         _project = project;
@@ -63,16 +64,17 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     }
 
     @Override
-    public final URLHelper getReturnURL()
+    public final ActionURL getReturnURL()
     {
         return _returnURL;
     }
 
     @Override
-    public final void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+    public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        // If impersonating, we shouldn't be adding an impersonate menu
-        throw new IllegalStateException("Shouldn't be adding an impersonate menu while impersonating!");
+        NavTree stop = new NavTree("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()));
+        stop.setId("__lk-usermenu-stopimpersonating");
+        menu.addChild(stop);
     }
 
     /** @return Returns a set of roles with the SiteAdminRole filtered out

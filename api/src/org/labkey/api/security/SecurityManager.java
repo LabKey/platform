@@ -544,7 +544,7 @@ public class SecurityManager
     }
 
 
-    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, URLHelper returnURL)
+    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, ActionURL returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
@@ -556,14 +556,14 @@ public class SecurityManager
     }
 
 
-    public static void impersonateGroup(ViewContext viewContext, Group group, URLHelper returnURL)
+    public static void impersonateGroup(ViewContext viewContext, Group group, ActionURL returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         impersonate(viewContext, new GroupImpersonationContextFactory(project, viewContext.getUser(), group, returnURL));
     }
 
 
-    public static void impersonateRoles(ViewContext viewContext, Collection<Role> roles, URLHelper returnURL)
+    public static void impersonateRoles(ViewContext viewContext, Collection<Role> roles, ActionURL returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();

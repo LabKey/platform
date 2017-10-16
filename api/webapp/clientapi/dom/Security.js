@@ -10,7 +10,7 @@ LABKEY.Security = new function(impl) {
      */
     impl.Impersonation = new function() {
 
-        // Helper for lazy intializing impersonation dependencies
+        // Helper for lazy initializing impersonation dependencies
         var _display = function(componentName)
         {
             LABKEY.requiresExt4ClientAPI(function() {

@@ -51,8 +51,8 @@ public interface ImpersonationContext extends Serializable
         return getCacheKey();
     }
     String getCacheKey();  // Caching permission-related state is very tricky with impersonation; context provides a cache key suffix that captures the current impersonation state
-    /** @return the URL to which the user should be returned when their impersonation context changes to another context */
-    URLHelper getReturnURL();
+    /** @return the URL to which the user should be returned when impersonation is over */
+    ActionURL getReturnURL();
     int[] getGroups(User user);
     Set<Role> getContextualRoles(User user, SecurityPolicy policy);
     ImpersonationContextFactory getFactory();

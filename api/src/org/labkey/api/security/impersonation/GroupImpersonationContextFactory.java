@@ -27,7 +27,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -49,10 +49,10 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 {
     private final @Nullable GUID _projectId;
     private final int _groupId;
-    private final URLHelper _returnURL;
+    private final ActionURL _returnURL;
     private final int _adminUserId;
 
-    public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, URLHelper returnURL)
+    public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, ActionURL returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -149,7 +149,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         private final Group _group;
         private final int[] _groups;
 
-        private GroupImpersonationContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
+        private GroupImpersonationContext(@Nullable Container project, User user, Group group, ActionURL returnURL)
         {
             // project is used to verify authorization, but isn't needed while impersonating... the group itself will
             // limit the admin user appropriately

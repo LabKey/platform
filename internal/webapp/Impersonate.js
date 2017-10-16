@@ -300,6 +300,16 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             })
         });
 
+        // Select any previously selected roles, present only in the "adjust impersonation" case
+        this.roleGrid.store.on("load", function(store){
+            sm = this.roleGrid.selModel;
+            Ext4.each(store.data.items, function(item){
+                if (item.data.selected){
+                    sm.select(item.index, true);
+                }
+            });
+        }, this);
+
         this.roleGrid.on("selectionChange", function(grid){
             var selected = grid.getSelection();
             var includesRead = false;
@@ -318,7 +328,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             this.divWarning.setVisible(selected.length > 0 && !includesRead);
 
             // Enable/disable "Impersonate" button
-            this.impersonateButton.setDisabled(0 == selected.length);
+            this.impersonateButton.setDisabled(0 === selected.length);
         }, this);
 
         this.divWarning = Ext4.create('Ext.container.Container', {
@@ -344,7 +354,8 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
                 fields: [
                     {name: 'roleName', type: 'string'},
                     {name: 'displayName', type: 'string'},
-                    {name: 'hasRead', type: 'boolean'}
+                    {name: 'hasRead', type: 'boolean'},
+                    {name: 'selected', type: 'boolean'}  // True for previously selected roles, when already impersonating roles
                 ]
             });
         }

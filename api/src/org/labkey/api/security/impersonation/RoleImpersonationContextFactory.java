@@ -26,7 +26,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -47,10 +47,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
     private final Set<String> _roleNames;
-    private final URLHelper _returnURL;
+    private final ActionURL _returnURL;
     private final String _cacheKey;
 
-    public RoleImpersonationContextFactory(Container project, User adminUser, Collection<Role> roles, URLHelper returnURL)
+    public RoleImpersonationContextFactory(Container project, User adminUser, Collection<Role> roles, ActionURL returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -113,7 +113,12 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
     static void addMenu(NavTree menu)
     {
-        NavTree newRoleMenu = new NavTree("Roles");
+        addMenu(menu, "Roles");
+    }
+
+    static void addMenu(NavTree menu, String text)
+    {
+        NavTree newRoleMenu = new NavTree(text);
         newRoleMenu.setScript("LABKEY.Security.Impersonation.showImpersonateRole();");
         menu.addChild(newRoleMenu);
     }
@@ -138,7 +143,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         private final Set<String> _roleNames;
         private transient Set<Role> _roles;
 
-        private RoleImpersonationContext(@Nullable Container project, User user, Set<String> roleNames, URLHelper returnURL)
+        private RoleImpersonationContext(@Nullable Container project, User user, Set<String> roleNames, ActionURL returnURL)
         {
             super(user, project, returnURL);
             verifyPermissions(project, user);
@@ -201,6 +206,13 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return getFilteredContextualRoles(getRoles());
+        }
+
+        @Override
+        public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+        {
+            super.addMenu(menu, c, user, currentURL);
+            RoleImpersonationContextFactory.addMenu(menu, "Adjust Impersonation");
         }
     }
 }

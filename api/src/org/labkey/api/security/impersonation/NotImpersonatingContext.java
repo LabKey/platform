@@ -18,9 +18,12 @@ package org.labkey.api.security.impersonation;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -79,7 +82,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public URLHelper getReturnURL()
+    public ActionURL getReturnURL()
     {
         return null;
     }
@@ -105,8 +108,21 @@ public class NotImpersonatingContext implements ImpersonationContext
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        UserImpersonationContextFactory.addMenu(menu);
-        GroupImpersonationContextFactory.addMenu(menu);
-        RoleImpersonationContextFactory.addMenu(menu);
+        @Nullable Container project = c.getProject();
+
+        // Must be site or project admin (folder admins can't impersonate)
+        if (user.hasRootAdminPermission() || (null != project && project.hasPermission(user, AdminPermission.class)))
+        {
+            NavTree impersonateMenu = new NavTree("Impersonate");
+            impersonateMenu.setId("__lk-usermenu-impersonate");
+            UserImpersonationContextFactory.addMenu(impersonateMenu);
+            GroupImpersonationContextFactory.addMenu(impersonateMenu);
+            RoleImpersonationContextFactory.addMenu(impersonateMenu);
+            menu.addChild(impersonateMenu);
+        }
+
+        NavTree signOut = new NavTree("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));
+        signOut.setId("__lk-usermenu-signout");
+        menu.addChild(signOut);
     }
 }

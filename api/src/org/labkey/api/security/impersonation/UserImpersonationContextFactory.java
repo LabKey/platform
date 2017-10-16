@@ -28,7 +28,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SessionHelper;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -49,9 +49,9 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
     private final int _impersonatedUserId;
-    private final URLHelper _returnURL;
+    private final ActionURL _returnURL;
 
-    public UserImpersonationContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
+    public UserImpersonationContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -158,7 +158,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
 
     private class UserImpersonationContext extends AbstractImpersonationContext
     {
-        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
+        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL)
         {
             super(adminUser, project, returnURL);
             verifyPermissions(project, impersonatedUser, adminUser);
