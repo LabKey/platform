@@ -217,7 +217,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Verify changes in Ancillary Study. (insert)");
         clickFolder(STUDY_NAME);
         DataRegionTable table = _studyHelper.goToManageDatasets()
-                .selectDatasetByName(DATASETS[0])
+                .selectDatasetByLabel(DATASETS[0])
                 .clickViewData()
                 .getDataRegion();
 
@@ -241,7 +241,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Verify changes in Ancillary Study. (modify)");
         clickFolder(STUDY_NAME);
         _studyHelper.goToManageDatasets()
-                .selectDatasetByName(DATASETS[0])
+                .selectDatasetByLabel(DATASETS[0])
                 .clickViewData();
         table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
@@ -264,7 +264,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Verify changes in Ancillary Study. (delete)");
         clickFolder(STUDY_NAME);
         _studyHelper.goToManageDatasets()
-                .selectDatasetByName(DATASETS[0])
+                .selectDatasetByLabel(DATASETS[0])
                 .clickViewData();
         table.goToView("Edit Snapshot");
         clickButton("Update Snapshot", 0);
