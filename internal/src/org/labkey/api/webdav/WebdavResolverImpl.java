@@ -100,85 +100,16 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         return "webdav";
     }
 
-    private class WebdavListener extends ContainerManager.AbstractContainerListener
+    private class WebdavListener extends AbstractWebdavListener
     {
-        public void containerCreated(Container c, User user)
+        @Override
+        protected void clearFolderCache()
         {
-            invalidate(c.getParsedPath().getParent(), false);
+            _folderCache.clear();
         }
 
-        public void containerDeleted(Container c, User user)
-        {
-            invalidate(c.getParsedPath(), true);
-            invalidate(c.getParsedPath().getParent(), false);
-        }
-
-        public void propertyChange(PropertyChangeEvent pce)
-        {
-            ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)pce;
-            Container c = evt.container;
-            try
-            {
-                switch (evt.property)
-                {
-                    case PipelineRoot:
-                    case Policy:
-                    case AttachmentDirectory:
-                    case WebRoot:
-                    case EndpointDirectory:
-                    default:
-                    {
-                        invalidate(c.getParsedPath(), true);
-                        break;
-                    }
-                    case Name:
-                    {
-                        String oldName = (String)evt.getOldValue();
-                        invalidate(c.getParsedPath(), true);
-                        invalidate(resolveSibling(c, oldName), true);
-                        invalidate(c.getParsedPath().getParent(), false);
-                        break;
-                    }
-                    case Parent:
-                    {
-                        Container oldParent = (Container)pce.getOldValue();
-                        invalidate(c.getParsedPath(), true);
-                        invalidate(getParentPath(c), false);
-                        invalidate(resolveSibling(c,c.getName()), true);
-                        invalidate(oldParent.getParsedPath(), false);
-                        break;
-                    }
-                    case SiteRoot:
-                        _folderCache.clear();
-                        break;
-                }
-            }
-            catch (Exception x)
-            {
-                _folderCache.clear();
-            }
-        }
-
-
-        Path getParentPath(Container c)
-        {
-            Path p = c.getParsedPath();
-            if (p.size() == 0)
-                throw new IllegalArgumentException();
-            return p.getParent();
-        }
-
-
-        Path resolveSibling(Container c, String name)
-        {
-            Path p = c.getParsedPath();
-            if (p.size() == 0)
-                throw new IllegalArgumentException();
-            return p.getParent().append(name);
-        }
-
-
-        void invalidate(Path containerPath, boolean recursive)
+        @Override
+        protected void invalidate(Path containerPath, boolean recursive)
         {
             final Path path = getRootPath().append(containerPath);
             _folderCache.remove(path);

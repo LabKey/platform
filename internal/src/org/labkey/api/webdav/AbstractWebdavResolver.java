@@ -13,6 +13,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 
+import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -149,9 +150,9 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
 
     public abstract class AbstractWebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
-        public WebdavResolver _resolver;
+        protected WebdavResolver _resolver;
         final Container _c;
-        ArrayList<String> _children = null;
+        protected ArrayList<String> _children = null;
 
         protected AbstractWebFolderResource(WebdavResolver resolver, Container c)
         {
@@ -279,6 +280,88 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return list;
         }
 
+    }
+
+    public abstract class AbstractWebdavListener extends ContainerManager.AbstractContainerListener
+    {
+        public void containerCreated(Container c, User user)
+        {
+            invalidate(c.getParsedPath().getParent(), false);
+        }
+
+        public void containerDeleted(Container c, User user)
+        {
+            invalidate(c.getParsedPath(), true);
+            invalidate(c.getParsedPath().getParent(), false);
+        }
+
+        public void propertyChange(PropertyChangeEvent pce)
+        {
+            ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)pce;
+            Container c = evt.container;
+            try
+            {
+                switch (evt.property)
+                {
+                    case PipelineRoot:
+                    case Policy:
+                    case AttachmentDirectory:
+                    case WebRoot:
+                    case EndpointDirectory:
+                    default:
+                    {
+                        invalidate(c.getParsedPath(), true);
+                        break;
+                    }
+                    case Name:
+                    {
+                        String oldName = (String)evt.getOldValue();
+                        invalidate(c.getParsedPath(), true);
+                        invalidate(resolveSibling(c, oldName), true);
+                        invalidate(c.getParsedPath().getParent(), false);
+                        break;
+                    }
+                    case Parent:
+                    {
+                        Container oldParent = (Container)pce.getOldValue();
+                        invalidate(c.getParsedPath(), true);
+                        invalidate(getParentPath(c), false);
+                        invalidate(resolveSibling(c,c.getName()), true);
+                        invalidate(oldParent.getParsedPath(), false);
+                        break;
+                    }
+                    case SiteRoot:
+                        clearFolderCache();
+                        break;
+                }
+            }
+            catch (Exception x)
+            {
+                clearFolderCache();
+            }
+        }
+
+
+        Path getParentPath(Container c)
+        {
+            Path p = c.getParsedPath();
+            if (p.size() == 0)
+                throw new IllegalArgumentException();
+            return p.getParent();
+        }
+
+
+        Path resolveSibling(Container c, String name)
+        {
+            Path p = c.getParsedPath();
+            if (p.size() == 0)
+                throw new IllegalArgumentException();
+            return p.getParent().append(name);
+        }
+
+        abstract protected void clearFolderCache();
+
+        abstract protected void invalidate(Path containerPath, boolean recursive);
     }
 
 
