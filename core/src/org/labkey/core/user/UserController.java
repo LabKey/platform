@@ -2887,9 +2887,9 @@ public class UserController extends SpringActionController
                 controller.new GetImpersonationUsersAction(),
                 controller.new ImpersonateUserAction(),
                 controller.new GetImpersonationGroupsAction(),
-                controller.new ImpersonateGroupAction(),
-                controller.new GetImpersonationRolesAction()
-//                controller.new ImpersonateRolesAction()     Annotated as "no permission", to allow impersonation adjustments
+                controller.new ImpersonateGroupAction()
+//                controller.new GetImpersonationRolesAction()   Annotated as "no permission", to allow impersonation adjustments
+//                controller.new ImpersonateRolesAction()        Annotated as "no permission", to allow impersonation adjustments
             );
 
             // @RequiresPermission(UserManagementPermission.class)
