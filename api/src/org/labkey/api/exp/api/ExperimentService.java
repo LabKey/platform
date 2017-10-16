@@ -489,4 +489,5 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<ValidationException> onBeforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user);
     List<ValidationException> onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user);
+    void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 }

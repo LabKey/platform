@@ -47,6 +47,8 @@ public enum PropertyType
     xsdBinary("http://www.w3.org/2001/XMLSchema#binary", false, "Byte Buffer", "Buffer", "string");
 
     public static final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
+    public static final String VISIT_CONCEPT_URI = "http://cpas.labkey.com/Study#VisitId";
+    public static final String SPECIMEN_CONCEPT_URI = "http://cpas.labkey.com/Study#SpecimenId";
 
     private final String _uri;
     private final String _display;

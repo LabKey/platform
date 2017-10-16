@@ -15,7 +15,9 @@
  */
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.security.User;
 
 import java.util.List;
 
@@ -26,5 +28,8 @@ import java.util.List;
 public interface ExperimentMaterialListener
 {
     /** Invoked immediately prior to the exp.material row being deleted */
-    void beforeDelete(List<? extends ExpMaterial> materials);
+    default void beforeDelete(List<? extends ExpMaterial> materials, Container container, User user){}
+
+    // called after import of an exp.material object
+    default void afterCreate(List<? extends ExpMaterial> materials, Container container, User user){}
 }

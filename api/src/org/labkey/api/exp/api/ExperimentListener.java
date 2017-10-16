@@ -31,8 +31,8 @@ public interface ExperimentListener
     /** Called before deleting a row from exp.experiment */
     default void beforeExperimentDeleted(ExpExperiment experiment, User user){}
 
-    // called after the experiment run is created (and saved)
-    default List<ValidationException> afterRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    // called before the experiment run is created (and saved)
+    default List<ValidationException> beforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
     {
         return Collections.emptyList();
     }
