@@ -252,6 +252,10 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().getPath());
 
+            // Thread the timeout option through to the external script engine
+            if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
+                bindings.put(ExternalScriptEngine.TIMEOUT, _factory.getTimeout());
+
             Map<String, String> replacements = createReplacements(_engine, scriptFile, transformSessionId);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 

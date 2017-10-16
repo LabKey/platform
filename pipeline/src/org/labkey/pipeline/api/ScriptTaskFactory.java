@@ -90,6 +90,9 @@ public class ScriptTaskFactory extends SimpleTaskFactory
         if (xscript == null)
             throw new IllegalArgumentException("Script task requires <script> element");
 
+        if (xscript.isSetTimeout() && xscript.getTimeout() > 0)
+            factory.setTimeout(xscript.getTimeout());
+
         Map<String, TaskPath> inputs = factory.getInputPaths();
         Map<String, TaskPath> outputs = factory.getOutputPaths();
         Map<String, JobParamToCommandArgs> params = factory._params;

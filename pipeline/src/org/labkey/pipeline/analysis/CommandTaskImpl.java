@@ -60,6 +60,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,6 +88,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         private boolean _preview;
         private String _actionableInput;
         private String _installPath;
+        private Integer _timeout;
         private Path _moduleTaskPath;
 
         public Factory()
@@ -146,6 +148,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
             if (settings.getInstallPath() != null)
                 _installPath = settings.getInstallPath();
+
+            if (settings.getTimeout() != null)
+                _timeout = settings.getTimeout();
         }
 
         public CommandTaskImpl createTask(PipelineJob job)
@@ -373,6 +378,16 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         public boolean isPreview()
         {
             return _preview;
+        }
+
+        public Integer getTimeout()
+        {
+            return _timeout;
+        }
+
+        public void setTimeout(Integer timeout)
+        {
+            _timeout = timeout;
         }
 
         /**
@@ -663,7 +678,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         action.setStartTime(new Date());
         action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
-        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false);
+        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false, _factory._timeout, TimeUnit.SECONDS);
         action.setEndTime(new Date());
         return true;
     }

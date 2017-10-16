@@ -85,7 +85,10 @@ public class ExecTaskFactory extends SimpleTaskFactory
     private static ListToCommandArgs createExecConverter(ExecTaskFactory factory, Module module, Path taskDir, ExecType xexec)
     {
         if (xexec == null)
-            throw new IllegalArgumentException("Script task requires <script> element");
+            throw new IllegalArgumentException("Exec task requires <exec> element");
+
+        if (xexec.isSetTimeout() && xexec.getTimeout() > 0)
+            factory.setTimeout(xexec.getTimeout());
 
         Map<String, TaskPath> inputs = factory.getInputPaths();
         Map<String, TaskPath> outputs = factory.getOutputPaths();
