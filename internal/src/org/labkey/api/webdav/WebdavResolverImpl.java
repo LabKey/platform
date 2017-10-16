@@ -76,13 +76,13 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         return _rootPath;
     }
 
-    WebDavFolderResource _root = null;
+    WebFolderResource _root = null;
 
     protected synchronized WebdavResource getRoot()
     {
         if (null == _root)
         {
-            _root = new WebDavFolderResource(this, ContainerManager.getRoot())
+            _root = new WebFolderResource(this, ContainerManager.getRoot())
             {
                 @Override
                 public boolean canList(User user, boolean forRead)
@@ -204,9 +204,9 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
     // end up with just one of these.
     private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders");
 
-    public class WebDavFolderResource extends WebFolderResource
+    public class WebFolderResource extends AbstractWebFolderResource
     {
-        WebDavFolderResource(WebdavResolver resolver, Container c)
+        WebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver, c);
         }
@@ -237,7 +237,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
                 if (c != null)
                 {
-                    resource = new WebDavFolderResource(_resolver, c);
+                    resource = new WebFolderResource(_resolver, c);
                 }
                 else
                 {

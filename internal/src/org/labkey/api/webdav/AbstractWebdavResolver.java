@@ -147,13 +147,13 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
     }
 
 
-    public abstract class WebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
+    public abstract class AbstractWebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
         public WebdavResolver _resolver;
         final Container _c;
         ArrayList<String> _children = null;
 
-        protected WebFolderResource(WebdavResolver resolver, Container c)
+        protected AbstractWebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver.getRootPath().append(c.getParsedPath()), resolver);
             _resolver = resolver;
