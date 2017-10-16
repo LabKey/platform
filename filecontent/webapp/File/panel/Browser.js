@@ -1908,15 +1908,15 @@ Ext4.define('File.panel.Browser', {
             items: items,
             autoShow: true,
             buttons: [{
-                text: 'Import',
+                text: 'Cancel',
                 handler: function() {
-                    this.submitForm(Ext4.getCmp(actionPanelId), actionMap);
                     win.close();
                 },
                 scope: this
             },{
-                text: 'Cancel',
+                text: 'Import',
                 handler: function() {
+                    this.submitForm(Ext4.getCmp(actionPanelId), actionMap);
                     win.close();
                 },
                 scope: this

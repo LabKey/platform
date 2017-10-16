@@ -93,6 +93,13 @@
 <%
         index++;
     }
+
+    if (plateTemplates == null || plateTemplates.isEmpty())
+    {
+%>
+        <tr><td colspan="2" style="padding: 3px;">No plate templates available.</td></tr>
+<%
+    }
 %>
 </table>
 
