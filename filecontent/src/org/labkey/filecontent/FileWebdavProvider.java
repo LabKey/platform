@@ -56,9 +56,9 @@ public class FileWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target)
     {
-        if (!(target instanceof AbstractWebdavResolver.WebFolderResource))
+        if (!(target instanceof AbstractWebdavResolver.AbstractWebFolderResource))
             return null;
-        AbstractWebdavResolver.WebFolderResource folder = (AbstractWebdavResolver.WebFolderResource) target;
+        AbstractWebdavResolver.AbstractWebFolderResource folder = (AbstractWebdavResolver.AbstractWebFolderResource) target;
         Container c = folder.getContainer();
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
@@ -89,9 +89,9 @@ public class FileWebdavProvider implements WebdavService.Provider
 
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!(parent instanceof AbstractWebdavResolver.WebFolderResource))
+        if (!(parent instanceof AbstractWebdavResolver.AbstractWebFolderResource))
             return null;
-        AbstractWebdavResolver.WebFolderResource folder = (AbstractWebdavResolver.WebFolderResource) parent;
+        AbstractWebdavResolver.AbstractWebFolderResource folder = (AbstractWebdavResolver.AbstractWebFolderResource) parent;
         Container c = folder.getContainer();
 
         if (FileContentService.FILE_SETS_LINK.equalsIgnoreCase(name))

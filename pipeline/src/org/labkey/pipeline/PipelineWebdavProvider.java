@@ -51,9 +51,9 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target)
     {
-        if (!(target instanceof WebdavResolverImpl.WebDavFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
-        WebdavResolverImpl.WebDavFolderResource folder = (WebdavResolverImpl.WebDavFolderResource) target;
+        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
         
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
@@ -72,9 +72,9 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     {
         if (!PIPELINE_LINK.equalsIgnoreCase(name))
             return null;
-        if (!(parent instanceof WebdavResolverImpl.WebDavFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
-        WebdavResolverImpl.WebDavFolderResource folder = (WebdavResolverImpl.WebDavFolderResource) parent;
+        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
         if (null == c)
             return null;
