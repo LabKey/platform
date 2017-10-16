@@ -2376,7 +2376,7 @@ public class PageFlowUtil
             }
 
             String hrefTarget = null;
-            String hrefRel = null;
+            List<String> hrefRel = null;
 
             for (int i = 0; i < attributes.getLength(); i++)
             {
@@ -2410,13 +2410,13 @@ public class PageFlowUtil
                     if ("target".equals(a))
                         hrefTarget = value;
                     else if ("rel".equals(a))
-                        hrefRel = value;
+                        hrefRel = Arrays.asList(value.trim().split("\\s+"));
                 }
             }
 
             if ("a".equals(e) && "_blank".equals(hrefTarget))
             {
-                if (hrefRel == null || !hrefRel.contains("noopener") || !hrefRel.contains("noreferrer"))
+                if ((hrefRel == null || !hrefRel.contains("noopener") || !hrefRel.contains("noreferrer")) && !_reported.contains("rel"))
                 {
                     _reported.add("rel");
                     _errors.add("Rel attribute must be set to \"noopener noreferrer\" with target=\"_blank\". Error on element <" + qName + ">.");
