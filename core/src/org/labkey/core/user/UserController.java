@@ -81,6 +81,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
+import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
@@ -2638,7 +2639,7 @@ public class UserController extends SpringActionController
 
             try
             {
-                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, form.getReturnURLHelper());
+                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
             }
             catch (UnauthorizedImpersonationException uie)
             {
@@ -2729,12 +2730,15 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresNoPermission
     public class GetImpersonationRolesAction extends ApiAction
     {
         @Override
         public ApiResponse execute(Object object, BindException errors) throws Exception
         {
+            ImpersonationContext context = authorizeImpersonateRoles();
+            Set<Role> impersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+
             ApiSimpleResponse response = new ApiSimpleResponse();
             Collection<Role> roles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer());
             Collection<Map<String, Object>> responseRoles = new LinkedList<>();
@@ -2745,6 +2749,7 @@ public class UserController extends SpringActionController
                 map.put("displayName", role.getName());
                 map.put("roleName", role.getUniqueName());
                 map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
+                map.put("selected", impersonationRoles.contains(role));
                 responseRoles.add(map);
             }
 
@@ -2752,6 +2757,21 @@ public class UserController extends SpringActionController
 
             return response;
         }
+    }
+
+
+    private ImpersonationContext authorizeImpersonateRoles()
+    {
+        User user = getUser();
+        ImpersonationContext context = user.getImpersonationContext();
+
+        if (context.isImpersonating())
+            user = context.getAdminUser();
+
+        if (!getContainer().hasPermission(user, AdminPermission.class))
+            throw new UnauthorizedException();
+
+        return context;
     }
 
 
@@ -2771,15 +2791,15 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class) @CSRF
+    // Permissions are checked in impersonate() to let an admin adjust an existing impersonation
+    @RequiresNoPermission @CSRF
     public class ImpersonateRolesAction extends ImpersonateApiAction<ImpersonateRolesForm>
     {
         @Nullable
         @Override
         public String impersonate(ImpersonateRolesForm form)
         {
-            if (getUser().isImpersonated())
-                return "Can't impersonate; you're already impersonating";
+            ImpersonationContext context = authorizeImpersonateRoles();
 
             String[] roleNames = form.getRoleNames();
 
@@ -2796,7 +2816,7 @@ public class UserController extends SpringActionController
                 roles.add(role);
             }
 
-            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            ActionURL returnURL = context.isImpersonating() ? context.getReturnURL() : form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
             SecurityManager.impersonateRoles(getViewContext(), roles, returnURL);
 
             return null;
@@ -2868,8 +2888,8 @@ public class UserController extends SpringActionController
                 controller.new ImpersonateUserAction(),
                 controller.new GetImpersonationGroupsAction(),
                 controller.new ImpersonateGroupAction(),
-                controller.new GetImpersonationRolesAction(),
-                controller.new ImpersonateRolesAction()
+                controller.new GetImpersonationRolesAction()
+//                controller.new ImpersonateRolesAction()     Annotated as "no permission", to allow impersonation adjustments
             );
 
             // @RequiresPermission(UserManagementPermission.class)
