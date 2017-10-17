@@ -1643,11 +1643,11 @@ public class PageFlowUtil
 
         ResourceURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
 
-        sb.append("    <link rel=\"shortcut icon\" href=\"");
+        sb.append("<link rel=\"shortcut icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
         sb.append("\">\n");
 
-        sb.append("    <link rel=\"icon\" href=\"");
+        sb.append("<link rel=\"icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
         sb.append("\">\n");
 
@@ -1718,7 +1718,7 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder();
 
         Formatter F = new Formatter(sb);
-        String link = "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
+        String link = "<link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
         /* Stylesheets for Ext 3.x, 4.x -- order matters as overrides are in stylesheet.css and themeStylesheet.view */
         Set<String> preIncludedCss = getExtJSStylesheets(c, resources);
@@ -1729,6 +1729,7 @@ public class PageFlowUtil
         {
             if (useExperimentalCoreUI())
             {
+                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css")));
                 F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css")));
 
                 ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
@@ -1792,7 +1793,7 @@ public class PageFlowUtil
                         F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
                 }
 
-                sb.append("    <link href=\"");
+                sb.append("<link href=\"");
                 sb.append(filter(staticResourceUrl("printStyle.css")));
                 sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
             }
@@ -1885,7 +1886,7 @@ public class PageFlowUtil
         //cache list of CSS files to prevent double-loading
         if (cssFiles.size() > 0)
         {
-            sb.append("    <script type=\"text/javascript\">\n        LABKEY.requestedCssFiles(");
+            sb.append("<script type=\"text/javascript\">\nLABKEY.requestedCssFiles(");
             String comma = "";
 
             if (null != preIncludedCss)
@@ -1905,8 +1906,7 @@ public class PageFlowUtil
                     comma = ",";
                 }
             }
-            sb.append(");\n");
-            sb.append("    </script>\n");
+            sb.append(");\n</script>\n");
         }
     }
 
@@ -1974,19 +1974,19 @@ public class PageFlowUtil
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("    <script src=\"").append(staticResourceUrl("/labkey.js")).append("\" type=\"text/javascript\"></script>\n");
+        sb.append("<script src=\"").append(staticResourceUrl("/labkey.js")).append("\" type=\"text/javascript\"></script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
                 (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
-            sb.append("    <script src=\"").append(staticResourceUrl("/stacktrace-1.3.0.min.js")).append("\" type=\"text/javascript\"></script>\n");
-            sb.append("    <script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("<script src=\"").append(staticResourceUrl("/stacktrace-1.3.0.min.js")).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("<script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
         }
 
-        sb.append("    <script type=\"text/javascript\">\n");
-        sb.append("        LABKEY.init(").append(jsInitObject(context, resources)).append(");\n");
-        sb.append("    </script>\n");
+        sb.append("<script type=\"text/javascript\">\n");
+        sb.append("LABKEY.init(").append(jsInitObject(context, resources)).append(");\n");
+        sb.append("</script>\n");
 
         return sb.toString();
     }
@@ -2004,7 +2004,7 @@ public class PageFlowUtil
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("    <script type=\"text/javascript\">\n        LABKEY.loadedScripts(");
+        sb.append("<script type=\"text/javascript\">\nLABKEY.loadedScripts(");
         String comma = "";
         for (String s : implicitIncludes)
         {
@@ -2015,11 +2015,11 @@ public class PageFlowUtil
             }
         }
         sb.append(");\n");
-        sb.append("    </script>\n");
+        sb.append("</script>\n");
 
         for (String s : includes)
         {
-            sb.append("    <script src=\"");
+            sb.append("<script src=\"");
             if (ClientDependency.isExternalDependency(s))
                 sb.append(s);
             else
