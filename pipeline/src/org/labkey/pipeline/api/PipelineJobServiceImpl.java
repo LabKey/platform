@@ -979,7 +979,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
                 if (null != pipelinetest)
                 {
-                    assertEquals("Task pipelines from pipelinetest module", 6, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task pipelines from pipelinetest module", 8, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
                     assertEquals("Task factories from pipelinetest module", 3, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
                 }
 
