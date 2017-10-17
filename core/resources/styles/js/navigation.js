@@ -359,15 +359,20 @@
         var win = $(window);
 
         // distance between menu's bottom edge and bottom of window
-        var spaceDown = win.scrollTop() + win.height() - (offset.top + menu.height());
+        var spaceDown = me.hasClass('dropup') ? win.height() - menu.height() - (me.offset().top - win.scrollTop())
+                : win.scrollTop() + win.height() - (offset.top + menu.height());
+
+        // distance between menu's top edge and top of window
+        var spaceUp = me.hasClass('dropup') ? me.offset().top - (menu.height() + win.scrollTop())
+                : offset.top - (menu.height() + me.height() + win.scrollTop());
 
         // if toggle element is in left half of screen then left align the menu
         var inLeftHemisphere = (me.offset().left + 100) < (win.width() / 2);
 
-        if (spaceDown < 0) {
+        if (me.hasClass('dropdown') && spaceDown < 0 && spaceUp > 0) {
             me.removeClass('dropdown').addClass('dropup');
         }
-        else {
+        else if (me.hasClass('dropup') && spaceUp < 0 && spaceDown > 0) {
             me.removeClass('dropup').addClass('dropdown');
         }
 
