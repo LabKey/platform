@@ -20,13 +20,9 @@ import org.labkey.test.LabKeySiteWrapper;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.components.ComponentElements;
 import org.labkey.test.pages.LabKeyPage;
-import org.labkey.test.selenium.LazyWebElement;
 import org.labkey.test.util.mothership.MothershipHelper;
-import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 
 import java.util.Collections;
 
@@ -57,11 +53,11 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
     {
         if (LabKeySiteWrapper.IS_BOOTSTRAP_LAYOUT)
             return Locator.tagWithClassContaining("label", "control-label")
-                    .withText(WordUtils.capitalize(labelText))
+                    .withText(WordUtils.capitalize(labelText))  // TODO: WordUtils is deprecated in Commons Lang 3.6; this class is now maintained in Commons Text
                     .followingSibling("div")
                     .childTag("p").findElement(getDriver()).getText();
         else
-            return Locator.lkLabel(WordUtils.capitalize(labelText)).followingSibling("td").findElement(getDriver()).getText();
+            return Locator.lkLabel(WordUtils.capitalize(labelText) /* TODO: See comment above */).followingSibling("td").findElement(getDriver()).getText();
     }
 
     @Override
