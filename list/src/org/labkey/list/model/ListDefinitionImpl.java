@@ -572,7 +572,8 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey) throws IOException
     {
-        TableInfo table = getTable(user, container);
+        ListQuerySchema schema = new ListQuerySchema(user, container);
+        TableInfo table = schema.getTable(_def.getName());
         if (null != table)
         {
             ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
