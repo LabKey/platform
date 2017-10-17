@@ -169,11 +169,15 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
 
         if (rowIds.length > 0)
         {
+            this.getEl().mask('Marking all notifications as read...');
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('notification', 'markNotificationAsRead.api'),
+                method: 'POST', // Issue 31849: action fails if there is a long rowIds list
                 params: {rowIds: rowIds},
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {
+                    this.getEl().unmask();
+
                     if (response.success)
                     {
                         Ext4.Object.each(this.groupPanelMap, function(key, value)
@@ -209,6 +213,8 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                 }, this),
                 failure: function(response)
                 {
+                    this.getEl().unmask();
+
                     var responseText = LABKEY.Utils.decode(response.responseText);
                     LABKEY.Utils.alert('Error', responseText.exception);
                 }
@@ -244,11 +250,15 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
         var rowIds = Object.keys(this.rowIdToGroupMap);
         if (rowIds.length > 0)
         {
+            this.getEl().mask('Deleting all notifications...');
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('notification', 'deleteNotification.api'),
+                method: 'POST', // Issue 31849: action fails if there is a long rowIds list
                 params: {rowIds: rowIds},
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {
+                    this.getEl().unmask();
+
                     if (response.success)
                     {
                         window.location.reload();
@@ -256,6 +266,8 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                 }, this),
                 failure: function(response)
                 {
+                    this.getEl().unmask();
+
                     var responseText = LABKEY.Utils.decode(response.responseText);
                     LABKEY.Utils.alert('Error', responseText.exception);
                 }

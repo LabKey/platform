@@ -2,6 +2,10 @@
     font-size: 120%;
 }
 
+.labkey-text-link:hover {
+    cursor: pointer;
+}
+
 .notification-group-panel {
     border: solid #c0c0c0 1px;
     border-top-width: 0;

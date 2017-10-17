@@ -203,6 +203,7 @@
                 {
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL('notification', 'markNotificationAsRead.api'),
+                        method: 'POST', // Issue 31849: action fails if there is a long rowIds list
                         params: {rowIds: rowIds},
                         success: LABKEY.Utils.getCallbackWrapper(function (response)
                         {
