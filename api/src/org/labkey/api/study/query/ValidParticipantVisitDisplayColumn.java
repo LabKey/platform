@@ -18,7 +18,6 @@ package org.labkey.api.study.query;
 
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
@@ -44,16 +43,14 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
         Pair<Boolean,String> matchStatus = _resolverHelper.getMatchStatus(ctx);
         boolean match = matchStatus.first;
         String message = matchStatus.second;
-        out.write("<img src=\"");
-        out.write(AppProps.getInstance().getContextPath());
         if (match)
         {
-            out.write("/_images/check.png\" />");
+            out.write("<i class=\"fa fa-check\"></i>");
             out.write(PageFlowUtil.helpPopup("Match", message, true));
         }
         else
         {
-            out.write("/_images/cancel.png\" />");
+            out.write("<i class=\"fa fa-times\"></i>");
             out.write(PageFlowUtil.helpPopup("No match", message, true));
         }
     }
