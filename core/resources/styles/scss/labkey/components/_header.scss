@@ -150,6 +150,13 @@
         &:focus {
           color: $lk-page-header-font-hover-color;
         }
+
+        &.header-link {
+          &:hover,
+          &:focus {
+            color: $lk-page-header-icon-hover-color;
+          }
+        }
       }
 
       & > .btn-primary {

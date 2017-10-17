@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 --%>
-<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
@@ -117,16 +116,6 @@
                 </ul>
             </li>
 <% } %>
-<% if (isRealUser) { %>
-            <li class="dropdown dropdown-rollup">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-user"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-right">
-                    <% PopupMenuView.renderTree(PopupUserView.createNavTree(context, pageConfig), out); %>
-                </ul>
-            </li>
-<% } %>
 <% if (PopupAdminView.hasPermission(context)) { %>
             <li class="dropdown dropdown-rollup">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -137,6 +126,7 @@
                 </ul>
             </li>
 <% } %>
+
 <% if (me.getView("notifications") != null) { %>
     <% include(me.getView("notifications"), out); %>
 <% } %>
@@ -148,17 +138,6 @@
             </li>
 <% } %>
 
-<% if (user != null && user.isImpersonated()) { %>
-            <li>
-                <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
-            </li>
-<% } %>
-<% if (PageFlowUtil.isPageAdminMode(getViewContext())) { %>
-            <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
-            <li>
-                <a href="<%=h(urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()))%>" class="btn btn-primary">Exit Admin Mode</a>
-            </li>
-<% } %>
 <% if (!isRealUser && pageConfig.shouldIncludeLoginLink()) { %>
             <%
                 final String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(getActionURL());
@@ -167,20 +146,36 @@
             <%= authLogoHtml /* TODO: currently expected to generate <li> tags, could expose set of links instead  */ %>
             <%  } %>
             <li>
-                <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">
+                <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>" class="header-link">
                     <span>Sign In</span>
                 </a>
             </li>
 <% } %>
-<% if (isRealUser)
-{ %>
-            <li data-tt="tooltip" data-placement="bottom" title="Give your thoughts on our new look.">
-                <a href="<%=h(urlProvider(CoreUrls.class).getFeedbackURL())%>" target="_blank">
-                    <span class="hidden-sm hidden-md hidden-lg">
-                        <i class="fa fa-comments"></i>
-                    </span>
-                    <span class="hidden-xs">Give feedback</span>
+
+<% if (isRealUser) { %>
+            <li class="dropdown dropdown-rollup" id="headerUserPopup">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" >
+                    <i class="fa fa-user"></i>
                 </a>
+                <ul class="dropdown-menu dropdown-menu-right" >
+                    <% PopupMenuView.renderTree(PopupUserView.createNavTree(context, pageConfig), out); %>
+                </ul>
+            </li>
+            <li class="dropdown dropdown-rollup">
+                <a class="hidden-xs dropdown-toggle" href="#" data-toggle="dropdown" data-target="#headerUserPopup" style="padding-left: 8px;"><%=h(user.getDisplayName(user))%></a>
+            </li>
+<% } %>
+
+<% if (user != null && user.isImpersonated()) { %>
+            <li>
+                <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
+            </li>
+<% } %>
+
+<% if (PageFlowUtil.isPageAdminMode(getViewContext())) { %>
+            <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
+            <li>
+                <a href="<%=h(urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()))%>" class="btn btn-primary">Exit Admin Mode</a>
             </li>
 <% } %>
         </ul>
