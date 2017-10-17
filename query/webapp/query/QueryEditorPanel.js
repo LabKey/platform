@@ -41,7 +41,7 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                 {
                     id    : this.editorBoxId,
                     xtype : 'box',
-                    html: '<textarea id="queryText" rows="17" cols="80" wrap="off" style="width: 100%; height: 100%;">'
+                    html: '<textarea id="queryText" rows="25" cols="80" wrap="off">' // save some space at the bottom to display parse errors
                         + Ext4.util.Format.htmlEncode(this.query.queryText) + '</textarea>'
                 }
             ],
@@ -63,26 +63,6 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
 
                         this.codeMirror.setSize(null, size.height + 'px');
                         LABKEY.codemirror.RegisterEditorInstance(this.editorId, this.codeMirror);
-                        this.doLayout(false, true);
-                    }
-                },
-                resize : function(x)
-                {
-                    if (!x)
-                    {
-                        var h = this.getHeight() - 125;
-                        this.editor.setHeight(h);
-                        var box = Ext4.getCmp(this.editorBoxId);
-                        if (box)
-                        {
-                            box.setHeight(h);
-                            var _f = Ext4.get('frame_' + this.editorId);
-                            if (_f)
-                                _f.setHeight(h, false);
-
-                            if (this.codeMirror && h > 0)
-                                this.codeMirror.setSize(null, h + 'px');
-                        }
                         this.doLayout(false, true);
                     }
                 },
@@ -113,10 +93,6 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
         }, this, []);
 
         this.callParent();
-
-        this.on('resize', function() {
-            this.editor.fireEvent('resize');
-        });
     },
 
     initButtonBar : function() {
@@ -396,7 +372,7 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
                 {
                     id : this.editorBoxId,
                     xtype : 'box',
-                    html: '<textarea id="metadataText" rows="17" cols="80" wrap="off" style="width: 100%; height: 100%;">'
+                    html: '<textarea id="metadataText" rows="25" cols="80" wrap="off">' // save some space at the bottom to display parse errors
                         + Ext4.util.Format.htmlEncode(this.query.metadataText) + '</textarea>'
                 }
             ],
@@ -418,22 +394,6 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
 
                         this.codeMirror.setSize(null, size.height + 'px');
                         LABKEY.codemirror.RegisterEditorInstance(this.editorId, this.codeMirror);
-                    }
-                },
-                resize : function(x)
-                {
-                    if (!x) {
-                        var h = this.getHeight() - 160;
-                        this.editor.setHeight(h);
-                        var box = Ext4.getCmp(this.editorBoxId);
-                        if (box) {
-                            box.setHeight(h);
-                            var _f = Ext4.get('frame_' + this.editorId);
-                            if (_f) {
-                                _f.setHeight(h, false);
-                            }
-                        }
-                        this.doLayout(false, true);
                     }
                 },
                 scope : this
@@ -463,10 +423,6 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
         this.items = items;
         
         this.callParent();
-
-        this.on('resize', function() {
-            this.editor.fireEvent('resize');
-        });
     },
 
     setDisplay : function(id)

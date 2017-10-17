@@ -162,8 +162,8 @@
             layout     : 'fit',
             frame      : false,
             border     : false,
-            // allow this component to resize the height to fit the browser window
-            autoResize: { skipHeight: false },
+            minHeight  : 650,
+            autoResize : false,
             items      : [Ext4.create('LABKEY.query.QueryEditorPanel', {
                 id          : 'qep',
                 border      : false,
