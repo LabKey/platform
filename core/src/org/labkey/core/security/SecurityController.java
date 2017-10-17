@@ -106,6 +106,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1411,6 +1413,8 @@ public class SecurityController extends SpringActionController
             final User user = UserManager.getUser(userEmail);
             if (clone != null && user != null)
             {
+                Map<Container, Set<Role>> groupRoles = new HashMap<>();
+                // clone group membership
                 for (int groupId : clone.getGroups())
                 {
                     if (!user.isInGroup(groupId))
@@ -1422,6 +1426,14 @@ public class SecurityController extends SpringActionController
                             try
                             {
                                 SecurityManager.addMember(group, user);
+                                // Keep track of roles associated with this group so we don't assign them individually below
+                                Container groupContainer = ContainerManager.getForId(group.getContainer());
+                                if (groupContainer != null)
+                                {
+                                    SecurityPolicy policy = groupContainer.getPolicy();
+                                    Set<Role> currentRoles = groupRoles.computeIfAbsent(groupContainer, k -> new HashSet<>());
+                                    currentRoles.addAll(policy.getEffectiveRoles(group));
+                                }
                             }
                             catch (InvalidGroupMembershipException e)
                             {
@@ -1429,6 +1441,25 @@ public class SecurityController extends SpringActionController
                             }
                         }
                     }
+                }
+                // Now clone permissions assigned outside of groups
+                Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                for (Container container: containers)
+                {
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
+                    Collection<Role> roles = policy.getEffectiveRoles(clone);
+                    roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
+                    Boolean modified = false;
+                    for (Role role : roles)
+                    {
+                        if (groupRoles.get(container) == null || !groupRoles.get(container).contains(role))
+                        {
+                            modified = true;
+                            policy.addRoleAssignment(user, role);
+                        }
+                    }
+                    if (modified)
+                        SecurityPolicyManager.savePolicy(policy);
                 }
             }
         }
