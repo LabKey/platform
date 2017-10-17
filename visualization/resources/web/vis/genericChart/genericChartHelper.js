@@ -219,6 +219,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _updateAndSortQueryFields = function(queryConfig, columnList, columnMetadata)
     {
         var queryFields = [],
+            queryFieldKeys = [],
             columnTypes = Ext4.isDefined(columnList.columns) ? columnList.columns : {};
 
         Ext4.each(columnMetadata, function(column)
@@ -241,8 +242,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 f.isSubjectGroupColumn = true;
             }
 
-            if (f.fieldKey.toLowerCase() != 'lsid')
+            // Issue 31672: keep track of the distinct query field keys so we don't get duplicates
+            if (f.fieldKey.toLowerCase() != 'lsid' && queryFieldKeys.indexOf(f.fieldKey) == -1) {
                 queryFields.push(f);
+                queryFieldKeys.push(f.fieldKey);
+            }
         }, this);
 
         // Sorts fields by their shortCaption, but put subject groups/categories/cohort at the end.

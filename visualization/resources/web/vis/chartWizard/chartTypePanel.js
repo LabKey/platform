@@ -350,7 +350,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 cls: 'study-columns-grid',
                 store: this.getStudyColumnsStore(),
                 autoScroll: true,
-                height: this.height - 37/*studyQueryCombo height*/ - 165,
+                height: this.height - 37/*studyQueryCombo height*/ - 170,
                 enableColumnHide: false,
                 columns: this.getGridColumnConfig(),
                 viewConfig: { plugins: this.getGridViewDragPluginConfig() },
@@ -431,7 +431,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 cls: 'query-columns-grid',
                 store: this.getQueryColumnsStore(),
                 autoScroll: true,
-                height: this.height - 165,
+                height: this.height - 170,
                 enableColumnHide: false,
                 columns: this.getGridColumnConfig(),
                 viewConfig: {

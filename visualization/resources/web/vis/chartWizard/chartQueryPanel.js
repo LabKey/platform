@@ -9,7 +9,7 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
 
     cls: 'chart-wizard-panel chart-query-panel',
     mainTitle: 'Select a query',
-    height: 210,
+    height: 220,
     width: 440,
 
     schemaName: null,
