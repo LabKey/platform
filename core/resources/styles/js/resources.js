@@ -7,3 +7,6 @@
 require('bootstrap-sass'); // javascript
 
 require('./navigation');
+
+// Dependencies
+require('font-awesome/scss/font-awesome.scss');

@@ -4,17 +4,17 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 const path = require('path');
-const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-var inProduction = process.env.NODE_ENV === 'production';
+const inProduction = process.env.NODE_ENV === 'production';
+const baseJsDir = './resources/styles/js/';
+const styleJs = baseJsDir + 'style.js';
+const ext4Js = baseJsDir + 'ext4.js';
+const ext3Js = baseJsDir + 'ext3.js';
+const useSourceMaps = !inProduction;
 
 module.exports = function(env) {
     var entry = {};
-    var baseJsDir = './resources/styles/js/';
-    var styleJs = baseJsDir + 'style.js';
-    var ext4Js = baseJsDir + 'ext4.js';
-    var ext3Js = baseJsDir + 'ext3.js';
     if (env && env.builddependency) {
         entry.core = baseJsDir + 'resources.js';
     }
@@ -33,7 +33,7 @@ module.exports = function(env) {
     return {
         context: path.resolve(__dirname, '..'),
 
-        devtool: 'source-map',
+        devtool: useSourceMaps ? 'source-map' : false,
 
         entry: entry,
 
@@ -68,18 +68,18 @@ module.exports = function(env) {
                             loader: 'css-loader',
                             options: {
                                 minimize: inProduction,
-                                sourceMap: true,
+                                sourceMap: useSourceMaps,
                                 url: false
                             }
                         },{
                             loader: 'postcss-loader',
                             options: {
-                                sourceMap: 'inline'
+                                sourceMap: useSourceMaps ? 'inline' : undefined
                             }
                         },{
                             loader: 'sass-loader',
                             options: {
-                                sourceMap: true
+                                sourceMap: useSourceMaps
                             }
                         }],
                         fallback: 'style-loader'
@@ -96,7 +96,7 @@ module.exports = function(env) {
                         use: [{
                             loader: 'css-loader',
                             options: {
-                                sourceMap: true
+                                sourceMap: useSourceMaps
                             }
                         },{
                             loader: 'postcss-loader'
@@ -105,7 +105,7 @@ module.exports = function(env) {
                         },{
                             loader: 'sass-loader',
                             options: {
-                                sourceMap: true
+                                sourceMap: useSourceMaps
                             }
                         }],
                         fallback: 'style-loader'
