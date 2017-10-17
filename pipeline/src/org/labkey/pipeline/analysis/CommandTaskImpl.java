@@ -678,7 +678,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         action.setStartTime(new Date());
         action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
-        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false, _factory._timeout, TimeUnit.SECONDS);
+        int timeout = _factory._timeout != null ? _factory._timeout : 0;
+        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false, timeout, TimeUnit.SECONDS);
         action.setEndTime(new Date());
         return true;
     }
