@@ -652,7 +652,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             v = "{" + StringUtils.join((Object[])arg1, ",") + "}";
         }
         else
-            v = arg1.toString();
+        {
+            // Trim to prevent users from inadvertently letting in leading/trailing spaces, which cause confusion on filtering, sorting, joins, and many other places
+            v = arg1.toString().trim();
+        }
         _stringValues.put(arg0, v);
         _values = null;
     }
