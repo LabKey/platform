@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
@@ -56,13 +57,9 @@ public class PopupUserView extends PopupMenuView
         {
             tree = new NavTree();
 
-            if (null != user && !user.isGuest())
-            {
-                NavTree signedIn = new NavTree("Signed in as " + user.getFriendlyName());
-                signedIn.setDisabled(true);
-                tree.addChild(signedIn);
-                tree.addSeparator();
-            }
+            NavTree feedBack = new NavTree("Give UI Feedback", PageFlowUtil.urlProvider(CoreUrls.class).getFeedbackURL());
+            tree.addChild(feedBack);
+            tree.addSeparator();
         }
         else
         {
