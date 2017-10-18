@@ -135,7 +135,7 @@ $lk-button-font-size: $lk-font-size-small !default;
 $lk-button-font-weight: bold !default;
 $lk-button-letter-spacing: 0.5px !default;
 $lk-button-padding: $lk-padding-base-vertical $lk-padding-base-horizontal 3px $lk-padding-base-horizontal !default;
-$lk-button-text-transform: uppercase !default;
+$lk-button-text-transform: capitalize !default;
 
 $lk-button-primary-bg-color: $lk-accent-color !default; // theme variable
 $lk-button-primary-bg-color-hover: $lk-accent-color !default; // theme variable
