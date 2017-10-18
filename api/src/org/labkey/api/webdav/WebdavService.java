@@ -25,6 +25,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +71,16 @@ public class WebdavService
     public List<WebdavResolver> getRootResolvers()
     {
         return _rootResolvers;
+    }
+
+    public List<WebdavResolver> getEnabledRootResolvers()
+    {
+        List<WebdavResolver> enabledProviders = new ArrayList<>();
+        for (WebdavResolver provider : _rootResolvers)
+            if (provider.isEnabled())
+                enabledProviders.add(provider);
+
+        return enabledProviders;
     }
 
     public void registerRootResolver(WebdavResolver webdavResolver)

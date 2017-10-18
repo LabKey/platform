@@ -68,6 +68,11 @@ public interface WebdavResolver extends Resolver
         return true;
     }
 
+    default boolean isEnabled()
+    {
+        return true;
+    }
+
     interface History
     {
         User getUser();

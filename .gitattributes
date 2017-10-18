@@ -7061,6 +7061,7 @@ internal/src/org/labkey/api/webdav/FileSystemBatchAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/UserResolverImpl.java -text
+internal/src/org/labkey/api/webdav/WebFilesResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
 internal/src/org/labkey/remoteapi/RemoteConnections.java -text
 internal/src/org/labkey/remoteapi/SelectRowsStreamHack.java -text

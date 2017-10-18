@@ -219,4 +219,7 @@ public interface AppProps
     String getXFrameOptions();
 
     String getStaticFilesPrefix();
+
+    boolean isWebfilesRootEnabled();
+
 }

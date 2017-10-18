@@ -82,6 +82,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
     static final String WEB_ROOT = "webRoot";
     static final String USER_FILE_ROOT = "userFileRoot";
+    static final String WEBFILES_ROOT_ENABLED = "webfilesEnabled";
     static final String MAX_BLOB_SIZE = "maxBLOBSize";
     static final String EXT3_REQUIRED = "ext3Required";
     static final String EXT3API_REQUIRED = "ext3APIRequired";
@@ -561,4 +562,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             });
         writeable.save();
     }
+
+    @Override
+    public boolean isWebfilesRootEnabled()
+    {
+        return lookupBooleanValue(WEBFILES_ROOT_ENABLED, false);
+    }
+
 }

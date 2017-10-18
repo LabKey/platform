@@ -179,4 +179,6 @@ public interface FileContentService
      * </ul>
      */
     SQLFragment listFilesQuery(@NotNull User currentUser);
+
+    void setWebfilesEnabled(boolean enabled);
 }

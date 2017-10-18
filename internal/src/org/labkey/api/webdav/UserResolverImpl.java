@@ -16,7 +16,6 @@
 package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityPolicy;

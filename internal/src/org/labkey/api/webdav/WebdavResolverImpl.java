@@ -38,7 +38,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 
-import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Random;

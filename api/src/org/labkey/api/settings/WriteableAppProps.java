@@ -164,6 +164,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(USER_FILE_ROOT, root);
     }
 
+    public void setWebfilesEnabled(boolean b)
+    {
+        storeBooleanValue(WEBFILES_ROOT_ENABLED, b);
+    }
+
     public void setAdministratorContactEmail(String email)
     {
         storeStringValue(ADMINISTRATOR_CONTACT_EMAIL, email);
