@@ -68,10 +68,10 @@ public class StudySecurityTest extends StudyBaseTest
         //start import--need to wait for completion after setting up security
         importStudy();
 
-        createUser(READER, null);
-        createUser(EDITOR, null);
-        createUser(LIMITED, null);
-        createUser(NONE, null);
+        _userHelper.createUser(READER);
+        _userHelper.createUser(EDITOR);
+        _userHelper.createUser(LIMITED);
+        _userHelper.createUser(NONE);
         clickProject(getProjectName());
         importFolderFromZip(TestFileUtils.getSampleData("studies/StudySecurityProject.folder.zip"));
 
