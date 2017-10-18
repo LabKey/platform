@@ -1999,9 +1999,7 @@ public class DataRegion extends DisplayElement
 
             if (showRecordSelectors)
             {
-                out.write(newUI ? "<th " : "<td ");
-                out.write("valign=\"top\" class=\"labkey-column-header labkey-selectors");
-                out.write("\">");
+                out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors>");
 
                 out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" ");
                 out.write(">");
@@ -2011,7 +2009,7 @@ public class DataRegion extends DisplayElement
                 out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
                 out.write("></span>");
 
-                out.write(newUI ? "</th>" : "</td>");
+                out.write("</td>");
             }
 
             for (DisplayColumn renderer : renderers)
@@ -3192,52 +3190,145 @@ public class DataRegion extends DisplayElement
             {
                 // TODO: It'd be better to have this be actionable by the user (e.g. show a filter context action
                 // with an exclamation point and option to remove or add a link to remove the offending parameter)
-                String msg;
+                StringBuilder msg;
                 if (ignoredColumns.size() == 1)
                 {
-                    msg = "Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist.";
+                    msg = new StringBuilder("Ignoring filter/sort on column '" + ignoredColumns.iterator().next().toDisplayString() + "' because it does not exist.");
                 }
                 else
                 {
                     String sep = "";
-                    msg = "Ignoring filter/sort on columns ";
+                    msg = new StringBuilder("Ignoring filter/sort on columns ");
                     for (FieldKey fieldKey : ignoredColumns)
                     {
-                        msg += sep;
+                        msg.append(sep);
                         sep = ", ";
-                        msg += "'" + fieldKey.toDisplayString() + "'";
+                        msg.append("'").append(fieldKey.toDisplayString()).append("'");
                     }
-                    msg += " because they do not exist.";
+                    msg.append(" because they do not exist.");
                 }
 
-                addMessage(new Message(msg, MessageType.WARNING, "filter"));
+                addMessage(new Message(msg.toString(), MessageType.WARNING, "filter"));
             }
 
             SimpleFilter filter = getValidFilter(ctx);
 
-            if (filter != null)
+            if (filter != null && filter.displayFilterText())
             {
                 for (SimpleFilter.FilterClause clause : filter.getClauses())
                 {
                     List<FieldKey> fieldKeys = clause.getFieldKeys();
+
+                    // zero/multiple fieldKey clauses NYI
                     if (fieldKeys == null || fieldKeys.size() != 1)
                         continue;
-                    StringBuilder caption = new StringBuilder();
-                    clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter());
 
-                    String fieldKey = fieldKeys.get(0).toString();
-                    String jsObject = getJavaScriptObjectReference();
-                    ContextAction.Builder action = new ContextAction.Builder()
-                            .iconCls("filter")
-                            // TODO: Only allow open if the column is available to the region...new scenario for UX
-                            .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(fieldKey) + ", arguments[0]); return false;")
-                            .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + "); return false;")
-                            .text(caption.toString())
-                            .tooltip(caption.toString());
-                    _contextActions.add(action.build());
+                    // 1. If the filterKey is associated with a current DisplayColumn then generate the
+                    //    filter action from that DisplayColumn.
+                    // 2. Otherwise fallback to generating the filter action by parsing the filter clause
+                    //    and fieldKey.
+                    // 3. Be sure to show the same "Column Caption" as what is shown in the table header
+                    //    (even if there are duplicates) -- consider calling DataColumn.renderTitle(ctx, out).
+                    // 4. If there are multiple (and maybe even if not) then show the FieldKey.toString()
+                    //    in the tooltip hover so the user has a chance to disambiguate.
+
+                    FieldKey filterKey = fieldKeys.get(0);
+
+                    if (filterKey != null)
+                    {
+                        DisplayColumn filteredColumn = getFilterColumn(filterKey);
+
+                        if (filteredColumn != null)
+                            _contextActions.add(createFilterAction(ctx, clause, filteredColumn));
+                        else
+                            _contextActions.add(createFilterAction(ctx, clause, filterKey));
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * @param fieldKey The fieldKey to match a DisplayColumn against.
+     * @return DisplayColumn associated with the fieldKey if it is shown in this DataRegion, otherwise, null
+     */
+    @Nullable
+    private DisplayColumn getFilterColumn(FieldKey fieldKey)
+    {
+        return getDisplayColumns().stream().filter(dc -> dc.hasFilterKey(fieldKey)).findFirst().orElse(null);
+
+    }
+
+    @NotNull
+    private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, DisplayColumn column)
+    {
+        // Column is visible in the currently displayed region -- display with same rendered column title
+        StringBuilder caption = new StringBuilder();
+        clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
+        {
+            @Override
+            public String format(FieldKey fieldKey)
+            {
+                // TODO: Make sure implementors of DisplayColumn override getTitle(ctx)
+                return column.getTitle(ctx);
+            }
+        });
+
+        StringBuilder tooltip = new StringBuilder();
+        clause.appendFilterText(tooltip, new SimpleFilter.ColumnNameFormatter());
+
+        // Note: The client-side DataRegion expects the ColumnInfo FieldKey,
+        // not the one expressed in the filter clause (aka the URL)
+        FieldKey fk = column.getColumnInfo().getFieldKey();
+        String jsObject = getJavaScriptObjectReference();
+
+        return new ContextAction.Builder()
+                .iconCls("filter")
+                .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(fk.toString()) + ", arguments[0]); return false;")
+                .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(fk.toString()) + "); return false;")
+                .text(caption.toString())
+                .tooltip(tooltip.toString())
+                .build();
+    }
+
+    @NotNull
+    private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, FieldKey filterKey)
+    {
+        // This is copied from the original addFilterMessage
+        StringBuilder caption = new StringBuilder();
+        clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
+        {
+            @Override
+            public String format(FieldKey fieldKey)
+            {
+                String formatted = super.format(fieldKey);
+                for (String hiddenFilter : HIDDEN_FILTER_COLUMN_SUFFIXES)
+                {
+                    if (formatted.toLowerCase().endsWith("/" + hiddenFilter.toLowerCase()) ||
+                            formatted.toLowerCase().endsWith("." + hiddenFilter.toLowerCase()))
+                    {
+                        formatted = formatted.substring(0, formatted.length() - (hiddenFilter.length() + 1));
+                    }
+                }
+                int dotIndex = formatted.lastIndexOf('.');
+                if (dotIndex >= 0)
+                    formatted = formatted.substring(dotIndex + 1);
+                int slashIndex = formatted.lastIndexOf('/');
+                if (slashIndex >= 0)
+                    formatted = formatted.substring(slashIndex);
+                return formatted;
+            }
+        });
+
+        String jsObject = getJavaScriptObjectReference();
+
+        // Still able to remove just cannot edit
+        return new ContextAction.Builder()
+                .iconCls("filter")
+                .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
+                .text(caption.toString())
+                .tooltip("(Unable to edit) " + caption.toString())
+                .build();
     }
 
     protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException

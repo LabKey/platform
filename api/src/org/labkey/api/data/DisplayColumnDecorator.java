@@ -64,6 +64,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public String getTitle(RenderContext ctx)
+    {
+        return _column.getTitle(ctx);
+    }
+
+    @Override
     public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
         _column.renderGridEnd(ctx, out);

@@ -88,7 +88,13 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException;
 
+    @Deprecated
     public abstract void renderTitle(RenderContext ctx, Writer out) throws IOException;
+
+    public String getTitle(RenderContext ctx)
+    {
+        return null;
+    }
 
     /** @return whether the underlying column knows how to sort the query that was executed (via SQL ORDER BY) */
     public abstract boolean isSortable();
@@ -554,6 +560,11 @@ public abstract class DisplayColumn extends RenderColumn
     public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
     {
         renderGridHeaderCell(ctx, out, null);
+    }
+
+    public boolean hasFilterKey(FieldKey fieldKey)
+    {
+        return false;
     }
 
     private Sort.SortField getSortColumn(Sort sort)

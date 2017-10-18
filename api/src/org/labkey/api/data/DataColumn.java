@@ -278,6 +278,14 @@ public class DataColumn extends DisplayColumn
         renderGridCellContents(ctx, out);
     }
 
+    public boolean hasFilterKey(FieldKey fieldKey)
+    {
+        if (_filterColumn == null)
+            return false;
+
+        return _filterColumn.getFieldKey().equals(fieldKey);
+    }
+
     public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
     {
         if (_filterColumn == null)
@@ -856,12 +864,19 @@ public class DataColumn extends DisplayColumn
 
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
-        String title = PageFlowUtil.filter(_caption.eval(ctx));
+        String title = PageFlowUtil.filter(getTitle(ctx));
         if (title.length() == 0)
         {
             title = "&nbsp;";
         }
         out.write(title);
+    }
+
+    public String getTitle(RenderContext ctx)
+    {
+        if (_caption == null)
+            return null;
+        return _caption.eval(ctx);
     }
 
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
