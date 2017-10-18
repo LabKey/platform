@@ -29,6 +29,7 @@ import org.labkey.issue.model.IssueManager;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +58,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
     private String _fieldChanges;
     private String _recipients;
     private String _attachments;
+    private Map<String, Object> _issueProperties = new HashMap<>();
 
     public IssueUpdateEmailTemplate()
     {
@@ -300,7 +302,8 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         protected abstract Integer getUserId(Container c);
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients, List<AttachmentFile> attachments, User creator)
+    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients,
+                     List<AttachmentFile> attachments, User creator, Map<String, Object> issueProperties)
     {
         _newIssue = newIssue;
         _detailsURL = detailsURL;
@@ -308,6 +311,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         _comment = comment;
         _fieldChanges = fieldChanges;
         setOriginatingUser(creator);
+        _issueProperties = issueProperties;
 
         StringBuilder sb = new StringBuilder();
         String separator = "";
@@ -332,7 +336,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         _allReplacements.addAll(_replacements);
 
         // inject any custom fields into the replacement parameters
-        for (Map.Entry<String, Object> prop : _newIssue.getProperties().entrySet())
+        for (Map.Entry<String, Object> prop : _issueProperties.entrySet())
         {
             if (!existingParams.contains(prop.getKey()))
             {

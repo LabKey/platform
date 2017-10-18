@@ -66,6 +66,7 @@ import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,13 @@ public class ChangeSummary
     private Issue.Comment _comment;
     private String _textChanges;
     private String _summary;
+
+    private IssueListDef _issueListDef;
+    private Issue _issue;
+    private Issue _prevIssue;
+    private Class<? extends Controller> _action;
+    private Map<String, Object> _issueProperties = new HashMap<>();
+
     private static Set<String> _standardFields = new CaseInsensitiveHashSet();
 
     static
@@ -99,11 +107,17 @@ public class ChangeSummary
         _standardFields.add("Related");
     }
 
-    private ChangeSummary(Issue.Comment comment, String textChanges, String summary)
+    private ChangeSummary(IssueListDef issueListDef, Issue issue, Issue prevIssue, Issue.Comment comment,
+                          String textChanges, String summary, Class<? extends Controller> action, Map<String, Object> issueProperties)
     {
+        _issueListDef = issueListDef;
+        _issue = issue;
+        _prevIssue = prevIssue;
         _comment = comment;
         _textChanges = textChanges;
         _summary = summary;
+        _action = action;
+        _issueProperties = issueProperties;
     }
 
     public Issue.Comment getComment()
@@ -126,12 +140,12 @@ public class ChangeSummary
                                                     User user,
                                                     Class<? extends Controller> action,
                                                     String comment,
-                                                    CustomColumnConfiguration ccc,
-                                                    User currentUser)
+                                                    CustomColumnConfiguration ccc)
     {
         StringBuilder sbHTMLChanges = new StringBuilder();
         StringBuilder sbTextChanges = new StringBuilder();
         String summary = null;
+        Map<String, Object> issueProperties = new HashMap<>();
 
         if (!action.equals(IssuesController.InsertAction.class) && !action.equals(IssuesController.UpdateAction.class))
         {
@@ -166,7 +180,7 @@ public class ChangeSummary
             sbHTMLChanges.append("<table class=issues-Changes>");
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "AssignedTo", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "AssignedTo", previous.getAssignedToName(user), issue.getAssignedToName(user), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Notify",
                     StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
                     StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
@@ -192,6 +206,7 @@ public class ChangeSummary
                         Object oldValue = oldProps.get(entry.getKey());
                         Object newValue = entry.getValue();
 
+                        issueProperties.put(entry.getKey(), newValue);
                         ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
                         if (col != null && col.getFk() != null)
                         {
@@ -204,6 +219,8 @@ public class ChangeSummary
 
                                 oldValue = ov != null ? ov : oldValue;
                                 newValue = nv != null ? nv : newValue;
+
+                                issueProperties.put(entry.getKey(), newValue);
                             }
                         }
 
@@ -233,7 +250,8 @@ public class ChangeSummary
 
         formattedComment.append("</div>");
 
-        return new ChangeSummary(issue.addComment(user, formattedComment.toString()), sbTextChanges.toString(), summary);
+        return new ChangeSummary(issueListDef, issue, previous, issue.addComment(user, formattedComment.toString()),
+                sbTextChanges.toString(), summary, action, issueProperties);
     }
 
     private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
@@ -305,27 +323,29 @@ public class ChangeSummary
         return relatedIssue;
     }
 
-    public static void sendUpdateEmail(IssueListDef issueListDef, Container container, User u, Issue issue, Issue prevIssue, String fieldChanges, String summary,
-                                 String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
+    public void sendUpdateEmail(Container container, User user, String comment, ActionURL detailsURL, String change,
+                                List<AttachmentFile> attachments) throws ServletException
     {
         // Skip the email if no comment and no public fields have changed, #17304
+        String fieldChanges = getTextChanges();
+
         if (fieldChanges.isEmpty() && comment.isEmpty())
             return;
 
-        final Set<User> allAddresses = getUsersToEmail(container, u, issue, prevIssue, action);
-        MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer(createdByUser);
+        final Set<User> allAddresses = getUsersToEmail(container, user, _issue, _prevIssue, _action);
+        MailHelper.BulkEmailer emailer = new MailHelper.BulkEmailer(user);
 
-        for (User user : allAddresses)
+        for (User recipient : allAddresses)
         {
-            boolean hasPermission = container.hasPermission(user, ReadPermission.class);
+            boolean hasPermission = container.hasPermission(recipient, ReadPermission.class);
             if (!hasPermission) continue;
 
-            String to = user.getEmail();
+            String to = recipient.getEmail();
             try
             {
-                Issue.Comment lastComment = issue.getLastComment();
-                String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                Issue.Comment lastComment = _issue.getLastComment();
+                String messageId = "<" + _issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String references = messageId + " <" + _issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
                 Address[] addresses = m.getAllRecipients();
@@ -333,7 +353,7 @@ public class ChangeSummary
                 if (addresses != null && addresses.length > 0)
                 {
                     IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, container);
-                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
+                    template.init(_issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, recipient, _issueProperties);
 
                     m.setSubject(template.renderSubject(container));
                     m.setFrom(template.renderFrom(container, LookAndFeelProperties.getInstance(container).getSystemEmailAddress()));
@@ -350,16 +370,16 @@ public class ChangeSummary
                                     "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
                                     "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
                                     "  </div>\n" +
-                                    "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(container, issueListDef.getName()).singularName) + "\"></meta>\n" +
+                                    "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(container, _issueListDef.getName()).singularName) + "\"></meta>\n" +
                                     "</div>\n");
                     html.append("</body></html>");
                     m.setEncodedHtmlContent(html.toString());
 
-                    emailer.addMessage(user.getEmail(), m);
-                    Notification notification = createNotification(user, m,
-                            "view " + IssueManager.getEntryTypeNames(container, issueListDef.getName()).singularName,
-                            new ActionURL(IssuesController.DetailsAction.class,container).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
-                            "issue:" + issue.getIssueId(),
+                    emailer.addMessage(recipient.getEmail(), m);
+                    Notification notification = createNotification(recipient, m,
+                            "view " + IssueManager.getEntryTypeNames(container, _issueListDef.getName()).singularName,
+                            new ActionURL(IssuesController.DetailsAction.class,container).addParameter("issueId", _issue.getIssueId()).getLocalURIString(false),
+                            "issue:" + _issue.getIssueId(),
                             Issue.class.getName());
 
                     if (notification != null)
@@ -367,7 +387,7 @@ public class ChangeSummary
                         NotificationService.get().removeNotifications(container, notification.getObjectId(),
                                 Collections.singletonList(notification.getType()), notification.getUserId());
 
-                        NotificationService.get().addNotification(container, createdByUser, notification);
+                        NotificationService.get().addNotification(container, user, notification);
                     }
                 }
             }

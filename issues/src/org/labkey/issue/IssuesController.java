@@ -767,7 +767,7 @@ public class IssuesController extends SpringActionController
                         issue.parseNotifyList(issue.getNotifyList());
 
                         ChangeSummary changeSummary = ChangeSummary.createChangeSummary(getViewContext(), issueListDef,
-                                issue, prevIssue, null, getContainer(), getUser(), InsertAction.class, issuesForm.getComment(), ccc, getUser());
+                                issue, prevIssue, null, getContainer(), getUser(), InsertAction.class, issuesForm.getComment(), ccc);
                         IssueManager.saveIssue(getUser(), getContainer(), issue);
                         newIssues.add(issue);
                         newIssueIds.add(issue.getIssueId());
@@ -941,7 +941,7 @@ public class IssuesController extends SpringActionController
                 // convert from email addresses & display names to userids before we hit the database
                 issue.parseNotifyList(issue.getNotifyList());
 
-                changeSummary = ChangeSummary.createChangeSummary(getViewContext(), getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
+                changeSummary = ChangeSummary.createChangeSummary(getViewContext(), getIssueListDef(), issue, prevIssue, duplicateOf, c, user, form.getAction(), form.getComment(), getColumnConfiguration());
                 IssueManager.saveIssue(user, c, issue);
                 detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
                 AttachmentService.get().addAttachments(new CommentAttachmentParent(changeSummary.getComment()), getAttachmentFileList(), user);
@@ -1007,9 +1007,7 @@ public class IssuesController extends SpringActionController
             {
                 change += " as " + issue.getResolution(); // Issue 12273
             }
-            ChangeSummary.sendUpdateEmail(issueListDef, getContainer(), getUser(), issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(),
-                    form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction(), user);
-
+            changeSummary.sendUpdateEmail(c, user, form.getComment(), detailsUrl, change, getAttachmentFileList());
             return true;
         }
 
