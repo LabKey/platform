@@ -62,6 +62,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyReloadSource;
@@ -75,6 +76,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -132,13 +134,18 @@ public class StudyServiceImpl implements StudyService
 
     private StudyServiceImpl() {}
 
-    public Study getStudy(Container container)
+    public static StudyServiceImpl get()
+    {
+        return (StudyServiceImpl)ServiceRegistry.get(StudyService.class);
+    }
+
+    public StudyImpl getStudy(Container container)
     {
         return StudyManager.getInstance().getStudy(container);
     }
 
     @Override
-    public Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets)
+    public StudyImpl createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets)
     {
         // Needed for study creation from VISC module. We might want to remove this when we don't need the old study design tool.
 
@@ -159,6 +166,17 @@ public class StudyServiceImpl implements StudyService
 
             return StudyManager.getInstance().createStudy(user, study);
     }
+
+    @Override
+    public DatasetDefinition createDataset(Container container, User user, String name, @Nullable Integer datasetId, boolean isDemographic)
+    {
+        StudyImpl study = getStudy(container);
+        if (study == null)
+            throw new IllegalStateException("Study required");
+
+        return AssayPublishManager.getInstance().createDataset(user, study, name, datasetId, isDemographic);
+    }
+
 
     public DatasetDefinition getDataset(Container c, int datasetId)
     {

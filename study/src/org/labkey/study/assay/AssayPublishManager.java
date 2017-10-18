@@ -585,19 +585,28 @@ public class AssayPublishManager implements AssayPublishService
         return false;
     }
 
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, ExpProtocol protocol)
+    @NotNull
+    public DatasetDefinition createDataset(User user, StudyImpl study, String name, @Nullable Integer datasetId, boolean isDemographicData)
+    {
+        return createAssayDataset(user, study, name, null, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, null, false);
+    }
+
+    @NotNull
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, @Nullable ExpProtocol protocol)
     {
         return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false);
     }
 
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, ExpProtocol protocol, boolean useTimeKeyField)
+    @NotNull
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
     {
         return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField);
     }
 
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, String type, @Nullable Integer categoryId, ExpProtocol protocol, boolean useTimeKeyField)
+    @NotNull
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
