@@ -937,10 +937,13 @@ public class DbSchema
                     sbOut.append(rs.getString(1));
                     sbOut.append(" &nbsp;&nbsp;&nbsp;&nbsp; ");
                     sbOut.append(rs.getString(2));
+                    sbOut.append("." ).append(rs.getString(3));
                     sbOut.append(" = ");
-                    sbOut.append(rs.getString(3));
-                    sbOut.append("&nbsp;&nbsp;&nbsp;Container:  ");
+                    sbOut.append(rs.getString(4));
+                    sbOut.append("&nbsp;&nbsp;&nbsp;Module:  ");
                     sbOut.append(rs.getString(5));
+                    sbOut.append("&nbsp;&nbsp;&nbsp;Container:  ");
+                    sbOut.append(rs.getString(6));
                     sbOut.append("\n");
                 }
             });
