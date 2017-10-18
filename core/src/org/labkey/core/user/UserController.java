@@ -35,6 +35,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -1508,6 +1509,23 @@ public class UserController extends SpringActionController
             TableInfo table = schema.getTable(userTableName);
             if (table == null)
                 throw new NotFoundException(userTableName + " table");
+            else if (table instanceof AbstractTableInfo)
+            {
+                // conditionally remove the email and groups columns only for this view
+                if (!SecurityManager.canSeeEmailAddresses(getContainer(), getUser()))
+                {
+                    ColumnInfo col = table.getColumn(FieldKey.fromParts("Email"));
+                    if (col != null)
+                        ((AbstractTableInfo)table).removeColumn(col);
+                }
+
+                if (!c.hasPermission(user, AdminPermission.class))
+                {
+                    ColumnInfo col = table.getColumn(FieldKey.fromParts("Groups"));
+                    if (col != null)
+                        ((AbstractTableInfo)table).removeColumn(col);
+                }
+            }
 
             QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext());
             DetailsView detailsView = new DetailsView(quf);

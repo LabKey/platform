@@ -421,31 +421,28 @@ public class CoreQuerySchema extends UserSchema
 
     private void addGroupsColumn(FilteredTable users)
     {
-        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+        ColumnInfo groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
+        groupsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("User")
         {
-            ColumnInfo groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
-            groupsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("User")
+            @Override
+            public TableInfo getLookupTableInfo()
             {
-                @Override
-                public TableInfo getLookupTableInfo()
-                {
-                    return getMembersTable();
-                }
-            }, "Group"){
-                @Override
-                protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
-                {
-                    ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
-                    return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
-                }
-            });
-            groupsCol.setDescription("List of the user's group memberships.");
-            users.addColumn(groupsCol);
+                return getMembersTable();
+            }
+        }, "Group"){
+            @Override
+            protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
+            {
+                ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
+                return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
+            }
+        });
+        groupsCol.setDescription("List of the user's group memberships.");
+        users.addColumn(groupsCol);
 
-            List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
-            visibleColumns.add(groupsCol.getFieldKey());
-            users.setDefaultVisibleColumns(visibleColumns);
-        }
+        List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
+        visibleColumns.add(groupsCol.getFieldKey());
+        users.setDefaultVisibleColumns(visibleColumns);
     }
 
     private void addAvatarColumn(FilteredTable users)
