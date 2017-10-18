@@ -89,6 +89,11 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
             return;
 
+        // These flags act as a trimming boundaries for menu separators. They are used to prevent
+        // "empty" menu items between separators as well as prevent beginning or ending with a separator
+        boolean hasNonSeparatorItem = false;
+        boolean lastIsSeparator = false;
+
         String treeItemCls = null;
 
         for (NavTree child : tree.getChildren())
@@ -111,6 +116,13 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
             if (child.hasChildren())
             {
+                if (lastIsSeparator)
+                {
+                    lastIsSeparator = false;
+                    renderTreeDivider(out);
+                }
+
+                hasNonSeparatorItem = true;
                 String text = PageFlowUtil.filter(child.getText());
 
                 out.write("<li class=\"dropdown-submenu\">");
@@ -123,9 +135,21 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 out.write("</li>");
             }
             else if ("-".equals(child.getText()))
-                renderTreeDivider(out);
+            {
+                if (hasNonSeparatorItem)
+                    lastIsSeparator = true;
+            }
             else
+            {
+                if (lastIsSeparator)
+                {
+                    lastIsSeparator = false;
+                    renderTreeDivider(out);
+                }
+
+                hasNonSeparatorItem = true;
                 renderTreeItem(child, treeItemCls, out);
+            }
         }
     }
 
@@ -141,7 +165,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("</li>");
     }
 
-    public static void renderTreeDivider(Writer out) throws IOException
+    protected static void renderTreeDivider(Writer out) throws IOException
     {
         out.write("<li class=\"divider\"></li>");
     }
