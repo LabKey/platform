@@ -141,6 +141,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
     {
         File prev = _svc.getSiteDefaultRoot();
         _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())));
+        _svc.setWebfilesEnabled(form.isWebfilesEnabled());
 
         if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
         {

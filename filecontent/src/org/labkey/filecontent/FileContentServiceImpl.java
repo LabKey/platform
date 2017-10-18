@@ -395,6 +395,14 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     }
 
     @Override
+    public void setWebfilesEnabled(boolean enabled)
+    {
+        WriteableAppProps props = AppProps.getWriteableInstance();
+        props.setWebfilesEnabled(enabled);
+        props.save();
+    }
+
+    @Override
     public FileSystemAttachmentParent registerDirectory(Container c, String name, String path, boolean relative)
     {
         FileSystemAttachmentParent parent = new FileSystemAttachmentParent();

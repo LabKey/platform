@@ -147,6 +147,7 @@ import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.UserResolverImpl;
+import org.labkey.api.webdav.WebFilesResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -337,6 +338,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
         // need to register webdav resolvers in init() instead of since static module files are loaded during module startup
         WebdavService.get().registerRootResolver(WebdavResolverImpl.get());
+        WebdavService.get().registerRootResolver(WebFilesResolverImpl.get());
         if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
         {
             WebdavService.get().registerRootResolver(UserResolverImpl.get());

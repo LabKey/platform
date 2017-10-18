@@ -4595,7 +4595,7 @@ public class DavController extends SpringActionController
     boolean isStaticContent(Path path)
     {
         final Boolean[] isStatic = {true};
-        WebdavService.get().getRootResolvers().forEach(webdavResolver -> {
+        WebdavService.get().getEnabledRootResolvers().forEach(webdavResolver -> {
             if (!webdavResolver.isStaticContent() && path.startsWith(webdavResolver.getRootPath()))
                 isStatic[0] = false;
         });
@@ -5700,7 +5700,7 @@ public class DavController extends SpringActionController
     public Path getResourceRootPath(WebdavResource resource)
     {
         final Path[] rootPath = new Path[1];
-        WebdavService.get().getRootResolvers().forEach(webdavResolver -> {
+        WebdavService.get().getEnabledRootResolvers().forEach(webdavResolver -> {
             if (resource.getPath().startsWith(webdavResolver.getRootPath()))
                 rootPath[0] = webdavResolver.getRootPath();
         });

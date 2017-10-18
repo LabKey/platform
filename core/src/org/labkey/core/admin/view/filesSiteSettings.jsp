@@ -71,22 +71,34 @@
             <td><input type="text" name="userRootPath" size="64" value="<%=h(StringUtils.defaultIfBlank(bean.getUserRootPath(), ""))%>"></td>
         </tr>
         <%}%>
-        <tr><td>&nbsp;</td></tr>
+
         <tr>
         <%
             if (bean.isUpgrade()) {
         %>
+            <tr><td>&nbsp;</td></tr>
             <td><%= button("Next").submit(true) %></td>
         <%
             } else {
         %>
+            <tr><td colspan="2" class="labkey-announcement-title"><span>Alternative Webfiles Root</span></td></tr>
+            <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
+            <tr><td colspan="2">Site level setting to enable/disable alternative webdav tree: _webfiles.</td></tr>
+
+            <tr><td class="labkey-form-label">Enable _webfiles<%=helpPopup("_webfiles", "Alternative webdav tree with a compact representation of file root contents and child containers.")%></td>
+                <td><input type=checkbox id="webfilesEnabled" name="webfilesEnabled" <%=checked(bean.isWebfilesEnabled())%> style="margin-left: 10px;"></td>
+            </tr>
+            <tr><td>&nbsp;</td></tr>
+
             <td><%= button("Save").submit(true) %>&nbsp;
-                <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
-            </td>
+                    <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
+                </td>
         <%
             }
         %>
         </tr>
+
+
     </table>
 </labkey:form>
 

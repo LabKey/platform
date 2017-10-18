@@ -69,6 +69,8 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
                 if (userRoot != null && userRoot.exists())
                     form.setUserRootPath(FileUtil.getAbsoluteCaseSensitiveFile(userRoot).getAbsolutePath());
             }
+
+            form.setWebfilesEnabled(AppProps.getInstance().isWebfilesRootEnabled());
         }
         setHelpTopic("setRoots");
         return new JspView<>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);
