@@ -123,6 +123,7 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesListView;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -1216,8 +1217,8 @@ public class IssuesController extends SpringActionController
 
     public static class NewCustomColumnConfiguration implements CustomColumnConfiguration
     {
-        private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
-        private Map<String, String> _captionMap = new LinkedHashMap<>();
+        private Map<String, CustomColumn> _columnMap = new LinkedCaseInsensitiveMap<>();
+        private Map<String, String> _captionMap = new LinkedCaseInsensitiveMap<>();
         private Set<String> _baseNames = new CaseInsensitiveHashSet();
         private Map<String, DomainProperty> _propertyMap = new CaseInsensitiveHashMap<>();
         private List<DomainProperty> _customProperties = new ArrayList<>();
