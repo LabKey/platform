@@ -1410,7 +1410,7 @@ public class DataRegion extends DisplayElement
         out.write("</div>");
     }
 
-    protected void renderTableContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    private void renderTableContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
         renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 
@@ -1430,9 +1430,20 @@ public class DataRegion extends DisplayElement
         out.write("<div class=\"lk-region-ct\">");
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-bar lk-region-section north\"></div>");
 
-        // table wrapper
+        // center section
         out.write("<div class=\"lk-region-section center\" style=\"display: block;\">");
+        renderCenterContent(ctx, out, showRecordSelectors, renderers, colCount);
+        out.write("</div>");
+        // end center section
 
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-w") + "\" class=\"lk-region-bar lk-region-section west\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-bar lk-region-section east\"></div>");
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-bar lk-region-section south\"></div>");
+        out.write("</div>");
+    }
+
+    protected void renderCenterContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    {
         // declare table
         out.write("<table id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
 
@@ -1451,15 +1462,6 @@ public class DataRegion extends DisplayElement
 
         out.write("</table>");
         // end declare table
-
-        out.write("</div>");
-        // end table wrapper
-
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-w") + "\" class=\"lk-region-bar lk-region-section west\"></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-bar lk-region-section east\"></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-bar lk-region-section south\"></div>");
-        out.write("</div>");
-        out.write("</td></tr>");
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException

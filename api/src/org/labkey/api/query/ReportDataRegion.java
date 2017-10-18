@@ -136,7 +136,7 @@ public class ReportDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderTableContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    protected void renderCenterContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
         try
         {

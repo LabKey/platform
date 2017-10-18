@@ -50,38 +50,34 @@ public class CrosstabView extends WebPartView
         }
 
         if (_exportAction != null)
+        {
+            pw.write("<div style=\"margin-bottom:20px;\">");
             pw.write(PageFlowUtil.button("Export to Excel (.xls)").href(_exportAction).toString());
+            pw.write("</div>");
+        }
 
         List<Object> colHeaders = _crosstab.getColHeaders();
         Set<Stats.StatDefinition> statSet = _crosstab.getStatSet();
 
-        pw.write("<table id=\"report\" class=\"labkey-data-region labkey-show-borders labkey-has-row-totals labkey-has-col-totals\">\n<colgroup>");
-        if (statSet.size() > 1)
-            pw.write("<col>");
-        for (int i = 0; i < colHeaders.size() + 1; i++)
-        {
-             pw.write("<col>");
-        }
-
-        pw.write("</colgroup>\n<tr>\n");
+        pw.write("<table id=\"report\" class=\"table-xtab-report\"><tr>");
         if (null != _crosstab.getColField())
         {
-            pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
+            pw.write("<th>&nbsp;</th>");
             if (statSet.size() > 1)
-                pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
+                pw.write("<th>&nbsp;</th>");
 
-            pw.printf("\t<th class=\"labkey-data-region-title\" colspan=\"%d\">%s</th>\n", colHeaders.size(), str(_crosstab.getFieldLabel(_crosstab.getColField())));
-            pw.write("\t<th class=\"labkey-data-region-title\" style=\"border-right:hidden\">&nbsp;</th>\n</tr>\n");
+            pw.printf("<th colspan=\"%d\">%s</th>", colHeaders.size(), str(_crosstab.getFieldLabel(_crosstab.getColField())));
+            pw.write("<th>&nbsp;</th></tr>");
         }
-        pw.printf("\t<th class=\"labkey-data-region-title\">%s</th>\n", str(_crosstab.getFieldLabel(_crosstab.getRowField())));
+        pw.printf("<th>%s</th>", str(_crosstab.getFieldLabel(_crosstab.getRowField())));
         if (statSet.size() > 1)
-            pw.write("\t<td class=\"labkey-col-header\">&nbsp;</td>\n");
+            pw.write("<td class=\"xtab-col-header\">&nbsp;</td>");
 
         if (null != _crosstab.getColField())
             for (Object colVal : colHeaders)
-                pw.printf("\t<td class=\"labkey-col-header\">%s</td>\n", str(colVal));
+                pw.printf("<td class=\"xtab-col-header\">%s</td>", str(colVal));
 
-        pw.printf("<td class=\"labkey-col-header\"");
+        pw.printf("<td class=\"xtab-col-header\">");
         Stats.StatDefinition stat = null;
         if (statSet.size() == 1)
             stat = statSet.toArray(new Stats.StatDefinition[1])[0];
@@ -91,15 +87,13 @@ public class CrosstabView extends WebPartView
         else
             pw.write("Total");
 
-        pw.write("</td>");
-
-        pw.write("</tr>");
+        pw.write("</td></tr>");
 
         if (null != _crosstab.getRowField())
         {
             for (Object rowVal : _crosstab.getRowHeaders())
             {
-                pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">%s</td>\n", statSet.size(), rowVal == null ? "" : str(rowVal));
+                pw.printf("<tr><td class=\"xtab-row-header\" rowspan=\"%d\">%s</td>", statSet.size(), rowVal == null ? "" : str(rowVal));
 
                 int statRow = 0;
                 for (Stats.StatDefinition rowStat : statSet)
@@ -108,15 +102,15 @@ public class CrosstabView extends WebPartView
                     {
                         if (statRow > 0)
                             pw.write("<tr>");
-                        pw.printf("\t<td class=\"labkey-stat-title\">%s</td>\n", rowStat.getName());
+                        pw.printf("<td class=\"xtab-stat-title\">%s</td>", rowStat.getName());
                     }
 
                     for (Object colVal : colHeaders)
                     {
-                        pw.printf("\t<td>%s</td>\n", _crosstab.getStats(rowVal, colVal).getFormattedStat(rowStat));
+                        pw.printf("<td>%s</td>", _crosstab.getStats(rowVal, colVal).getFormattedStat(rowStat));
                     }
 
-                    pw.printf("\t<td class=\"labkey-row-total\">%s</td>\n", _crosstab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
+                    pw.printf("<td class=\"xtab-row-total\">%s</td>", _crosstab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
 
                     statRow++;
                     if (statSet.size() > 1 && statRow < statSet.size())
@@ -128,7 +122,7 @@ public class CrosstabView extends WebPartView
         }
 
         //Now totals for the cols
-        pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">Total</td>\n", statSet.size());
+        pw.printf("<tr><td class=\"xtab-row-header\" rowspan=\"%d\">Total</td>", statSet.size());
 
         int statRow = 0;
         for (Stats.StatDefinition rowStat : statSet)
@@ -136,20 +130,18 @@ public class CrosstabView extends WebPartView
             if (statSet.size() > 1)
             {
                 if (statRow > 0)
-                {
                     pw.write("<tr>");
-                }
 
-                pw.printf("\t<td class=\"labkey-stat-title\">%s</td>\n", rowStat.getName());
+                pw.printf("<td class=\"xtab-stat-title\">%s</td>", rowStat.getName());
             }
 
-
             if (null != _crosstab.getColField())
+            {
                 for (Object colVal : colHeaders)
-                {
-                    pw.printf("\t<td class=\"labkey-col-total\">%s</td>\n", _crosstab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
-                }
-            pw.write("<td class=\"labkey-col-total\">");
+                    pw.printf("<td class=\"xtab-col-total\">%s</td>", _crosstab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
+            }
+
+            pw.write("<td class=\"xtab-col-total\">");
             Stats stats = _crosstab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
             pw.write(stats.getFormattedStat(rowStat));
             pw.write("</td>");
@@ -158,8 +150,8 @@ public class CrosstabView extends WebPartView
             if (statSet.size() > 1 && statRow < statSet.size())
                 pw.write("</tr>");
         }
-        pw.write("</tr>");
-        pw.write("</table>");
+
+        pw.write("</tr></table>");
     }
 
     public CrosstabView(Crosstab crosstab, ActionURL exportAction)
@@ -173,5 +165,4 @@ public class CrosstabView extends WebPartView
     {
         return PageFlowUtil.filter(ConvertUtils.convert(val));
     }
-
 }
