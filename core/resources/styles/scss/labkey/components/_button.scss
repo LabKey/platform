@@ -78,6 +78,12 @@
       padding: 4px 20px;
     }
 
+    &.labkey-down-arrow {
+      /* Keep these properties separated as bg-color is overridden with theme */
+      background-image: url('#{$internal-images-dir}/arrow_down.png');
+      padding-right: 16px;
+    }
+
     &:active,
     &:hover,
     &:focus {
