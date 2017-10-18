@@ -70,23 +70,40 @@
             <%
         }
     }%>
+
+<style type="text/css">
+    .lk-import-expando .labkey-button {
+        padding: 0 5px;
+    }
+</style>
+
 <div id="<%=text(errorDivId)%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
-<table class="labkey-bordered labkey-wp" style="background-color:#ffffff;max-width: 760px;">
-<tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-text">Upload file (.xlsx, .xls, .csv, .txt)</span></th>
-    <th class="labkey-wp-title-right"><%= PageFlowUtil.button("+").href("#").attributes("id='" + uploadFileDivId + "Expando'") %></tr>
-<tr><td colspan=2><div id="<%=text(uploadFileDivId)%>"></div></td></tr>
-</table>
-<br />
-<table class="labkey-wp" style="background-color:#ffffff;max-width: 760px;">
-<tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-text">Copy/paste text</span></th>
-    <th class="labkey-wp-title-right"><%=PageFlowUtil.button("&ndash;").textAsHTML(true).href("#").attributes("id='" + copyPasteDivId + "Expando'") %></th>
-</tr>
-<tr><td colspan=2 style="display:inline;"><div id="<%=text(copyPasteDivId)%>"></div></td></tr>
-</table>
+
+<div class="panel panel-portal" style="width: 760px;">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title pull-left">Upload file (.xlsx, .xls, .csv, .txt)</h3>
+        <span class="lk-import-expando pull-right">
+            <%= PageFlowUtil.button("+").href("#").attributes("id='" + uploadFileDivId + "Expando'") %>
+        </span>
+    </div>
+    <div class="panel-body">
+        <div id="<%=text(uploadFileDivId)%>"></div>
+    </div>
+</div>
+
+<div class="panel panel-portal" style="width: 760px;">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title pull-left">Copy/paste text</h3>
+        <span class="lk-import-expando pull-right">
+            <%=PageFlowUtil.button("&ndash;").textAsHTML(true).href("#").attributes("id='" + copyPasteDivId + "Expando'") %>
+        </span>
+    </div>
+    <div class="panel-body">
+        <div id="<%=text(copyPasteDivId)%>"></div>
+    </div>
+</div>
 
 <script type="text/javascript"> (function(){
     var $html = Ext.util.Format.htmlEncode;
@@ -106,14 +123,14 @@
     var importTsvExpando = Ext.get(<%=q(copyPasteDivId+"Expando")%>);
     var uploadTsvExpando = Ext.get(<%=q(uploadFileDivId+"Expando")%>);
 
-    importTsvExpando.parent('tr').on('click',function(){toggleExpanded(importTsvExpando,importTsvDiv,uploadTsvExpando,uploadFileDiv);});
-    uploadTsvExpando.parent('tr').on('click',function(){toggleExpanded(uploadTsvExpando,uploadFileDiv,importTsvExpando,importTsvDiv);});
+    importTsvExpando.parent('div').on('click',function(){toggleExpanded(importTsvExpando,importTsvDiv,uploadTsvExpando,uploadFileDiv);});
+    uploadTsvExpando.parent('div').on('click',function(){toggleExpanded(uploadTsvExpando,uploadFileDiv,importTsvExpando,importTsvDiv);});
 
     function toggleExpanded(toggleButton, toggleDiv, collapseButton, collapseDiv)
     {
         var collapsed = -1!=toggleButton.dom.innerHTML.indexOf("+");
         toggleButton.dom.innerHTML = collapsed ? "&ndash;" : "+";
-        toggleDiv.parent().setStyle("display",collapsed?"inline":"none");
+        toggleDiv.parent().setStyle("display",collapsed?"block":"none");
 
         collapseButton.dom.innerHTML = "+";
         collapseDiv.parent().setStyle("display","none");
