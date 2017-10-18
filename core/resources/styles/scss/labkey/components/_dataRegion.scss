@@ -387,3 +387,34 @@ td.labkey-blank-cell, th.labkey-blank-cell {
     }
   }
 }
+
+table.table-xtab-report {
+
+  border: 1px solid $lk-grid-border-color;
+
+  td, th, tr {
+    line-height: $lk-line-height-base;
+    padding: 3px 5px;
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: bold;
+    text-align: center;
+  }
+
+  td {
+    border: 1px solid $lk-grid-border-color;
+  }
+
+  .xtab-col-header, .xtab-col-total,
+  .xtab-row-header, .xtab-row-total {
+    background-color: #EEEEEE;
+    font-weight: bold;
+  }
+
+  .xtab-stat-title {
+    border: 1px solid $lk-grid-border-color; // make same as table border color
+    font-style: italic;
+  }
+}
