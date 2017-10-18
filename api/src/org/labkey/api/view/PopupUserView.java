@@ -51,31 +51,18 @@ public class PopupUserView extends PopupMenuView
         User user = context.getUser();
         Container c = context.getContainer();
         ActionURL currentURL = context.getActionURL();
-        NavTree tree;
+        NavTree tree = new NavTree();
 
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            tree = new NavTree();
-
-            NavTree feedBack = new NavTree("Give UI Feedback", PageFlowUtil.urlProvider(CoreUrls.class).getFeedbackURL());
-            tree.addChild(feedBack);
-            tree.addSeparator();
-        }
-        else
-        {
-            tree = new NavTree(user.getFriendlyName());
-        }
-
+        if (!PageFlowUtil.useExperimentalCoreUI())
+            tree.setText(user.getFriendlyName());
         tree.setId("userMenu");
 
-        NavTree myaccount = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
-        myaccount.setId("__lk-usermenu-myaccount");
-        tree.addChild(myaccount);
+        NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
+        tree.addChild(account);
 
         if (AppProps.getInstance().isAllowSessionKeys())
         {
             NavTree apikey = new NavTree("API Key", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
-            myaccount.setId("__lk-usermenu-apikey");
             tree.addChild(apikey);
         }
 
@@ -83,17 +70,22 @@ public class PopupUserView extends PopupMenuView
         ImpersonationContext impersonationContext = user.getImpersonationContext();
         impersonationContext.addMenu(tree, c, user, currentURL);
 
-        if (PageFlowUtil.useExperimentalCoreUI() && pageConfig != null)
-        {
-            NavTree help = PopupHelpView.createNavTree(context, pageConfig.getHelpTopic());
+        NavTree feedBack = new NavTree("Give UI Feedback", PageFlowUtil.urlProvider(CoreUrls.class).getFeedbackURL());
+        feedBack.setTarget("_blank");
 
-            if (help.hasChildren())
+        if (PageFlowUtil.useExperimentalCoreUI())
+        {
+            tree.addSeparator();
+
+            if (pageConfig != null)
             {
-                tree.addSeparator();
+                NavTree help = PopupHelpView.createNavTree(context, pageConfig.getHelpTopic());
 
                 for (NavTree child : help.getChildren())
                     tree.addChild(child);
             }
+
+            tree.addChild(feedBack);
         }
 
         return tree;

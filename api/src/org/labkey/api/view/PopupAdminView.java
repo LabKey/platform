@@ -124,7 +124,6 @@ public class PopupAdminView extends PopupMenuView
         if (user.hasRootPermission(AdminReadPermission.class))
         {
             NavTree siteAdmin = new NavTree("Site");
-            siteAdmin.setId("__lk-adminmenu-site");
             siteAdmin.addChildren(SiteAdminMenu.getNavTree(context));
             navTree.addChild(siteAdmin);
         }
@@ -137,7 +136,6 @@ public class PopupAdminView extends PopupMenuView
             if (isFolderAdmin(context) && !c.isWorkbook())
             {
                 NavTree folderAdmin = new NavTree("Folder");
-                folderAdmin.setId("__lk-adminmenu-folder");
                 folderAdmin.addChildren(FolderAdminMenu.getFolderElements(c));
                 folderAdmin.addSeparator();
                 folderAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
@@ -148,7 +146,6 @@ public class PopupAdminView extends PopupMenuView
         if (user.isDeveloper())
         {
             NavTree devMenu = new NavTree("Developer Links");
-            devMenu.setId("__lk-adminmenu-developer");
             devMenu.addChildren(PopupDeveloperView.getNavTree(context));
             navTree.addChild(devMenu);
         }
@@ -160,7 +157,6 @@ public class PopupAdminView extends PopupMenuView
                 String pageAdminTxt = PageFlowUtil.isPageAdminMode(context) ? "Exit Page Admin Mode" : "Page Admin Mode";
                 ActionURL pageAdminUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, context.getActionURL());
                 NavTree pageAdmin = new NavTree(pageAdminTxt, pageAdminUrl);
-                pageAdmin.setId("__lk-adminmenu-page");
                 navTree.addChild(pageAdmin);
             }
 

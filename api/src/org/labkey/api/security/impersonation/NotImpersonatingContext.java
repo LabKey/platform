@@ -114,7 +114,6 @@ public class NotImpersonatingContext implements ImpersonationContext
         if (user.hasRootAdminPermission() || (null != project && project.hasPermission(user, AdminPermission.class)))
         {
             NavTree impersonateMenu = new NavTree("Impersonate");
-            impersonateMenu.setId("__lk-usermenu-impersonate");
             UserImpersonationContextFactory.addMenu(impersonateMenu);
             GroupImpersonationContextFactory.addMenu(impersonateMenu);
             RoleImpersonationContextFactory.addMenu(impersonateMenu);
@@ -122,7 +121,6 @@ public class NotImpersonatingContext implements ImpersonationContext
         }
 
         NavTree signOut = new NavTree("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));
-        signOut.setId("__lk-usermenu-signout");
         menu.addChild(signOut);
     }
 }
