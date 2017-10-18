@@ -84,6 +84,11 @@ public interface StudyService
     Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets);
 
     /**
+     * Create new Dataset in the Study container.
+     */
+    Dataset createDataset(Container container, User user, String name, @Nullable Integer datasetId, boolean isDemographic);
+
+    /**
      * Finds a study by either Container id or study label.
      * @param studyReference Container instance, GUID instance, or String representing container id, container path, or study label.
      * @param user Null or a User that must have ReadPermission to the study container.
