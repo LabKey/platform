@@ -31,24 +31,35 @@
 }
 
 .btn-primary {
+  background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  border-width: $lk-button-border-size;
+  border-style: solid;
+  border-color: $lk-button-primary-border-color;
   color: $btn-primary-color;
-  background-color: $btn-primary-bg;
-  border: $btn-primary-border-size solid $btn-primary-border;
+  font-size: $lk-button-font-size;
+  font-family: $lk-button-font-family;
+  font-weight: $lk-button-font-weight;
 
   // Maintain same color when disabled
   &.disabled {
     &:active, &:focus, &:hover {
-      background-color: $lk-accent-color;
-      border-color: darken($lk-accent-color, 5%);
+      background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      border-color: $lk-button-primary-border-color;
     }
   }
 
   &:active,
   &:focus,
   &:hover {
-    background-color: $lk-button-primary-bg-color-hover;
-    border-color: $lk-button-primary-border-color-hover;
-    color: $lk-button-primary-color-hover;
+    background-color: $lk-button-bg-color-hover;
+    background-image: none;
+    border-color: $lk-button-primary-border-color;
   }
 }
 

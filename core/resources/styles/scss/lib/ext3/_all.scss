@@ -6962,8 +6962,10 @@ li.x-menu-item-active a.x-menu-item {
   cursor: pointer;
   white-space: nowrap;
 
-  border: $lk-button-border-size solid $lk-button-border-color;
+  border-color: $lk-button-border-color;
   border-radius: $lk-button-border-radius;
+  border-style: solid;
+  border-width: $lk-button-border-size;
 
   button {
     background-color: transparent;

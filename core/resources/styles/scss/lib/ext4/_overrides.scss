@@ -265,6 +265,42 @@ a div.x4-menu-item-icon.fa-users {
   opacity: 1;
 }
 
+.x4-btn-default-small {
+  @include border-radius($lk-button-border-radius);
+
+  background-color: $lk-button-bg-color;
+  border-width: $lk-button-border-size;
+  border-style: solid;
+  border-color: $lk-button-border-color;
+  border-radius: $lk-button-border-radius;
+  color: $lk-button-color;
+  font-size: $lk-button-font-size;
+  font-family: $lk-button-font-family;
+  font-weight: $lk-button-font-weight;
+  background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+
+}
+
+.x4-btn-default-small-over,
+.x4-btn-default-small-focus,
+.x4-btn-default-medium-over,
+.x4-btn-default-medium-focus,
+.x4-btn-default-large-over,
+.x4-btn-default-large-focus,
+.x4-btn-default-small-pressed,
+.x4-btn-default-medium-pressed,
+.x4-btn-default-large-pressed {
+  background-image: none;
+  background-color: $lk-button-bg-color-hover;
+  border-width: $lk-button-border-size;
+  border-style: solid;
+  border-color: $lk-button-border-color-hover;
+  color: $lk-button-color-hover;
+}
+
 .x4-btn-default-small-disabled {
   color: $lk-button-disabled-color;
   border-color: $lk-button-disabled-color;

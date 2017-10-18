@@ -33,22 +33,10 @@ $lk-brand-primary: $Leaf-header;
 
 //== Buttons
 //
-$lk-button-bg-color: $Leaf-white;
-$lk-button-bg-color-hover: $Leaf-accent;
-$lk-button-border-color: $Leaf-accent;
-$lk-button-border-color-hover: $Leaf-accent;
-
-$lk-button-color: $Leaf-accent;
-$lk-button-color-hover: $Leaf-page-bkgd;
-
-$lk-button-primary-bg-color: $Leaf-accent;
-$lk-button-primary-bg-color-hover: $Leaf-accent;
-$lk-button-primary-color: $Leaf-page-bkgd;
-$lk-button-primary-color-hover: $Leaf-page-bkgd;
-$lk-button-primary-border-size: 2px;
-$lk-button-primary-border-color: $Leaf-page-bkgd;
-$lk-button-primary-border-color-hover: $Leaf-gray-blue;
-
+$lk-button-primary-color: $lk-theme-light-accent;
+$lk-button-primary-color-hover: $lk-theme-light-accent;
+$lk-button-primary-border-color: $lk-theme-light-accent;
+$lk-button-primary-border-color-hover: $lk-theme-light-accent;
 $lk-bar-button-color: $Leaf-anchor-color;
 $lk-bar-button-color-hover: $Leaf-gray-darkest;
 $lk-bar-button-border-color-hover: $Leaf-gray-blue;
@@ -61,7 +49,6 @@ $lk-dropdown-link-hover-bg: $Leaf-accent;
 
 //== Grids
 //
-$lk-grid-row-bg-color: $Leaf-page-bkgd;
 $lk-grid-row-select-color: $Leaf-anchor-color;
 $lk-grid-row-select-text-color: $Leaf-page-bkgd;
 $lk-grid-row-select-link-color: $Leaf-gray-blue;

@@ -42,22 +42,10 @@ $lk-brand-primary: $Madison-red;
 
 //== Buttons
 //
-$lk-button-bg-color: $Madison-white;
-$lk-button-bg-color-hover: $Madison-red;
-$lk-button-border-color: $Madison-red;
-$lk-button-border-color-hover: $Madison-red;
-
-$lk-button-color: $Madison-red;
-$lk-button-color-hover: $Madison-page-bkgd;
-
-$lk-button-disabled-opacity: 0.5;
-
-$lk-button-primary-bg-color: $Madison-red;
-$lk-button-primary-bg-color-hover: $Madison-red;
-$lk-button-primary-color: $Madison-page-bkgd;
-$lk-button-primary-color-hover: $Madison-page-bkgd;
-$lk-button-primary-border-color: $Madison-page-bkgd;
-$lk-button-primary-border-color-hover: $Madison-gray-blue;
+$lk-button-primary-color: $lk-theme-light-accent;
+$lk-button-primary-color-hover: $lk-theme-light-accent;
+$lk-button-primary-border-color: $lk-theme-light-accent;
+$lk-button-primary-border-color-hover: $lk-theme-light-accent;
 
 $lk-bar-button-color: $Madison-body-font-color;
 $lk-bar-button-color-hover: $Madison-gray-darkest;
@@ -71,7 +59,6 @@ $lk-dropdown-link-hover-bg: $Madison-red-dark;
 
 //== Grids
 //
-$lk-grid-row-bg-color: $Madison-page-bkgd;
 $lk-grid-row-select-color: $Madison-anchor-color;
 $lk-grid-row-select-text-color: $Madison-page-bkgd;
 $lk-grid-row-select-link-color: $Madison-gray-blue;

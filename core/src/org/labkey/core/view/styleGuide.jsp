@@ -113,19 +113,19 @@
     </div>
     <labkey:panel id="buttons" className="lk-sg-section">
         <h1 class="labkey-page-section-header">Buttons</h1>
-        <p>btn-default buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
+        <p>labkey-button buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
         <div class="lk-sg-example">
-            <a class="btn btn-default" href="#" role="button">Link</a>
-            <button class="btn btn-default" type="submit">Button</button>
-            <input class="btn btn-default" type="button" value="Input">
-            <input class="btn btn-default" type="submit" value="Submit">
+            <a class="labkey-button" href="#" role="button">Link</a>
+            <button class="labkey-button" type="submit">Button</button>
+            <input class="labkey-button" type="button" value="Input">
+            <input class="labkey-button" type="submit" value="Submit">
         </div>
         <p>All disabled.</p>
         <div class="lk-sg-example">
-            <a class="btn btn-default disabled" href="#" role="button">Link</a>
-            <button class="btn btn-default" type="submit" disabled="disabled">Button</button>
-            <input class="btn btn-default" type="button" value="Input" disabled="disabled">
-            <input class="btn btn-default" type="submit" value="Submit" disabled="disabled">
+            <a class="labkey-button labkey-disabled-button" href="#" role="button">Link</a>
+            <button class="labkey-button" type="submit" disabled="disabled">Button</button>
+            <input class="labkey-button" type="button" value="Input" disabled="disabled">
+            <input class="labkey-button" type="submit" value="Submit" disabled="disabled">
         </div>
         <p>btn-primary buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
         <div class="lk-sg-example">
@@ -133,6 +133,13 @@
             <button class="btn btn-primary" type="submit">Button</button>
             <input class="btn btn-primary" type="button" value="Input">
             <input class="btn btn-primary" type="submit" value="Submit">
+        </div>
+        <p>Disabled btn-primary buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
+        <div class="lk-sg-example">
+            <a class="btn btn-primary disabled" href="#" role="button">Link</a>
+            <button class="btn btn-primary disabled" type="submit">Button</button>
+            <input class="btn btn-primary disabled" type="button" value="Input">
+            <input class="btn btn-primary disabled" type="submit" value="Submit">
         </div>
         <p>Use any of the available button classes to quickly create a styled button.</p>
         <div class="lk-sg-example">
@@ -166,9 +173,9 @@
         <p>Basic button group.</p>
         <div class="lk-sg-example">
             <div class="btn-group" role="group" aria-label="Basic Example">
-                <button type="button" class="btn btn-default">Left</button>
-                <button type="button" class="btn btn-default">Middle</button>
-                <button type="button" class="btn btn-default">Right</button>
+                <button type="button" class="labkey-button">Left</button>
+                <button type="button" class="labkey-button">Middle</button>
+                <button type="button" class="labkey-button">Right</button>
             </div>
         </div>
     </labkey:panel>

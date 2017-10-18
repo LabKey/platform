@@ -33,22 +33,10 @@ $lk-brand-primary: $Ocean-header;
 
 //== Buttons
 //
-$lk-button-bg-color: $Ocean-white;
-$lk-button-bg-color-hover: $Ocean-header;
-$lk-button-border-color: $Ocean-header;
-$lk-button-border-color-hover: $Ocean-header;
-
-$lk-button-color: $Ocean-header;
-$lk-button-color-hover: $Ocean-page-bkgd;
-
-$lk-button-primary-bg-color: $Ocean-header;
-$lk-button-primary-bg-color-hover: $Ocean-header;
-$lk-button-primary-color: $Ocean-page-bkgd;
-$lk-button-primary-color-hover: $Ocean-page-bkgd;
-$lk-button-primary-border-size: 2px;
-$lk-button-primary-border-color: $Ocean-page-bkgd;
-$lk-button-primary-border-color-hover: $Ocean-gray-blue;
-
+$lk-button-primary-color: $lk-theme-light-accent;
+$lk-button-primary-color-hover: $lk-theme-light-accent;
+$lk-button-primary-border-color: $lk-theme-light-accent;
+$lk-button-primary-border-color-hover: $lk-theme-light-accent;
 $lk-bar-button-color: $Ocean-anchor-color;
 $lk-bar-button-color-hover: $Ocean-gray-darkest;
 $lk-bar-button-border-color-hover: $Ocean-gray-blue;
@@ -61,7 +49,6 @@ $lk-dropdown-link-hover-bg: $Ocean-accent;
 
 //== Grids
 //
-$lk-grid-row-bg-color: $Ocean-page-bkgd;
 $lk-grid-row-select-color: $Ocean-anchor-color;
 $lk-grid-row-select-text-color: $Ocean-page-bkgd;
 $lk-grid-row-select-link-color: $Ocean-gray-blue;

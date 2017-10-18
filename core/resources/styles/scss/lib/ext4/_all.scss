@@ -1910,8 +1910,9 @@ body.x4-nbr .x4-btn-default-small-frameInfo {
 
 /* line 253, ../../../ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-small .x4-btn-inner {
-  font-size: $lk-font-size-small;
-  font-weight: bold;
+  font-size: $lk-button-font-size;
+  font-family: $lk-button-font-family;
+  font-weight: $lk-button-font-weight;
   color: $button-default-color;
   padding: 0;
 }

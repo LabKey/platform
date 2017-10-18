@@ -5,3 +5,16 @@
 .x-form-field-wrap .x-form-trigger {
   height: 21px;
 }
+
+.x-btn.x-item-disabled {
+  &:hover {
+    background-color: $lk-button-bg-color;
+    border-color: $lk-button-disabled-color;
+    color: $lk-button-disabled-color;
+
+    button {
+      color: $lk-button-disabled-color;
+    }
+  }
+
+}

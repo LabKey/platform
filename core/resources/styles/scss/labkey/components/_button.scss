@@ -3,15 +3,21 @@
 
 .labkey-button {
   background-color: $lk-button-bg-color;
-  border: $lk-button-border-size solid $lk-button-border-color;
+  background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  border-width: $lk-button-border-size;
+  border-style: solid;
+  border-color: $lk-button-border-color;
   border-radius: $lk-button-border-radius;
   color: $lk-button-color;
   display: inline-block;
+  font-size: $lk-button-font-size;
+  font-family: $lk-button-font-family;
+  font-weight: $lk-button-font-weight;
   letter-spacing: 0.5px;
   padding: $lk-button-padding;
-  font-family: $lk-button-font-family;
-  font-size: $lk-font-size-small;
-  font-weight: $lk-button-font-weight;
   text-align: center;
   text-transform: $lk-button-text-transform;
   touch-action: manipulation;
@@ -22,23 +28,28 @@
   &:hover,
   &:focus {
     background-color: $lk-button-bg-color-hover;
-    border: $lk-button-border-size solid $lk-button-border-color-hover;
+    background-image: none;
+    border-color: $lk-button-border-color-hover;
     color: $lk-button-color-hover;
     cursor: pointer;
   }
 
   &.disabled, &.labkey-disabled-button, &[disabled] {
+    border-color: $lk-button-disabled-color;
+    color: $lk-button-disabled-color;
     cursor: not-allowed;
-    opacity: $lk-button-disabled-opacity;
 
     &:active,
     &:hover,
     &:focus {
-      /* Intentionally not using *-hover variables */
       background-color: $lk-button-bg-color;
-      border: $lk-button-border-size solid $lk-button-border-color;
-      color: $lk-button-color;
-      cursor: pointer;
+      background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      border-color: $lk-button-disabled-color;
+      color: $lk-button-disabled-color;
+      cursor: not-allowed;
     }
   }
 }
@@ -55,6 +66,7 @@
   white-space: nowrap;
 
   .labkey-button {
+    background-image: none;
     background-color: $lk-bar-button-bg-color;
     border: $lk-bar-button-border;
     color: $lk-bar-button-color;
@@ -76,14 +88,15 @@
 
     &.disabled, &.labkey-disabled-button, &[disabled] {
       cursor: not-allowed !important;
-      opacity: $lk-button-disabled-opacity;
+      color: $lk-button-disabled-color;
 
       &:active,
       &:hover,
       &:focus {
-        background-color: $lk-bar-button-bg-color;
+        background-color: $lk-bar-button-bg-color-hover;
+        background-image: none;
+        color: $lk-button-disabled-color;
         border: $lk-bar-button-border;
-        color: $lk-bar-button-color;
       }
     }
   }

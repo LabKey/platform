@@ -33,22 +33,10 @@ $lk-brand-primary: $Mono-header;
 
 //== Buttons
 //
-$lk-button-bg-color: $Mono-white;
-$lk-button-bg-color-hover: $Mono-header;
-$lk-button-border-color: $Mono-header;
-$lk-button-border-color-hover: $Mono-header;
-
-$lk-button-color: $Mono-header;
-$lk-button-color-hover: $Mono-page-bkgd;
-
-$lk-button-primary-bg-color: $Mono-header;
-$lk-button-primary-bg-color-hover: $Mono-header;
-$lk-button-primary-color: $Mono-page-bkgd;
-$lk-button-primary-color-hover: $Mono-page-bkgd;
-$lk-button-primary-border-size: 2px;
-$lk-button-primary-border-color: $Mono-page-bkgd;
-$lk-button-primary-border-color-hover: $Mono-gray-blue;
-
+$lk-button-primary-color: $lk-theme-light-accent;
+$lk-button-primary-color-hover: $lk-theme-light-accent;
+$lk-button-primary-border-color: $lk-theme-light-accent;
+$lk-button-primary-border-color-hover: $lk-theme-light-accent;
 $lk-bar-button-color: $Mono-anchor-color;
 $lk-bar-button-color-hover: $Mono-gray-darkest;
 $lk-bar-button-border-color-hover: $Mono-gray-blue;
@@ -61,7 +49,6 @@ $lk-dropdown-link-hover-bg: $Mono-accent;
 
 //== Grids
 //
-$lk-grid-row-bg-color: $Mono-page-bkgd;
 $lk-grid-row-select-color: $Mono-anchor-color;
 $lk-grid-row-select-text-color: $Mono-page-bkgd;
 $lk-grid-row-select-link-color: $Mono-gray-blue;
