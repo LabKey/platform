@@ -340,7 +340,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         String rootPath = webdavPrefix + c.getEncodedPath();
 
         if (folderFileRoot != null)
-            rootPath += "/" + folderFileRoot;
+        {
+            if (!rootPath.endsWith("/"))
+                rootPath += "/";
+            rootPath += folderFileRoot;
+        }
 
         if (!rootPath.endsWith("/"))
             rootPath += "/";
