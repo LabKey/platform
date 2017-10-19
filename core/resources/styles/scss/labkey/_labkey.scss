@@ -1424,6 +1424,13 @@ div span.labkey-main-menu-icon {
   }
 }
 
+// permission/policy editor user/group display
+.dragbutton {
+  .x4-btn-inner {
+    text-transform: none;
+  }
+}
+
 @import "components/header";
 @import "components/navigation";
 @import "components/menu";
