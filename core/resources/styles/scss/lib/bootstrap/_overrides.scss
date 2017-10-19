@@ -9,32 +9,57 @@
 }
 
 .btn-default {
-  color: $btn-default-color;
-  background-color: $btn-default-bg;
-  border-color: $btn-default-border;
-
-  // Maintain same color when disabled
-  &.disabled {
-    &:active, &:focus, &:hover {
-      background-color: $lk-button-bg-color-hover;
-      border-color: $lk-button-border-color-hover;
-    }
-  }
+  background-color: $lk-button-bg-color;
+  @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
+  border-width: $lk-button-border-size;
+  border-style: solid;
+  border-color: $lk-button-border-color;
+  border-radius: $lk-button-border-radius;
+  color: $lk-button-color;
+  display: inline-block;
+  font-size: $lk-button-font-size;
+  font-family: $lk-button-font-family;
+  font-weight: $lk-button-font-weight;
+  letter-spacing: 0.5px;
+  padding: $lk-button-padding;
+  text-align: center;
+  text-transform: $lk-button-text-transform;
+  touch-action: manipulation;
+  vertical-align: middle;
+  white-space: nowrap;
 
   &:active,
+  &:hover,
   &:focus,
-  &:hover {
-    color: $lk-button-color-hover;
+  &:active:hover,
+  &:active:focus {
     background-color: $lk-button-bg-color-hover;
-    border-color: darken($lk-button-bg-color-hover, 5%);
+    background-image: none;
+    border-color: $lk-button-border-color-hover;
+    color: $lk-button-color-hover;
+    cursor: pointer;
+  }
+
+
+  &.disabled, &.labkey-disabled-button, &[disabled] {
+    border-color: $lk-button-disabled-color;
+    color: $lk-button-disabled-color;
+    cursor: not-allowed;
+
+    &:active,
+    &:hover,
+    &:focus {
+      background-color: $lk-button-bg-color;
+      @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
+      border-color: $lk-button-disabled-color;
+      color: $lk-button-disabled-color;
+      cursor: not-allowed;
+    }
   }
 }
 
 .btn-primary {
-  background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-  background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-  background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-  background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
   border-width: $lk-button-border-size;
   border-style: solid;
   border-color: $lk-button-primary-border-color;
@@ -46,17 +71,16 @@
   // Maintain same color when disabled
   &.disabled {
     &:active, &:focus, &:hover {
-      background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-      background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-      background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-      background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
       border-color: $lk-button-primary-border-color;
     }
   }
 
   &:active,
   &:focus,
-  &:hover {
+  &:hover,
+  &:active:hover,
+  &:active:focus {
     background-color: $lk-button-bg-color-hover;
     background-image: none;
     border-color: $lk-button-primary-border-color;

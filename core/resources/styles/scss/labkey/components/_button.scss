@@ -3,10 +3,7 @@
 
 .labkey-button {
   background-color: $lk-button-bg-color;
-  background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-  background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-  background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-  background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+  @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
   border-width: $lk-button-border-size;
   border-style: solid;
   border-color: $lk-button-border-color;
@@ -43,10 +40,7 @@
     &:hover,
     &:focus {
       background-color: $lk-button-bg-color;
-      background-image: -webkit-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-      background-image: -moz-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-      background-image: -o-linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
-      background-image: linear-gradient(top, $lk-button-bg-color-start, $lk-button-bg-color-end);
+      @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
       border-color: $lk-button-disabled-color;
       color: $lk-button-disabled-color;
       cursor: not-allowed;
