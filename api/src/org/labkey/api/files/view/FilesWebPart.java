@@ -80,6 +80,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private String fileSet;
     private Container container;
     private boolean _isPipelineFiles;       // viewing @pipeline files
+    private boolean _isRootNotFilesPipeline;
 
     private static final String JSP = "/org/labkey/api/files/view/filesWebPart.jsp";
 
@@ -98,6 +99,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             if (fileRoot.startsWith(FileContentService.PIPELINE_LINK))
             {
                 _isPipelineFiles = true;
+            }
+            else if (fileRoot.startsWith(FileContentService.FILE_SETS_LINK)
+                    || fileRoot.startsWith(CloudStoreService.CLOUD_NAME)
+                    || fileRoot.startsWith("@wiki"))
+            {
+                _isRootNotFilesPipeline = true;
             }
 
             getModelBean().setRootPath(getWebPartFolderRootPath(c, fileRoot));
@@ -358,6 +365,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             if (_isPipelineFiles)
                 return true;
+            else if (_isRootNotFilesPipeline)
+                return false;
 
             // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
             // reference the same location, then import and customize actions should be disabled
