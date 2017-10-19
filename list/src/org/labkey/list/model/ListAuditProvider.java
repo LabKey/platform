@@ -257,7 +257,9 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ID, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_DOMAIN_URI, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ITEM_ENTITY_ID, PropertyType.STRING)); // UNDONE: is needed ? .setEntityId(true));
+            // Choose a length that should be much larger than necessary to give extra buffer, but still small enough
+            // to be indexed
+            fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_ITEM_ENTITY_ID, PropertyType.STRING, 300)); // UNDONE: is needed ? .setEntityId(true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LIST_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
