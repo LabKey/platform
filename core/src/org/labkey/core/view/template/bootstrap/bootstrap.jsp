@@ -22,6 +22,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable
@@ -50,6 +51,9 @@
 <%
     HttpView me = HttpView.currentView();
     PageConfig pageConfig = (PageConfig) me.getModelBean();
+    AppBar appBar = pageConfig.getAppBar();
+
+    boolean hasContainerTabs = appBar != null && appBar.getSubContainerTabs() != null && appBar.getSubContainerTabs().size() > 0;
 
     boolean showRight = me.getView(WebPartFactory.LOCATION_RIGHT) instanceof HttpView
             && ((HttpView) me.getView(WebPartFactory.LOCATION_RIGHT)).isVisible();
@@ -79,7 +83,7 @@
                        }
                    }
 
-                   if (trail != null || pageTitle != null)
+                   if (trail != null || pageTitle != null || hasContainerTabs)
                    {
             %>
         </div>
@@ -97,6 +101,19 @@
                         <i class="fa fa-folder-o"></i><%= h(getContainer().getName()) %>
                     </a>
                 <% } %>
+            <% } %>
+            <% if (hasContainerTabs) {%>
+            <div style="float: right;">
+                <select title="subContainerTabs" onchange="window.location = this.options[this.selectedIndex].value;">
+                    <%for (NavTree tree : appBar.getSubContainerTabs())
+                    {
+                        String selectedText = tree.isSelected() ? "selected" : "";
+                    %>
+                        <option value="<%=h(tree.getHref())%>" <%=h(selectedText)%> ><%=h(tree.getText())%></option>
+                    <%}%>
+                </select>
+            </div>
+
             <% } %>
             <%     }
                 }
