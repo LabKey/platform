@@ -300,7 +300,7 @@ $lk-notification-bg-color: $white !default;
 
 //== Pills
 //
-$lk-nav-pills-active-link-hover-bg: $lk-button-color !default;
+$lk-nav-pills-active-link-hover-bg: $lk-theme-dark-accent !default;
 
 //== Panels
 //
@@ -388,10 +388,6 @@ $lk-tooltip-opacity: 0.8 !default; // theme variable
 //
 $lk-well-bg-color: $white !default;
 $lk-well-border-color: darken($lk-well-bg-color, 15%) !default;
-
-//== Wizards
-//
-$lk-wizard-pill-active-bg-color: $lk-nav-pills-active-link-hover-bg !default;
 
 //== Modals
 $lk-modal-title-padding: 15px !default;
