@@ -298,7 +298,7 @@ Ext4.define('File.panel.Browser', {
          *                              not the permissions to show these actions.
          * }
          */
-        _getPipelineConfiguration : function(cb, containerPath, scope) {
+        _getPipelineConfiguration : function(cb, containerPath, scope, errorCb) {
             var cacheResult = File.panel.Browser._pipelineConfigurationCache[containerPath];
 
             if (Ext4.isObject(cacheResult)) {
@@ -307,11 +307,11 @@ Ext4.define('File.panel.Browser', {
             }
             else if (Ext4.isArray(cacheResult)) {
                 // cache miss -- inflight
-                File.panel.Browser._pipelineConfigurationCache[containerPath].push({fn: cb, scope: scope});
+                File.panel.Browser._pipelineConfigurationCache[containerPath].push({fn: cb, scope: scope, errorFn: errorCb});
             }
             else {
                 // prep cache
-                File.panel.Browser._pipelineConfigurationCache[containerPath] = [{fn: cb, scope: scope}];
+                File.panel.Browser._pipelineConfigurationCache[containerPath] = [{fn: cb, scope: scope, errorFn: errorCb}];
 
                 // cache miss
                 Ext4.Ajax.request({
@@ -331,7 +331,16 @@ Ext4.define('File.panel.Browser', {
                             }
                         }
                     },
-                    failure: LABKEY.Utils.displayAjaxErrorResponse,
+                    failure: function(response, error) {
+                        var errorCallbacks = File.panel.Browser._pipelineConfigurationCache[containerPath], cb;
+                        for (var c=0; c < errorCallbacks.length; c++) {
+                            cb = errorCallbacks[c];
+                            if (Ext4.isFunction(cb.errorFn)) {
+                                cb.errorFn.call(cb.scope || window, error);
+                            }
+                        }
+                        return LABKEY.Utils.displayAjaxErrorResponse(response, error);
+                    },
                     scope: scope
                 });
             }
@@ -728,7 +737,12 @@ Ext4.define('File.panel.Browser', {
                         actions: json.config.actions
                     });
                 }
-            }, this.containerPath, this);
+            }, this.containerPath, this, function(error) {
+                this.initializeToolbar({
+                    tbarActions: undefined,
+                    actions: undefined
+                });
+            });
         }
         else {
             this.addToolbar(this.getActions().getRange());
