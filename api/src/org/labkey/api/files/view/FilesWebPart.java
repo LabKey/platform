@@ -375,7 +375,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
 
-            if (null != root && null != dir && root.getRootPath().equals(dir.getFileSystemDirectory()))
+            if (null != root && root.isValid() && null != dir && root.getRootPath().equals(dir.getFileSystemDirectory()))
             {
                 return true;
             }
