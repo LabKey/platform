@@ -274,7 +274,7 @@ Ext4.define('File.panel.Browser', {
          */
         _getActions : function(cb, containerPath, scope) {
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions', containerPath, {path : decodeURIComponent(scope.getFolderOffset()) }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions', containerPath, {path : decodeURIComponent(scope.getFullFolderOffset()) }),
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
@@ -1321,6 +1321,33 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderOffset : function() {
+        return this.rootOffset;
+    },
+
+    getFullFolderOffset: function() {
+        if (!this.fileSystem || !this.fileSystem.baseUrl)
+            return this.rootOffset;
+
+        // Issue 31892: Contents of subfolders not always displayed in Files web part
+        // file root might be configured at child or sibling node of @files or @pipeline
+        // The path parameter pass in api call together with container needs to have the full relative path of the directory, not just the directory name
+        var relativePath = this.fileSystem.baseUrl.replace(this.fileSystem.containerPath, '');
+        if (relativePath.indexOf('@files') === 0)
+            relativePath = relativePath.replace("@files", '');
+        else if (relativePath.indexOf('/@files') === 0)
+            relativePath = relativePath.replace("/@files", '');
+        else if (relativePath.indexOf('@pipeline') === 0)
+            relativePath = relativePath.replace("@pipeline", '');
+        else if (relativePath.indexOf('/@pipeline') === 0)
+            relativePath = relativePath.replace("/@pipeline", '');
+
+        if (relativePath && relativePath !== '/')
+        {
+            if (relativePath.indexOf('/', relativePath.length - 1) !== -1 && this.rootOffset.indexOf('/') !== 0)
+                relativePath += '/';
+            return relativePath + this.rootOffset;
+
+        }
         return this.rootOffset;
     },
 
