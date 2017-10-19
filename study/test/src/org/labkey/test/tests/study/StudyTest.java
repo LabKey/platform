@@ -146,7 +146,7 @@ public class StudyTest extends StudyBaseTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException //child class cleanup method throws Exception
     {
         super.doCleanup(afterTest);
-        deleteUsers(false, authorUser); // Subclasses may not have created this user
+        _userHelper.deleteUsers(false, authorUser);
     }
 
     protected String getHeaderName()
