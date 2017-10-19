@@ -1332,14 +1332,23 @@ Ext4.define('File.panel.Browser', {
         // file root might be configured at child or sibling node of @files or @pipeline
         // The path parameter pass in api call together with container needs to have the full relative path of the directory, not just the directory name
         var relativePath = this.fileSystem.baseUrl.replace(this.fileSystem.containerPath, '');
-        if (relativePath.indexOf('@files') === 0)
-            relativePath = relativePath.replace("@files", '');
-        else if (relativePath.indexOf('/@files') === 0)
-            relativePath = relativePath.replace("/@files", '');
-        else if (relativePath.indexOf('@pipeline') === 0)
-            relativePath = relativePath.replace("@pipeline", '');
-        else if (relativePath.indexOf('/@pipeline') === 0)
-            relativePath = relativePath.replace("/@pipeline", '');
+
+        var prefixes = ['filesets', 'files', 'pipeline', 'wiki', 'cloud']; //filesets needs to be before files since it contains 'files' substring
+        Ext4.each(prefixes, function(prefix){
+            var found = false;
+            if (relativePath.indexOf('@' + prefix) === 0)
+            {
+                relativePath = relativePath.replace('@' + prefix, '');
+                found = true;
+            }
+            else if (relativePath.indexOf('/@' + prefix) === 0)
+            {
+                relativePath = relativePath.replace('/@' + prefix, '');
+                found = true;
+            }
+            if (found)
+                return false; //break loop
+        });
 
         if (relativePath && relativePath !== '/')
         {
@@ -1595,6 +1604,12 @@ Ext4.define('File.panel.Browser', {
             // see if the nodeId is a direct child of root
             if (path == this.folderSeparator) {
                 this.unlockState(true /* refresh */);
+                // update actions on Files web part load
+                if (!this.isWebDav && this.tree && this.tree.getStore())
+                {
+                    var root = this.tree.getStore().getRootNode();
+                    this.onFolderChange(null, root);
+                }
             }
             else {
                 // otherwise, prepare to recursively ensure visibility
@@ -2505,6 +2520,7 @@ Ext4.define('File.panel.Browser', {
                 var values = panel.getForm().getValues();
                 if (values && values.folderName) {
                     var folder = values.folderName;
+                    var browser = this;
                     this.fileSystem.createDirectory({
                         path : path + this.folderSeparator + folder,
                         success : function(path) {
@@ -2525,7 +2541,7 @@ Ext4.define('File.panel.Browser', {
                             else
                                 message = 'Failed to create directory on server. This directory may already exist '
                                         + 'or this may be a server configuration problem. Please contact the site administrator.';
-                            this.showErrorMsg('Error', message);
+                            browser.showErrorMsg('Error', message);
                         },
                         scope : this
                     });
