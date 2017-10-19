@@ -47,7 +47,7 @@ public class TextArea extends Input
                 .append(" name=\"").append(getName()).append("\"");
 
         if (getColumns() != -1)
-            sb.append(" columns=\"").append(getColumns()).append("\"");
+            sb.append(" cols=\"").append(getColumns()).append("\"");
         if (getRows() != -1)
             sb.append(" rows=\"").append(getRows()).append("\"");
 
