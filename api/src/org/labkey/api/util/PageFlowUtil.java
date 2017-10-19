@@ -1933,6 +1933,10 @@ public class PageFlowUtil
                 // Only for 17.2 release
                 if (!"seattle".equalsIgnoreCase(themeName) &&
                         !"overcast".equalsIgnoreCase(themeName) &&
+                        !"harvest".equalsIgnoreCase(themeName) &&
+                        !"leaf".equalsIgnoreCase(themeName) &&
+                        !"ocean".equalsIgnoreCase(themeName) &&
+                        !"mono".equalsIgnoreCase(themeName) &&
                         !"madison".equalsIgnoreCase(themeName))
                     return WebTheme.EXPERIMENTAL_DEFAULT_THEME_NAME;
             }
