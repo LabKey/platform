@@ -33,10 +33,10 @@ $lk-brand-primary: $Leaf-header;
 
 //== Buttons
 //
-$lk-button-primary-color: $lk-theme-light-accent;
-$lk-button-primary-color-hover: $lk-theme-light-accent;
-$lk-button-primary-border-color: $lk-theme-light-accent;
-$lk-button-primary-border-color-hover: $lk-theme-light-accent;
+$lk-button-primary-color: $lk-theme-dark-accent;
+$lk-button-primary-color-hover: $lk-theme-dark-accent;
+$lk-button-primary-border-color: $lk-theme-dark-accent;
+$lk-button-primary-border-color-hover: $lk-theme-dark-accent;
 $lk-bar-button-color: $Leaf-anchor-color;
 $lk-bar-button-color-hover: $Leaf-gray-darkest;
 $lk-bar-button-border-color-hover: $Leaf-gray-blue;
@@ -81,7 +81,7 @@ $lk-page-nav-dropdown-item-text-color: $Leaf-accent;
 $lk-page-nav-dropdown-highlight-item-bg-color: $Leaf-accent;
 $lk-page-nav-dropdown-highlight-item-text-color: $Leaf-page-bkgd;
 $lk-page-nav-dropdown-icon-color: $Leaf-accent;
-$lk-page-nav-secondary-tab-bg-color: $Leaf-gray-blue;
+$lk-page-nav-secondary-tab-bg-color:  lighten(adjust-hue($Leaf-gray-blue, -10), 5%);
 $lk-page-nav-secondary-tab-text-color: $Leaf-accent;
 $lk-page-nav-primary-tab-bg-color: $Leaf-page-bkgd;
 $lk-page-nav-primary-tab-text-color: $Leaf-accent;
@@ -99,7 +99,7 @@ $lk-webpart-title-hover-color: $Leaf-anchor-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //
-$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-primary-bg-color: $Leaf-white;
 $lk-nav-tab-secondary-text-color: $Leaf-anchor-color;
 
 //== Tool Icons
@@ -134,7 +134,7 @@ $lk-x4-border-layout-ct-background-base-color: $Leaf-header;
 
 //== Ext4 - Panel
 //
-$lk-x4-panel-header-background-color: $Leaf-header;
+$lk-x4-panel-header-background-color: $Leaf-white;
 $lk-x4-panel-header-background-gradient-base-color: $Leaf-header;
 $lk-x4-panel-header-inner-border-base-color: $Leaf-header;
 $lk-x4-panel-frame-base-color: $Leaf-header;

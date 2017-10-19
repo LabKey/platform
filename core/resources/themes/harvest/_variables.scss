@@ -14,6 +14,7 @@ $Harvest-anchor-color: #0479a8;
 $Harvest-gray-footer-text: #adadad;
 $Harvest-gray-footer-text-hover: #f9f9f9;
 $Harvest-white: #FFFFFF;
+$Harvest-addtl-text: #742A2A;
 
 $lk-theme-dark-accent: $Harvest-accent;
 $lk-theme-light-accent: $Harvest-header;
@@ -33,10 +34,10 @@ $lk-brand-primary: $Harvest-header;
 
 //== Buttons
 //
-$lk-button-primary-color: $lk-theme-light-accent;
-$lk-button-primary-color-hover: $lk-theme-light-accent;
-$lk-button-primary-border-color: $lk-theme-light-accent;
-$lk-button-primary-border-color-hover: $lk-theme-light-accent;
+$lk-button-primary-color: $lk-theme-dark-accent;
+$lk-button-primary-color-hover: $lk-theme-dark-accent;
+$lk-button-primary-border-color: $lk-theme-dark-accent;
+$lk-button-primary-border-color-hover: $lk-theme-dark-accent;
 $lk-bar-button-color: $Harvest-anchor-color;
 $lk-bar-button-color-hover: $Harvest-gray-darkest;
 $lk-bar-button-border-color-hover: $Harvest-gray-blue;
@@ -81,15 +82,15 @@ $lk-page-nav-dropdown-item-text-color: $Harvest-accent;
 $lk-page-nav-dropdown-highlight-item-bg-color: $Harvest-accent;
 $lk-page-nav-dropdown-highlight-item-text-color: $Harvest-page-bkgd;
 $lk-page-nav-dropdown-icon-color: $Harvest-accent;
-$lk-page-nav-secondary-tab-bg-color: $Harvest-gray-blue;
-$lk-page-nav-secondary-tab-text-color: $Harvest-accent;
+$lk-page-nav-secondary-tab-bg-color: lighten(adjust-hue($Harvest-gray-blue, -10), 5%);;
+$lk-page-nav-secondary-tab-text-color: $Harvest-addtl-text;
 $lk-page-nav-primary-tab-bg-color: $Harvest-page-bkgd;
 $lk-page-nav-primary-tab-text-color: $Harvest-accent;
 
 //== Panels
 //
 $lk-panel-bg-color: $Harvest-white;
-$lk-panel-default-text: $Harvest-accent;
+$lk-panel-default-text: $Harvest-addtl-text;
 $lk-panel-default-border: $Harvest-gray-darker;
 
 //== Portals
@@ -99,7 +100,7 @@ $lk-webpart-title-hover-color: $Harvest-anchor-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //
-$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-primary-bg-color: $Harvest-white;
 $lk-nav-tab-secondary-text-color: $Harvest-anchor-color;
 
 //== Tool Icons
@@ -134,7 +135,7 @@ $lk-x4-border-layout-ct-background-base-color: $Harvest-header;
 
 //== Ext4 - Panel
 //
-$lk-x4-panel-header-background-color: $Harvest-header;
+$lk-x4-panel-header-background-color: $Harvest-white;
 $lk-x4-panel-header-background-gradient-base-color: $Harvest-header;
 $lk-x4-panel-header-inner-border-base-color: $Harvest-header;
 $lk-x4-panel-frame-base-color: $Harvest-header;

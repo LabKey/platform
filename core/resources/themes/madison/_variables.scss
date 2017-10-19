@@ -91,7 +91,7 @@ $lk-page-nav-dropdown-item-text-color: $Madison-red-dark;
 $lk-page-nav-dropdown-highlight-item-bg-color: $Madison-red-dark;
 $lk-page-nav-dropdown-highlight-item-text-color: $Madison-page-bkgd;
 $lk-page-nav-dropdown-icon-color: $Madison-red-dark;
-$lk-page-nav-secondary-tab-bg-color: $Madison-gray-blue;
+$lk-page-nav-secondary-tab-bg-color: lighten(adjust-hue($Madison-gray-blue, -10), 5%);;;
 $lk-page-nav-secondary-tab-text-color: $Madison-red-dark;
 $lk-page-nav-primary-tab-bg-color: $Madison-page-bkgd;
 $lk-page-nav-primary-tab-text-color: $Madison-red-dark;
@@ -111,7 +111,7 @@ $lk-webpart-title-hover-color: $lk-webpart-title-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //
-$lk-nav-tab-primary-bg-color: white;
+$lk-nav-tab-primary-bg-color: $Madison-white;
 $lk-nav-tab-secondary-text-color: $Madison-anchor-color;
 
 //== Tool Icons
@@ -146,7 +146,7 @@ $lk-x4-border-layout-ct-background-base-color: $Madison-red;
 
 //== Ext4 - Panel
 //
-$lk-x4-panel-header-background-color: $Madison-red;
+$lk-x4-panel-header-background-color: $Madison-white;
 $lk-x4-panel-header-background-gradient-base-color: $Madison-red;
 $lk-x4-panel-header-inner-border-base-color: $Madison-red;
 $lk-x4-panel-frame-base-color: $Madison-red;

@@ -78,11 +78,15 @@
 </tr>
 <% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <tr>
-    <td class="labkey-form-label">Theme (new experimental themes)</td>
+    <td class="labkey-form-label">Theme</td>
     <td>
         <select name="themeName">
+            <option value="Harvest" <%=selected("Harvest".equalsIgnoreCase(themeName))%>>Harvest</option>
+            <option value="Leaf" <%=selected("Leaf".equalsIgnoreCase(themeName))%>>Leaf</option>
             <option value="Madison" <%=selected("Madison".equalsIgnoreCase(themeName))%>>Madison</option>
-            <option value="Overcast" <%=selected("Overcast".equalsIgnoreCase(themeName))%>>Overcast (Seattle Alt)</option>
+            <option value="Mono" <%=selected("Mono".equalsIgnoreCase(themeName))%>>Mono</option>
+            <option value="Ocean" <%=selected("Ocean".equalsIgnoreCase(themeName))%>>Ocean</option>
+            <option value="Overcast" <%=selected("Overcast".equalsIgnoreCase(themeName))%>>Overcast</option>
             <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(themeName))%>>Seattle</option>
         </select>
     </td>

@@ -14,8 +14,7 @@ var BASE_BUILD_CMD = 'webpack --config webpack/style.config.js --progress';
 var VALID_JS_OUTPUTS = ['core.js'];
 
 var fs = require('fs');
-// only build core themes considered viable for production use
-var themeDirs = ['madison', 'seattle', 'overcast']; // fs.readdirSync(SOURCE_THEME_DIR);
+var themeDirs = fs.readdirSync(SOURCE_THEME_DIR);
 if (!fs.existsSync(TARGET_THEME_DIR)){
     fs.mkdirSync(TARGET_THEME_DIR);
 }
