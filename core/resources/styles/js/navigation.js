@@ -369,10 +369,13 @@
         // if toggle element is in left half of screen then left align the menu
         var inLeftHemisphere = (me.offset().left + 100) < (win.width() / 2);
 
-        if (me.hasClass('dropdown') && spaceDown < 0 && spaceUp > 0) {
-            me.removeClass('dropdown').addClass('dropup');
-        }
-        else if (me.hasClass('dropup') && spaceUp < 0 && spaceDown > 0) {
+        if (spaceDown < 0) {
+            if (spaceUp > 0 || spaceUp > spaceDown) {
+                me.removeClass('dropdown').addClass('dropup');
+            } else {
+                me.removeClass('dropup').addClass('dropdown');
+            }
+        } else {
             me.removeClass('dropup').addClass('dropdown');
         }
 
@@ -410,11 +413,14 @@
 
     $(function() {
         // initial bind
-        $('[data-tt="tooltip"]').tooltip();
+        $('[data-tt="tooltip"]').tooltip({
+            trigger: 'hover'
+        });
 
         // bind subsequent DOM updates
         $(document.body).tooltip({
-            selector: '[data-tt="tooltip"]'
+            selector: '[data-tt="tooltip"]',
+            trigger: 'hover'
         });
 
         var $document = $(document),
