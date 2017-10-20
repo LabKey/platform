@@ -289,7 +289,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     private void createQuerySnapshot(String snapshotName, boolean autoUpdate, boolean isDemographic, String keyField, int index)
     {
         DataRegionTable table = DataRegionTable.DataRegion(getDriver()).find();
-        table.clickHeaderMenu("Charts / Reports", true, "Create Query Snapshot");
+        table.goToReport("Create Query Snapshot");
 
         setFormElement(Locator.name("snapshotName"), snapshotName);
         if (autoUpdate)
