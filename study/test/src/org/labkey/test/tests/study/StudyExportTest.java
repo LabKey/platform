@@ -258,7 +258,7 @@ public class StudyExportTest extends StudyManualTest
         clickAndWait(Locator.linkWithText("Show individual vials"));
         assertElementPresent(Locator.linkWithText("999320016"));
         checkCheckbox(Locator.checkboxByName(".toggle"));
-        BootstrapMenu.find(getDriver(), "Request Options").clickSubMenu(true,"Create New Request");
+        BootstrapMenu.find(getDriver(), "Request Options").clickSubMenu(true, "Create New Request");
         assertTextPresent("HAQ0003Y-09", "BAQ00051-09");
         assertTextNotPresent("KAQ0003Q-01");
         selectOptionByText(Locator.name("destinationLocation"), "Duke University (Repository, Site Affiliated Lab, Clinic)");
@@ -326,8 +326,7 @@ public class StudyExportTest extends StudyManualTest
                 "Institutional Review Board (Duke University), Receiving lab approval",
                 VISIT_MAP.getName());
 
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         enterStudySecurity();
 
         // enable advanced study security
@@ -358,7 +357,7 @@ public class StudyExportTest extends StudyManualTest
         clickAndWait(Locator.linkWithText("Plasma, Unknown Processing"));
         clickButton("Enable Comments/QC");
         new DataRegionTable("SpecimenDetail", this).checkAll();
-        BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
+        BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Set Vial Comment or QC State for Selected");
         setFormElement(Locator.name("comments"), "These vials are very important.");
         clickButton("Save Changes");
         assertTextPresent("These vials are very important.", 25);
@@ -375,7 +374,7 @@ public class StudyExportTest extends StudyManualTest
         assertTextNotPresent("These vials are very important.");
         new DataRegionTable("SpecimenDetail", this).clearFilter("MouseId");
         assertTextPresent("These vials are very important.", 23);
-       BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
+        BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
 
         // import second archive, verify that that data is merged:
         SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_B), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 4);
@@ -445,12 +444,14 @@ public class StudyExportTest extends StudyManualTest
                 "WARNING: Missing Specimens");
 
         log("Test editing rows in a dataset");
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
 
         enterStudySecurity();
 
-        doAndWaitForPageToLoad(() -> { selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE"); click(Locator.lkButton("Update Type")); },
+        doAndWaitForPageToLoad(() -> {
+                    selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE");
+                    click(Locator.lkButton("Update Type"));
+                },
                 WAIT_FOR_PAGE);
 
         clickFolder(getFolderName());
@@ -610,8 +611,7 @@ public class StudyExportTest extends StudyManualTest
 
     protected void doTestDatasetImport()
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         clickAndWait(Locator.linkWithText("Create New Dataset"));

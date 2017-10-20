@@ -218,8 +218,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
 
         //webpart needed for republish test
         PortalHelper portalHelper = new PortalHelper(this);
@@ -997,8 +996,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         String ptidFilter = createOneOfFilterString(ptids);
 
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
 
         clickAndWait(Locator.linkWithText(dataset));
         _customizeViewsHelper.openCustomizeViewPanel();
@@ -1152,8 +1150,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // verify the case where a user has admin access to a folder but not to a subfolder
         log("verify permissions for a top level folder admin");
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         _permissionsHelper.enterPermissionsUI();
         _permissionsHelper.uncheckInheritedPermissions();
         _permissionsHelper.savePermissions();
@@ -1179,8 +1176,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // verify the case where a user has read access to a folder and admin access to a subfolder
         log("verify permissions for a sub level folder admin");
-        clickProject(getProjectName());
-        clickFolder(PUB1_NAME);
+        navigateToFolder(getProjectName(), PUB1_NAME);
         _permissionsHelper.setUserPermissions(PUBLISH_SUB_FOLDER_ADMIN, "Folder Administrator");
         clickButton("Save and Finish");
         clickFolder(getFolderName());
@@ -1194,7 +1190,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         colsToCheck.put("Refresh", new String[0]);
         verifyDataRegion(colsToCheck);
 
-        dt.goToView( "Folder Filter", "Current folder and subfolders");
+        dt.goToView("Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
         colsToCheck.put("Refresh", new String[]{"false"});
         verifyDataRegion(colsToCheck);

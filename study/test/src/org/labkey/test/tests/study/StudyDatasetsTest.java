@@ -264,8 +264,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void checkDataElementsPresent(String name, String... items)
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         _studyHelper.goToManageDatasets()
                 .selectDatasetByName(name)
                 .clickViewData();
@@ -275,15 +274,13 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     private void verifySideFilter()
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         verifyFilterPanelOnDemographics("Dataset");
 
         _studyHelper.deleteCustomParticipantGroup(EXTRA_GROUP, "Mouse");
 
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         PortalHelper portalHelper = new PortalHelper(this);
         portalHelper.addQueryWebPart("Demographics", "study", "DEM-1 (DEM-1: Demographics)", null);
         verifyFilterPanelOnDemographics("qwp6");
@@ -393,8 +390,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     private void verifyReportAndViewDatasetReferences()
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
 
         // verify the reports and views dataset label/name references after study import
         //verifyExpectedReportsAndViewsExist();

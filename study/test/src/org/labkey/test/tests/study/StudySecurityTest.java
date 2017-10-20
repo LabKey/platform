@@ -135,8 +135,7 @@ public class StudySecurityTest extends StudyBaseTest
 
     protected void adjustGroupDatasetPerms(String groupName, GroupSetting setting, String[] datasets, PerDatasetPerm perm)
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         enterStudySecurity();
 
         click(getRadioButtonLocator(groupName, setting));
@@ -164,8 +163,7 @@ public class StudySecurityTest extends StudyBaseTest
         if (null != userName)
             impersonate(userName);
 
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
 
         if (canSetupPipeline)
             assertButtonPresent("Setup");

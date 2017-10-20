@@ -89,8 +89,7 @@ public class StudyDemoModeTest extends StudyBaseTest
 
     private void enterDemoMode()
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Demo Mode"));
         verifyNotInDemoMode();
@@ -100,8 +99,7 @@ public class StudyDemoModeTest extends StudyBaseTest
 
     private void leaveDemoMode()
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Demo Mode"));
         verifyInDemoMode();

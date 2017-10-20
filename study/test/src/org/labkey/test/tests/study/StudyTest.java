@@ -259,8 +259,7 @@ public class StudyTest extends StudyBaseTest
     @LogMethod
     private void verifyDeleteUnusedVisits()
     {
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         clickAndWait(Locator.linkWithText("Manage Study"));
         clickAndWait(Locator.linkWithText("Manage Visits"));
 

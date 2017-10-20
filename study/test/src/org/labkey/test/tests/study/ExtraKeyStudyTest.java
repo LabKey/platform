@@ -98,8 +98,7 @@ public class ExtraKeyStudyTest extends StudyBaseTest
     protected void doVerifySteps()
     {
         log("TODO");
-        clickProject(getProjectName());
-        clickFolder(getFolderName());
+        navigateToFolder(getProjectName(), getFolderName());
         clickAndWait(Locator.linkContainingText("datasets"));
 
         for (int i = 0; i < datasets.length; i++)

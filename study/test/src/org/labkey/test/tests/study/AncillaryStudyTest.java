@@ -89,17 +89,16 @@ public class AncillaryStudyTest extends StudyBaseTest
 
     private void createAncillaryStudy()
     {
-        clickProject(PROJECT_NAME);
-        clickFolder(getFolderName());
+        navigateToFolder(PROJECT_NAME, getFolderName());
         clickTab("Manage");
 
         log("Create Special Emphasis Study.");
         clickButton("Create Ancillary Study", 0);
-        
+
         //Wizard page 1 - location
         _extHelper.waitForExtDialog("Create Ancillary Study");
         click(Locator.xpath("//label/span[text()='Protocol']"));
-        waitForElement(Locator.xpath("//div["+Locator.NOT_HIDDEN+" and @class='g-tip-header']//span[text()='Protocol Document']"), WAIT_FOR_JAVASCRIPT);
+        waitForElement(Locator.xpath("//div[" + Locator.NOT_HIDDEN + " and @class='g-tip-header']//span[text()='Protocol Document']"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("studyName"), getFolderName());
         setFormElement(Locator.name("studyDescription"), STUDY_DESCRIPTION);
         assertTrue(PROTOCOL_DOC.exists());
@@ -132,7 +131,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         //Wizard page 3 - select datasets
         waitForElement(Locator.xpath("//div[contains(@class, 'studyWizardDatasetList')]"), WAIT_FOR_JAVASCRIPT);
         click(Locator.xpath("//label/span[text()='Data Refresh:']"));
-        waitForElement(Locator.xpath("//div["+Locator.NOT_HIDDEN+" and @class='g-tip-header']//span[text()='Data Refresh']"), WAIT_FOR_JAVASCRIPT);
+        waitForElement(Locator.xpath("//div[" + Locator.NOT_HIDDEN + " and @class='g-tip-header']//span[text()='Data Refresh']"), WAIT_FOR_JAVASCRIPT);
         for (String dataset : DATASETS)
         {
             _extHelper.selectExtGridItem("Label", dataset, -1, "studyWizardDatasetList", true);
