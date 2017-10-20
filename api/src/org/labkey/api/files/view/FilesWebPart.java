@@ -43,6 +43,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -91,7 +92,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         setModelBean(new FilesForm());
         setFileSet(null);
         setTitle(DEFAULT_TITLE);
-        setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
+        ActionURL titleHref = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c);
+        if (fileRoot != null)
+            titleHref.addParameter("fileRootName", fileRoot);
+        setTitleHref(titleHref);
         setBodyClass("labkey-wp-nopadding");
 
         if (fileRoot != null)
