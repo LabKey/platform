@@ -88,7 +88,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         setFormElement(Locator.name("sequenceNumMin"), "999.0000");
         setFormElement(Locator.name("sequenceNumMax"), "999.9999");
         selectOptionByValue(Locator.name("sequenceNumHandling"), "logUniqueByDate");
-        clickAndWait(Locator.linkWithText("save"));
+        clickAndWait(Locator.lkButton("Save"));
 
         // "overview" is a dumb place for this link
         clickAndWait(Locator.linkWithText("Overview"));
