@@ -31,6 +31,22 @@
     cursor: pointer;
   }
 
+  &.primary {
+    background-color: $lk-button-primary-bg-color;
+    @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
+    border: $lk-button-primary-border-size solid $lk-button-primary-border-color;
+    color: $lk-button-primary-color;
+
+    &:active,
+    &:hover,
+    &:focus {
+      background-color: $lk-button-primary-bg-color-hover;
+      background-image: none;
+      border-color: $lk-button-primary-border-color-hover;
+      color: $lk-button-primary-color;
+    }
+  }
+
   &.disabled, &.labkey-disabled-button, &[disabled] {
     border-color: $lk-button-disabled-color;
     color: $lk-button-disabled-color;

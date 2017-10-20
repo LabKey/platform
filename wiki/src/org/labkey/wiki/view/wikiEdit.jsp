@@ -98,14 +98,14 @@
         <td width="50%" align="left" style="white-space: nowrap;">
             <%= button("Save & Close").submit(true).onClick("LABKEY._wiki.onFinish();").id("wiki-button-finish") %>
             <%= button("Save").submit(true).onClick("LABKEY._wiki.onSave();").id("wiki-button-save") %>
-            <%= button("Cancel").submit(true).onClick("LABKEY._wiki.onCancel();") %>
+            <%= button("Cancel").onClick("LABKEY._wiki.onCancel();") %>
         </td>
         <td width="50%" align="right" style="white-space: nowrap;">
             <% if (model.canUserDelete()) { %>
-                <%= button("Delete Page").submit(true).onClick("return false;").id(ID_PREFIX + "button-delete").enabled(false) %>
+                <%= button("Delete Page").onClick("return false;").id(ID_PREFIX + "button-delete").enabled(false) %>
             <% } %>
-            <%= button("Convert To...").submit(true).onClick("LABKEY._wiki.showConvertWindow()").id(ID_PREFIX + "button-change-format") %>
-            <%= button("Show Page Tree").submit(true).onClick("LABKEY._wiki.showHideToc()").id(ID_PREFIX + "button-toc") %>
+            <%= button("Convert To...").onClick("LABKEY._wiki.showConvertWindow()").id(ID_PREFIX + "button-change-format") %>
+            <%= button("Show Page Tree").onClick("LABKEY._wiki.showHideToc()").id(ID_PREFIX + "button-toc") %>
         </td>
     </tr>
 </table>
