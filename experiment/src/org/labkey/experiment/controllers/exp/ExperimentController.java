@@ -522,14 +522,13 @@ public class ExperimentController extends SpringActionController
                 @Override
                 public ActionButton createDeleteButton()
                 {
-                    ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
-                    deleteMaterialUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton deleteMaterial = new ActionButton(deleteMaterialUrl, "Delete");
-                    deleteMaterial.setActionType(ActionButton.Action.POST);
-                    deleteMaterial.setDisplayPermission(DeletePermission.class);
-                    deleteMaterial.setIconCls("trash");
-                    deleteMaterial.setRequiresSelection(true);
-                    return deleteMaterial;
+                    // Use default delete button, but without showing the confirmation text
+                    ActionButton button = super.createDeleteButton();
+                    if (button != null)
+                    {
+                        button.setRequiresSelection(true);
+                    }
+                    return button;
                 }
 
                 @Override
@@ -2799,9 +2798,7 @@ public class ExperimentController extends SpringActionController
             for (ExpRun run : getRuns(materials))
             {
                 if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
-                {
                     throw new UnauthorizedException();
-                }
             }
 
             for (ExpMaterial expMaterial : materials)
@@ -2861,9 +2858,17 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
         {
-            for (ExpData data : getDatas(deleteForm, true))
+            List<ExpData> datas = getDatas(deleteForm, true);
+
+            for (ExpRun run : getRuns(datas))
+            {
+                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
+                    throw new UnauthorizedException();
+            }
+
+            for (ExpData data : datas)
             {
                 data.delete(getUser());
             }
@@ -2872,9 +2877,20 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpData> datas = getDatas(deleteForm, false);
-            List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(datas);
+            List<ExpRun> runs = getRuns(datas);
 
             return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
+        }
+
+        private List<ExpRun> getRuns(List<ExpData> datas)
+                throws SQLException
+        {
+            List<ExpRun> runsToDelete = new ArrayList<>();
+            List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingDatas(datas);
+            for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                runsToDelete.add(run);
+
+            return runsToDelete;
         }
 
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
@@ -5633,7 +5649,18 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedDataAction.class, c).addReturnURL(returnURL);
+            ActionURL url = new ActionURL(DeleteSelectedDataAction.class, c);
+            if (returnURL != null)
+                url.addReturnURL(returnURL);
+            return url;
+        }
+
+        public ActionURL getDeleteMaterialsURL(Container c, URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(DeleteMaterialByRowIdAction.class, c);
+            if (returnURL != null)
+                url.addReturnURL(returnURL);
+            return url;
         }
 
         public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)

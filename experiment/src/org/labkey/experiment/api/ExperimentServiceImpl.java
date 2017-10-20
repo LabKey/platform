@@ -3064,16 +3064,10 @@ public class ExperimentServiceImpl implements ExperimentService
             for (ExpMaterial material : materials)
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
-                {
                     throw new UnauthorizedException();
-                }
             }
 
-            // Notify that a delete is about to happen
-            for (ExperimentMaterialListener materialListener : _materialListeners)
-            {
-                materialListener.beforeDelete(materials, container, user);
-            }
+            beforeDeleteMaterials(user, container, materials);
 
             for (ExpMaterial material : materials)
             {
@@ -3126,7 +3120,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void deleteDataByRowIds(Container container, Collection<Integer> selectedDataIds)
+    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds)
     {
         if (selectedDataIds.isEmpty())
             return;
@@ -3138,12 +3132,30 @@ public class ExperimentServiceImpl implements ExperimentService
 
             Map<Integer, List<String>> lsidsByClass = new LinkedHashMap<>();
 
-            beforeDeleteData(ExpDataImpl.fromDatas(datas));
+            for (Data data : datas)
+            {
+                if (!data.getContainer().hasPermission(user, DeletePermission.class))
+                    throw new UnauthorizedException();
+            }
+
+            beforeDeleteData(user, container, ExpDataImpl.fromDatas(datas));
+
             for (Data data : datas)
             {
                 if (!data.getContainer().equals(container))
                 {
                     throw new SQLException("Attempting to delete a Data from another container");
+                }
+
+                // Delete any runs using the data if the ProtocolImplementation allows it
+                List<ExpRunImpl> runArray = getRunsUsingDataIds(Arrays.asList(data.getRowId()));
+                for (ExpRun run : runsDeletedWithInput(runArray))
+                {
+                    Container runContainer = run.getContainer();
+                    if (!runContainer.hasPermission(user, DeletePermission.class))
+                        throw new UnauthorizedException();
+
+                    deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
                 }
 
                 SqlExecutor executor = new SqlExecutor(getExpSchema());
@@ -3346,7 +3358,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Integer> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteDataByRowIds(c, dataIds);
+            deleteDataByRowIds(user, c, dataIds);
 
             transaction.commit();
         }
@@ -3412,7 +3424,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return "LSID/" + lsid;
     }
 
-    public void beforeDeleteData(List<ExpDataImpl> datas)
+    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas)
     {
         try
         {
@@ -3436,6 +3448,20 @@ public class ExperimentServiceImpl implements ExperimentService
         catch (ExperimentException e)
         {
             throw UnexpectedException.wrap(e);
+        }
+
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.beforeDataDelete(datas, container, user);
+        }
+    }
+
+    public void beforeDeleteMaterials(User user, Container container, List<? extends ExpMaterial> materials)
+    {
+        // Notify that a delete is about to happen
+        for (ExperimentMaterialListener materialListener : _materialListeners)
+        {
+            materialListener.beforeDelete(materials, container, user);
         }
     }
 
@@ -3737,7 +3763,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * Delete all exp.Data from the DataClass.  If container is not provided,
      * all rows from the DataClass will be deleted regardless of container.
      */
-    public int truncateDataClass(ExpDataClass dataClass, @Nullable Container c)
+    public int truncateDataClass(ExpDataClass dataClass, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -3754,7 +3780,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (Map.Entry<String, Collection<Integer>> entry : byContainer.asMap().entrySet())
         {
             Container container = ContainerManager.getForId(entry.getKey());
-            deleteDataByRowIds(container, entry.getValue());
+            deleteDataByRowIds(user, container, entry.getValue());
             count += entry.getValue().size();
         }
         return count;
@@ -3775,7 +3801,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             DbSequenceManager.delete(c, ExpDataClassImpl.GENID_SEQUENCE_NAME, dataClass.getRowId());
 
-            truncateDataClass(dataClass, null);
+            truncateDataClass(dataClass, user, null);
 
             d.delete(user);
 

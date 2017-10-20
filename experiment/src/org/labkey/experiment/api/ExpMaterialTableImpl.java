@@ -414,6 +414,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         rowIdCol.setURL(url);
         setDetailsURL(url);
 
+        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteMaterialsURL(getContainer(), null);
+        setDeleteURL(new DetailsURL(deleteUrl));
+
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);

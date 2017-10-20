@@ -356,6 +356,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         rowIdCol.setURL(url);
         nameCol.setURL(url);
 
+        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
+        setDeleteURL(new DetailsURL(deleteUrl));
+
         setTitleColumn("Name");
         setDefaultVisibleColumns(defaultVisible);
 
@@ -1291,7 +1294,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         @Override
         protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
         {
-            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, container);
+            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
         }
 
         private void removePreviousAttachments(User user, Container c, Map<String, Object> newRow, Map<String, Object> oldRow)

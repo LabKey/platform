@@ -447,7 +447,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        svc.beforeDeleteData(datasToDelete);
+        svc.beforeDeleteData(user, getContainer(), datasToDelete);
 
         // Clean up DataInput and MaterialInput exp.object and properties
         OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +

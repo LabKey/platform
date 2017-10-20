@@ -255,7 +255,7 @@ public class ExpDataClassDataTestCase
         {
             // TODO: truncate rows API doesn't support truncating from all containers
             //count = table.getUpdateService().truncateRows(user, c, null, null);
-            count = ExperimentServiceImpl.get().truncateDataClass(dataClass, null);
+            count = ExperimentServiceImpl.get().truncateDataClass(dataClass, TestContext.get().getUser(), null);
             tx.commit();
         }
         Assert.assertEquals(2, count);

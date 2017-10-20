@@ -121,6 +121,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         getColumn(Column.RowId).setURL(detailsURL);
         getColumn(Column.Name).setURL(detailsURL);
 
+        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
+        setDeleteURL(new DetailsURL(deleteUrl));
+
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         String domainURI = svc.getDomainURI(getContainer());
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, getContainer());
