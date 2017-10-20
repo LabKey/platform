@@ -253,7 +253,7 @@ public class ProgressReportTest extends ReportTest
         goToSchemaBrowser();
         createNewQuery(schemaName);
         setFormElement(Locator.name("ff_newQueryName"), customQueryName);
-        clickAndWait(Locator.linkWithText("Create and Edit Source"));
+        clickAndWait(Locator.lkButton("Create and Edit Source"));
         setCodeEditorValue("queryText", sql);
         clickButton("Save & Finish");
     }
