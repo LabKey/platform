@@ -17,10 +17,8 @@
 package org.labkey.mothership;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -62,7 +60,7 @@ public class MothershipModule extends DefaultModule
 
     public double getVersion()
     {
-        return 17.20;
+        return 17.21;
     }
 
     protected void init()

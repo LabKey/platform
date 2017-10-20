@@ -507,6 +507,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("ServerSessionId", "RuntimeOS"));
         defaultCols.add(FieldKey.fromParts("ServerSessionId", "JavaVersion"));
         defaultCols.add(FieldKey.fromParts("ServerSessionId", "HeapSize"));
+        defaultCols.add(FieldKey.fromParts("ErrorCode"));
         result.setDefaultVisibleColumns(defaultCols);
 
         return result;

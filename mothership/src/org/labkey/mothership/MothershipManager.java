@@ -38,6 +38,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MothershipReport;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -133,6 +134,12 @@ public class MothershipManager
             if (null != controllerName && controllerName.length() > 30)
             {
                 report.setPageflowName(controllerName.substring(0, 29));
+            }
+
+            String errorCode = report.getErrorCode();
+            if (null != errorCode && errorCode.length() > MothershipReport.ERROR_CODE_LENGTH)
+            {
+                report.setErrorCode(errorCode.substring(0, MothershipReport.ERROR_CODE_LENGTH - 1));
             }
 
             report = Table.insert(null, getTableInfoExceptionReport(), report);

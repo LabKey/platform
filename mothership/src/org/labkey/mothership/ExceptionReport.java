@@ -37,6 +37,7 @@ public class ExceptionReport
     private String _pageflowAction;
     private String _sqlState;
     private String _exceptionMessage;
+    private String _errorCode;
 
     public String getUsername()
     {
@@ -167,5 +168,15 @@ public class ExceptionReport
     public void setExceptionMessage(String exceptionMessage)
     {
         _exceptionMessage = exceptionMessage;
+    }
+
+    public String getErrorCode()
+    {
+        return _errorCode;
+    }
+
+    public void setErrorCode(String errorCode)
+    {
+        _errorCode = errorCode;
     }
 }

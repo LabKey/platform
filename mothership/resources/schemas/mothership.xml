@@ -41,6 +41,7 @@
             <column columnName="SQLState"/>
             <column columnName="PageflowAction"/>
             <column columnName="ExceptionMessage"/>
+            <column columnName="ErrorCode"/>
         </columns>
     </table>
     <table tableName="ExceptionStackTrace" tableDbType="TABLE">

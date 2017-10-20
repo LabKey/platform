@@ -8589,7 +8589,7 @@ public class AdminController extends SpringActionController
                         new SQLException("Intentional exception for testing purposes", "400"),
                         (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING),
                         true,
-                        ExceptionReportingLevel.valueOf(form.getLevel()));
+                        ExceptionReportingLevel.valueOf(form.getLevel()), null);
             }
             if (null != report && form.isSubmit())
             {

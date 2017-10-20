@@ -17,6 +17,7 @@
 package org.labkey.mothership;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartColor;
@@ -35,23 +36,8 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.Aggregate;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ResultsImpl;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -76,6 +62,7 @@ import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -105,6 +92,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -176,15 +164,13 @@ public class MothershipController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            HtmlView linkView = new HtmlView(getLinkBarHTML());
-
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
             settings.getBaseSort().insertSortColumn("-SVNRevision");
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
 
-            return new VBox(linkView, queryView);
+            return new VBox(getLinkBar(), queryView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -378,8 +364,6 @@ public class MothershipController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            HtmlView linkView = new HtmlView(getLinkBarHTML());
-
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("ExceptionStackTraceId"), Sort.SortDirection.DESC);
@@ -389,7 +373,7 @@ public class MothershipController extends SpringActionController
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
 
-            return new VBox(linkView, queryView);
+            return new VBox(getLinkBar(), queryView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -438,8 +422,6 @@ public class MothershipController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            HtmlView linkView = new HtmlView(getLinkBarHTML());
-
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setSchemaName(schema.getSchemaName());
@@ -452,7 +434,7 @@ public class MothershipController extends SpringActionController
 
             QueryView gridView = schema.createView(getViewContext(), settings, errors);
 
-            return new VBox(linkView, gridView);
+            return new VBox(getLinkBar(), gridView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -491,8 +473,7 @@ public class MothershipController extends SpringActionController
             form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
 
-            HtmlView linkView = new HtmlView(getLinkBarHTML());
-            return new VBox(linkView, new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
+            return new VBox(getLinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -733,6 +714,53 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class JumpToErrorCodeAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            String errorCode = StringUtils.trimToNull((String)getProperty("errorCode"));
+            ActionURL url;
+            if (errorCode != null)
+            {
+                TableInfo exceptionReportTable = new MothershipSchema(getUser(), getContainer()).getTable(MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("errorCode"), errorCode);
+                List<String> stackTraceIds = new TableSelector(exceptionReportTable.getColumn(FieldKey.fromParts("ExceptionStackTraceId")), filter, null)
+                                                .getArrayList(String.class)
+                                                .stream()
+                                                .distinct()
+                                                .collect(Collectors.toList());
+                if (stackTraceIds.size() == 1)
+                {
+                    url = new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer());
+                    url.addParameter("exceptionStackTraceId", stackTraceIds.get(0));
+                }
+                else
+                {
+                    url = new ActionURL(MothershipController.ShowExceptionsAction.class, getContainer());
+                    if (stackTraceIds.isEmpty())
+                    {
+                        url.addFilter("ExceptionSummary", FieldKey.fromParts("ExceptionStackTraceId"), CompareType.ISBLANK, null);
+                    }
+                    else
+                    {
+                        url.addFilter("ExceptionSummary", FieldKey.fromParts("ExceptionStackTraceId"), CompareType.IN, String.join(";", stackTraceIds));
+                    }
+                }
+            }
+            else
+            {
+                url = new ActionURL(MothershipController.ShowExceptionsAction.class, getContainer());
+            }
+            return HttpView.redirect(url);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
     // API for inserting exceptions reported from this or other LabKey servers.
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
@@ -788,6 +816,7 @@ public class MothershipController extends SpringActionController
                     report.setPageflowName(form.getPageflowName());
                     report.setBrowser(form.getBrowser());
                     report.setServerSessionId(session.getServerSessionId());
+                    report.setErrorCode(form.getErrorCode());
 
                     MothershipManager.get().insertException(stackTrace, report);
                 }
@@ -879,9 +908,8 @@ public class MothershipController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            HtmlView linkView = new HtmlView(getLinkBarHTML());
             HtmlView graphView = new HtmlView("Installations", "<img src=\"mothership-showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"mothership-showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");
-            return new VBox(linkView, new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
+            return new VBox(getLinkBar(), new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
         }
     }
 
@@ -943,22 +971,9 @@ public class MothershipController extends SpringActionController
         return "";
     }
 
-    private String getLinkBarHTML()
+    private JspView getLinkBar()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append(PageFlowUtil.textLink("View Exceptions", "mothership-showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true") + " " +
-                PageFlowUtil.textLink("View All Installations", new ActionURL(ShowInstallationsAction.class,getContainer())) + " " +
-                PageFlowUtil.textLink("Configure Mothership", new ActionURL(EditUpgradeMessageAction.class,getContainer())) + " " +
-                PageFlowUtil.textLink("List of Releases", new ActionURL(ShowReleasesAction.class,getContainer())) + " " +
-                PageFlowUtil.textLink("Reports", new ActionURL(ReportsAction.class,getContainer())) + " ");
-
-        if (getUser() != null && !getUser().isGuest())
-        {
-            String link = "mothership-showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=" + getUser().getDisplayName(getUser());
-            builder.append(PageFlowUtil.textLink("My Exceptions", link));
-        }
-
-        return builder.toString();
+        return new JspView("/org/labkey/mothership/view/linkBar.jsp");
     }
 
     public static abstract class ServerInfoForm
@@ -1331,6 +1346,7 @@ public class MothershipController extends SpringActionController
         private String _pageflowName;
         private String _pageflowAction;
         private String _sqlState;
+        private String _errorCode;
 
         public String getExceptionMessage()
         {
@@ -1423,6 +1439,16 @@ public class MothershipController extends SpringActionController
         public void setSqlState(String sqlState)
         {
             _sqlState = sqlState;
+        }
+
+        public String getErrorCode()
+        {
+            return _errorCode;
+        }
+
+        public void setErrorCode(String errorCode)
+        {
+            _errorCode = errorCode;
         }
     }
 
