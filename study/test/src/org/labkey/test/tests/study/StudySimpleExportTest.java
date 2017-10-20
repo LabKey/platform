@@ -33,7 +33,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.ListHelper;
-import org.labkey.test.util.ListHelper.ListColumn;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -89,7 +89,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
         initTest.initializeFolder();
-        initTest.setPipelineRoot(initTest.getPipelinePath());
+        initTest.setPipelineRoot(StudyHelper.getPipelinePath());
 
         initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
@@ -151,7 +151,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        TestFileUtils.deleteDir(new File(getPipelinePath() + "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath() + "export"));
     }
 
     @Test
@@ -760,7 +760,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                     continue;
                 
                 waitForText("Insert");
-                DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();
+                DataRegionTable.findDataRegion(this).clickInsertNewRow();
                 populateFormData(row, "quf_");
                 clickButton("Submit");
             }
@@ -916,7 +916,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         // update the default view to contain the custom column
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn(fieldName);
+        _customizeViewsHelper.addColumn(fieldName);
         _customizeViewsHelper.saveCustomView("", true);
     }
 
@@ -924,7 +924,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolderName, "Collaboration", null, true);
         clickFolder(subfolderName);
-        setPipelineRoot(getPipelinePath());
+        setPipelineRoot(StudyHelper.getPipelinePath());
         importFolderFromPipeline("/export/folder.xml");
     }
 

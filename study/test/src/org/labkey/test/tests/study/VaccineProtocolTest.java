@@ -232,7 +232,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
 
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn("Day");
+        _customizeViewsHelper.addColumn("Day");
         _customizeViewsHelper.applyCustomView();
         assertTextPresent("-120", "320");
         navigateToFolder(getProjectName(), STUDY_FOLDER);
@@ -379,7 +379,8 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
     private void insertLookupRecord(String name, String label)
     {
-        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        if (name != null) setFormElement(Locator.name("quf_Name"), name);
+        DataRegionTable.findDataRegion(this).clickInsertNewRow();
+        if (name != null) setFormElement(Locator.name("quf_Name"), name);
         if (label != null) setFormElement(Locator.name("quf_Label"), label);
         clickButton("Submit");
     }

@@ -186,15 +186,15 @@ public class StudyPHIExportTest extends StudyExportTest
         selectQuery("study", "Location");
         waitAndClickAndWait(Locator.linkWithText("view data"));
         DataRegionTable query = new DataRegionTable("query", this);
-        Assert.assertTrue("Lab Code column should not be in default view", query.getColumn("LabwareLabCode") == -1);
+        Assert.assertTrue("Lab Code column should not be in default view", query.getColumnIndex("LabwareLabCode") == -1);
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn("LabwareLabCode");
+        _customizeViewsHelper.addColumn("LabwareLabCode");
         _customizeViewsHelper.applyCustomView();
 
         query = new DataRegionTable("query", this); // reset column index cache
-        int labelCol = query.getColumn("Label");
-        int labCodeCol = query.getColumn("LabwareLabCode");
-        int clinicCol = query.getColumn("Clinic");
+        int labelCol = query.getColumnIndex("Label");
+        int labCodeCol = query.getColumnIndex("LabwareLabCode");
+        int clinicCol = query.getColumnIndex("Clinic");
         int rowCount = query.getDataRowCount();
         int foundClinics = 0;
         for (int i = 0; i < rowCount; i++)

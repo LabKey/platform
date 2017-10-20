@@ -137,7 +137,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt("/query/" + getProjectName() + "/executeQuery.view?schemaName=study&query.queryName=Visit");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
-        _customizeViewsHelper.addCustomizeViewColumn("Folder");
+        _customizeViewsHelper.addColumn("Folder");
 
         String viewName = "withfolder";
         _customizeViewsHelper.saveCustomView(viewName, false, true);
@@ -362,7 +362,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertElementNotPresent(Locator.linkWithText(insertedPtid));
 
         new DataRegionTable("Dataset", getDriver()).clickInsertNewRow();
-        new DatasetInsertPage(this, SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", insertedPtid));
+        new DatasetInsertPage(this.getDriver(), SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", insertedPtid));
 
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", STUDY2_DATASET_ID)));
         assertElementNotPresent(Locator.linkWithText(insertedPtid));
@@ -464,7 +464,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertElementNotPresent(Locator.linkWithText(overlappingParticipant));
 
         new DataRegionTable("Dataset", getDriver()).clickInsertNewRow();
-        new DatasetInsertPage(this, SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", overlappingParticipant));
+        new DatasetInsertPage(this.getDriver(), SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", overlappingParticipant));
 
         assertElementPresent(Locators.labkeyError.containing("Duplicate: Panda = " + overlappingParticipant));
     }

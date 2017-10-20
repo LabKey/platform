@@ -23,6 +23,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -81,7 +82,7 @@ public class StudyVisitTagTest extends StudyBaseTest
 
         doCleanup(false);
         initializeFolder();
-        setPipelineRoot(getStudySampleDataPath() + "VisitTags");
+        setPipelineRoot(StudyHelper.getStudySampleDataPath() + "VisitTags");
         importStudies();
     }
 
@@ -163,7 +164,8 @@ public class StudyVisitTagTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "VisitTag");
 
-        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        waitForElement(Locator.input("quf_Name"));
+        DataRegionTable.findDataRegion(this).clickInsertNewRow();
+        waitForElement(Locator.input("quf_Name"));
         setFormElement(Locator.input("quf_Name"), tag.name);
         setFormElement(Locator.input("quf_Caption"), tag.caption);
         setFormElement(Locator.tagWithName("textarea", "quf_Description"), tag.description);
@@ -179,7 +181,8 @@ public class StudyVisitTagTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "VisitTagMap");
 
-        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        waitForElement(Locator.name("quf_VisitTag"));
+        DataRegionTable.findDataRegion(this).clickInsertNewRow();
+        waitForElement(Locator.name("quf_VisitTag"));
         selectOptionByValue(Locator.name("quf_VisitTag"), map.visitTag);
         selectOptionByText(Locator.name("quf_Visit"), map.visit);
         if (null != map.cohort && !map.cohort.isEmpty())

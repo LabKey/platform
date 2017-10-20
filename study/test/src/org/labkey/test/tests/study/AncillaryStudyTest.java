@@ -22,6 +22,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.WikiHelper;
 
 import java.io.File;
@@ -72,7 +73,7 @@ public class AncillaryStudyTest extends StudyBaseTest
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         _containerHelper.deleteProject(getProjectName(), afterTest);
-        TestFileUtils.deleteDir(new File(getPipelinePath(), "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath(), "export"));
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -68,7 +69,7 @@ public class StudyScheduleTest extends StudyBaseTest
     }
 
     private String _folderName = getFolderName();
-    private String _sampleDataPath = getStudySampleDataPath();
+    private String _sampleDataPath = StudyHelper.getStudySampleDataPath();
 
     private final PortalHelper portalHelper = new PortalHelper(this);
 

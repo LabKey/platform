@@ -24,7 +24,6 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.components.dumbster.EmailRecordTable;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
@@ -32,7 +31,7 @@ import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.openqa.selenium.By;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +75,7 @@ public class StudyExportTest extends StudyManualTest
         createStudyManually();
 
         // import the specimens and wait for both datasets & specimens to load
-        SpecimenImporter specimenImporter = new SpecimenImporter(new File(getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_A), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 2);
+        SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_A), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 2);
         specimenImporter.importAndWaitForComplete();
 
         // TODO: Call afterManualCreate()?
@@ -379,7 +378,7 @@ public class StudyExportTest extends StudyManualTest
        BootstrapMenu.find(getDriver(),"Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
 
         // import second archive, verify that that data is merged:
-        SpecimenImporter importer = new SpecimenImporter(new File(getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_B), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 4);
+        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_B), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 4);
         importer.importAndWaitForComplete();
 
         // verify that comments remain after second specimen load
@@ -465,7 +464,8 @@ public class StudyExportTest extends StudyManualTest
         assertTextPresent("2001-11-11");
 
         log("Test adding a row to a dataset");
-        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        clickButton("Submit");
+        DataRegionTable.findDataRegion(this).clickInsertNewRow();
+        clickButton("Submit");
         assertTextPresent("This field is required");
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);
         setFormElement(Locator.name("quf_SequenceNum"), "123");
@@ -641,6 +641,6 @@ public class StudyExportTest extends StudyManualTest
     {
         super.doCleanup(afterTest);
 
-        TestFileUtils.deleteDir(new File(getPipelinePath() + "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath() + "export"));
     }
 }

@@ -30,6 +30,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
 
 import java.util.Arrays;
@@ -83,7 +84,7 @@ public class StudyDataspaceTest extends StudyBaseTest
     protected void doCreateSteps()
     {
         initializeFolder();
-        setPipelineRoot(getPipelinePath());
+        setPipelineRoot(StudyHelper.getPipelinePath());
     }
 
     @Override
@@ -172,7 +173,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/study/study.xml");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), SUBFOLDER_STUDY5, "Collaboration", null, true);
         clickFolder(SUBFOLDER_STUDY5);
-        setPipelineRoot(getPipelinePath());
+        setPipelineRoot(StudyHelper.getPipelinePath());
         importFolderFromPipeline("/export/folder.xml", 1, false);
         clickFolder(SUBFOLDER_STUDY5);
         assertTextPresent("tracks data in", "over 6 time points", "Data is present for 3 Participants");
@@ -345,7 +346,7 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         assertEquals("Wrong Visit Tag Map Rows in study folder", expectedRows, actualRows);
 
-        visitTagMaps.clickInsertNewRowDropdown();
+        visitTagMaps.clickInsertNewRow();
 
         clickTab("Overview");
         _portalHelper.removeWebPart("VisitTagMap");

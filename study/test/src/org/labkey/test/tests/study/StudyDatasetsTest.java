@@ -466,9 +466,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("CPS-1: Screening Chemistry Panel"));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn("DataSets/ECI-1/ECIelig");
-        _customizeViewsHelper.addCustomizeViewColumn("DataSets/DEM-1/DEMbdt");
-        _customizeViewsHelper.addCustomizeViewColumn("DataSets/DEM-1/DEMsex");
+        _customizeViewsHelper.addColumn("DataSets/ECI-1/ECIelig");
+        _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMbdt");
+        _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMsex");
         _customizeViewsHelper.saveCustomView(CUSTOM_VIEW_PRIVATE, false);
 
         EXPECTED_CUSTOM_VIEWS.put(CUSTOM_VIEW_PRIVATE, "CPS-1: Screening Chemistry Panel");

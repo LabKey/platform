@@ -468,12 +468,12 @@ public class AssayTest extends AbstractAssayTest
                 ALIASED_DATA);
 
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
-        _customizeViewsHelper.addCustomizeViewColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
-        _customizeViewsHelper.addCustomizeViewColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
-        _customizeViewsHelper.removeCustomizeViewColumn("Run/testAssayRunProp1");
-        _customizeViewsHelper.removeCustomizeViewColumn("Run/Batch/testAssaySetProp2");
-        _customizeViewsHelper.removeCustomizeViewColumn("testAssayDataProp4");
+        _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
+        _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
+        _customizeViewsHelper.addColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
+        _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
+        _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
+        _customizeViewsHelper.removeColumn("testAssayDataProp4");
         _customizeViewsHelper.applyCustomView();
 
         assertTextPresent("Blood (Whole)", 4);
