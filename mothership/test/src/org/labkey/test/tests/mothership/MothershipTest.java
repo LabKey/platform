@@ -140,7 +140,7 @@ public class MothershipTest extends BaseWebDriverTest
                 "TestController.java"};
         assertTextPresentInThisOrder(new TextSearcher(() -> insertPage.comment().get()), expectedComments);
         assertEquals("New issue shouldn't be assigned by default", "", insertPage.assignedTo().get().trim());
-        insertPage.assignedTo().set(displayNameFromEmail(ASSIGNEE));
+        insertPage.assignedTo().set(_userHelper.getDisplayNameForEmail(ASSIGNEE));
         insertPage.save();
         Integer newIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
         assertNotEquals("Didn't create a new issue.", highestIssueId, newIssueId);
@@ -159,7 +159,7 @@ public class MothershipTest extends BaseWebDriverTest
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
         exceptionSummary.uncheckAll();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
-        exceptionSummary.assignSelectedTo(displayNameFromEmail(ASSIGNEE));
+        exceptionSummary.assignSelectedTo(_userHelper.getDisplayNameForEmail(ASSIGNEE));
 
         impersonate(ASSIGNEE);
         {
@@ -168,7 +168,7 @@ public class MothershipTest extends BaseWebDriverTest
             assertEquals("Should be only one issue assigned to user", 1, exceptionSummary.getDataRowCount());
             StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
             assertElementPresent(Locator.linkWithText("#" + stackTraceId));
-            assertEquals(displayNameFromEmail(ASSIGNEE), detailsPage.assignedTo().getFirstSelectedOption().getText());
+            assertEquals(_userHelper.getDisplayNameForEmail(ASSIGNEE), detailsPage.assignedTo().getFirstSelectedOption().getText());
         }
         stopImpersonating();
     }
@@ -197,12 +197,12 @@ public class MothershipTest extends BaseWebDriverTest
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
         exceptionSummary.uncheckAll();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
-        exceptionSummary.assignSelectedTo(displayNameFromEmail(ASSIGNEE));
+        exceptionSummary.assignSelectedTo(_userHelper.getDisplayNameForEmail(ASSIGNEE));
 
         StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         InsertPage insertPage = detailsPage.clickCreateIssue();
         assertEquals("Exception assignment != New issue assignment",
-                displayNameFromEmail(ASSIGNEE), insertPage.assignedTo().get());
+                _userHelper.getDisplayNameForEmail(ASSIGNEE), insertPage.assignedTo().get());
     }
 
     @Test
