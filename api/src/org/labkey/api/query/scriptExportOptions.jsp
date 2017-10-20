@@ -75,7 +75,7 @@
     <tr>
         <td colspan="6">
             <br>
-            <%= button("Create Script").onClick("window.open(getRadioButtonValue(document.getElementById(\"" + guid + "\")), \"_blank\"); return false;") %>
+            <%= button("Create Script").primary(true).onClick("window.open(getRadioButtonValue(document.getElementById(\"" + guid + "\")), \"_blank\"); return false;") %>
         </td>
     </tr>
 </table>

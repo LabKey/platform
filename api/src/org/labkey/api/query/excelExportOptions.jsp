@@ -100,7 +100,7 @@
     <% } %>
     <tr>
         <td colspan="2">
-            <%= button(exportButtonText).id(exportButtonId) %>
+            <%= button(exportButtonText).primary(true).id(exportButtonId) %>
             <%= model.isIncludeSignButton() ? button(signButtonText).id(signButtonId) : " "%>
         </td>
     </tr>

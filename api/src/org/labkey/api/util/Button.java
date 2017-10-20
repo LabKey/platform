@@ -37,6 +37,7 @@ public class Button extends DisplayElement
     private static final String CLS = "labkey-button";
     private static final String DISABLEDCLS = "labkey-disabled-button";
     private static final String MENU_CLS = "labkey-menu-button";
+    private static final String PRIMARY_CLS = "primary";
 
     // Composable members
     private final String cssClass;
@@ -47,6 +48,7 @@ public class Button extends DisplayElement
     private final String id;
     private final String attributes;
     private final String tooltip;
+    private final String typeCls;
     private final boolean disableOnClick;
     private final boolean dropdown;
     private final boolean enabled;
@@ -68,6 +70,7 @@ public class Button extends DisplayElement
         this.enabled = builder.enabled;
         this.submit = builder.submit;
         this.tooltip = builder.tooltip;
+        this.typeCls = builder.typeCls;
     }
 
     public String getCssClass()
@@ -220,10 +223,16 @@ public class Button extends DisplayElement
                 sb.append(CLS);
             sb.append(" ").append(DISABLEDCLS);
         }
+
+        if (typeCls != null)
+            sb.append(" ").append(PageFlowUtil.filter(typeCls));
+        else if (isSubmit())
+            sb.append(" ").append(PRIMARY_CLS);
+
         if (newUI && isDropdown())
             sb.append(" labkey-down-arrow");
         if (getCssClass() != null)
-            sb.append(" ").append(getCssClass());
+            sb.append(" ").append(PageFlowUtil.filter(getCssClass()));
         if (iconOnly)
             sb.append(" icon-only");
         sb.append("\" ");
@@ -279,6 +288,7 @@ public class Button extends DisplayElement
         private String onClick;
         private String attributes;
         private String tooltip;
+        private String typeCls;
         private boolean disableOnClick;
         private boolean dropdown;
         private boolean enabled = true;
@@ -377,6 +387,13 @@ public class Button extends DisplayElement
         public ButtonBuilder enabled(boolean enabled)
         {
             this.enabled = enabled;
+            return this;
+        }
+
+        public ButtonBuilder primary(boolean primary)
+        {
+            if (primary)
+                this.typeCls = PRIMARY_CLS;
             return this;
         }
 
