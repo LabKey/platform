@@ -336,7 +336,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(UsageMetricsService.class, new UsageMetricsServiceImpl());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
-        // need to register webdav resolvers in init() instead of since static module files are loaded during module startup
+        // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup
         WebdavService.get().registerRootResolver(WebdavResolverImpl.get());
         WebdavService.get().registerRootResolver(WebFilesResolverImpl.get());
         if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))

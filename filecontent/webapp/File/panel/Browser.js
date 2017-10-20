@@ -1345,6 +1345,9 @@ Ext4.define('File.panel.Browser', {
         // Issue 31892: Contents of subfolders not always displayed in Files web part
         // file root might be configured at child or sibling node of @files or @pipeline
         // The path parameter pass in api call together with container needs to have the full relative path of the directory, not just the directory name
+        if (this.fileSystem.baseUrl.indexOf(this.fileSystem.containerPath) !== 0)
+            return this.rootOffset;
+
         var relativePath = this.fileSystem.baseUrl.replace(this.fileSystem.containerPath, '');
 
         var prefixes = ['filesets', 'files', 'pipeline', 'wiki', 'cloud']; //filesets needs to be before files since it contains 'files' substring
