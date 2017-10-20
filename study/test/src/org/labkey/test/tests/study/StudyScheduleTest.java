@@ -20,6 +20,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.ext4.RadioButton;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
@@ -35,6 +36,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.Collections;
 
 @Category({DailyC.class})
 public class StudyScheduleTest extends StudyBaseTest
@@ -393,12 +395,14 @@ public class StudyScheduleTest extends StudyBaseTest
                 clickButton("Import");
                 break;
             case linkeToExisting:
-                click(Ext4Helper.Locators.ext4Radio("Link to existing dataset"));
+                RadioButton link_to_existing_dataset = new RadioButton.RadioButtonFinder().withLabel("Link to existing dataset").find(getDriver());
+                link_to_existing_dataset.check();
 
                 Locator.XPathLocator comboParent = Locator.xpath("//table[contains(@class, 'existing-dataset-combo')]");
                 _ext4Helper.selectComboBoxItem(comboParent, targetDataset);
 
                 clickButton("Done", 0);
+                shortWait().until(ExpectedConditions.invisibilityOfAllElements(Collections.singletonList(link_to_existing_dataset.getComponentElement())));
                 break;
         }
     }
