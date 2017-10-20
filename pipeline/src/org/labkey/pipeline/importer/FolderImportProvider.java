@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileFilter;
 
 /**
+ * Recognizes folder archives and attaches import options for use in the file browser.
  * User: cnathe
  * Date: Jan 19, 2012
  */
