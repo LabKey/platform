@@ -36,4 +36,6 @@ public interface FlowService
      * @return
      */
     List<ExpData> getExpDataByURL(String canonicalURL, @Nullable Container container);
+
+    int getTempTableCount();
 }

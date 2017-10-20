@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.CoreSchema;
@@ -55,10 +56,12 @@ public class MothershipReport implements Runnable
 {
     private final URL _url;
     private final Map<String, String> _params = new LinkedHashMap<>();
+    private final String _errorCode;
     private int _responseCode = -1;
     private String _content;
     public static final String MOTHERSHIP_STATUS_HEADER_NAME = "MothershipStatus";
     public static final String MOTHERSHIP_STATUS_SUCCESS = "Success";
+    public static final int ERROR_CODE_LENGTH = 6;
 
     public static final String CONTAINER_PATH = "/_mothership";
     public static final String BASE_URL = "/mothership" + CONTAINER_PATH;
@@ -101,7 +104,14 @@ public class MothershipReport implements Runnable
             String getAction()
             {
                 return "reportException";
-            }},
+            }
+
+            @Override
+            boolean includeErrorCode()
+            {
+                return true;
+            }
+        },
         CheckForUpdates
         {
             @Override
@@ -116,6 +126,10 @@ public class MothershipReport implements Runnable
         }
 
         abstract String getAction();
+        boolean includeErrorCode()
+        {
+            return false;
+        }
     }
 
     public static boolean isMothershipExceptionReport(String url)
@@ -123,7 +137,7 @@ public class MothershipReport implements Runnable
         return url.toLowerCase().contains((BASE_URL + "/" + Type.ReportException.getAction()).toLowerCase());
     }
 
-    public MothershipReport(Type type, boolean local) throws MalformedURLException, URISyntaxException
+    public MothershipReport(Type type, boolean local, String errorCode) throws MalformedURLException, URISyntaxException
     {
         URLHelper urlHelper = type.getURL();
         URL url;
@@ -149,6 +163,18 @@ public class MothershipReport implements Runnable
             urlHelper.setContextPath("/");
             _url = new URL("https", "www.labkey.org", 443, urlHelper.toString());
         }
+
+        if (type.includeErrorCode())
+        {
+            if (null == errorCode)
+                _errorCode = RandomStringUtils.randomAlphanumeric(ERROR_CODE_LENGTH).toUpperCase();
+            else
+                _errorCode = errorCode;
+
+            addParam("errorCode", _errorCode);
+        }
+        else
+            _errorCode = null;
     }
 
     public int getResponseCode()
@@ -178,6 +204,11 @@ public class MothershipReport implements Runnable
     public Map<String, String> getParams()
     {
         return Collections.unmodifiableMap(_params);
+    }
+
+    public String getErrorCode()
+    {
+        return _errorCode;
     }
 
     public void run()

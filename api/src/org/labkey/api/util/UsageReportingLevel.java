@@ -22,6 +22,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -90,6 +91,12 @@ public enum UsageReportingLevel
             metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
             Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
             metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
+
+            FlowService fs = ServiceRegistry.get(FlowService.class);
+            if (null != fs)
+            {
+                metrics.put("flowTempTableCount", fs.getTempTableCount());
+            }
 
         }
     },
@@ -163,7 +170,7 @@ public enum UsageReportingLevel
             MothershipReport report;
             try
             {
-                report = new MothershipReport(MothershipReport.Type.CheckForUpdates, local);
+                report = new MothershipReport(MothershipReport.Type.CheckForUpdates, local, null);
             }
             catch (MalformedURLException | URISyntaxException e)
             {

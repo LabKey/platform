@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -187,7 +188,21 @@ public class ExceptionUtil
                              @Nullable HttpServletRequest request, boolean isPart, boolean isStartupFailure)
     {
         if (!isStartupFailure && responseStatus == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-            logExceptionToMothership(request, ex);
+        {
+            String errorCode = logExceptionToMothership(request, ex);
+            if (null != errorCode)
+            {
+                message = StringUtils.trimToEmpty(message);
+                if (message.length() > 0)
+                {
+                    if (message.endsWith("."))
+                        message += " ";
+                    else
+                        message += ". ";
+                }
+                message += "If contacting support regarding this error, please refer to error code: " + errorCode;
+            }
+        }
 
         if (isPart)
             return new WebPartErrorRenderer(responseStatus, message, ex, isStartupFailure);
@@ -210,44 +225,61 @@ public class ExceptionUtil
         return !installing && AppProps.getInstance().isSelfReportExceptions();
     }
 
-    /** @param request may be null if this is coming from a background thread or init */
-    public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
+    /**
+     * @param request may be null if this is coming from a background thread or init  */
+    public static String logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
         if (ViewServlet.isShuttingDown())
-            return;
+            return null;
 
         ex = unwrapException(ex);
 
         if (isIgnorable(ex))
-            return;
+            return null;
 
         String requestURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         // Need this extra check to make sure we're not in an infinite loop if there's
         // an exception when trying to submit an exception
         if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
-            return;
+            return null;
 
-        LOG.error("Exception detected and logged to mothership", ex);
-
-        // Once to labkey.org, if so configured
-        sendReport(createReportFromThrowable(request, ex, requestURL, false, getExceptionReportingLevel()));
-
-        // And once to the local server, if so configured
-        if (isSelfReportExceptions())
+        String errorCode = null;
+        try
         {
-            sendReport(createReportFromThrowable(request, ex, requestURL, true, ExceptionReportingLevel.HIGH));
+            // Once to labkey.org, if so configured
+            errorCode = sendReport(createReportFromThrowable(request, ex, requestURL, false, getExceptionReportingLevel(), null));
+
+            // And once to the local server, if so configured. If submitting to both labkey.org and the local server, the errorCode will be the same.
+            if (isSelfReportExceptions())
+            {
+                String newErrorCode = sendReport(createReportFromThrowable(request, ex, requestURL, true, ExceptionReportingLevel.HIGH, errorCode));
+                if (null == errorCode)
+                    errorCode = newErrorCode; // which may still be null, if server is configured to not send reports to either location.
+            }
         }
+        finally
+        {
+            String message = "Exception detected";
+            if (null != errorCode)
+                message += " and logged to mothership with error code: " + errorCode;
+            LOG.error(message, ex);
+        }
+
+        return errorCode;
     }
 
-    private static void sendReport(MothershipReport report)
+    private static String sendReport(MothershipReport report)
     {
         if (null != report)
+        {
             JOB_RUNNER.execute(report);
+            return report.getErrorCode();
+        }
+        return null;
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
-    @Nullable
-    public static MothershipReport createReportFromThrowable(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level)
+    public static MothershipReport createReportFromThrowable(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level, @Nullable String errorCode)
     {
         if (!shouldSend(level, local))
             return null;
@@ -315,7 +347,7 @@ public class ExceptionUtil
             }
         }
 
-        return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level);
+        return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level, errorCode);
     }
 
     /**
@@ -330,24 +362,37 @@ public class ExceptionUtil
             String referrerURL,
             String username)
     {
-        LOG.error("Client exception detected and logged to mothership:\n" +
-            requestURL + "\n" +
-            referrerURL + "\n" +
-            browser + "\n" +
-            stackTrace
-        );
-
-        // Once to labkey.org, if so configured
-        ExceptionReportingLevel level = getExceptionReportingLevel();
-        if (shouldSend(level, false))
+        String errorCode = null;
+        try
         {
-            sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, level));
+            // Once to labkey.org, if so configured
+            ExceptionReportingLevel level = getExceptionReportingLevel();
+            if (shouldSend(level, false))
+            {
+                errorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, level, null));
+            }
+
+            // And once to the local server, if so configured
+            if (isSelfReportExceptions() && shouldSend(ExceptionReportingLevel.HIGH, true))
+            {
+                String newErrorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH, errorCode));
+                if (null == errorCode)
+                    errorCode = newErrorCode;
+            }
         }
-
-        // And once to the local server, if so configured
-        if (isSelfReportExceptions() && shouldSend(ExceptionReportingLevel.HIGH, true))
+        finally
         {
-            sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH));
+            String message = "Client exception detected";
+            if (null != errorCode)
+            {
+                message += " and logged to mothership with error code: ";
+            }
+            LOG.error(message + "\n" +
+                    requestURL + "\n" +
+                    referrerURL + "\n" +
+                    browser + "\n" +
+                    stackTrace
+            );
         }
     }
 
@@ -378,12 +423,11 @@ public class ExceptionUtil
         return send;
     }
 
-    @NotNull
-    private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, boolean local, ExceptionReportingLevel level)
+    private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, boolean local, ExceptionReportingLevel level, @Nullable String errorCode)
     {
         try
         {
-            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local);
+            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local, errorCode);
             report.addServerSessionParams();
             report.addParam("stackTrace", stackTrace);
             report.addParam("sqlState", sqlState);
@@ -668,12 +712,13 @@ public class ExceptionUtil
             message = responseStatus + ": Unexpected server error";
         }
 
+        boolean logError = true;
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
         if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED &&
                 responseStatus != HttpServletResponse.SC_FORBIDDEN &&
                 responseStatus != HttpServletResponse.SC_NOT_FOUND)
         {
-            log.error("Unhandled exception: " + (null == message ? "" : message), ex);
+            logError = false;
         }
 
         boolean isJSON = request.getContentType() != null && request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON);
@@ -738,6 +783,9 @@ public class ExceptionUtil
         else
         {
             ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
+            // getErrorView() eventually calls logExceptionToMothership(), which also logs to the local server log. Don't
+            // log to the server log twice, as this has caused confusion in support situations.
+            logError = false;
 
             if (ex instanceof UnauthorizedException)
             {
@@ -771,6 +819,11 @@ public class ExceptionUtil
             {
                 log.error("Global.handleException", x);
             }
+        }
+
+        if (logError)
+        {
+            log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
         return null;
