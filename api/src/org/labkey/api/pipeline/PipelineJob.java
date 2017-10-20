@@ -83,7 +83,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * A job represents the invocation of a pipeline on a certain set out inputs. It can be monolithic (a single run() method)
- * or be comprised of multiple tasks that can be checkpointed and restarted individually.
+ * or be comprised of multiple tasks ({@link Task}) that can be checkpointed and restarted individually.
  */
 abstract public class PipelineJob extends Job implements Serializable
 {

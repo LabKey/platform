@@ -30,6 +30,9 @@ import java.util.*;
 /**
  * A source of things that can be done to files in the pipeline directory. Standard use cases include doing analysis
  * of data files and importing results into the database.
+ *
+ * Implementations should be registered via a call to {@link PipelineService}'s registerPipelineProvider method during
+ * module startup.
  */
 abstract public class PipelineProvider
 {
