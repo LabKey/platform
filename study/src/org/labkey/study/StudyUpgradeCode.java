@@ -314,18 +314,12 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    private void updateTableQCState(String schema, String table, String column)
-    {
-        String sql = "update " + schema + "." + table + " set " + column + " = \n" +
-                "(SELECT min(cq.RowId)\n" +
-                "  FROM core.QCState cq\n" +
-                "  JOIN study.QCState sq on (sq.Label = cq.Label or (sq.Label is null and cq.Label is null))and sq.Container = cq.Container\n" +
-                "  WHERE " + schema + "." + table + "." + column + " = sq.RowId)";
+    /*
+     * Move QC state to core to allow it to be used by modules outside the study module.
+     */
 
-        SQLFragment sqlFrag = new SQLFragment(sql);
-        new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
-    }
-
+    // Invoked by study-17.21-17.22.sql
+    @SuppressWarnings({"UnusedDeclaration"})
     public void moveQCStateToCore(final ModuleContext context) throws Exception
     {
         SQLFragment sqlFrag;
