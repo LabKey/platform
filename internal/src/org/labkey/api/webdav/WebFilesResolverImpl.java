@@ -92,13 +92,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
             final Path path = getRootPath().append(containerPath);
             _folderCache.remove(path);
             if (recursive)
-                _folderCache.removeUsingFilter(new Filter<Path>() {
-                    @Override
-                    public boolean accept(Path test)
-                    {
-                        return test.startsWith(path);
-                    }
-                });
+                _folderCache.removeUsingFilter(test -> test.startsWith(path));
             if (containerPath.size() == 0)
             {
                 synchronized (WebFilesResolverImpl.this)
@@ -128,12 +122,12 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
             Container container = getContainer();
             if (null == _children)
             {
-                List<Container> list = ContainerManager.getChildren(container);
-                ArrayList<String> children = new ArrayList<>(list.size() + 2);
+                List<Container> childContainers = ContainerManager.getChildren(container);
+                ArrayList<String> children = new ArrayList<>(childContainers.size() + 2);
                 // get child containers
-                for (Container aList : list)
+                for (Container childContainer : childContainers)
                 {
-                    String containerName = aList.getName();
+                    String containerName = childContainer.getName();
                     children.add(containerName);
                     folderNamesMap.put(containerName, containerName);
                 }
@@ -171,7 +165,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                     }
                 }
 
-                // providers might not be registred if !isStartupComplete();
+                // providers might not be registered if !isStartupComplete();
                 if (!ModuleLoader.getInstance().isStartupComplete())
                     return children;
                 _children = children;
