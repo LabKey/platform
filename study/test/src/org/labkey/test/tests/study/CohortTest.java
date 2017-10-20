@@ -28,6 +28,7 @@ import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.PortalHelper;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -82,7 +83,7 @@ public class CohortTest extends BaseWebDriverTest
         _containerHelper.createProject(PROJECT_NAME, "Study");
         importStudyFromZip(COHORT_STUDY_ZIP);
         clickProject(PROJECT_NAME);
-        addWebPart("Specimens");
+        new PortalHelper(this).addWebPart("Specimens");
         // Check all cohorts after initial import.
     }
 
