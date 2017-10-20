@@ -289,7 +289,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
         this.roleGrid = Ext4.create('Ext.grid.Panel', {
             id           : 'ImpersonateRolesGrid',
             hideHeaders  : true,
-            maxHeight    : 300,
+            height       : 150, // Issue 31889
             name         : 'roles',
             store        : this.getRoleStore(),
             columns: [
