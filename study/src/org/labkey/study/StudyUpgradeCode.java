@@ -314,8 +314,10 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    /*
-     * Move QC state to core to allow it to be used by modules outside the study module.
+    /**
+     * Move QC state to core to allow it to be used by modules outside the study module.  Moves existing data over
+     * as well and handles inserting into identity/serial columns for SQL Server and Postgres.  Drops study.qcstate
+     * but references to study.qcstate in the study user schema have been updated to core.qcstate.
      */
 
     // Invoked by study-17.21-17.22.sql
