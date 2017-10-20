@@ -18,13 +18,18 @@ package org.labkey.api.exp.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -95,6 +100,30 @@ public class DataClassUserSchema extends AbstractExpSchema
         ret.populate();
         ret.overlayMetadata(ret.getPublicName(), DataClassUserSchema.this, new ArrayList<>());
         return ret;
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    {
+        if (getTableNames().contains(settings.getQueryName()))
+        {
+            return new QueryView(this, settings, errors) {
+                @Override
+                public @Nullable ActionButton createDeleteButton()
+                {
+                    // Use default delete button, but without showing the confirmation text
+                    ActionButton button = super.createDeleteButton();
+                    if (button != null)
+                    {
+                        button.setRequiresSelection(true);
+                    }
+
+                    return button;
+                }
+            };
+        }
+
+        return super.createView(context, settings, errors);
     }
 
     @Override

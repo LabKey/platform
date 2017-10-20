@@ -16,8 +16,10 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -30,10 +32,14 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -110,6 +116,30 @@ public class SamplesSchema extends AbstractExpSchema
         if (ss == null)
             return null;
         return getSampleTable(ss);
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    {
+        if (getTableNames().contains(settings.getQueryName()))
+        {
+            return new QueryView(this, settings, errors)
+            {
+                @Override
+                public ActionButton createDeleteButton()
+                {
+                    // Use default delete button, but without showing the confirmation text
+                    ActionButton button = super.createDeleteButton();
+                    if (button != null)
+                    {
+                        button.setRequiresSelection(true);
+                    }
+                    return button;
+                }
+            };
+        }
+
+        return super.createView(context, settings, errors);
     }
 
     /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */

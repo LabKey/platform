@@ -45,4 +45,8 @@ public interface ExperimentListener
 
     // called before the experiment run is deleted
     default void beforeRunDelete(ExpProtocol protocol, ExpRun run){}
+
+    /** Called before deleting the datas. */
+    default void beforeDataDelete(List<? extends ExpData> data, Container c, User user) { }
+
 }
