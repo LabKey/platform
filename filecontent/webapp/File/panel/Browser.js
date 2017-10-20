@@ -1444,10 +1444,26 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderTreeCfg : function() {
-
+        var me = this;
         var listeners = {
             load: {
                 fn : function(treeStore) {
+                    // skip child container nodes for customize files page
+                    if (me.showFolderTreeOnly)
+                    {
+                        treeStore.filterBy(function(record){
+                            var id = record.get('id');
+                            var containerPath = LABKEY.container.path;
+                            if (id === containerPath || id === containerPath + '/') // root: current container
+                                return true;
+                            else if (id.indexOf(LABKEY.container.path + '/@') === 0) // if any of @files, @filesets, @pipeline, @wiki, @cloud
+                                return true;
+
+                            return false; // filter out child containers
+                         }, treeStore, true);
+
+                        treeStore.getRootNode().expand(); // root is collapsed after filtering, re-expand
+                    }
 
                     var nodeId;
 
@@ -1527,15 +1543,17 @@ Ext4.define('File.panel.Browser', {
      */
     loadRootNode : function(treeStore, callback, scope) {
 
+        var me = this;
+
         var operation = new Ext4.data.Operation({
             action: 'read',
             params: {
                 depth: 0 // only the root node result
             }
         });
-
         var isWebDav = this.isWebDav;
         treeStore.getProxy().read(operation, function(s) {
+
             if (s.success) {
                 treeStore.getRootNode().set('options', s.resultSet.records[0].get('options'));
             }
