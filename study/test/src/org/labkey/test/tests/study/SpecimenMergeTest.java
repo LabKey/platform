@@ -77,7 +77,7 @@ public class SpecimenMergeTest extends BaseWebDriverTest
                 file.delete();
             tempDir.delete();
         }
-        deleteProject(getProjectName(), afterTest);
+        _containerHelper.deleteProject(getProjectName(), afterTest);
     }
 
     @Test
