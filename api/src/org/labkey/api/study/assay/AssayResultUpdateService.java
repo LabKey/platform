@@ -49,7 +49,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
     public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
-        super(table, table.getRealTable());
+        super(table, table.getRealTable(), createMVMapping(schema.getProvider().getResultsDomain(schema.getProtocol())));
         if (!(table instanceof AssayResultTable))
             throw new IllegalArgumentException("Expected AssayResultTable");
         _schema = schema;

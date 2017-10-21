@@ -30,6 +30,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -49,6 +50,9 @@ import org.labkey.api.dataiterator.TriggerDataBuilderHelper;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
@@ -749,4 +753,36 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected AttachmentParentFactory getAttachmentParentFactory() { return _attachmentParentFactory; }
 
 
+    /** Translate between the column name that query is exposing to the column name that actually lives in the database */
+    protected static void aliasColumns(Map<String, String> columnMapping, Map<String, Object> row)
+    {
+        for (Map.Entry<String, String> entry : columnMapping.entrySet())
+        {
+            if (row.containsKey(entry.getValue()) && !row.containsKey(entry.getKey()))
+            {
+                row.put(entry.getKey(), row.get(entry.getValue()));
+            }
+        }
+    }
+
+    /**
+     * The database table has underscores for MV column names, but we expose a column without the underscore.
+     * Therefore, we need to translate between the two sets of column names.
+     * @return database column name -> exposed TableInfo column name
+     */
+    protected static Map<String, String> createMVMapping(Domain domain)
+    {
+        Map<String, String> result = new CaseInsensitiveHashMap<>();
+        if (domain != null)
+        {
+            for (DomainProperty domainProperty : domain.getProperties())
+            {
+                if (domainProperty.isMvEnabled())
+                {
+                    result.put(PropertyStorageSpec.getMvIndicatorStorageColumnName(domainProperty.getPropertyDescriptor()), domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                }
+            }
+        }
+        return result;
+    }
 }

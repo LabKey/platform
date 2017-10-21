@@ -97,6 +97,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _helper == null ? Collections.emptyList() : _helper.getPropertyColumns();
     }
 
+    protected Map<String, String> getColumnMapping()
+    {
+        return _columnMapping;
+    }
+
     /**
      * Returns the container that the domain is defined
      */
@@ -167,7 +172,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        aliasColumns(keys);
+        aliasColumns(_columnMapping, keys);
         Map<String,Object> row = _select(container, getKeys(keys));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
@@ -245,22 +250,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        aliasColumns(row);
+        aliasColumns(_columnMapping, row);
         convertTypes(container, row);
         setSpecialColumns(user, container, getDbTable(), row);
         return _insert(user, container, row);
-    }
-
-    /** Translate between the column name that query is exposing to the column name that actually lives in the database */
-    private void aliasColumns(Map<String, Object> row)
-    {
-        for (Map.Entry<String, String> entry : _columnMapping.entrySet())
-        {
-            if (row.containsKey(entry.getValue()) && !row.containsKey(entry.getKey()))
-            {
-                row.put(entry.getKey(), row.get(entry.getValue()));
-            }
-        }
     }
 
     protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row)
@@ -466,7 +459,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (oldRowMap == null)
             return null;
 
-        aliasColumns(oldRowMap);
+        aliasColumns(_columnMapping, oldRowMap);
 
         if (container != null && getDbTable().getColumn("container") != null)
         {
