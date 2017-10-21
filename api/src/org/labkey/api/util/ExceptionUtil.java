@@ -712,13 +712,12 @@ public class ExceptionUtil
             message = responseStatus + ": Unexpected server error";
         }
 
-        boolean logError = true;
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
         if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED &&
                 responseStatus != HttpServletResponse.SC_FORBIDDEN &&
                 responseStatus != HttpServletResponse.SC_NOT_FOUND)
         {
-            logError = false;
+            log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
         boolean isJSON = request.getContentType() != null && request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON);
@@ -783,9 +782,6 @@ public class ExceptionUtil
         else
         {
             ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
-            // getErrorView() eventually calls logExceptionToMothership(), which also logs to the local server log. Don't
-            // log to the server log twice, as this has caused confusion in support situations.
-            logError = false;
 
             if (ex instanceof UnauthorizedException)
             {
@@ -819,11 +815,6 @@ public class ExceptionUtil
             {
                 log.error("Global.handleException", x);
             }
-        }
-
-        if (logError)
-        {
-            log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
         return null;
