@@ -22,6 +22,7 @@ import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.report.ReportType;
@@ -49,6 +50,7 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
+        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
     }
 
     @NotNull
