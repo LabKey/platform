@@ -59,6 +59,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunAttachmentParent;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.exp.api.ExperimentService;
@@ -2369,7 +2370,8 @@ public class ExperimentServiceImpl implements ExperimentService
             listener.beforeRunDelete(run.getProtocol(), run);
         }
 
-        // TODO: All we ever do is delete attachments associated with ExpRunImpl... we never add or display them (!?)
+        // Note: At the moment, FlowRun is the only example of an ExpRun attachment parent, but we're keeping this general
+        // so other cases can be added in the future
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
         run.deleteProtocolApplications(datasToDelete, user);
