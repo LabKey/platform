@@ -24,6 +24,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
@@ -71,10 +72,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
+    /** Mapping for MV column names */
+    private Map<String, String> _columnMapping = Collections.emptyMap();
+
     public DatasetUpdateService(DatasetTableImpl table)
     {
         super(table);
         _dataset = table.getDatasetDefinition();
+        Domain domain = _dataset.getDomain();
+        if (null != domain)
+            _columnMapping = createMVMapping(domain);
     }
 
     @Override
@@ -123,6 +130,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
+        for (Map<String, Object> row : rows)
+        {
+            aliasColumns(_columnMapping, row);
+        }
+
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
         if (null != result && result.size() > 0)
@@ -348,6 +360,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        // Update will delete old and insert, so covering aliases, like insert, is needed
+        aliasColumns(_columnMapping, row);
+
         List<String> errors = new ArrayList<>();
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update

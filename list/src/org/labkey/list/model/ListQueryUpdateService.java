@@ -84,31 +84,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, @NotNull ListDefinition list)
     {
-        super(queryTable, dbTable, createMVMapping(queryTable.getList()));
+        super(queryTable, dbTable, createMVMapping(queryTable.getList().getDomain()));
         _list = (ListDefinitionImpl) list;
         setAttachmentParentFactory(new ListItemAttachmentParentFactory());
-    }
-
-    /**
-     * The database table has underscores for MV column names, but we expose a column without the underscore.
-     * Therefore, we need to translate between the two sets of column names.
-     * @return database column name -> exposed TableInfo column name
-     */
-    private static Map<String, String> createMVMapping(ListDefinition list)
-    {
-        Map<String, String> result = new CaseInsensitiveHashMap<>();
-        Domain domain = list.getDomain();
-        if (domain != null)
-        {
-            for (DomainProperty domainProperty : domain.getProperties())
-            {
-                if (domainProperty.isMvEnabled())
-                {
-                    result.put(PropertyStorageSpec.getMvIndicatorDisplayColumnName(domainProperty.getName()), domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-                }
-            }
-        }
-        return result;
     }
 
     @Override
@@ -176,6 +154,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
+        for (Map<String, Object> row : rows)
+        {
+            aliasColumns(getColumnMapping(), row);
+        }
+
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
 
