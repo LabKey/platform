@@ -648,7 +648,7 @@ public class PipelineStatusManager
                 // Allow the provider to do any necessary clean-up
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
                 if (provider != null)
-                    provider.preDeleteStatusFile(pipelineStatusFile);
+                    provider.preDeleteStatusFile(user, pipelineStatusFile);
 
                 LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + user);
                 statusFileIds.add(pipelineStatusFile.getRowId());

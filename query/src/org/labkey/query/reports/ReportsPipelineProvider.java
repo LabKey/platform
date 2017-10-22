@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
@@ -38,7 +39,7 @@ public class ReportsPipelineProvider extends PipelineProvider
         super(NAME, owningModule);
     }
 
-    public void preDeleteStatusFile(PipelineStatusFile sf)
+    public void preDeleteStatusFile(User user, PipelineStatusFile sf)
     {
         // clean up all the temp files on status file deletion
         File filePath = new File(sf.getFilePath());

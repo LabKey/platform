@@ -194,7 +194,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
-    private List<ExperimentMaterialListener> _materialListeners = new CopyOnWriteArrayList<>();
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
 
@@ -2979,9 +2978,15 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            for (Protocol protocol : protocols)
+            List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(Collectors.toList());
+
+            for (ExperimentListener listener : _listeners)
             {
-                ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
+                listener.beforeProtocolsDeleted(c, user, expProtocols);
+            }
+
+            for (ExpProtocol protocolToDelete : expProtocols)
+            {
                 for (ExpExperiment batch : protocolToDelete.getBatches())
                 {
                     batch.delete(user);
@@ -3140,7 +3145,8 @@ public class ExperimentServiceImpl implements ExperimentService
                     throw new UnauthorizedException();
             }
 
-            beforeDeleteData(user, container, ExpDataImpl.fromDatas(datas));
+            List<ExpDataImpl> expDatas = ExpDataImpl.fromDatas(datas);
+            beforeDeleteData(user, container, expDatas);
 
             for (Data data : datas)
             {
@@ -3211,6 +3217,8 @@ public class ExperimentServiceImpl implements ExperimentService
             dialect.appendInClauseSql(dataSQL, selectedDataIds);
             executor.execute(dataSQL);
 
+            afterDeleteData(user, container, expDatas);
+
             // Remove from search index
             SearchService ss = SearchService.get();
             if (null != ss)
@@ -3240,10 +3248,10 @@ public class ExperimentServiceImpl implements ExperimentService
         if(experiment == null)
             return;
 
-        deleteExpExperiment(user, experiment);
+        deleteExpExperiment(c, user, experiment);
     }
 
-    private void deleteExpExperiment(User user, ExpExperimentImpl experiment)
+    private void deleteExpExperiment(Container c, User user, ExpExperimentImpl experiment)
     {
         try (DbScope.Transaction t = ensureTransaction())
         {
@@ -3270,7 +3278,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // Inform the listeners.
             for (ExperimentListener listener: _listeners)
             {
-                listener.beforeExperimentDeleted(experiment, user);
+                listener.beforeExperimentDeleted(c, user, experiment);
             }
 
             sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
@@ -3344,7 +3352,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // Delete all the experiments/run groups/batches
             for (ExpExperimentImpl exp : exps)
             {
-                deleteExpExperiment(user, exp);
+                deleteExpExperiment(c, user, exp);
             }
 
             // now delete protocols (including their nested actions and parameters.
@@ -3434,12 +3442,7 @@ public class ExperimentServiceImpl implements ExperimentService
             for (ExpData data : datas)
             {
                 ExperimentDataHandler handler = data.findDataHandler();
-                List<ExpData> list = handlers.get(handler);
-                if (list == null)
-                {
-                    list = new ArrayList<>();
-                    handlers.put(handler, list);
-                }
+                List<ExpData> list = handlers.computeIfAbsent(handler, k -> new ArrayList<>());
                 list.add(data);
             }
             for (Map.Entry<ExperimentDataHandler, List<ExpData>> entry : handlers.entrySet())
@@ -3454,16 +3457,24 @@ public class ExperimentServiceImpl implements ExperimentService
 
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeDataDelete(datas, container, user);
+            listener.beforeDataDelete(container, user, datas);
+        }
+    }
+
+    public void afterDeleteData(User user, Container container, List<ExpDataImpl> datas)
+    {
+        for (ExperimentListener listener : _listeners)
+        {
+            listener.afterDataDelete(container, user, datas);
         }
     }
 
     public void beforeDeleteMaterials(User user, Container container, List<? extends ExpMaterial> materials)
     {
         // Notify that a delete is about to happen
-        for (ExperimentMaterialListener materialListener : _materialListeners)
+        for (ExperimentListener materialListener : _listeners)
         {
-            materialListener.beforeDelete(materials, container, user);
+            materialListener.beforeMaterialDelete(materials, container, user);
         }
     }
 
@@ -5010,11 +5021,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return run;
     }
 
-    @Override
-    public void registerExperimentMaterialListener(ExperimentMaterialListener listener)
-    {
-        _materialListeners.add(listener);
-    }
 
     private ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException
     {
@@ -5909,7 +5915,7 @@ public class ExperimentServiceImpl implements ExperimentService
         List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeRunCreated(protocol, run, container, user);
+            listener.beforeRunCreated(container, user, protocol, run);
         }
         return errors;
     }
@@ -5920,7 +5926,7 @@ public class ExperimentServiceImpl implements ExperimentService
         List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            listener.afterResultDataCreated(protocol, run, container, user);
+            listener.afterResultDataCreated(container, user, run, protocol);
         }
         return errors;
     }
@@ -5928,9 +5934,9 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user)
     {
-        for (ExperimentMaterialListener listener : _materialListeners)
+        for (ExperimentListener listener : _listeners)
         {
-            listener.afterCreate(materials, container, user);
+            listener.afterMaterialCreated(materials, container, user);
         }
     }
 

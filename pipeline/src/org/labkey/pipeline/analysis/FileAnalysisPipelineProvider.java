@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
@@ -115,7 +116,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     }
 
     @Override
-    public void preDeleteStatusFile(PipelineStatusFile sf)
+    public void preDeleteStatusFile(User user, PipelineStatusFile sf)
     {
         // Delete the protocol analysis directory and its contents if it is no longer used
         File statusFile = new File(sf.getFilePath());
@@ -160,7 +161,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 
                     // Delete any ExpData remains
                     for (ExpData data : children)
-                        data.delete(null);
+                        data.delete(user);
 
                     // The analysis dir may have been multiple levels down relative the pipeline root.
                     // Walk back up the tree to delete all the unused directories
