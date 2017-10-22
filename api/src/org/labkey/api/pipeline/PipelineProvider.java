@@ -17,6 +17,7 @@
 package org.labkey.api.pipeline;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -216,9 +217,10 @@ abstract public class PipelineProvider
     /**
      * Override to do any extra work necessary before deleting a status entry.
      *
+     * @param user
      * @param sf the entry to delete
      */
-    public void preDeleteStatusFile(PipelineStatusFile sf)
+    public void preDeleteStatusFile(User user, PipelineStatusFile sf)
     {
     }
 

@@ -28,7 +28,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentMaterialListener;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -426,7 +425,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
         throws ExperimentException;
     void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
-    void registerExperimentMaterialListener(ExperimentMaterialListener listener);
     void registerExperimentDataHandler(ExperimentDataHandler handler);
     void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
     void registerDataType(DataType type);

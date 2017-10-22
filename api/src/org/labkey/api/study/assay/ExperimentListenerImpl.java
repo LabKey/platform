@@ -13,7 +13,7 @@ import java.util.List;
 public class ExperimentListenerImpl implements ExperimentListener
 {
     @Override
-    public List<ValidationException> afterResultDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    public List<ValidationException> afterResultDataCreated(Container container, User user, ExpRun run, ExpProtocol protocol)
     {
         List<ValidationException> errors = new ArrayList<>();
 

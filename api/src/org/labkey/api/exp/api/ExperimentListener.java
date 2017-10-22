@@ -29,16 +29,18 @@ import java.util.List;
 public interface ExperimentListener
 {
     /** Called before deleting a row from exp.experiment */
-    default void beforeExperimentDeleted(ExpExperiment experiment, User user){}
+    default void beforeExperimentDeleted(Container c, User user, ExpExperiment experiment){}
+
+    default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols) { }
 
     // called before the experiment run is created (and saved)
-    default List<ValidationException> beforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    default List<ValidationException> beforeRunCreated(Container container, User user, ExpProtocol protocol, ExpRun run)
     {
         return Collections.emptyList();
     }
 
     // called after run data is uploaded
-    default List<ValidationException> afterResultDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    default List<ValidationException> afterResultDataCreated(Container container, User user, ExpRun run, ExpProtocol protocol)
     {
         return Collections.emptyList();
     }
@@ -47,6 +49,13 @@ public interface ExperimentListener
     default void beforeRunDelete(ExpProtocol protocol, ExpRun run){}
 
     /** Called before deleting the datas. */
-    default void beforeDataDelete(List<? extends ExpData> data, Container c, User user) { }
+    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data) { }
+
+    /** Called after deleting the datas. */
+    default void afterDataDelete(Container c, User user, List<? extends ExpData> data) { }
+
+    default void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user) { }
+
+    default void afterMaterialCreated(List<? extends ExpMaterial> materials, Container container, User user) { }
 
 }
