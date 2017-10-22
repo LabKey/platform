@@ -16,12 +16,11 @@
 package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.RefactorIn17_3;
+import org.labkey.api.annotations.RefactorIn18_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -45,7 +44,7 @@ public interface ImpersonationContext extends Serializable
     /** @return the user who is actually performing the operation, not the user that they might be impersonating */
     User getAdminUser();
     @Deprecated // Use getCacheKey() instead
-    @RefactorIn17_3 // Delete this once GEL schema/column caching switches to getCacheKey()
+    @RefactorIn18_1 // Delete this once GEL schema/column caching switches to getCacheKey()
     default String getNavTreeCacheKey()
     {
         return getCacheKey();

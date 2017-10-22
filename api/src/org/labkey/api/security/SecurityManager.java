@@ -56,7 +56,6 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -64,6 +63,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -83,7 +83,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
@@ -1568,8 +1567,8 @@ public class SecurityManager
                 if (null == g)
                     continue;
 
-                // Only groups in this project and site groups (issue 12026)
-                if ((g.isProjectGroup() && g.getContainer().equals(proj.getId())) || !g.isProjectGroup())
+                // Only site groups or groups in this project (issue 12026)
+                if (!g.isProjectGroup() || g.getContainer().equals(proj.getId()))
                 {
                     groupList.append(sep);
                     groupList.append(g.getName());

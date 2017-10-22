@@ -891,33 +891,30 @@ public class DbSchema
             final Container recovered = ContainerManager.ensureContainer(cName);
             final Set<Module> modulesOfOrphans = new HashSet<>();
 
-            new SqlSelector(coreSchema, "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
-                    + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName").forEach(new ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
+            String selectSql = "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
+                    + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName";
+
+            new SqlSelector(coreSchema, selectSql).forEach(rs -> {
+                modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs.getString(3)));
+                String sql = "UPDATE " + rs.getString(1) + " SET Container = ? WHERE Container = ?";
+
+                try
                 {
-                    modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs.getString(3)));
-                    String sql = "UPDATE " + rs.getString(1) + " SET Container = ? WHERE Container = ?";
+                    executor.execute(sql, recovered.getId(), rs.getString(2));
 
-                    try
-                    {
-                        executor.execute(sql, recovered.getId(), rs.getString(2));
-
-                        //remove the ACLs that were there
-                        SecurityPolicyManager.removeAll(recovered);
-                        sbOut.append("<br> Recovered objects from table ");
-                        sbOut.append(rs.getString(1));
-                        sbOut.append(" to project ");
-                        sbOut.append(recovered.getName());
-                    }
-                    catch (Exception se)
-                    {
-                        sbOut.append("<br> Failed attempt to recover some objects from table ");
-                        sbOut.append(rs.getString(1));
-                        sbOut.append(" due to error ").append(se.getMessage());
-                        sbOut.append(". Retrying recovery may work.  ");
-                    }
+                    //remove the ACLs that were there
+                    SecurityPolicyManager.removeAll(recovered);
+                    sbOut.append("<br> Recovered objects from table ");
+                    sbOut.append(rs.getString(1));
+                    sbOut.append(" to project ");
+                    sbOut.append(recovered.getName());
+                }
+                catch (Exception se)
+                {
+                    sbOut.append("<br> Failed attempt to recover some objects from table ");
+                    sbOut.append(rs.getString(1));
+                    sbOut.append(" due to error ").append(se.getMessage());
+                    sbOut.append(". Retrying recovery may work.  ");
                 }
             });
 

@@ -116,7 +116,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         addMenu(menu, "Roles");
     }
 
-    static void addMenu(NavTree menu, String text)
+    private static void addMenu(NavTree menu, String text)
     {
         NavTree newRoleMenu = new NavTree(text);
         newRoleMenu.setScript("LABKEY.Security.Impersonation.showImpersonateRole();");
