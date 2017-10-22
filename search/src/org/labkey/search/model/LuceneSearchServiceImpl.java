@@ -672,7 +672,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 case "org.bouncycastle.cms.CMSException":
                     _log.warn("Can't read encrypted document \"" + id + "\". You must install the Bouncy Castle encryption libraries to index this document. Refer to the LabKey documentation for instructions.");
                     break;
-                // #30288 repros with testtika.doc. Temporarily suppress and warn. Exception is supposedly fixed in Tika 1.15. @RefactorIn17_3
+                // #30288 repros with testtika.doc. Temporarily suppress and warn. Exception is supposedly fixed in Tika 1.15. @RefactorIn18_1
                 case "com.microsoft.schemas.office.visio.x2012.main.ConnectsType":
                 case "com/microsoft/schemas/office/visio/x2012/main/ConnectsType":
                     logAsWarning(r, "Unable to extract embedded Visio document");

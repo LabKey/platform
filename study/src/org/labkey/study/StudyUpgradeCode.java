@@ -63,7 +63,6 @@ public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
 
-
     // Invoked by study-16.10-16.20.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void upgradeLocationTables(final ModuleContext context)
@@ -318,6 +317,10 @@ public class StudyUpgradeCode implements UpgradeCode
      * Move QC state to core to allow it to be used by modules outside the study module.  Moves existing data over
      * as well and handles inserting into identity/serial columns for SQL Server and Postgres.  Drops study.qcstate
      * but references to study.qcstate in the study user schema have been updated to core.qcstate.
+     */
+
+    /*
+        Note: When this upgrade code is removed (in v20.1), we'll need to move the three ADD CONSTRAINT statements into an upgrade script
      */
 
     // Invoked by study-17.21-17.22.sql
