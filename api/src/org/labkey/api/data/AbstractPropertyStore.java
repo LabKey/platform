@@ -127,6 +127,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
             TableInfo tinfo = _prop.getTableInfoProperties();
             TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
             fillValueMap(selector, m);
+            m.afterPropertiesSet(); // clear modified flag
         }
 
         return m;

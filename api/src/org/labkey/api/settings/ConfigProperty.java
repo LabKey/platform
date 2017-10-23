@@ -22,11 +22,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ConfigProperty
 {
-    private String _name;
-    private String _value;
-    private modifier _modifier = modifier.bootstrap;
-    private String _scope = DEFAULT_SCOPE;
-
     public static final String DEFAULT_SCOPE = "none";
     public static final String SYS_PROP_PREFIX = "labkey.prop.";
     public static final String SCOPE_LOOK_AND_FEEL_SETTINGS = "LookAndFeelSettings";
@@ -37,6 +32,12 @@ public class ConfigProperty
     public static final String SCOPE_GROUP_ROLES = "GroupRoles";
     public static final String SCOPE_USER_GROUPS = "UserGroups";
     public static final String SCOPE_EXPERIMENTAL_FEATURE = AppProps.EXPERIMENTAL_FEATURE;
+
+    private final String _name;
+    private final String _value;
+    private final modifier _modifier;
+    private final String _scope;
+
 
     public enum modifier
     {
@@ -49,10 +50,8 @@ public class ConfigProperty
     {
         _name = name;
         _value = value;
-        if (modifierType != null)
-            _modifier = modifier.valueOf(modifierType);
-        if (scope != null)
-            _scope = scope;
+        _modifier = null==modifierType ?  modifier.bootstrap : modifier.valueOf(modifierType);
+        _scope = null==scope ? DEFAULT_SCOPE : scope;
     }
 
     public String getValue()
@@ -97,10 +96,4 @@ public class ConfigProperty
 
         return result;
     }
-
-    public interface ConfigPropertyInitializer
-    {
-        void setConfigProperties(boolean isStartup);
-    }
-
 }

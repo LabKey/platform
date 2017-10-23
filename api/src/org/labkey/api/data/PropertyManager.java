@@ -30,6 +30,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -107,19 +108,25 @@ public class PropertyManager
     /** For global system properties that get attached to the root container. */
     public static PropertyMap getWritableProperties(String category, boolean create)
     {
-        return STORE.getWritableProperties(category, create);
+        PropertyMap ret = STORE.getWritableProperties(category, create);
+        assert !ret.isModified();
+        return ret;
     }
 
 
     public static PropertyMap getWritableProperties(Container container, String category, boolean create)
     {
-        return STORE.getWritableProperties(container, category, create);
+        PropertyMap ret = STORE.getWritableProperties(container, category, create);
+        assert !ret.isModified();
+        return ret;
     }
 
 
     public static PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
-        return STORE.getWritableProperties(user, container, category, create);
+        PropertyMap ret = STORE.getWritableProperties(user, container, category, create);
+        assert !ret.isModified();
+        return ret;
     }
 
 
@@ -258,7 +265,7 @@ public class PropertyManager
         return new TableSelector(prop.getTableInfoPropertyEntries(), filter, sort).getArray(PropertyEntry.class);
     }
 
-    public static class PropertyMap extends HashMap<String, String>
+    public static class PropertyMap extends HashMap<String, String> implements InitializingBean
     {
         private int _set;
         @NotNull
@@ -325,7 +332,7 @@ public class PropertyManager
             checkLocked();
             if (null != removedKeys)
                 removedKeys.remove(key);
-            if (!StringUtils.equals(value, get(value)))
+            if (!StringUtils.equals(value, get(key)))
                 _modified = true;
             return super.put(key, value);
         }
@@ -406,6 +413,14 @@ public class PropertyManager
         {
             return _modified;
         }
+
+
+        @Override
+        public void afterPropertiesSet()
+        {
+            _modified = false;
+        }
+
 
         private static String toNullString(Object o)
         {

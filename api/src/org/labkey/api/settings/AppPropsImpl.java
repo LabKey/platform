@@ -552,6 +552,8 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
         // for a list of recognized site setting properties refer to: AppPropsImpl.java
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
+        if (startupProps.isEmpty())
+            return;
         WriteableAppProps writeable = AppProps.getWriteableInstance();
         startupProps
             .forEach(prop -> {
