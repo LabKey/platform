@@ -1126,7 +1126,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // change the container filter to include subfolders
         DataRegionTable dt = new DataRegionTable("query", getDriver());
-        dt.goToView("Folder Filter", "Current folder and subfolders");
+        dt.setContainerFilter(DataRegionTable.ContainerFilterType.CURRENT_AND_SUBFOLDERS);
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon", "PublishedSubStudy"});
         colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
 
