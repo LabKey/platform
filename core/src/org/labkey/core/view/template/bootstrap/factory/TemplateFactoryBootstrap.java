@@ -20,10 +20,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServiceImpl;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.core.view.template.bootstrap.BootstrapBodyTemplate;
 import org.labkey.core.view.template.bootstrap.BootstrapTemplate;
 import org.labkey.core.view.template.bootstrap.DialogTemplate;
-import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.labkey.core.view.template.bootstrap.WizardTemplate;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -51,7 +51,7 @@ public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
             case Framed:
             case Print:
             {
-                return new PrintTemplate(context, body, page);
+                return new PrintTemplate(body, page);
             }
             case Dialog:
             {
