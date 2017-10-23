@@ -226,7 +226,7 @@ a div.x4-menu-item-icon.fa-users {
 
 // tab panel bar
 .x4-tab-bar-default, .x4-tab-bar-default-top {
-  background-color: $white;
+  background: $white none;
   border-color: $white;
 }
 .x4-tab-bar-strip-default {
@@ -237,14 +237,13 @@ a div.x4-menu-item-icon.fa-users {
   border-color: $lk-tabstrip-border-color;
 }
 .x4-tab-default-left, .x4-tab-default-right, .x4-tab-default-top {
-  border-bottom: 1px solid transparent;
-  background-color: $lk-inactive-tab-bg-color;
+  background: $lk-inactive-tab-bg-color none;
 }
 .x4-tab-default .x4-tab-inner {
   color: $lk-inactive-tab-color;
   font-size: 12px;
   font-weight: normal;
-  opacity: 0.75;
+  opacity: 0.6;
 }
 .x4-tab-default .x4-tab-inner:hover {
   opacity: 1;

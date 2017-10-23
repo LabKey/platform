@@ -121,26 +121,23 @@
             <tr><td>&nbsp;</td></tr>
         </table>
 
-        <table><tr>
-            <td><labkey:form action='<%=h(buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : ""))%>' method="post">
-                <%= button("Delete").submit(true) %></labkey:form></td>
-            <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
-        </tr></table><%
+        <labkey:form action='<%=h(buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : ""))%>' method="post">
+            <%= button("Delete").submit(true) %>
+            <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
+        </labkey:form>
+        <%
     }
     else
     {
         %>
-    <tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s.  If you continue you will <b>permanently delete</b> the <%=h(containerType)%>, its <%=h(childrenDescription)%>s, and all the objects they contain.
-        The next page will summarize some of the objects in these folders and give you another chance to cancel.</td></tr>
-    <tr><td>&nbsp;</td></tr>
-    <tr><td>Cancel now to preserve these folders and objects.</td></tr>
-    <tr><td>&nbsp;</td></tr>
-</table>
+            <tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s.  If you continue you will <b>permanently delete</b> the <%=h(containerType)%>, its <%=h(childrenDescription)%>s, and all the objects they contain.
+                The next page will summarize some of the objects in these folders and give you another chance to cancel.</td></tr>
+            <tr><td>&nbsp;</td></tr>
+            <tr><td>Cancel now to preserve these folders and objects.</td></tr>
+            <tr><td>&nbsp;</td></tr>
+        </table>
 
-<table>
-    <tr>
-        <td><%= button("Delete All Folders").href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1") %></td>
-        <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
-    </tr>
-</table><%
+        <%= button("Delete All Folders").primary(true).href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1") %>
+        <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
+        <%
     }  %>

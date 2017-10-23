@@ -43,7 +43,7 @@
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
-<table width="100%" cellpadding=0 class="lk-fields-table">
+<table class="lk-fields-table">
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -165,8 +165,8 @@
     <td><input type="text" name="reportAProblemPath" size="50" value="<%= h(laf.getUnsubstitutedReportAProblemPath()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)</td>
-    <td><input type="text" name="supportEmail" size="50" value="<%= h(laf.getSupportEmail()) %>"></td>
+    <td class="labkey-form-label">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</td>
+    <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%= h(laf.getSupportEmail()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
