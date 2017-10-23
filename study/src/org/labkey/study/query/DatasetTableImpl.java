@@ -183,16 +183,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 if (isVisibleByDefault(column))
                     defaultVisibleCols.add(FieldKey.fromParts(column.getName()));
             }
-            else if (getRealTable().getColumn(name + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX) != null)
+            else if (getRealTable().getColumn(name + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX) != null)
             {
                 // If this is the value column that goes with an OORIndicator, add the special OOR options
                 OORDisplayColumnFactory.addOORColumns(this, baseColumn, getRealTable().getColumn(name +
-                        OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX));
+                        OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX));
                 if (isVisibleByDefault(baseColumn))
                     defaultVisibleCols.add(FieldKey.fromParts(name));
             }
-            else if (name.toLowerCase().endsWith(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
-                    getRealTable().getColumn(name.substring(0, name.length() - OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.length())) != null)
+            else if (name.toLowerCase().endsWith(OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
+                    getRealTable().getColumn(name.substring(0, name.length() - OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX.length())) != null)
             {
                 // If this is an OORIndicator and there's a matching value column in the same table, don't add this column
             }

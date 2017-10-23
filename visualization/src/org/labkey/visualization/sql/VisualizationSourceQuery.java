@@ -41,7 +41,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -490,7 +489,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         Set<FieldKey> fieldKeys = new HashSet<>();
         for (VisualizationSourceColumn selectCol : this.getSelects(factory, false))
         {
-            FieldKey oorSelect = FieldKey.fromString(selectCol.getOriginalName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+            FieldKey oorSelect = FieldKey.fromString(selectCol.getOriginalName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX);
             fieldKeys.add(oorSelect);
         }
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getTableInfo(), fieldKeys);
