@@ -59,7 +59,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -166,18 +165,12 @@ public class PageFlowUtil
 
     private static final String NONPRINTING_ALTCHAR = "~";
 
-    // This is a flag that is used to distinguish code paths while migrating the core UI
-    public static final String EXPERIMENTAL_MIGRATE_CORE_UI = "migrate-core-ui";
-
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
     public static final String SESSION_TAB_EDIT_MODE = "tabEditMode";
 
     public static boolean useExperimentalCoreUI()
     {
-        ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
-        if (svc != null)
-            return svc.isFeatureEnabled(EXPERIMENTAL_MIGRATE_CORE_UI);
-        return false;
+        return true;
     }
 
     /**

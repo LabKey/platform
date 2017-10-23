@@ -181,22 +181,6 @@ LABKEY.Utils = new function(impl, $) {
     };
 
     /**
-     * Toggle the updated UI on/off.
-     */
-    impl.toggleUI = function() {
-        var choice = confirm("Warning! This will update the look-and-feel for all users.\n\nWould you like to proceed?");
-        if (choice) {
-            LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('admin', 'experimentalFeature.api'),
-                method: 'POST',
-                params: {feature: "migrate-core-ui", enabled: !LABKEY.experimental.useExperimentalCoreUI},
-                success: function() { window.location.reload(); },
-                failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
-            });
-        }
-    };
-
-    /**
      * Provides a generic error callback.  This helper show a modal dialog, log the error to the console
      * and will log the error to the audit log table. The user must have insert permissions on the selected container for
      * this to work.  By default, it will insert the error into the Shared project.  A containerPath param can be passed to
