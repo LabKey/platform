@@ -183,7 +183,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         waitForSnapshotUpdate("Slovakian");
 
         log("delete the snapshot");
-        table.clickHeaderMenu("Grid views", "Edit Snapshot");
+        table.goToView("Edit Snapshot");
         deleteSnapshot();
 
         // snapshot over a custom query
