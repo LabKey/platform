@@ -67,13 +67,13 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
         for (PropertyDescriptor displayPd : pds)
         {
-            PropertyDescriptor oorIndicatorPd = nameToPropertyMap.get(displayPd.getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+            PropertyDescriptor oorIndicatorPd = nameToPropertyMap.get(displayPd.getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX);
             if (oorIndicatorPd != null)
             {
                 metadata.addOORPropertyDescriptor(displayPd, oorIndicatorPd);
             }
-            else if (!(displayPd.getName().toLowerCase().endsWith(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
-                    nameToPropertyMap.containsKey(displayPd.getName().substring(0, displayPd.getName().length() - OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX.length()))))
+            else if (!(displayPd.getName().toLowerCase().endsWith(OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
+                    nameToPropertyMap.containsKey(displayPd.getName().substring(0, displayPd.getName().length() - OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX.length()))))
             {
                 metadata.addNonOORPropetyDescriptor(displayPd);
             }
@@ -135,7 +135,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
     private static ColumnInfo getIndicatorColumn(String baseName, ColumnInfo colInfo)
     {
-        return getNamedColumn(baseName, colInfo, OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+        return getNamedColumn(baseName, colInfo, OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX);
     }
 
     private static ColumnInfo getNamedColumn(String baseName, ColumnInfo colInfo, String suffix)
@@ -194,7 +194,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             ColumnInfo indicatorCol = getIndicatorColumn(_baseName, this);
             if (indicatorCol == null)
             {
-                throw new IllegalStateException("Could not find " + _baseName + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX + " column");
+                throw new IllegalStateException("Could not find " + _baseName + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX + " column");
             }
             indicatorCol.declareJoins(parentAlias, map);
             ColumnInfo numberCol = getNumberColumn(_baseName, this);

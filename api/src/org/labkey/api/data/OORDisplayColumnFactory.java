@@ -30,7 +30,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
 {
     public static final String NUMBER_COLUMN_SUFFIX = "Number";
     public static final String IN_RANGE_COLUMN_SUFFIX = "InRange";
-    public static final String OORINDICATOR_COLUMN_SUFFIX = "OORIndicator";
+    public static final String OOR_INDICATOR_COLUMN_SUFFIX = "OORIndicator";
 
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {

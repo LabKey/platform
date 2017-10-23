@@ -222,7 +222,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             return;
 
         results.put(name, icValue);
-        results.put(name + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX, outOfRange);
+        results.put(name + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX, outOfRange);
     }
 
     protected ExperimentException createParseError(File dataFile, String msg)
@@ -643,7 +643,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public static Integer getCutoffFromPropertyName(String propertyName)
     {
-        if (propertyName.startsWith(CURVE_IC_PREFIX) && !propertyName.endsWith(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX))
+        if (propertyName.startsWith(CURVE_IC_PREFIX) && !propertyName.endsWith(OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX))
         {
             // parse out the cutoff number
             int idx = propertyName.indexOf('_');
@@ -655,7 +655,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
             return Integer.valueOf(num);
         }
-        else if (propertyName.startsWith(POINT_IC_PREFIX) && !propertyName.endsWith(OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX))
+        else if (propertyName.startsWith(POINT_IC_PREFIX) && !propertyName.endsWith(OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX))
         {
             return Integer.valueOf(propertyName.substring(POINT_IC_PREFIX.length()));
         }

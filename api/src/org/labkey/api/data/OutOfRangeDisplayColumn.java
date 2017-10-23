@@ -99,7 +99,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
             }
             if (row == 1)
             {
-                String msg = "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX + ">";
+                String msg = "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX + ">";
                 if (getRequiresHtmlFiltering())
                     result.append(h(msg));
                 else
@@ -144,7 +144,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
 
         if (_oorIndicatorColumn == null)
         {
-            FieldKey fk = new FieldKey(getBoundColumn().getFieldKey().getParent(), getBoundColumn().getFieldKey().getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+            FieldKey fk = new FieldKey(getBoundColumn().getFieldKey().getParent(), getBoundColumn().getFieldKey().getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX);
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getBoundColumn().getParentTable(), Collections.singleton(fk));
             _oorIndicatorColumn = cols.get(fk);
         }
