@@ -121,7 +121,7 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (getTableNames().contains(settings.getQueryName()))
+        if (settings.getQueryName() != null && getTableNames().contains(settings.getQueryName()))
         {
             return new QueryView(this, settings, errors)
             {
