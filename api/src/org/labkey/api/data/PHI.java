@@ -27,10 +27,11 @@ import org.labkey.api.security.permissions.Permission;
  */
 public enum PHI
 {
-    NotPHI(0, null),
-    Limited(1, LimitedPHIPermission.class),
-    PHI(2, FullPHIPermission.class),
-    Restricted(3, RestrictedPHIPermission.class);
+    // Important: Must be in order of least to most restrictive level so ordinal reflects each level's rank.
+    NotPHI(null),
+    Limited(LimitedPHIPermission.class),
+    PHI(FullPHIPermission.class),
+    Restricted(RestrictedPHIPermission.class);
 
     public static PHI fromString(@Nullable String value)
     {
@@ -41,24 +42,21 @@ public enum PHI
         return null;
     }
 
-    private final int _rank;
     private final Class<? extends Permission> _permission;
 
-    PHI(int rank, @Nullable Class<? extends Permission> permission)
+    PHI(@Nullable Class<? extends Permission> permission)
     {
-        _rank = rank;
         _permission = permission;
     }
-    public int getRank() {
-        return _rank;
-    }
+
     public boolean isLevelAllowed(PHI level)
     {
-        return _rank <= level.getRank();
+        return ordinal() <= level.ordinal();
     }
+
     public boolean isExportLevelAllowed(PHI level)
     {
-        return _rank < level.getRank();
+        return ordinal() < level.ordinal();
     }
 
     @Nullable
@@ -67,7 +65,7 @@ public enum PHI
         return _permission;
     }
 
-    // Find the maximum PHI permission this user has in this container
+    // Determine the maximum PHI permission this user has in this container
     public static PHI determinePhiAllowed(Container c, User user)
     {
         if (c.hasPermission(user, RestrictedPHIPermission.class))
