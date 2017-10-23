@@ -49,6 +49,11 @@ public enum PHI
         _permission = permission;
     }
 
+    public int getRank()
+    {
+        return ordinal();
+    }
+
     public boolean isLevelAllowed(PHI level)
     {
         return ordinal() <= level.ordinal();
