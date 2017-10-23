@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.HeaderProperties" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
@@ -129,13 +128,6 @@
 
 <% if (me.getView("notifications") != null) { %>
     <% include(me.getView("notifications"), out); %>
-<% } %>
-
-<% if (AppProps.getInstance().isDevMode() && isRealUser && user.isInSiteAdminGroup())
-   { %>
-            <li data-tt="tooltip" data-placement="bottom" title="Revert back to the legacy look and feel.">
-                <a href="javascript:void(0);" onclick="LABKEY.Utils.toggleUI();"><i class="fa fa-history"></i></a>
-            </li>
 <% } %>
 
 <% if (!isRealUser && pageConfig.shouldIncludeLoginLink()) { %>
