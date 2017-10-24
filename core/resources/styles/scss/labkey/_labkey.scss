@@ -43,9 +43,7 @@ legend {
 }
 
 .lk-body-ct {
-  width: 100%;
-  position: relative;
-  padding-top: 113px;
+  padding-top: 20px;
 
   > .container {
     width: 100%;
@@ -82,14 +80,6 @@ legend {
   .lk-header-ct {
     border-bottom: 1px solid lightgray;
   }
-
-  .lk-body-ct {
-    padding-top: 93px; // navigation not displayed
-  }
-}
-
-.print-template-body .lk-body-ct {
-  padding-top: 15px; // header not displayed
 }
 
 .lk-body-title-folder {

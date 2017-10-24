@@ -407,7 +407,7 @@
             .on('shown.bs.dropdown.data-api', '.dropdown-rollup, .lk-menu-drop', SubMenu.prototype.viewportAlign);
 }(jQuery);
 
-// Initialize tooltips & box-shadow scrolling
+// Initialize tooltips
 +function($) {
     'use strict';
 
@@ -421,21 +421,6 @@
         $(document.body).tooltip({
             selector: '[data-tt="tooltip"]',
             trigger: 'hover'
-        });
-
-        var $document = $(document),
-            $element = $('.lk-header-ct'),
-            className = 'box-shadow';
-
-        $document.scroll(function() {
-            if ($document.scrollTop() >= 20) {
-                // Change 50 to the value you require
-                // for the event to trigger
-                $element.addClass(className);
-            }
-            else {
-                $element.removeClass(className);
-            }
         });
     });
 }(jQuery);
@@ -630,5 +615,24 @@
         nav_tabs_separate = $('#nav_tabs > #lk-nav-tabs-separate');
         nav_ready = true;
         toggleNavTabs();
+    });
+}(jQuery);
+
+// "fixed" header horizontally, remains in normal flow vertically
+// consider: "position: sticky" when it is more widely supported
++function($) {
+    $(function() {
+        var head = $('.lk-header-ct');
+        if (head) {
+            var last = 0;
+            var onScroll = function() {
+                if (window.pageXOffset !== last) {
+                    head.css('left', last = window.pageXOffset);
+                }
+            };
+
+            $(window).on('scroll', onScroll);
+            onScroll();
+        }
     });
 }(jQuery);
