@@ -2700,14 +2700,6 @@ public class DavController extends SpringActionController
         {
             xml.sendData();
         }
-
-        private boolean isFileSystemFileOrDirectory(WebdavResource resource)
-        {
-            if (resource.isFile())
-                return true;
-            File file = resource.getFile();
-            return null != file && file.isDirectory();
-        }
     }
 
 
@@ -2786,9 +2778,6 @@ public class DavController extends SpringActionController
                 if (contentType != null)
                     json.key("contenttype").value(contentType);
                 json.key("etag").value(resource.getETag());
-                String absolutePath = resource.getAbsolutePath(getUser());
-                if (null != absolutePath)
-                    json.key("absolutePath").value(absolutePath);
 
                 // UNDONE: Don't calculate directget URL for every item -- it may be expensive to generate.
                 // UNDONE: Client doesn't support handling directget yet
@@ -2802,6 +2791,13 @@ public class DavController extends SpringActionController
             else
             {
                 json.key("leaf").value(false);
+            }
+
+            if (isFileSystemFileOrDirectory(resource))
+            {
+                String absolutePath = resource.getAbsolutePath(getUser());
+                if (null != absolutePath)
+                    json.key("absolutePath").value(absolutePath);
             }
 
             Collection<NavTree> actions = resource.getActions(getUser());
@@ -2886,6 +2882,14 @@ public class DavController extends SpringActionController
         {
             out.flush();
         }
+    }
+
+    private static boolean isFileSystemFileOrDirectory(WebdavResource resource)
+    {
+        if (resource.isFile())
+            return true;
+        File file = resource.getFile();
+        return null != file && file.isDirectory();
     }
 
 
