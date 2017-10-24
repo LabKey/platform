@@ -84,6 +84,7 @@ import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
@@ -1006,7 +1007,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ChecksumUtil.TestCase.class,
                 MaterializedQueryHelper.TestCase.class,
                 LabKeyScriptEngineManager.TestCase.class,
-                ConvertHelper.TestCase.class
+                ConvertHelper.TestCase.class,
+                RReport.TestCase.class
         ));
     }
 
