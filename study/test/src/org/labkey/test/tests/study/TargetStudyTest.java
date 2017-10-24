@@ -219,12 +219,12 @@ public class TargetStudyTest extends AbstractAssayTest
         assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(By.xpath("select[@name='targetStudy']"))));
 
         log("** Check ptid/visit matches for rows 0-2 and 4, no match for rows 3 and 5");
-        assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("img")), "src", "check.png");
-        assertAttributeContains(table.findCell(1, 1).findElement(By.xpath("img")), "src", "check.png");
-        assertAttributeContains(table.findCell(2, 1).findElement(By.xpath("img")), "src", "check.png");
-        assertAttributeContains(table.findCell(3, 1).findElement(By.xpath("img")), "src", "cancel.png");
-        assertAttributeContains(table.findCell(4, 1).findElement(By.xpath("img")), "src", "check.png");
-        assertAttributeContains(table.findCell(5, 1).findElement(By.xpath("img")), "src", "cancel.png");
+        assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+        assertAttributeContains(table.findCell(1, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+        assertAttributeContains(table.findCell(2, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+        assertAttributeContains(table.findCell(3, 1).findElement(By.xpath("i")), "class", "fa fa-times");
+        assertAttributeContains(table.findCell(4, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+        assertAttributeContains(table.findCell(5, 1).findElement(By.xpath("i")), "class", "fa fa-times");
 
         clickButton("Re-Validate");
         assertTextPresent("You must specify a Target Study for all selected rows.");
