@@ -19,6 +19,8 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
@@ -46,6 +48,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -62,6 +65,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -362,11 +366,64 @@ public class RReport extends ExternalScriptEngineReport
         if (getKnitrFormat() != null && script.startsWith(yamlSyntaxPrefix))
         {
             yamlScript = script.substring(0, script.indexOf(yamlSyntaxPrefix, yamlSyntaxPrefix.length()) + yamlSyntaxPrefix.length());
-            script = script.substring(yamlScript.length() + 1);
+            script = script.substring(yamlScript.length());
         }
 
-        return yamlScript + StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
+        return
+                yamlScript +
+                "# 8< ----- do not edit this line ---------------------------------------\n" +
+                "# This code is not part of your R report, changes will not be saved \n" +
+                StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) +
+                "# Your report code goes below the next line \n" +
+                "# -------- do not edit this line ------------------------------------ >8\n" +
+                script;
     }
+
+
+    String stripScriptProlog(String script)
+    {
+        String[] lines = StringUtils.split(script, '\n');
+        int cutstart = -1, cutend = -1;
+        int yamlstart = -1;
+        int yamlend = -1;
+        if (lines.length > 0 && lines[0].trim().startsWith("---"))
+            yamlstart = 0;
+        for (int i=0 ; i<lines.length ; i++)
+        {
+            String line = lines[i].trim();
+            if (i > 0 && yamlend == -1 && line.startsWith("---"))
+                yamlend = i;
+            if (line.startsWith("#") && line.substring(1).trim().startsWith("8<"))
+            {
+                cutstart = i;
+                break;
+            }
+        }
+        for (int i=lines.length-1 ; i>=0 ; i--)
+        {
+            String line = lines[i].trim();
+            if (line.startsWith("#") && line.endsWith(">8"))
+            {
+                cutend = i;
+                break;
+            }
+        }
+
+        if (cutstart == -1 || cutend == -1)
+            return script;
+
+        // write out lines before prolog cut 8<
+        String ret = "";
+        List<String> list = Arrays.asList(lines);
+        if (cutstart > 0)
+            ret = StringUtils.join(list.subList(0,cutstart), "\n") + "\n";
+        if (yamlstart == 0 && (yamlend > cutstart && yamlend < cutend))
+            ret += "---\n";
+        if (cutend < lines.length-1)
+            ret += StringUtils.join(list.subList(cutend+1, lines.length), "\n") + "\n";
+        return ret;
+    }
+
 
     // append the pipeline roots to the prolog
     public File getPipelineRoot(ViewContext context)
@@ -671,6 +728,49 @@ public class RReport extends ExternalScriptEngineReport
     public String getEditAreaSyntax()
     {
         return "text/x-rsrc";
+    }
+
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testProlog()
+        {
+            RReport report = new RReport();
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            ViewContext context = HttpView.currentContext();
+            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
+            String pre = "print('hello world')\n";
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
+
+            assertTrue( post.contains("# 8<") );
+            assertTrue( post.contains(">8") );
+            assertTrue( post.endsWith(pre) );
+
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
+        }
+
+        @Test
+        public void testPrologYaml()
+        {
+            RReport report = new RReport();
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            ViewContext context = HttpView.currentContext();
+            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
+            String pre = "---\n" +
+                    "title: My Report\n" +
+                    "---\n" +
+                    "print('hello world')\n";
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
+            assertTrue( post.contains("# 8<") );
+            assertTrue( post.contains(">8") );
+            assertTrue( post.endsWith("print('hello world')\n") );
+
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
+        }
     }
 }
 
