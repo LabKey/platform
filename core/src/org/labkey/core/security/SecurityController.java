@@ -1444,12 +1444,13 @@ public class SecurityController extends SpringActionController
                 }
                 // Now clone permissions assigned outside of groups
                 Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                Boolean modified;
                 for (Container container: containers)
                 {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
                     Collection<Role> roles = policy.getEffectiveRoles(clone);
                     roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
-                    Boolean modified = false;
+                    modified = false;
                     for (Role role : roles)
                     {
                         if (groupRoles.get(container) == null || !groupRoles.get(container).contains(role))
