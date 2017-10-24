@@ -408,7 +408,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             throw new UnauthorizedException("You do not have permission to delete from " + data.getContainer().getPath());
         }
         data.delete(user);
-        
+
         return oldRow;
     }
 

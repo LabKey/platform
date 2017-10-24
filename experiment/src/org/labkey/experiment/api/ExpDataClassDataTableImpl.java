@@ -1294,7 +1294,14 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         @Override
         protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
         {
-            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
+            try
+            {
+                return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
+            }
+            catch (ExperimentException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
         }
 
         private void removePreviousAttachments(User user, Container c, Map<String, Object> newRow, Map<String, Object> oldRow)

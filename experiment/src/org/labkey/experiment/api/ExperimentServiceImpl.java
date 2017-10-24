@@ -171,6 +171,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.singleton;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
@@ -2822,13 +2823,22 @@ public class ExperimentServiceImpl implements ExperimentService
         return Lsid.parse(generateLSID(container, ExpDataClass.class, name));
     }
 
-    // TODO: @NotNull Collection<Integer> selectedRunIds
+    @Override
     public void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds)
     {
-        if (selectedRunIds == null || selectedRunIds.length == 0)
+        List<Integer> ids = new ArrayList<>(selectedRunIds.length);
+        for (int id : selectedRunIds)
+            ids.add(id);
+        deleteExperimentRunsByRowIds(container, user, ids);
+    }
+
+    @Override
+    public void deleteExperimentRunsByRowIds(Container container, final User user, @NotNull Collection<Integer> selectedRunIds)
+    {
+        if (selectedRunIds.isEmpty())
             return;
 
-        for (int runId : selectedRunIds)
+        for (Integer runId : selectedRunIds)
         {
             try (DbScope.Transaction transaction = ensureTransaction())
             {
@@ -2856,7 +2866,7 @@ public class ExperimentServiceImpl implements ExperimentService
                             {
                                 AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
                                 SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                Collection<String> lsids = new TableSelector(tableInfo, Collections.singleton("LSID"), filter, null).getCollection(String.class);
+                                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
                                 // Do the actual delete on the dataset for the rows in question
                                 dataset.deleteDatasetRows(user, lsids);
@@ -2891,13 +2901,9 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    private int[] getRelatedProtocolIds(int[] selectedProtocolIds)
+    private Collection<Integer> getRelatedProtocolIds(Collection<Integer> selectedProtocolIds)
     {
-        Set<Integer> allIds = new HashSet<>();
-        for (int selectedProtocolId : selectedProtocolIds)
-        {
-            allIds.add(selectedProtocolId);
-        }
+        Set<Integer> allIds = new HashSet<>(selectedProtocolIds);
 
         Set<Integer> idsToCheck = new HashSet<>(allIds);
         while (!idsToCheck.isEmpty())
@@ -2924,27 +2930,31 @@ public class ExperimentServiceImpl implements ExperimentService
             allIds.addAll(idsToCheck);
         }
 
-        return ArrayUtils.toPrimitive(allIds.toArray(new Integer[allIds.size()]));
+        return allIds;
     }
 
+    @Override
     public List<ExpRunImpl> getExpRunsForProtocolIds(boolean includeRelated, int... protocolIds)
     {
-        if (protocolIds.length == 0)
+        List<Integer> ids = new ArrayList<>(protocolIds.length);
+        for (int id : protocolIds)
+            ids.add(id);
+        return getExpRunsForProtocolIds(includeRelated, ids);
+    }
+
+    @Override
+    public List<ExpRunImpl> getExpRunsForProtocolIds(boolean includeRelated, @NotNull Collection<Integer> protocolIds)
+    {
+        if (protocolIds.isEmpty())
         {
             return Collections.emptyList();
         }
 
-        int[] allProtocolIds;
+        Collection<Integer> allProtocolIds = protocolIds;
         if (includeRelated)
-        {
             allProtocolIds = getRelatedProtocolIds(protocolIds);
-        }
-        else
-        {
-            allProtocolIds = protocolIds;
-        }
 
-        if (allProtocolIds.length == 0)
+        if (allProtocolIds.isEmpty())
         {
             return Collections.emptyList();
         }
@@ -2954,7 +2964,7 @@ public class ExperimentServiceImpl implements ExperimentService
         sb.append(getTinfoExperimentRun().getSelectName());
         sb.append(" WHERE ProtocolLSID IN (");
         sb.append("SELECT LSID FROM exp.Protocol WHERE RowId IN (");
-        sb.append(StringUtils.join(ArrayUtils.toObject(allProtocolIds), ", "));
+        sb.append(StringUtils.join(allProtocolIds, ", "));
         sb.append("))");
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb.toString()).getArrayList(ExperimentRun.class));
     }
@@ -3127,7 +3137,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds)
+    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds) throws ExperimentException
     {
         if (selectedDataIds.isEmpty())
             return;
@@ -3434,7 +3444,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return "LSID/" + lsid;
     }
 
-    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas)
+    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas) throws ExperimentException
     {
         try
         {
@@ -3766,17 +3776,17 @@ public class ExperimentServiceImpl implements ExperimentService
             transaction.commit();
         }
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
-        QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, Collections.singleton(source.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
 
         SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
-        QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, Collections.singleton(source.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
     }
 
     /**
      * Delete all exp.Data from the DataClass.  If container is not provided,
      * all rows from the DataClass will be deleted regardless of container.
      */
-    public int truncateDataClass(ExpDataClass dataClass, User user, @Nullable Container c)
+    public int truncateDataClass(ExpDataClass dataClass, User user, @Nullable Container c) throws ExperimentException
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -3828,7 +3838,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
-        QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, Collections.singleton(dataClass.getName()));
+        QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, singleton(dataClass.getName()));
     }
 
     private void deleteUnusedAliases(Container c, User user)
@@ -5332,6 +5342,22 @@ public class ExperimentServiceImpl implements ExperimentService
     public List<ExpProtocolImpl> getAllExpProtocols()
     {
         return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol()).getArrayList(Protocol.class));
+    }
+
+    @Override
+    public List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c)
+    {
+        SimpleFilter parameterFilter = new SimpleFilter()
+                .addCondition(FieldKey.fromParts("ontologyEntryURI"), parameterURI)
+                .addCondition(FieldKey.fromParts("stringvalue"), parameterValue)
+                .addCondition(FieldKey.fromParts("valuetype"), "String");
+
+        Set<Integer> protocolIds = new HashSet<>(new TableSelector(getTinfoProtocolParameter(), singleton("protocolId"), parameterFilter, null).getArrayList(Integer.class));
+
+        SimpleFilter protocolFilter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
+        protocolFilter.addCondition(FieldKey.fromParts("rowId"), protocolIds, CompareType.IN);
+
+        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), protocolFilter, null).getArrayList(Protocol.class));
     }
 
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException

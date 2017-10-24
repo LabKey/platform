@@ -57,6 +57,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -235,7 +236,15 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()));
+        try
+        {
+            ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()));
+        }
+        catch (ExperimentException e)
+        {
+            // CONSIDER: Add ExperimentException to throws clause
+            throw UnexpectedException.wrap(e);
+        }
     }
     
     public String getMimeType()

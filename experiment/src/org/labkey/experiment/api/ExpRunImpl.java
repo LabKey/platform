@@ -50,6 +50,7 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
@@ -447,7 +448,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        svc.beforeDeleteData(user, getContainer(), datasToDelete);
+        try
+        {
+            svc.beforeDeleteData(user, getContainer(), datasToDelete);
+        }
+        catch (ExperimentException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
 
         // Clean up DataInput and MaterialInput exp.object and properties
         OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +

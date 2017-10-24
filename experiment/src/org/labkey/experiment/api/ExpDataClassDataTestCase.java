@@ -248,7 +248,7 @@ public class ExpDataClassDataTestCase
         Assert.assertEquals(1, dataClass.getDatas().size());
     }
 
-    private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, String expectedName, String expectedSubName)
+    private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, String expectedName, String expectedSubName) throws ExperimentException
     {
         int count;
         try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
