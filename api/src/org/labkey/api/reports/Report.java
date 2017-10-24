@@ -47,6 +47,8 @@ import java.util.Map;
  */
 public interface Report extends AttachmentParent, ThumbnailProvider
 {
+    String SHARE_REPORT_TYPE = "Report.ShareReport";
+
     Report clone();
     String getType();
     String getTypeDescription();
@@ -83,6 +85,11 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      */
     boolean canShare(User user, Container container);
     boolean canShare(User user, Container container, List<ValidationError> errors);
+
+    /**
+     * Determine if this report type allows sharing via the shareReport action.
+     */
+    boolean allowShareButton(User user, Container container);
 
     /**
      * Determines whether the user can delete this report

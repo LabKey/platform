@@ -52,10 +52,18 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ResourceURL;
@@ -78,7 +86,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -804,5 +811,62 @@ public class ReportUtil
 
             return json;
         }
+    }
+
+    public static void resetReportSecurityPolicy(ViewContext context, @NotNull Report report, @Nullable User owner)
+    {
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
+        SecurityPolicyManager.savePolicy(policy);
+        report.getDescriptor().setOwner(owner != null ? owner.getUserId() : null); // null = "public", owner = "private"
+        ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
+    }
+
+    public static void updateReportSecurityPolicy(ViewContext context, @NotNull Report report, Integer principalId, boolean toAdd)
+    {
+        UserPrincipal principal = principalId != null && principalId != 0 ? SecurityManager.getPrincipal(principalId) : null;
+        if (null != principal)
+        {
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor()));
+            // make sure the Administrators remains readers of this report
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ReaderRole.class));
+
+            List<Role> princalAssignedRoles = policy.getAssignedRoles(principal);
+            if (toAdd && princalAssignedRoles.isEmpty())
+                policy.addRoleAssignment(principal, RoleManager.getRole(ReaderRole.class));
+            else if (!toAdd && !princalAssignedRoles.isEmpty())
+                policy.addRoleAssignment(principal, RoleManager.getRole(NoPermissionsRole.class));
+            
+            SecurityPolicyManager.savePolicy(policy);
+            report.getDescriptor().setOwner(null); // force the report to be "custom"
+            ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
+        }
+    }
+
+    public static void setReportSecurityPolicy(ViewContext context, @NotNull Report report, Set<Integer> groupIds, Set<Integer> userIds)
+    {
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
+
+        if (groupIds != null && !groupIds.isEmpty())
+        {
+            for (int groupId : groupIds)
+            {
+                Group group = groupId != 0 ? SecurityManager.getGroup(groupId) : null;
+                if (null != group)
+                    policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
+            }
+        }
+        if (userIds != null && !userIds.isEmpty())
+        {
+            for (int userId : userIds)
+            {
+                User user = userId != 0 ? UserManager.getUser(userId) : null;
+                if (null != user)
+                    policy.addRoleAssignment(user, RoleManager.getRole(ReaderRole.class));
+            }
+        }
+
+        SecurityPolicyManager.savePolicy(policy);
+        report.getDescriptor().setOwner(null);
+        ReportService.get().saveReport(context, report.getDescriptor().getReportKey(), report);
     }
 }

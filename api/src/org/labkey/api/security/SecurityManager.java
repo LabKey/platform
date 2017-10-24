@@ -96,6 +96,7 @@ import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -122,6 +123,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
 
 /**
@@ -3282,4 +3284,53 @@ public class SecurityManager
         }
     }
 
+    public static List<User> parseRecipientListForContainer(Container container, String recipientList, Errors errors)
+    {
+        List<User> validRecipients = new ArrayList<>();
+
+        if (recipientList != null)
+        {
+            String[] recipientArr = recipientList.split("\n");
+            List<String> invalidRecipients = new ArrayList<>();
+            List<ValidEmail> potentialValidRecipients = SecurityManager.normalizeEmails(recipientArr, invalidRecipients);
+
+            // validate that the recipient emails are valid
+            for (String rawEmail : invalidRecipients)
+            {
+                // Ignore lines of all whitespace, otherwise show an error.
+                if (!"".equals(rawEmail.trim()))
+                {
+                    errors.reject(ERROR_MSG, "Invalid email address: " + rawEmail.trim());
+                }
+            }
+
+            // validate that the valid emails are for users that have read permissions to this container
+            for (ValidEmail validRecipient : potentialValidRecipients)
+            {
+                User validUser = UserManager.getUser(validRecipient);
+                if (validUser != null)
+                {
+                    if (container.hasPermission(validUser, ReadPermission.class))
+                    {
+                        if (!validRecipients.contains(validUser))
+                            validRecipients.add(validUser);
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "User does not have permissions to this container: " + validRecipient.getEmailAddress());
+                    }
+                }
+                else
+                {
+                    errors.reject(ERROR_MSG, "Unknown user: " + validRecipient.getEmailAddress());
+                }
+            }
+        }
+        else
+        {
+            errors.reject(ERROR_MSG, "No recipients provided.");
+        }
+
+        return validRecipients;
+    }
 }

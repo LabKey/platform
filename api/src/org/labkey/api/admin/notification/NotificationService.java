@@ -22,6 +22,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.view.ActionURL;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpSession;
@@ -56,6 +57,13 @@ public interface NotificationService
     Notification sendMessage(Container c, User createdByUser, User notifyUser, MailHelper.MultipartMessage m,
                              String linkText, String linkURL, String id, String type, boolean useSubjectAsContent)
         throws IOException, MessagingException, ValidationException;
+
+    /**
+     * Create a notification, and send email, for the recipient user.
+     * @return the generated Notification object
+     */
+    Notification sendMessageForRecipient(Container c, User createdByUser, User recipient, String subject, String body,
+                                 ActionURL linkUrl, String id, String type) throws MessagingException, ValidationException, IOException;
 
     /*
      * Returns a list of notifications for a specific user. Sorted descending by created date.

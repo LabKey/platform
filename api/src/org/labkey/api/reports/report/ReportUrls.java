@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.view.ActionURL;
-import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * User: Karl Lum
@@ -43,6 +42,7 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlPlotChart(Container c);
     ActionURL urlDeleteReport(Container c);
     ActionURL urlExportCrosstab(Container c);
+    ActionURL urlShareReport(Container c, Report r);
     // Thumbnail or icon, depending on ImageType
     ActionURL urlImage(Container c, Report r, ThumbnailService.ImageType type, @Nullable Integer revision);
     ActionURL urlReportInfo(Container c);

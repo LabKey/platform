@@ -845,7 +845,7 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
-            bar.add(createReportButton());
+            populateChartsReports(bar);
         }
 
         if (showExportButtons())
@@ -1072,6 +1072,17 @@ public class QueryView extends WebPartView<Object>
         btnPrint.setIconCls("print");
         btnPrint.setTarget("_blank");
         return btnPrint;
+    }
+
+    private ActionButton createShareButton(@NotNull ActionURL url, @Nullable String tooltip)
+    {
+        ActionButton shareBtn = new ActionButton(url, "Share");
+        shareBtn.setActionType(ActionButton.Action.LINK);
+        shareBtn.setIconCls("share");
+        if (tooltip != null)
+            shareBtn.setTooltip(tooltip);
+        
+        return shareBtn;
     }
 
     /**
@@ -2067,8 +2078,15 @@ public class QueryView extends WebPartView<Object>
                 {
                     // not sure why this is necessary (adding the reportId to the context)
                     ctx.put("reportId", _report.getDescriptor().getReportId());
+
                     ButtonBar bar = new ButtonBar();
                     populateReportButtonBar(bar);
+
+                    if (_report.allowShareButton(getUser(), getContainer()))
+                    {
+                        ActionURL shareUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), _report);
+                        bar.add(createShareButton(shareUrl, "Share Report"));
+                    }
 
                     dr.setButtonBar(bar);
                 }

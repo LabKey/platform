@@ -434,7 +434,9 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         }
         else
         {
-            if(!container.hasPermission(user, EditSharedReportPermission.class))
+            if (isPrivate())
+                errors.add(new SimpleValidationError("You must be the owner to share a private report."));
+            else if(!container.hasPermission(user, EditSharedReportPermission.class))
                 errors.add(new SimpleValidationError("You must be in the Editor role to share a public report."));
         }
         return errors.isEmpty();
@@ -443,6 +445,13 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     public boolean canShare(User user, Container container)
     {
         return canShare(user, container, new ArrayList<>());
+    }
+
+    @Override
+    public boolean allowShareButton(User user, Container container)
+    {
+        // See RReport, currently only allowing ShareReportAction for that report type
+        return false;
     }
 
     public boolean canDelete(User user, Container container)
