@@ -707,6 +707,13 @@ LABKEY.Security = new function()
          *              <li>value: the value of the property as set for this specific container</li>
          *          </ul>
          *      </li>
+         *      <li>settings: Container LookAndFeelSettings as set /labkey/admin-projectSettings.view?
+         *          <ul>
+         *              <li>defaultDateFormat: The default display format for dates</li>
+         *              <li>defaultDateTimeFormat: The default format for date-times</li>
+         *              <li>defaultNumberFormat: The default format for numbers</li>
+         *          </ul>
+         *      </li>
          *  </ul>
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>

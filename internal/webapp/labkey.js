@@ -14,6 +14,7 @@ if (typeof LABKEY == "undefined")
     LABKEY = new function()
     {
         var configs = {
+            container: undefined,
             contextPath: "",
             DataRegions: {},
             devMode: false,
@@ -746,6 +747,20 @@ if (typeof LABKEY == "undefined")
         };
 
         return {
+            /**
+             * A collection of properties related to the "current" LabKey Server container scope.
+             * The properties are as follows:
+             * <ul>
+             *     <li>formats: Java formatting strings as set in /admin-projectSettings.view
+             *         <ul>
+             *             <li>dateFormat: The display format for dates</li>
+             *             <li>dateTimeFormat: The display format for date-times</li>
+             *             <li>numberFormat: The display format for numbers</li>
+             *         </ul>
+             *     </li>
+             * </ul>
+             */
+            container: configs.container,
 
             /**
              * This callback type is called 'requireCallback' and is displayed as a global symbol

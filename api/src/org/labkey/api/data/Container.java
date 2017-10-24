@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -48,10 +49,12 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
@@ -1208,6 +1211,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("activeModules", new HashSet<Module>());
             containerProps.put("folderType", "");
         }
+
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(this);
+        JSONObject formats = new JSONObject();
+        formats.put("dateFormat", DateUtil.getDateFormatString(this));
+        formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
+        formats.put("numberFormat", props.getDefaultNumberFormat());
+        containerProps.put("formats", formats);
+
         return containerProps;
     }
 
