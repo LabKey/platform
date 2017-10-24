@@ -3738,15 +3738,13 @@ if (!LABKEY.DataRegions) {
 
         var headerRowId = region.domId + '-column-header-row';
         var headerRow = $('#' + headerRowId);
-        var pageHeader = $('.lk-header-ct');
 
-        if (headerRow.length === 0 || pageHeader.length === 0) {
+        if (headerRow.length === 0) {
             region._allowHeaderLock = false;
             return;
         }
 
         var BOTTOM_OFFSET = 100;
-        var HEADER_CONSTANT = pageHeader.height();
 
         var me = this,
             timeout,
@@ -3763,7 +3761,7 @@ if (!LABKEY.DataRegions) {
                     'box-shadow': '0 4px 4px #DCDCDC',
                     display: 'none',
                     position: 'fixed',
-                    top: HEADER_CONSTANT
+                    top: 0
                 });
 
         floatRow.insertAfter(headerRow);
@@ -3794,9 +3792,9 @@ if (!LABKEY.DataRegions) {
             var header = headerRow.offset() || {top: 0};
             var table = $('#' + region.domId);
 
-            var bottom = header.top + table.height() - HEADER_CONSTANT - BOTTOM_OFFSET;
+            var bottom = header.top + table.height() - BOTTOM_OFFSET;
 
-            pos = [ header.left, header.top - HEADER_CONSTANT, bottom ];
+            pos = [ header.left, header.top, bottom ];
         };
 
         loadPosition();
@@ -3827,13 +3825,13 @@ if (!LABKEY.DataRegions) {
                     floatRow.css('left', newLeft);
                 }
                 floatRow.css({
-                    top: HEADER_CONSTANT
+                    top: 0
                 });
                 lastLeft = newLeft;
             }
             else if (locked && window.pageYOffset >= pos[2]) {
                 floatRow.css({
-                    top: pos[2] - window.pageYOffset + HEADER_CONSTANT
+                    top: pos[2] - window.pageYOffset
                 });
             }
             else if (locked) {
