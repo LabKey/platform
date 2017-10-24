@@ -981,7 +981,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 lastmodified: {
                     header: "Last Modified",
-                    flex: 1,
+                    flex: 2,
                     dataIndex: 'lastmodified',
                     sortable: true,
                     hidden: false,
@@ -1000,7 +1000,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 createdby: {
                     header: "Created By",
-                    flex: 1,
+                    flex: 2,
                     dataIndex: 'createdby',
                     sortable: true,
                     hidden: false,
@@ -1008,7 +1008,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 description: {
                     header: "Description",
-                    flex: 1,
+                    flex: 3,
                     dataIndex: 'description',
                     sortable: true,
                     hidden: false,
@@ -1017,7 +1017,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 actions: {
                     header: "Usages",
-                    flex: 1,
+                    flex: 2,
                     dataIndex: 'actions',
                     sortable: !this.bufferFiles,
                     hidden: false,
@@ -1026,7 +1026,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 fileLink: {
                     header: "Download Link",
-                    flex: 1,
+                    flex: 2,
                     dataIndex: 'fileLink',
                     sortable: !this.bufferFiles,
                     hidden: true,
@@ -1043,7 +1043,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 absolutePath: {
                     header: "Absolute File Path",
-                    flex: 1,
+                    flex: 7,
                     dataIndex: 'absolutePath',
                     sortable: !this.bufferFiles,
                     hidden: true,
@@ -1122,6 +1122,9 @@ Ext4.define('File.panel.Browser', {
                 if (finalColumns[index]) {
                     finalColumns[index].hidden = gridConfigColInfo[i].hidden;
                     finalColumns[index].sortable = gridConfigColInfo[i].sortable;
+
+                    if (!json.canSeeFilePaths && 'absolutePath' == finalColumns[index].dataIndex)
+                        finalColumns[index].hidden = true;    // Hide if user can't see file paths, even if customization showed it
                 }
             }
         }

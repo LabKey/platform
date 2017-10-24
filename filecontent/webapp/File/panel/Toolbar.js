@@ -148,7 +148,7 @@ Ext4.define('File.panel.Toolbar', {
 
         var columnData = [];
         var baseColumnNames = ['Row Checker', 'File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
-                'Usages', 'Download Link', 'File Extension', 'Absolute File Path'];
+                'Usages', 'Download Link', 'File Extension', 'Absolute File Path (permission required)'];
         if (this.useCustomProps) {
             for (var i = 0; i < this.fileProperties.length; i++) {
                 if (this.fileProperties[i].label)
@@ -343,7 +343,7 @@ Ext4.define('File.panel.Toolbar', {
                     },
                     scope: this
                 },
-                { header: 'Text', dataIndex: 'text', flex: 1 }
+                { header: 'Text', dataIndex: 'text', flex: 2 }
             ]
         }];
 

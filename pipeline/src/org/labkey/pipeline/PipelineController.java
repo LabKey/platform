@@ -588,6 +588,7 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("config", options.toJSON());
             resp.putBeanList("fileProperties", getFileProperties(getContainer(), options.getFileConfig()));
+            resp.put("canSeeFilePaths", SecurityManager.canSeeFilePaths(getContainer(), getUser()));
             resp.put("success", true);
 
             return resp;
