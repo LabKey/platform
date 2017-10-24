@@ -104,6 +104,7 @@ import javax.mail.internet.MimeMessage;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -260,6 +261,7 @@ public class SecurityManager
         scrubTables();
 
         ContainerManager.addContainerListener(new SecurityContainerListener());
+        UserManager.addUserListener(new SecurityUserListener());
     }
 
 
@@ -362,6 +364,42 @@ public class SecurityManager
         }
     }
 
+
+    private static class SecurityUserListener implements UserManager.UserListener
+    {
+
+        @Override
+        public void userAddedToSite(User user)
+        {
+            // do nothing
+        }
+
+        @Override
+        public void userDeletedFromSite(User user)
+        {
+            // This clears the cache of security policies.  It does not remove the policies themselves.
+            SecurityPolicyManager.removeAll();
+        }
+
+        @Override
+        public void userAccountDisabled(User user)
+        {
+            // This clears the cache of security policies.  It does not remove the policies themselves.
+            SecurityPolicyManager.removeAll();
+        }
+
+        @Override
+        public void userAccountEnabled(User user)
+        {
+            // do nothing
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+            // do nothing
+        }
+    }
 
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
     public static @Nullable User authenticateBasic(HttpServletRequest request, String basic)

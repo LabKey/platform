@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -49,6 +50,7 @@ import java.util.Set;
  */
 public class SecurityPolicyManager
 {
+    private static final Logger logger = Logger.getLogger(SecurityPolicyManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), CacheManager.UNLIMITED, "SecurityPolicies");
 
@@ -147,7 +149,11 @@ public class SecurityPolicyManager
             //insert rows for the policy entries
             for (RoleAssignment assignment : policy.getAssignments())
             {
-                Table.insert(null, table, assignment);
+                UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
+                if (principal == null)
+                    logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
+                else
+                    Table.insert(null, table, assignment);
             }
 
             //commit transaction
