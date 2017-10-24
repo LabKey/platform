@@ -341,6 +341,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getCreatingRun(File file, Container c);
     List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
+    List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, @NotNull Collection<Integer> rowIds);
     List<? extends ExpRun> getRunsUsingSampleSets(ExpSampleSet... sampleSets);
     List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 
@@ -354,6 +355,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Lsid getSampleSetLsid(String name, Container container);
 
     void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
+    void deleteExperimentRunsByRowIds(Container container, final User user, @NotNull Collection<Integer> selectedRunIds);
 
     void deleteExpExperimentByRowId(Container container, User user, int experimentId);
 
@@ -437,6 +439,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpProtocol> getExpProtocols(Container... containers);
     List<? extends ExpProtocol> getAllExpProtocols();
+    List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c);
 
     /**
      * Kicks off a pipeline job to asynchronously load the XAR from disk

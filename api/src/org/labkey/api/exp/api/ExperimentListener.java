@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -29,9 +30,11 @@ import java.util.List;
 public interface ExperimentListener
 {
     /** Called before deleting a row from exp.experiment */
-    default void beforeExperimentDeleted(Container c, User user, ExpExperiment experiment){}
+    default void beforeExperimentDeleted(Container c, User user, ExpExperiment experiment)
+    {}
 
-    default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols) { }
+    default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols) throws ExperimentException
+    { }
 
     // called before the experiment run is created (and saved)
     default List<ValidationException> beforeRunCreated(Container container, User user, ExpProtocol protocol, ExpRun run)
@@ -49,7 +52,8 @@ public interface ExperimentListener
     default void beforeRunDelete(ExpProtocol protocol, ExpRun run){}
 
     /** Called before deleting the datas. */
-    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data) { }
+    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data) throws ExperimentException
+    { }
 
     /** Called after deleting the datas. */
     default void afterDataDelete(Container c, User user, List<? extends ExpData> data) { }
