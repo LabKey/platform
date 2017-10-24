@@ -26,14 +26,13 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -460,6 +459,7 @@ public class SecurityController extends SpringActionController
             List<NavTree> tabs = new ArrayList<>(2);
 
             tabs.add(new TabInfo("Permissions", SecurityController.TAB_REPORT, getViewContext().getActionURL()));
+            // TODO only add this tab if we have a study in the container
             tabs.add(new TabInfo("Study Security", SecurityController.TAB_STUDY, getViewContext().getActionURL()));
 
             return tabs;
@@ -507,17 +507,13 @@ public class SecurityController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor()));
-            Integer owner = null;
-
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))
             {
-                policy = new MutableSecurityPolicy(report.getDescriptor());
-                owner = getUser().getUserId();
+                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, getUser());
             }
             else if (form.getPermissionType().equals(PermissionType.defaultPermission.toString()))
             {
-                policy = new MutableSecurityPolicy(report.getDescriptor());
+                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, null);
             }
             else
             {
@@ -525,34 +521,17 @@ public class SecurityController extends SpringActionController
                 if (form.getRemove() != 0 || form.getAdd() != 0)
                 {
                     if (form.getRemove() != 0)
-                    {
-                        Group group = SecurityManager.getGroup(form.getRemove());
-                        if (null != group)
-                            policy.addRoleAssignment(group, RoleManager.getRole(NoPermissionsRole.class));
-                    }
+                        ReportUtil.updateReportSecurityPolicy(getViewContext(), report, form.getRemove(), false);
+
                     if (form.getAdd() != 0)
-                    {
-                        Group group = SecurityManager.getGroup(form.getAdd());
-                        if (null != group)
-                            policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
-                    }
+                        ReportUtil.updateReportSecurityPolicy(getViewContext(), report, form.getAdd(), true);
                 }
                 // set all at once
                 else
                 {
-                    policy = new MutableSecurityPolicy(report.getDescriptor());
-                    if (form.getGroups() != null)
-                        for (int gid : form.getGroups())
-                        {
-                            Group group = SecurityManager.getGroup(gid);
-                            if (null != group)
-                                policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
-                        }
+                    ReportUtil.setReportSecurityPolicy(getViewContext(), report, form.getGroups(), form.getUsers());
                 }
             }
-            SecurityPolicyManager.savePolicy(policy);
-            report.getDescriptor().setOwner(owner);
-            ReportService.get().saveReport(getViewContext(), report.getDescriptor().getReportKey(), report);
             return true;
         }
 
@@ -644,6 +623,7 @@ public class SecurityController extends SpringActionController
         private Integer remove = 0;
         private Integer add = 0;
         private Set<Integer> groups = null;
+        private Set<Integer> users = null;
         private String _permissionType;
         private String _tabId;
 
@@ -665,6 +645,25 @@ public class SecurityController extends SpringActionController
         public Set<Integer> getGroups()
         {
             return groups;
+        }
+
+        // Not used, but needed for spring binding
+        public int[] getUser()
+        {
+            return null;
+        }
+
+        // use users (multi values) to set acl all at once
+        public void setUser(int[] usersArray)
+        {
+            users = new TreeSet<>();
+            for (int user : usersArray)
+                users.add(user);
+        }
+
+        public Set<Integer> getUsers()
+        {
+            return users;
         }
 
         public ReportIdentifier getReportId()

@@ -335,9 +335,7 @@ public class DatasetQueryView extends StudyQueryView
         // query reports will render their own button bar
         if (!(report instanceof QueryReport))
         {
-            MenuButton button = createViewButton(getViewItemFilter());
-            bar.add(button);
-
+            bar.add(createViewButton(getViewItemFilter()));
             populateChartsReports(bar);
         }
     }

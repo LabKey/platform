@@ -40,6 +40,7 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -86,6 +87,7 @@ import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
+import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -114,6 +116,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -124,6 +127,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
@@ -280,6 +284,14 @@ public class ReportsController extends SpringActionController
         public ActionURL urlExportCrosstab(Container c)
         {
             return new ActionURL(CrosstabExportAction.class, c);
+        }
+
+        @Override
+        public ActionURL urlShareReport(Container c, Report r)
+        {
+            ActionURL url = new ActionURL(ShareReportAction.class, c);
+            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
+            return url;
         }
 
         @Override
@@ -1281,6 +1293,111 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ShareReportPermission.class)
+    public class ShareReportAction extends FormViewAction<ShareReportForm>
+    {
+        Report _report = null;
+        List<User> _validRecipients = new ArrayList<>();
+
+        @Override
+        public ModelAndView getView(ShareReportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/query/reports/view/shareReport.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(ShareReportForm form, Errors errors)
+        {
+            _validRecipients = SecurityManager.parseRecipientListForContainer(getContainer(), form.getRecipientList(), errors);
+        }
+
+        @Override
+        public boolean handlePost(ShareReportForm form, BindException errors) throws Exception
+        {
+            if (null != form.getReportId())
+                _report = form.getReportId().getReport(getViewContext());
+
+            if (!errors.hasErrors() && !_validRecipients.isEmpty() && _report != null)
+            {
+                for (User recipient : _validRecipients)
+                {
+                    NotificationService.get().sendMessageForRecipient(
+                        getContainer(), getUser(), recipient,
+                        form.getMessageSubject(), form.getMessageBody(), _report.getRunReportURL(getViewContext()),
+                        form.getReportId().toString(), Report.SHARE_REPORT_TYPE
+                    );
+
+                    // if the report is already public, send the notification but don't update the policy
+                    if (!ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(_report.getDescriptor().getAccess()))
+                        ReportUtil.updateReportSecurityPolicy(getViewContext(), _report, recipient.getUserId(), true);
+
+                    // TODO audit entry
+                    //SecurityManager.addAuditEvent(getContainer(), user, comment, groupId);
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ShareReportForm form)
+        {
+            if (_report != null)
+            {
+                return PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
+                        addParameter(ReportDescriptor.Prop.reportId, _report.getDescriptor().getReportId().toString());
+            }
+
+            return form.getReturnActionURL(form.getDefaultUrl(getContainer()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Share Report");
+        }
+    }
+
+    public static class ShareReportForm extends ReportDesignBean
+    {
+        private String _recipientList;
+        private String _messageSubject;
+        private String _messageBody;
+
+        public String getRecipientList()
+        {
+            return _recipientList;
+        }
+
+        public void setRecipientList(String recipientList)
+        {
+            _recipientList = recipientList;
+        }
+
+        public String getMessageSubject()
+        {
+            return _messageSubject;
+        }
+
+        public void setMessageSubject(String messageSubject)
+        {
+            _messageSubject = messageSubject;
+        }
+
+        public String getMessageBody()
+        {
+            return _messageBody;
+        }
+
+        public void setMessageBody(String messageBody)
+        {
+            _messageBody = messageBody;
+        }
+
+        public ActionURL getDefaultUrl(Container container)
+        {
+            return new ActionURL(ManageViewsAction.class, container);
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ReportDesignBean>

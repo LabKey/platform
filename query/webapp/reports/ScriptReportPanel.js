@@ -182,10 +182,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     },
 
     renderDataGrid : function(cmp) {
-        LABKEY.requiresExt3ClientAPI(function() { this._doRenderGrid(cmp); }, this);
-    },
-
-    _doRenderGrid : function(cmp) {
         var filters = LABKEY.Filter.getFiltersFromUrl(this.initialURL, this.reportConfig.dataRegionName);
         var sort = LABKEY.Filter.getSortFromUrl(this.initialURL, this.reportConfig.dataRegionName);
         var params = LABKEY.Filter.getQueryParamsFromUrl(this.initialURL, this.reportConfig.dataRegionName);
@@ -199,7 +195,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             removeableSort      : sort,
             dataRegionName      : this.reportConfig.dataRegionName + '_report',
             frame       : 'none',
-            showBorders : false,
             showDetailsColumn       : false,
             showUpdateColumn        : false,
             showRecordSelectors     : false,
@@ -209,7 +204,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             allowHeaderLock         : false,
             buttonBar   : {
                 includeStandardButton: false,
-                items: [LABKEY.QueryWebPart.standardButtons.exportRows, LABKEY.QueryWebPart.standardButtons.pageSize]
+                items: [LABKEY.QueryWebPart.standardButtons.exportRows, LABKEY.QueryWebPart.standardButtons.print]
             },
             success : this.onDataSuccess,
             failure : this.onDataFailure,

@@ -40,11 +40,15 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 
+import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.http.HttpSession;
@@ -121,6 +125,38 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         return NotificationService.get().addNotification(c, createdByUser, notification);
     }
 
+    @Override
+    public Notification sendMessageForRecipient(Container c, User createdByUser, User recipient, String subject, String body,
+                                        ActionURL linkUrl, String id, String type) throws MessagingException, ValidationException, IOException
+    {
+        if (recipient != null)
+        {
+            String fullUrlStr = linkUrl.getBaseServerURI() + linkUrl.toString();
+
+            // create the notification message email
+            MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+            m.setFrom(LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
+            m.addRecipients(Message.RecipientType.TO, recipient.getEmail());
+            m.setSubject(subject);
+            m.setTextContent(body + "\n" + linkUrl);
+
+            // replicate the message body as html with an <a> tag
+            StringBuilder html = new StringBuilder();
+            html.append("<html><head></head><body>");
+            html.append(PageFlowUtil.filter(body, true, true));
+            html.append("<br/><a href='" + fullUrlStr + "'>" + fullUrlStr + "</a>");
+            html.append("</body></html>");
+            m.setEncodedHtmlContent(html.toString());
+
+            // send the message and create the new notification for this user and report
+            Notification notification = NotificationService.get().sendMessage(c, createdByUser, recipient, m,
+                "view", linkUrl.toString(), id, type, true);
+
+            return notification;
+        }
+
+        return null;
+    }
 
     @Override
     public Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException

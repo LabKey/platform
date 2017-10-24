@@ -102,14 +102,11 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
@@ -123,7 +120,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -191,7 +187,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.mail.Message;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -6934,10 +6929,10 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    @RequiresLogin @RequiresPermission(ReadPermission.class)
     public class SendParticipantGroupAction extends FormViewAction<SendParticipantGroupForm>
     {
-        private List<User> _validRecipients = new ArrayList<>();
+        List<User> _validRecipients = new ArrayList<>();
 
         @Override
         public URLHelper getSuccessURL(SendParticipantGroupForm form)
@@ -6973,53 +6968,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateCommand(SendParticipantGroupForm form, Errors errors)
         {
-            parseRecipientList(form, errors);
-        }
-
-        private void parseRecipientList(SendParticipantGroupForm form, Errors errors)
-        {
-            if (form.getRecipientList() != null)
-            {
-                String[] recipientArr = form.getRecipientList().split("\n");
-                List<String> invalidRecipients = new ArrayList<>();
-                List<ValidEmail> potentialValidRecipients = SecurityManager.normalizeEmails(recipientArr, invalidRecipients);
-
-                // validate that the recipient emails are valid
-                for (String rawEmail : invalidRecipients)
-                {
-                    // Ignore lines of all whitespace, otherwise show an error.
-                    if (!"".equals(rawEmail.trim()))
-                    {
-                        errors.reject(ERROR_MSG, "Invalid email address: " + rawEmail.trim());
-                    }
-                }
-
-                // validate that the valid emails are for users that have permissions to this container
-                for (ValidEmail validRecipient : potentialValidRecipients)
-                {
-                    User validUser = UserManager.getUser(validRecipient);
-                    if (validUser != null)
-                    {
-                        if (getContainer().hasPermission(validUser, ReadPermission.class))
-                        {
-                            if (!_validRecipients.contains(validUser))
-                                _validRecipients.add(validUser);
-                        }
-                        else
-                        {
-                            errors.reject(ERROR_MSG, "User does not have permissions to this container: " + validRecipient.getEmailAddress());
-                        }
-                    }
-                    else
-                    {
-                        errors.reject(ERROR_MSG, "Unknown user: " + validRecipient.getEmailAddress());
-                    }
-                }
-            }
-            else
-            {
-                errors.reject(ERROR_MSG, "No recipients provided.");
-            }
+            _validRecipients = SecurityManager.parseRecipientListForContainer(getContainer(), form.getRecipientList(), errors);
         }
 
         @Override
@@ -7027,30 +6976,15 @@ public class StudyController extends BaseStudyController
         {
             if (!errors.hasErrors() && !_validRecipients.isEmpty())
             {
-                ActionURL sendGroupUrl = form.getSendGroupUrl(getContainer());
-                String fullSendGroupUrlStr = sendGroupUrl.getBaseServerURI() + sendGroupUrl.toString();
-
-                for (User validRecipient : _validRecipients)
+                for (User recipient : _validRecipients)
                 {
-                    // create the notification message email
-                    MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
-                    m.setFrom(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress());
-                    m.addRecipients(Message.RecipientType.TO, validRecipient.getEmail());
-                    m.setSubject(form.getMessageSubject());
-                    m.setTextContent(form.getMessageBody() + "\n" +  fullSendGroupUrlStr);
+                    NotificationService.get().sendMessageForRecipient(
+                        getContainer(), getUser(), recipient,
+                        form.getMessageSubject(), form.getMessageBody(), form.getSendGroupUrl(getContainer()),
+                        form.getRowId().toString(), ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE
+                    );
 
-                    // replicate the message body as html with an <a> tag
-                    StringBuilder html = new StringBuilder();
-                    html.append("<html><head></head><body>");
-                    html.append(PageFlowUtil.filter(form.getMessageBody(), true, true));
-                    html.append("<br/><a href='" + fullSendGroupUrlStr + "'>" + fullSendGroupUrlStr + "</a>");
-                    html.append("</body></html>");
-                    m.setEncodedHtmlContent(html.toString());
-
-                    // send the message and create the new notification for this user and participant group
-                    NotificationService.get().sendMessage(getContainer(), getUser(), validRecipient, m,
-                            "view", sendGroupUrl.toString(), form.getRowId().toString(),
-                            ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, true);
+                    // TODO add audit event
                 }
             }
 
