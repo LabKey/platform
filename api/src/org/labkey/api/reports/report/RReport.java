@@ -369,14 +369,26 @@ public class RReport extends ExternalScriptEngineReport
             script = script.substring(yamlScript.length());
         }
 
-        return
-                yamlScript +
-//                "# 8< ----- do not edit this line ---------------------------------------\n" +
-//                "# This code is not part of your R report, changes will not be saved \n" +
-                StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) +
-//                "# Your report code goes below the next line \n" +
-//                "# -------- do not edit this line ------------------------------------ >8\n" +
-                script;
+        String commentLineStart = "# ";
+        String commentLineEnd = "\n";
+
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html || getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown )
+        {
+            commentLineStart = "<!-- ";
+            commentLineEnd = " -->\n";
+        }
+
+        // TODO only add comments for RStudio editing, not regular runtime execution
+        String ret;
+        ret =
+            yamlScript +
+            commentLineStart + "8< - - - do not edit this line - - - - - - - - - - - - - - - - - - - -" + commentLineEnd +
+            commentLineStart + "This code is not part of your R report, changes will not be saved     " + commentLineEnd +
+            StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) +
+            commentLineStart + "Your report code goes below the next line                             " + commentLineEnd +
+            commentLineStart + " - - - - do not edit this line - - - - - - - - - - - - - - - - - -  >8" + commentLineEnd +
+            script;
+        return ret;
     }
 
 
@@ -398,11 +410,21 @@ public class RReport extends ExternalScriptEngineReport
                 cutstart = i;
                 break;
             }
+            if (line.startsWith("<!--") && line.endsWith("-->") && line.substring(4,line.length()-3).trim().startsWith("8<"))
+            {
+                cutstart = i;
+                break;
+            }
         }
         for (int i=lines.length-1 ; i>=0 ; i--)
         {
             String line = lines[i].trim();
-            if (line.startsWith("#") && line.endsWith(">8"))
+            if (line.startsWith("#") && line.trim().endsWith(">8"))
+            {
+                cutend = i;
+                break;
+            }
+            if (line.startsWith("<!--") && line.endsWith("-->") && line.substring(4,line.length()-3).trim().endsWith(">8"))
             {
                 cutend = i;
                 break;
@@ -739,39 +761,63 @@ public class RReport extends ExternalScriptEngineReport
         @Test
         public void testProlog()
         {
-//            RReport report = new RReport();
-//            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
-//            ViewContext context = HttpView.currentContext();
-//            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
-//            String pre = "print('hello world')\n";
-//            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
-//
-//            assertTrue( post.contains("# 8<") );
-//            assertTrue( post.contains(">8") );
-//            assertTrue( post.endsWith(pre) );
-//
-//            String strip = report.stripScriptProlog(post);
-//            assertEquals(pre, strip);
+            RReport report = new RReport();
+            report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            ViewContext context = HttpView.currentContext();
+            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
+            String pre = "print('hello world')\n";
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
+
+            assertTrue( post.contains("# 8<") );
+            assertTrue( post.contains(">8") );
+            assertTrue( post.endsWith(pre) );
+
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
         }
 
         @Test
-        public void testPrologYaml()
+        public void testPrologHtml()
         {
-//            RReport report = new RReport();
-//            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
-//            ViewContext context = HttpView.currentContext();
-//            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
-//            String pre = "---\n" +
-//                    "title: My Report\n" +
-//                    "---\n" +
-//                    "print('hello world')\n";
-//            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
-//            assertTrue( post.contains("# 8<") );
-//            assertTrue( post.contains(">8") );
-//            assertTrue( post.endsWith("print('hello world')\n") );
-//
-//            String strip = report.stripScriptProlog(post);
-//            assertEquals(pre, strip);
+            RReport report = new RReport();
+            report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "html");
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Html);
+            //assertEquals(RReportDescriptor.KnitrFormat.Html, r.getKnitrFormat());
+            ViewContext context = HttpView.currentContext();
+            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
+            String pre = "<b>hello world</b>\n";
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
+            assertTrue( post.contains("<!-- 8<") );
+            assertTrue( post.contains(">8 -->") );
+            assertTrue( post.endsWith("<b>hello world</b>\n") );
+
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
+        }
+
+        @Test
+        public void testPrologMd()
+        {
+            RReport report = new RReport();
+            report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "markdown");
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Markdown);
+            ViewContext context = HttpView.currentContext();
+            Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
+            String pre = "---\n" +
+                    "title: My Report\n" +
+                    "---\n" +
+                    "hello world\n";
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
+            assertTrue( post.startsWith("---\n") );
+            assertTrue( post.contains("<!-- 8<") );
+            assertTrue( post.contains(">8") );
+            assertTrue( post.endsWith("hello world\n") );
+
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
         }
     }
 }
