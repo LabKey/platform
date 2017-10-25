@@ -204,6 +204,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             parameters: queryConfig.parameters,
             requiredVersion: 9.1,
             columns: columnList.columns.all,
+            method: 'POST', // Issue 31744: use POST as the columns list can be very long and cause a 400 error
             success: function(response){
                 var columnMetadata = _updateAndSortQueryFields(queryConfig, columnList, response.metaData.fields);
                 successCallback.call(callbackScope, columnMetadata);

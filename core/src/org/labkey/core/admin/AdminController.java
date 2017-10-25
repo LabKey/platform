@@ -843,10 +843,13 @@ public class AdminController extends SpringActionController
         }
     }
 
+    /**
+     * Action that preforms a basic check to see if the configured db is available
+     */
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public class HealthCheckAction extends ApiAction
+    public class BaseHealthCheckAction extends ApiAction
     {
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -860,10 +863,12 @@ public class AdminController extends SpringActionController
 
             healthValues.put("Overall", overallStatus);
             healthValues.put("DbConnectionStatus", dbConnectionHealth(overallStatus));
-            healthValues.put("Users", userHealth(overallStatus));
+            additionalHealthChecks(overallStatus, healthValues);
 
-            Boolean healthy = true;
-            for (Boolean healthStat : overallStatus.values())
+            Collection<Boolean> statusValues = overallStatus.values();
+            Boolean healthy = statusValues != null;
+
+            for (Boolean healthStat : statusValues)
             {
                 healthy = healthy && healthStat;
             }
@@ -875,27 +880,14 @@ public class AdminController extends SpringActionController
             }
             else
             {
+                if (!healthy)
+                {
+                    createResponseWriter().writeAndCloseError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
+                    return null;
+                }
+
                 return new ApiSimpleResponse("healthy", healthy);
             }
-
-        }
-
-        private Map<String, Object> userHealth(Map<String, Boolean> overallStatus)
-        {
-            Map<String, Object> userHealth = new HashMap<>();
-            ZonedDateTime now = ZonedDateTime.now();
-            try
-            {
-                int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
-                userHealth.put("RegisteredUsers", userCount);
-                overallStatus.put("HasUsers", userCount > 0);
-            }
-            catch (SQLException e)
-            {
-                LOG.error("HealthCheck: can't get user count", e);
-                overallStatus.put("HasUsers", false);  //TODO: not sure if this is best option...
-            }
-            return userHealth;
         }
 
         private Map<String, Boolean> dbConnectionHealth(Map<String, Boolean> overallStatus) throws Exception
@@ -920,6 +912,55 @@ public class AdminController extends SpringActionController
 
             overallStatus.put("AllDBsConnected", allConnected);
             return healthValues;
+        }
+
+        /**
+         * Add additional health checks to the response
+         * @param overallStatus json map showing boolean health indicators for server health categories
+         * @param healthValues Map expanded health per category
+         */
+        protected void additionalHealthChecks(Map<String, Boolean> overallStatus, Map<String, Object> healthValues)
+        {
+            //No additional health checks since this is the base
+        }
+    }
+
+    /**
+     * Preform the base DB HealthCheck plus some additional checks
+     */
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
+    public class HealthCheckAction extends BaseHealthCheckAction
+    {
+        @Override
+        protected void additionalHealthChecks(Map<String, Boolean> overallStatus, Map<String, Object> healthValues)
+        {
+            //Check if initial user is set
+            healthValues.put("Users", userHealth(overallStatus));
+        }
+
+        /**
+         * Check user health status (particularly, is at least one user registered)
+         * @param overallStatus Map for server. This method will add flag indicating if a user has been registered
+         * @return a Map containing expanded user health status
+         */
+        private Map<String, Object> userHealth(Map<String, Boolean> overallStatus)
+        {
+            Map<String, Object> userHealth = new HashMap<>();
+            ZonedDateTime now = ZonedDateTime.now();
+            try
+            {
+                int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
+                userHealth.put("RegisteredUsers", userCount);
+                overallStatus.put("HasUsers", userCount > 0);
+            }
+            catch (SQLException e)
+            {
+                LOG.error("HealthCheck: can't get user count", e);
+                overallStatus.put("HasUsers", false);  //TODO: not sure if this is best option...
+            }
+            return userHealth;
         }
     }
 
