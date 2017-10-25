@@ -356,8 +356,9 @@ include(new RelatedIssuesView(context, issue.getRelatedIssues()), out);
 </labkey:panel>
 <labkey:panel>
 <%
-for (Issue.Comment comment : commentLinkedList)
+for (int j = 0; j < commentLinkedList.size(); j++)
 {
+    Issue.Comment comment = commentLinkedList.get(j);
 if (!issue.getComments().contains(comment))
 {%>
 <div class="relatedIssue" style="display: none;"><%
@@ -366,7 +367,8 @@ if (!issue.getComments().contains(comment))
         {%>
     <div class="currentIssue" style="display: inline;"><%
         }%>
-        <hr><table width="100%"><tr><td class="comment-created" align="left"><b>
+
+        <table width="100%"><tr><td class="comment-created" align="left"><b>
             <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td class="comment-created-by" align="right"><b>
             <%=h(comment.getCreatedByName(user))%>
@@ -374,10 +376,13 @@ if (!issue.getComments().contains(comment))
         <%
             if (!issue.getComments().contains(comment))
             {%>
-        <div style="color:blue;font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
+        <div style="font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
             }%>
         <%=comment.getComment()%>
         <%=bean.renderAttachments(context, comment)%>
+        <%if (j != commentLinkedList.size() - 1) {%>
+        <hr>
+        <%}%>
     </div>
 <% }
 if (bean.getCallbackURL() != null) { %>
