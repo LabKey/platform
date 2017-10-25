@@ -302,10 +302,12 @@
             <%
                 ArrayList<DomainProperty> propertyArr = new ArrayList<>();
                 propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
+            %><table><tbody><%
                 for(DomainProperty prop : propertyArr)
                 {%>
             <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
             <%}%>
+            </tbody></table>
         </div>
     </div>
 
