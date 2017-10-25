@@ -234,8 +234,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
             propertiesItems.push({
                 xtype   : 'checkbox',
-                inputValue  : this.data.shared,
-                checked     : this.data.shared,
+                inputValue  : this.data.access == 'public',
+                checked     : this.data.access == 'public',
                 boxLabel    : 'Share this report with all users?',
                 name        : sharedName,
                 fieldLabel  : "Shared",

@@ -261,6 +261,14 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         var items = [];
         var id = Ext4.id();
 
+        // boolean helpers for the report access levels
+        var accessIsPublic = this.reportConfig.reportAccess == 'public';
+        var accessIsCustom = this.reportConfig.reportAccess == 'custom';
+        var accessIsPrivate = this.reportConfig.reportAccess == 'private';
+
+        // boolean indicating if the user can create script reports (is developer and at least author in container)
+        var isScriptEditor = LABKEY.user.isDeveloper && LABKEY.user.canInsert;
+
         items.push({
             xtype : 'fieldset',
             title : 'Script Source',
@@ -280,7 +288,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 mode            : this.reportConfig.editAreaSyntax ? this.reportConfig.editAreaSyntax : 'text/plain',
                                 lineNumbers     : true,
                                 lineWrapping    : true,
-                                readOnly        : this.readOnly,
+                                readOnly        : this.readOnly && !isScriptEditor,
                                 indentUnit      : 3
                             });
 
@@ -297,12 +305,16 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         items.push({
             xtype : 'fieldset',
             title : 'Options',
-            hidden: this.readOnly,
+            hidden: this.readOnly && !isScriptEditor,
             defaults    : {xtype : 'checkbox', labelWidth : 12},
             items : [
-                {name : 'shareReport',
-                    boxLabel : 'Make this report available to all users',
-                    checked : this.reportConfig.shareReport,
+                {
+                    name : 'shareReport',
+                    boxLabel : 'Make this report available to all users' + (this.reportConfig.reportAccess != null
+                                ? '&nbsp;<span data-qtip="Current report access level: ' + this.reportConfig.reportAccess + '"><i class="fa fa-question-circle-o"></i></span>'
+                                : ''),
+                    checked : accessIsPublic,
+                    disabled: accessIsCustom,
                     listeners : {
                         scope: this,
                         'change': function(cb, value) {
@@ -311,14 +323,19 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 this.down('checkbox[name=sourceTabVisible]').setValue(null);
                         }
                     }
-                },
-                {name : 'sourceTabVisible', boxLabel : 'Show source tab to all users', fieldLabel : ' ', checked : this.reportConfig.sourceTabVisible, disabled : !this.reportConfig.shareReport},
-                {name : 'inheritable',
-                        hidden : !this.reportConfig.allowInherit,
-                        boxLabel : 'Make this report available in child folders&nbsp;' +
-                                '<span data-qtip="If this check box is selected, this report will be available in data grids of child folders where the schema and table are the same as this data grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                        checked : this.reportConfig.inheritable},
-                {name : 'runInBackground',
+                },{
+                    name : 'sourceTabVisible',
+                    boxLabel : 'Show source tab to all users',
+                    checked : this.reportConfig.sourceTabVisible,
+                    disabled : this.reportConfig.reportAccess == null || accessIsPrivate
+                },{
+                    name : 'inheritable',
+                    hidden : !this.reportConfig.allowInherit,
+                    boxLabel : 'Make this report available in child folders&nbsp;' +
+                            '<span data-qtip="If this check box is selected, this report will be available in data grids of child folders where the schema and table are the same as this data grid."><i class="fa fa-question-circle-o"></i></span>',
+                    checked : this.reportConfig.inheritable
+                },{
+                    name : 'runInBackground',
                     hidden : !this.reportConfig.supportsPipeline,
                     boxLabel : 'Run this report in the background as a pipeline job',
                     checked : this.reportConfig.runInBackground,
@@ -338,32 +355,32 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 collapsible : true,
                 collapsed   : true,
                 defaults    : {xtype : 'radio', labelWidth : 12},
-                hidden      : this.readOnly,
+                hidden      : this.readOnly && !isScriptEditor,
                 items : [
                     {name : 'knitrFormat',
                         inputValue : 'None',
                         boxLabel : 'None&nbsp;' +
-                                '<span data-qtip="The source is run without going through knitr."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                '<span data-qtip="The source is run without going through knitr."><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.knitrFormat == 'None'},
                     {name : 'knitrFormat',
                         inputValue : 'Html',
                         boxLabel : 'Html&nbsp;' +
-                                '<span data-qtip="Use knitr to process html source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                '<span data-qtip="Use knitr to process html source"><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.knitrFormat == 'Html'},
                     {name : 'knitrFormat',
                         inputValue : 'Markdown',
                         boxLabel : 'Markdown&nbsp;' +
-                                '<span data-qtip="Use knitr to process markdown source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                '<span data-qtip="Use knitr to process markdown source"><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.knitrFormat == 'Markdown'},
                     {name : 'useDefaultOutputFormat',
                         xtype : 'checkbox',
                         inputValue : 'true',
-                        boxLabel : 'Use default output_format options (experimental, leave this checked)' +
-                        '<span data-qtip="html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=&quot;default&quot;)"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        boxLabel : 'Use default output_format options (experimental, leave this checked)&nbsp;' +
+                        '<span data-qtip="html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=&quot;default&quot;)"><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.useDefaultOutputFormat !== false},
                     { xtype : 'label',
                       html : 'Dependencies&nbsp;' +
-                              '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>'},
+                              '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><i class="fa fa-question-circle-o"></i></span>'},
                     { name : 'scriptDependencies',
                         xtype : 'textarea',
                         value : this.reportConfig.scriptDependencies,
@@ -383,13 +400,13 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 title : 'JavaScript Options',
                 collapsible : true,
                 collapsed   : true,
-                hidden      : this.readOnly,
+                hidden      : this.readOnly && !isScriptEditor,
                 defaults    : {xtype : 'checkbox', labelWidth : 12},
                 items : [
                     {name : 'useGetDataApi',
                         boxLabel : 'Use GetData API&nbsp;' +
                         '<span data-qtip="Uses the GetData API to retrieve data. Allows you to pass the data through one or more transforms before retrieving it. ' +
-                                    'See the documentation at : www.labkey.org/download/clientapi_docs/javascript-api/symbols/LABKEY.Query.GetData.html"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                    'See the documentation at : www.labkey.org/download/clientapi_docs/javascript-api/symbols/LABKEY.Query.GetData.html"><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.useGetDataApi,
                         uncheckedValue : false}
                 ]
@@ -403,11 +420,11 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
             thumbnails.push({name : 'thumbnailType',
                 boxLabel : 'Auto-generate&nbsp;' +
-                        '<span data-qtip="Auto-generate a new thumbnail based on the first available output from this report (i.e. image, pdf, etc.)"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        '<span data-qtip="Auto-generate a new thumbnail based on the first available output from this report (i.e. image, pdf, etc.)"><i class="fa fa-question-circle-o"></i></span>',
                 inputValue : 'AUTO', checked : this.reportConfig.thumbnailType == 'AUTO'});
             thumbnails.push({name : 'thumbnailType',
                 boxLabel : 'None&nbsp;' +
-                        '<span data-qtip="Use the default static image for this report"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        '<span data-qtip="Use the default static image for this report"><i class="fa fa-question-circle-o"></i></span>',
                 inputValue : 'NONE', checked : this.reportConfig.thumbnailType == 'NONE'});
 
             if (this.reportConfig.thumbnailType == 'CUSTOM')
@@ -419,7 +436,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 defaults    : {xtype : 'radio'},
                 collapsible : true,
                 collapsed   : true,
-                hidden      : this.readOnly,
+                hidden      : this.readOnly && !isScriptEditor,
                 items       : thumbnails
             });
         }
@@ -440,7 +457,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 collapsible : true,
                 collapsed   : true,
                 defaults    : {xtype : 'checkbox'},
-                hidden      : this.readOnly,
+                hidden      : this.readOnly && !isScriptEditor,
                 items : scripts
             });
         }
@@ -453,14 +470,14 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 title : 'Study Options',
                 collapsible : true,
                 collapsed   : true,
-                hidden      : this.readOnly,
+                hidden      : this.readOnly && !isScriptEditor,
                 defaults    : {xtype : 'checkbox', labelWidth : 12},
                 items : [
                     {name : 'filterParam',
                         inputValue : 'participantId',
                         boxLabel : subjectNoun + ' chart&nbsp;' +
                         '<span data-qtip="' + subjectNoun + ' chart views show measures for only one ' + subjectNoun + ' at a time. ' + subjectNoun +
-                                                ' chart views allow the user to step through charts for each ' + subjectNoun + ' shown in any dataset grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                                                ' chart views allow the user to step through charts for each ' + subjectNoun + ' shown in any dataset grid."><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.filterParam == 'participantId'},
                     {name : 'cached',
                         boxLabel : 'Automatically cache this report for faster reloading',
@@ -470,29 +487,46 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         }
 
         items.push({
-            xtype   : 'button',
-            text    : 'Save',
-            hidden  : this.readOnly,
-            handler : function() {
-
-                if (this.reportConfig.reportId)
+            xtype: 'button',
+            text: 'Save',
+            hidden: this.readOnly,
+            scope: this,
+            handler: function() {
+                if (this.reportConfig.reportId) {
                     this.save();
-                else
-                {
-                    Ext4.MessageBox.show({
-                        title   : 'Save Report',
-                        msg     : 'Please enter a report name:',
-                        buttons : Ext4.MessageBox.OKCANCEL,
-                        fn      : function(btnId, name) {
-                            if (btnId == 'ok')
-                                this.save(name);
-                        },
-                        prompt  : true,
-                        scope   : this
-                    });
                 }
-            },
-            scope : this
+                else {
+                    this.showSaveReportPrompt('Save Report', false);
+                }
+            }
+        });
+
+        items.push({
+            xtype: 'button',
+            text: 'Save As',
+            hidden: !isScriptEditor || this.reportConfig.reportId == null,
+            style: 'margin-left: 5px;',
+            scope: this,
+            handler: function() {
+                this.showSaveReportPrompt('Save Report As', true);
+            }
+        });
+
+        items.push({
+            xtype: 'button',
+            text: 'Cancel',
+            hidden: !isScriptEditor,
+            style: 'margin-left: 5px;',
+            scope: this,
+            handler: function() {
+                this.resetDirty();
+                if (this.redirectUrl) {
+                    window.location = this.redirectUrl;
+                }
+                else {
+                    window.location.reload();
+                }
+            }
         });
 
         // hidden elements
@@ -523,6 +557,20 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         });
 
         return this.formPanel;
+    },
+
+    showSaveReportPrompt : function(title, isSaveAs) {
+        Ext4.MessageBox.show({
+            title   : title,
+            msg     : 'Please enter a report name:',
+            buttons : Ext4.MessageBox.OKCANCEL,
+            fn      : function(btnId, name) {
+                if (btnId == 'ok')
+                    this.save(name, isSaveAs);
+            },
+            prompt  : true,
+            scope   : this
+        });
     },
 
     createHelpPanel : function() {
@@ -563,7 +611,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return url;
     },
 
-    save : function(name) {
+    save : function(name, isSaveAs) {
 
         var form = this.formPanel.getForm();
 
@@ -571,10 +619,14 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         {
             var data = form.getValues();
 
-            if (this.reportConfig.reportId)
+            if (!isSaveAs && this.reportConfig.reportId) {
                 data.reportId = this.reportConfig.reportId;
-            else
+            }
+            else {
                 data.reportName = name;
+                data.redirectUrl = null; // force redirect back to the newly saved report
+            }
+
             data.script = this.codeMirror.getValue();
 
             Ext4.Ajax.request({
@@ -587,8 +639,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         this.resetDirty();
                         window.location = o.redirect;
                     }
-                    else
+                    else {
                         LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+                    }
                 },
                 failure : LABKEY.Utils.displayAjaxErrorResponse,
                 jsonData: data,

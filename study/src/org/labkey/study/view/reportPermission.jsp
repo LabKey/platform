@@ -50,7 +50,7 @@
     Study study = StudyManager.getInstance().getStudy(getContainer());
     Container c = study != null ? study.getContainer() : getContainer();
     SecurityPolicy containerPolicy = c.getPolicy();
-    SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor());
+    SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor(), false);
 
     Container project = c.getProject();
     List<Group> globalGroups = SecurityManager.getGroups(null, false);
@@ -61,7 +61,7 @@
     for (RoleAssignment assignment : reportPolicy.getAssignments())
     {
         User user = UserManager.getUser(assignment.getUserId());
-        if (user != null && assignment.getRole() != null)
+        if (user != null && assignment.getRole() != null && !reportSharedUsers.contains(user))
             reportSharedUsers.add(user);
     }
 %>

@@ -1591,7 +1591,7 @@ public class ReportsController extends SpringActionController
             }
 
             response.put("success", true);
-            response.put("redirect", form.getRedirectUrl());
+            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : report.getRunReportURL(getViewContext()));
 
             return response;
         }
