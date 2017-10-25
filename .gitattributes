@@ -39,7 +39,6 @@ announcements/src/org/labkey/announcements/ToursController.java -text
 announcements/src/org/labkey/announcements/announcementEmailDefaults.jsp -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/announcementThread.jsp -text
-announcements/src/org/labkey/announcements/announcementWebPart.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPartSimple.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPartWithExpandos.jsp -text
 announcements/src/org/labkey/announcements/api/AnnouncementImpl.java -text
