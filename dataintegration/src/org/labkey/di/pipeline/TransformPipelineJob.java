@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -50,6 +51,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -224,13 +226,15 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
                 - If the source and destination schemas are in the same scope, a single REPEATABLE READ transaction is used. And
                   this is only available for Postgres.
          */
-
-        if (null != _etlDescriptor.getTransactSourceSchema())
+        try
         {
-            sourceScope = DefaultSchema
-                    .get(_transformJobContext.getUser(), _transformJobContext.getContainer(), _etlDescriptor.getTransactSourceSchema())
-                    .getDbSchema()
-                    .getScope();
+            if (null != _etlDescriptor.getTransactSourceSchema())
+            {
+                sourceScope = Optional.ofNullable(DefaultSchema
+                        .get(_transformJobContext.getUser(), _transformJobContext.getContainer(), _etlDescriptor.getTransactSourceSchema()))
+                        .orElseThrow(() -> new ConfigurationException("transactSourceSchema not found for this container: " + _etlDescriptor.getTransactSourceSchema()))
+                        .getDbSchema()
+                        .getScope();
             /*
             TODO: Support SQL Server if possible. Tricky:
               - On SQL Server, REPEATABLE READ isolation causes locking issues on the source tables. This defeats the purpose of using a transaction
@@ -243,19 +247,26 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
               - Note that while java.sql.Connection doesn't define a constant corresponding to SNAPSHOT isolation level, JTDS represents it as int 4096. (Or an explicit SET TRANSACTION
                   statement can be run over the connection.)
             */
-            if (!sourceScope.getSqlDialect().isPostgreSQL())
-                throw new IllegalArgumentException("Transacting the source scope is only available on Postgres data sources.");
+                if (!sourceScope.getSqlDialect().isPostgreSQL())
+                    throw new ConfigurationException("Transacting the source scope is only available on Postgres data sources.");
+            }
+
+            if (null != _etlDescriptor.getTransactTargetSchema())
+            {
+                targetScope = Optional.ofNullable(DefaultSchema
+                        .get(_transformJobContext.getUser(), _transformJobContext.getContainer(), _etlDescriptor.getTransactTargetSchema()))
+                        .orElseThrow(() -> new ConfigurationException("transactDestinationSchema not found for this container: " + _etlDescriptor.getTransactTargetSchema()))
+                        .getDbSchema()
+                        .getScope();
+
+                if (targetScope.equals(sourceScope))
+                    targetScope = null; // If both source and destination are on the same data source, we only have one connection/transaction
+            }
         }
-
-        if (null != _etlDescriptor.getTransactTargetSchema())
+        catch (ConfigurationException e)
         {
-            targetScope = DefaultSchema
-                    .get(_transformJobContext.getUser(), _transformJobContext.getContainer(), _etlDescriptor.getTransactTargetSchema())
-                    .getDbSchema()
-                    .getScope();
-
-            if (targetScope.equals(sourceScope))
-                targetScope = null; // If both source and destination are on the same data source, we only have one connection/transaction
+            error("Configuration problem with ETL", e);
+            return;
         }
 
         DbScope.Transaction sourceTx = null == sourceScope ? null : sourceScope.beginTransaction(SNAPSHOT_TRANSACTION_KIND);
