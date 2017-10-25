@@ -211,7 +211,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             // This is so '_webdav' shows up as a child when someone does a propfind on '/'
 
             List<WebdavResource> webdavResources = new ArrayList<>();
-            WebdavService.get().getEnabledRootResolvers().forEach(webdavResolver ->
+            WebdavService.get().getRootResolvers().forEach(webdavResolver ->
                 webdavResources.add(new SymbolicLink(webdavResolver.getRootPath(), webdavResolver))
             );
             _root = new StaticResource(null, Path.emptyPath, roots, webdavResources);
