@@ -273,7 +273,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 hasPostData = true;
                 originalName = "upload.tsv";
                 TabLoader tabLoader = new TabLoader(text, _hasColumnHeaders);
-                if ("csv".equals(getViewContext().getRequest().getParameter("format")))
+                if ("csv".equalsIgnoreCase(getViewContext().getRequest().getParameter("format")))
                 {
                     tabLoader.setDelimiterCharacter(',');
                     originalName = "upload.csv";
