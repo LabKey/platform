@@ -47,6 +47,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -1492,6 +1493,18 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 {
                     return null;
                 }
+            }
+            return null;
+        }
+
+        @Override
+        public String getAbsolutePath(User user)
+        {
+            Container container = null != getContainerId() ? ContainerManager.getForId(getContainerId()) : null;
+            if (null != container && SecurityManager.canSeeFilePaths(container, user))
+            {
+                File file = getFile();
+                return null != file ? file.getAbsolutePath() : null;
             }
             return null;
         }
