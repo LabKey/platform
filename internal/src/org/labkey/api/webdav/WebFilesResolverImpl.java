@@ -1,17 +1,20 @@
 package org.labkey.api.webdav;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class WebFilesResolverImpl extends AbstractWebdavResolver
 {
@@ -30,7 +34,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
     private WebFilesResolverImpl(Path path)
     {
         _rootPath = path;
-        ContainerManager.addContainerListener(new WebfilesListener());
+        // skip folder caching since changes under @files aren't attached to container listener
     }
 
     public static WebdavResolver get()
@@ -78,35 +82,6 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
         return AppProps.getInstance().isWebfilesRootEnabled();
     }
 
-    private class WebfilesListener extends AbstractWebdavListener
-    {
-        @Override
-        protected void clearFolderCache()
-        {
-            _folderCache.clear();
-        }
-
-        @Override
-        protected void invalidate(Path containerPath, boolean recursive)
-        {
-            final Path path = getRootPath().append(containerPath);
-            _folderCache.remove(path);
-            if (recursive)
-                _folderCache.removeUsingFilter(test -> test.startsWith(path));
-            if (containerPath.size() == 0)
-            {
-                synchronized (WebFilesResolverImpl.this)
-                {
-                    _root = null;
-                }
-            }
-        }
-    }
-
-    // Cache with short-lived entries to make webfiles perform reasonably.  WebFilesResolverImpl is a singleton, so we
-    // end up with just one of these.
-    private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles folders");
-
     public class WebFilesFolderResource extends AbstractWebFolderResource
     {
         private Map<String, String> folderNamesMap = new HashMap<>();
@@ -114,6 +89,59 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
         WebFilesFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver, c);
+        }
+
+        @Override
+        public boolean canList(User user, boolean forRead)
+        {
+            return canRead(user, forRead);
+        }
+
+
+        @Override
+        public boolean canRead(User user, boolean forRead)
+        {
+            if ("/".equals(getPath()))
+                return true;
+            return getPermissions(user).contains(ReadPermission.class);
+        }
+
+        @Override
+        public boolean canWrite(User user, boolean forWrite)
+        {
+            return !user.isGuest() && getPermissions(user).contains(UpdatePermission.class);
+        }
+
+        @Override
+        public boolean canCreate(User user, boolean forCreate)
+        {
+            return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(InsertPermission.class);
+        }
+
+        @Override
+        public boolean canCreateCollection(User user, boolean forCreate)
+        {
+            return canCreate(user, forCreate);
+        }
+
+        @Override
+        public boolean canDelete(User user, boolean forDelete)
+        {
+            return canDelete(user,forDelete,null);
+        }
+
+        @Override
+        public boolean canDelete(User user, boolean forDelete, /* OUT */ @Nullable List<String> message)
+        {
+            if (user.isGuest() || !hasAccess(user))
+                return false;
+            Set<Class<? extends Permission>> perms = getPermissions(user);
+            return perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class);
+        }
+
+        public boolean canRename(User user, boolean forRename)
+        {
+            return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
         }
 
         @Override
@@ -133,35 +161,24 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                 }
 
                 // get directories under @files
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                if (svc != null)
+                File fileRootFolder = getFileRootFile(container);
+                if (fileRootFolder != null)
                 {
-                    AttachmentDirectory dir = null;
-                    try
+                    File[] fileRootContent = fileRootFolder.listFiles();
+                    if (fileRootContent != null)
                     {
-                        dir = svc.getMappedAttachmentDirectory(container, false);
-                        if (dir != null)
+                        for (File file : fileRootContent)
                         {
-                            File fileRootFolder = dir.getFileSystemDirectory();
-                            File[] fileRootContent = fileRootFolder.listFiles();
-                            if (fileRootContent != null)
+                            if (file.isDirectory())
                             {
-                                for (File file : fileRootContent)
-                                {
-                                    if (file.isDirectory())
-                                    {
-                                        String rawFileName = file.getName();
-                                        String noConflictName = getFolderNameNoConflict(children, rawFileName);
-                                        children.add(noConflictName);
-                                        folderNamesMap.put(noConflictName, rawFileName);
-                                    }
-                                }
+                                String rawFileName = file.getName();
+                                String noConflictName = getFolderNameNoConflict(children, rawFileName);
+                                children.add(noConflictName);
+                                folderNamesMap.put(noConflictName, rawFileName);
                             }
+                            else
+                                children.add(file.getName());
                         }
-                    }
-                    catch (MissingRootDirectoryException e)
-                    {
-                        // Don't complain here, just hide the @files subfolders
                     }
                 }
 
@@ -213,10 +230,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
             if (name != null)
             {
                 Path path = getPath().append(name);
-                // check in webfolder cache
-                WebdavResource resource = _folderCache.get(path);
-                if (null != resource)
-                    return resource;
+                WebdavResource resource = null;
 
                 // if child container
                 if (c != null)
@@ -225,48 +239,64 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                 }
                 else // if directory under @files
                 {
-                    String rawFolderName = folderNamesMap.get(name);
-                    File targetFile = null;
-                    FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                    if (svc != null)
+                    File fileRootFile = getFileRootFile(parentContainer);
+                    if (fileRootFile != null)
                     {
-                        AttachmentDirectory dir = null;
-                        try
+                        String rawFolderName = folderNamesMap.get(name);
+                        File targetFile = null;
+                        File[] fileRootContent = fileRootFile.listFiles();
+                        if (fileRootContent != null)
                         {
-                            dir = svc.getMappedAttachmentDirectory(parentContainer, false);
-                            if (dir != null)
+                            for (File file : fileRootContent)
                             {
-                                File fileRootFolder = dir.getFileSystemDirectory();
-                                File[] fileRootContent = fileRootFolder.listFiles();
-                                if (fileRootContent != null)
-                                {
-                                    for (File file : fileRootContent)
-                                    {
-                                        if (file.getName().equals(rawFolderName))
-                                            targetFile = file;
-                                    }
-                                }
+                                if (file.isDirectory() && file.getName().equals(rawFolderName))
+                                    targetFile = file;
+                                else if (!file.isDirectory() && file.getName().equals(name))
+                                    targetFile = file;
                             }
-                            if (targetFile != null)
-                                resource = new FileSystemResource(this, name, targetFile, parentContainer.getPolicy(), true);
+                        }
+                        if (targetFile != null)
+                            resource = new FileSystemResource(this, name, targetFile, parentContainer.getPolicy(), false);
 
-                        }
-                        catch (MissingRootDirectoryException e)
-                        {
-                            // Don't complain here, just hide the @files subfolders
-                        }
                     }
 
                 }
 
                 if (resource != null)
-                {
-                    _folderCache.put(path, resource);
                     return resource;
+            }
+            else // uploading, creating subfolder directly under child (but maps to @files) is supported
+            {
+                File fileRootFile = getFileRootFile(parentContainer);
+                if (fileRootFile != null)
+                {
+                    FileSystemResource fileRootResource = new FileSystemResource(this, "@files", fileRootFile, parentContainer.getPolicy(), false);
+                    if (child.equals("@files"))
+                        return fileRootResource;
+                    return new FileSystemResource(fileRootResource, child);
                 }
             }
 
             return new UnboundResource(this.getPath().append(child));
+        }
+
+        private File getFileRootFile(Container container)
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            if (svc != null)
+            {
+                try
+                {
+                    AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
+                    if (dir != null)
+                        return dir.getFileSystemDirectory();
+                }
+                catch (MissingRootDirectoryException e)
+                {
+                    // Don't complain here, just hide the @files subfolders
+                }
+            }
+            return null;
         }
 
         @Override
