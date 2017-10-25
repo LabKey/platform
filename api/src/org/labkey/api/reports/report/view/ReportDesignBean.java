@@ -46,6 +46,7 @@ public class ReportDesignBean extends ReportForm
     protected String _reportName;
     protected String _reportDescription;
     protected String _redirectUrl;
+    protected String _reportAccess;
     protected boolean _shareReport;
     protected boolean _inheritable;
     protected boolean _cached;
@@ -162,6 +163,16 @@ public class ReportDesignBean extends ReportForm
         _reportDescription = reportDescription;
     }
 
+    public String getReportAccess()
+    {
+        return _reportAccess;
+    }
+
+    public void setReportAccess(String reportAccess)
+    {
+        _reportAccess = reportAccess;
+    }
+
     public boolean isShareReport()
     {
         return _shareReport;
@@ -251,6 +262,8 @@ public class ReportDesignBean extends ReportForm
             list.add(new Pair<>(ReportDescriptor.Prop.reportDescription.toString(), _reportDescription));
         if (_owner != -1)
             list.add(new Pair<>("owner", Integer.toString(_owner)));
+        if (!StringUtils.isEmpty(_reportAccess))
+            list.add(new Pair<>("reportAccess", _reportAccess));
         if (_shareReport)
             list.add(new Pair<>("shareReport", String.valueOf(_shareReport)));
         if (_inheritable)
@@ -272,6 +285,7 @@ public class ReportDesignBean extends ReportForm
         setFilterParam(descriptor.getProperty(ReportDescriptor.Prop.filterParam));
         setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
 
+        setReportAccess(descriptor.getAccess());
         setShareReport((descriptor.isShared()));
         setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
         setRedirectUrl(getViewContext().getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl.name()));

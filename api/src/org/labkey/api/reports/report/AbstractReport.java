@@ -392,24 +392,17 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             return false;
         }
 
-        // public or private report
-        if (isPrivate())
+        // public, custom, or private report
+        if (isPrivate() || getDescriptor().hasCustomAccess())
         {
             if (!isOwner(user))
-                errors.add(new SimpleValidationError("You must be the owner of a private report in order to edit it."));
+                errors.add(new SimpleValidationError("You must be the owner of a private or custom report in order to edit it."));
         }
         else if (!isOwner(user) && !container.hasPermission(user, EditSharedReportPermission.class))
         {
             errors.add(new SimpleValidationError("You must be in the Editor role to update a shared report."));
         }
 
-/*
-        if (container.hasPermission(user, AdminPermission.class))
-            return true;
-        if (getCreatedBy() != 0)
-            return (getCreatedBy() == user.getUserId());
-        return false;
-*/
         return errors.isEmpty();
     }
 
@@ -434,8 +427,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         }
         else
         {
-            if (isPrivate())
-                errors.add(new SimpleValidationError("You must be the owner to share a private report."));
+            if (isPrivate() || getDescriptor().hasCustomAccess())
+                errors.add(new SimpleValidationError("You must be the owner to share a private or custom report."));
             else if(!container.hasPermission(user, EditSharedReportPermission.class))
                 errors.add(new SimpleValidationError("You must be in the Editor role to share a public report."));
         }

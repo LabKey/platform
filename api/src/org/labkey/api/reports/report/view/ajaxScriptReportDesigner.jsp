@@ -119,6 +119,7 @@
     reportConfig.put("dataRegionName", h(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
     reportConfig.put("reportType", bean.getReportType());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
+    reportConfig.put("reportAccess", bean.getReportAccess());
     reportConfig.put("shareReport", bean.isShareReport());
     reportConfig.put("sourceTabVisible", bean.isSourceTabVisible());
     reportConfig.put("runInBackground", bean.isRunInBackground());

@@ -153,7 +153,7 @@ public class ScriptReportBean extends ReportDesignBean
 
             descriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
 
-            if (!isShareReport())
+            if (!isShareReport() && !descriptor.hasCustomAccess())
                 descriptor.setOwner(getUser().getUserId());
             else
                 descriptor.setOwner(null);

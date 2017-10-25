@@ -739,7 +739,7 @@ public class RReport extends ExternalScriptEngineReport
         if (getDescriptorType().equals(ModuleRReportDescriptor.TYPE))
             return false;
         
-        return super.canEdit(user, container, errors);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.canEdit(user, container, errors);
     }
 
     @Nullable

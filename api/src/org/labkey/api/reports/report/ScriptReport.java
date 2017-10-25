@@ -157,10 +157,10 @@ public abstract class ScriptReport extends AbstractReport
         {
             if (user.isDeveloper())
             {
-                if (isPrivate())
+                if (isPrivate() || getDescriptor().hasCustomAccess())
                 {
                     if (!container.hasPermission(user, InsertPermission.class))
-                        errors.add(new SimpleValidationError("You must be in the Author role to update a private script report."));
+                        errors.add(new SimpleValidationError("You must be in the Author role to update a private or custom script report."));
                 }
             }
             else

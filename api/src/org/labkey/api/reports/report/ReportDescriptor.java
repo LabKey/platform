@@ -1001,4 +1001,9 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
         return access;
     }
+
+    public boolean hasCustomAccess()
+    {
+        return REPORT_ACCESS_CUSTOM.equals(getAccess());
+    }
 }
