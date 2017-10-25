@@ -18,6 +18,9 @@ $Leaf-white: #FFFFFF;
 $lk-theme-dark-accent: $Leaf-accent;
 $lk-theme-light-accent: $Leaf-header;
 
+//== Override default colors
+//
+$lk-accent-color: $lk-theme-light-accent;
 $lk-text-color: $Leaf-body-font;
 
 //== Forms / States
@@ -33,10 +36,6 @@ $lk-brand-primary: $Leaf-header;
 
 //== Buttons
 //
-$lk-button-primary-color: $lk-theme-dark-accent;
-$lk-button-primary-color-hover: $lk-theme-dark-accent;
-$lk-button-primary-border-color: $lk-theme-dark-accent;
-$lk-button-primary-border-color-hover: $lk-theme-dark-accent;
 $lk-bar-button-color: $Leaf-anchor-color;
 $lk-bar-button-color-hover: $Leaf-gray-darkest;
 $lk-bar-button-border-color-hover: $Leaf-gray-blue;

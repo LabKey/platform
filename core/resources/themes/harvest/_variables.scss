@@ -19,6 +19,9 @@ $Harvest-addtl-text: #742A2A;
 $lk-theme-dark-accent: $Harvest-accent;
 $lk-theme-light-accent: $Harvest-header;
 
+//== Override default colors
+//
+$lk-accent-color: $lk-theme-light-accent;
 $lk-text-color: $Harvest-body-font;
 
 //== Forms / States
@@ -34,10 +37,6 @@ $lk-brand-primary: $Harvest-header;
 
 //== Buttons
 //
-$lk-button-primary-color: $lk-theme-dark-accent;
-$lk-button-primary-color-hover: $lk-theme-dark-accent;
-$lk-button-primary-border-color: $lk-theme-dark-accent;
-$lk-button-primary-border-color-hover: $lk-theme-dark-accent;
 $lk-bar-button-color: $Harvest-anchor-color;
 $lk-bar-button-color-hover: $Harvest-gray-darkest;
 $lk-bar-button-border-color-hover: $Harvest-gray-blue;

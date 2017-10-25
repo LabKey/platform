@@ -18,6 +18,10 @@ $Madison-white: #FFFFFF;
 $lk-theme-dark-accent: $Madison-red-dark;
 $lk-theme-light-accent: $Madison-red;
 
+
+//== Override default colors
+//
+$lk-accent-color: $lk-theme-light-accent;
 $lk-text-color: $Madison-body-font-color;
 $lk-link-color: $Madison-anchor-color;
 
@@ -41,11 +45,6 @@ $lk-brand-primary: $Madison-red;
 
 //== Buttons
 //
-$lk-button-primary-color: $lk-theme-light-accent;
-$lk-button-primary-color-hover: $lk-theme-light-accent;
-$lk-button-primary-border-color: $lk-theme-light-accent;
-$lk-button-primary-border-color-hover: $lk-theme-light-accent;
-
 $lk-bar-button-color: $Madison-body-font-color;
 $lk-bar-button-color-hover: $Madison-gray-darkest;
 $lk-bar-button-border-color-hover: $Madison-gray-blue;

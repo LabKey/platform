@@ -18,6 +18,9 @@ $Mono-white: #FFFFFF;
 $lk-theme-dark-accent: $Mono-accent;
 $lk-theme-light-accent: $Mono-header;
 
+//== Override default colors
+//
+$lk-accent-color: $lk-theme-light-accent;
 $lk-text-color: $Mono-body-font;
 
 //== Forms / States
@@ -33,10 +36,6 @@ $lk-brand-primary: $Mono-header;
 
 //== Buttons
 //
-$lk-button-primary-color: $lk-theme-light-accent;
-$lk-button-primary-color-hover: $lk-theme-light-accent;
-$lk-button-primary-border-color: $lk-theme-light-accent;
-$lk-button-primary-border-color-hover: $lk-theme-light-accent;
 $lk-bar-button-color: $Mono-anchor-color;
 $lk-bar-button-color-hover: $Mono-gray-darkest;
 $lk-bar-button-border-color-hover: $Mono-gray-blue;
