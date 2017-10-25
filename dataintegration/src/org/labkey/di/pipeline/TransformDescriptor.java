@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -51,10 +52,12 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.pipeline.TaskPipelineSettings;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
@@ -93,6 +96,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -313,6 +317,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 return false;
             // Call this just to create the TransformConfiguration record if it doesn't exist
             TransformManager.get().getTransformConfiguration(c, this);
+            validate(context);
             for (StepMeta stepMeta : _stepMetaDatas)
             {
                 TransformTask step = stepMeta.getProvider().createStepInstance(null, null, stepMeta, (TransformJobContext)context);
@@ -349,6 +354,28 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             wrapException(x);
 
         return false;
+    }
+
+    private void validate(ScheduledPipelineJobContext context)
+    {
+        if (null != getTransactSourceSchema())
+        {
+            DbScope sourceScope = Optional.ofNullable(DefaultSchema
+                    .get(context.getUser(), context.getContainer(), getTransactSourceSchema()))
+                    .orElseThrow(() -> new ConfigurationException("transactSourceSchema not found for this container: " + getTransactSourceSchema()))
+                    .getDbSchema()
+                    .getScope();
+
+            if (!sourceScope.getSqlDialect().isPostgreSQL())
+                throw new ConfigurationException("Transacting the source scope is only available on Postgres data sources.");
+        }
+
+        if (null != getTransactTargetSchema())
+        {
+            Optional.ofNullable(DefaultSchema
+                    .get(context.getUser(), context.getContainer(), getTransactTargetSchema()))
+                    .orElseThrow(() -> new ConfigurationException("transactDestinationSchema not found for this container: " + getTransactTargetSchema()));
+        }
     }
 
 
