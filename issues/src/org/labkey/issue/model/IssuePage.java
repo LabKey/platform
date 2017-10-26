@@ -56,7 +56,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.issue.ColumnType;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.IssuesController.DownloadAction;
 import org.labkey.issue.model.Issue.Comment;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
@@ -432,12 +431,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        if (_newUI)
-                            sb.append("<td>");
-                        dc.renderDetailsCaptionCell(renderContext, writer, _newUI ? "control-label" : null);
+                        dc.renderDetailsCaptionCell(renderContext, writer, _newUI ? "lk-form-label" : null);
                         sb.append(writer);
-                        if (_newUI)
-                            sb.append("</td>");
                     }
                     return sb.toString();
                 }
@@ -455,9 +450,17 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (label != null)
         {
             if (_newUI)
-                sb.append("<td><label class=\"control-label\">").append(label).append("</label></td>");
+            {
+                sb.append("<td class=\"lk-form-label\">").append(label);
+                if (label.length() < 100) //prevents silly-looking colons on extremely long labels (see: email prefs)
+                    sb.append(":");
+                sb.append("</td>");
+            }
+
             else
+            {
                 sb.append("<td class=\"labkey-form-label\">").append(label).append("</td>");
+            }
 
             return sb.toString();
         }
@@ -732,21 +735,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     sep = ", ";
                 }
 
-                if (PageFlowUtil.useExperimentalCoreUI())
-                {
-                    sb.append("<div class='form-group'>");
-                    sb.append("<label class='control-label'>").append(label).append("</label>");
-                    sb.append("<div class='col-9'>").append(cellContents.toString()).append("</div>");
-                    sb.append("</div>");
-                }
-                else
-                {
-                    sb.append("<tr><td class='labkey-form-label'>");
-                    sb.append(label);
-                    sb.append("</td><td>");
-                    sb.append(cellContents.toString());
-                    sb.append("</td><tr>");
-                }
+                sb.append("<tr><td class=\"lk-form-label\">");
+                sb.append(label);
+                sb.append("</td><td>");
+                sb.append(cellContents.toString());
+                sb.append("</td><tr>");
+
             }
 
             return sb.toString();

@@ -51,13 +51,10 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
 
     public String getInstallationValue(String labelText)
     {
-        if (LabKeySiteWrapper.IS_BOOTSTRAP_LAYOUT)
-            return Locator.tagWithClassContaining("label", "control-label")
-                    .withText(WordUtils.capitalize(labelText))  // TODO: WordUtils is deprecated in Commons Lang 3.6; this class is now maintained in Commons Text
-                    .followingSibling("div")
-                    .childTag("p").findElement(getDriver()).getText();
-        else
-            return Locator.lkLabel(WordUtils.capitalize(labelText) /* TODO: See comment above */).followingSibling("td").findElement(getDriver()).getText();
+        return Locator.tagWithClassContaining("td", "lk-form-label")
+                .withText(WordUtils.capitalize(labelText))  // TODO: WordUtils is deprecated in Commons Lang 3.6; this class is now maintained in Commons Text
+                .followingSibling("td")
+                .findElement(getDriver()).getText();
     }
 
     @Override

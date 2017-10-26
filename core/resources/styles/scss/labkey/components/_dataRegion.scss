@@ -330,8 +330,14 @@ td.labkey-blank-cell, th.labkey-blank-cell {
 
   .control-header-label {
     word-break: normal;
-    font-weight: bold;
     padding: 0 10px 0 0;
+    white-space: nowrap;
+  }
+
+  td {
+    border-collapse: separate;
+    border-spacing: 2px;
+    padding: 2px;
   }
 
   .labkey-input-cell > div {

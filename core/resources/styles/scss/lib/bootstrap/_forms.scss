@@ -32,8 +32,7 @@ legend {
 label {
   display: inline-block;
   max-width: 100%; // Force IE8 to wrap long content (see https://github.com/twbs/bootstrap/issues/13141)
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 0;
 }
 
 
@@ -122,7 +121,7 @@ output {
   display: block;
   width: 100%;
   height: 27px; //$input-height-base; // Make inputs at least the height of their button counterpart (base line-height + padding + border)
-  padding: $padding-base-vertical $padding-base-horizontal;
+  padding: 0 $padding-base-horizontal;
   font-size: $font-size-base;
   line-height: $line-height-base;
   color: $input-color;
@@ -182,6 +181,14 @@ textarea.form-control {
       width: 100%;
     }
   }
+}
+
+.lk-form-label {
+  padding-top: ($padding-base-vertical + 3); // Default padding with a little extra room
+  padding-bottom: ($padding-base-vertical + 3);
+  padding-left: 0;
+  padding-right: $lk-padding-small-horizontal;
+  text-align: $lk-form-control-text-align;
 }
 
 // Search inputs in iOS
@@ -617,7 +624,7 @@ input[type="checkbox"] {
   // labels on narrow viewports stack the same as a default form example.
   @media (min-width: $screen-sm-min) {
     .control-label {
-      //text-align: right;
+      text-align: $lk-form-control-text-align;
       margin-bottom: 0;
       padding-top: ($padding-base-vertical + 1); // Default padding plus a border
     }
