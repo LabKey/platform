@@ -37,8 +37,9 @@ public class WebPartPanel extends Composite
         {
             panel = new HTMLPanel(
                 "<div class=\"panel panel-portal\">" +
-                "<div class=\"panel-heading clearfix\">" +
+                "<div class=\"panel-heading\">" +
                     "<h3 class=\"panel-title pull-left\" title=\"" + SafeHtmlUtils.htmlEscape(title) + "\">" + SafeHtmlUtils.htmlEscape(title) + "</h3>" +
+                    "<div class=\"clearfix\"></div>" +
                 "</div>" +
                 "<div id=\"" + bodyId + "\" class=\"panel-body\"></div>" +
                 "</div>"

@@ -76,35 +76,33 @@
         padding: 0 5px;
     }
 </style>
-
 <div id="<%=text(errorDivId)%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
-
 <div class="panel panel-portal" style="width: 760px;">
-    <div class="panel-heading clearfix">
+    <div class="panel-heading">
         <h3 class="panel-title pull-left">Upload file (.xlsx, .xls, .csv, .txt)</h3>
         <span class="lk-import-expando pull-right">
             <%= PageFlowUtil.button("+").href("#").attributes("id='" + uploadFileDivId + "Expando'") %>
         </span>
+        <div class="clearfix"></div>
     </div>
     <div class="panel-body">
         <div id="<%=text(uploadFileDivId)%>"></div>
     </div>
 </div>
-
 <div class="panel panel-portal" style="width: 760px;">
-    <div class="panel-heading clearfix">
+    <div class="panel-heading">
         <h3 class="panel-title pull-left">Copy/paste text</h3>
         <span class="lk-import-expando pull-right">
             <%=PageFlowUtil.button("&ndash;").textAsHTML(true).href("#").attributes("id='" + copyPasteDivId + "Expando'") %>
         </span>
+        <div class="clearfix"></div>
     </div>
     <div class="panel-body">
         <div id="<%=text(copyPasteDivId)%>"></div>
     </div>
 </div>
-
 <script type="text/javascript"> (function(){
     var $html = Ext.util.Format.htmlEncode;
 
@@ -435,6 +433,5 @@
     }
 
     Ext.onReady(onReady);
-
 })();
 </script>

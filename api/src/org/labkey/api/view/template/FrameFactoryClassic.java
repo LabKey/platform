@@ -656,8 +656,9 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             String panelTypeCls = useDefault ? "panel-default" : "panel-portal";
             String style = width != null ? "width: " + width + "px;" : "";
             out.write("<div class=\"panel " + panelTypeCls + "\" style=\"" + style + "\">");
-            out.write(" <div class=\"panel-heading clearfix\">");
+            out.write(" <div class=\"panel-heading\">");
             out.write("  <h3 class=\"panel-title pull-left\">" + PageFlowUtil.filter(title) + "</h3>");
+            out.write("  <div class=\"clearfix\"></div>");
             out.write(" </div>");
             out.write(" <div class=\"panel-body\">");
         }
