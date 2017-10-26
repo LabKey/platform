@@ -420,7 +420,7 @@ function renderFormPanel(data, editable){
     items.push({
         xtype: 'label',
         text : 'Protocol Documents:',
-        style : 'float: left;',
+        style : 'float: left; text-align: right; padding-right: 0;',
         width : 160
     });
     items.push({
@@ -543,7 +543,7 @@ function renderFormPanel(data, editable){
         bodyStyle : 'background-color: transparent;',
         defaults : {
             labelWidth: 160,
-            labelStyle: 'font-weight: bold;',
+            labelStyle: 'text-align: right;',
             width: 500,
             height : 30,
             padding : '5px',

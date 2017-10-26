@@ -22,8 +22,9 @@
 
 <labkey:errors />
 <p>
-<labkey:form name="upload" action="<%=h(buildURL(ExperimentController.ShowAddXarFileAction.class))%>" enctype="multipart/form-data" method="post">
-    Local file: <input id="UploadFile" type="file" name="uploadFile" value="" size="60"> <%= button("Upload").submit(true) %>
+<labkey:form name="upload" action="<%=h(buildURL(ExperimentController.ShowAddXarFileAction.class))%>" enctype="multipart/form-data" method="post" layout="horizontal">
+    <labkey:input type="file" label="Local File" id="UploadFile" name="uploadFile" value="" size="60"/>
+    <%= button("Upload").submit(true) %>
 </labkey:form>
 </p>
 <p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=urlProvider(PipelineUrls.class).urlSetup(getContainer())%>">Data Pipeline</a> instead.</p>
