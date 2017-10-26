@@ -36,6 +36,12 @@ public class RuntimeValidationException extends RuntimeException
         super(new ValidationException(message, property));
     }
 
+    public RuntimeValidationException(Throwable cause)
+    {
+        super(new ValidationException(cause.getMessage()).initCause(cause));
+    }
+
+
     public ValidationException getValidationException()
     {
         return (ValidationException)getCause();
