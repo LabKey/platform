@@ -348,9 +348,9 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
                     if (PageFlowUtil.useExperimentalCoreUI())
                     {
-                        out.write("<label class=\"col-sm-3 col-lg-2 control-label\">");
+                        out.write("<td class=\"lk-form-label\">");
                         out.write(nounV1 + " Metadata" + helpPopup + " *");
-                        out.write("</label>");
+                        out.write("</td>");
                     }
                     else
                     {
@@ -358,6 +358,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                         out.write(nounV1 + " Metadata" + helpPopup + " *");
                         out.write("</td>");
                     }
+
                 }
             }
 

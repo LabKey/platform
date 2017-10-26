@@ -697,7 +697,8 @@ public class DataColumn extends DisplayColumn
                 Input.InputBuilder input = new Input.InputBuilder()
                         .type("file")
                         .name(getInputPrefix() + formFieldName)
-                        .disabled(disabledInput);
+                        .disabled(disabledInput)
+                        .needsWrapping(false);
 
                 out.write(input.build().toString());
             }
@@ -721,7 +722,8 @@ public class DataColumn extends DisplayColumn
                         .name(getInputPrefix() + formFieldName)
                         .disabled(disabledInput)
                         .value("1")
-                        .checked(checked);
+                        .checked(checked)
+                        .needsWrapping(false);
 
                 out.write(input.build().toString());
             }
@@ -788,7 +790,8 @@ public class DataColumn extends DisplayColumn
                             .name(getInputPrefix() + formFieldName)
                             .disabled(disabledInput)
                             .size(_inputLength)
-                            .value(PageFlowUtil.filter(strVal));
+                            .value(PageFlowUtil.filter(strVal))
+                            .needsWrapping(false);
 
                     out.write(input.build().toString());
                 }
@@ -887,10 +890,12 @@ public class DataColumn extends DisplayColumn
         boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         if (newUI)
-            out.write("<label class=\"" + (cls != null ? cls : "col-sm-3 col-lg-2 control-label") + "\">");
+            out.write("<td class=\"" + (cls != null ? cls : " lk-form-label") + "\">");
         else
             out.write("<td class=\"labkey-form-label\">");
         renderTitle(ctx, out);
+        if (ctx.getMode() == DataRegion.MODE_DETAILS)
+            out.write(":");
         int mode = ctx.getMode();
         if ((mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE) && isEditable())
         {
@@ -918,7 +923,7 @@ public class DataColumn extends DisplayColumn
                 }
             }
         }
-        out.write(newUI ? "</label>" : "</td>");
+        out.write("</td>");
     }
 
     protected boolean renderRequiredIndicators()

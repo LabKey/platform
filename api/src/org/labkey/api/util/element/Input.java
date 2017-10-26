@@ -63,6 +63,7 @@ public class Input extends DisplayElement
     private final boolean _showLabel;
     private final String _type;
     private final Object _value;
+    private final boolean _needsWrapping;
 
     protected Input(InputBuilder builder)
     {
@@ -88,9 +89,10 @@ public class Input extends DisplayElement
         _state = builder._state;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
         _value = builder._value;
+        _needsWrapping = builder._needsWrapping == null ? true : builder._needsWrapping;
     }
 
-    private String getContextContent()
+    public String getContextContent()
     {
         return _contextContent;
     }
@@ -210,6 +212,11 @@ public class Input extends DisplayElement
         return _value;
     }
 
+    public boolean needsWrapping()
+    {
+        return _needsWrapping;
+    }
+
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
@@ -229,6 +236,7 @@ public class Input extends DisplayElement
         {
             final boolean isHorizontal = Layout.HORIZONTAL.equals(getLayout());
             final boolean needsInputGroup = needsInputGroup();
+            final boolean needsLayoutWrapping = isHorizontal && needsWrapping();
 
             // begin form-group
             if (isFormGroup())
@@ -243,7 +251,7 @@ public class Input extends DisplayElement
                 doLabel(sb);
 
             // begin wrapper for layout
-            if (isHorizontal)
+            if (needsLayoutWrapping)
                 sb.append("<div class=\"col-sm-9 col-lg-10\">");
 
             // begin wrapper for input group
@@ -267,7 +275,7 @@ public class Input extends DisplayElement
                 sb.append("</div>");
 
             // end wrapper for layout
-            if (isHorizontal)
+            if (needsLayoutWrapping)
                 sb.append("</div>");
 
             // end form-group
@@ -324,7 +332,7 @@ public class Input extends DisplayElement
             sb.append(" onkeyup=\"").append(getOnKeyUp()).append("\"");
     }
 
-    private void doLabel(StringBuilder sb)
+    protected void doLabel(StringBuilder sb)
     {
         sb.append("<label");
 
@@ -334,7 +342,7 @@ public class Input extends DisplayElement
         String cls = "";
         if (StringUtils.isNotEmpty(getLabelClassName()))
             cls += " " + getLabelClassName();
-        if (Layout.HORIZONTAL.equals(getLayout()))
+        if (Layout.HORIZONTAL.equals(getLayout()) && needsWrapping())
             cls += " col-sm-3 col-lg-2";
 
         if (StringUtils.isNotEmpty(cls))
@@ -384,7 +392,7 @@ public class Input extends DisplayElement
             sb.append(" has-success");
     }
 
-    private void doContextField(StringBuilder sb)
+    protected void doContextField(StringBuilder sb)
     {
         if (Layout.INLINE.equals(getLayout()))
         {
@@ -403,7 +411,6 @@ public class Input extends DisplayElement
             sb.append(getContextContent());
             sb.append("</p>");
         }
-
     }
 
     protected void doValue(StringBuilder sb)
@@ -462,6 +469,7 @@ public class Input extends DisplayElement
         private String _stateMessage;
         private String _type = "text";
         private Object _value;
+        private Boolean _needsWrapping;
 
         public InputBuilder()
         {
@@ -598,6 +606,12 @@ public class Input extends DisplayElement
         public T value(Object value)
         {
             _value = value;
+            return (T)this;
+        }
+
+        public T needsWrapping(Boolean wrapped)
+        {
+            _needsWrapping = wrapped;
             return (T)this;
         }
 

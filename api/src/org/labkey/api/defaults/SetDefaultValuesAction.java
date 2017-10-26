@@ -110,14 +110,13 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
         public void render(RenderContext ctx, Writer out) throws IOException
         {
-            boolean newUI = PageFlowUtil.useExperimentalCoreUI();
             renderFormBegin(ctx, out, MODE_INSERT);
             renderMainErrors(ctx, out);
             out.write("<table class=\"lk-fields-table\">");
             out.write("<tr>" +
-                    "<td><label>Field</label></td>" +
-                    "<td><label class=\"col-sm-9 col-lg-10\">Initial/Default Value</label></td>" +
-                    "<td><label>Default type</label></td>" +
+                    "<td class=\"lk-form-label\"><label>Field</label></td>" +
+                    "<td class=\"lk-form-label\" style=\"text-align: left;\"><label>Initial/Default Value</label></td>" +
+                    "<td class=\"lk-form-label\"><label>Default type</label></td>" +
                     "</tr>");
             for (DisplayColumn renderer : getDisplayColumns())
             {
@@ -127,17 +126,8 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     renderInputError(ctx, out, 1, renderer);
                 out.write("<tr>");
 
-                if (newUI)
-                    out.write("<td nowrap>");
-                renderer.renderDetailsCaptionCell(ctx, out, "");
-                if (newUI)
-                    out.write("</td>");
-
-                if (newUI)
-                    out.write("<td nowrap>");
+                renderer.renderDetailsCaptionCell(ctx, out, "control-label");
                 renderer.renderInputCell(ctx, out, 1);
-                if (newUI)
-                    out.write("</td>");
 
                 out.write("<td>");
                 if (((DefaultableDisplayColumn) renderer).getJavaType() == File.class)

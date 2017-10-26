@@ -70,9 +70,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         if (null == _caption)
             return;
 
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
-        out.write(newUI ? "<label class=\"col-sm-3 col-lg-2 control-label\">" : "<td class=\"labkey-form-label\">");
+        out.write("<td class=\"lk-form-label\">");
         renderTitle(ctx, out);
         int mode = ctx.getMode();
         if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
@@ -86,7 +84,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
                     out.write(" *");
             }
         }
-        out.write(newUI ? "</label>" : "</td>");
+        out.write("</td>");
     }
 
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException

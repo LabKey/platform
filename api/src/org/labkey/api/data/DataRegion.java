@@ -2436,6 +2436,10 @@ public class DataRegion extends DisplayElement
                 }
                 out.write(">\n");
             }
+            else
+            {
+                out.write("<table>");
+            }
 
             while (rs.next())
             {
@@ -2447,12 +2451,12 @@ public class DataRegion extends DisplayElement
                 {
                     if (!renderer.isVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
                         continue;
-                    out.write(newUI ? "<div class=\"form-group\">" : "<tr>");
+                    out.write("<tr>");
                     renderer.renderDetailsCaptionCell(ctx, out, null);
                     renderer.renderInputWrapperBegin(out, 1);
                     renderer.renderDetailsData(ctx, out, 1);
                     renderer.renderInputWrapperEnd(out);
-                    out.write(newUI ? "</div>" : "</tr>");
+                    out.write("</tr>");
                 }
 
                 if (!newUI)
@@ -2462,8 +2466,7 @@ public class DataRegion extends DisplayElement
             if (rowIndex == 0)
                 renderNoRowsMessage(ctx, out, 1);
 
-            if (!newUI)
-                out.write("</table>");
+            out.write("</table>");
 
             renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
@@ -2652,7 +2655,7 @@ public class DataRegion extends DisplayElement
 
         if (newUI)
         {
-            out.write("<div class=\"form-group" + (errors.size() > 0 ? " has-error" : "") + "\">");
+            out.write("<tr class=\"form-group" + (errors.size() > 0 ? " has-error" : "") + "\">");
         }
         else
         {
@@ -2672,7 +2675,7 @@ public class DataRegion extends DisplayElement
         }
 
         //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
-        out.write(newUI ? "</div>" : "</tr>");
+        out.write("</tr>");
     }
 
     private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)
@@ -2752,17 +2755,13 @@ public class DataRegion extends DisplayElement
         renderFormBegin(ctx, out, action);
         renderMainErrors(ctx, out);
 
-        if (!newUI)
-            out.write("<table>");
+        out.write("<table>");
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
             String msg = "This will edit " + ctx.getForm().getSelectedRows().length + " rows.";
 
-            if (newUI)
-                out.write("<p>" + msg + "</p>");
-            else
-                out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
+            out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
 
         List<DisplayColumn> renderers = getDisplayColumns();
@@ -2773,10 +2772,7 @@ public class DataRegion extends DisplayElement
             {
                 String msg = "Fields marked with an asterisk * are required.";
 
-                if (newUI)
-                    out.write("<p>" + msg + "</p>");
-                else
-                    out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
+                out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
                 break;
             }
         }
@@ -2807,7 +2803,7 @@ public class DataRegion extends DisplayElement
             {
                 List<DisplayColumnGroup> groups = groupTable.getGroups();
                 List<String> groupHeadings = groupTable.getGroupHeadings();
-                out.write("<tr><td/>");
+                out.write("<tr><td></td>");
                 boolean hasCopyable = false;
 
                 for (DisplayColumnGroup group : groups)
@@ -2888,7 +2884,7 @@ public class DataRegion extends DisplayElement
                         {
                             if (!shouldRender(col, ctx))
                                 continue;
-                            writeColRenderInputCell(ctx, out, col, 1);
+                            col.renderInputCell(ctx, out, span);
                         }
                         out.write("\t</tr>");
                     }
@@ -2923,7 +2919,7 @@ public class DataRegion extends DisplayElement
                             DisplayColumn col = group.getColumns().get(i);
                             if (!shouldRender(col, ctx))
                                 continue;
-                            writeColRenderInputCell(ctx, out, col, 1);
+                            col.renderInputCell(ctx, out, span);
                         }
                         out.write("\t</tr>");
                     }
@@ -2983,8 +2979,14 @@ public class DataRegion extends DisplayElement
                 }
             }
         }
+        if (newUI)
+        {
+            out.write("</td></tr>");
+            out.write("</table>");
+        }
 
         buttonBar.render(ctx, out);
+
         if (!newUI)
         {
             out.write("</td></tr>");
@@ -2996,29 +2998,9 @@ public class DataRegion extends DisplayElement
     private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer out, DisplayColumn col) throws IOException
     {
         if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.write("<td nowrap>");
             col.renderDetailsCaptionCell(ctx, out, "control-header-label");
-            out.write("</td>");
-        }
         else
-        {
             col.renderDetailsCaptionCell(ctx, out, null);
-        }
-    }
-
-    private void writeColRenderInputCell(RenderContext ctx, Writer out, DisplayColumn col, int span) throws IOException
-    {
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.write("<td class=\"labkey-input-cell\">");
-            col.renderInputCell(ctx, out, span);
-            out.write("</td>");
-        }
-        else
-        {
-            col.renderInputCell(ctx, out, span);
-        }
     }
 
     private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups) throws IOException

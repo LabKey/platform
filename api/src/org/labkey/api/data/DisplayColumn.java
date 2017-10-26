@@ -1026,9 +1026,9 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (PageFlowUtil.useExperimentalCoreUI())
         {
-            out.write("<label class=\"" + (cls != null ? cls : "col-sm-3 col-lg-2 control-label") + "\">");
+            out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
             renderTitle(ctx, out);
-            out.write("</label>");
+            out.write("</td>");
         }
         else
         {
@@ -1054,13 +1054,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
-        if (newUI)
-            out.write("<p class=\"form-control-static\">");
         renderDetailsCellContents(ctx, out);
-        if (newUI)
-            out.write("</p>");
     }
 
     public String getInputCell(RenderContext ctx)
@@ -1155,10 +1149,10 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderInputWrapperBegin(Writer out, int span) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        boolean newUI = PageFlowUtil.useExperimentalCoreUI(); //when removing the newUI the span argument should be factored
 
         if (newUI)
-            out.write("<div class=\"col-sm-9 col-lg-10\">");
+            out.write("<td>");
         else if (null == _caption)
             out.write("<td colspan=\"" + (span + 1) + "\">");
         else
@@ -1167,7 +1161,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderInputWrapperEnd(Writer out) throws IOException
     {
-        out.write(PageFlowUtil.useExperimentalCoreUI() ? "</div>" : "</td>");
+        out.write("</td>");
     }
 
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
