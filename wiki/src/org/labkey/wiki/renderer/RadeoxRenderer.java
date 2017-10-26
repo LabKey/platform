@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.renderer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -89,7 +90,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static final MessageFormat WIKI_IMG_FORMAT = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
 
     private Map<String, String> _pageTitles;
-    private Collection<? extends Attachment>  _attachments;
+    private Collection<? extends Attachment> _attachments;
 
     public RadeoxRenderer()
     {
@@ -311,7 +312,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 buf.append(" class=\"").append(PageFlowUtil.filter(cssClass)).append("\"");
             if (cssStyle != null)
             {
-                if (-1 != cssStyle.toLowerCase().indexOf("behavior"))
+                if (StringUtils.containsIgnoreCase(cssStyle, "behavior"))
                     cssStyle = null;
                 if (null != cssStyle)
                     buf.append(" style=\"").append(PageFlowUtil.filter(cssStyle)).append("\"");
@@ -767,7 +768,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                     else
                     {
                         // internal link
-                        if (name.length() == 0 && null != hash || wikiEngine.exists(name))
+                        if (name.isEmpty() || wikiEngine.exists(name))
                         {
                             String view = "";
                             if (-1 != pipeIndex)
