@@ -46,6 +46,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
@@ -57,7 +58,6 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -242,8 +242,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         }
         catch (ExperimentException e)
         {
-            // CONSIDER: Add ExperimentException to throws clause
-            throw UnexpectedException.wrap(e);
+            throw new RuntimeValidationException(e);
         }
     }
     

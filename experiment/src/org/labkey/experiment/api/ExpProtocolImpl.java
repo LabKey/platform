@@ -23,9 +23,9 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -149,7 +149,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         }
         catch (ExperimentException e)
         {
-            throw new UnexpectedException(e);
+            throw new RuntimeValidationException(e);
         }
     }
 

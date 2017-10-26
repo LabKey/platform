@@ -32,6 +32,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -178,7 +179,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
         catch (ExperimentException e)
         {
-            throw new UnexpectedException(e);
+            throw new RuntimeValidationException(e);
         }
     }
 
