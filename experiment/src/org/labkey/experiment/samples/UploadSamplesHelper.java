@@ -1046,10 +1046,10 @@ public class UploadSamplesHelper
             return lsid;
         }
 
-        public void afterBatchInsert(int currentRow) throws SQLException
+        public void afterBatchInsert(int rowCount) throws SQLException
         {
             List<ExpMaterial> materials = new ArrayList<>();
-            for (int i = _currentRow; i < currentRow; i++)
+            for (int i = _currentRow; i < rowCount; i++)
             {
                 ExpMaterial material = _materials.get(i);
                 if (material != null)
@@ -1058,7 +1058,7 @@ public class UploadSamplesHelper
 
             if (!materials.isEmpty())
                 ExperimentService.get().onMaterialsCreated(materials, _container, _user);
-            _currentRow = currentRow;
+            _currentRow = rowCount;
         }
 
 

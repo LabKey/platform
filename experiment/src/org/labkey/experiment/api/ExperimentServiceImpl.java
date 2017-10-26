@@ -5941,7 +5941,7 @@ public class ExperimentServiceImpl implements ExperimentService
         List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeRunCreated(container, user, protocol, run);
+            errors.addAll(listener.beforeRunCreated(container, user, protocol, run));
         }
         return errors;
     }
@@ -5952,7 +5952,7 @@ public class ExperimentServiceImpl implements ExperimentService
         List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            listener.afterResultDataCreated(container, user, run, protocol);
+            errors.addAll(listener.afterResultDataCreated(container, user, run, protocol));
         }
         return errors;
     }
