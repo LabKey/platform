@@ -28,8 +28,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -55,6 +53,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -70,7 +69,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
@@ -389,8 +387,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this);
         if (!existingPolicy.getAssignments().equals(policy.getAssignments()))
         {
-            AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, getContainer(), getPolicyChangeSummary(policy, existingPolicy, "Group dataset access type changed.", "Previous access", "New access"));
-            AuditLogService.get().addEvent(user, event);
+            String comment = getPolicyChangeSummary(policy, existingPolicy, "Group dataset access type changed.", "Previous access", "New access");
+            StudyService.get().addStudyAuditEvent(getContainer(), user, comment);
         }
 
         super.savePolicy(policy, user);

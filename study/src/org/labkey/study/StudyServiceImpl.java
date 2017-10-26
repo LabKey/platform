@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
@@ -78,6 +79,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
+import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.importer.StudyImportJob;
@@ -283,6 +285,12 @@ public class StudyServiceImpl implements StudyService
         AuditLogService.get().addEvent(user, event);
     }
 
+    @Override
+    public void addStudyAuditEvent(Container container, User user, String comment)
+    {
+        AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, container, comment);
+        AuditLogService.get().addEvent(user, event);
+    }
 
     /**
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,

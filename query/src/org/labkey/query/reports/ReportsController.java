@@ -127,6 +127,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
@@ -1331,8 +1332,10 @@ public class ReportsController extends SpringActionController
                     if (!ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(_report.getDescriptor().getAccess()))
                         ReportUtil.updateReportSecurityPolicy(getViewContext(), _report, recipient.getUserId(), true);
 
-                    // TODO audit entry
-                    //SecurityManager.addAuditEvent(getContainer(), user, comment, groupId);
+                    String auditMsg = "The following report was shared: recipient: " + recipient.getName() + " (" + recipient.getUserId() + ")"
+                            + ", reportId: " + _report.getDescriptor().getReportId()
+                            + ", name: " + _report.getDescriptor().getReportName();
+                    StudyService.get().addStudyAuditEvent(getContainer(), getUser(), auditMsg);
                 }
             }
 

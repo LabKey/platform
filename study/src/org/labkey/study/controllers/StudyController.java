@@ -6898,8 +6898,6 @@ public class StudyController extends BaseStudyController
             {
                 NotificationService.get().removeNotifications(getContainer(), form.getGroupId().toString(),
                     Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), getUser().getUserId());
-
-                // TODO we don't currently do anything with a sent group for this action
             }
 
             return new JspView("/org/labkey/study/view/manageParticipantCategories.jsp");
@@ -6984,7 +6982,9 @@ public class StudyController extends BaseStudyController
                         form.getRowId().toString(), ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE
                     );
 
-                    // TODO add audit event
+                    String auditMsg = "The following participant group was shared: recipient: " + recipient.getName() + " (" + recipient.getUserId() + ")"
+                            + ", groupId: " + form.getRowId() + ", name: " + form.getLabel();
+                    StudyService.get().addStudyAuditEvent(getContainer(), getUser(), auditMsg);
                 }
             }
 
