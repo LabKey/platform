@@ -2431,7 +2431,7 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
-            root.addChild("Insert " + _table.getName());
+            root.addChild("Insert new row");
             return root;
         }
     }
