@@ -61,7 +61,7 @@
     <div class="container clearfix">
         <div class="hidden-xs navbar-header">
             <a class="brand-logo" href="<%=h(laf.getLogoHref())%>">
-                <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
+                <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>">
             </a>
             <%-- _header.html overrides the server short name--%>
             <%  if (headerHtml == null) {
@@ -74,7 +74,7 @@
         </div>
         <div class="hidden-sm hidden-md hidden-lg navbar-header">
             <a class="brand-logo-mobile" href="<%=h(laf.getLogoHref())%>">
-                <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
+                <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>">
             </a>
             <% if (headerHtml == null) {
                     if (siteShortName != null) { %>
