@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
@@ -2091,6 +2092,12 @@ public class QueryView extends WebPartView<Object>
                     dr.setButtonBar(bar);
                 }
                 dr.render(ctx, request, response);
+
+                // if the user is viewing a shared report, remove any notifications related to it
+                NotificationService.get().removeNotifications(
+                    getContainer(), _report.getDescriptor().getReportId().toString(),
+                    Collections.singletonList(Report.SHARE_REPORT_TYPE), getUser().getUserId()
+                );
             }
             catch (Exception e)
             {

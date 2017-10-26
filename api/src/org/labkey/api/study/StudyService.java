@@ -154,6 +154,8 @@ public interface StudyService
 
     void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 
+    void addStudyAuditEvent(Container container, User user, String comment);
+
     List<SecurableResource> getSecurableResources(Container container, User user);
 
     Set<Role> getStudyRoles();
