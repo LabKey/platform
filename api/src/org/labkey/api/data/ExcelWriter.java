@@ -268,20 +268,32 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
 
-    public void setShowInsertableColumnsOnly(boolean b)
+    public void setShowInsertableColumnsOnly(boolean b, @Nullable List<FieldKey> includeColumns)
     {
         _insertableColumnsOnly = b;
         if (_insertableColumnsOnly)
         {
             // Remove any insert only columns that have already made their way into the list
+            // except those explicitly requested
             Iterator<ExcelColumn> i = _columns.iterator();
             while (i.hasNext())
             {
                 ExcelColumn column = i.next();
-                if (column.getDisplayColumn() != null && column.getDisplayColumn().getColumnInfo() != null && !column.getDisplayColumn().getColumnInfo().isShownInInsertView())
-                {
-                    i.remove();
-                }
+                DisplayColumn dc = column.getDisplayColumn();
+                if (dc == null)
+                    continue;
+
+                ColumnInfo c = dc.getColumnInfo();
+                if (c == null)
+                    continue;
+
+                if (includeColumns != null && includeColumns.contains(c.getFieldKey()))
+                    continue;
+
+                if (c.isShownInInsertView())
+                    continue;
+
+                i.remove();
             }
         }
     }

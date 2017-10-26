@@ -2604,7 +2604,7 @@ public class QueryView extends WebPartView<Object>
             if (headerType == null)
                 headerType = getColumnHeaderType();
             ew.setCaptionType(headerType);
-            ew.setShowInsertableColumnsOnly(insertColumnsOnly);
+            ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
             if (prefix != null)
                 ew.setFilenamePrefix(prefix);
             ew.write(response);
@@ -2634,7 +2634,7 @@ public class QueryView extends WebPartView<Object>
             {
                 ExcelWriter ew = getExcelWriter(docType);
                 ew.setCaptionType(headerType);
-                ew.setShowInsertableColumnsOnly(false);
+                ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
                 ew.write(stream);
                 stream.flush();
