@@ -706,14 +706,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 if (-1 != slashIndex)
                     config = StringUtils.substring(config, 0, slashIndex);
 
-                for (String store : CloudStoreService.get().getEnabledCloudStores(getContextContainer()))
-                {
-                    if (config.equalsIgnoreCase(store))
+                CloudStoreService service = CloudStoreService.get();
+                if (service != null)
+                    for (String store : service.getEnabledCloudStores(getContextContainer()))
                     {
-                        // Store is enabled; if non-null then it exists
-                        return CloudStoreService.get().containerFolderExists(store, container);
+                        if (config.equalsIgnoreCase(store))
+                        {
+                            // Store is enabled; if non-null then it exists
+                            return service.containerFolderExists(store, container);
+                        }
                     }
-                }
                 return false;
             }
             return true;    // Not cloud store
