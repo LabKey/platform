@@ -68,6 +68,7 @@ This action cannot be undone.</p>
 
     if (canDeactivate) {
 %>
+<br/>
 <labkey:form action="<%=h(deactivateUsersUrl)%>" method="post" name="deactivateUsersForm">
     <%
         for (User user : bean.getUsers())

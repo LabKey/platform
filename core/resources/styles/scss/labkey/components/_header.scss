@@ -248,11 +248,6 @@
   }
 }
 
-.labkey-notification-panel,
-.labkey-notification-footer {
-  background-color: $lk-notification-bg-color;
-}
-
 .lk-body-title {
   margin-bottom: 20px;
 
@@ -274,5 +269,38 @@
     width: 100%;
     padding-left: 20px;
     padding-right: 20px;
+  }
+}
+
+/* See Notification.css for the rest of the styles. */
+.labkey-notification-panel {
+  background-color: $lk-notification-bg-color;
+
+  .labkey-notification-footer {
+    background-color: $lk-notification-bg-color;
+  }
+  .labkey-notification-icon {
+    color: $lk-text-link-color;
+  }
+  .labkey-notification-title, .labkey-notification-type-label, .labkey-notification-createdby, .labkey-notification-clear-all, .labkey-notification-footer {
+    color: $lk-brand-primary;
+  }
+  .labkey-notification-type-label {
+    border-bottom-color: $lk-grid-border-color !important;
+  }
+  .labkey-notification-close {
+    border-left-color: $lk-grid-border-color !important;
+  }
+  .labkey-notification-times, .labkey-notification-toggle {
+    color: $lk-text-link-color;
+  }
+  .labkey-notification, .labkey-notification-none, .labkey-notification-body {
+    color: $lk-text-link-color;
+  }
+  .labkey-notification-clear-all:hover, .labkey-notification-footer span:hover, .labkey-notification-times:hover, .labkey-notification-toggle:hover, a:hover {
+    color: $lk-text-link-color-hover;
+  }
+  .labkey-notification:hover, .labkey-notification:hover .labkey-notification-icon {
+    background-color: $lk-grid-row-color-hover;
   }
 }
