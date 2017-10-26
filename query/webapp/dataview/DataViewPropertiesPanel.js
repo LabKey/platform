@@ -216,6 +216,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['shared']) {
             var sharedName = "shared";
+            var isShared = Ext4.isString(this.data.access) ? this.data.access == 'public' : this.data.shared;
 
             if (this.disableShared) {
                 // be sure to roundtrip the original shared value
@@ -223,7 +224,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 propertiesItems.push({
                     xtype : 'hidden',
                     name  : "shared",
-                    value : this.data.shared,
+                    value : isShared,
                     labelWidth : 120,
                     width      : 400
                 });
@@ -234,8 +235,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
             propertiesItems.push({
                 xtype   : 'checkbox',
-                inputValue  : this.data.access == 'public',
-                checked     : this.data.access == 'public',
+                inputValue  : isShared,
+                checked     : isShared,
                 boxLabel    : 'Share this report with all users?',
                 name        : sharedName,
                 fieldLabel  : "Shared",
