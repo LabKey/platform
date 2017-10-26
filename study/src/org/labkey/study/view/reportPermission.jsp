@@ -165,7 +165,7 @@
 
         if (reportSharedUsers.size() > 0)
         {
-            %><tr><th class="labkey-form-label" align=left>Specific Users</th><th class="labkey-form-label">Read Access</th></tr><%
+            %><tr><th class="labkey-form-label" align=left>Specific users</th><th class="labkey-form-label">Read Access</th></tr><%
             for (User u : reportSharedUsers)
             {
                 boolean checked = reportPolicy.hasPermission(u, ReadPermission.class);

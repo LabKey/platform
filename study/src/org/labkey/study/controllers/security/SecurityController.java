@@ -456,12 +456,10 @@ public class SecurityController extends SpringActionController
 
         public List<NavTree> getTabList()
         {
-            List<NavTree> tabs = new ArrayList<>(2);
-
+            List<NavTree> tabs = new ArrayList<>();
             tabs.add(new TabInfo("Permissions", SecurityController.TAB_REPORT, getViewContext().getActionURL()));
-            // TODO only add this tab if we have a study in the container
-            tabs.add(new TabInfo("Study Security", SecurityController.TAB_STUDY, getViewContext().getActionURL()));
-
+            if (StudyManager.getInstance().getStudy(getViewContext().getContainer()) != null)
+                tabs.add(new TabInfo("Study Security", SecurityController.TAB_STUDY, getViewContext().getActionURL()));
             return tabs;
         }
 
