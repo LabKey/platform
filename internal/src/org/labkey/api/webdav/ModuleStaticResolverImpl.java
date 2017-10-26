@@ -628,6 +628,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             Path full = null==_target ? getPath().append(relpath) : _target.append(relpath);
             WebdavResolver innerResolver = null == getResolver() ? ModuleStaticResolverImpl.this : getResolver();
+            if (!innerResolver.isEnabled())
+                return null;
             LookupResult inner = innerResolver.lookupEx(full);
             WebdavResource r = inner.resource;
             if (_readOnly)
