@@ -52,6 +52,7 @@ import org.labkey.data.xml.domainTemplate.DataClassOptionsType;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.EHRTemplateType;
+import org.labkey.data.xml.domainTemplate.EHRBillingTemplateType;
 import org.labkey.data.xml.domainTemplate.IndexType;
 import org.labkey.data.xml.domainTemplate.InitialDataType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -177,7 +178,8 @@ public class DomainTemplate
                (template instanceof DataClassTemplateType) ? "DataClass" :
                (template instanceof SNDTemplateType) ? "SND" :
                (template instanceof EHRTemplateType) ? "EHR" :
-               null;
+               (template instanceof EHRBillingTemplateType) ? "EHR_Billing" :
+                null;
     }
 
     private static String getListDomainKind(String templateName, ListTemplateType template, List<GWTPropertyDescriptor> properties)
