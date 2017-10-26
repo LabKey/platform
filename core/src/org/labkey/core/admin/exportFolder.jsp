@@ -131,18 +131,21 @@ Ext.onReady(function(){
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'container', layout: 'hbox', items:[
-            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Exclude Columns At This PHI Level And Higher:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions'},
-            {xtype: 'combo', triggerAction: 'all', mode: 'local', name: 'exportPhiLevel', itemId: 'exportPhiLevelCombo', allowBlank: false, displayField: 'name', valueField: 'value', value: 'Limited', editable: false, validateOnBlur: false, width: 100,
-                store: new Ext.data.ArrayStore({
-                    fields: ['value', 'name'],
-                    data: [
-                        //['Limited', 'Limited PHI'],  // FIXME: Should be displaying better labels
-                        ['Limited', 'Limited'],
-                        //['PHI', 'Full PHI'],  // FIXME: SHould be displaying better labels
-                        ['PHI', 'PHI'],
-                        ['Restricted', 'Restricted']
-                    ]
-                })
+            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Exclude Columns At This PHI Level And Higher:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions',
+                listeners : {
+                    check : function(cmp, checked){
+                        var radioGroup = cmp.ownerCt.getComponent('phi_level');
+                        if (radioGroup)
+                            radioGroup.setDisabled(!checked);
+                    }
+                }
+            },
+            {xtype: 'radiogroup', hideLabel: true, columns : 1, disabled : true, itemId : 'phi_level',
+                items: [
+                    {boxLabel: 'Limited', name: 'exportPhiLevel', inputValue: 'Limited', checked : true, style:'margin-left: 2px'},
+                    {boxLabel: 'Full', name: 'exportPhiLevel', inputValue: 'PHI', style:'margin-left: 2px'},
+                    {boxLabel: 'Restricted', name: 'exportPhiLevel', inputValue: 'Restricted', style:'margin-left: 2px'}
+                ]
             }
         ]});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
