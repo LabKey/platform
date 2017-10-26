@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 /**
  * Module properties allow administrators to set key configuration values for an install. They are accessible through
  * client APIs and in Folder Management. Properties can be set at a site-wide level, or at an individual container.
- * If a value are not set explicitly in a given container, it will inherit from its parent container or the site-level
+ * If a value is not set explicitly in a given container, it will inherit from its parent container or the site-level
  * setting.
  * User: bbimber
  * Date: 6/12/12
