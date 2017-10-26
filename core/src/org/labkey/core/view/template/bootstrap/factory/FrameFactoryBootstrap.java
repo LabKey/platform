@@ -26,9 +26,7 @@ import org.labkey.api.view.WebPartFrame;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.FrameFactoryClassic;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.api.util.PageFlowUtil.jsString;
@@ -62,29 +60,6 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         return super.createFrame(e, context, config);
     }
 
-    public static void startBootstrapTitleFrame(Writer out, String title, String href, String className)
-    {
-        try
-        {
-            out.write(
-                    "<table width=\"100%\">" +
-                            "<tr>" +
-                            "<td class=\"labkey-announcement-title\" align=left><span>");
-            if (null != href)
-                out.write("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-            out.write(PageFlowUtil.filter(title));
-            if (null != href)
-                out.write("</a>");
-            out.write("</span></td></tr>");
-            out.write("<tr><td style=\"padding: 10px 0\"><span class=\"labkey-title-area-line\" style=\"width: 100%;float: left;\"></span></td></tr>");
-            out.write("<tr><td colspan=3 class=\"" + className + "\">");
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
     protected class FrameTitleBootstrap extends _FrameTitle
     {
         public FrameTitleBootstrap(ViewContext context, FrameConfig config)
@@ -101,19 +76,26 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
             if (_devMode)
                 out.print("<!--FrameType.TITLE-->");
 
-            startBootstrapTitleFrame(out,title, href, className);
+            out.write("<table width=\"100%\"><tr><td class=\"labkey-announcement-title\" align=\"left\"><span>");
+            if (null != href)
+                out.write("<a href=\"" + PageFlowUtil.filter(href) + "\">");
+            out.write(PageFlowUtil.filter(title));
+            if (null != href)
+                out.write("</a>");
+            out.write("</span></td></tr>");
+            out.write("<tr><td style=\"padding: 10px 0\"><span class=\"labkey-title-area-line\" style=\"width: 100%;float: left;\"></span></td></tr>");
+            out.write("<tr><td colspan=3 class=\"" + className + "\">");
         }
 
         @Override
         public void doEndTag(PrintWriter out)
         {
-            endTitleFrame(out);
+            out.write("</td></tr></table>");
         }
     }
 
     protected class FrameDialogBootstrap extends _FrameDialog
     {
-
         public FrameDialogBootstrap(ViewContext context, FrameConfig config)
         {
             super(context, config);
@@ -125,12 +107,10 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
             if (_devMode)
                 out.print("<!--FrameType.DIALOG-->");
             out.println("<div class=\"panel panel-default labkey-dialog-frame\">");
-
-            out.println("<div class=\"panel-heading clearfix\">");
+            out.println("<div class=\"panel-heading\">");
             out.print("<span class=\"panel-title pull-left\">");
             out.print(PageFlowUtil.filter(getConfig()._title));
             out.print("</span>");
-
 
             if (null != getConfig()._closeURL)
             {
@@ -148,12 +128,10 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         {
             out.print("</div></div>");
         }
-
     }
 
     protected class FramePortalBootstrap extends _FramePortal
     {
-
         public FramePortalBootstrap(ViewContext context, FrameConfig config)
         {
             super(context, config);
@@ -173,29 +151,26 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         @Override
         public void renderWebpartHeaderStart(PrintWriter out, String title)
         {
-            out.println("<div class=\"panel-heading clearfix\">");
-            out.print("<h3 class=\"panel-title pull-left\" title=\"");
+            out.print("<div class=\"panel-heading\">");
+            out.print("<h3 class=\"panel-title pull-left\"");
             if (getConfig()._showTitle)
+            {
+                out.print(" title=\"");
                 out.print(PageFlowUtil.filter(title));
-            out.print("\">");
-            out.print("<a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
+                out.print("\"");
+            }
+            out.print("><a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
             if (getConfig()._isCollapsible)
-            {
                 renderCollapsiblePortalTitle(out);
-            }
             else
-            {
                 renderNonCollapsiblePortalTitle(out);
-            }
-
-            out.print("</a>");
-            out.print("</h3>");
+            out.print("</a></h3>");
         }
 
         @Override
         public void renderWebpartHeaderEnd(PrintWriter out)
         {
-            out.println("</div>");
+            out.println("<div class=\"clearfix\"></div></div>");
         }
 
         @Override
@@ -258,8 +233,6 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
         {
             renderMenuWithFontImage(null, current, out, null, false);
         }
-
-
     }
 
     public class FramelessPortalBootstrap extends FramePortalBootstrap
@@ -367,5 +340,4 @@ public class FrameFactoryBootstrap extends FrameFactoryClassic
             throw new RuntimeException(e);
         }
     }
-
 }
