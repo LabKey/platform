@@ -556,7 +556,7 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
-            root.addChild("Admin Console", getAdminConsoleURL());
+            root.addChild("Admin Console", getAdminConsoleURL().setFragment("links") );
 
             if (null != childURL)
                 root.addChild(childTitle, childURL);
