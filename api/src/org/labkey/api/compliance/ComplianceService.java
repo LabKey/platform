@@ -12,8 +12,6 @@ import org.labkey.api.view.ActionURL;
  */
 public interface ComplianceService
 {
-    String LOGGING_QUERY_TAG = " /* COMPLIANCE-LOGGABLE-QUERY */";
-
     static ComplianceService get()
     {
         return ServiceRegistry.get(ComplianceService.class);
