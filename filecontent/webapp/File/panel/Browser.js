@@ -2469,7 +2469,7 @@ Ext4.define('File.panel.Browser', {
 
         var detailsTpl = new Ext4.XTemplate(
            '<table class="fb-details">' +
-                '<tr><th>Name:</th><td>{name}</td></tr>' +
+                '<tr><th>Name:</th><td>{name:htmlEncode}</td></tr>' +
                 '<tpl if="description != undefined && description.length">' +
                     '<tr><th>Description:</td><td>{description:htmlEncode}</td></tr>' +
                 '</tpl>' +
@@ -2484,7 +2484,7 @@ Ext4.define('File.panel.Browser', {
                 '</tpl>' +
                 '<tr><th>WebDav URL:</th><td colspan="3"><a target="_blank" href="{[Ext.util.Format.htmlEncode(values.href||values.uri)]}">{[Ext.util.Format.htmlEncode(values.href||values.uri)]}</a></td></tr>' +
                 '<tpl if="absolutePath != undefined && absolutePath">' +
-                    '<tr><th>Absolute Path:</th><td>{absolutePath}</td></tr>' +
+                    '<tr><th>Absolute Path:</th><td>{absolutePath:htmlEncode}</td></tr>' +
                 '</tpl>' +
            '</table>',
         {
