@@ -59,7 +59,7 @@
                 viewportMargin: Infinity
             });
             codeMirror.setValue(<%=q(form.getXml())%>);
-            document.getElementsByClassName("CodeMirror")[0].style.backgroundColor = window.getComputedStyle(document.getElementById("bodyElement")).backgroundColor;
+            document.getElementsByClassName("CodeMirror")[0].style.backgroundColor = window.getComputedStyle(document.getElementsByTagName('body')[0]).backgroundColor;
         }
     });
 </script>
