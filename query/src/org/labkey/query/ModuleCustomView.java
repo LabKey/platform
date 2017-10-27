@@ -200,4 +200,10 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
 
         return cview;
     }
+
+    @Override
+    public List<String> getErrors()
+    {
+        return super.getErrors();
+    }
 }

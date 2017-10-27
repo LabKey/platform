@@ -242,4 +242,9 @@ public class ModuleCustomViewInfo implements CustomViewInfo
         );
     }
 
+    public List<String> getErrors()
+    {
+        return _customViewDef.getErrors();
+    }
+
 }

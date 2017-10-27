@@ -157,4 +157,9 @@ public class ModuleCustomViewDef
     {
         return _path;
     }
+
+    public List<String> getErrors()
+    {
+        return _customView.getErrors();
+    }
 }

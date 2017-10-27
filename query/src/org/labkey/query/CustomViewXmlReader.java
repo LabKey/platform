@@ -91,6 +91,8 @@ public class CustomViewXmlReader
     protected String _name;
     private String _label;
 
+    private List<String> _errors;
+
     private static final Logger LOG = Logger.getLogger(CustomViewXmlReader.class);
 
     private CustomViewXmlReader()
@@ -160,6 +162,20 @@ public class CustomViewXmlReader
     public String getCategory()
     {
         return _category;
+    }
+
+    public List<String> getErrors()
+    {
+        return _errors;
+    }
+
+    public void addError(String error)
+    {
+        if (_errors == null)
+            _errors = new ArrayList<>();
+
+        if (null != error)
+            _errors.add(error);
     }
 
     // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
@@ -297,7 +313,9 @@ public class CustomViewXmlReader
         catch (XmlException | IOException | XmlValidationException e)
         {
             LOG.error("Failed to parse custom view file from custom module at location " + path + ", falling back on default view", e);
-            return new CustomViewXmlReader();
+            CustomViewXmlReader reader = new CustomViewXmlReader();
+            reader.addError(e.getMessage());
+            return reader;
         }
     }
 
