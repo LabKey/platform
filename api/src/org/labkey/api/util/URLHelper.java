@@ -284,52 +284,59 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         return PageFlowUtil.toQueryString(_parameters, allowSubstSyntax);
     }
 
-    public void setHost(String host)
+    public URLHelper setHost(String host)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _host = host;
+        return this;
     }
 
 
-    public void setPath(Path path)
+    public URLHelper setPath(Path path)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _path = path;
+        return this;
     }
 
 
-    public void setPath(String path)
+    public URLHelper setPath(String path)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _parsePath(path);
+        return this;
     }
 
 
-    public void setPort(int port)
+    public URLHelper setPort(int port)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _port = port;
+        return this;
     }
 
 
-    public void setRawQuery(String query)
+    public URLHelper setRawQuery(String query)
     {
         //_query = query;
         _parseQuery(query);
+        return this;
     }
 
 
-    public void setScheme(String scheme)
+    public URLHelper setScheme(String scheme)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _scheme = scheme;
+        return this;
     }
 
 
-    public void setFragment(String fragment)
+    public URLHelper setFragment(String fragment)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _fragment = fragment;
+        return this;
     }
 
 
@@ -671,7 +678,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    public void setFile(String name)
+    public URLHelper setFile(String name)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         Path p = null==_path ? Path.rootPath : _path;
@@ -679,6 +686,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
             p = p.getParent();
         if (null != name)
             _path = p.append(name, false);
+        return this;
     }
 
 

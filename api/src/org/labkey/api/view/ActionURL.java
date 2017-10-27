@@ -454,7 +454,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
 
     @Override
-    public void setPath(String pathStr)
+    public ActionURL setPath(String pathStr)
     {
         if (_readOnly)
             throw new java.lang.IllegalStateException();
@@ -494,6 +494,7 @@ public class ActionURL extends URLHelper implements Cloneable
         _path = path;
         _action = action;
         _controller = controller.toLowerCase();
+        return this;
     }
 
 
