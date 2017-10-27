@@ -7,7 +7,6 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.studydesigner.AssayScheduleWebpart;
 import org.labkey.test.components.studydesigner.BaseManageVaccineDesignVisitPage;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
@@ -65,11 +64,6 @@ public class ProgressReportTest extends ReportTest
         _expectedLuminexResults[7] = Arrays.asList("249320897", "expected", "expected", "not-received", "expected", "expected", "expected", "expected", "expected");
         _expectedLuminexResults[8] = Arrays.asList("249325717", "expected", "not-available", "expected", "expected", "expected", "expected", "expected", "expected");
 
-    }
-
-    public ProgressReportTest()
-    {
-        setIsBootstrapWhitelisted(true);
     }
 
     @Override

@@ -43,8 +43,6 @@ import static org.junit.Assert.assertTrue;
 @Category({DailyB.class})
 public class CohortTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     private static final String PROJECT_NAME = "Cohort Test Project";
     private static final File COHORT_STUDY_ZIP = TestFileUtils.getSampleData("studies/CohortStudy.zip");
     private static final String TABLE_NEGATIVE = "tableNegative";

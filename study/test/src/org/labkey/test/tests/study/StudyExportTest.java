@@ -43,7 +43,6 @@ import static org.junit.Assert.assertTrue;
 @Category({DailyC.class, FileBrowser.class})
 public class StudyExportTest extends StudyManualTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
     private static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     private static final String TEST_ADD_ENTRY = "999000000";

@@ -45,7 +45,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * This test is designed to test individual parts/properties of the study import/export archive.
@@ -56,7 +57,6 @@ import static org.junit.Assert.*;
 @BaseWebDriverTest.ClassTimeout(minutes = 60)
 public class StudySimpleExportTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String TEST_DATASET_NAME = "TestDataset";
     public static final String NOTIFICATION_EMAIL = "specimen-test@simpleexport.test";
     private final String FOLDER_SCOPE = "folder";

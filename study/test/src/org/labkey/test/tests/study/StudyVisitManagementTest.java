@@ -18,8 +18,8 @@ package org.labkey.test.tests.study;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.BeforeClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.Pair;
@@ -42,12 +42,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class, Study.class})
 public class StudyVisitManagementTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private final File INITIAL_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement.folder.zip");
     private final File DATASETS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Datasets.folder.zip");
     private final File SPECIMENS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Specimens.folder.zip");

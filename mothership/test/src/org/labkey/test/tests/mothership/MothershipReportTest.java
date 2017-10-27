@@ -33,14 +33,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
-/**
- * User: tgaluhn
- * Date: 10/28/2016
- */
 @Category({DailyB.class})
 public class MothershipReportTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private MothershipHelper _mothershipHelper;
 
     @Override

@@ -42,7 +42,6 @@ import static org.junit.Assert.assertEquals;
 @Category({BVT.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private final PortalHelper portalHelper = new PortalHelper(this);
 
     protected static final String TEST_ASSAY = "Test" + TRICKY_CHARACTERS + "Assay1";

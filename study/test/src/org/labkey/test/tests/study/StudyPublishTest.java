@@ -65,7 +65,6 @@ import static org.junit.Assert.fail;
 @BaseWebDriverTest.ClassTimeout(minutes = 30)
 public class StudyPublishTest extends StudyPHIExportTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private final String ID_PREFIX = "PUBLISHED-";
     private final int ID_DIGITS = 8;
     private final File PROTOCOL_DOC = TestFileUtils.getSampleData("study/Protocol.txt");

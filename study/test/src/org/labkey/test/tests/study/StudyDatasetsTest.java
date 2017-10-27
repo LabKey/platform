@@ -55,7 +55,6 @@ import static org.labkey.test.components.ext4.Window.Window;
 @Category({DailyA.class})
 public class StudyDatasetsTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String CATEGORY1 = "Category1";
     private static final String GROUP1A = "Group1A";
     private static final String GROUP1B = "Group1B";

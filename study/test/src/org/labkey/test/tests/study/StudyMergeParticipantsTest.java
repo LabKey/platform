@@ -21,9 +21,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
-import org.labkey.test.pages.study.CreateDatasetPage;
 import org.labkey.test.tests.StudyBaseTest;
-import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 
 import java.io.File;
@@ -31,7 +29,6 @@ import java.io.File;
 @Category(DailyC.class)
 public class StudyMergeParticipantsTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String PROJECT_NAME =  "Merge Participants Test Project";
     private static final String STUDY_NAME = "Merge Participants Test Study";
     private static final String FOLDER_NAME =  "Merge Participants Test Folder";

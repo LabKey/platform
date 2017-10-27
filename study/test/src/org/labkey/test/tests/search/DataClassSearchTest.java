@@ -45,7 +45,6 @@ import java.util.Map;
 @Category({DailyA.class, Search.class})
 public class DataClassSearchTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     public SearchAdminAPIHelper.DirectoryType directoryType()
     {
         return SearchAdminAPIHelper.DirectoryType.Default;

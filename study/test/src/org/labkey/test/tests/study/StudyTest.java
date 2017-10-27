@@ -67,7 +67,6 @@ import static org.labkey.test.util.PasswordUtil.getUsername;
 @Category({Specimen.class, DailyC.class})
 public class StudyTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
     protected String datasetLink = datasetCount + " datasets";
     protected static final String DEMOGRAPHICS_DESCRIPTION = "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     protected static final String DEMOGRAPHICS_TITLE = "DEM-1: Demographics";

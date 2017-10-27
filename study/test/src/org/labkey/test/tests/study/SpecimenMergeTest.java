@@ -34,8 +34,6 @@ import java.util.List;
 @Category({DailyB.class, Specimen.class})
 public class SpecimenMergeTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     protected static final String PROJECT_NAME = "SpecimenMergeTest";
     protected static final String FOLDER_NAME = "My Study";
 

@@ -42,7 +42,6 @@ import java.util.Collections;
 public class StudyScheduleTest extends StudyBaseTest
 {
     // dataset names
-    {setIsBootstrapWhitelisted(true);}
     private static final String IMPORT_DATASET = "ImportDataset";
     private static final String MANUAL_DATASET = "ManualDataset";
     private static final String GHOST_DATASET_1 = "GhostDataset1";

@@ -36,7 +36,6 @@ import java.util.List;
 @Category({DailyA.class})
 public class VaccineProtocolTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     protected static final String PROJECT_NAME = "ProtocolVerifyProject";
     protected static final String FOLDER_NAME = "My Folder";
     protected static final String TEST_RUN1 = "FirstRun";

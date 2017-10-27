@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 @Category({BVT.class})
 public class QuerySnapshotTest extends StudyBaseTest
 {
-    private final boolean IS_BOOTSTRAP_LAYOUT_WHITELISTED = setIsBootstrapWhitelisted(true); // whitelist me before constructor time
     private final String DEMOGRAPHICS_SNAPSHOT = "Demographics Snapshot";
     private final String APX_SNAPSHOT = "APX Joined Snapshot";
     private final String CROSS_STUDY_SNAPSHOT = "Cross study query snapshot";

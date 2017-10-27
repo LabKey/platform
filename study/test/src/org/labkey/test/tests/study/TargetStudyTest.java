@@ -32,13 +32,12 @@ import org.openqa.selenium.By;
 import java.io.File;
 import java.util.Random;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @Category({DailyB.class, Assays.class})
 public class TargetStudyTest extends AbstractAssayTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     private static final String ASSAY_NAME = "Assay";
     private static final String STUDY1_LABEL = "AwesomeStudy1";
     private static final String STUDY2_LABEL = "AwesomeStudy2";

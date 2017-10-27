@@ -26,7 +26,6 @@ import org.labkey.test.util.DataRegionTable;
 @Category({DailyC.class})
 public class StudySecurityTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
     protected static final String READER = "dsreader@studysecurity.test";
     protected static final String EDITOR = "dseditor@studysecurity.test";
     protected static final String LIMITED = "dslimited@studysecurity.test";

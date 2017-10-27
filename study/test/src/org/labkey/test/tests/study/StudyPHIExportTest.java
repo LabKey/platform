@@ -28,12 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class})
 public class StudyPHIExportTest extends StudyExportTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private String idPreface = "P!@#$%^&*(";
     private int idLength = 7;
     private Map<String,String> _originalFirstMouseStats;

@@ -38,7 +38,6 @@ import static org.labkey.test.util.DataRegionTable.DataRegion;
 @Category({DailyC.class})
 public class AncillaryStudyTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String PROJECT_NAME = "AncillaryStudyTest Project";
     private static final String STUDY_NAME = "Special Emphasis Study";
     private static final String STUDY_DESCRIPTION = "Ancillary study created by AncillaryStudyTest.";

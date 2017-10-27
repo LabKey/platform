@@ -53,7 +53,6 @@ import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJEC
 @Category({DailyB.class})
 public class MothershipTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String ASSIGNEE = "assignee@mothership.test";
     private static final String NON_ASSIGNEE = "non_assignee@mothership.test";
     private static final String MOTHERSHIP_GROUP = "Mothership Test Group";

@@ -38,8 +38,6 @@ import static org.junit.Assert.assertEquals;
 @Category({DailyA.class, Specimen.class})
 public class TruncationTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     private final File LIST_ARCHIVE = TestFileUtils.getSampleData("lists/searchTest.lists.zip");
     private final String LIST_NAME = "List1";
 

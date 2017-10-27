@@ -50,7 +50,6 @@ import java.util.Set;
 @Category({DailyA.class})
 public class SharedStudyTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String NON_DATASPACE_PROJECT = "Non Dataspace Project";
     private static final String STUDY1 = "Study001";
     private static final String STUDY2 = "Study002";

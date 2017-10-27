@@ -32,8 +32,6 @@ import static org.junit.Assert.assertTrue;
 @Category({DailyC.class})
 public class StudyDatasetReloadTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     private static final File STUDY_WITH_BIT = TestFileUtils.getSampleData("studies/StudyWithDemoBit.folder.zip");
     private static final File STUDY_WITHOUT_BIT = TestFileUtils.getSampleData("studies/StudyWithoutDemoBit.folder.zip");
 

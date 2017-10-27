@@ -29,7 +29,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Imports a SampleMinded data export (.xlsx) into the specimen repository.
@@ -37,7 +37,6 @@ import static org.junit.Assert.*;
 @Category({DailyB.class, Specimen.class})
 public class SampleMindedImportTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
     private static final String PROJECT_NAME = "SampleMindedImportTest";
 
     private static final String FILE = "SampleMindedExport.xlsx";

@@ -33,8 +33,8 @@ import org.labkey.test.components.studydesigner.AssayScheduleWebpart;
 import org.labkey.test.components.studydesigner.BaseManageVaccineDesignVisitPage;
 import org.labkey.test.components.studydesigner.ImmunizationScheduleWebpart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
-import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
+import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
 import org.labkey.test.components.studydesigner.ManageTreatmentsSingleTablePage;
 import org.labkey.test.components.studydesigner.TreatmentDialog;
 import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
@@ -51,13 +51,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category({DailyB.class})
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");
     // Cohorts: defined in study archive
     private static final String[] COHORTS = {"Positive", "Negative"};

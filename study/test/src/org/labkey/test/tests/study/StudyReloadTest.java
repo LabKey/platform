@@ -23,15 +23,9 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PipelineStatusTable;
 
-import java.io.File;
-
-import static org.junit.Assert.assertEquals;
-
 @Category({DailyC.class})
 public class StudyReloadTest extends StudyBaseTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     @Override
     //disabled for 14569
     @LogMethod

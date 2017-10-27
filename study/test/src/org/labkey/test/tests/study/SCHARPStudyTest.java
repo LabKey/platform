@@ -28,13 +28,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 @Category({DailyA.class})
 public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
-    {setIsBootstrapWhitelisted(true);}
-
     public static final String PROJECT_NAME="SCHARP Study Test";
 
     private String _labkeyRoot = TestFileUtils.getLabKeyRoot();
