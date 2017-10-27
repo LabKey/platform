@@ -600,5 +600,4 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         return getRealTable().hasDbTriggers();
     }
-
 }
