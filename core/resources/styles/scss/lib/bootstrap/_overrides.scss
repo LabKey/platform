@@ -21,7 +21,6 @@
   font-family: $lk-button-font-family;
   font-weight: $lk-button-font-weight;
   letter-spacing: 0.5px;
-  padding: $lk-button-padding;
   text-align: center;
   text-transform: $lk-button-text-transform;
   touch-action: manipulation;
@@ -70,9 +69,14 @@
 
   // Maintain same color when disabled
   &.disabled {
-    &:active, &:focus, &:hover {
+    opacity: 1;
+    border-color: $lk-button-disabled-color;
+    color: $lk-button-disabled-color;
+    @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
+    &:active, &:focus, &:hover, &:active:hover, &:active:focus {
       @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
-      border-color: $lk-button-primary-border-color;
+      border-color: $lk-button-disabled-color;
+      color: $lk-button-disabled-color;
     }
   }
 
@@ -83,7 +87,6 @@
   &:active:focus {
     background-color: $lk-button-bg-color-hover;
     background-image: none;
-    border-color: $lk-button-primary-border-color;
   }
 }
 

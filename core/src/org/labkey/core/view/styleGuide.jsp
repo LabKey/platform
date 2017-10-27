@@ -127,6 +127,20 @@
             <input class="labkey-button" type="button" value="Input" disabled="disabled">
             <input class="labkey-button" type="submit" value="Submit" disabled="disabled">
         </div>
+        <p>.labkey-button.primary buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
+        <div class="lk-sg-example">
+            <a class="labkey-button primary" href="#" role="button">Link</a>
+            <button class="labkey-button primary" type="submit">Button</button>
+            <input class="labkey-button primary" type="button" value="Input">
+            <input class="labkey-button primary" type="submit" value="Submit">
+        </div>
+        <p>Disabled .labkey-button.primary buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
+        <div class="lk-sg-example">
+            <a class="labkey-button primary disabled" href="#" role="button">Link</a>
+            <button class="labkey-button primary disabled" type="submit">Button</button>
+            <input class="labkey-button primary disabled" type="button" value="Input">
+            <input class="labkey-button primary disabled" type="submit" value="Submit">
+        </div>
         <p>btn-primary buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
         <div class="lk-sg-example">
             <a class="btn btn-primary" href="#" role="button">Link</a>
