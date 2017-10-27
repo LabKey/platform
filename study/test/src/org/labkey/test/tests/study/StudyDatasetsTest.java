@@ -336,7 +336,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
         dataregion.clickHeaderMenu("Groups", false, "Create Mouse Group", "From All Mice");
-        Window window = Window().withTitle("Define Mouse Group").waitFor(getDriver());
+        Window window = Window(getDriver()).withTitle("Define Mouse Group").waitFor();
         final WebElement groupLabelInput = Locator.id("groupLabel-inputEl").notHidden().waitForElement(window, 10000);
         setFormElement(groupLabelInput, EXTRA_GROUP);
         dataregion.doAndWaitForUpdate(() ->
