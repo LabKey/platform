@@ -685,12 +685,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         super._setContainerFilter(filter);
     }
 
-    @Override
-    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
-    {
-        return super.getContainerFilterClause(filter, fieldKey);
-    }
-
     @NotNull
     @Override
     public ContainerFilter getDefaultContainerFilter()
@@ -707,121 +701,129 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         ParticipantGroup group = getUserSchema().getSessionParticipantGroup();
         DatasetDefinition.DataSharing sharing = ((DatasetDefinition)getDataset()).getDataSharingEnum();
+
+        final SQLFragment sqlf;
+
         if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
-            return super.getFromSQL(alias);
-
-        String innerAlias = "__" +  alias;
-        SqlDialect d = getSchema().getSqlDialect();
-        SQLFragment sqlf = new SQLFragment();
-        sqlf.appendComment("<DatasetTableImpl>", d);
-
-        if (!includeParticipantVisit)
         {
-            sqlf.append("(SELECT * FROM ");
-            sqlf.append(super.getFromSQL(innerAlias));
+            sqlf = super.getFromSQL(alias);
         }
         else
         {
-            TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            sqlf.append("(SELECT ").append(innerAlias).append(".*, PV.VisitRowId");
-            if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
-                sqlf.append(", PV.Day");
-            SQLFragment from = getRealTable().getFromSQL(innerAlias);
-            sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV"))
-                    .append("\n" + "    ON ").append(innerAlias).append(".ParticipantId=PV.ParticipantId AND ")
-                    .append(innerAlias).append(".SequenceNum=PV.SequenceNum");
+            String innerAlias = "__" +  alias;
+            SqlDialect d = getSchema().getSqlDialect();
+            sqlf = new SQLFragment();
+            sqlf.appendComment("<DatasetTableImpl>", d);
 
-            if (null != getRealTable().getColumn("container"))
+            if (!includeParticipantVisit)
             {
-                sqlf.append(" AND PV.Container =  ").append(innerAlias).append(".Container");
+                sqlf.append("(SELECT * FROM ");
+                sqlf.append(super.getFromSQL(innerAlias));
             }
             else
             {
-                sqlf.append(" AND PV.Container =  '").append(getContainer().getId()).append("'");
-            }
-        }
+                TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+                sqlf.append("(SELECT ").append(innerAlias).append(".*, PV.VisitRowId");
+                if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
+                    sqlf.append(", PV.Day");
+                SQLFragment from = getRealTable().getFromSQL(innerAlias);
+                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV"))
+                        .append("\n" + "    ON ").append(innerAlias).append(".ParticipantId = PV.ParticipantId AND ")
+                        .append(innerAlias).append(".SequenceNum = PV.SequenceNum");
 
-        boolean hasWhere = false;
-
-        // Datasets mostly ignore container filters because they usually belong to a single container.
-        // In the dataspace case, they are unfiltered (no container filter).
-        // We actually need to handle the container filter in the "dataset with shared data" case
-        if (_dsd.isShared())
-        {
-            ContainerFilter cf = getContainerFilter();
-
-            if (null != cf.getIds(getContainer()))
-            {
-                TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
-                ColumnInfo ciContainer = tiParticipant.getColumn("Container");
-                SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
-                SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
-                if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+                if (null != getRealTable().getColumn("container"))
                 {
-                    sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                    sqlf.append(" AND PV.Container = ").append(innerAlias).append(".Container");
                 }
                 else
                 {
-                    // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
-                    if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
-                        throw new IllegalStateException("problem generating dataset SQL");
-                    sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+                    sqlf.append(" AND PV.Container = '").append(getContainer().getId()).append("'");
+                }
+            }
+
+            boolean hasWhere = false;
+
+            // Datasets mostly ignore container filters because they usually belong to a single container.
+            // In the dataspace case, they are unfiltered (no container filter).
+            // We actually need to handle the container filter in the "dataset with shared data" case
+            if (_dsd.isShared())
+            {
+                ContainerFilter cf = getContainerFilter();
+
+                if (null != cf.getIds(getContainer()))
+                {
+                    TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
+                    ColumnInfo ciContainer = tiParticipant.getColumn("Container");
+                    SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
+                    SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
+                    if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
+                    {
+                        sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                    }
+                    else
+                    {
+                        // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
+                        if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
+                            throw new IllegalStateException("problem generating dataset SQL");
+                        sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+                    }
+
+                    hasWhere = true;
+                }
+            }
+
+            // Add the session participant group filter
+            if (group != null)
+            {
+                SQLFragment frag;
+                if (group.isSession() || group.isNew())
+                {
+                    // Unsaved session group doesn't persist in participant group map table (yet) so we need to
+                    // expand into a "ParticipantId IN ..." filter.
+                    // CONSIDER: Use a temp table for large participant group lists
+                    FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
+                    ColumnInfo participantCol = getColumn(participantFieldKey);
+                    SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
+                    SQLFragment temp = clause.toSQLFragment(Collections.singletonMap(participantFieldKey, participantCol), getSqlDialect());
+
+                    // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
+                    // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
+                    String sql = StringUtils.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
+                    frag = new SQLFragment(sql, temp.getParams());
+                }
+                else
+                {
+                    // Filter using ParticipantGroupMap
+                    // NOTE: Unlike the Participant table's ParticipantCategoryColumn as used by the normal
+                    // participant group filter "ParticipantId/<category> = <group>" filter, we don't join on
+                    // ParticipantGroupMap.Container to support project-level shared datasets.
+                    frag = new SQLFragment();
+                    frag.append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
+                    frag.add(group.getRowId());
                 }
 
-                hasWhere = true;
+                sqlf.append("\n").append(hasWhere ? "AND " : "WHERE ").append(frag);
             }
+
+            sqlf.append(") AS ").append(alias);
+
+            if (_dsd.isAssayData())
+            {
+                // Join in Assay-side data to make it appear as if it's in the dataset table itself
+                String assayResultAlias = getAssayResultAlias(alias);
+                TableInfo assayResultTable = getAssayResultTable();
+                // Check if assay design has been deleted
+                if (assayResultTable != null)
+                {
+                    sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
+                    sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
+                    sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+                }
+            }
+            sqlf.appendComment("</DatasetTableImpl>", d);
         }
 
-        // Add the session participant group filter
-        if (group != null)
-        {
-            SQLFragment frag;
-            if (group.isSession() || group.isNew())
-            {
-                // Unsaved session group doesn't persist in participant group map table (yet) so we need to
-                // expand into a "ParticipantId IN ..." filter.
-                // CONSIDER: Use a temp table for large participant group lists
-                FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
-                ColumnInfo participantCol = getColumn(participantFieldKey);
-                SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
-                SQLFragment temp = clause.toSQLFragment(Collections.singletonMap(participantFieldKey, participantCol), getSqlDialect());
-
-                // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
-                // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
-                String sql = StringUtils.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
-                frag = new SQLFragment(sql, temp.getParams());
-            }
-            else
-            {
-                // Filter using ParticipantGroupMap
-                // NOTE: Unlike the Participant table's ParticipantCategoryColumn as used by the normal
-                // participant group filter "ParticipantId/<category> = <group>" filter, we don't join on
-                // ParticipantGroupMap.Container to support project-level shared datasets.
-                frag = new SQLFragment();
-                frag.append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
-                frag.add(group.getRowId());
-            }
-
-            sqlf.append("\n").append(hasWhere ? "AND " : "WHERE ").append(frag);
-        }
-
-        sqlf.append(") AS ").append(alias);
-
-        if (_dsd.isAssayData())
-        {
-            // Join in Assay-side data to make it appear as if it's in the dataset table itself 
-            String assayResultAlias = getAssayResultAlias(alias);
-            TableInfo assayResultTable = getAssayResultTable();
-            // Check if assay design has been deleted
-            if (assayResultTable != null)
-            {
-                sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
-                sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
-                sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
-            }
-        }
-        sqlf.appendComment("</DatasetTableImpl>", d);
-        return sqlf;
+        return _rules.getSqlTransformer().apply(sqlf);
     }
 
 
@@ -874,8 +876,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public ContainerContext getContainerContext()
     {
-        if (null == _dsd)
-            return null;
         if (_dsd.isShared())
             return new ContainerContext.FieldKeyContext(new FieldKey(null,"Folder"));
         else

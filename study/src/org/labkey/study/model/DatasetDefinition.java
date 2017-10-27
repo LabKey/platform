@@ -28,7 +28,6 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -496,7 +495,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     /**
      *
-     * We do not want to invalidate caches everytime someone updates a dataset row
+     * We do not want to invalidate caches every time someone updates a dataset row
      * So don't store modified in this bean.
      *
      * Instead cache modified dates separately
@@ -504,19 +503,15 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      * @return
      */
 
-    static CacheLoader<String,Date> modifiedDatesLoader = new CacheLoader<String,Date>()
-    {
-        @Override
-        public Date load(String key, @Nullable Object argument)
-        {
-            StudySchema ss = StudySchema.getInstance();
-            SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
-            Date modified = new SqlSelector(ss.getScope(),sql).getObject(Date.class);
-            return modified;
-        }
+    static CacheLoader<String,Date> modifiedDatesLoader = (key, argument) -> {
+        StudySchema ss = StudySchema.getInstance();
+        SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
+
+        return new SqlSelector(ss.getScope(),sql).getObject(Date.class);
     };
+
     static Cache<String, Date> modifiedDates = new BlockingCache<>(
-            new DatabaseCache<Wrapper<Date>>(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "dataset modified cache"),
+            new DatabaseCache<>(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "dataset modified cache"),
             modifiedDatesLoader);
 
 
@@ -528,8 +523,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public static Date getModified(DatasetDefinition def)
     {
-        Date modified = modifiedDates.get(def.getEntityId());
-        return modified;
+        return modifiedDates.get(def.getEntityId());
     }
 
     public static void updateModified(DatasetDefinition def, Date modified)
