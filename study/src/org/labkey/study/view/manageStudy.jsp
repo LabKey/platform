@@ -57,8 +57,8 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -154,7 +154,7 @@
     if (c.hasPermission(user, AdminPermission.class))
     {
 %>
-            <%FrameFactoryClassic.startPanelFrame(out, "General Study Settings");%>
+            <labkey:panel title="General Study Settings">
                 <table class="lk-fields-table lk-manage-study-table">
                     <tr>
                         <td class="lk-study-prop-label">Study Properties</td>
@@ -303,13 +303,13 @@
                                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
                     </tr>
                 </table>
-            <%FrameFactoryClassic.endPanelFrame(out);%>
+            </labkey:panel>
 
 <%
         if (!study.hasSourceStudy() && !study.isSnapshotStudy())
         {
 %>
-            <%FrameFactoryClassic.startPanelFrame(out, "Specimen Repository Settings");%>
+            <labkey:panel title="Specimen Repository Settings">
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
@@ -350,7 +350,7 @@
                             }
                 %>
                 </table>
-            <%FrameFactoryClassic.endPanelFrame(out);%>
+            </labkey:panel>
         <%
         }
         else
@@ -367,7 +367,7 @@
         if (study.getRepositorySettings().isEnableRequests())
         {
     %>
-            <%FrameFactoryClassic.startPanelFrame(out, "Specimen Request Settings");%>
+            <labkey:panel title="Specimen Request Settings">
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>
@@ -408,7 +408,7 @@
                                 new ActionURL(SpecimenController.ConfigureRequestabilityRulesAction.class, c)) %></td>
                     </tr>
                 </table>
-            <%FrameFactoryClassic.endPanelFrame(out);%>
+            </labkey:panel>
 <%
         }
     }

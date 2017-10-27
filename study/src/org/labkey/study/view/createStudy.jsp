@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -39,7 +38,7 @@
 
 <labkey:errors/>
 <labkey:form action="<%=h(buildURL(StudyController.CreateStudyAction.class))%>" method="POST">
-        <%FrameFactoryClassic.startPanelFrame(out, "Look and Feel Properties");%>
+        <labkey:panel title="Look and Feel Properties">
             <table class="lk-fields-table">
                 <tr>
                     <td class="lk-study-property">Study Label</td>
@@ -58,10 +57,10 @@
                     <td align="left"><input type="text" size="40" name="subjectColumnName" value="<%= h(form.getSubjectColumnName()) %>"></td>
                 </tr>
             </table>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 
 <% if (!form.isShareVisits()) { %>
-        <%FrameFactoryClassic.startPanelFrame(out, "Visit/Timepoint Tracking");%>
+        <labkey:panel title="Visit/Timepoint Tracking">
             <p>
                 Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.
                 Alternately, if the study is ongoing without a strong concept of visit, a continuous study can be chosen.
@@ -86,14 +85,14 @@
                     </td>
                 </tr>
             </table>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 <% } else { %>
     <input type="hidden" name="timepointType" value="<%= form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? TimepointType.VISIT : form.getTimepointType() %>" >
     <input type="hidden" name="startDate" value="<%=formatDate(form.getStartDate())%>">
     <input type="hidden" name="defaultTimepointDuration" value="<%=form.getDefaultTimepointDuration()%>">
 <% } %>
 
-        <%FrameFactoryClassic.startPanelFrame(out, "Specimen Management");%>
+        <labkey:panel title="Specimen Management">
             <p>
                 The standard specimen repository allows you to upload a list of available specimens. The advanced specimen repository
                 relies on an external set of tools to track movement of specimens between locations. The advanced system also enables a customizable specimen
@@ -108,9 +107,9 @@
                     </td>
                 </tr>
             </table>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 
-        <%FrameFactoryClassic.startPanelFrame(out, "Security");%>
+        <labkey:panel title="Security">
             <table class="lk-fields-table">
                 <tr>
                     <td class="lk-study-property">Security Mode<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%></td>
@@ -128,7 +127,7 @@
                     </td>
                 </tr>
             </table>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 
 <%
     boolean isProject = getContainer().isProject();
@@ -138,7 +137,7 @@
         // Issue 22690: Disallow creating a shared study if child studies already exist
         boolean allowCreateSharedStudy = StudyManager.getInstance().getAllStudies(getContainer(), getUser()).isEmpty();
 %>
-        <%FrameFactoryClassic.startPanelFrame(out, "Shared Study Properties");%>
+        <labkey:panel title="Shared Study Properties">
             <p>
                 Enable sharing of dataset definitions created in this project-level study.
                 If this option is enabled, all studies in this project will see the datasets defined in the root folder of the project.
@@ -177,7 +176,7 @@
                     </td>
                 </tr>
             </table>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 <%}%>
 
     <%= button("Create Study").disableOnClick(true).submit(true) %>

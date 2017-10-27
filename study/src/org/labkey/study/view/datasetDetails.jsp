@@ -45,8 +45,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
     {
@@ -152,7 +152,7 @@ if (!pipelineSet)
 %>
 <br/>
 <br/>
-    <%FrameFactoryClassic.startPanelFrame(out, "Dataset Properties");%>
+    <labkey:panel title="Dataset Properties">
         <table id="details" width="600px" class="lk-fields-table">
             <tr>
                 <td class=labkey-form-label>Name</td>
@@ -205,17 +205,17 @@ if (!pipelineSet)
                 <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
             </tr>
         </table>
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 
-    <%FrameFactoryClassic.startPanelFrame(out, "Dataset Fields");%>
+    <labkey:panel title="Dataset Fields">
         <%
             JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
             me.include(typeSummary, out);
         %>
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 
 <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-    <%FrameFactoryClassic.startPanelFrame(out, "Visit Associations");%>
+    <labkey:panel title="Visit Associations">
         <table class="lk-fields-table"><%
             List<VisitDataset> visitList = StudyManager.getInstance().getMapping(dataset);
             HashMap<Integer,VisitDataset> visitMap = new HashMap<>();
@@ -241,7 +241,7 @@ if (!pipelineSet)
             }
         %>
         </table>
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 <% } %>
 
 <script type="text/javascript">

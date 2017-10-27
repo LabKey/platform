@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -34,9 +33,7 @@
 <labkey:form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
-    <%
-        FrameFactoryClassic.startPanelFrame(out, "Currently Defined Dataset QC States");
-    %>
+    <labkey:panel title="Currently Defined Dataset QC States">
         <table class="lk-fields-table">
             <tr>
                 <th>&nbsp;</th>
@@ -97,11 +94,9 @@
                 </td>
             </tr>
         </table>
-        <%
-            FrameFactoryClassic.endPanelFrame(out);
-            
-            FrameFactoryClassic.startPanelFrame(out, "Default states for dataset data");
-        %>
+    </labkey:panel>
+
+    <labkey:panel title="Default states for dataset data">
         <table class="lk-fields-table">
             <tr>
                 <td colspan="2">These settings allow different default QC states depending on data source.
@@ -163,30 +158,26 @@
                 </td>
             </tr>
         </table>
-        <%
-            FrameFactoryClassic.endPanelFrame(out);
-            
-            FrameFactoryClassic.startPanelFrame(out, "Data visibility");
-        %>
-    <table class="lk-fields-table">
-        <tr>
-            <td colspan="2">This setting determines whether users see non-public data by default.
-                Users can always explicitly choose to see data in any QC state.</td>
-        </tr>
-        <tr>
-            <th align="right" width="300px">Default visibility:</th>
-            <td>
-                <select name="showPrivateDataByDefault">
-                    <option value="false">Public data</option>
-                    <option value="true"<%=selected(bean.getStudy().isShowPrivateDataByDefault())%>>All data</option>
-                </select>
-            </td>
-        </tr>
-    </table>
+    </labkey:panel>
 
-        <%
-            FrameFactoryClassic.endPanelFrame(out);
-        %>
-<%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
-<%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
+    <labkey:panel title="Data visibility">
+        <table class="lk-fields-table">
+            <tr>
+                <td colspan="2">This setting determines whether users see non-public data by default.
+                    Users can always explicitly choose to see data in any QC state.</td>
+            </tr>
+            <tr>
+                <th align="right" width="300px">Default visibility:</th>
+                <td>
+                    <select name="showPrivateDataByDefault">
+                        <option value="false">Public data</option>
+                        <option value="true"<%=selected(bean.getStudy().isShowPrivateDataByDefault())%>>All data</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+    </labkey:panel>
+
+    <%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
+    <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 </labkey:form>

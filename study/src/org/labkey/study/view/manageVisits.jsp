@@ -30,8 +30,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     List<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
 %>
@@ -86,7 +86,7 @@
     {
 %>
 <p>
-<%FrameFactoryClassic.startPanelFrame(out, "Visits", 800, true);%>
+<labkey:panel title="Visits" width="800">
 <table id="visits" class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">&nbsp;</td>
@@ -130,7 +130,7 @@
         }
     %>
 </table>
-<%FrameFactoryClassic.endPanelFrame(out);%>
+</labkey:panel>
 <%
     }
 %>

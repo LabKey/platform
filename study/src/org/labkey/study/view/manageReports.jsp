@@ -34,7 +34,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -106,7 +105,10 @@
             reportCount = 0;
             maxColumns--;
         }
+
+        %><labkey:panel title="<%=h(entry.getKey())%>"><%
         startReportSection(out, entry.getKey(), bean);
+
         for (DataViewInfo view : entry.getValue())
         {
             reportCount++;
@@ -132,7 +134,9 @@
                 <tr><td><%=h(view.getName())%></td></tr>
          <% }
         }
+
         endReportSection(out, bean);
+        %></labkey:panel><%
     }
 
     if (bean.isWideView())
@@ -160,7 +164,6 @@
     {
         if (!bean.getAdminView())
         {
-            FrameFactoryClassic.startPanelFrame(out, title);
             out.write("<table class=\"lk-fields-table\">");
         }
         else
@@ -178,7 +181,6 @@
         if (!bean.getAdminView())
         {
             out.write("</table>");
-            FrameFactoryClassic.endPanelFrame(out);
         }
     }
 %>
