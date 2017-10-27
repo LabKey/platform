@@ -103,7 +103,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public double getVersion()
     {
-        return 17.21;
+        return 17.30;
     }
 
     protected void init()
