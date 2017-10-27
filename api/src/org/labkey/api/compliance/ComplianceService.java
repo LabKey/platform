@@ -1,6 +1,7 @@
 package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.annotations.RefactorIn18_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.User;
@@ -12,6 +13,9 @@ import org.labkey.api.view.ActionURL;
  */
 public interface ComplianceService
 {
+    @RefactorIn18_1  // TODO: Delete once dataset logging changes are merged to develop
+    String LOGGING_QUERY_TAG = " /* COMPLIANCE-LOGGABLE-QUERY */";
+
     static ComplianceService get()
     {
         return ServiceRegistry.get(ComplianceService.class);
