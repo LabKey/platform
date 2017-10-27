@@ -239,6 +239,11 @@ public class DataRegion extends DisplayElement
             _messages.add(message);
     }
 
+    public void adViewErrorMessage(String errorMsg)
+    {
+        addMessage(new Message("<span class=\"labkey-error\">" + PageFlowUtil.filter(errorMsg) + "</span><br>", MessageType.ERROR, MessagePart.view));
+    }
+
     public void addDisplayColumn(DisplayColumn col)
     {
         assert null != col;

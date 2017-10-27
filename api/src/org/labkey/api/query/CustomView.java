@@ -53,4 +53,9 @@ public interface CustomView extends CustomViewInfo
     boolean serialize(VirtualFile dir) throws IOException;
 
     Collection<String> getDependents(User user);
+
+    default List<String> getErrors()
+    {
+        return null;
+    }
 }

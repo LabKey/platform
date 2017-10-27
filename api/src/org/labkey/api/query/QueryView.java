@@ -2132,6 +2132,11 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
 
+        if (_customView != null && _customView.getErrors() != null)
+        {
+            _customView.getErrors().forEach(rgn::adViewErrorMessage);
+        }
+
         // Allow region to specify header lock, optionally override
         if (rgn.getAllowHeaderLock())
             rgn.setAllowHeaderLock(getSettings().getAllowHeaderLock());
