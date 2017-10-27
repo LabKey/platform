@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page isELIgnored="true" %>
 
-    <%FrameFactoryClassic.startPanelFrame(out, "Syntax reference");%>
+    <labkey:panel title="Syntax reference">
         Your R script uses input substitution parameters to generate the names of input files and to import data
         from your chosen Dataset Grid. It then uses output substitution parameters to either directly place image/data
         files in your View or to include download links to these files in your View. Substitutions take the form
         of: <%="${param}"%> where 'param' is the substitution.
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 
-    <%FrameFactoryClassic.startPanelFrame(out, "Valid substitutions");%>
+    <labkey:panel title="Valid substitutions">
         <table id="validSubstitutions" class="lk-fields-table">
             <tr>
                 <td class="labkey-form-label">input_data</td>
@@ -133,9 +133,9 @@
                 </td>
             </tr>
         </table>
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 
-    <%FrameFactoryClassic.startPanelFrame(out, "Implicit variables");%>
+    <labkey:panel title="Implicit variables">
         <p>
             Each R script contains implicit variables that are inserted before your source script. Implicit variables
             are R data types and may contain information that can be used by the source script.
@@ -177,9 +177,9 @@
                 <td>The email address of the current user</td>
             </tr>
         </table>
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 
-    <%FrameFactoryClassic.startPanelFrame(out, "Using regular expressions with replacement token names");%>
+    <labkey:panel title="Using regular expressions with replacement token names">
         Sometimes it can be useful to have flexibility when binding token names to replacement parameters. This can be the case when
         a script generates file artifacts but does not know the file names in advance. Using the syntax: regex() in the place of a token name
         (where LabKey server controls the token name to file mapping) will result the following actions:
@@ -199,7 +199,7 @@
                 </td>
             </tr>
         </table>
-    <%FrameFactoryClassic.endPanelFrame(out);%>
+    </labkey:panel>
 
 <p>
     <i>Documentation and tutorials about the R language can be found at

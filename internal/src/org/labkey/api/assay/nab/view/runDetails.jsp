@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -46,13 +45,16 @@
     if (bean.needsNotesView())
     {
 %>
-        <%FrameFactoryClassic.startPanelFrame(out, "Notes");%>
+        <labkey:panel title="Notes">
             <% me.include(bean.getRunNotesView(), out); %>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 <%
     }
+
+    String runSummarySectionTitle = "Run Summary" + (assay.getRunName() != null ? ": " + assay.getRunName() : "");
+    String sampleInformationSectionTitle = bean.getSampleNoun() + " Information";
 %>
-        <%FrameFactoryClassic.startPanelFrame(out, "Run Summary" + (assay.getRunName() != null ? ": " + assay.getRunName() : ""));%>
+        <labkey:panel title="<%=h(runSummarySectionTitle)%>">
             <% me.include(bean.getRunPropertiesView(), out); %>
             <br/>
             <table>
@@ -71,23 +73,23 @@
             </table>
             <br/>
             <% me.include(bean.getSamplePropertiesView(), out); %>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 
-        <%FrameFactoryClassic.startPanelFrame(out, bean.getSampleNoun() + " Information");%>
+        <labkey:panel title="<%=h(sampleInformationSectionTitle)%>">
             <% me.include(bean.getSampleDilutionsView(), out); %>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 
-        <%FrameFactoryClassic.startPanelFrame(out, "Plate Data");%>
+        <labkey:panel title="Plate Data">
             <% me.include(bean.getPlateDataView(), out); %>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 
 <%
     if (!bean.isPrintView() && writer)
     {
 %>
-        <%FrameFactoryClassic.startPanelFrame(out, "Discussions");%>
+        <labkey:panel title="Discussions">
             <% me.include(bean.getDiscussionView(getViewContext()), out); %>
-        <%FrameFactoryClassic.endPanelFrame(out);%>
+        </labkey:panel>
 <%
     }
 %>

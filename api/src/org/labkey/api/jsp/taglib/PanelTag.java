@@ -16,6 +16,7 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyTagSupport;
@@ -26,6 +27,8 @@ public class PanelTag extends BodyTagSupport
     private String className = null;
     private String id = null;
     private String type = "default";
+    private String title = null;
+    private Integer width = null;
 
     public String getClassName()
     {
@@ -59,6 +62,26 @@ public class PanelTag extends BodyTagSupport
         this.type = type;
     }
 
+    public String getTitle()
+    {
+        return title;
+    }
+
+    public void setTitle(String title)
+    {
+        this.title = title;
+    }
+
+    public Integer getWidth()
+    {
+        return width;
+    }
+
+    public void setWidth(Integer width)
+    {
+        this.width = width;
+    }
+
     public int doStartTag() throws JspException
     {
         StringBuilder sb = new StringBuilder();
@@ -70,7 +93,20 @@ public class PanelTag extends BodyTagSupport
 
         if (StringUtils.isNoneEmpty(getId()))
             sb.append(" id=\"" + getId() + "\"");
+
+        String style = getWidth() != null ? "width: " + getWidth() + "px;" : "";
+        if (StringUtils.isNoneEmpty(style))
+            sb.append(" style=\"" + style + "\"");
+
         sb.append(">");
+
+        if (StringUtils.isNoneEmpty(getTitle()))
+        {
+            sb.append("<div class=\"panel-heading\">");
+            sb.append(" <h3 class=\"panel-title pull-left\">" + PageFlowUtil.filter(title) + "</h3>");
+            sb.append(" <div class=\"clearfix\"></div>");
+            sb.append("</div>");
+        }
 
         sb.append("<div class=\"panel-body\">");
 
