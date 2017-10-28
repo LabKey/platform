@@ -171,7 +171,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
-        return ReportUtil.getRunReportURL(context, this);
+        return ReportUtil.getRunReportURL(context, this, true);
     }
 
     @Override

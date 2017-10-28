@@ -178,7 +178,7 @@ public class ReportUtil
         return url;
     }
 
-    public static ActionURL getRunReportURL(ViewContext context, Report report)
+    public static ActionURL getRunReportURL(ViewContext context, Report report, boolean useDefaultRedirect)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlRunReport(context.getContainer());
 
@@ -194,7 +194,7 @@ public class ReportUtil
 
                 if (returnUrlString != null)
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, returnUrlString.toString());
-                else
+                else if (useDefaultRedirect)
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, context.getActionURL().getLocalURIString());
             }
         }
@@ -826,7 +826,7 @@ public class ReportUtil
         UserPrincipal principal = principalId != null && principalId != 0 ? SecurityManager.getPrincipal(principalId) : null;
         if (null != principal)
         {
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor()));
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor(), false));
             // make sure the Administrators remains readers of this report
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ReaderRole.class));
 

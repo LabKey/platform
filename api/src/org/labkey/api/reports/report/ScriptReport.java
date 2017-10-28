@@ -117,7 +117,7 @@ public abstract class ScriptReport extends AbstractReport
     {
         if (canEdit(context.getUser(), context.getContainer()))
         {
-            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
+            return ReportUtil.getRunReportURL(context, this, true).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
         }
         return null;
     }
