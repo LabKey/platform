@@ -2986,6 +2986,11 @@ input.x-tree-node-cb {
   padding-top:2px;
   padding-bottom:2px;
   width:130px; /* FF3 */
+
+  > .x-btn,
+  > .x-btn:hover {
+    background-color: inherit;
+  }
 }
 
 .x-date-right a, .x-date-left a{
@@ -3017,69 +3022,57 @@ input.x-tree-node-cb {
   text-decoration:none !important;
 }
 
-.x-date-left a{
+.x-date-left a {
   margin-left:2px;
   text-decoration:none !important;
 }
 
-table.x-date-inner {
-  width: 100%;
-  table-layout:fixed;
-}
+.x-date-inner {
+  th {
+    background: repeat-x left top;
+    text-align: right !important;
+    border-bottom: 1px solid;
+    cursor: default;
+    padding: 0;
+    border-collapse: separate;
+    width: 25px;
 
-.ext-webkit table.x-date-inner{
-  /* Fix for webkit browsers */
-  width: 175px;
-}
+    span {
+      display: block;
+      padding: 2px;
+      padding-right: 7px;
+    }
+  }
 
+  td {
+    border: 1px solid;
+    text-align:right;
+    padding:0;
+  }
 
-.x-date-inner th {
-  width:25px;
-}
+  a {
+    padding: 2px 5px;
+    display: block;
+    text-decoration: none;
+    text-align: right;
+    zoom: 1;
+  }
 
-.x-date-inner th {
-  background: repeat-x left top;
-  text-align:right !important;
-  border-bottom: 1px solid;
-  cursor:default;
-  padding:0;
-  border-collapse:separate;
-}
+  .x-date-active {
+    cursor: pointer;
+    color: black;
+  }
 
-.x-date-inner th span {
-  display:block;
-  padding:2px;
-  padding-right:7px;
-}
+  .x-date-selected a {
+    background: repeat-x left top;
+    border: 1px solid;
+    padding: 1px 4px;
+  }
 
-.x-date-inner td {
-  border: 1px solid;
-  text-align:right;
-  padding:0;
-}
-
-.x-date-inner a {
-  padding:2px 5px;
-  display:block;
-  text-decoration:none;
-  text-align:right;
-  zoom:1;
-}
-
-.x-date-inner .x-date-active{
-  cursor:pointer;
-  color:black;
-}
-
-.x-date-inner .x-date-selected a{
-  background: repeat-x left top;
-  border:1px solid;
-  padding:1px 4px;
-}
-
-.x-date-inner .x-date-today a{
-  border: 1px solid;
-  padding:1px 4px;
+  .x-date-today a {
+    border: 1px solid;
+    padding: 1px 4px;
+  }
 }
 
 .x-date-inner .x-date-prevday a,.x-date-inner .x-date-nextday a {
@@ -3107,13 +3100,13 @@ table.x-date-inner {
 .x-date-menu .x-menu-item {
   padding:1px 24px 1px 4px;
   white-space: nowrap;
-}
 
-.x-date-menu .x-menu-item .x-menu-item-icon {
-  width:10px;
-  height:10px;
-  margin-right:5px;
-  background-position:center -4px !important;
+  .x-menu-item-icon {
+    width:10px;
+    height:10px;
+    margin-right:5px;
+    background-position:center -4px !important;
+  }
 }
 
 .x-date-mp {
@@ -3121,11 +3114,11 @@ table.x-date-inner {
   left:0;
   top:0;
   display:none;
-}
 
-.x-date-mp td {
-  padding:2px;
-  font:normal 11px $lk-body-font-family;
+  td {
+    padding:2px;
+    font:normal 11px $lk-body-font-family;
+  }
 }
 
 td.x-date-mp-month,td.x-date-mp-year,td.x-date-mp-ybtn {
@@ -6095,43 +6088,46 @@ td.grid-hd-group-cell {
   background-image: url('#{$ext3-images-dir}/shared/left-btn.gif');
 }
 
-.x-date-inner th {
-  background-color:#dfecfb;
-  background-image:url('#{$ext3-images-dir}/shared/glass-bg.gif');
-  border-bottom-color:#a3bad9;
-  font: normal 10px $lk-body-font-family;
-  color:#233d6d;
-}
+.x-date-inner {
+  th {
+    background-color:#dfecfb;
+    background-image:url('#{$ext3-images-dir}/shared/glass-bg.gif');
+    border-bottom-color:#a3bad9;
+    font: normal 10px $lk-body-font-family;
+    color:#233d6d;
+  }
 
-.x-date-inner td {
-  border-color:#fff;
-}
+  td {
+    border-color:#fff;
+  }
 
-.x-date-inner a {
-  font: normal 11px $lk-body-font-family;
-  color:#000;
-}
+  a {
+    font: normal 11px $lk-body-font-family;
+    color: #000;
+  }
 
-.x-date-inner .x-date-active{
-  color:#000;
-}
+  .x-date-active {
+    color: #000;
+  }
 
-.x-date-inner .x-date-selected a{
-  background-color:#dfecfb;
-  background-image:url('#{$ext3-images-dir}/shared/glass-bg.gif');
-  border-color:#8db2e3;
-}
+  .x-date-selected a {
+    background-color: #dfecfb;
+    background-image: url('#{$ext3-images-dir}/shared/glass-bg.gif');
+    border-color: #8db2e3;
+  }
 
-.x-date-inner .x-date-today a{
-  border-color:darkred;
-}
+  .x-date-today a {
+    border-color:darkred;
+  }
 
-.x-date-inner .x-date-selected span{
-  font-weight:bold;
-}
+  .x-date-selected span {
+    font-weight:bold;
+  }
 
-.x-date-inner .x-date-prevday a,.x-date-inner .x-date-nextday a {
-  color:#aaa;
+  .x-date-prevday a,
+  .x-date-nextday a {
+    color: #aaa;
+  }
 }
 
 .x-date-bottom {
