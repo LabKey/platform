@@ -30,14 +30,9 @@ Ext4.apply(Ext4.Ajax.defaultHeaders, LABKEY.defaultHeaders);
 
 if (LABKEY.experimental.useExperimentalCoreUI) {
     +function() {
-        var warned = {
-            AUTO_RESIZE_FLAG: {},
-            AUTO_RESIZE_USAGE: {}
-        };
-
         Ext4.ns('LABKEY.ext4.Util');
-        LABKEY.ext4.Util.resizeToContainer = function(extContainer, options) {
-            if (!extContainer || !extContainer.rendered) {
+        LABKEY.ext4.Util.resizeToContainer = function(ct, options) {
+            if (!ct || !ct.rendered) {
                 return;
             }
 
@@ -52,8 +47,8 @@ if (LABKEY.experimental.useExperimentalCoreUI) {
             };
 
             // container-specified options
-            if (extContainer && Ext4.isObject(extContainer.autoResize)) {
-                config = Ext4.apply(config, extContainer.autoResize);
+            if (ct && Ext4.isObject(ct.autoResize)) {
+                config = Ext4.apply(config, ct.autoResize);
             }
 
             // explicit options
@@ -61,18 +56,6 @@ if (LABKEY.experimental.useExperimentalCoreUI) {
                 config = Ext4.apply(config, options);
             }
             // else ignore parameters
-
-            // provide notice that autoResize is available and in-use
-            if (LABKEY.devMode) {
-                if (!options.AUTO_RESIZE_FLAG && !warned.AUTO_RESIZE_FLAG[extContainer.id]) {
-                    warned.AUTO_RESIZE_FLAG[extContainer.id] = true;
-                    console.warn('Ext4 component with id "' + extContainer.id + '" no longer needs to specify LABKEY.ext4.Util.resizeToViewport as it is now built-in. Specify options on "autoResize" on your outermost container.');
-                }
-                if (!warned.AUTO_RESIZE_USAGE[extContainer.id]) {
-                    warned.AUTO_RESIZE_USAGE[extContainer.id] = true;
-                    console.log('"autoResize" feature enabled for Ext4 component with id "' + extContainer.id + '".\n\t- To disable set "autoResize" to false.\n\t- If this seems to be causing an issue please give us feedback.');
-                }
-            }
 
             if (config.skipWidth && config.skipHeight) {
                 return;
@@ -82,31 +65,32 @@ if (LABKEY.experimental.useExperimentalCoreUI) {
             var width = 0;
 
             if (!config.skipWidth) {
-                width = extContainer.el.parent().getBox().width;
+                width = ct.el.parent().getBox().width;
             }
             if (!config.skipHeight) {
-                height = window.innerHeight - extContainer.el.getXY()[1];
+                height = window.innerHeight - ct.el.getXY()[1];
             }
 
             var padding = [config.paddingWidth, config.paddingHeight];
 
             var size = {
-                width  : Math.max(100, width - padding[0]),
-                height : Math.max(100, height - padding[1] - config.offsetY)
+                width: Math.max(100, width - padding[0]),
+                height: Math.max(100, height - padding[1] - config.offsetY)
             };
 
             if (config.skipWidth) {
-                extContainer.setHeight(size.height);
-                if (config.overrideMinWidth)
-                    extContainer.minWidth = size.width;
+                ct.setHeight(size.height);
+                if (config.overrideMinWidth) {
+                    ct.minWidth = size.width;
+                }
             }
             else if (config.skipHeight) {
-                extContainer.setWidth(size.width);
+                ct.setWidth(size.width);
             }
             else {
-                extContainer.setSize(size);
+                ct.setSize(size);
             }
-            extContainer.doLayout();
+            ct.doLayout();
         };
 
         Ext4.override(Ext4.AbstractComponent, {
@@ -118,11 +102,11 @@ if (LABKEY.experimental.useExperimentalCoreUI) {
             afterRender: function() {
                 var me = this;
                 me.callParent(arguments);
-                if (!me.ownerCt && me._validAutoResizeRenderTarget === true && me.autoResize !== false && Ext4.isFunction(me.doLayout)) {
+                if (!me.ownerCt && me._validAutoResizeRenderTarget === true && (me.autoResize === true || Ext4.isObject(me.autoResize)) && Ext4.isFunction(me.doLayout)) {
                     me.on('afterrender', function() {
                         var resize = function() { LABKEY.ext4.Util.resizeToContainer(this, { AUTO_RESIZE_FLAG: true }) };
                         Ext4.EventManager.onWindowResize(resize, this, {delay: 75});
-                        Ext4.defer(function() { resize.call(this) }, 250, this);
+                        Ext4.defer(function() { resize.call(this) }, 100, this);
                     }, me, {single: true});
                 }
             }

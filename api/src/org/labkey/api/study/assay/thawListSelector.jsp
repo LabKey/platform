@@ -30,6 +30,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext3");
+        dependencies.add("Ext4");
     }
 %>
 <%
