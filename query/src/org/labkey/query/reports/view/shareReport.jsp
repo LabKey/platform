@@ -46,7 +46,7 @@
             <br/>Additionally, any further modifications to this report will be reflected in the link as viewed by the recipient.</p>
 
         <labkey:errors/>
-        <labkey:form action="<%=h(urlFor(ShareReportAction.class))%>" method="POST" >
+        <labkey:form action="<%=h(urlFor(ShareReportAction.class))%>" method="POST" layout="horizontal">
             <b>Recipients (one per line):</b>
             <labkey:autoCompleteTextArea
                 name="recipientList" id="recipientList" rows="6" cols="95"
@@ -55,11 +55,11 @@
             <br/>
 
             <b>Message Subject:</b><br/>
-            <input type="text" name="messageSubject" id="messageSubject" size="95" value="<%=h(messageSubject)%>"/>
-            <br/><br/>
+            <labkey:input type="text" name="messageSubject" id="messageSubject" size="95" value="<%=h(messageSubject)%>" />
+            <br/>
 
             <b>Message Body:</b><br/>
-            <textarea name="messageBody" id="messageBody" rows="8" cols="95"><%=h(messageBody)%></textarea>
+            <textarea name="messageBody" id="messageBody" rows="8" cols="97"><%=h(messageBody)%></textarea>
             <br/><br/>
 
             <b>Message link:</b>

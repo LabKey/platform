@@ -39,6 +39,7 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -118,7 +119,6 @@ public class ReportViewProvider implements DataViewProvider
     {
         Container c = context.getContainer();
         User user = context.getUser();
-        boolean studyFolder = StudyService.get().getStudy(c) != null;
 
         if (filter == null)
             throw new IllegalArgumentException("ReportFilter cannot be null");
@@ -202,24 +202,18 @@ public class ReportViewProvider implements DataViewProvider
                 String access = descriptor.getAccess();
                 info.setShared(!ReportDescriptor.REPORT_ACCESS_PRIVATE.equals(access));
 
-                // studies support dataset level report permissions
-                if (studyFolder)
+                // report level permissions link for admins only
+                ActionURL reportPermUrl = null;
+                if (c.hasPermission(user, AdminPermission.class))
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(c).
-                                                    addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+                    reportPermUrl = PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(c).
+                        addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
 
                     URLHelper returnUrl = context.getActionURL().getReturnURL();
                     if (returnUrl != null)
-                    {
-                        url.addReturnURL(returnUrl);
-                    }
-
-                    info.setAccess(access, url);
+                        reportPermUrl.addReturnURL(returnUrl);
                 }
-                else
-                {
-                    info.setAccess(access);
-                }
+                info.setAccess(access, reportPermUrl);
 
                 info.setVisible(!descriptor.isHidden());
 

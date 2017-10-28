@@ -1345,7 +1345,7 @@ public class ReportsController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ShareReportForm form)
         {
-            if (_report != null)
+            if (_report != null && getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 return PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
                         addParameter(ReportDescriptor.Prop.reportId, _report.getDescriptor().getReportId().toString());
@@ -1593,8 +1593,9 @@ public class ReportsController extends SpringActionController
                 }
             }
 
+            ActionURL defaultRedirectUrl = ReportUtil.getRunReportURL(getViewContext(), report, false);
+            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : defaultRedirectUrl);
             response.put("success", true);
-            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : report.getRunReportURL(getViewContext()));
 
             return response;
         }

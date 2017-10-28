@@ -112,7 +112,9 @@
 
 </script>
 
-<h3><%= h(bean.getDescriptor().getReportName()) %></h3>
+    <h3>
+        <a href="<%=bean.getRunReportURL(getViewContext())%>"><%= h(bean.getDescriptor().getReportName()) %></a>
+    </h3>
 
     <p>This page enables you to fine-tune permissions for this view.</p>
     <p>You can choose the default behavior as described.  Alternately, you can set custom permissions for each group. As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
@@ -130,62 +132,76 @@
         }
     %>
     </table>
-    <table class="lk-fields-table">
-        <tr><th class="labkey-form-label" align=left>Site groups</th><th class="labkey-form-label">Read Access</th></tr><%
+    <br/>
+    <table class="labkey-data-region-legacy labkey-show-borders" style="width: 350px;">
+        <tr>
+            <th class="labkey-column-header" align=left>Site Groups</th>
+            <th class="labkey-column-header" style="white-space: nowrap;">Read Access</th>
+        </tr><%
         for (Group g : globalGroups)
         {
             if (g.isAdministrators())
             {
             %>
-                <tr><td><input type="hidden" name="group" value="<%=g.getUserId()%>"></td></tr>
+                <tr style="display: none;"><td><input type="hidden" name="group" value="<%=g.getUserId()%>"></td></tr>
             <%
             }
             //if (g.isAdministrators()) continue;
             boolean checked = reportPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
-            %><tr>
+            %><tr class="labkey-row">
                 <td><font color=<%=text(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td>
                 <td height="22" width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
             </tr><%
         }
+    %></table><%
 
         if (projectGroups.size() > 0)
         {
-            %><tr><th class="labkey-form-label" align=left>Project groups</th><th class="labkey-form-label">Read Access</th></tr><%
+            %><br/>
+            <table class="labkey-data-region-legacy labkey-show-borders" style="width: 350px;">
+                <tr>
+                    <th class="labkey-column-header" align=left>Project Groups</th>
+                    <th class="labkey-column-header" style="white-space: nowrap;">Read Access</th>
+                </tr><%
             for (Group g : projectGroups)
             {
                 boolean checked = reportPolicy.hasPermission(g, ReadPermission.class);
                 boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class);
-                %><tr>
+                %><tr class="labkey-row">
                     <td><font color=<%=text(disabled?"gray":"black")%>><%=h(g.getName())%></font></td>
                     <td height=22 width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
                 </tr><%
             }
+            %></table><%
         }
 
         if (reportSharedUsers.size() > 0)
         {
-            %><tr><th class="labkey-form-label" align=left>Specific users</th><th class="labkey-form-label">Read Access</th></tr><%
+            %><br/>
+            <table class="labkey-data-region-legacy labkey-show-borders" style="width: 350px;">
+                <tr>
+                    <th class="labkey-column-header" align=left>Specific Users</th>
+                    <th class="labkey-column-header" style="white-space: nowrap;">Read Access</th>
+                </tr><%
             for (User u : reportSharedUsers)
             {
                 boolean checked = reportPolicy.hasPermission(u, ReadPermission.class);
                 boolean disabled = !containerPolicy.hasPermission(u, ReadPermission.class);
-                %><tr>
+                %><tr class="labkey-row">
                     <td><font color=<%=text(disabled?"gray":"black")%>><%=h(u.getName())%></font></td>
                     <td height=22 width="20" align="center"><input name=user value="<%=u.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
                 </tr><%
             }
+            %></table><%
         }
         %>
-    </table>
+    <br/>
     <%= button("Save").submit(true) %>
     <span id="selectionButtons">
         <%= PageFlowUtil.button("Select All").href("#").onClick("setSelection(true); return false;") %>
         <%= PageFlowUtil.button("Select None").href("#").onClick("setSelection(false); return false;") %>
     </span>
-<%--
-    <input type=hidden name=reportId value="<%=bean.getDescriptor().getReportId()%>">
---%>
     </labkey:form>&nbsp;
 
 <table>

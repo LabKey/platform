@@ -55,7 +55,7 @@
     <br/>Additionally, any further modifications to this saved group will be reflected in the sent group.</p>
 
 <labkey:errors/>
-<labkey:form action="<%=h(urlFor(SendParticipantGroupAction.class))%>" method="POST" >
+<labkey:form action="<%=h(urlFor(SendParticipantGroupAction.class))%>" method="POST" layout="horizontal" >
 
     <b>Recipients (one per line):</b>
     <labkey:autoCompleteTextArea
@@ -65,11 +65,11 @@
     <br/>
 
     <b>Message Subject:</b><br/>
-    <input type="text" name="messageSubject" id="messageSubject" size="95" value="<%=h(messageSubject)%>"/>
-    <br/><br/>
+    <labkey:input type="text" name="messageSubject" id="messageSubject" size="95" value="<%=h(messageSubject)%>"/>
+    <br/>
 
     <b>Message Body:</b><br/>
-    <textarea name="messageBody" id="messageBody" rows="8" cols="95"><%=h(messageBody)%></textarea>
+    <textarea name="messageBody" id="messageBody" rows="8" cols="97"><%=h(messageBody)%></textarea>
     <br/><br/>
 
     <b>Message link:</b>
@@ -80,6 +80,7 @@
     <input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>">
     <input type="hidden" name="label" value="<%=h(bean.getLabel())%>">
     <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
+    
     <%= button("Submit").submit(true) %>
     <%= button("Cancel").href(returnUrl) %>
 </labkey:form>
