@@ -3223,12 +3223,7 @@ public class DataRegion extends DisplayElement
 
                     if (filterKey != null)
                     {
-                        DisplayColumn filteredColumn = getFilterColumn(filterKey);
-
-                        if (filteredColumn != null)
-                            _contextActions.add(createFilterAction(ctx, clause, filteredColumn));
-                        else
-                            _contextActions.add(createFilterAction(ctx, clause, filterKey));
+                        _contextActions.add(createFilterAction(ctx, clause, filterKey));
                     }
                 }
             }
@@ -3243,44 +3238,22 @@ public class DataRegion extends DisplayElement
     private DisplayColumn getFilterColumn(FieldKey fieldKey)
     {
         return getDisplayColumns().stream().filter(dc -> dc.hasFilterKey(fieldKey)).findFirst().orElse(null);
-
-    }
-
-    @NotNull
-    private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, DisplayColumn column)
-    {
-        // Column is visible in the currently displayed region -- display with same rendered column title
-        StringBuilder caption = new StringBuilder();
-        clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
-        {
-            @Override
-            public String format(FieldKey fieldKey)
-            {
-                // TODO: Make sure implementors of DisplayColumn override getTitle(ctx)
-                return column.getTitle(ctx);
-            }
-        });
-
-        StringBuilder tooltip = new StringBuilder();
-        clause.appendFilterText(tooltip, new SimpleFilter.ColumnNameFormatter());
-
-        // Note: The client-side DataRegion expects the ColumnInfo FieldKey,
-        // not the one expressed in the filter clause (aka the URL)
-        FieldKey fk = column.getColumnInfo().getFieldKey();
-        String jsObject = getJavaScriptObjectReference();
-
-        return new ContextAction.Builder()
-                .iconCls("filter")
-                .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(fk.toString()) + ", arguments[0]); return false;")
-                .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(fk.toString()) + "); return false;")
-                .text(caption.toString())
-                .tooltip(tooltip.toString())
-                .build();
     }
 
     @NotNull
     private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, FieldKey filterKey)
     {
+        DisplayColumn filterColumn = getFilterColumn(filterKey);
+
+        // Display the filter action using the DisplayColumn information if available
+        if (filterColumn != null)
+        {
+            FieldKey colFilterKey = filterColumn.getFilterKey();
+
+            if (colFilterKey != null)
+                return createFilterAction(ctx, clause, colFilterKey, filterColumn);
+        }
+
         // This is copied from the original addFilterMessage
         StringBuilder caption = new StringBuilder();
         clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
@@ -3315,6 +3288,35 @@ public class DataRegion extends DisplayElement
                 .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
                 .text(caption.toString())
                 .tooltip("(Unable to edit) " + caption.toString())
+                .build();
+    }
+
+    @NotNull
+    private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, @NotNull FieldKey filterKey, DisplayColumn column)
+    {
+        // Column is visible in the currently displayed region -- display with same rendered column title
+        StringBuilder caption = new StringBuilder();
+        clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
+        {
+            @Override
+            public String format(FieldKey fieldKey)
+            {
+                // TODO: Make sure implementors of DisplayColumn override getTitle(ctx)
+                return column.getTitle(ctx);
+            }
+        });
+
+        StringBuilder tooltip = new StringBuilder();
+        clause.appendFilterText(tooltip, new SimpleFilter.ColumnNameFormatter());
+
+        String jsObject = getJavaScriptObjectReference();
+
+        return new ContextAction.Builder()
+                .iconCls("filter")
+                .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(filterKey.toString()) + ", arguments[0]); return false;")
+                .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
+                .text(caption.toString())
+                .tooltip(tooltip.toString())
                 .build();
     }
 

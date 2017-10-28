@@ -278,12 +278,13 @@ public class DataColumn extends DisplayColumn
         renderGridCellContents(ctx, out);
     }
 
-    public boolean hasFilterKey(FieldKey fieldKey)
+    @Nullable
+    public FieldKey getFilterKey()
     {
         if (_filterColumn == null)
-            return false;
+            return null;
 
-        return _filterColumn.getFieldKey().equals(fieldKey);
+        return _filterColumn.getFieldKey();
     }
 
     public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException

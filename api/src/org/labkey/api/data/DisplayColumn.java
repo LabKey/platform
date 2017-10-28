@@ -564,7 +564,14 @@ public abstract class DisplayColumn extends RenderColumn
 
     public boolean hasFilterKey(FieldKey fieldKey)
     {
-        return false;
+        FieldKey fk = getFilterKey();
+        return fk != null && fk.equals(fieldKey);
+    }
+
+    @Nullable
+    public FieldKey getFilterKey()
+    {
+        return null;
     }
 
     private Sort.SortField getSortColumn(Sort sort)
