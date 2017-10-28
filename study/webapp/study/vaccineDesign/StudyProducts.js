@@ -6,8 +6,6 @@
 Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
     extend : 'Ext.panel.Panel',
 
-    autoResize : false,
-
     border : false,
 
     bodyStyle : 'background-color: transparent;',
@@ -284,8 +282,6 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
 
     cls : 'study-vaccine-design vaccine-design-immunogens',
 
-    autoResize: false,
-
     mainTitle : 'Immunogens',
 
     filterRole : 'Immunogen',
@@ -387,8 +383,6 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
 
     cls : 'study-vaccine-design vaccine-design-adjuvants',
 
-    autoResize: false,
-
     mainTitle : 'Adjuvants',
 
     filterRole : 'Adjuvant',
@@ -449,8 +443,6 @@ Ext4.define('LABKEY.VaccineDesign.ChallengesGrid', {
     extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
 
     cls : 'study-vaccine-design vaccine-design-challenges',
-
-    autoResize: false,
 
     mainTitle : 'Challenges',
 

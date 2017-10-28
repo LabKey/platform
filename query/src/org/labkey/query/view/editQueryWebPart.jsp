@@ -85,7 +85,6 @@
 
         var queryForm = Ext4.create('Ext.form.Panel', {
             renderTo: 'extDiv',
-            autoResize: false,
             defaults : {
                 labelWidth: 225,
                 width : 525,

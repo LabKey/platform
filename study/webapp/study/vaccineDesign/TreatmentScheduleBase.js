@@ -6,8 +6,6 @@
 Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanelBase', {
     extend : 'Ext.panel.Panel',
 
-    autoResize : false,
-
     border : false,
 
     bodyStyle : 'background-color: transparent;',

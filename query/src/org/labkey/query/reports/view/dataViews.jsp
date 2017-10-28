@@ -61,7 +61,8 @@
             fullPage: <%= manageView%>,
             returnUrl: '<%= getActionURL().getLocalURIString()%>',
             allowCustomize: <%= getContainer().hasPermission(u, AdminPermission.class) %>,
-            allowEdit: <%= getContainer().hasPermission(u, InsertPermission.class) %>
+            allowEdit: <%= getContainer().hasPermission(u, InsertPermission.class) %>,
+            autoResize: true
         });
     });
 

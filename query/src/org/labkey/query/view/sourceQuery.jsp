@@ -163,7 +163,6 @@
             frame      : false,
             border     : false,
             minHeight  : 650,
-            autoResize : false,
             items      : [Ext4.create('LABKEY.query.QueryEditorPanel', {
                 id          : 'qep',
                 border      : false,

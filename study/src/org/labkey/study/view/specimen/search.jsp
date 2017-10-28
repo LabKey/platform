@@ -40,10 +40,8 @@
     int webPartId = me.getModelBean().getWebPartId();
     String renderTarget = "labkey-specimen-search-"+ webPartId;
 %>
-
 <div id="<%=text(renderTarget)%>"></div>
 <script type="text/javascript">
-
 Ext4.onReady(function(){
     var multi = new LABKEY.MultiRequest();
     var errorMessages = [];
