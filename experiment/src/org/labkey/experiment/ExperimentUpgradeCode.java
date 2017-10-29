@@ -148,7 +148,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(container -> {
+        ContainerManager.getProjects().forEach(container -> {
             PropertyService.get().getDomains(container).forEach(domain -> {
                 upgradeDomainForMvIndicators(domain, context);
             });
@@ -176,7 +176,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
         catch (Exception e)
         {
-            LOG.error("Upgrade for domain '" + domain.getName() + "' failed: " + e.getMessage());
+            LOG.error("Upgrade for domain '" + domain.getName() + "' for project '" +
+                              domain.getContainer() + "' failed: [" + e.getClass().getName() + "] " + e.getMessage());
         }
     }
 
