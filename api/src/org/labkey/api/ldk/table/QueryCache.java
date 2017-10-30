@@ -116,7 +116,7 @@ public class QueryCache
 
             if (ti == null)
             {
-                _log.info("TableInfo was null: " + schemaPath + "/" + queryName, new Exception());
+                _log.info("TableInfo was null: " + schemaPath + "/" + queryName + " in container: " + targetContainer.getPath(), new Exception());
                 return null;
             }
 

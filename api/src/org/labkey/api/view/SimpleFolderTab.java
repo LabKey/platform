@@ -127,10 +127,15 @@ public class SimpleFolderTab extends FolderTab.PortalPage
                         {
                             permissions.add(permClass);
                         }
+                        else
+                        {
+                            LOGGER.error("Improper permission class: " + permClassName + ", for folder type: " + getFolderType() + ", tab: " + getName());
+                        }
                     }
                     catch (ClassNotFoundException e)
                     {
                         // ignore
+                        LOGGER.error("Unable to find class for permission name: " + permClassName + ", for folder type: " + getFolderType() + ", tab: " + getName());
                     }
                 }
             }
