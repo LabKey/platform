@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -40,6 +41,9 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -831,6 +835,55 @@ quickScan:
         time = time.replace(" ", "_");
 
         return time;
+    }
+
+    private static String indent(LinkedList<Boolean> hasMoreFlags)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0, len = hasMoreFlags.size(); i < len; i++)
+        {
+            Boolean hasMore = hasMoreFlags.get(i);
+            if (i == len-1)
+                sb.append(hasMore ? "├── " : "└── ");
+            else
+                sb.append(hasMore ? "│   " : "    ");
+        }
+
+        return sb.toString();
+    }
+
+    private static void printTree(StringBuilder sb, File node, LinkedList<Boolean> hasMoreFlags)
+    {
+        if (hasMoreFlags.isEmpty())
+            sb.append(node.getAbsolutePath());
+        else
+            sb.append(indent(hasMoreFlags)).append(node.getName());
+
+        if (node.isDirectory())
+            sb.append("/");
+        else
+            sb.append(" (").append(FileUtils.byteCountToDisplaySize(node.length())).append(")");
+        sb.append("\n");
+
+        File[] children = node.listFiles();
+        if (children != null)
+        {
+            Arrays.sort(children, Comparator.comparing(File::getName));
+            for (int i = 0; i < children.length; i++)
+            {
+                File child = children[i];
+                hasMoreFlags.add(i < children.length - 1);
+                printTree(sb, child, hasMoreFlags);
+                hasMoreFlags.removeLast();
+            }
+        }
+    }
+
+    public static String printTree(File root)
+    {
+        StringBuilder sb = new StringBuilder();
+        printTree(sb, root, new LinkedList<>());
+        return sb.toString();
     }
 
 
