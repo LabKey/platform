@@ -424,7 +424,7 @@ public class DomainUtil
 
         Domain created = kind.createDomain(domain, arguments, container, user, templateInfo);
         if (created == null)
-            throw new RuntimeException("Failed to created domain");
+            throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
         return created;
     }
 

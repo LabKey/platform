@@ -87,7 +87,7 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public Set<String> getMandatoryPropertyNames(Domain domain);
 
-    // CONSIDER: have DomainKind supply and IDomainInstance or similiar
+    // CONSIDER: have DomainKind supply and IDomainInstance or similar
     // so that it can hold instance data (e.g. a DatasetDefinition)
 
     /**
