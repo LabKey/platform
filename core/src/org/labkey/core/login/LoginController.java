@@ -684,7 +684,7 @@ public class LoginController extends SpringActionController
                 else
                 {
                     if (!SecurityManager.loginExists(email))
-                        errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                        errors.reject("setPassword", "This email address is not associated with an account.  Make sure you've copied the entire link into your browser's address bar.");
                     else if (SecurityManager.isVerified(email))
                         errors.reject("setPassword", "This email address has already been verified.");
                     else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
@@ -1677,7 +1677,12 @@ public class LoginController extends SpringActionController
         else
         {
             if (!SecurityManager.loginExists(email))
-                errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+            {
+                if (SecurityManager.isLdapEmail(email))
+                    errors.reject("setPassword", "Your account will use your institution's LDAP authentication server and you do not need to set a separate password.");
+                else
+                    errors.reject("setPassword", "This email address is not associated with an account.  Make sure you've copied the entire link into your browser's address bar.");
+            }
             else if (SecurityManager.isVerified(email))
                 errors.reject("setPassword", "This email address has already been verified.");
             else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
@@ -1857,7 +1862,7 @@ public class LoginController extends SpringActionController
         {
             if (!SecurityManager.loginExists(email))
             {
-                errors.reject("setPassword", "This email address doesn't exist.");
+                errors.reject("setPassword", "This email address is not associated with an account.");
                 _unrecoverableError = true;
             }
             else
