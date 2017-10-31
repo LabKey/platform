@@ -178,8 +178,6 @@
         // show/hide comment elements
         var commentDivs = document.getElementsByClassName("<%=h(relatedCommentsDivClassName)%>");
         for (var i = 0; i < commentDivs.length; i++) {
-            console.log(commentDivs);
-            console.log(hidden);
             if (hidden)
                 commentDivs[i].style.display = 'inline';
             else
