@@ -108,7 +108,7 @@ public class DatasetController extends BaseStudyController
 
         protected NavTree appendExtraNavTrail(NavTree root)
         {
-            return root.addChild("Insert new row");
+            return root.addChild("Insert " + _ds.getLabel());
         }
     }
 
