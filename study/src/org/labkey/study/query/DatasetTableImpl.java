@@ -645,7 +645,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
             }
         }
-        if (fieldKey == null && !"Properties".equalsIgnoreCase((name)) && !"SpecimenLsid".equalsIgnoreCase(name))
+        if (fieldKey == null && !"Properties".equalsIgnoreCase((name)) && !"SpecimenLsid".equalsIgnoreCase(name) && !"Analyte".equalsIgnoreCase(name))
         {
             fieldKey = FieldKey.fromParts("Properties", name);
         }
