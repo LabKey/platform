@@ -191,6 +191,13 @@ textarea.form-control {
   text-align: $lk-form-control-text-align;
 }
 
+.lk-form-col-label {
+  font-weight: bold;
+}
+.lk-form-col-label, .lk-form-row-label {
+  text-align: left !important;
+}
+
 // Search inputs in iOS
 //
 // This overrides the extra rounded corners on search inputs in iOS so that our
