@@ -1072,6 +1072,22 @@ public class SimpleFilter implements Filter
                     if (null == type || fieldKey == null)
                         continue;
 
+                    if ((CompareType.MV_INDICATOR.equals(type) || CompareType.NO_MV_INDICATOR.equals(type)) &&
+                            null != fieldKey.getParent())
+                    {
+                        ColumnInfo column = null;
+                        for (ColumnInfo selectColumn : selectColumns)
+                        {
+                            if (fieldKey.getParent().equals(selectColumn.getFieldKey()))
+                            {
+                                column = selectColumn;
+                                break;
+                            }
+                        }
+                        if (null != column && column.isMvEnabled())
+                            fieldKey = column.getFieldKey();
+                    }
+
                     try
                     {
                         FilterClause fc = type.createFilterClause(fieldKey, param);
