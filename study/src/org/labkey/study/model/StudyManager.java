@@ -533,14 +533,16 @@ public class StudyManager
         return study;
     }
 
+    /** @return all studies in the whole server, unfiltered by permissions */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies()
     {
         return Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
     }
 
-
-    public Set<? extends StudyImpl> getAllStudies(Container root)
+    /** @return all studies under the given root in the container hierarchy (inclusive), unfiltered by permissions */
+    @NotNull
+    public Set<? extends StudyImpl> getAllStudies(@NotNull Container root)
     {
         Set<StudyImpl> result = new LinkedHashSet<>();
         for (StudyImpl study : getAllStudies())
@@ -554,12 +556,14 @@ public class StudyManager
     }
 
 
+    /** @return all studies under the given root in the container hierarchy (inclusive), to which the user has at least read permission */
     @NotNull
-    public Set<? extends StudyImpl> getAllStudies(Container root, User user)
+    public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user)
     {
         return getAllStudies(root, user, ReadPermission.class);
     }
 
+    /** @return all studies under the given root in the container hierarchy (inclusive), to which the user has at least the specified permission */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user, @NotNull Class<? extends Permission> perm)
     {
