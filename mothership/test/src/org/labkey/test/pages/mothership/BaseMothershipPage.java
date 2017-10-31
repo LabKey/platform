@@ -16,10 +16,9 @@
 package org.labkey.test.pages.mothership;
 
 import org.labkey.test.Locator;
-import org.labkey.test.components.ComponentElements;
+import org.labkey.test.components.html.Input;
 import org.labkey.test.pages.LabKeyPage;
 import org.labkey.test.selenium.LazyWebElement;
-import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -66,6 +65,13 @@ public abstract class BaseMothershipPage<EC extends BaseMothershipPage.ElementCa
         return new ShowExceptionsPage(getDriver());
     }
 
+    public StackTraceDetailsPage searchForErrorCode(String errorCode)
+    {
+        elementCache().errorCodeInput.set(errorCode);
+        clickAndWait(elementCache().jumpToErrorCodeButton);
+        return new StackTraceDetailsPage(getDriver());
+    }
+
     protected class ElementCache extends LabKeyPage.ElementCache
     {
         WebElement viewExceptionsLink = new LazyWebElement(Locator.linkWithText("View Exceptions"), this);
@@ -74,5 +80,7 @@ public abstract class BaseMothershipPage<EC extends BaseMothershipPage.ElementCa
         WebElement listReleasesLink = new LazyWebElement(Locator.linkWithText("List of Releases"), this);
         WebElement reportsLink = new LazyWebElement(Locator.linkWithText("Reports"), this);
         WebElement myExceptionsLink = new LazyWebElement(Locator.linkWithText("My Exceptions"), this);
+        Input errorCodeInput = Input.Input(Locator.input("errorCode"), getDriver()).findWhenNeeded(this);
+        WebElement jumpToErrorCodeButton = Locator.tagWithName("form", "jumpToErrorCode").append(Locator.lkButton()).findWhenNeeded(this);
     }
 }

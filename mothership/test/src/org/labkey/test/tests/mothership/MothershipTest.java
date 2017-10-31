@@ -23,6 +23,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.api.util.Pair;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.Locators;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyB;
@@ -44,9 +45,13 @@ import org.labkey.test.util.mothership.MothershipHelper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.labkey.test.pages.test.TestActions.ExceptionActions;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
@@ -60,7 +65,7 @@ public class MothershipTest extends BaseWebDriverTest
     private static final String ISSUES_GROUP = "Issues Group";
     public static final String ISSUES_LIST = "mothershipissues";
 
-    private MothershipHelper _mothershipHelper;
+    private static MothershipHelper _mothershipHelper; // Static to remember site settings between tests
     private ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
 
     @Override
@@ -82,6 +87,8 @@ public class MothershipTest extends BaseWebDriverTest
 
     private void doSetup()
     {
+        _mothershipHelper = new MothershipHelper(this);
+
         _userHelper.createUser(ASSIGNEE);
         _userHelper.createUser(NON_ASSIGNEE);
         permissionsHelper.createProjectGroup(MOTHERSHIP_GROUP, MOTHERSHIP_PROJECT);
@@ -112,7 +119,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Before
     public void preTest() throws Exception
     {
-        _mothershipHelper = new MothershipHelper(this);
+        _mothershipHelper.ensureSelfReportingEnabled();
         // In case the testIgnoreInstallationExceptions() test case didn't reset this flag after itself.
         _mothershipHelper.setIgnoreExceptions(false);
         goToMothership();
@@ -253,6 +260,44 @@ public class MothershipTest extends BaseWebDriverTest
         // Very basic check.
         assertEquals("Wrong mothership reports", expected, actual);
         // TODO: Verify report contents
+    }
+
+    @Test
+    public void testErrorCode() throws Exception
+    {
+        checkErrors();
+        ExceptionActions exception = ExceptionActions.illegalState;
+        exception.beginAt(this);
+        String errorCode = getErrorCode();
+        assertNotNull("Exception didn't produce an error code", errorCode);
+        resetErrors();
+        StackTraceDetailsPage stackTraceDetailsPage = ShowExceptionsPage.beginAt(this)
+                .searchForErrorCode(errorCode);
+        assertEquals("Searching for error code landed on incorrect page", "Exception Reports", getText(Locators.bodyTitle()));
+        assertEquals("Searching for error code navigated to an incorrect stack trace", exception.getExceptionClass(), stackTraceDetailsPage.getExceptionClass());
+    }
+
+    @Test
+    public void testNoErrorCodeWithReportingDisabled() throws Exception
+    {
+        _mothershipHelper.disableExceptionReporting();
+        checkErrors();
+        ExceptionActions.illegalState.beginAt(this);
+        assertEquals("Shouldn't generate an error code when exception reporting is disabled", null, getErrorCode());
+        resetErrors();
+    }
+
+    private String getErrorCode()
+    {
+        if (!isElementPresent(Locator.tagWithClass("table", "server-error")))
+            fail("Expected to be on an error page");
+        String error = Locators.labkeyError.findElement(getDriver()).getText();
+        Pattern errorCodePattern = Pattern.compile(".*please refer to error code: ([^\\s]+)");
+        Matcher matcher = errorCodePattern.matcher(error);
+        if(matcher.find())
+            return matcher.group(1);
+        else
+            return null;
     }
 
     private ShowExceptionsPage goToMothership()

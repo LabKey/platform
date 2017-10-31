@@ -24,10 +24,9 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
-import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.LabKeySiteWrapper;
 import org.labkey.test.Locator;
-import org.labkey.test.WebDriverWrapper;
-import org.labkey.test.WebDriverWrapperImpl;
+import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.APIUserHelper;
 import org.labkey.test.util.LogMethod;
@@ -51,18 +50,19 @@ public class MothershipHelper
     public static final String SERVER_INSTALLATION_QUERY = "ServerInstallations";
     public static final String MOTHERSHIP_PROJECT = "_mothership";
 
-    private final WebDriverWrapper driver;
-    private final BaseWebDriverTest test;
+    private boolean selfReportingEnabled;
 
-    public MothershipHelper(BaseWebDriverTest test)
+    private final LabKeySiteWrapper test;
+
+    public MothershipHelper(LabKeySiteWrapper test)
     {
         this.test = test;
-        driver = new WebDriverWrapperImpl(test.getDriver());
+        selfReportingEnabled = false;
     }
 
     public int getLatestStackTraceId()
     {
-        Connection connection = driver.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection(true);
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addSort("LastReport", Sort.Direction.DESCENDING);
         command.setMaxRows(1);
@@ -86,7 +86,7 @@ public class MothershipHelper
 
     public void updateStackTrace(int exceptionStackTraceId, String bugNumber, String comments, String assignedToEmail)
     {
-        Connection connection = driver.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection(true);
         PostCommand command = new PostCommand("mothership", "updateStackTrace");
         Map<String, Object> params = new HashMap<>();
         params.put(ID_COLUMN, exceptionStackTraceId);
@@ -96,7 +96,7 @@ public class MothershipHelper
             params.put("comments", comments);
         if (assignedToEmail != null)
         {
-            String assignedToId = assignedToEmail.isEmpty() ? "" : new APIUserHelper(driver).getUserId(assignedToEmail).toString();
+            String assignedToId = assignedToEmail.isEmpty() ? "" : new APIUserHelper(test).getUserId(assignedToEmail).toString();
             params.put("assignedTo", assignedToId);
         }
         command.setParameters(params);
@@ -112,7 +112,7 @@ public class MothershipHelper
 
     public int getReportCount(int stackTraceId)
     {
-        Connection connection = driver.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection(true);
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addFilter(ID_COLUMN, stackTraceId, Filter.Operator.EQUAL);
         try
@@ -149,7 +149,7 @@ public class MothershipHelper
         String relativeUrl = "/admin-testMothershipReport.view?" + "type=" + type +
                 "&level=" + level.toString() +
                 "&submit=" + submit;
-        driver.beginAt(relativeUrl);
+        test.beginAt(relativeUrl);
     }
 
     @LogMethod
@@ -159,7 +159,7 @@ public class MothershipHelper
         test.goToAdmin();
         String serverGUID = test.getText(Locator.tagWithText("td", "Server GUID").followingSibling("td"));
 
-        Connection connection = driver.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection(true);
         // Find the corresponding serverInstallationId
         SelectRowsCommand select = new SelectRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
         select.setColumns(Collections.singletonList(SERVER_INSTALLATION_ID_COLUMN));
@@ -178,6 +178,26 @@ public class MothershipHelper
             test.log("No existing server installation record to update.");
             assertFalse("Attempting to set ignore exceptions true but no existing server installation record.", ignore);
         }
+    }
+
+    public void ensureSelfReportingEnabled()
+    {
+        if (!selfReportingEnabled)
+        {
+            CustomizeSitePage.beginAt(test)
+                    .setExceptionSelfReporting(true)
+                    .save();
+            selfReportingEnabled = true;
+        }
+    }
+
+    public void disableExceptionReporting()
+    {
+        CustomizeSitePage.beginAt(test)
+                .setExceptionReportingLevel(CustomizeSitePage.ReportingLevel.NONE)
+                .setExceptionSelfReporting(false)
+                .save();
+        selfReportingEnabled = false;
     }
 
     public int triggerException(TestActions.ExceptionActions action)

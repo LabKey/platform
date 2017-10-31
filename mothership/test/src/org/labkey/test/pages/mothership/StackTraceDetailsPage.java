@@ -20,6 +20,7 @@ import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.components.html.Input;
 import org.labkey.test.components.html.OptionSelect;
+import org.labkey.test.pages.LabKeyPage;
 import org.labkey.test.pages.issues.InsertPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Maps;
@@ -29,7 +30,7 @@ import org.openqa.selenium.WebElement;
 
 import static org.labkey.test.components.html.OptionSelect.OptionSelect;
 
-public class StackTraceDetailsPage extends BaseMothershipPage<StackTraceDetailsPage.ElementCache>
+public class StackTraceDetailsPage extends LabKeyPage<StackTraceDetailsPage.ElementCache>
 {
     public StackTraceDetailsPage(WebDriver driver)
     {
@@ -43,7 +44,7 @@ public class StackTraceDetailsPage extends BaseMothershipPage<StackTraceDetailsP
 
     public static StackTraceDetailsPage beginAt(WebDriverWrapper driver, String containerPath, int exceptionStackTraceId)
     {
-        driver.beginAt(WebTestHelper.buildURL("mothership", containerPath, "stackTraceDetails", Maps.of(MothershipHelper.ID_COLUMN, String.valueOf(exceptionStackTraceId))));
+        driver.beginAt(WebTestHelper.buildURL("mothership", containerPath, "showStackTraceDetail", Maps.of(MothershipHelper.ID_COLUMN, String.valueOf(exceptionStackTraceId))));
         return new StackTraceDetailsPage(driver.getDriver());
     }
 
@@ -60,6 +61,12 @@ public class StackTraceDetailsPage extends BaseMothershipPage<StackTraceDetailsP
     public OptionSelect assignedTo()
     {
         return elementCache().assignedToSelect;
+    }
+
+    public String getExceptionClass()
+    {
+        return getText(Locator.tagWithClass("td", "lk-form-label").withText("Stack Trace").followingSibling("td"))
+                .split("\n")[0].trim();
     }
 
     public ShowExceptionsPage clickSave()
@@ -85,7 +92,7 @@ public class StackTraceDetailsPage extends BaseMothershipPage<StackTraceDetailsP
         return new ElementCache();
     }
 
-    protected class ElementCache extends BaseMothershipPage.ElementCache
+    protected class ElementCache extends LabKeyPage.ElementCache
     {
         Input bugNumberInput = new Input(Locator.name("bugNumber").findWhenNeeded(this), getDriver());
         Input commentsTextArea = new Input(Locator.name("comments").findWhenNeeded(this), getDriver());
