@@ -410,16 +410,14 @@ else
         </table></td>
     </tr>
 </table>
-<%
-    if (bean.getCallbackURL() != null)
-    {
-%><input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/><%
-    }
-
-    for (Issue.Comment comment : issue.getComments())
-    {
+<% if (bean.getCallbackURL() != null) { %>
+<input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
+<% } boolean firstComment = true;
+for (Issue.Comment comment : issue.getComments()) {
+    if (firstComment) { firstComment = false; }
+    else { %><hr><% }
 %>
-<hr><table width="100%"><tr><td align="left"><b>
+<table width="100%"><tr><td align="left"><b>
     <%=h(bean.writeDate(comment.getCreated()))%>
 </b></td><td align="right"><b>
     <%=h(comment.getCreatedByName(user))%>
