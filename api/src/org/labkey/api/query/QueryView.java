@@ -2086,7 +2086,7 @@ public class QueryView extends WebPartView<Object>
                     if (_report.allowShareButton(getUser(), getContainer()))
                     {
                         ActionURL shareUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), _report);
-                        bar.add(createShareButton(shareUrl, "Share Report"));
+                        bar.add(createShareButton(shareUrl, "Share report"));
                     }
 
                     dr.setButtonBar(bar);
