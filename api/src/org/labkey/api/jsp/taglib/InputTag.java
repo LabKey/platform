@@ -164,14 +164,8 @@ public class InputTag extends SimpleTagBase
             .readOnly(isReadOnly)
             .value(value)
             .checked(checked)
-            .size(size);
-
-        if (Input.State.ERROR.toString().equalsIgnoreCase(state))
-            input.state(Input.State.ERROR);
-        else if (Input.State.WARNING.toString().equalsIgnoreCase(state))
-            input.state(Input.State.WARNING);
-        else if (Input.State.SUCCESS.toString().equalsIgnoreCase(state))
-            input.state(Input.State.SUCCESS);
+            .size(size)
+            .state(Input.State.get(state));
 
         FormTag form = (FormTag) findAncestorWithClass(this, FormTag.class);
 
@@ -182,12 +176,7 @@ public class InputTag extends SimpleTagBase
             if (formGroup == null)
                 input.formGroup(true);
 
-            if (Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(form.getLayout()))
-                input.layout(Input.Layout.HORIZONTAL);
-
-            if (Input.Layout.INLINE.toString().equalsIgnoreCase(form.getLayout()))
-                input.layout(Input.Layout.INLINE);
-
+            input.layout(Input.Layout.get(form.getLayout()));
         }
 
         getOut().write(input.toString());

@@ -31,14 +31,46 @@ public class Input extends DisplayElement
     public enum Layout
     {
         HORIZONTAL,
-        INLINE
+        INLINE;
+
+        public static Layout get(String layoutName)
+        {
+            for (Layout layout : values())
+            {
+                if (layout.name().equalsIgnoreCase(layoutName))
+                    return layout;
+            }
+            return null;
+        }
     }
 
     public enum State
     {
-        ERROR,
-        WARNING,
-        SUCCESS
+        ERROR("exclamation-circle"),
+        WARNING("exclamation-triangle"),
+        SUCCESS("check-circle");
+
+        private final String iconClass;
+
+        State(String iconClass)
+        {
+            this.iconClass = iconClass;
+        }
+
+        public String getIconClass()
+        {
+            return iconClass;
+        }
+
+        public static State get(String stateName)
+        {
+            for (State state : values())
+            {
+                if (state.name().equalsIgnoreCase(stateName))
+                    return state;
+            }
+            return null;
+        }
     }
 
     private final boolean _checked;
@@ -363,7 +395,7 @@ public class Input extends DisplayElement
     {
         if (null != getState())
         {
-            String iconClass = State.SUCCESS.equals(getState()) ? "fa fa-check-circle" : "fa fa-exclamation-circle";
+            String iconClass = getState() != null ? "fa fa-" + getState().getIconClass() : "";
             sb.append("<span class=\"input-group-addon validation-state\">");
             sb.append("<i class=\" validation-state-icon ");
             sb.append(iconClass).append("\"");
