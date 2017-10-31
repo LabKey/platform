@@ -32,9 +32,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 /**
+ * {@link DataIterator} implementation backed by a JDBC {@link ResultSet}
  * User: matthewb
  * Date: Jun 8, 2011
- * Time: 10:12:11 PM
  */
 public class ResultSetDataIterator extends AbstractDataIterator implements ScrollableDataIterator
 {

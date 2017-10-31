@@ -31,6 +31,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
 /**
+ * Base class for actions that want to display a single page in response to a GET, including
+ * form parameters. Not intended for actions that may separately receive a POST.
  * User: matthewb
  * Date: May 16, 2007
  * Time: 1:48:01 PM

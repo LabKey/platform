@@ -21,7 +21,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 /**
- * Adds analytics tracking code to HTML pages.
+ * Adds analytics tracking code to HTML pages, such as Google Analytics
  */
 public interface AnalyticsService
 {

@@ -54,7 +54,6 @@ api/src/org/labkey/api/action/HasPageConfig.java -text
 api/src/org/labkey/api/action/HasValidator.java -text
 api/src/org/labkey/api/action/HasViewContext.java -text
 api/src/org/labkey/api/action/IgnoresAllocationTracking.java -text
-api/src/org/labkey/api/action/InterfaceAction.java -text
 api/src/org/labkey/api/action/LabKeyError.java -text
 api/src/org/labkey/api/action/Marshal.java -text
 api/src/org/labkey/api/action/Marshaller.java -text

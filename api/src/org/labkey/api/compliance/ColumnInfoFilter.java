@@ -9,6 +9,7 @@ import org.labkey.api.data.ColumnInfo;
 import java.util.function.Predicate;
 
 /**
+ * Convenience sub-interface for filtering ColumnInfos based on some criteria
  * Created by adam on 1/17/2016
  */
 public interface ColumnInfoFilter extends Predicate<ColumnInfo>

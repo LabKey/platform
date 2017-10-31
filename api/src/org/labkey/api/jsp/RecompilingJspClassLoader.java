@@ -41,9 +41,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Checks if the JSP source has changed since the last time the JSP was compiled, and if so, recompiles the JSP and
+ * uses that version to serve the request.
+ *
+ * Used in dev mode at runtime. Production mode servers assume that all JSPs have been precompiled and are up to date.
+ *
  * User: adam
  * Date: Oct 25, 2008
- * Time: 4:12:44 PM
  */
 public class RecompilingJspClassLoader extends JspClassLoader
 {

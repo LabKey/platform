@@ -18,10 +18,10 @@ package org.labkey.api.defaults;
 
 import org.labkey.api.view.ViewForm;
 
-/*
+/**
+ * Simple extension of basic form object to add a Domain's RowId.
  * User: brittp
  * Date: Mar 2, 2009
- * Time: 5:17:59 PM
  */
 
 public class DomainIdForm extends ViewForm

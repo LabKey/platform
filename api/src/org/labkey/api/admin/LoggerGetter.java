@@ -25,5 +25,5 @@ import org.apache.log4j.Logger;
  */
 public interface LoggerGetter
 {
-    public Logger getLogger();
+    Logger getLogger();
 }

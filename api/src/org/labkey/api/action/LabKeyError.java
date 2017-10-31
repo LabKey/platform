@@ -21,6 +21,8 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.ObjectError;
 
 /**
+ * Simple Spring-style error to show a specific error message originated from Java code, and not going to a resources
+ * file to look up a localized version.
  * User: jeckels
  * Date: May 2, 2008
  */

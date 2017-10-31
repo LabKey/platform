@@ -30,11 +30,9 @@ import java.io.IOException;
 import java.util.List;
 
 /**
+ * Service for adding/getting/removing user notifications attached to specific objects.
  * User: cnathe
  * Date: 9/14/2015
- *
- * Service for adding/getting/removing user notifications attached to specific objects.
- *
  */
 public interface NotificationService
 {

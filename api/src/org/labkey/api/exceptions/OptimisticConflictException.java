@@ -21,6 +21,9 @@ import org.labkey.api.data.Table;
 import java.sql.SQLException;
 
 /**
+ * Thrown to indicate that the database has changed state from the precondition assumption made by this operation.
+ * For example, if a row is being deleted and the DELETE statement to the database indicates that no rows were actually
+ * removed.
  * Created by adam on 1/17/2017.
  */
 public class OptimisticConflictException extends RuntimeSQLException

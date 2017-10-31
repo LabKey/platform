@@ -19,7 +19,7 @@ package org.labkey.api.data.dialect;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-// Handles standard reading of pk meta data
+/** Handles standard reading of primary key meta data from a JDBC result set, pulling the values from the configured columns */
 public class PkMetaDataReader
 {
     private final ResultSet _rsCols;

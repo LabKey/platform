@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 /**
+ * Adds the ability to rewind a {@link DataIterator} to before its first row of data.
  *
  * (MAB) I go back and forth between adding methods to DataIterator and having extended/marker interfaces.
  *

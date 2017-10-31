@@ -26,10 +26,16 @@ import org.labkey.api.services.ServiceRegistry;
 import java.util.Map;
 import java.util.List;
 
-/*
+/**
+ * Manages sets of values to be used as defaults when a user comes to a data entry form.
+ *
+ * Persistence is based on the ontology manager schema, so this requires a Domain as the source of the fields.
+ *
+ * Multiple scopes are supported, so that different defaults can be stored on a per-user, per-container, or other
+ * approaches.
+ *
  * User: brittp
  * Date: Jan 30, 2009
- * Time: 11:08:04 AM
  */
 
 public interface DefaultValueService

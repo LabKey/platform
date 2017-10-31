@@ -29,12 +29,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Production JSP loader -- loads pre-compiled classes from JSP JAR files.  No reloading or auto-recompiling.
+ *
  * User: adam
  * Date: Oct 25, 2008
- * Time: 2:45:22 PM
  */
-
-// Production JSP loader -- loads pre-compiled classes from JSP JAR files.  No reloading or auto-recompiling.
 public class JspClassLoader
 {
     private static final Logger _log = Logger.getLogger(JspClassLoader.class);

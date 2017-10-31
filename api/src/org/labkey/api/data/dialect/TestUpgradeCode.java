@@ -19,6 +19,8 @@ package org.labkey.api.data.dialect;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 
+
+/** Dummy implementation of Java-based module upgrade process, for testing purposes */
 public class TestUpgradeCode implements UpgradeCode
 {
     private int _counter = 0;

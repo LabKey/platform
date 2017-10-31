@@ -61,10 +61,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 /**
- * User: matthewb
- * Date: May 16, 2011
- * Time: 2:03:45 PM
- *
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
  *
  * Note that get(n) may be called more than once for any column.  To simplify the implementation to avoid
@@ -75,7 +71,9 @@ import java.util.function.Supplier;
  *
  *   e.g. Column [2] can use the result calculated by column [1] by calling SimpleTranslator.this.get(1)
  *
- * see AliasColumn for an example
+ * see {@link AliasColumn} for an example
+ * User: matthewb
+ * Date: May 16, 2011
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {

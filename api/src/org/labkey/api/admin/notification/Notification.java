@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Bean object representing a notification that can be routed to a user, in the header of the
+ * page, for example.
  * User: cnathe
  * Date: 9/14/2015
  */

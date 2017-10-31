@@ -24,9 +24,10 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
 /**
+ * Serialization object for stashing information in Quartz to be available when the timer fires and wants to
+ * start doing work.
  * User: matthewb
  * Date: 2013-03-18
- * Time: 3:52 PM
  */
 public class ScheduledPipelineJobContext implements ContainerUser, Cloneable
 {

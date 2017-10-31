@@ -19,9 +19,13 @@ import java.util.Comparator;
 import java.util.TreeSet;
 
 /**
-* User: jeckels
-* Date: 2/13/14
-*/
+ * A collection of {@link QueryTracker} objects. Used to manage the total number of queries we're tracking at any given
+ * time. Multiple collections will prioritize queries based on different criteria (recently executed, frequently executed,
+ * long-running, etc) and the superset should capture the most relevant of the queries that have been run within the
+ * current server session.
+ * User: jeckels
+ * Date: 2/13/14
+ */
 public class QueryTrackerSet extends TreeSet<QueryTracker>
 {
     public static final int STANDARD_LIMIT = 1000;

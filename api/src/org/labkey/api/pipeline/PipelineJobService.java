@@ -25,9 +25,9 @@ import java.util.List;
 
 /**
  * Exposes the interface for dealing with
- * TaskPipelines and TaskFactories.  It is kept separate from the PipelineService,
+ * TaskPipelines and TaskFactories.  It is kept separate from the {@link PipelineService},
  * because it must be available on remote machines running Tasks and TaskPipelines
- * under the Mule server.
+ * under the Mule server, not just on the web server.
  *
  * @author brendanx
  */

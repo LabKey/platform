@@ -19,9 +19,9 @@ package org.labkey.api.action;
 import org.labkey.api.view.NavTree;
 
 /**
+ * Interface for {@link Action} implementations that want to fill in a nav trail to show at the top of the page.
  * User: matthewb
  * Date: May 21, 2007
- * Time: 8:05:32 PM
  */
 public interface NavTrailAction
 {

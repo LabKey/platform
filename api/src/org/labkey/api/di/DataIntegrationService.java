@@ -23,9 +23,9 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.NotFoundException;
 
 /**
+ * Services provided for running ETLs within the server.
  * User: matthewb
  * Date: 2013-04-03
- * Time: 11:34 AM
  */
 public interface DataIntegrationService
 {

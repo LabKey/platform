@@ -41,6 +41,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Capabilities provided by the Pipeline module to other modules. These methods are only available to code
+ * that is running within the web server. {@link PipelineJobService} provides basic pipeline job and task
+ * functionality that is also available on remote execution pipeline servers.
  */
 public interface PipelineService extends PipelineStatusFile.StatusReader, PipelineStatusFile.StatusWriter
 {

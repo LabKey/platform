@@ -16,7 +16,8 @@ import java.util.Collections;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 /**
- * Used for adding detailed audit logs for each row in a data import.
+ * Used for adding detailed audit logs for each row in a data import, which records the full values
+ * of the row that's being inserted or updated.
  *
  * This does not change the data, only adds an audit log when detailed logging is requested for the table.
  */

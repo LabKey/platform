@@ -24,20 +24,17 @@ package org.labkey.api.event;
 public interface PropertyChange<P extends Enum<P>, V>
 {
     /**
-     * The Property that has changed or null if more than one property has changed.
-     * @return The changed Property.
+     * @return the Property that has changed or null if more than one property has changed.
      */
-    public P getProperty();
+    P getProperty();
 
     /**
-     * The previous version of the value or null if more than one property has changed.
-     * @return
+     * @return the previous version of the value or null if more than one property has changed.
      */
-    public V getOldValue();
+    V getOldValue();
 
     /**
-     * The new version of the value or null if more than one property has changed.
-     * @return
+     * @return the new version of the value or null if more than one property has changed.
      */
-    public V getNewValue();
+    V getNewValue();
 }

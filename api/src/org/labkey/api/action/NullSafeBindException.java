@@ -20,8 +20,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import java.util.List;
-
 /**
  * Avoids the dreaded "NoSuchMessageException: No message found under code 'null' for locale 'en_US'."
  * by checking the parameters of the BindException methods.
@@ -30,7 +28,7 @@ import java.util.List;
  * thrown at render time by Spring making it difficult to track down where
  * the null error message was generated.
  *
- * See 10432.
+ * See issue 10432.
  */
 public class NullSafeBindException extends org.springframework.validation.BindException
 {

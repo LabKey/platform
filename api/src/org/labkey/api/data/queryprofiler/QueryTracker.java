@@ -42,9 +42,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.DataFormatException;
 
 /**
-* User: jeckels
-* Date: 2/13/14
-*/
+ * Information about a specific query that has been issued against the database. Intended to have one instance
+ * per unique SQL. Tracks information about executions to date, and code that invoked it.
+ * User: jeckels
+ * Date: 2/13/14
+ */
 class QueryTracker
 {
     private final @Nullable DbScope _scope;

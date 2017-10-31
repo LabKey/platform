@@ -21,9 +21,10 @@ import org.labkey.api.query.BatchValidationException;
 import java.util.function.Predicate;
 
 /**
+ * DataIterator implementation that skips over selected rows in its incoming data stream, based on either
+ * overriding the accept() method, or passing in a Predicate to make the decision.
  * User: matthewb
  * Date: 2011-05-31
- * Time: 5:18 PM
  */
 public class FilterDataIterator extends WrapperDataIterator
 {

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * FolderWriter that serializes out child containers.
  * User: cnathe
  * Date: 10/10/12
  */

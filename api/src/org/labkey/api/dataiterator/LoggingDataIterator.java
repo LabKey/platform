@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
+ * Wrapper around some other DataIterator that provides Log4J-based logging of the values that are passing through.
  * User: matthewb
  * Date: 2011-05-27
- * Time: 1:10 PM
  */
 public class LoggingDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {

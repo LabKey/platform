@@ -48,11 +48,9 @@ public class RecordedAction
     private Date _endTime;
     private Integer _recordCount;
 
-    // No-args constructor to support de-serialization in Java 7
-              @SuppressWarnings({"UnusedDeclaration"})
-              public RecordedAction()
-              {
-              }
+    /** No-args constructor to support de-serialization in Java 7 and beyond */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public RecordedAction() {}
 
     public RecordedAction(String name)
     {

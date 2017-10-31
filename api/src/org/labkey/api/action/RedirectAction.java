@@ -25,8 +25,8 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * Base class for action that never want to serve up a regular HTTP response, and always
- * want to redirect the client to a differnet URL, perhaps after performing some work.
+ * Base class for action that never want to serve up a regular HTTP response page, and always
+ * want to redirect the client to a different URL, typically after performing some work.
  *
  * User: adamr
  * Date: September 19, 2007

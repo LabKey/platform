@@ -97,7 +97,7 @@ public interface PipelineStatusFile
     String getJobParentId();
 
     /**
-     * @return the name of the PipelineProvider for this job. Used to provide hooks for
+     * @return the name of the {@link PipelineProvider} for this job. Used to provide hooks for
      * doing work before deletion of the job, etc
      */
     @Nullable

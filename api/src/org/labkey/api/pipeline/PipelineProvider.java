@@ -150,6 +150,10 @@ abstract public class PipelineProvider
         }
     }
 
+    /**
+     * Operations that can be performed on a job belonging to this provider from the job's status details page.
+     * Cancel and retry are examples.
+     */
     public static class StatusAction
     {
         String _label;
@@ -205,7 +209,7 @@ abstract public class PipelineProvider
      * Return true, if the file name should present a link for viewing its
      * contents on the details page for status associated with this provider.
      *
-     * @param container the <code>Container</code> for the status entery
+     * @param container the <code>Container</code> for the status entry
      * @param name the file name
      * @param basename the base name associated with the status @return true if link should be displayed
      */

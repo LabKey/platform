@@ -22,16 +22,15 @@ import org.labkey.api.query.ValidationException;
 import java.io.IOException;
 
 /**
- * User: matthewb
- * Date: 2011-06-03
- * Time: 3:51 PM
- *
- * This slightly silly class lets you postpose errors encountered during construction of a iterator until
+ * This slightly silly class lets you postpone errors encountered during construction of a iterator until
  * next() is called.
  *
  * Two cases:
  *  - return error on first call to next()
  *  - return error on first call to next IF input iterator has at least one row
+ *
+ * User: matthewb
+ * Date: 2011-06-03
  */
 public class ErrorIterator extends AbstractDataIterator
 {

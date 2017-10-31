@@ -63,7 +63,7 @@ public class PipelinePathForm extends ViewForm
         {
             if (s != null)
             {
-                if (s.indexOf("..") != -1 || s.indexOf("/") != -1 || s.indexOf("\\") != -1)
+                if (s.contains("..") || s.contains("/") || s.contains("\\"))
                 {
                     throw new IllegalArgumentException("File names should not include any path information");
                 }

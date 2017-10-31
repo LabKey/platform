@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 /**
+ * Settings to control behavior during the import of a folder or study.
  * User: klum
  * Date: 10/10/13
  */
