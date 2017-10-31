@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.model;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 public class IssuesListDefServiceImpl implements IssuesListDefService
 {
+    private static final Logger LOG = Logger.getLogger(IssuesListDefServiceImpl.class);
     private final Map<String, IssuesListDefProvider> _issuesListDefProviders = new ConcurrentHashMap<>();
     private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
 
@@ -102,8 +104,13 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         IssueListDef issueListDef = IssueManager.getIssueListDef(container, issueDefId);
         if (issueListDef != null)
         {
-            return issueListDef.getDomain(user);
+            Domain domain = issueListDef.getDomain(user);
+            if (domain == null)
+                LOG.warn("Unable to find the domain for issue list definition id: " + issueDefId + " and container: " + container);
+            return domain;
         }
+        else
+            LOG.warn("Unable to find the issue list definition for id: " + issueDefId + " and container: " + container);
 
         return null;
     }
