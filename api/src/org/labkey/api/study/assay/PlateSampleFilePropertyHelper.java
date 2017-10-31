@@ -348,7 +348,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
                     if (PageFlowUtil.useExperimentalCoreUI())
                     {
-                        out.write("<td class=\"lk-form-label\">");
+                        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
                         out.write(nounV1 + " Metadata" + helpPopup + " *");
                         out.write("</td>");
                     }

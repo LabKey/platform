@@ -114,9 +114,9 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             renderMainErrors(ctx, out);
             out.write("<table class=\"lk-fields-table\">");
             out.write("<tr>" +
-                    "<td class=\"lk-form-label\"><label>Field</label></td>" +
-                    "<td class=\"lk-form-label\" style=\"text-align: left;\"><label>Initial/Default Value</label></td>" +
-                    "<td class=\"lk-form-label\"><label>Default type</label></td>" +
+                    "<td class=\"lk-form-label lk-form-col-label\"><label>Field</label></td>" +
+                    "<td class=\"lk-form-label lk-form-col-label\" style=\"text-align: left;\"><label>Initial/Default Value</label></td>" +
+                    "<td class=\"lk-form-label lk-form-col-label\"><label>Default type</label></td>" +
                     "</tr>");
             for (DisplayColumn renderer : getDisplayColumns())
             {
@@ -126,7 +126,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     renderInputError(ctx, out, 1, renderer);
                 out.write("<tr>");
 
-                renderer.renderDetailsCaptionCell(ctx, out, "control-label");
+                renderer.renderDetailsCaptionCell(ctx, out, "control-label lk-form-row-label");
                 renderer.renderInputCell(ctx, out, 1);
 
                 out.write("<td>");

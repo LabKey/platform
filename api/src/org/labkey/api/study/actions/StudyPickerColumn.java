@@ -70,7 +70,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         if (null == _caption)
             return;
 
-        out.write("<td class=\"lk-form-label\">");
+        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
         renderTitle(ctx, out);
         int mode = ctx.getMode();
         if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
