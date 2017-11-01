@@ -2082,21 +2082,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return new Pair<>(parentsToken,childrenToken);
     }
 
-
-    /* This is the class for the objects that keeps the temp table from being garbage collected by TempTableTracker */
-    static class MaterializedCTE
-    {
-        final long created;
-        final String uptodateKey;
-        final String fromSql;        MaterializedCTE(long created, String key, String sql)
-        {
-            this.created = created;
-            this.uptodateKey = key;
-            this.fromSql = sql;
-        }
-    }
-
-
     MaterializedQueryHelper materializedNodes = null;
     MaterializedQueryHelper materializedEdges = null;
     final Object initEdgesLock = new Object();
@@ -2104,14 +2089,22 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void uncacheLineageGraph()
     {
+        MaterializedQueryHelper nodes;
+        MaterializedQueryHelper edges;
+
+        // only lock on retrieving the object
         synchronized (initEdgesLock)
         {
-            if (null != materializedNodes)
-                materializedNodes.uncache(null);
-            if (null != materializedEdges)
-                materializedEdges.uncache(null);
-            getExpSchema().getScope().addCommitTask(() -> expLineageCounter.incrementAndGet(), POSTCOMMIT);
+            nodes = materializedNodes;
+            edges = materializedEdges;
         }
+
+        if (null != nodes)
+            nodes.uncache(null);
+        if (null != edges)
+            edges.uncache(null);
+
+        getExpSchema().getScope().addCommitTask(expLineageCounter::incrementAndGet, POSTCOMMIT);
     }
 
     /* TODO AND CONSIDER:
