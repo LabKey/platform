@@ -3123,11 +3123,14 @@ public class QueryController extends SpringActionController
 
                 // get the filter set from the queryform and verify that they resolve
                 SimpleFilter filter = getFilterFromQueryForm(form);
-                Map<FieldKey, ColumnInfo> resolvedCols = QueryService.get().getColumns(view.getTable(), filter.getAllFieldKeys());
-                for (FieldKey filterFieldKey : filter.getAllFieldKeys())
+                if (filter != null)
                 {
-                    if (!resolvedCols.containsKey(filterFieldKey))
-                        filter.deleteConditions(filterFieldKey);
+                    Map<FieldKey, ColumnInfo> resolvedCols = QueryService.get().getColumns(view.getTable(), filter.getAllFieldKeys());
+                    for (FieldKey filterFieldKey : filter.getAllFieldKeys())
+                    {
+                        if (!resolvedCols.containsKey(filterFieldKey))
+                            filter.deleteConditions(filterFieldKey);
+                    }
                 }
 
                 // query the table/view for the aggregate results
