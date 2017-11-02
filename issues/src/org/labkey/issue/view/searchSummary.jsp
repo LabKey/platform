@@ -76,8 +76,6 @@
     <%}
     else
     {%>
-    else
-    {%>
     <table style="min-width:150pt;">
         <tr><td class="labkey-form-label" style="white-space: nowrap;">Status</td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
         <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"closed")) { %>
