@@ -66,7 +66,7 @@ $lk-grid-row-select-text-color: $Madison-page-bkgd;
 $lk-grid-row-select-link-color: $Madison-gray-blue;
 
 $lk-grid-filter-border-color: $Madison-red-dark;
-$lk-grid-sort-icon-color: $Madison-page-bkgd;
+$lk-grid-sort-icon-color: $Madison-gray-footer-text;
 
 //== Header
 //
@@ -107,8 +107,7 @@ $lk-panel-default-border: darken($Madison-page-bkgd, 15%);
 //== Portals
 //
 $lk-webpart-accent-color: $Madison-red;
-$lk-webpart-border-top: 2px solid $lk-webpart-accent-color;
-$lk-webpart-title-color: $Madison-body-font-color;
+$lk-webpart-title-color: $Madison-white;
 $lk-webpart-title-hover-color: $lk-webpart-title-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))

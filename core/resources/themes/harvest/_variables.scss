@@ -58,7 +58,7 @@ $lk-grid-row-select-text-color: $Harvest-page-bkgd;
 $lk-grid-row-select-link-color: $Harvest-gray-blue;
 
 $lk-grid-filter-border-color: $Harvest-accent;
-$lk-grid-sort-icon-color: $Harvest-page-bkgd;
+$lk-grid-sort-icon-color: $Harvest-gray-footer-text;
 
 //== Header
 //
@@ -99,7 +99,8 @@ $lk-panel-default-border: $Harvest-gray-darker;
 //== Portals
 //
 $lk-webpart-accent-color: $Harvest-header;
-$lk-webpart-title-hover-color: $Harvest-anchor-color;
+$lk-webpart-title-color: $Harvest-white;
+$lk-webpart-title-hover-color: $lk-webpart-title-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //

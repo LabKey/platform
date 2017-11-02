@@ -57,7 +57,7 @@ $lk-grid-row-select-text-color: $Mono-page-bkgd;
 $lk-grid-row-select-link-color: $Mono-gray-blue;
 
 $lk-grid-filter-border-color: $Mono-accent;
-$lk-grid-sort-icon-color: $Mono-page-bkgd;
+$lk-grid-sort-icon-color: $Mono-gray-footer-text;
 
 //== Header
 //
@@ -98,7 +98,8 @@ $lk-panel-default-border: $Mono-gray-darker;
 //== Portals
 //
 $lk-webpart-accent-color: $Mono-header;
-$lk-webpart-title-hover-color: $Mono-anchor-color;
+$lk-webpart-title-color: $Mono-white;
+$lk-webpart-title-hover-color: $lk-webpart-title-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //

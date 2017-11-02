@@ -57,7 +57,7 @@ $lk-grid-row-select-text-color: $Ocean-page-bkgd;
 $lk-grid-row-select-link-color: $Ocean-gray-blue;
 
 $lk-grid-filter-border-color: $Ocean-accent;
-$lk-grid-sort-icon-color: $Ocean-page-bkgd;
+$lk-grid-sort-icon-color: $Ocean-gray-footer-text;
 
 //== Header
 //
@@ -98,7 +98,8 @@ $lk-panel-default-border: $Ocean-gray-darker;
 //== Portals
 //
 $lk-webpart-accent-color: $Ocean-header;
-$lk-webpart-title-hover-color: $Ocean-anchor-color;
+$lk-webpart-title-color: $Ocean-white;
+$lk-webpart-title-hover-color: $lk-webpart-title-color;
 
 //== Tabs (Bootstrap tabs (Export data set dropdown))
 //
