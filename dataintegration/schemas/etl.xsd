@@ -45,14 +45,16 @@
                 state of source data throughout the transaction. This prevents phantom reads of source data which has been inserted/updated since
                 the ETL started. Only meaningful if the source schemas for every step in the ETL are all from the same datasource. Individual steps
                 will not have their own transaction boundaries.
+                The intended use case is for a source datasource external to LabKey Server.
                 This setting is independent of the optional transactDestinationSchema setting. If both are specified, and the two schemas are from
-                the same datasource, the ETL will be wrapped in a single REPEATABLE READ transaction.
+                the same datasource, the ETL will be wrapped in a single REPEATABLE READ transaction. This scenario is only supported if
+                tha single datasource is Postgres, and is not recommended.
             </documentation>
         </annotation>
         </attribute>
         <attribute name="transactDestinationSchema" type="string">
             <annotation>
-                <documentation>Optional. Experimental, use with caution. Causes a multi-step ETL to wrap an entire run of the ETL in a single transaction
+                <documentation>Optional. Very experimental, use with caution. Causes a multi-step ETL to wrap an entire run of the ETL in a single transaction
                     on the destination datasource containing the schema specified. This transaction will only be committed upon successful completion
                     of the ETL run; any error will cause a full rollback of every step up to that point. Only meaningful if the destination schemas for every
                     step in the ETL are all from the same datasource. Individual steps will not have their own transaction boundaries, nor will setting
@@ -60,7 +62,7 @@
                     especially on SQL Server.
                     This setting is independent of the optional transactSourceSchema setting. If both are specified, and the two schemas are from
                     the same datasource, the ETL run will be wrapped in a single REPEATABLE READ transaction. This scenario is only supported if
-                    tha single datasource is Postgres.
+                    tha single datasource is Postgres, and is not recommended.
                 </documentation>
             </annotation>
         </attribute>

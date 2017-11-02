@@ -261,7 +261,7 @@ public class StoredProcedureStep extends TransformTask
 
     private boolean prepareExecution(boolean checkingForWork) throws SQLException
     {
-        if (!checkingForWork && !validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
+        if (!checkingForWork && !validate(_meta, _context.getContainer(), _context.getUser(), _txJob.getLogger())) return false;
         setDbScopes(_context.getContainer(), _context.getUser());
         if (!procDialect.isProcedureExists(procScope, procDbSchemaName, procName))
             throw new ConfigurationException("Could not find procedure " + procQuerySchemaName + "." + procName);
@@ -395,7 +395,7 @@ public class StoredProcedureStep extends TransformTask
                     if (firstResult && _meta.isUseTarget())
                     {
                         firstResult = false;
-                        if (!writeToTarget(inlineResult, getJob().getLogger(), txTarget))
+                        if (!writeToTarget(inlineResult, _txJob.getLogger(), txTarget))
                             return false;
                     }
                     else
@@ -528,7 +528,7 @@ public class StoredProcedureStep extends TransformTask
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
             try
             {
-                getJob().info(filterStrategy.getLogMessage(null == f ? null : f.toSQLString(procDialect)));
+                _txJob.info(filterStrategy.getLogMessage(null == f ? null : f.toSQLString(procDialect)));
             }
             catch (UnsupportedOperationException|IllegalArgumentException x)
             {
@@ -595,7 +595,7 @@ public class StoredProcedureStep extends TransformTask
 
         if (procReturns.equals(RETURN_TYPE.RESULTSET) && _meta.isUseTarget()) // Postgres resultset output
         {
-            if (checkingForWork || writeToTarget((ResultSet) stmt.getObject(1), getJob().getLogger(), txTarget))
+            if (checkingForWork || writeToTarget((ResultSet) stmt.getObject(1), _txJob.getLogger(), txTarget))
                 returnVal = 0;
             else returnVal = null;
         }
@@ -660,8 +660,8 @@ public class StoredProcedureStep extends TransformTask
         context.setFailFast(true);
 
         int transformRunId = getTransformJob().getTransformRunId();
-        DataIteratorBuilder transformSource = createTransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger());
-        _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource , getJob().getLogger(), txTarget);
+        DataIteratorBuilder transformSource = createTransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), _txJob.getLogger());
+        _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource, log, txTarget);
 
         if (context.getErrors().hasErrors())
         {
@@ -677,27 +677,23 @@ public class StoredProcedureStep extends TransformTask
 
     private void info(String message)
     {
-        if (null != getJob())
-            getJob().info(message);
+        _txJob.info(message);
     }
 
     private void warn(String message)
     {
-        if (null != getJob())
-            getJob().warn(message);
+        _txJob.warn(message);
     }
 
     private void debug(String message)
     {
-        if (null != getJob())
-            getJob().debug(message);
+        _txJob.debug(message);
     }
 
     private void error(String message)
     {
-        if (null != getJob())
-            getJob().error(message);
-        else throw new IllegalStateException(message);
+        _txJob.closeWrappingTransactions(true,true);
+        _txJob.error(message);
     }
 
 }
