@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
@@ -88,25 +89,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 {
                     // Do type conversion in case there's a mismatch in the lookup source and target columns
                     ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
-                    if (newValue != null && !fkTablePkCol.getJavaClass().isAssignableFrom(newValue.getClass()))
-                    {
-                        newValue = ConvertUtils.convert(newValue.toString(), fkTablePkCol.getJavaClass());
-                    }
-                    if (oldValue != null && !fkTablePkCol.getJavaClass().isAssignableFrom(oldValue.getClass()))
-                    {
-                        oldValue = ConvertUtils.convert(oldValue.toString(), fkTablePkCol.getJavaClass());
-                    }
-
-                    Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getObject(oldValue, Map.class);
-                    if (oldLookupTarget != null)
-                    {
-                        oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
-                    }
-                    Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getObject(newValue, Map.class);
-                    if (newLookupTarget != null)
-                    {
-                        newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
-                    }
+                    newValue = lookupDisplayValue(newValue, fkTableInfo, fkTablePkCol);
+                    oldValue = lookupDisplayValue(oldValue, fkTableInfo, fkTablePkCol);
                 }
                 appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
@@ -115,6 +99,35 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         return result;
     }
+
+    private Object lookupDisplayValue(Object o, @NotNull TableInfo fkTableInfo, ColumnInfo fkTablePkCol)
+    {
+        if (o == null)
+            return null;
+
+        if (fkTablePkCol == null)
+            return o;
+
+        if (!fkTablePkCol.getJavaClass().isAssignableFrom(o.getClass()))
+        {
+            try
+            {
+                o = ConvertUtils.convert(o.toString(), fkTablePkCol.getJavaClass());
+                Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(o);
+                if (newLookupTarget != null)
+                {
+                    o = newLookupTarget.get(fkTableInfo.getTitleColumn());
+                }
+            }
+            catch (ConversionException ex)
+            {
+                // ok - just use the value as is
+            }
+        }
+
+        return o;
+    }
+
 
     private ExpRun getRun(Map<String, Object> row, User user, Class<? extends Permission> perm) throws InvalidKeyException
     {
