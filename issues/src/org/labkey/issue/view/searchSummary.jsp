@@ -57,7 +57,7 @@
                 Matcher matcher = p.matcher(s);
                 while (matcher.find() && linesLeft > 0)
                 {
-                    String commentContentText = matcher.group(1);
+                    String commentContentText = PageFlowUtil.filter(matcher.group(1));
                     if (!StringUtils.isEmpty(commentContentText))
                     {
                         hasTextComment = true;
