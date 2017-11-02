@@ -353,7 +353,7 @@ public class ScriptReportBean extends ReportDesignBean
 
     public boolean isUseDefaultOutputFormat()
     {
-        return null==_useDefaultOutputFormat?false:_useDefaultOutputFormat;
+        return null==_useDefaultOutputFormat?true:_useDefaultOutputFormat;
     }
 
     public void setUseDefaultOutputFormat(boolean useDefaultOutputFormat)
