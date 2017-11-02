@@ -70,8 +70,6 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     public static final String ETL_PREFIX = "ETL Job: ";
     private static final String LOG_EXTENSION = "etl.log";
     private final Set<String> _outputFileBaseNames = new LinkedHashSet<>();
-    private transient DbScope.Transaction _sourceTx;
-    private transient DbScope.Transaction _targetTx;
 
     public TransformPipelineJob(@NotNull TransformJobContext info, TransformDescriptor etlDescriptor)
     {
@@ -225,7 +223,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
                 - Specifying to transact the source and/or destination is only meaningful if every step in the ETL uses
                   the same source or destination scope. Different schemas are fine, as long as they are in the same DbScope
                 - Transacting the source is only available for Postgres data sources. SQL Server is a future possibility.
-                - If the source and destination schemas are in the same scope, a single REPEATABLE READ transaction is used. This
+                - If the source and destination schemas are in the same scope, a single REPEATABLE READ transaction is used. And
                   this is only available for Postgres.
          */
         try
@@ -271,74 +269,40 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
             return;
         }
 
-        _sourceTx = null == sourceScope ? null : sourceScope.beginTransaction(SNAPSHOT_TRANSACTION_KIND);
-        _targetTx = null == targetScope ? null : targetScope.beginTransaction();
-        boolean rollbackSource = true;
+        DbScope.Transaction sourceTx = null == sourceScope ? null : sourceScope.beginTransaction(SNAPSHOT_TRANSACTION_KIND);
         try
         {
-            try
+            try (DbScope.Transaction targetTx = null == targetScope ? null : targetScope.beginTransaction())
             {
-                if (null != _sourceTx)
+                if (null != sourceTx)
                 {
-                    _sourceTx.getConnection().setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+                    sourceTx.getConnection().setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
                 }
                 super.run();
                 if (TaskStatus.complete == this.getActiveTaskStatus())
                 {
-                    if (null != _sourceTx && !_sourceTx.isAborted())
-                    {
-                        _sourceTx.commitAndKeepConnection(); // Keep connection open so we can reset its isolation level to default
-                        rollbackSource = false;
-                    }
-                    if (null != _targetTx && !_targetTx.isAborted())
-                        _targetTx.commit();
+                    if (null != sourceTx && !sourceTx.isAborted())
+                        sourceTx.commitAndKeepConnection(); // Keep connection open so we can reset its isolation level to default
+                    if (null != targetTx && !targetTx.isAborted())
+                        targetTx.commit();
                 }
             }
             finally
             {
-                closeWrappingTransactions(rollbackSource, false);
+                if (null != sourceTx)
+                {
+                    // Need to explicitly end the transaction to be able to set connection's isolation level back to default.
+                    if (sourceScope.isTransactionActive())
+                        sourceTx.getConnection().rollback();
+                    sourceTx.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+                    sourceTx.close();
+                }
             }
         }
         catch (SQLException e)
         {
             getLogger().error("SQLException setting connection transaction isolation level.", e);
-            _sourceTx.close();
-        }
-    }
-
-    public void closeWrappingTransactions(boolean rollbackSource, boolean rollbackTarget)
-    {
-        if (null != _targetTx && !_targetTx.isAborted())
-        {
-            _targetTx.close();
-            if (rollbackTarget)
-            {
-                getLogger().error("Rolling back wrapping destination transaction for all steps in ETL.");
-            }
-        }
-
-        if (null != _sourceTx && !_sourceTx.isAborted())
-        {
-            try
-            {
-                // Need to explicitly end the transaction to be able to keep connection and set connection's isolation level back to default.
-                if (rollbackSource)
-                {
-                    _sourceTx.getConnection().rollback();
-                    getLogger().error("Rolling back wrapping source transaction for all steps in ETL.");
-                }
-                else
-                    _sourceTx.getConnection().commit();
-                _sourceTx.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-            }
-            catch (SQLException e)
-            {
-                getLogger().error("SQLException rolling back wrapping source transaction or resetting connection transaction isolation level.", e);
-            }
-            finally
-            {
-                _sourceTx.close();
-            }
+            sourceTx.close();
         }
     }
 

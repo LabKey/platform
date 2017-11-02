@@ -170,7 +170,6 @@ public class SimpleQueryTransformStep extends TransformTask
         }
         if (context.getErrors().hasErrors())
         {
-            _txJob.closeWrappingTransactions(true,true);
             for (ValidationException v : context.getErrors().getRowErrors())
             {
                 log.error(v.getMessage());
