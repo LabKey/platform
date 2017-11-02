@@ -18,6 +18,7 @@ package org.labkey.pipeline.mule.filters;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.pipeline.PipelineJob;
 import org.mule.providers.jms.filters.JmsSelectorFilter;
 
@@ -38,7 +39,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
 
     private boolean _includeMonolithic;
 
-    protected Set<String> _locations = new CaseInsensitiveHashSet();
+    protected Set<String> _locations = new CaseInsensitiveTreeSet();
 
     public Set<String> getLocations()
     {
