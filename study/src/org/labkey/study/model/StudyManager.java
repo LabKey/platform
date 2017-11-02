@@ -298,7 +298,19 @@ public class StudyManager
                 return result;
             }
 
+            @Override
+            public void clearCache(Container c)
+            {
+                super.clearCache(c);
+                clearCachedStudies();
+            }
 
+            @Override
+            public void clearCache(StudyImpl obj)
+            {
+                super.clearCache(obj);
+                clearCachedStudies();
+            }
         };
 
         _visitHelper = new QueryHelper<>(new TableInfoGetter()
@@ -533,11 +545,24 @@ public class StudyManager
         return study;
     }
 
+    private static final String CACHE_KEY = StudyManager.class.getName() + "||cachedStudies";
+
     /** @return all studies in the whole server, unfiltered by permissions */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies()
     {
-        return Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
+        if (CacheManager.getSharedCache().get(CACHE_KEY) == null)
+        {
+            Set<StudyImpl> ret = Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy()).getArrayList(StudyImpl.class)));
+            CacheManager.getSharedCache().put(CACHE_KEY, ret);
+        }
+
+        return (Set)CacheManager.getSharedCache().get(CACHE_KEY);
+    }
+
+    private void clearCachedStudies()
+    {
+        CacheManager.getSharedCache().remove(CACHE_KEY);
     }
 
     /** @return all studies under the given root in the container hierarchy (inclusive), unfiltered by permissions */
@@ -2978,6 +3003,7 @@ public class StudyManager
     public void clearCaches(Container c, boolean unmaterializeDatasets)
     {
         Study study = getStudy(c);
+        clearCachedStudies();
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
 //        _locationHelper.clearCache(c);
@@ -3149,6 +3175,7 @@ public class StudyManager
             transaction.commit();
         }
 
+        clearCachedStudies();
         ContainerManager.notifyContainerChange(c.getId(), ContainerManager.Property.StudyChange);
 
         //
