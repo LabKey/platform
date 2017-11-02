@@ -913,8 +913,9 @@ public class TransformManager implements DataIntegrationService
             {
                 if (stepMeta.isUseTarget() && ((CopyConfig)stepMeta).getTargetType() == CopyConfig.TargetTypes.query)
                 {
-                    if (SimpleQueryTransformStepMeta.class.isInstance(stepMeta) && ((SimpleQueryTransformStepMeta)stepMeta).isTruncateStep())
-                        continue; // Don't bother truncating from a truncate step!
+                    if (SimpleQueryTransformStepMeta.class.isInstance(stepMeta) && ((SimpleQueryTransformStepMeta)stepMeta).isTruncateStep()
+                            || null == stepMeta.getTargetSchema())
+                        continue; // Don't bother truncating from a truncate step, or any step without a target.
 
                     QuerySchema querySchema = DefaultSchema.get(user, c, stepMeta.getTargetSchema());
                     if (null == querySchema || null == querySchema.getDbSchema())

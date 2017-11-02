@@ -86,7 +86,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 {
     final protected TransformJobContext _context;
     final protected StepMeta _meta;
-    final private TransformPipelineJob _txJob;
+    protected final TransformPipelineJob _txJob;
     final private RecordedActionSet _records = new RecordedActionSet();
     final private VariableMap _variableMap;
 
@@ -466,6 +466,11 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             if (_meta.isSaveState())
                 getTransformJob().saveVariableMap(false);
             return _records;
+        }
+        catch (Exception x) // It should only ever be either a PipelineJobException or a RuntimeException, but to be safe...
+        {
+            _txJob.closeWrappingTransactions(true,true);
+            throw x;
         }
         finally
         {
