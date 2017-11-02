@@ -773,6 +773,7 @@ public class ExceptionUtil
                     writer = ApiResponseWriter.Format.XML.createWriter(response, null);
 
                 errorResponse.render(writer);
+                writer.close();
             }
             catch (Exception x)
             {
