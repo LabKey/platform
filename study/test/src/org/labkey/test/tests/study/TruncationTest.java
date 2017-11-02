@@ -27,7 +27,6 @@ import org.labkey.test.categories.Specimen;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.ManageDatasetsPage;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -71,9 +70,6 @@ public class TruncationTest extends BaseWebDriverTest
     {
         _containerHelper.createProject(getProjectName(), "Study");
         importFolderFromZip(TestFileUtils.getSampleData("studies/AltIdStudy.folder.zip"));
-        clickTab("Overview");
-        PortalHelper portalHelper = new PortalHelper(this);
-        portalHelper.addWebPart("Lists");
         _listHelper.importListArchive(getProjectName(), LIST_ARCHIVE);
     }
 
