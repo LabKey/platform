@@ -43,42 +43,39 @@
             <% } %>
         </table>
 </td><td>&nbsp;</td><td>&nbsp;</td><td valign="top">
-        <%
-            StringBuilder html = new StringBuilder();
-            int linesLeft = 3;
-            boolean hasTextComment = false;
-            for (Issue.Comment comment : issue.getComments())
+    <%
+        StringBuilder html = new StringBuilder();
+        boolean hasTextComment = false;
+        for (Issue.Comment comment : issue.getComments())
+        {
+            String s = comment.getComment();
+            String pattern1 = "<div class=\"labkey-wiki\">";
+            String pattern2 = "</div>";
+            String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
+            Pattern p = Pattern.compile(regexString);
+            Matcher matcher = p.matcher(s);
+            while (matcher.find())
             {
-                String s = comment.getComment();
-                String pattern1 = "<div class=\"labkey-wiki\">";
-                String pattern2 = "</div>";
-                String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
-                Pattern p = Pattern.compile(regexString);
-                Matcher matcher = p.matcher(s);
-                while (matcher.find() && linesLeft > 0)
+                String commentContentText = matcher.group(1);
+                if (!StringUtils.isEmpty(commentContentText))
                 {
-                    String commentContentText = PageFlowUtil.filter(matcher.group(1));
-                    if (!StringUtils.isEmpty(commentContentText))
-                    {
-                        hasTextComment = true;
-                        if (commentContentText.length() > 60 * linesLeft)
-                            commentContentText = commentContentText.substring(0, 60 * linesLeft) + "...";
-                        html.append(commentContentText);
-                        html.append("<br>");
-                        linesLeft = linesLeft - (commentContentText.length() / 60) - 1;
-
-                        if (html.length() > 1000)
-                            break;
-                    }
+                    hasTextComment = true;
+                    html.append(commentContentText);
+                    html.append("<br>");
+                    if (html.length() > 1000)
+                        break;
                 }
             }
-            if (hasTextComment)
-            {
-        %>
-            <label style="text-decoration: underline">Comments</label>
-        <%}%>
-        <div style="max-height:50pt; overflow-y:hidden;"><%= text(html.toString()) %></div>
+        }
+        if (hasTextComment)
+        {
+    %>
+    <label style="text-decoration: underline">Comments</label>
+    <%}%>
+    <div style="max-height:4em; overflow-y:hidden;"><%= text(html.toString()) %></div>
     <%}
+    else
+    {%>
     else
     {%>
     <table style="min-width:150pt;">
