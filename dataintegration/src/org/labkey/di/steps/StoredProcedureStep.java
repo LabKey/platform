@@ -675,25 +675,34 @@ public class StoredProcedureStep extends TransformTask
         return true;
     }
 
+    // The null checks below are necessary because there's no job when a gating proc is checked for work
+
     private void info(String message)
     {
-        _txJob.info(message);
+        if (null != _txJob)
+            _txJob.info(message);
     }
 
     private void warn(String message)
     {
-        _txJob.warn(message);
+        if (null != _txJob)
+            _txJob.warn(message);
     }
 
     private void debug(String message)
     {
-        _txJob.debug(message);
+        if (null != _txJob)
+            _txJob.debug(message);
     }
 
     private void error(String message)
     {
-        _txJob.closeWrappingTransactions(true,true);
-        _txJob.error(message);
+        if (null != _txJob)
+        {
+            _txJob.closeWrappingTransactions(true, true);
+            _txJob.error(message);
+        }
+        else throw new IllegalStateException(message);
     }
 
 }
