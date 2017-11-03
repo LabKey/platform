@@ -1389,6 +1389,9 @@ public class ContainerManager
         }
     }
 
+
+    private static Map<String,Integer> deletingContainers = Collections.synchronizedMap(new HashMap<String,Integer>());
+
     // Delete a container from the database
     public static boolean delete(final Container c, User user)
     {
@@ -1397,10 +1400,17 @@ public class ContainerManager
             throw new IllegalArgumentException("Cannot delete container: " + c.getPath());
         }
 
+        if (deletingContainers.containsKey(c.getId()))
+        {
+            throw new IllegalArgumentException("Container is already being deleted: " + c.getPath());
+        }
+
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
 
         try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction())
         {
+            deletingContainers.put(c.getId(), user.getUserId());
+
             // Verify that no children exist
             Selector sel = new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("Parent"), c), null);
 
@@ -1450,6 +1460,10 @@ public class ContainerManager
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
             t.commit();
+        }
+        finally
+        {
+            deletingContainers.remove(c.getId());
         }
         LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
         return true;
