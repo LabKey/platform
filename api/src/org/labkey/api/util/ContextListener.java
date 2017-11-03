@@ -61,7 +61,7 @@ public class ContextListener implements ServletContextListener
 
     public static void callShutdownListeners()
     {
-        // Want exact same list for shutdownPre() and shutdownStarted()
+        // Make a copy so we use exact same list for shutdownPre() and shutdownStarted()
         List<ShutdownListener> shutdownListeners = _shutdownListeners;
 
         for (ShutdownListener listener : shutdownListeners)
@@ -103,9 +103,7 @@ public class ContextListener implements ServletContextListener
 
     public static void moduleStartupComplete(ServletContext servletContext)
     {
-        List<StartupListener> startupListeners = _startupListeners;
-
-        for (StartupListener listener : startupListeners)
+        for (StartupListener listener : _startupListeners)
         {
             try
             {
