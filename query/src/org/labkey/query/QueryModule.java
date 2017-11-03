@@ -171,7 +171,7 @@ public class QueryModule extends DefaultModule
         ExternalSchema.register();
         LinkedSchema.register();
 
-        ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
+        ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
 
         QueryService.get().addQueryListener(new CustomViewQueryChangeListener());
         QueryService.get().addQueryListener(new QuerySnapshotQueryChangeListener());
