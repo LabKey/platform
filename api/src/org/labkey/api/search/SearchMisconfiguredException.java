@@ -22,7 +22,12 @@ package org.labkey.api.search;
 * Time: 9:04:45 AM
 */
 
-// CONSIDER: Make this a checked exception instead?
-public class SearchMisconfiguredException extends RuntimeException
+import org.labkey.api.util.MinorConfigurationException;
+
+public class SearchMisconfiguredException extends MinorConfigurationException
 {
+    public SearchMisconfiguredException()
+    {
+        super("The search index is misconfigured. An administrator will need to correct this via the full-text search configuration page.");
+    }
 }

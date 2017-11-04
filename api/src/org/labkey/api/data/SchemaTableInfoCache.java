@@ -89,10 +89,9 @@ public class SchemaTableInfoCache
             }
             catch (Throwable t)
             {
-                // Log all problems to mothership so admin and LabKey are made aware of the cause of the problem, but
-                // return null so other tables in this schema can load. One current example: we don't properly handle
-                // MV indicators on list columns with very long names. That needs to be fixed, of course, but there
-                // may be other scenarios that throw.
+                // Log all problems to mothership so admin and LabKey are made aware of the cause of the problem, but return
+                // null so other tables in this schema can load. One previous example: MV indicators on list columns with
+                // very long names used to be a problem, but that was fixed. There may be other scenarios that throw.
                 ExceptionUtil.logExceptionToMothership(null, t);
 
                 return null;

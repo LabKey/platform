@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 
 abstract public class UserSchema extends AbstractSchema implements MemTrackable
@@ -359,7 +358,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         QueryDefinition qdef = settings.getQueryDef(this);
         if (qdef != null)
         {
-            TableInfo tableInfo = qdef.getTable(this, new ArrayList<QueryException>(), true);
+            TableInfo tableInfo = qdef.getTable(this, new ArrayList<>(), true);
             if (tableInfo instanceof CrosstabTableInfo)
                 return new CrosstabView(this, settings, errors);
         }
