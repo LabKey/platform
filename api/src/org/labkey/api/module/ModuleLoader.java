@@ -109,7 +109,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -129,7 +128,7 @@ import java.util.stream.Collectors;
  */
 public class ModuleLoader implements Filter
 {
-    private static final double EARLIEST_UPGRADE_VERSION = 15.2;
+    private static final double EARLIEST_UPGRADE_VERSION = 15.3;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
@@ -534,15 +533,7 @@ public class ModuleLoader implements Filter
 
     private void removeMapValue(Module module, Map<?, Module> map)
     {
-        Iterator<? extends Map.Entry<?, Module>> iterator = map.entrySet().iterator();
-        while (iterator.hasNext())
-        {
-            Map.Entry<?, Module> entry = iterator.next();
-            if (entry.getValue() == module)
-            {
-                iterator.remove();
-            }
-        }
+        map.entrySet().removeIf(entry -> entry.getValue() == module);
     }
 
     private List<String> additionalSchemasRequiringUpgrade(Module module)
