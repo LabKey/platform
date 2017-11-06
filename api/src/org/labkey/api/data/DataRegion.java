@@ -2194,7 +2194,11 @@ public class DataRegion extends DisplayElement
 
         if (PageFlowUtil.useExperimentalCoreUI())
         {
-            out.write(" class=\"form-horizontal\" ");
+            String cls = "form-horizontal";
+            if (mode == MODE_DETAILS)
+                cls += " form-mode-details";
+
+            out.write(" class=\"" + cls + "\" ");
         }
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
