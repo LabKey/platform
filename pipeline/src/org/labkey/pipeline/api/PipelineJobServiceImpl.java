@@ -194,24 +194,34 @@ public class PipelineJobServiceImpl extends PipelineJobService
     }
 
     /**
-     * Used to getInternal a TaskPipeline by name.  If the pipeline has been registered using
-     * Mule's Spring configuration, than that version will be used.  Otherwise, the default
-     * passed in version gets used.
+     * Used to get a TaskPipeline by name. If the pipeline has been registered using Mule's Spring configuration,
+     * then that version will be used. Otherwise, the default passed-in version gets used.
      *
      * @param id An enum ID that uniquely identifies the pipeline
      * @return the definitive TaskPipeline for this id
      */
-    public TaskPipeline getTaskPipeline(TaskId id)
+    public @Nullable TaskPipeline getTaskPipeline(TaskId id)
     {
+        TaskPipeline pipeline;
+
         synchronized (_taskPipelineStore)
         {
-            TaskPipeline pipeline = _taskPipelineStore.get(id);
-            if (pipeline != null)
-                return pipeline;
+            pipeline = _taskPipelineStore.get(id);
         }
 
-        Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
-        return TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
+        // Null pipeline could mean a task pipeline defined by a module that no longer exists, #32082. Or it could mean
+        // it's defined as a module resource. Hence the null checks.
+        if (null == pipeline && null != id.getModuleName())
+        {
+            Module module = ModuleLoader.getInstance().getModule(id.getModuleName());
+
+            if (null != module)
+            {
+                pipeline = TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
+            }
+        }
+
+        return pipeline;
     }
 
     @NotNull
