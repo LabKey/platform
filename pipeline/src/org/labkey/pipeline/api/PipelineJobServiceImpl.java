@@ -83,7 +83,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-public class PipelineJobServiceImpl extends PipelineJobService
+public class PipelineJobServiceImpl implements PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
 
@@ -132,12 +132,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return pjs;
     }
     
-    private Map<TaskId, TaskPipeline> _taskPipelineStore = new HashMap<>();
-    private Map<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
-    private Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
+    private final Map<TaskId, TaskPipeline> _taskPipelineStore;
+    private final Map<TaskId, TaskFactory> _taskFactoryStore;
+    private final Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories;
 
-    private final ModuleResourceCache<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("TaskFactory cache", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
-    private final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("TaskPipeline cache", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
+    private static final ModuleResourceCache<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("TaskFactory cache", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
+    private static final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("TaskPipeline cache", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
@@ -170,11 +170,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
         PipelineJobServiceImpl current = get();
         if (current != null)
         {
-            current._taskPipelineStore.putAll(_taskPipelineStore);
             _taskPipelineStore = current._taskPipelineStore;
-            current._taskFactoryStore.putAll(_taskFactoryStore);
             _taskFactoryStore = current._taskFactoryStore;
-            current._taskFactoryFactories.putAll(_taskFactoryFactories);
             _taskFactoryFactories = current._taskFactoryFactories;
 
             _appProperties = current._appProperties;
@@ -186,10 +183,16 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _jobStore = current._jobStore;
             _locationType = current._locationType;
         }
+        else
+        {
+            _taskPipelineStore = new HashMap<>();
+            _taskFactoryStore = new HashMap<>();
+            _taskFactoryFactories = new HashMap<>();
+        }
 
         if (register)
         {
-            setInstance(this);
+            PipelineJobService.setInstance(this);
         }
     }
 
@@ -693,7 +696,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                                 file1.canExecute();
                     });
 
-                    if (matchingExecutables.length > 0)
+                    if (matchingExecutables != null && matchingExecutables.length > 0)
                         return file.toString();
                 }
             }
@@ -968,13 +971,13 @@ public class PipelineJobServiceImpl extends PipelineJobService
         @Test
         public void testModuleCaches()
         {
-            int pipelineCount = _impl.TASK_PIPELINE_CACHE.streamAllResourceMaps()
+            int pipelineCount = TASK_PIPELINE_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
             LOG.info(pipelineCount + " task pipelines defined in all modules");
 
-            int factoryCount = _impl.TASK_FACTORY_CACHE.streamAllResourceMaps()
+            int factoryCount = TASK_FACTORY_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
@@ -989,16 +992,16 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
                 if (null != pipelinetest)
                 {
-                    assertEquals("Task pipelines from pipelinetest module", 8, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
-                    assertEquals("Task factories from pipelinetest module", 3, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task pipelines from pipelinetest module", 8, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task factories from pipelinetest module", 3, TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
                 }
 
                 Module pipelinetest2 = ModuleLoader.getInstance().getModule("pipelinetest2");
 
                 if (null != pipelinetest2)
                 {
-                    assertEquals("Task pipelines from pipelinetest2 module", 2, _impl.TASK_PIPELINE_CACHE.getResourceMap(pipelinetest2).size());
-                    assertEquals("Task factories from pipelinetest2 module", 2, _impl.TASK_FACTORY_CACHE.getResourceMap(pipelinetest2).size());
+                    assertEquals("Task pipelines from pipelinetest2 module", 2, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest2).size());
+                    assertEquals("Task factories from pipelinetest2 module", 2, TASK_FACTORY_CACHE.getResourceMap(pipelinetest2).size());
                 }
             }
         }
