@@ -17,17 +17,16 @@
 package org.labkey.experiment;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.exp.ObjectProperty;
 
 import java.io.File;
 import java.util.Date;
@@ -49,10 +48,10 @@ public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
         if (prop.getPropertyType() == PropertyType.FILE_LINK)
         {
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(o.toString()));
-            o = FileLinkDisplayColumn.relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(c, FileContentService.ContentType.files));
+            o = FileLinkDisplayColumn.relativize(f, FileContentService.get().getFileRoot(c, FileContentService.ContentType.files));
             if (o == null)
             {
-                o = FileLinkDisplayColumn.relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(c, FileContentService.ContentType.pipeline));
+                o = FileLinkDisplayColumn.relativize(f, FileContentService.get().getFileRoot(c, FileContentService.ContentType.pipeline));
             }
             if (o == null)
             {

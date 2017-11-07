@@ -63,7 +63,7 @@ public class FileContentModule extends DefaultModule
     {
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
-        ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
+        FileContentService.setInstance(new FileContentServiceImpl());
         AttachmentService.get().registerAttachmentType(FileSystemAttachmentType.get());
     }
 
@@ -85,7 +85,7 @@ public class FileContentModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         List<String> result = new ArrayList<>();
-        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService service = FileContentService.get();
         File file = service.getFileRoot(c, FileContentService.ContentType.files);
         if (file != null && NetworkDrive.exists(file) && file.isDirectory())
         {
@@ -133,8 +133,8 @@ public class FileContentModule extends DefaultModule
                 }
             }
         }
-        return result;
 
+        return result;
     }
 
 

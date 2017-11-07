@@ -273,23 +273,16 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
-        ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
-        {
-            @NotNull
-            public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container)
-            {
-                return Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE);
-            }
-        });
+        ExperimentService.get().registerExperimentRunTypeSource(container -> Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE));
         ExperimentService.get().registerDataType(new LogDataType());
 
         AuditLogService.get().registerAuditType(new DomainAuditProvider());
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
 
-        ServiceRegistry.get(FileContentService.class).addFileListener(new ExpDataFileListener());
-        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
-        ServiceRegistry.get(FileContentService.class).addFileListener(new FileLinkFileListener());
+        FileContentService.get().addFileListener(new ExpDataFileListener());
+        FileContentService.get().addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
+        FileContentService.get().addFileListener(new FileLinkFileListener());
 
         ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
                                               {

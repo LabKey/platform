@@ -28,7 +28,6 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.services.ServiceRegistry;
 
 /**
  * User: kevink
@@ -56,7 +55,7 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
         {
             super(CoreSchema.getInstance().getSchema(), CoreQuerySchema.FILES_TABLE_NAME, schema);
 
-            FileContentService svc = ServiceRegistry.get(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             _query = new SQLFragment();
             _query.appendComment("<FileListTableInfo>", getSchema().getSqlDialect());
             _query.append(svc.listFilesQuery(schema.getUser()));

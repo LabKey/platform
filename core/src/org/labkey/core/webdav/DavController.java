@@ -63,7 +63,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
@@ -3296,7 +3295,7 @@ public class DavController extends SpringActionController
         Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
         File file = resource.getFile();
         if (null != file)
-            ServiceRegistry.get(FileContentService.class).fireFileCreateEvent(file, getUser(), srcContainer);
+            FileContentService.get().fireFileCreateEvent(file, getUser(), srcContainer);
         _log.debug("fireFileCreatedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
@@ -3673,7 +3672,7 @@ public class DavController extends SpringActionController
 
         if (src.getFile() != null && dest.getFile() != null)
         {
-            ServiceRegistry.get(FileContentService.class).fireFileMoveEvent(src.getFile(), dest.getFile(), getUser(), srcContainer);
+            FileContentService.get().fireFileMoveEvent(src.getFile(), dest.getFile(), getUser(), srcContainer);
         }
 
         removeFromIndex(src);

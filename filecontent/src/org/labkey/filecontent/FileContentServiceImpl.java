@@ -863,14 +863,14 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 .filter( prop -> prop.getName().equals("siteRootFile"))
                 .filter( prop -> prop.getModifier() != bootstrap || isBootstrap )
                 .forEach(prop -> {
-                        File fileRoot = new File(prop.getValue());
-                        FileContentServiceImpl.getInstance().setSiteDefaultRoot(fileRoot);
+                    File fileRoot = new File(prop.getValue());
+                    FileContentService.get().setSiteDefaultRoot(fileRoot);
                 });
     }
 
     public static FileContentServiceImpl getInstance()
     {
-        return (FileContentServiceImpl) ServiceRegistry.get(FileContentService.class);
+        return (FileContentServiceImpl) FileContentService.get();
     }
 
     @TestWhen(TestWhen.When.BVT)
@@ -1049,7 +1049,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         public void testStartupPropertiesForSiteRootSettings() throws Exception
         {
             // save the original Site Root File settings so that we can restore them when this test is done
-            File originalSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
+            File originalSiteRootFile = FileContentService.get().getSiteDefaultRoot();
 
             // create the new site root file to test with as a child of the current site root file so that we know it is in a dir that exist
             String originalSiteRootFilePath = originalSiteRootFile.getAbsolutePath();
@@ -1063,11 +1063,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             populateSiteRootFileWithStartupProps();
 
             // now check that the expected changes occured to the Site Root File settings on the server
-            File newSiteRootFile = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
+            File newSiteRootFile = FileContentService.get().getSiteDefaultRoot();
             Assert.assertEquals("The expected change in Site Root File was not found", testSiteRootFile.getAbsolutePath(), newSiteRootFile.getAbsolutePath());
 
             // restore the Site Root File server settings to how they were originally
-            FileContentServiceImpl.getInstance().setSiteDefaultRoot(originalSiteRootFile);
+            FileContentService.get().setSiteDefaultRoot(originalSiteRootFile);
             testSiteRootFile.delete();
         }
 

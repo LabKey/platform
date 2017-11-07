@@ -179,7 +179,7 @@
                                 remoteURI: ''
                             },
                             {
-                                localURI: <%=PageFlowUtil.jsString(ServiceRegistry.get(FileContentService.class).getSiteDefaultRoot().toURI().toString())%>,
+                                localURI: <%=PageFlowUtil.jsString(FileContentService.get().getSiteDefaultRoot().toURI().toString())%>,
                                 remoteURI: ''
                             }
                         ]
