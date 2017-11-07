@@ -32,8 +32,8 @@
 </td><td style="padding-left:20px; padding-bottom: 20px">
 <labkey:form method="GET" layout="inline" action='<%=new ActionURL("search", "search", container)%>'>
     <labkey:input label="Search Workbooks:" type="text" placeholder="Enter Text" id="wbtextsearch-id" name="q" size="40" value=""/>
-    <input type="hidden" name="container" value="<%=h(container.getId())%>"/>
-    <input type="hidden" name="includeSubfolders" value="1"/>
+    <labkey:input type="hidden" name="container" value="<%=h(container.getId())%>"/>
+    <labkey:input type="hidden" name="includeSubfolders" value="1"/>
     <%= button("Search").submit(true) %>
 </labkey:form>
 </td></tr></table>
