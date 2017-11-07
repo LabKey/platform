@@ -24,14 +24,14 @@
     Container container = getContainer();
 %>
 <table><tr>
-<td>
-<labkey:form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
-    Jump To Workbook: <input type="text" placeholder="Enter ID" id="wbsearch-id" name="id" size="10" value=""/>
+<td style="padding-bottom: 20px">
+<labkey:form method="GET" layout="inline" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
+    <labkey:input label="Jump To Workbook:" type="text" placeholder="Enter ID" id="wbsearch-id" name="id" value=""/>
     <%= button("Go").submit(true) %>
 </labkey:form>
-</td><td style="padding-left:20px;">
-<labkey:form method="GET" action='<%=new ActionURL("search", "search", container)%>'>
-    Search Workbooks: <input type="text" placeholder="Enter Text" id="wbtextsearch-id" name="q" size="40" value=""/>
+</td><td style="padding-left:20px; padding-bottom: 20px">
+<labkey:form method="GET" layout="inline" action='<%=new ActionURL("search", "search", container)%>'>
+    <labkey:input label="Search Workbooks:" type="text" placeholder="Enter Text" id="wbtextsearch-id" name="q" size="40" value=""/>
     <input type="hidden" name="container" value="<%=h(container.getId())%>"/>
     <input type="hidden" name="includeSubfolders" value="1"/>
     <%= button("Search").submit(true) %>
