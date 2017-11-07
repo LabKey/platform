@@ -32,29 +32,35 @@ import java.util.List;
  * @author brendanx
  */
 
-// TODO: Convert to an interface once #28535 is resolved
-abstract public class PipelineJobService implements TaskPipelineRegistry
+public interface PipelineJobService extends TaskPipelineRegistry
 {
-    public static final String VERSION_SUBSTITUTION = "${version}";
-    public static final String VERSION_PLAIN_SUBSTITUTION = "${versionPlain}";
+    String VERSION_SUBSTITUTION = "${version}";
+    String VERSION_PLAIN_SUBSTITUTION = "${versionPlain}";
 
-    private static PipelineJobService _instance;
-
-    public static PipelineJobService get()
+    /**
+     * We use Spring-based XML to register and wire up implementations, which breaks our standard ServiceRegistry
+     * methodology. Use this hack to manage the instance
+     */
+    class InstanceHolder
     {
-        return _instance;
+        private static PipelineJobService INSTANCE;
     }
 
-    public static void setInstance(PipelineJobService instance)
+    static PipelineJobService get()
     {
-        PipelineJobService._instance = instance;
+        return InstanceHolder.INSTANCE;
+    }
+
+    static void setInstance(PipelineJobService instance)
+    {
+        InstanceHolder.INSTANCE = instance;
     }
 
     /**
      * <code>ApplicationProperties</code> are set through the Site Settings page
      * on the web server, and through config on remote machines.
      */
-    public interface ApplicationProperties
+    interface ApplicationProperties
     {
         String getToolsDirectory();
 
@@ -68,7 +74,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
      * <code>ConfigProperties</code> may be desirable on an machine, but may
      * only be set through config.
      */
-    public interface ConfigProperties
+    interface ConfigProperties
     {
         String getSoftwarePackagePath(String packageName);
     }
@@ -76,7 +82,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     /**
      * <code>RemoteServerProperties</code> are only used on a remote server instance.
      */
-    public interface RemoteServerProperties
+    interface RemoteServerProperties
     {
         String getLocation();
         String getMuleConfig();
@@ -89,7 +95,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     }
 
     /** Configuration for a {@link RemoteExecutionEngine}. Expected to be registered via Spring XML configuration files. */
-    public interface RemoteExecutionEngineConfig
+    interface RemoteExecutionEngineConfig
     {
         /** @return the pipeline location to which this configuration is bound, and for which jobs should be routed to the associated engine */
         @NotNull
@@ -104,26 +110,25 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         PathMapper getPathMapper();
     }
 
-    abstract public ApplicationProperties getAppProperties();
+    ApplicationProperties getAppProperties();
 
-    abstract public ConfigProperties getConfigProperties();
+    ConfigProperties getConfigProperties();
 
-    abstract public RemoteServerProperties getRemoteServerProperties();
+    RemoteServerProperties getRemoteServerProperties();
 
-    @NotNull
-    abstract public LocationType getLocationType();
+    @NotNull LocationType getLocationType();
 
     /** @return all of the engines that are currently known to the pipeline module */
-    abstract public List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
+    List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
 
     /** Registers a remote execution engine. Intended for calling during module startup */
-    abstract public void registerRemoteExecutionEngine(RemoteExecutionEngine engine);
+    void registerRemoteExecutionEngine(RemoteExecutionEngine engine);
 
     /**
      * @param exeRel if relative, interpreted based on either the installPath or tools directory
      * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
      */
-    abstract public String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
+    String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
     /**
      * Similar to getExecutablePath(), but allows resolution of non-executable tool directory files
@@ -131,34 +136,34 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
      * @param exeRel if relative, interpreted based on either the installPath or tools directory
      * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
      */
-    abstract public String getToolPath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
+    String getToolPath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
     /**
      * @param jarRel if relative, interpreted based on either the installPath or tools directory
      * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
      */
-    abstract public String getJarPath(String jarRel, @Nullable String installPath, String packageName, String ver) throws FileNotFoundException;
+    String getJarPath(String jarRel, @Nullable String installPath, String packageName, String ver) throws FileNotFoundException;
 
-    abstract public String getJavaPath() throws FileNotFoundException;
+    String getJavaPath() throws FileNotFoundException;
     
-    abstract public ParamParser createParamParser();
+    ParamParser createParamParser();
 
-    abstract public WorkDirFactory getWorkDirFactory();
+    WorkDirFactory getWorkDirFactory();
 
-    abstract public WorkDirFactory getLargeWorkDirFactory();
+    WorkDirFactory getLargeWorkDirFactory();
 
-    abstract public PathMapper getPathMapper();
+    PathMapper getPathMapper();
 
-    abstract public PipelineStatusFile.StatusWriter getStatusWriter();
+    PipelineStatusFile.StatusWriter getStatusWriter();
 
-    abstract public PipelineStatusFile.JobStore getJobStore();
+    PipelineStatusFile.JobStore getJobStore();
 
-    public static String statusPathOf(String path)
+    static String statusPathOf(String path)
     {
         return (path == null ? null : path.replace('\\', '/'));
     }
 
-    public enum LocationType
+    enum LocationType
     {
         /** Any of the various queues that are managed and run directly on the web server */
         WebServer,
