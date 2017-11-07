@@ -30,6 +30,9 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -599,5 +602,14 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     public boolean hasDbTriggers()
     {
         return getRealTable().hasDbTriggers();
+    }
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (ReadPermission.class.isAssignableFrom(perm))
+        {
+            return _userSchema.getContainer().hasPermission(user, perm);
+        }
+        return super.hasPermission(user, perm);
     }
 }
