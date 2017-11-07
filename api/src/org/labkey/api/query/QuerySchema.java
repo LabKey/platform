@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -49,9 +50,11 @@ public interface QuerySchema extends SchemaTreeNode
     Collection<QuerySchema> getSchemas(boolean includeHidden);
 
     /** @return the simple name for this schema, excluding any parent schema names */
+    @NotNull
     String getName();
 
     /** @return a SchemaKey encoded name for this schema. */
+    @NotNull
     String getSchemaName();
 
     /** @return short description of the content and purpose of the schema */

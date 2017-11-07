@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -45,10 +46,22 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
          * That is, the folder "/home/myflowfolder/flow" can be found by doing "project.myflowfolder.folder.flow", and
          * the flow schema in "/home/myflowfolder" is "project.myflowfolder.flow".  
          */
-        public FolderSchema(User user, Container container, QuerySchema fallback)
+        public FolderSchema(@NotNull String name, User user, Container container, QuerySchema fallback)
         {
-            super(null, null, user, container, CoreSchema.getInstance().getSchema());
+            super(name, null, user, container, CoreSchema.getInstance().getSchema());
             _fallback = fallback;
+        }
+
+        @Override
+        public boolean isHidden()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isFolder()
+        {
+            return true;
         }
 
         public DbSchema getDbSchema()
@@ -106,7 +119,7 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
                 fallback = DefaultSchema.get(_user, child);
             }
 
-            return new FolderSchema(_user, child, fallback);
+            return new FolderSchema(name, _user, child, fallback);
         }
 
         @Override

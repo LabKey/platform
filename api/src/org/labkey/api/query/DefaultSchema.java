@@ -32,6 +32,7 @@ import org.labkey.api.visualization.VisualizationProvider;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -99,7 +100,7 @@ final public class DefaultSchema extends AbstractSchema
         {
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                return new FolderSchema(schema.getUser(), schema.getContainer(), null);
+                return new FolderSchema("Folder", schema.getUser(), schema.getContainer(), null);
             }
         });
         registerProvider("Project", new FolderSchemaProvider()
@@ -112,21 +113,21 @@ final public class DefaultSchema extends AbstractSchema
                     // No project available from the root container
                     return null;
                 }
-                return new FolderSchema(schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
+                return new FolderSchema("Project", schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
             }
         });
         registerProvider("Shared", new FolderSchemaProvider(){
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getSharedContainer();
-                return new FolderSchema(schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
+                return new FolderSchema("Shared", schema.getUser(), container, DefaultSchema.get(schema.getUser(), container));
             }
         });
         registerProvider("Site", new FolderSchemaProvider(){
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getRoot();
-                return new FolderSchema(schema.getUser(), container, null);
+                return new FolderSchema("Site", schema.getUser(), container, null);
             }
         });
     }
@@ -201,16 +202,18 @@ final public class DefaultSchema extends AbstractSchema
 
     public QuerySchema getSchema(@NotNull String name)
     {
+        Objects.requireNonNull(name, "null schema name");
+
         SchemaProvider provider = _providers.get(name);
         if (provider != null)
             return provider.getSchema(this);
 
-        if (name != null && name.startsWith("/"))
+        if (name.startsWith("/"))
         {
             Container project = ContainerManager.getForPath(name);
             if (project != null && project.hasPermission(getUser(), ReadPermission.class))
             {
-                return new FolderSchemaProvider.FolderSchema(getUser(), project, DefaultSchema.get(getUser(), project));
+                return new FolderSchemaProvider.FolderSchema(name, getUser(), project, DefaultSchema.get(getUser(), project));
             }
         }
 
@@ -248,7 +251,7 @@ final public class DefaultSchema extends AbstractSchema
                 continue;
             }
             UserSchema userSchema = (UserSchema) schema;
-            if (userSchema.getName() == null)
+            if (userSchema.isFolder())
                 continue;
             if (!includeHidden && userSchema.isHidden())
                 continue;
@@ -303,6 +306,7 @@ final public class DefaultSchema extends AbstractSchema
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
+    @NotNull
     public String getSchemaName()
     {
         return getName();

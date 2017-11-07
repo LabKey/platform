@@ -58,7 +58,7 @@ abstract public class AbstractSchema implements QuerySchema
     public final @Nullable UserSchema getUserSchema(String name)
     {
         QuerySchema schema = getSchema(name);
-        if ((schema instanceof UserSchema) && schema.getName() != null)
+        if ((schema instanceof UserSchema) && !((UserSchema) schema).isFolder())
             return (UserSchema)schema;
 
         return null;
@@ -149,5 +149,11 @@ abstract public class AbstractSchema implements QuerySchema
     public boolean isHidden()
     {
         return _hidden;
+    }
+
+    /** True if this schema is a FolderSchema representing a Container rather than a real query schema. */
+    public boolean isFolder()
+    {
+        return false;
     }
 }

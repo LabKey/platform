@@ -22,6 +22,7 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -78,12 +79,19 @@ import java.util.Objects;
     {
         if (parts.size() == 0)
             return null;
+
+        if (parts.stream().anyMatch(Objects::isNull))
+            throw new IllegalArgumentException("parts contains null: " + StringUtils.join(parts, "."));
+
         T parent = QueryKey.fromParts(factory, parts.subList(0, parts.size() - 1));
         return factory.create(parent, parts.get(parts.size() - 1));
     }
 
     static public <T extends QueryKey<T>> T fromParts(Factory<T> factory, T... parts)
     {
+        if (Arrays.stream(parts).anyMatch(Objects::isNull))
+            throw new IllegalArgumentException("parts contains null: " + StringUtils.join(parts, "."));
+
         T cur = null;
         for (T key : parts)
         {
@@ -128,12 +136,12 @@ import java.util.Objects;
     final int _hash;
 
 
-    protected QueryKey(QueryKey<T> parent, String name)
+    protected QueryKey(QueryKey<T> parent, @NotNull String name)
     {
+        Objects.requireNonNull(name, "name must not be null");
         _parent = parent;
         _name = name;
-        // NOTE: FolderSchema creates a SchmeaKey with name==null?!
-        _hash =  (null==_name ? 0 :_name.toLowerCase().hashCode()) ^ Objects.hashCode(_parent);
+        _hash = _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
     }
 
     protected QueryKey(QueryKey<T> parent, Enum name)

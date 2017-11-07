@@ -60,7 +60,7 @@ public class JsonWriter
             FieldKey fieldKey;
             ColumnInfo cinfo = displayColumn.getColumnInfo();
             if (cinfo != null && null != cinfo.getFieldKey())
-                fieldKey = FieldKey.fromParts(fieldKeyPrefix, cinfo.getFieldKey());
+                fieldKey = fieldKeyPrefix == null ? cinfo.getFieldKey() : FieldKey.fromParts(fieldKeyPrefix, cinfo.getFieldKey());
             else
                 fieldKey = new FieldKey(fieldKeyPrefix, displayColumn.getName());
 
@@ -108,7 +108,7 @@ public class JsonWriter
 
         props.put("fieldKey", fieldKey.toString());
         props.put("fieldKeyArray", new JSONArray(fieldKey.getParts()));
-        props.put("fieldKeyPath", FieldKey.fromParts(fieldKeyPrefix, fieldKey).toString());
+        props.put("fieldKeyPath", (fieldKeyPrefix == null ? fieldKey : FieldKey.fromParts(fieldKeyPrefix, fieldKey)).toString());
 
         // Duplicate booleans with alternate property name for backwards compatibility
         boolean autoIncrement = cinfo != null && cinfo.isAutoIncrement();

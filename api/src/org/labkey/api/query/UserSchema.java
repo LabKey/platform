@@ -61,20 +61,21 @@ import java.util.TreeMap;
 
 abstract public class UserSchema extends AbstractSchema implements MemTrackable
 {
-    protected String _name;
-    protected SchemaKey _path;
-    protected String _description;
+    protected final String _name;
+    protected final SchemaKey _path;
+    protected final String _description;
+
     protected boolean _cacheTableInfos = false;
     protected boolean _restricted = false;      // restricted schemas will return null from getSchema()
     protected final Collection<UserSchemaCustomizer> _schemaCustomizers;
     private boolean hasRegisteredSchemaLinks = false;
 
-    public UserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
+    public UserSchema(@NotNull String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
         this(SchemaKey.fromParts(name), description, user, container, dbSchema, null);
     }
 
-    public UserSchema(SchemaKey path, @Nullable String description, User user, Container container, DbSchema dbSchema, Collection<UserSchemaCustomizer> schemaCustomizers)
+    public UserSchema(@NotNull SchemaKey path, @Nullable String description, User user, Container container, DbSchema dbSchema, Collection<UserSchemaCustomizer> schemaCustomizers)
     {
         super(dbSchema, user, container);
         _name = path.getName();
