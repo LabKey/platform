@@ -57,12 +57,6 @@ public class ParticipantGroupFilterClause extends SimpleFilter.FilterClause
     }
 
     @Override
-    public List<String> getColumnNames()
-    {
-        return Collections.singletonList(_ptid.getName());
-    }
-
-    @Override
     public List<FieldKey> getFieldKeys()
     {
         return Collections.singletonList(_ptid);
