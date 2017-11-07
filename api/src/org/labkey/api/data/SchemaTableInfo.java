@@ -72,7 +72,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A thin wrapper over a table in the real underlying database.
+ * A thin wrapper over a table in the real underlying database. Includes JDBC-provided metadata and configuration
+ * performed in schema-based XML file.
  */
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditConfigurable
 {
@@ -655,7 +656,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        // First null check is critcal for server startup... can't initialize LINK_DISABLER until first request
+        // First null check is critical for server startup... can't initialize LINK_DISABLER until first request
         if (null == _detailsURL || _detailsURL == AbstractTableInfo.LINK_DISABLER)
         {
             return null;
@@ -1042,8 +1043,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         {
             URLHelper url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.Name.name()); // CONSIDER: Use DisplayFieldKey instead
-            if (url != null)
-                templates.add(Pair.of("Download Template", url.toString()));
+            templates.add(Pair.of("Download Template", url.toString()));
         }
 
         return templates;
