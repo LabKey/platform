@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
@@ -41,8 +42,18 @@ public interface FileContentService
     String FILE_SETS_LINK = "@filesets";
     String PIPELINE_LINK = "@pipeline";
 
+    static @Nullable FileContentService get()
+    {
+        return ServiceRegistry.get(FileContentService.class);
+    }
+
+    static void setInstance(FileContentService impl)
+    {
+        ServiceRegistry.get().registerService(FileContentService.class, impl);
+    }
+
     /**
-     * Returns the file root of the specified container.  It not explicitly defined,
+     * Returns the file root of the specified container. If not explicitly defined,
      * it will default to a path relative to the first parent container with an override
      */
     File getFileRoot(Container c);

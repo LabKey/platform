@@ -33,7 +33,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -186,10 +185,10 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         {
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(value.toString()));
             NetworkDrive.ensureDrive(f.getPath());
-            result = relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(_container, FileContentService.ContentType.files));
+            result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.files));
             if (result == null)
             {
-                result = relativize(f, ServiceRegistry.get(FileContentService.class).getFileRoot(_container, FileContentService.ContentType.pipeline));
+                result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.pipeline));
             }
             if (result == null)
             {

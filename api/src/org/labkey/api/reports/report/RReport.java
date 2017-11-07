@@ -61,7 +61,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -139,13 +138,7 @@ public class RReport extends ExternalScriptEngineReport
     {
         if (DEFAULT_APP_PATH == null)
         {
-            DEFAULT_APP_PATH = getDefaultAppPath(new FilenameFilter()
-            {
-                public boolean accept(File dir, String name)
-                {
-                    return "r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name);
-                }
-            });
+            DEFAULT_APP_PATH = getDefaultAppPath((dir, name) -> "r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name));
         }
 
         return DEFAULT_APP_PATH;
@@ -293,10 +286,10 @@ public class RReport extends ExternalScriptEngineReport
         }
 
         // Root path to resolve system files in reports
-        File root = ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.files);
+        File root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.files);
         if (root != null)
         {
-            labkey.append("labkey.file.root <- \"" + root.getPath().replaceAll("\\\\", "/") +"\"\n");
+            labkey.append("labkey.file.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
         }
         else
         {
@@ -304,10 +297,10 @@ public class RReport extends ExternalScriptEngineReport
         }
 
         // Root path to resolve pipeline files in reports
-        root = ServiceRegistry.get(FileContentService.class).getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline);
+        root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline);
         if (root != null)
         {
-            labkey.append("labkey.pipeline.root <- \"" + root.getPath().replaceAll("\\\\", "/") + "\"\n");
+            labkey.append("labkey.pipeline.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
         }
         else
         {
@@ -321,11 +314,11 @@ public class RReport extends ExternalScriptEngineReport
 
             File pipelineRoot = getPipelineRoot(context);
             String localPath = getLocalPath(pipelineRoot);
-            labkey.append("labkey.pipeline.root <- \"" + localPath + "\"\n");
+            labkey.append("labkey.pipeline.root <- \"").append(localPath).append("\"\n");
 
             // include remote paths so that the client can fixup any file references
             String remotePath = rengine.getRemotePath(pipelineRoot);
-            labkey.append("labkey.remote.pipeline.root <- \"" + remotePath + "\"\n");
+            labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
         }
 
         // session information
