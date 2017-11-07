@@ -239,7 +239,7 @@ public class Query
     public void decorateException(Exception e)
     {
         ExceptionUtil.decorateException(e, LabkeySQL, _querySource, false);
-        if (null != getSchema() && null != getSchema().getName())
+        if (null != getSchema())
             ExceptionUtil.decorateException(e, QuerySchema, getSchema().getName(), false);
         if (null != _name)
             ExceptionUtil.decorateException(e, QueryName, _name, false);

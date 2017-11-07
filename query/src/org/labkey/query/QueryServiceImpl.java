@@ -366,7 +366,7 @@ public class QueryServiceImpl implements QueryService
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && schema.getName() != null)
+        if (schema instanceof UserSchema && !((UserSchema)schema).isFolder())
             return (UserSchema)schema;
 
         return null;
@@ -375,7 +375,7 @@ public class QueryServiceImpl implements QueryService
     public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && schema.getName() != null)
+        if (schema instanceof UserSchema && !((UserSchema)schema).isFolder())
             return (UserSchema)schema;
 
         return null;
@@ -728,7 +728,7 @@ public class QueryServiceImpl implements QueryService
     {
         for (QuerySchema querySchema : schema.getSchemas(false))
         {
-            if (querySchema.getName() != null)
+            if (querySchema instanceof UserSchema && !((UserSchema)querySchema).isFolder())
             {
                 UserSchema userSchema = schema.getUserSchema(querySchema.getName());
                 if (userSchema != null)

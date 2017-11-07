@@ -175,7 +175,15 @@ public class StudyQuerySchema extends UserSchema
      */
     private StudyQuerySchema(@Nullable StudyImpl study, Container c, User user, boolean mustCheckPermissions)
     {
-        super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, c, StudySchema.getInstance().getSchema());
+        this(SchemaKey.fromParts(SCHEMA_NAME), SCHEMA_DESCRIPTION, study, c, user, mustCheckPermissions);
+    }
+
+    /**
+     * This c-tor is for nested study schemas
+     */
+    private StudyQuerySchema(SchemaKey path, String description, @Nullable StudyImpl study, Container c, User user, boolean mustCheckPermissions)
+    {
+        super(path, description, user, c, StudySchema.getInstance().getSchema(), null);
         _study = study;
         _mustCheckPermissions = mustCheckPermissions;
     }
@@ -1208,11 +1216,8 @@ public class StudyQuerySchema extends UserSchema
 
         DatasetSchema(StudyQuerySchema parent)
         {
-            super(parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
-            this._name = "Datasets";
-            this._path = new SchemaKey(parent.getSchemaPath(),this._name);
+            super(new SchemaKey(parent.getSchemaPath(), "Datasets"), "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
             _parentSchema = parent;
-            _description = "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.";
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
 
@@ -1267,11 +1272,8 @@ public class StudyQuerySchema extends UserSchema
 
         SpecimenSchema(StudyQuerySchema parent)
         {
-            super(parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
-            this._name = "Specimens";
-            this._path = new SchemaKey(parent.getSchemaPath(),this._name);
+            super(new SchemaKey(parent.getSchemaPath(), "Specimens"), "Specimen repository", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
             _parentSchema = parent;
-            _description = "Specimen repository";
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
 
@@ -1336,11 +1338,8 @@ public class StudyQuerySchema extends UserSchema
 
         DesignSchema(StudyQuerySchema parent)
         {
-            super(parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
-            this._name = "Design";
-            this._path = new SchemaKey(parent.getSchemaPath(),this._name);
+            super(new SchemaKey(parent.getSchemaPath(), "Design"), "Contains all study design", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
             _parentSchema = parent;
-            _description = "Contains all study design";
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
 
