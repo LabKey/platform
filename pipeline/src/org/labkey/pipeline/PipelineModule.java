@@ -42,7 +42,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
@@ -80,7 +79,6 @@ import org.labkey.pipeline.validators.PipelineSetupValidator;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
 
-import javax.servlet.ServletContext;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -178,31 +176,11 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             ContextListener.addShutdownListener(listener);
         }
 
-        // Issue 19407. Need to delay restarting jobs until after all modules have started up, or we
-        // may try to restart a job whose pipeline hasn't yet been registered
-        ContextListener.addStartupListener(new StartupListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "PipelineJobRestarter";
-            }
-
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                // Restart any jobs that were in process or in the queue when the server shut down
-                Thread restarterThread = new Thread(new JobRestarter());
-                restarterThread.start();
-            }
-        });
-
-        PipelineEmailPreferences.get().startNotificationTasks();
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
         WebdavService.get().addProvider(new PipelineWebdavProvider());
 
-        ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
+        FileContentService.get().addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
         SiteValidationService svc = ServiceRegistry.get().getService(SiteValidationService.class);
         if (null != svc)
         {
@@ -212,7 +190,19 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
     }
 
+    @Override
+    public void startBackgroundThreads()
+    {
+        PipelineEmailPreferences.get().startNotificationTasks();
 
+        // Issue 19407. Need to delay restarting jobs until after all modules have started up, or we may try to restart
+        // a job whose pipeline hasn't yet been registered. Invoking from startBackgroundThreads() ensures that startup
+        // is complete and the base URL has been set.
+
+        // Restart any jobs that were in process or in the queue when the server shut down
+        Thread restarterThread = new Thread(new JobRestarter());
+        restarterThread.start();
+    }
 
     @NotNull
     @Override
@@ -283,16 +273,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         public void run()
         {
-            // Wait for the server to finish starting up. This is required so that all modules have a chance to register
-            // their task and job implementations
-            while (!ModuleLoader.getInstance().isStartupComplete())
-            {
-                try
-                {
-                    Thread.sleep(5000);
-                }
-                catch (InterruptedException ignored) {}
-            }
+            assert ModuleLoader.getInstance().isStartupComplete();
 
             // If the queue is in local server memory, then we need to restart all
             // jobs on server restart.
