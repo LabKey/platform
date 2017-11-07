@@ -1451,6 +1451,7 @@ public class SimpleFilter implements Filter
     }
 
     // NOTE: We really should take FieldKey instead of String as map key.
+    @Deprecated // Use FieldKey version below. TODO: Remove this
     public boolean meetsCriteria(Map<String, ?> map)
     {
         if (_clauses == null || _clauses.isEmpty())
@@ -1466,6 +1467,28 @@ public class SimpleFilter implements Filter
 
             String column = columns.get(0);
             Object value = map.get(column);
+            if (!clause.meetsCriteria(value))
+                return false;
+        }
+
+        return true;
+    }
+
+    public boolean meetsCriteriaFK(Map<FieldKey, ?> map)
+    {
+        if (_clauses == null || _clauses.isEmpty())
+            return true;
+
+        for (FilterClause clause : _clauses)
+        {
+            List<FieldKey> fieldKeys = clause.getFieldKeys();
+            if (fieldKeys.size() == 0)
+                throw new IllegalArgumentException("Expected filter criteria column name");
+            if (fieldKeys.size() > 1)
+                throw new IllegalArgumentException("Can't check filter criteria of multi-column clauses");
+
+            FieldKey fieldKey = fieldKeys.get(0);
+            Object value = map.get(fieldKey);
             if (!clause.meetsCriteria(value))
                 return false;
         }
