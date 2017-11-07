@@ -50,6 +50,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
@@ -222,7 +223,12 @@ public class SimpleFilter implements Filter
          * @deprecated Use {@link #getFieldKeys()}
          */
         @Deprecated
-        abstract public List<String> getColumnNames();
+        public List<String> getColumnNames()
+        {
+            return getFieldKeys().stream()
+                .map(fk->fk.toString())
+                .collect(Collectors.toList());
+        }
 
         abstract public List<FieldKey> getFieldKeys();
 
@@ -338,8 +344,8 @@ public class SimpleFilter implements Filter
 
     public static class SQLClause extends FilterClause
     {
-        SQLFragment _fragment;
-        private List<FieldKey> _fieldKeys = new ArrayList<>();
+        private final SQLFragment _fragment;
+        private final List<FieldKey> _fieldKeys;
 
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
@@ -361,14 +367,6 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return _fragment;
-        }
-
-        public List<String> getColumnNames()
-        {
-            List<String> colNames = new ArrayList<>(_fieldKeys.size());
-            for (FieldKey fieldKey : _fieldKeys)
-                colNames.add(fieldKey.toString());
-            return colNames;
         }
 
         public List<FieldKey> getFieldKeys()
@@ -395,23 +393,13 @@ public class SimpleFilter implements Filter
 
     public abstract static class OperationClause extends FilterClause
     {
-        private List<FilterClause> _clauses;
-        private String _operation;
+        private final String _operation;
+        private final List<FilterClause> _clauses;
 
         protected OperationClause(String operation, FilterClause... clauses)
         {
             _operation = operation;
             _clauses = new ArrayList<>(Arrays.asList(clauses));
-        }
-
-        public List<String> getColumnNames()
-        {
-            List<String> result = new ArrayList<>();
-            for (FilterClause clause : _clauses)
-            {
-                result.addAll(clause.getColumnNames());
-            }
-            return result;
         }
 
         public List<FieldKey> getFieldKeys()
@@ -540,11 +528,6 @@ public class SimpleFilter implements Filter
         public NotClause(FilterClause clause)
         {
             _clause = clause;
-        }
-
-        public List<String> getColumnNames()
-        {
-            return _clause.getColumnNames();
         }
 
         public List<FieldKey> getFieldKeys()
@@ -716,15 +699,15 @@ public class SimpleFilter implements Filter
             if (params.length == 0)
             {
                 if (isIncludeNull())
-                    in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
+                    in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
                 else if (!isNegated())
-                    in.append(alias + " IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                    in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
 
                 return in.toString();
             }
 
-            in.append("((" + alias);
-            in.append(" " + (isNegated() ? "NOT " : "") + "IN (");
+            in.append("((").append(alias);
+            in.append(" ").append(isNegated() ? "NOT " : "").append("IN (");
             String sep = "";
 
             for (Object param : params)
@@ -921,7 +904,7 @@ public class SimpleFilter implements Filter
             if(oc.getClauses().size() > 0)
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
-            return in.append(alias + (isNegated() ? " NOT IN " : " IN ") + "(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            return in.append(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
         }
 
         private OperationClause getContainsClause(ColumnInfo colInfo)

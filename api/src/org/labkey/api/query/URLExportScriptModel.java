@@ -90,7 +90,7 @@ public class URLExportScriptModel extends ExportScriptModel
         url.addParameter("query.columns", getColumns());
 
         if (hasQueryParameters())
-            getQueryParameters().entrySet().forEach(e->url.addParameter("query.param." + e.getKey(), e.getValue()));
+            getQueryParameters().forEach((key, value) -> url.addParameter("query.param." + key, value));
 
         if (hasSort())
             url.addParameter("query.sort", getSort());

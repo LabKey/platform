@@ -1019,13 +1019,6 @@ public abstract class ContainerFilter
         }
 
         @Override
-        @Deprecated // Use getFieldKeys() instead.
-        public List<String> getColumnNames()
-        {
-            return Collections.singletonList(_fieldKey.toString());
-        }
-
-        @Override
         public List<FieldKey> getFieldKeys()
         {
             return Collections.singletonList(_fieldKey);

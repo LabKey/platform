@@ -475,14 +475,6 @@ public interface SearchService
             return _sqlf;
         }
 
-        public List<String> getColumnNames()
-        {
-            List<String> names = new ArrayList<>(_fieldKeys.size());
-            for (FieldKey fieldKey : _fieldKeys)
-                names.add(fieldKey.toString());
-            return names;
-        }
-
         public List<FieldKey> getFieldKeys()
         {
             return new ArrayList<>(_fieldKeys);

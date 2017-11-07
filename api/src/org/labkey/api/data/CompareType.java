@@ -179,6 +179,7 @@ public abstract class CompareType
                 return ((Comparable)value).compareTo(filterValue) > 0;
             }
         };
+
     public static final CompareType DATE_GT = new CompareType("(Date) Is Greater Than", "dategt", "DATE_GREATER_THAN", true, " >= ?", OperatorType.GTE) // GT --> >= roundup(date)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -211,6 +212,7 @@ public abstract class CompareType
                 return ((Comparable)value).compareTo(filterValue) < 0;
             }
         };
+
     public static final CompareType DATE_LT = new CompareType("(Date) Is Less Than", "datelt", "DATE_LESS_THAN", true, " < ?", OperatorType.LT)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -243,6 +245,7 @@ public abstract class CompareType
                 return ((Comparable)value).compareTo(filterValue) >= 0;
             }
         };
+
     public static final CompareType DATE_GTE = new CompareType("(Date) Is Greater Than or Equal To", "dategte", "DATE_GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -275,6 +278,7 @@ public abstract class CompareType
                 return ((Comparable)value).compareTo(filterValue) <= 0;
             }
         };
+
     public static final CompareType DATE_LTE = new CompareType("(Date) Is Less Than or Equal To", "datelte", "DATE_LESS_THAN_OR_EQUAL", true, " < ?", OperatorType.LT)  // LTE --> < roundup(date)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -303,6 +307,7 @@ public abstract class CompareType
                 return value != null && value.toString().startsWith((String)filterValues[0]);
             }
         };
+
     public static final CompareType DOES_NOT_START_WITH = new CompareType("Does Not Start With", "doesnotstartwith", "DOES_NOT_START_WITH", true, null, OperatorType.DOESNOTSTARTWITH)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -327,9 +332,10 @@ public abstract class CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
             {
-                return value != null && value.toString().indexOf((String)filterValues[0]) != -1;
+                return value != null && value.toString().contains((String) filterValues[0]);
             }
         };
+
     public static final CompareType DOES_NOT_CONTAIN = new CompareType("Does Not Contain", "doesnotcontain", "DOES_NOT_CONTAIN", true, null, OperatorType.DOESNOTCONTAIN)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -340,7 +346,7 @@ public abstract class CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
             {
-                return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
+                return value == null || !value.toString().contains((String) filterValues[0]);
             }
         };
 
@@ -805,7 +811,7 @@ public abstract class CompareType
         _sql = sql;
     }
 
-    public static final Collection<CompareType> values()
+    public static Collection<CompareType> values()
     {
         return QueryService.get().getCompareTypes();
     }
@@ -959,11 +965,6 @@ public abstract class CompareType
         public List<FieldKey> getFieldKeys()
         {
             return Arrays.asList(getFieldKey());
-        }
-
-        public List<String> getColumnNames()
-        {
-            return Arrays.asList(getFieldKey().toString());
         }
 
         public abstract CompareType getCompareType();
@@ -1768,15 +1769,6 @@ public abstract class CompareType
         }
 
         @Override
-        public List<String> getColumnNames()
-        {
-            List<String> names = new ArrayList<>();
-            names.add(_fieldKey.toString());
-            names.add(_fieldKey.toString() + MvColumn.MV_INDICATOR_SUFFIX);
-            return names;
-        }
-
-        @Override
         public List<FieldKey> getFieldKeys()
         {
             List<FieldKey> names = new ArrayList<>();
@@ -1881,6 +1873,7 @@ public abstract class CompareType
     {
         SQLFragment ret = new SQLFragment();
         ret.append("(").append(groupIdSQL).append(") IN (");
+
         if (dialect.isPostgreSQL())
         {
             ret.append(

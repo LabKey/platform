@@ -18,9 +18,20 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerTable;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DelegatingContainerFilter;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpSchema;
@@ -115,6 +126,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
     private TableInfo _tableInfo = null;
+
     private TableInfo findTableInfo(Container container)
     {
         if (container == null)
@@ -184,12 +196,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
     }
 
-
-    @Override
-    public String getLookupColumnName()
-    {
-        return super.getLookupColumnName();
-    }
 
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
