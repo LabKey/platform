@@ -49,6 +49,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -95,6 +96,7 @@ import java.util.zip.ZipOutputStream;
 public class XarExporter
 {
     private final URLRewriter _urlRewriter;
+    private final User _user;
     private final ExperimentArchiveDocument _document;
     private final ExperimentArchiveType _archive;
 
@@ -121,18 +123,19 @@ public class XarExporter
 
     private boolean _includeXML = true;
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter)
+    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
     {
         _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer);
         _urlRewriter = urlRewriter;
+        _user = user;
 
         _document = ExperimentArchiveDocument.Factory.newInstance();
         _archive = _document.addNewExperimentArchive();
     }
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName, Logger log) throws SQLException, ExperimentException
+    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws SQLException, ExperimentException
     {
-        this(lsidRelativizer, selection.createURLRewriter());
+        this(lsidRelativizer, selection.createURLRewriter(), user);
         _log = log;
 
         selection.addContent(this);
@@ -172,7 +175,7 @@ public class XarExporter
         ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
 
         File rootPath = FileUtil.getAbsoluteCaseSensitiveFile(data.getFile().getParentFile());
-        u.addFile(data, data.getFile(), "", rootPath, data.findDataHandler());
+        u.addFile(data, data.getFile(), "", rootPath, data.findDataHandler(), _user);
     }
 
     public void addExperimentRun(ExpRun run) throws ExperimentException
@@ -331,7 +334,7 @@ public class XarExporter
             }
 
             ExpDataImpl expData = new ExpDataImpl(data);
-            String url = _urlRewriter.rewriteURL(expData.getFile(), expData, roleName, run);
+            String url = _urlRewriter.rewriteURL(expData.getFile(), expData, roleName, run, _user);
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
                 if (url != null && !"".equals(url))
@@ -675,7 +678,7 @@ public class XarExporter
         String url = null;
         if (f != null)
         {
-            url = _urlRewriter.rewriteURL(f, data, role, run);
+            url = _urlRewriter.rewriteURL(f, data, role, run, _user);
         }
         xData.setName(data.getName());
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
@@ -939,7 +942,7 @@ public class XarExporter
                                     File f = new File(uri);
                                     if (f.exists())
                                     {
-                                        link = _urlRewriter.rewriteURL(f, null, null, null);
+                                        link = _urlRewriter.rewriteURL(f, null, null, null, _user);
                                     }
                                 }
                             }

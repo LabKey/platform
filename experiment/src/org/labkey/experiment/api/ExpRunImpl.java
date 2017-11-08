@@ -78,6 +78,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private List<ExpMaterial> _materialOutputs = new ArrayList<>();
     private List<ExpData> _dataOutputs = new ArrayList<>();
     private ExpRunImpl _replacedByRun;
+    private Integer _maxOutputActionSequence = null;
     private static final Logger LOG = Logger.getLogger(ExpRunImpl.class);
 
     static public List<ExpRunImpl> fromRuns(List<ExperimentRun> runs)
@@ -165,6 +166,24 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public ExpProtocolImpl getProtocol()
     {
         return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
+    }
+
+    @Override
+    public boolean isFinalOutput(ExpData data)
+    {
+        return data.getSourceApplication().getActionSequence() == getMaxOutputActionSequence();
+    }
+
+    private int getMaxOutputActionSequence()
+    {
+        if (_maxOutputActionSequence == null)
+        {
+            _maxOutputActionSequence = 0;
+            for (ExpProtocolApplication app : getProtocolApplications())
+                if (!app.getDataOutputs().isEmpty() && app.getActionSequence() > _maxOutputActionSequence)
+                    _maxOutputActionSequence = app.getActionSequence();
+        }
+        return _maxOutputActionSequence;
     }
 
     @Override

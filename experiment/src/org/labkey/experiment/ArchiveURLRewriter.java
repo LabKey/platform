@@ -21,6 +21,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 
@@ -43,7 +44,7 @@ public class ArchiveURLRewriter extends URLRewriter
         _roles = roles == null ? null : new CaseInsensitiveHashSet(roles);
     }
 
-    public String rewriteURL(File f, ExpData data, String roleName, ExpRun run) throws ExperimentException
+    public String rewriteURL(File f, ExpData data, String roleName, ExpRun run, User user) throws ExperimentException
     {
         if (f != null && (_roles == null || _roles.contains(roleName)))
         {
@@ -57,7 +58,7 @@ public class ArchiveURLRewriter extends URLRewriter
             {
                 rootDir = run.getFilePathRoot();
             }
-            return addFile(ExperimentService.get().getExpData(data.getRowId()), f, getDirectoryName(run), rootDir, data.findDataHandler());
+            return addFile(ExperimentService.get().getExpData(data.getRowId()), f, getDirectoryName(run), rootDir, data.findDataHandler(), user);
         }
         return null;
     }
@@ -75,7 +76,7 @@ public class ArchiveURLRewriter extends URLRewriter
         return "Run" + run.getRowId();
     }
 
-    public String addFile(ExpData data, File f, String directoryName, File rootDir, ExperimentDataHandler dataHandler)
+    public String addFile(ExpData data, File f, String directoryName, File rootDir, ExperimentDataHandler dataHandler, User user)
             throws ExperimentException
     {
         String name;
@@ -96,11 +97,11 @@ public class ArchiveURLRewriter extends URLRewriter
 
             if (inSubTree)
             {
-                name = FileUtil.relativizeUnix(rootDir, f, true);
+                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, f, true));
             }
             else
             {
-                name = f.getName();
+                name = dataHandler.getFileName(data, f.getName());
             }
 
             if (!_files.containsKey(f))
@@ -111,7 +112,7 @@ public class ArchiveURLRewriter extends URLRewriter
                 }
                 if (f.exists())
                 {
-                    _files.put(f, new FileInfo(data, f, name, dataHandler));
+                    _files.put(f, new FileInfo(data, f, name, dataHandler, user));
                 }
             }
         }

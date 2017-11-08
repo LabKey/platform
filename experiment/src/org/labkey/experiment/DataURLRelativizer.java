@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -39,7 +40,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun) throws ExperimentException
+                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun, User user) throws ExperimentException
                 {
                     try
                     {
@@ -74,7 +75,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, String roleName, ExpRun expRun) throws ExperimentException
+                public String rewriteURL(File f, ExpData data, String roleName, ExpRun expRun, User user) throws ExperimentException
                 {
                     try
                     {
@@ -103,7 +104,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun)
+                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun, User user)
                 {
                     if (data == null)
                     {

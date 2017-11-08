@@ -216,7 +216,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         FileOutputStream fOut = null;
         try
         {
-            XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.RUN_RELATIVE_LOCATION.createURLRewriter());
+            XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.RUN_RELATIVE_LOCATION.createURLRewriter(), getJob().getUser());
             exporter.addExperimentRun(run);
 
             fOut = new FileOutputStream(tempFile);

@@ -21,6 +21,7 @@ import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.security.User;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
@@ -50,7 +51,7 @@ public abstract class URLRewriter
         _includeXarXml = includeXarXml;
     }
 
-    public abstract String rewriteURL(File f, ExpData data, String role, ExpRun experimentRun) throws ExperimentException;
+    public abstract String rewriteURL(File f, ExpData data, String role, ExpRun experimentRun, User user) throws ExperimentException;
 
     public Collection<FileInfo> getFileInfos()
     {
@@ -68,25 +69,27 @@ public abstract class URLRewriter
         private final String _name;
         private final ExperimentDataHandler _handler;
         private final ExpData _data;
+        private final User _user;
 
-        public FileInfo(ExpData data, File file, String name, ExperimentDataHandler handler)
+        public FileInfo(ExpData data, File file, String name, ExperimentDataHandler handler, User user)
         {
             _file = file;
             _name = name;
             _handler = handler;
             _data = data;
+            _user = user;
         }
 
         public String getName()
         {
-            return _name;
+            return _handler.getFileName(_data, _name);
         }
 
         public void writeFile(final OutputStream out) throws ExperimentException, IOException
         {
             if (_handler != null)
             {
-                _handler.exportFile(_data, _file, new OutputStream()
+                _handler.exportFile(_data, _file, _user, new OutputStream()
                 {
                     private boolean _closed = false;
 
