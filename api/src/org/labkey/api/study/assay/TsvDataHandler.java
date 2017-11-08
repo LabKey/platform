@@ -16,12 +16,29 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.qc.TransformDataHandler;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.NetworkDrive;
 
+import java.io.File;
+import java.io.OutputStream;
 import java.util.Arrays;
 
 /**
@@ -71,9 +88,72 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     }
 
     @Override
+    public String getFileName(ExpData data, String defaultName)
+    {
+        ExpRun run = data.getRun();
+
+        if (run == null || !run.isFinalOutput(data))
+            return defaultName;
+
+        return FilenameUtils.getFullPath(defaultName) + FilenameUtils.getBaseName(defaultName) + ".tsv";
+    }
+
+    @Override
     protected boolean shouldAddInputMaterials()
     {
         return true;
     }
 
+    @Override
+    public boolean hasContentToExport(ExpData data, File file)
+    {
+        ExpRun run = data.getRun();
+
+        if (run == null || !run.isFinalOutput(data))
+            return false;
+
+        return NetworkDrive.exists(file) && file.isFile();
+    }
+
+    @Override
+    public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
+    {
+        ExpRun run = data.getRun();
+
+        if (run != null && run.isFinalOutput(data))
+        {
+            ExpProtocol protocol = run.getProtocol();
+            if (protocol != null)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider instanceof AbstractTsvAssayProvider)
+                {
+                    AssayProtocolSchema schema = provider.createProtocolSchema(user, data.getContainer(), protocol, null);
+                    TableInfo dataTable = schema.createDataTable(false);
+
+                    if (dataTable != null)
+                    {
+                        // Filter to get rows just from that one file
+                        Results rs = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId")).getResults();
+                        if (rs.getSize() == 0)
+                            return;
+
+                        try
+                        {
+                            TSVGridWriter writer = new TSVGridWriter(rs);
+                            writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                            File tempFile = File.createTempFile(FilenameUtils.getBaseName(dataFile.getName()), ".tsv");
+                            writer.write(tempFile);
+                            writer.close();
+                            FileUtils.copyFile(tempFile, out);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new ExperimentException("Problem creating TSV grid for run " + run.getName() + "(lsid: " + run.getLSID() + ")", e);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

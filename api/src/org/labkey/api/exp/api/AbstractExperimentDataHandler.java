@@ -35,7 +35,12 @@ import java.util.List;
  */
 public abstract class AbstractExperimentDataHandler implements ExperimentDataHandler
 {
-    public void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException
+    public String getFileName(ExpData data, String defaultName)
+    {
+        return defaultName;
+    }
+
+    public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
     {
         if (dataFile != null)
         {

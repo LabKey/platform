@@ -33,6 +33,8 @@ public interface ExpRun extends ExpObject
     @Nullable ExpExperiment getBatch();
     ExpProtocol getProtocol();
 
+    boolean isFinalOutput(ExpData data);
+
     /**
      * @param type an optional filter for the type of data
      */

@@ -42,6 +42,11 @@ public interface ExperimentDataHandler extends Handler<ExpData>
     @Nullable
     DataType getDataType();
 
+    default String getFileName(ExpData data, String defaultName)
+    {
+        return defaultName;
+    }
+
     /**
      * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
      * owned by the module that holds the implementation of the ExperimentDataHandler.
@@ -52,7 +57,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * Stream the content of this data object. Typically this just streams the bytes of the file from disk, but could
      * create something based exclusively on what's in the database.
      */
-    void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
+    void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException;
 
     /** @return URL to the imported version of the data, like a grid view over a database table or a custom details page */
     @Nullable

@@ -407,41 +407,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return "column" + col;
     }
 
-    // Given a mv indicator column, find its matching value column
-    protected int getMvColumnIndex(ColumnDescriptor mvIndicatorColumn)
-    {
-        // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
-        // share a name. If not, they have different names
-        @Nullable String nonMvIndicatorName = null;
-        if (mvIndicatorColumn.name.toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
-        {
-            nonMvIndicatorName = mvIndicatorColumn.name.substring(0, mvIndicatorColumn.name.length() - MvColumn.MV_INDICATOR_SUFFIX.length());
-        }
 
-        for (int i = 0; i < _columns.length; i++)
-        {
-            ColumnDescriptor col = _columns[i];
-            if (col.isMvEnabled() && (col.name.equals(mvIndicatorColumn.name) || col.name.equals(nonMvIndicatorName)))
-                return i;
-        }
-        return -1;
-    }
 
-    protected int getMvIndicatorColumnIndex(ColumnDescriptor mvColumn)
-    {
-        // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
-        // share a name. If not, they have different names
-        String namePlusIndicator = mvColumn.name + MvColumn.MV_INDICATOR_SUFFIX;
 
-        for (int i = 0; i < _columns.length; i++)
-        {
-            ColumnDescriptor col = _columns[i];
-            if (col.isMvIndicator() && (col.name.equals(mvColumn.name) || col.name.equals(namePlusIndicator)))
-                return i;
-        }
-
-        return -1;
-    }
 
     /**
      * Set the number of lines to look ahead in the file when infering the data types of the columns.
@@ -560,6 +528,42 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 _log.error("unexpected io error", e);
                 throw new RuntimeException(e);
             }
+        }
+
+        protected int getMvIndicatorColumnIndex(ColumnDescriptor mvColumn)
+        {
+            // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
+            // share a name. If not, they have different names
+            String namePlusIndicator = mvColumn.name + MvColumn.MV_INDICATOR_SUFFIX;
+
+            for (int i = 0; i < _activeColumns.length; i++)
+            {
+                ColumnDescriptor col = _activeColumns[i];
+                if (col.isMvIndicator() && (col.name.equals(mvColumn.name) || col.name.equals(namePlusIndicator)))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        // Given a mv indicator column, find its matching value column
+        protected int getMvColumnIndex(ColumnDescriptor mvIndicatorColumn)
+        {
+            // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
+            // share a name. If not, they have different names
+            @Nullable String nonMvIndicatorName = null;
+            if (mvIndicatorColumn.name.toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+            {
+                nonMvIndicatorName = mvIndicatorColumn.name.substring(0, mvIndicatorColumn.name.length() - MvColumn.MV_INDICATOR_SUFFIX.length());
+            }
+
+            for (int i = 0; i < _activeColumns.length; i++)
+            {
+                ColumnDescriptor col = _activeColumns[i];
+                if (col.isMvEnabled() && (col.name.equals(mvIndicatorColumn.name) || col.name.equals(nonMvIndicatorName)))
+                    return i;
+            }
+            return -1;
         }
 
         protected final Map<String, Object> convertValues()
