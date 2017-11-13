@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerManager.ContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -83,12 +84,14 @@ import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
  * User: klum
  * Date: Dec 9, 2009
  */
-public class FileContentServiceImpl implements FileContentService, ContainerManager.ContainerListener
+public class FileContentServiceImpl implements FileContentService
 {
-    static Logger _log = Logger.getLogger(FileContentServiceImpl.class);
+    private static final Logger _log = Logger.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
+    private static final FileContentServiceImpl INSTANCE = new FileContentServiceImpl();
 
-    private List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
+    private final ContainerListener _containerListener = new FileContentServiceContainerListener();
+    private final List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
 
     enum Props {
         root,
@@ -101,7 +104,12 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         DELETE
     }
 
-    public FileContentServiceImpl()
+    static FileContentServiceImpl getInstance()
+    {
+        return INSTANCE;
+    }
+
+    private FileContentServiceImpl()
     {
     }
 
@@ -498,112 +506,116 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return Collections.unmodifiableCollection(new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getCollection(FileSystemAttachmentParent.class));
     }
 
-    @Override
-    public void containerCreated(Container c, User user)
+    private class FileContentServiceContainerListener implements ContainerListener
     {
-        try
+        @Override
+        public void containerCreated(Container c, User user)
         {
-            File dir = getMappedDirectory(c, false);
-            //Don't try to create dir if root not configured.
-            //But if we should have a directory, create it
-            if (null != dir && !dir.exists())
-                getMappedDirectory(c, true);
-        }
-        catch (MissingRootDirectoryException ex)
-        {
+            try
+            {
+                File dir = getMappedDirectory(c, false);
+                //Don't try to create dir if root not configured.
+                //But if we should have a directory, create it
+                if (null != dir && !dir.exists())
+                    getMappedDirectory(c, true);
+            }
+            catch (MissingRootDirectoryException ex)
+            {
             /* */
+            }
         }
-    }
 
-    @Override
-    public void containerDeleted(Container c, User user)
-    {
-        File dir = null;
-        try
+        @Override
+        public void containerDeleted(Container c, User user)
         {
-            // don't delete the file contents if they have a project override
+            File dir = null;
+            try
+            {
+                // don't delete the file contents if they have a project override
+                if (isUseDefaultRoot(c))
+                    dir = getMappedDirectory(c, false);
+            }
+            catch (Exception e)
+            {
+                _log.error("containerDeleted", e);
+            }
+
+            if (null != dir && dir.exists())
+            {
+                FileUtil.deleteDir(dir);
+            }
+
+            ContainerUtil.purgeTable(CoreSchema.getInstance().getMappedDirectories(), c, null);
+        }
+
+        @Override
+        public void containerMoved(Container c, Container oldParent, User user)
+        {
+            // only attempt to move the root if this is a managed file system
             if (isUseDefaultRoot(c))
-                dir = getMappedDirectory(c, false);
-        }
-        catch (Exception e)
-        {
-            _log.error("containerDeleted", e);
-        }
-
-        if (null != dir && dir.exists())
-        {
-            FileUtil.deleteDir(dir);
-        }
-
-        ContainerUtil.purgeTable(CoreSchema.getInstance().getMappedDirectories(), c, null);
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
-        // only attempt to move the root if this is a managed file system
-        if (isUseDefaultRoot(c))
-        {
-            File prevParent = _getFileRoot(oldParent);
-            if (prevParent != null)
             {
-                File src = new File(prevParent, c.getName());
-                File dst = _getFileRoot(c);
+                File prevParent = _getFileRoot(oldParent);
+                if (prevParent != null)
+                {
+                    File src = new File(prevParent, c.getName());
+                    File dst = _getFileRoot(c);
 
-                if (src.exists() && dst != null)
-                    moveFileRoot(src, dst, user, c);
+                    if (src.exists() && dst != null)
+                        moveFileRoot(src, dst, user, c);
+                }
+            }
+        }
+
+        @NotNull
+        @Override
+        public Collection<String> canMove(Container c, Container newParent, User user)
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent propertyChangeEvent)
+        {
+            ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
+            Container c = evt.container;
+
+            switch (evt.property)
+            {
+                case Name:          // container rename event
+                {
+                    String oldValue = (String) propertyChangeEvent.getOldValue();
+                    String newValue = (String) propertyChangeEvent.getNewValue();
+
+                    File location = null;
+                    try
+                    {
+                        location = getMappedDirectory(c, false);
+                    }
+                    catch (MissingRootDirectoryException ex)
+                    {
+                        _log.error(ex);
+                    }
+                    if (location == null)
+                        return;
+                    //Don't rely on container object. Seems not to point to the
+                    //new location even AFTER rename. Just construct new file paths
+                    File parentDir = location.getParentFile();
+                    File oldLocation = new File(parentDir, oldValue);
+                    File newLocation = new File(parentDir, newValue);
+                    if (newLocation.exists())
+                        moveToDeleted(newLocation);
+
+                    if (oldLocation.exists())
+                    {
+                        oldLocation.renameTo(newLocation);
+                        fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
+                    }
+                    break;
+                }
             }
         }
     }
 
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent propertyChangeEvent)
-    {
-        ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
-        Container c = evt.container;
-
-        switch (evt.property)
-        {
-            case Name:          // container rename event
-            {
-                String oldValue = (String) propertyChangeEvent.getOldValue();
-                String newValue = (String) propertyChangeEvent.getNewValue();
-
-                File location = null;
-                try
-                {
-                    location = getMappedDirectory(c, false);
-                }
-                catch (MissingRootDirectoryException ex)
-                {
-                    _log.error(ex);
-                }
-                if (location == null)
-                    return;
-                //Don't rely on container object. Seems not to point to the
-                //new location even AFTER rename. Just construct new file paths
-                File parentDir = location.getParentFile();
-                File oldLocation = new File(parentDir, oldValue);
-                File newLocation = new File(parentDir, newValue);
-                if (newLocation.exists())
-                    moveToDeleted(newLocation);
-
-                if (oldLocation.exists())
-                {
-                    oldLocation.renameTo(newLocation);
-                    fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
-                }
-                break;
-            }
-        }
-    }
 
     @Override
     public @Nullable String getFolderName(FileContentService.ContentType type)
@@ -868,9 +880,9 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 });
     }
 
-    public static FileContentServiceImpl getInstance()
+    public ContainerListener getContainerListener()
     {
-        return (FileContentServiceImpl) FileContentService.get();
+        return _containerListener;
     }
 
     @TestWhen(TestWhen.When.BVT)

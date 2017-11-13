@@ -63,7 +63,7 @@ public class FileContentModule extends DefaultModule
     {
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
-        FileContentService.setInstance(new FileContentServiceImpl());
+        FileContentService.setInstance(FileContentServiceImpl.getInstance());
         AttachmentService.get().registerAttachmentType(FileSystemAttachmentType.get());
     }
 
@@ -151,7 +151,7 @@ public class FileContentModule extends DefaultModule
         // initialize message config provider
         MessageConfigService.get().registerConfigType(new FileEmailConfig());
         ContainerManager.addContainerListener(new FileContentContainerListener());
-        ContainerManager.addContainerListener(FileContentServiceImpl.getInstance());
+        ContainerManager.addContainerListener(FileContentServiceImpl.getInstance().getContainerListener());
 
         FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (fsr != null)
@@ -185,5 +185,4 @@ public class FileContentModule extends DefaultModule
             FileContentController.TestCase.class
         ));
     }
-
 }

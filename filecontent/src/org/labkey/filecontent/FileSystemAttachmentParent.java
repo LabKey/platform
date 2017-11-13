@@ -16,6 +16,7 @@
 
 package org.labkey.filecontent;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
@@ -40,6 +41,8 @@ import java.io.InputStream;
 */
 public class FileSystemAttachmentParent implements AttachmentDirectory
 {
+    private static final Logger LOG = Logger.getLogger(FileSystemAttachmentParent.class);
+
     private Container c;
     private String entityId;
     private String path;
@@ -201,7 +204,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         }
         catch (MissingRootDirectoryException e)
         {
-            FileContentServiceImpl._log.warn(e.getMessage());
+            LOG.warn(e.getMessage());
         }
     }
 
