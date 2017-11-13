@@ -316,12 +316,9 @@ public class Parameter implements AutoCloseable
 
             if (value instanceof Object[])
             {
-                Object[] array = (Object[]) value;
-
-                // Convert to a JDBC array
-                SqlDialect dialect = SqlDialectManager.getFromMetaData(_stmt.getConnection().getMetaData(), true, false);
-                String typeName = dialect.getJDBCArrayType(array[0]);
-                final Array jdbcArray = _stmt.getConnection().createArrayOf(typeName, array);
+                // Delegate dialect-specific details of JDBC array creation and type inference to the LabKey ConnectionWrapper,
+                // which knows the current dialect.
+                final Array jdbcArray = _stmt.getConnection().createArrayOf(null, (Object[]) value);
                 // Set up to close it
                 _autoCloseable = jdbcArray::free;
                 value = jdbcArray;

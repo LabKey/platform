@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.util.DateUtil;
@@ -211,6 +212,7 @@ public class ConnectionWrapper implements java.sql.Connection
         return _spid;
     }
 
+    @Override
     public Statement createStatement() throws SQLException
     {
         checkForSuspiciousClose();
@@ -224,6 +226,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException
     {
         checkForSuspiciousClose();
@@ -237,6 +240,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public CallableStatement prepareCall(String sql) throws SQLException
     {
         checkForSuspiciousClose();
@@ -250,6 +254,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public String nativeSQL(String sql) throws SQLException
     {
         checkForSuspiciousClose();
@@ -263,6 +268,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException
     {
         checkForSuspiciousClose();
@@ -277,6 +283,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public boolean getAutoCommit() throws SQLException
     {
         checkForSuspiciousClose();
@@ -290,6 +297,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void commit() throws SQLException
     {
         checkForSuspiciousClose();
@@ -304,6 +312,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void rollback() throws SQLException
     {
         checkForSuspiciousClose();
@@ -319,6 +328,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void close() throws SQLException
     {
         _openConnections.remove(this);
@@ -364,6 +374,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public boolean isClosed() throws SQLException
     {
         try
@@ -376,6 +387,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public DatabaseMetaData getMetaData() throws SQLException
     {
         checkForSuspiciousClose();
@@ -391,6 +403,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void setReadOnly(boolean readOnly) throws SQLException
     {
         checkForSuspiciousClose();
@@ -404,6 +417,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public boolean isReadOnly() throws SQLException
     {
         checkForSuspiciousClose();
@@ -417,6 +431,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void setCatalog(String catalog) throws SQLException
     {
         checkForSuspiciousClose();
@@ -430,6 +445,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public String getCatalog() throws SQLException
     {
         checkForSuspiciousClose();
@@ -443,6 +459,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void setTransactionIsolation(int level) throws SQLException
     {
         checkForSuspiciousClose();
@@ -457,6 +474,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public int getTransactionIsolation() throws SQLException
     {
         checkForSuspiciousClose();
@@ -470,6 +488,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public SQLWarning getWarnings() throws SQLException
     {
         checkForSuspiciousClose();
@@ -483,6 +502,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void clearWarnings() throws SQLException
     {
         checkForSuspiciousClose();
@@ -513,6 +533,7 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
 
+    @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException
     {
         checkForSuspiciousClose();
@@ -526,6 +547,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException
     {
         checkForSuspiciousClose();
@@ -539,6 +561,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException
     {
         checkForSuspiciousClose();
@@ -552,6 +575,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException
     {
         checkForSuspiciousClose();
@@ -594,6 +618,7 @@ public class ConnectionWrapper implements java.sql.Connection
         return e;
     }
 
+    @Override
     public void setTypeMap(Map<String, Class<?>> map) throws SQLException
     {
         checkForSuspiciousClose();
@@ -607,6 +632,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void setHoldability(int holdability) throws SQLException
     {
         checkForSuspiciousClose();
@@ -620,6 +646,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public int getHoldability() throws SQLException
     {
         checkForSuspiciousClose();
@@ -633,6 +660,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public Savepoint setSavepoint() throws SQLException
     {
         checkForSuspiciousClose();
@@ -646,6 +674,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public Savepoint setSavepoint(String name) throws SQLException
     {
         checkForSuspiciousClose();
@@ -659,6 +688,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void rollback(Savepoint savepoint) throws SQLException
     {
         checkForSuspiciousClose();
@@ -672,6 +702,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException
     {
         checkForSuspiciousClose();
@@ -685,6 +716,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
     {
         checkForSuspiciousClose();
@@ -698,6 +730,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
     {
         checkForSuspiciousClose();
@@ -711,6 +744,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException
     {
         checkForSuspiciousClose();
@@ -724,6 +758,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException
     {
         checkForSuspiciousClose();
@@ -737,6 +772,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException
     {
         checkForSuspiciousClose();
@@ -750,6 +786,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException
     {
         checkForSuspiciousClose();
@@ -773,12 +810,14 @@ public class ConnectionWrapper implements java.sql.Connection
         return _loggedLeaks.size();
     }
 
+    @Override
     public String toString()
     {
         return "Connection wrapper for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
     }
 
 
+    @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
         return iface.isAssignableFrom(_connection.getClass());
@@ -791,19 +830,22 @@ public class ConnectionWrapper implements java.sql.Connection
         close();
     }
 
+    @Override
     public <T> T unwrap(Class<T> iface) throws SQLException
     {
         //noinspection unchecked
         return isWrapperFor(iface)?  (T)_connection : null;
     }
 
-
-    public Array createArrayOf(String typeName, Object[] elements) throws SQLException
+    @Override
+    public Array createArrayOf(String unused, Object[] array) throws SQLException
     {
         checkForSuspiciousClose();
         try
         {
-            return _connection.createArrayOf(typeName, elements);
+            SqlDialect dialect = _scope.getSqlDialect();
+            String typeName = dialect.getJDBCArrayType(array[0]);
+            return _connection.createArrayOf(typeName, array);
         }
         catch (SQLException e)
         {
@@ -813,76 +855,91 @@ public class ConnectionWrapper implements java.sql.Connection
 
     // TODO: Implement all of the following methods!
 
+    @Override
     public Blob createBlob() throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Clob createClob() throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public NClob createNClob() throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public SQLXML createSQLXML() throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Properties getClientInfo() throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getClientInfo(String name) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isValid(int timeout) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClientInfo(String name, String value) throws SQLClientInfoException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClientInfo(Properties properties) throws SQLClientInfoException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setSchema(String schema) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getSchema() throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void abort(Executor executor) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public int getNetworkTimeout() throws SQLException
     {
         throw new UnsupportedOperationException();
