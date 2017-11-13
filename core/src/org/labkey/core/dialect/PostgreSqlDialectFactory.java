@@ -53,7 +53,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 9.6 is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 10.x is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
@@ -113,7 +113,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (96 == version)
                 return new PostgreSql96Dialect();
 
-            if (version > 100 && logWarnings)
+            // Any 10.x version is okay; 11.x+ gets a warning.
+            // Note: PostgreSQL version format changed from x.y.z to x.y starting with 10.0.
+            if (version >= 110 && logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
             return new PostgreSql100Dialect();
