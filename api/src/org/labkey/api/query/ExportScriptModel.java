@@ -22,6 +22,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
@@ -112,15 +113,15 @@ public abstract class ExportScriptModel
         QueryView view = getQueryView();
         ArrayList<String> makeFilterExprs = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter(view.getSettings().getSortFilterURL(), view.getDataRegionName());
-        String name;
+        FieldKey fieldKey;
         CompareType operator;
         String value;
 
-        for (SimpleFilter.FilterClause clause : filter.getClauses())
+        for (FilterClause clause : filter.getClauses())
         {
             //all filter clauses can report col names and values,
             //each of which in this case should contain only one value
-            name = clause.getColumnNames().get(0);
+            fieldKey = clause.getFieldKeys().get(0);
             value = getFilterValue(clause, clause.getParamVals());
 
             //two kinds of clauses can be used on URLs: CompareClause and MultiValuedFilterClause
@@ -133,13 +134,13 @@ public abstract class ExportScriptModel
             else
                 operator = CompareType.EQUAL;
 
-            makeFilterExprs.add(makeFilterExpression(name, operator, value));
+            makeFilterExprs.add(makeFilterExpression(fieldKey.toString(), operator, value));
         }
 
         return makeFilterExprs;
     }
 
-    protected String getFilterValue(SimpleFilter.FilterClause clause, Object[] values)
+    protected String getFilterValue(FilterClause clause, Object[] values)
     {
         if (null == values || values.length == 0)
             return "";

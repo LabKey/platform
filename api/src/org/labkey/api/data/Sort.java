@@ -432,7 +432,7 @@ public class Sort
         if (null == _sortList)
             return null;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String sep = "";
         for (SortField sf : _sortList)
         {
@@ -449,10 +449,10 @@ public class Sort
         if (null == _sortList || _sortList.size() == 0)
             return Collections.emptySet();
 
-        Set<FieldKey> requiredColumnNames = new HashSet<>();
+        Set<FieldKey> requiredFieldKeys = new HashSet<>();
         for (SortField sf : _sortList)
         {
-            requiredColumnNames.add(sf.getFieldKey());
+            requiredFieldKeys.add(sf.getFieldKey());
 
             String columnName = sf.getColumnName();
             ColumnInfo col = columns.get(columnName);
@@ -461,10 +461,10 @@ public class Sort
                 // Note: The columns we're passed won't necessarily contain
                 // our mv column at this point -- we need to let the caller
                 // know it should be added
-                requiredColumnNames.add(col.getMvColumnName());
+                requiredFieldKeys.add(col.getMvColumnName());
             }
         }
-        return requiredColumnNames;
+        return requiredFieldKeys;
     }
 
     public String getOrderByClause(SqlDialect dialect)
