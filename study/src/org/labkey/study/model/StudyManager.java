@@ -57,6 +57,8 @@ import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -847,14 +849,9 @@ public class StudyManager
                 QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
-            transaction.addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // And post-commit to make sure that no other threads have reloaded the cache in the meantime
-                    uncache(datasetDefinition);
-                }
+            transaction.addCommitTask(() -> {
+                // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+                uncache(datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
             transaction.commit();
         }
@@ -3933,15 +3930,12 @@ public class StudyManager
         final Map<String, DatasetDefinitionEntry> datasetDefEntryMap = new HashMap<>();
 
         // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
-        DomainURIFactory factory = new DomainURIFactory() {
-            public Pair<String,Container> getDomainURI(String name)
-            {
-                assert datasetDefEntryMap.containsKey(name);
-                DatasetDefinitionEntry defEntry = datasetDefEntryMap.get(name);
-                Container defContainer = defEntry.datasetDefinition.getDefinitionContainer();
-                String domainURI = StudyManager.getDomainURI(defEntry.datasetDefinition.getDefinitionContainer(), user, name, defEntry.datasetDefinition.getEntityId());
-                return new Pair<>(domainURI, defContainer);
-            }
+        DomainURIFactory factory = name -> {
+            assert datasetDefEntryMap.containsKey(name);
+            DatasetDefinitionEntry defEntry = datasetDefEntryMap.get(name);
+            Container defContainer = defEntry.datasetDefinition.getDefinitionContainer();
+            String domainURI = getDomainURI(defEntry.datasetDefinition.getDefinitionContainer(), user, name, defEntry.datasetDefinition.getEntityId());
+            return new Pair<>(domainURI, defContainer);
         };
 
         // We need to build the datasets (but not save) before we create the property descriptors so that
@@ -3950,7 +3944,7 @@ public class StudyManager
         if (errors.hasErrors())
             return false;
 
-        OntologyManager.ListImportPropertyDescriptors list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
+        ImportPropertyDescriptorsList list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
 
         if (!importErrors.isEmpty())
         {
@@ -3959,7 +3953,7 @@ public class StudyManager
             return false;
         }
 
-        for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
+        for (ImportPropertyDescriptor ipd : list.properties)
         {
             if (null == ipd.domainName || null == ipd.domainURI)
                 errors.reject("importDatasetSchemas", "Dataset not specified for property: " + ipd.pd.getName());
@@ -3992,15 +3986,10 @@ public class StudyManager
 
         dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
 
-
-        if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap)) return false;
+        if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap))
+            return false;
 
         addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
-
-        for (Map.Entry<String, List<ConditionalFormat>> entry : list.formats.entrySet())
-        {
-            PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), study.getContainer()), entry.getValue());
-        }
 
         return true;
     }
@@ -4029,9 +4018,9 @@ public class StudyManager
         return true;
     }
 
-    private void buildPropertySaveAndDeleteLists(Map<String, DatasetDefinitionEntry> datasetDefEntryMap, OntologyManager.ListImportPropertyDescriptors list, Map<String, Domain> domainsMap, Map<String, List<? extends DomainProperty>> domainsPropertiesMap)
+    private void buildPropertySaveAndDeleteLists(Map<String, DatasetDefinitionEntry> datasetDefEntryMap, ImportPropertyDescriptorsList list, Map<String, Domain> domainsMap, Map<String, List<? extends DomainProperty>> domainsPropertiesMap)
     {
-        for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
+        for (ImportPropertyDescriptor ipd : list.properties)
         {
             Domain d = domainsMap.get(ipd.domainURI);
             if (null == d)
@@ -4071,6 +4060,9 @@ public class StudyManager
                 p.setRequired(ipd.pd.isRequired());
                 p.setDescription(ipd.pd.getDescription());
             }
+
+            ipd.validators.forEach(p::addValidator);
+            p.setConditionalFormats(ipd.formats);
         }
 
         //Ensure that each dataset has an entry in the domain map

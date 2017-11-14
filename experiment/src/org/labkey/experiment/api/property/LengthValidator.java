@@ -15,8 +15,6 @@
  */
 package org.labkey.experiment.api.property;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
@@ -25,7 +23,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.util.NumberUtilsLabKey;
+import org.labkey.data.xml.ValidatorsType;
 
 import java.util.List;
 
@@ -35,21 +33,25 @@ import java.util.List;
  */
 public class LengthValidator extends DefaultPropertyValidator implements ValidatorKind
 {
+    @Override
     public String getName()
     {
         return "Length Property Validator";
     }
 
+    @Override
     public String getTypeURI()
     {
         return createValidatorURI(PropertyValidatorType.Length).toString();
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
+    @Override
     public IPropertyValidator createInstance()
     {
         PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
@@ -58,11 +60,13 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
         return validator;
     }
 
+    @Override
     public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
         return true;
     }
 
+    @Override
     public boolean validate(IPropertyValidator validator, PropertyDescriptor field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         assert value != null : "Shouldn't be validating a null value";
@@ -84,5 +88,11 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
     {
         int comparison = Long.compare(value.toString().length(), constraint);
         return comparisonValid(comparison, oper);
+    }
+
+    @Override
+    public void convertToXml(IPropertyValidator v, ValidatorsType validatorsXml)
+    {
+        // Override to not write length validator to XML... these validators are conveyed via the "scale" property instead
     }
 }

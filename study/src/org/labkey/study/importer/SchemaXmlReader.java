@@ -152,7 +152,8 @@ public class SchemaXmlReader implements SchemaReader
                 }
             };
 
-            try {
+            try
+            {
                 _importMaps.addAll(importHelper.createImportMaps());
             }
             catch (Exception e)
@@ -217,12 +218,10 @@ public class SchemaXmlReader implements SchemaReader
 
         SharedConfigType[] sharedConfigArray = tablesDocument.getTables().getSharedConfigArray();
 
-        for (int i = 0; i < sharedConfigArray.length; i++)
+        for (SharedConfigType sharedConfigType : sharedConfigArray)
         {
-            SharedConfigType sharedConfigType = sharedConfigArray[i];
-
             IndicesType tableXmlIndices = sharedConfigType.getIndices();
-            if(tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
+            if (tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
             {
                 for (IndexType indexType : tableXmlIndices.getIndexArray())
                 {

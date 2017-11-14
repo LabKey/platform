@@ -20,16 +20,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
@@ -157,15 +156,9 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
                     current.put(pd.getName(), pd);
                 }
 
-                DomainURIFactory factory = new DomainURIFactory() {
-                    @Override
-                    public Pair<String, Container> getDomainURI(String name)
-                    {
-                        return new Pair<>(domain.getTypeURI(), container);
-                    }
-                };
+                DomainURIFactory factory = name -> new Pair<>(domain.getTypeURI(), container);
 
-                OntologyManager.ListImportPropertyDescriptors pds = OntologyManager.createPropertyDescriptors(factory, "TableName", importMaps, propErrors, container, true);
+                ImportPropertyDescriptorsList pds = OntologyManager.createPropertyDescriptors(factory, "TableName", importMaps, propErrors, container, true);
                 if (!propErrors.isEmpty())
                     throw new ImportException("Unable to get an instance of TablesDocument from " + SpecimenArchiveWriter.SCHEMA_FILENAME);
 
@@ -174,16 +167,9 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
                 {
                     if (!current.containsKey(ipd.pd.getName()))
                     {
-                        domain.addPropertyOfPropertyDescriptor(ipd.pd);
-                        isDirty = true;
-                    }
-                }
-
-                for (Map.Entry<String, List<ConditionalFormat>> entry : pds.formats.entrySet())
-                {
-                    if (!current.containsKey(entry.getKey()))
-                    {
-                        PropertyService.get().saveConditionalFormats(ctx.getUser(), OntologyManager.getPropertyDescriptor(entry.getKey(), container), entry.getValue());
+                        DomainProperty domainProperty = domain.addPropertyOfPropertyDescriptor(ipd.pd);
+                        ipd.validators.forEach(domainProperty::addValidator);
+                        domainProperty.setConditionalFormats(ipd.formats);
                         isDirty = true;
                     }
                 }

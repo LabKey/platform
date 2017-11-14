@@ -40,6 +40,8 @@ import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -1080,12 +1082,12 @@ public class ListManager implements SearchService.DocumentProvider
 
         DomainURIFactory factory = name -> new Pair<>(typeURI,container);
 
-        OntologyManager.ListImportPropertyDescriptors pds = OntologyManager.createPropertyDescriptors(factory, typeColumn, importMaps, errors, container, true);
+        ImportPropertyDescriptorsList pds = OntologyManager.createPropertyDescriptors(factory, typeColumn, importMaps, errors, container, true);
 
         if (!errors.isEmpty())
             return false;
 
-        for (OntologyManager.ImportPropertyDescriptor ipd : pds.properties)
+        for (ImportPropertyDescriptor ipd : pds.properties)
         {
             if (null == ipd.domainName || null == ipd.domainURI)
                 errors.add("List not specified for property: " + ipd.pd.getName());
@@ -1094,25 +1096,20 @@ public class ListManager implements SearchService.DocumentProvider
         if (!errors.isEmpty())
             return false;
 
-        for (OntologyManager.ImportPropertyDescriptor ipd : pds.properties)
+        for (ImportPropertyDescriptor ipd : pds.properties)
         {
-            unsavedList.getDomain().addPropertyOfPropertyDescriptor(ipd.pd);
+            DomainProperty domainProperty = unsavedList.getDomain().addPropertyOfPropertyDescriptor(ipd.pd);
+            ipd.validators.forEach(domainProperty::addValidator);
+            domainProperty.setConditionalFormats(ipd.formats);
         }
 
-        // Must save the list before attempting to save conditional formats, see #23235
         unsavedList.save(user);
-
-        for (Map.Entry<String, List<ConditionalFormat>> entry : pds.formats.entrySet())
-        {
-            PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), container), entry.getValue());
-        }
 
         return true;
     }
 
     public static class TestCase extends Assert
     {
-        private ListDefinitionImpl list;
         private static final String LIST_NAME = "Unit Test list";
         private static final String WORKBOOK1_NAME = "Unit Test Workbook 1";
         private static final String WORKBOOK2_NAME = "Unit Test Workbook 2";
@@ -1123,6 +1120,8 @@ public class ListManager implements SearchService.DocumentProvider
         private static final Integer PARENT_LI_KEY = 1;
         private static final Integer WB1_LI_KEY = 2;
         private static final Integer WB2_LI_KEY = 3;
+
+        private ListDefinitionImpl list;
         private Container c;
         private User u;
         private DomainProperty dp;
@@ -1166,7 +1165,6 @@ public class ListManager implements SearchService.DocumentProvider
         {
             //TestContext context = TestContext.get();
             ExperimentService.get().deleteAllExpObjInContainer(c, u);
-
         }
 
         @Test
@@ -1187,7 +1185,6 @@ public class ListManager implements SearchService.DocumentProvider
             assertTrue("Test List not found in workbook", lists.containsKey(LIST_NAME));
 
             checkListItemScoping(workbook1, workbook2);
-
         }
 
         private Container setupWorkbook(String title)

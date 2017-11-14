@@ -179,7 +179,7 @@ public class ListImporter
                         // Support for importing auto-incremented keys
                         if (def.getKeyType().equals(KeyType.AutoIncrementInteger))
                         {
-                            // Check that the key column is being provided, otherwise we'll genereate the ID's for them
+                            // Check that the key column is being provided, otherwise we'll generate the IDs for them
                             ColumnDescriptor[] columns = loader.getColumns();
                             for (ColumnDescriptor cd : columns)
                             {

@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -28,8 +29,10 @@ import org.labkey.study.model.DatasetDefinition;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -238,7 +241,7 @@ public class SchemaTsvReader implements SchemaReader
 
     public SchemaTsvReader(Study study, VirtualFile root, String tsvFileName, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetDefinitionImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
     {
-        this(study, new TabLoader(new InputStreamReader(root.getInputStream(tsvFileName)), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
+        this(study, new TabLoader(Readers.getReader(root.getInputStream(tsvFileName)), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
 
     public List<Map<String, Object>> getImportMaps()

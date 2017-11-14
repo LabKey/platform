@@ -43,7 +43,7 @@ public interface SchemaReader
     Map<Integer, DatasetImportInfo> getDatasetInfo();
     String getTypeNameColumn();
 
-    public static class DatasetImportInfo
+    class DatasetImportInfo
     {
         DatasetImportInfo(String name)
         {

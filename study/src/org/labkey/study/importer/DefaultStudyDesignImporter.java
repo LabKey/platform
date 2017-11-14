@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
@@ -33,10 +32,10 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
@@ -138,15 +137,9 @@ public class DefaultStudyDesignImporter
                         currentPropertyURIs.add(pd.getPropertyURI());
                     }
 
-                    DomainURIFactory factory = new DomainURIFactory() {
-                        @Override
-                        public Pair<String, Container> getDomainURI(String name)
-                        {
-                            return new Pair<>(domain.getTypeURI(), container);
-                        }
-                    };
+                    DomainURIFactory factory = name -> new Pair<>(domain.getTypeURI(), container);
 
-                    OntologyManager.ListImportPropertyDescriptors pds = OntologyManager.createPropertyDescriptors(factory, "TableName", importMaps, propErrors, container, true);
+                    ImportPropertyDescriptorsList pds = OntologyManager.createPropertyDescriptors(factory, "TableName", importMaps, propErrors, container, true);
                     if (!propErrors.isEmpty())
                         throw new ImportException("Unable to get an instance of TablesDocument from " + schemaFileName);
 
@@ -159,19 +152,13 @@ public class DefaultStudyDesignImporter
                             if (currentPropertyURIs.contains(ipd.pd.getPropertyURI()))
                                 ipd.pd.setPropertyURI(getUniquePropertyURI(ipd.pd.getPropertyURI(), currentPropertyURIs));
 
-                            domain.addPropertyOfPropertyDescriptor(ipd.pd);
+                            DomainProperty domainProperty = domain.addPropertyOfPropertyDescriptor(ipd.pd);
+                            ipd.validators.forEach(domainProperty::addValidator);
+                            domainProperty.setConditionalFormats(ipd.formats);
                             isDirty = true;
                         }
                         else
                             ctx.getLogger().warn("Table: " + tableName + " already has a field named: " + ipd.pd.getName() + ", ignoring the imported field");
-                    }
-                    for (Map.Entry<String, List<ConditionalFormat>> entry : pds.formats.entrySet())
-                    {
-                        if (!current.containsKey(entry.getKey()))
-                        {
-                            PropertyService.get().saveConditionalFormats(ctx.getUser(), OntologyManager.getPropertyDescriptor(entry.getKey(), container), entry.getValue());
-                            isDirty = true;
-                        }
                     }
 
                     if (isDirty)

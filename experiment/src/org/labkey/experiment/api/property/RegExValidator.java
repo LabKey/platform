@@ -65,19 +65,20 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
 
     public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
-        try {
+        try
+        {
+            //noinspection ResultOfMethodCallIgnored
             Pattern.compile(validator.getExpressionValue());
             return true;
         }
         catch (PatternSyntaxException se)
         {
-            StringBuffer sb = new StringBuffer();
+            String sb = "The regular expression validator: '" +
+                validator.getName() +
+                "' has a syntax error : " +
+                se.getMessage();
 
-            sb.append("The regular expression validator: '");
-            sb.append(validator.getName());
-            sb.append("' has a syntax error : ");
-            sb.append(se.getMessage());
-            errors.add(new SimpleValidationError(sb.toString()));
+            errors.add(new SimpleValidationError(sb));
         }
         return false;
     }

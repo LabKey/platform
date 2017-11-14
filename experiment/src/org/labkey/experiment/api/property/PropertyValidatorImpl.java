@@ -42,7 +42,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
 {
     private PropertyValidator _validator;
     private PropertyValidator _validatorOld;
-    boolean _deleted;
+    private boolean _deleted;
 
     public PropertyValidatorImpl(PropertyValidator validator)
     {
@@ -152,8 +152,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
             return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
         }
         else
-            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator,
-                    getRowId()));
+            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator, getRowId()));
     }
 
     public void delete()
@@ -166,11 +165,6 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return _deleted;
     }
     
-    public void delete(User user)
-    {
-        Table.delete(DomainPropertyManager.get().getTinfoValidator(), getRowId());
-    }
-
     public boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         // Don't validate null values, #15683

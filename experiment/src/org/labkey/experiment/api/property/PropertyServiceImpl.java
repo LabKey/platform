@@ -41,7 +41,6 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
@@ -399,5 +398,4 @@ public class PropertyServiceImpl implements PropertyService
 
         return prop;
     }
-
 }
