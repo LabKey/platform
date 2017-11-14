@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Gets the sample-specific values from user-provided information when creating child samples from an existing set
+ * of parents.
  * User: jeckels
  * Date: Oct 3, 2007
  */
@@ -72,7 +74,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         _nameProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
 
         List<DomainProperty> dps = new ArrayList<>();
-        if (sampleSet != null && sampleSet.getType() != null)
+        if (sampleSet != null)
         {
             if (sampleSet.hasNameAsIdCol())
             {

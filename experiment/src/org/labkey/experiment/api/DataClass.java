@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 /**
+ * Bean class for rows in the exp.dataclass table.
  * User: kevink
  * Date: 9/21/15
  */

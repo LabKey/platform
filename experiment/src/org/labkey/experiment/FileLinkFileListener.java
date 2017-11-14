@@ -40,7 +40,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Handles fixup of paths stored in OntologyManager for File Link fields.
+ * Handles fixup of paths stored in OntologyManager for File Link fields. These values are persisted as absolute paths
+ * on the server's file system.
  * User: jeckels
  * Date: 11/8/12
  */

@@ -297,7 +297,7 @@
           <description>Contains the time this material was last updated in the search index</description>
       </column>
     </columns>
-    <description>Contains a row per material or sample described in this folder.</description>
+    <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>
   <table tableName="MaterialInput" tableDbType="TABLE">
     <columns>
@@ -368,6 +368,7 @@
     <description>Contains a row per sample set, a collection of samples.</description>
   </table>
   <table tableName="DataClass" tableDbType="TABLE">
+    <description>Defines categories of data object types, each of which can have its own set of fields.</description>
     <gridUrl>/experiment/listDataClass.view</gridUrl>
     <columns>
       <column columnName="RowId">
@@ -973,6 +974,7 @@
       </columns>
     </table>
     <table tableName="AssayQCFlag" tableDbType="TABLE">
+      <description>Tags for possible quality control concerns associated with a given experiment run, such as high variability or missing data.</description>
       <columns>
         <column columnName="RowId">
             <isHidden>true</isHidden>

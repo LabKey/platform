@@ -21,9 +21,9 @@ import org.labkey.api.exp.IdentifiableBase;
 import java.util.Date;
 
 /**
+ * Bean class for the exp.protocolapplication table.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 2:49:46 PM
  */
 public class ProtocolApplication extends IdentifiableBase
 {

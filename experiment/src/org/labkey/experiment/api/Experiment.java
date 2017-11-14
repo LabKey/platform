@@ -18,9 +18,9 @@ package org.labkey.experiment.api;
 import java.io.Serializable;
 
 /**
+ * Bean class for the exp.experiment table. Also referred to as "run groups" or "batches" in assay usage cases.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 2:41:12 PM
  */
 public class Experiment extends IdentifiableEntity implements Serializable
 {

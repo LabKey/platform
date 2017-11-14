@@ -22,6 +22,7 @@ import org.labkey.api.exp.Lsid;
 import java.util.Objects;
 
 /**
+ * Base class for the beans that wire up material and data objects to be inputs to a protocol application.
  * User: jeckels
  * Date: Oct 31, 2008
  */

@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 /**
+ * Runs in the background and creates a XAR export to the server's file system.
  * User: jeckels
  * Date: Sep 12, 2006
  */
@@ -56,7 +57,7 @@ public class XarExportPipelineJob extends PipelineJob
 
         setLogFile(new File(_exportFile.getPath() + ".log"));
 
-        header("Experiment Import for " + _exportFile.getName());
+        header("Experiment export to " + _exportFile.getName());
         setStatus(TaskStatus.waiting);
     }
 

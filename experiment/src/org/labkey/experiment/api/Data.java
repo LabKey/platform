@@ -23,9 +23,9 @@ import java.net.URISyntaxException;
 import java.net.URI;
 
 /**
+ * Bean for rows in the exp.data table.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 3:12:17 PM
  */
 public class Data extends ProtocolOutput
 {

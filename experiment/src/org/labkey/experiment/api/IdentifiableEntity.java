@@ -24,9 +24,9 @@ import org.labkey.api.exp.Identifiable;
 import java.util.*;
 
 /**
+ * Base class for beans that have some standard fields, like RowId and Container.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 2:55:44 PM
  */
 public class IdentifiableEntity extends IdentifiableBase implements Identifiable
 {

@@ -16,9 +16,9 @@
 package org.labkey.experiment.api;
 
 /**
+ * Bean class for the exp.protocolaction table.
  * User: migra
  * Date: Sep 9, 2005
- * Time: 2:54:52 PM
  */
 public class ProtocolAction
 {

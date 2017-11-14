@@ -18,9 +18,9 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.ExperimentService;
 
 /**
+ * Bean class for the exp.experimentrun table.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 2:46:21 PM
  */
 public class ExperimentRun extends IdentifiableEntity
 {

@@ -33,9 +33,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
+ * Represents the GraphViz format for building an experiment run "flowchart", connecting datas, materials through runs
+ * and protocol applications.
  * User: migra
  * Date: Jun 13, 2005
- * Time: 1:01:14 PM
  */
 public class DotGraph
 {

@@ -31,9 +31,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Bean class for the exp.protocol table.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 11:58:20 PM
  */
 public class Protocol extends IdentifiableEntity
 {

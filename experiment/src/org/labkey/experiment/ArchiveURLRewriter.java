@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Transforms file URLs from how they are stored in the exp.data (a full path on the server's file system, typically)
+ * to a relative, unique path within a XAR export.
  * User: jeckels
  * Date: Jul 28, 2006
  */

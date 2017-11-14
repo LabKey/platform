@@ -29,11 +29,13 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
+ * Various options for representing LSIDs when exporting XAR files.
  * User: jeckels
  * Date: Nov 21, 2005
  */
 public enum LSIDRelativizer
 {
+    /** Keeps the original LSID from the source server */
     ABSOLUTE("Absolute")
     {
         protected String relativize(Lsid lsid, RelativizedLSIDs lsids)

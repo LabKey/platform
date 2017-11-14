@@ -16,9 +16,9 @@
 package org.labkey.experiment.api;
 
 /**
+ * Bean class for the exp.materialsource table. Referred to as sample sets within the UI.
  * User: migra
  * Date: Aug 15, 2005
- * Time: 2:59:39 PM
  */
 public class MaterialSource extends IdentifiableEntity
 {

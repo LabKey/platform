@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
+ * Options for how exp.data URL references can be exported in a XAR.
  * User: jeckels
  * Date: Jul 28, 2006
  */

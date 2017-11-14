@@ -22,6 +22,9 @@ import org.labkey.api.settings.AppProps;
 
 import static org.labkey.api.util.PageFlowUtil.encode;
 
+/**
+ * Bean class for the exp.datainput table.
+ */
 public class DataInput extends AbstractRunInput
 {
     /*package*/static final String NAMESPACE = LsidType.DataInput.name();

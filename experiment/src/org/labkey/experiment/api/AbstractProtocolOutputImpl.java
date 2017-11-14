@@ -35,10 +35,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-/*
-* User: jeckels
-* Date: Jul 28, 2008
-*/
+/**
+ * Base class for both types of objects that can be the output from a protocol - material and data.
+ * User: jeckels
+ * Date: Jul 28, 2008
+ */
 public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> extends ExpIdentifiableBaseImpl<Type> implements ExpProtocolOutput
 {
     private ExpProtocolApplicationImpl _sourceApp;

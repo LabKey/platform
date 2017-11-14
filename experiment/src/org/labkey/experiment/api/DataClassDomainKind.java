@@ -56,6 +56,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * DomainKind implementation for data classes, allowing customizable fields to be attached to the based set of columns.
  * User: kevink
  * Date: 9/15/15
  */
