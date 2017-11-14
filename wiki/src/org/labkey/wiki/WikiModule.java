@@ -178,7 +178,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         Map<String, String> wikiProps = new HashMap<>();
         wikiProps.put("webPartContainer", supportContainer.getId());
         addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, 0, wikiProps);
-        addWebPart("Messages", supportContainer, HttpView.BODY, 1);
 
         wikiProps.put("webPartContainer", sharedContainer.getId());
         addWebPart(WEB_PART_NAME, sharedContainer, HttpView.BODY, 0, wikiProps);

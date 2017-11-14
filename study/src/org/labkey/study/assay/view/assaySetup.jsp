@@ -47,21 +47,10 @@
 %>
 
 <% if (!hasAssayProtocols) { %>
-<em>No assay designs are available in this folder.</em>
-<% if (canDesignAssays) { %>
-    <labkey:link href="<%=new ActionURL(AssayController.ChooseAssayTypeAction.class, c).addParameter(\"returnURL\", getActionURL().getLocalURIString())%>" text="New Assay Design"/>
-<% } %>
-<p class="labkey-indented">
-    Each assay type provides pages to load and process data for a particular assay.
-    Before using an assay type a new assay design must be created.
-    The assay design specifies any custom information you would like to load with each assay batch, run, or result.
-<p class="labkey-indented">
-    <% if (canDesignAssays) { %>
-        For more information about assays, please see the <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=adminAssays">assay administrator</a> help topic.
-    <% } else { %>
-        Please ask an administrator for assistance in creating a new assay design.<br>
-        For more information about assays, please see the <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=assayUserGuide">assay user</a> help topic.
-    <% } %>
+<p>
+    <em>No assay designs are available in this folder.</em>
+    <a class="labkey-text-link" href="https://www.labkey.org/wiki/Documentation/page.view?name?defineAssaySchema">Assay Help</a>
+</p>
 <% } %>
 
 <% if (!hasPipelineRoot) { %>

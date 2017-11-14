@@ -206,7 +206,7 @@
                     }
                 },{
                     xtype: 'checkbox',
-                    boxLabel: 'Use name as title',
+                    boxLabel: 'Use name as display title',
                     checked: <%=title == null%>,
                     listeners: {
                         change: function(cb){
@@ -243,6 +243,8 @@
                 },{
                     html: 'Folder Type:',
                     cls: 'labkey-wizard-header'
+                },{
+                    html: 'Hover to learn more about each folder type. <a class="labkey-link" href="https://www.labkey.org/wiki/Documentation/page.view?name=foldertypes">FOLDER HELP></a>'
                 },{
                     xtype: 'radiogroup',
                     columns: 1,

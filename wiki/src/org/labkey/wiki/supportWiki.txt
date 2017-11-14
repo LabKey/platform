@@ -1,5 +1,5 @@
-<p>This page is a placeholder for your site support center.
-Customize this page to explain your support policies and offer resources.</p>
+Your users will arrive at this page when they select **Help > Support** on your LabKey Server instance.
 
-<p>Users will arrive at this page when they select <b>Help > Support</b>.
-You can change the destination page for that link at <b>Admin > Site > Admin Console > Look and Feel Settings</b>.</p>
+Here you can provide support resources to your users, such as issue trackers or message boards. Customize this page to meet the needs of your users and your organization's policies.
+
+The destination page for the **Help > Support** link can also be changed at **{span:class=fa fa-cog}{span} (Admin) > Site > Admin Console > Admin Console Links > Look and Feel Settings**.

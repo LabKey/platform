@@ -34,31 +34,9 @@
 %>
 <p>Congratulations! Your LabKey Server installation <%=text(newInstall ? "is ready to use" : "has been successfully upgraded")%>.</p>
 
-<p>What would you like to do next?</p>
-
 <ul>
-    <% if (newInstall) { %>
-        <li style="margin-bottom: 10px;">
-            <a href="<%= h(adminURLs.getCreateProjectURL(viewContext.getActionURL())) %>">Create a new project</a> as place to
-            <ul>
-                <li>perform mass spectrometry-based proteomics (MS1 and MS2)
-                <li>analyze flow cytometry data</li>
-                <li>import plate-based or other types of assay data</li>
-                <li>organize data in a longitudinal study</li>
-                <li>collaborate with tools like messages boards, wikis, and issue trackers</li>
-            </ul>
-        </li>
-
-        <li style="margin-bottom: 10px;">
-            <a href="<%= h(adminURLs.getAdminConsoleURL()) %>">Customize LabKey Server</a>
-            (<a href="<%= h(adminURLs.getProjectSettingsURL(org.labkey.api.data.ContainerManager.getRoot())) %>">appearance</a>,
-            security, <a href="<%= h(adminURLs.getCustomizeSiteURL()) %>">site settings</a>, etc)
-        </li>
-
-    <% } %>
-    
     <li style="margin-bottom: 10px;">
-        <a href="<%= h(ContainerManager.getHomeContainer().getStartURL(getUser())) %>">Go directly to the server's Home page</a>
+        <a href="<%= h(ContainerManager.getHomeContainer().getStartURL(getUser())) %>">Go to the server's Home page</a>
     </li>
 
     <li style="margin-bottom: 10px;">
