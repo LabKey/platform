@@ -46,7 +46,7 @@ public class ValidatorContext
 
     public void put(Class<? extends ValidatorKind> validatorClass, Object key, Object value)
     {
-        _map.put(new Pair<Class<? extends ValidatorKind>, Object>(validatorClass, key), value);
+        _map.put(new Pair<>(validatorClass, key), value);
     }
 
     public Container getContainer()

@@ -213,7 +213,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
         bbar.add(new ActionButton("Cancel", _returnUrl));
         rgn.addHiddenFormField("domainId", "" + domainIdForm.getDomainId());
-        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl().toString());
+        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl());
         rgn.setButtonBar(bbar);
 
         addAdditionalFormFields(domainIdForm, rgn);

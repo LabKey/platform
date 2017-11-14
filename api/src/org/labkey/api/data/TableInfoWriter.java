@@ -17,14 +17,18 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Type;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.ValidatorsType;
 
 import java.util.Collection;
+import java.util.List;
 
 /*
 * User: adam
@@ -104,6 +108,9 @@ public class TableInfoWriter
         if (!column.isNullable())
             columnXml.setNullable(false);
 
+        if (column.isRequiredSet())
+            columnXml.setRequired(true);
+
         if (column.isHidden())
             columnXml.setIsHidden(true);
         if (!column.isShownInInsertView())
@@ -124,7 +131,7 @@ public class TableInfoWriter
 
         if (column.getDefaultScale() != null)
         {
-            // only export default scale if not set to LINEAR
+            // Export default scale only if not set to LINEAR
             String typeName = column.getDefaultScale().name();
             if (!DefaultScaleType.LINEAR.toString().equals(typeName))
                 columnXml.setDefaultScale(DefaultScaleType.Enum.forString(typeName));
@@ -177,13 +184,27 @@ public class TableInfoWriter
             }
         }
 
-        // TODO: Field validators?
         // TODO: Default values / Default value types
+
         ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml);
+
+        List<? extends IPropertyValidator> validators = column.getValidators();
+
+        if (!validators.isEmpty())
+        {
+            ValidatorsType validatorsXml = columnXml.addNewValidators();
+
+            validators.forEach(v-> v.getType().convertToXml(v, validatorsXml));
+
+            // Remove the "validators" element if no validators wrote XML. For example, the collection might have just a "text length"
+            // validator, which isn't included in the "validators" element (these are serialized as the "scale" property).
+            if (0 == validatorsXml.sizeOfValidatorArray())
+                columnXml.unsetValidators();
+        }
 
         if (column.getFacetingBehaviorType() != null)
         {
-            // issue 14809: only export faceting behavior if not set to AUTOMATIC
+            // issue 14809: export faceting behavior only if not set to AUTOMATIC
             String typeName = column.getFacetingBehaviorType().name();
             if (!FacetingBehaviorType.AUTOMATIC.toString().equals(typeName))
             {
@@ -198,7 +219,7 @@ public class TableInfoWriter
         if (PHI.NotPHI != column.getPHI())
             columnXml.setPhi(PHIType.Enum.forString(column.getPHI().toString()));
 
-        //Only export scale if column is a string
+        // Export scale only if column is a string
         if (column.isStringType())
             columnXml.setScale(column.getScale());
     }

@@ -820,7 +820,7 @@ public class OntologyManager
         return new TableSelector(getTinfoObject()).getObject(id, OntologyObject.class);
     }
 
-    //todo:  review this.  this doesn't delete the underlying data objects.  should it?
+    //todo: review this. this doesn't delete the underlying data objects. should it?
     public static void deleteObjectsOfType(String domainURI, Container container)
     {
         DomainDescriptor dd = null;
@@ -1191,7 +1191,7 @@ public class OntologyManager
 
         if ((null != oldProject) && oldProject.getId().equals(newProject.getId()))
         {
-            //the folder is being moved within the same project.  No problems here
+            //the folder is being moved within the same project. No problems here
             return;
         }
 
@@ -2570,41 +2570,42 @@ public class OntologyManager
 
     public static class ImportPropertyDescriptor
     {
-        public String domainName;
-        public String domainURI;
-        public PropertyDescriptor pd;
+        public final String domainName;
+        public final String domainURI;
+        public final PropertyDescriptor pd;
+        public final List<? extends IPropertyValidator> validators;
+        public final List<ConditionalFormat> formats;
 
-        ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd)
+        ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, List<? extends IPropertyValidator> validators, List<ConditionalFormat> formats)
         {
             this.domainName = domainName;
             this.domainURI = domainURI;
             this.pd = pd;
+            this.validators = validators;
+            this.formats = formats;
         }
     }
 
 
-    public static class ListImportPropertyDescriptors
+    public static class ImportPropertyDescriptorsList
     {
-        public ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
+        public final ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
 
-        // TODO: need to track container for formats (maybe key'd to ImportPropertyDescriptor object instead of propertyuri?
-        public Map<String, List<ConditionalFormat>> formats = new HashMap<>();
-
-        void add(String domainName, String domainURI, PropertyDescriptor pd)
+        void add(String domainName, String domainURI, PropertyDescriptor pd, List<? extends IPropertyValidator> validators, List<ConditionalFormat> formats)
         {
-            properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd));
+            properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd, validators, formats));
         }
     }
 
 
     /**
-     * Turns a list of maps into a list of PropertyDescriptors.  Does not save anything.
+     * Turns a list of maps into a list of PropertyDescriptors. Does not save anything.
      * <p>
      * Look for duplicates with in imported list, but does not verify against any existing PropertyDescriptors/Domains
      */
-    public static ListImportPropertyDescriptors createPropertyDescriptors(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates)
+    public static ImportPropertyDescriptorsList createPropertyDescriptors(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates)
     {
-        ListImportPropertyDescriptors ret = new ListImportPropertyDescriptors();
+        ImportPropertyDescriptorsList ret = new ImportPropertyDescriptorsList();
         CaseInsensitiveHashSet all = new CaseInsensitiveHashSet();
         CaseInsensitiveHashSet mvColumns = new CaseInsensitiveHashSet();
 
@@ -2652,10 +2653,12 @@ public class OntologyManager
                 }
 
                 List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
-                if (conditionalFormats != null && !conditionalFormats.isEmpty())
-                    ret.formats.put(pd.getPropertyURI(), conditionalFormats);
+                assert null != conditionalFormats;
 
-                ret.add(domainName, domainURI, pd);
+                List<? extends IPropertyValidator> validators = (List<? extends IPropertyValidator>) m.get("Validators");
+                assert null != validators;
+
+                ret.add(domainName, domainURI, pd, validators, conditionalFormats);
             }
         }
 
@@ -2684,7 +2687,7 @@ public class OntologyManager
 
     /**
      * Updates an existing domain property with an import property descriptor generated
-     * by _propertyDescriptorFromRowMap below.  Properties we don't set are explicitly
+     * by _propertyDescriptorFromRowMap below. Properties we don't set are explicitly
      * called out
      */
     public static void updateDomainPropertyFromDescriptor(DomainProperty p, PropertyDescriptor pd)
@@ -2748,7 +2751,8 @@ public class OntologyManager
 
             BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
 
-            boolean required = ((Boolean) booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
+            boolean nullable = ((Boolean) booleanConverter.convert(Boolean.class, m.get("Nullable"))).booleanValue();
+            boolean required = ((Boolean) booleanConverter.convert(Boolean.class, m.get("Required"))).booleanValue();
             boolean hidden = ((Boolean) booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
             boolean mvEnabled = ((Boolean) booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
 
@@ -2870,6 +2874,7 @@ public class OntologyManager
             pd.setDescription(description);
             pd.setURL(url);
             pd.setImportAliases(importAliases);
+            pd.setNullable(nullable);
             pd.setRequired(required);
             pd.setHidden(hidden);
             pd.setShownInInsertView(shownInInsertView);

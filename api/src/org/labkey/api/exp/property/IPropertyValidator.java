@@ -15,15 +15,14 @@
  */
 package org.labkey.api.exp.property;
 
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 
 /*
 * User: Karl Lum
@@ -46,12 +45,11 @@ public interface IPropertyValidator
 
     void setName(String name);
     void setDescription(String description);
-    void setExpressionValue(String exression);
+    void setExpressionValue(String expression);
     void setErrorMessage(String message);
     void setProperty(String key, String value);
 
     IPropertyValidator save(User user, Container container) throws ValidationException;
-    void delete(User user) throws SQLException;
 
     boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
 }

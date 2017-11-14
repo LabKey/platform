@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
@@ -68,7 +69,7 @@ public class ConditionalFormat extends GWTConditionalFormat
 
     public boolean meetsCriteria(Object value)
     {
-        for (SimpleFilter.FilterClause filterClause : getSimpleFilter().getClauses())
+        for (FilterClause filterClause : getSimpleFilter().getClauses())
         {
             if (!filterClause.meetsCriteria(value))
             {
@@ -245,7 +246,7 @@ public class ConditionalFormat extends GWTConditionalFormat
                 // issue 20350 - don't add a <filters> element until we know the filter
                 // has clauses.
                 xmlFormat.addNewFilters();
-                for (SimpleFilter.FilterClause filterClause : simpleFilter.getClauses())
+                for (FilterClause filterClause : simpleFilter.getClauses())
                 {
                     ConditionalFormatFilterType xmlFilter = xmlFormat.getFilters().addNewFilter();
 

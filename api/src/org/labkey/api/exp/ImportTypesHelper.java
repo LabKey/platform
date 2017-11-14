@@ -19,6 +19,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.FacetingBehaviorType;
@@ -43,14 +44,16 @@ public class ImportTypesHelper
     protected Object _typeColumnValue;
     protected static List<String> _standardKeys = new ArrayList<>();
 
-    static {
+    static
+    {
         _standardKeys.add("Property");
         _standardKeys.add("PropertyURI");
         _standardKeys.add("Label");
         _standardKeys.add("Description");
 
         _standardKeys.add("RangeURI");
-        _standardKeys.add("NotNull");
+        _standardKeys.add("Nullable");
+        _standardKeys.add("Required");
         _standardKeys.add("ConceptURI");
         _standardKeys.add("Format");
         _standardKeys.add("InputType");
@@ -71,6 +74,7 @@ public class ImportTypesHelper
         _standardKeys.add("RecommendedVariable");
         _standardKeys.add("DefaultScale");
         _standardKeys.add("ConditionalFormats");
+        _standardKeys.add("Validators");
         _standardKeys.add("FacetingBehaviorType");
         _standardKeys.add("Phi");
         _standardKeys.add("ExcludeFromShifting");
@@ -138,7 +142,8 @@ public class ImportTypesHelper
                     throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
 
                 // Assume nullable if not specified
-                boolean notNull = columnXml.isSetNullable() && !columnXml.getNullable();
+                boolean nullable = !(columnXml.isSetNullable() && !columnXml.getNullable());
+                boolean required = columnXml.isSetRequired() && columnXml.getRequired();
 
                 boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
 
@@ -185,7 +190,7 @@ public class ImportTypesHelper
                     if (columnXml.getProtected())
                         phi = PHIType.LIMITED;  // always convert protected to limited PHI; may be overridden by getPhi(), though
                 }
-                if(columnXml.isSetPhi())
+                if (columnXml.isSetPhi())
                     phi = columnXml.getPhi();
 
                 boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
@@ -199,7 +204,8 @@ public class ImportTypesHelper
                         columnXml.getColumnTitle(),
                         columnXml.getDescription(),
                         pt.getTypeUri(),
-                        notNull,
+                        nullable,
+                        required,
                         columnXml.getConceptURI(),
                         columnXml.getFormatString(),
                         columnXml.isSetInputType() ? columnXml.getInputType() : null,
@@ -218,11 +224,11 @@ public class ImportTypesHelper
                         recommendedVariable,
                         defaultScale,
                         ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
+                        ValidatorKind.convertFromXML(columnXml.getValidators()),
                         facetingBehaviorType,
                         phi,
                         isExcludeFromShifting,
                         columnXml.isSetScale() ? columnXml.getScale() : null
-
                 );
 
                 importMaps.add(map);

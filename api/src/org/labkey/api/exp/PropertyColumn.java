@@ -118,6 +118,7 @@ public class PropertyColumn extends LookupColumn
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
+        to.setValidators(PropertyService.get().getPropertyValidators(pd));
     }
 
 

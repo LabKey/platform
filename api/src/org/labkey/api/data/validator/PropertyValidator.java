@@ -63,5 +63,4 @@ public class PropertyValidator implements ColumnValidator
         errors.clear();
         return msg;
     }
-
 }

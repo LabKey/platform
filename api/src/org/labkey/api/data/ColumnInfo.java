@@ -34,6 +34,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -364,6 +365,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setInputRows(col.getInputRows());
         if (!isKeyField() && !col.isNullable())
             setNullable(col.isNullable());
+        setRequired(col.required);
         setReadOnly(col.isReadOnly);
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
@@ -382,9 +384,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
         setConditionalFormats(col.getConditionalFormats());
-        validators = col.getValidators();
+        setValidators(col.getValidators());
+
         // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
-        // hide the fact that these values can be null internally.  It's important to preserve the notion
+        // hide the fact that these values can be null internally. It's important to preserve the notion
         // of unset values on the new columninfo.
         measure = col.measure;
         dimension = col.dimension;
@@ -1077,6 +1080,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             isKeyField = xmlCol.getIsKeyField();
         if (xmlCol.isSetDisplayWidth())
             setDisplayWidth(xmlCol.getDisplayWidth());
+        if (xmlCol.isSetRequired())
+            required = xmlCol.getRequired();
         if (xmlCol.isSetNullable())
             nullable = xmlCol.getNullable();
         if (xmlCol.isSetExcludeFromShifting())
@@ -1086,6 +1091,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (xmlCol.isSetConditionalFormats())
         {
             setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
+        }
+        if (xmlCol.isSetValidators())
+        {
+            setValidators(ValidatorKind.convertFromXML(xmlCol.getValidators()));
         }
         if (xmlCol.isSetProtected())  // column is removed from LabKey but need to support old archives, see spec #28920
         {
@@ -2021,6 +2030,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return validators;
     }
 
+    public void setValidators(List<? extends IPropertyValidator> validators)
+    {
+        this.validators = validators;
+    }
 
     // TODO: fix up OORIndicator
 
