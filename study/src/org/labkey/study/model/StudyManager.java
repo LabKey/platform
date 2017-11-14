@@ -551,13 +551,14 @@ public class StudyManager
     @NotNull
     public Set<? extends StudyImpl> getAllStudies()
     {
-        if (CacheManager.getSharedCache().get(CACHE_KEY) == null)
+        Set<StudyImpl> ret = (Set)CacheManager.getSharedCache().get(CACHE_KEY);
+        if (ret == null)
         {
-            Set<StudyImpl> ret = Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy()).getArrayList(StudyImpl.class)));
+            ret = Collections.unmodifiableSet(new LinkedHashSet<>(new TableSelector(StudySchema.getInstance().getTableInfoStudy(), null, new Sort("Label")).getArrayList(StudyImpl.class)));
             CacheManager.getSharedCache().put(CACHE_KEY, ret);
         }
 
-        return (Set)CacheManager.getSharedCache().get(CACHE_KEY);
+        return ret;
     }
 
     private void clearCachedStudies()
