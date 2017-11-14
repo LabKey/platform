@@ -1066,8 +1066,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Study Properties: adding custom fields");
         goToManageStudy();
-        waitForText("Edit Definition");
-        clickAndWait(Locator.linkWithText("Edit Definition"));
+        waitAndClickAndWait(Locator.linkWithText("Edit Additional Properties"));
         waitForText("No fields have been defined.");
 
         clickButton("Add Field", 0);
