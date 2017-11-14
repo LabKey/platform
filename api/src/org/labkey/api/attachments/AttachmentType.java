@@ -18,6 +18,10 @@ package org.labkey.api.attachments;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
 
+/**
+ * Tags {@link Attachment} objects based on their intended use and what they're attached to. Does not
+ * necessarily indicate that they are a file of a particular type/format.
+ */
 public interface AttachmentType
 {
     AttachmentType UNKNOWN = new AttachmentType()

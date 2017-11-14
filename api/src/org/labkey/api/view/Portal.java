@@ -164,6 +164,7 @@ public class Portal
 
     public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
 
+    /** Bean object for persisting web part configurations in the core.portalwebparts table */
     public static class WebPart implements Serializable
     {
         Container container;

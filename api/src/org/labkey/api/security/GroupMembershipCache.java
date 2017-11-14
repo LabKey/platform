@@ -32,9 +32,9 @@ import java.util.LinkedList;
 import java.util.Set;
 
 /**
+ * Caches membership information for groups (their constituent users and child groups).
  * User: adam
  * Date: 10/11/11
- * Time: 9:55 PM
  */
 public class GroupMembershipCache
 {

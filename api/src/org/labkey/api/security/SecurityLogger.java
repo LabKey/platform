@@ -21,11 +21,13 @@ import org.apache.log4j.Priority;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
+ * Utility wrapper over a Log4J logger to make it easier to log security-related information and track context for users
+ * and impersonations.
  * User: matthewb
  * Date: 2013-02-01
- * Time: 12:00 PM
  */
 
 public class SecurityLogger extends Logger
@@ -55,7 +57,7 @@ public class SecurityLogger extends Logger
 
     public static void pushSecurityContext(String description, User user)
     {
-        ArrayList<ThreadSecurityContext> a = threadsecuritycontexts.get();
+        List<ThreadSecurityContext> a = threadsecuritycontexts.get();
         a.add(new ThreadSecurityContext(user,description,a.get(a.size()-1)));
         if (null != description)
             indent("<" + description + (null == user ? "" : " " + user.getName()) + ">");
@@ -64,7 +66,7 @@ public class SecurityLogger extends Logger
 
     public static void popSecurityContext()
     {
-        ArrayList<ThreadSecurityContext> a = threadsecuritycontexts.get();
+        List<ThreadSecurityContext> a = threadsecuritycontexts.get();
         if (a.size()==1)
             return;
         outdent();
@@ -79,7 +81,7 @@ public class SecurityLogger extends Logger
     {
         if (null != msg)
             instance.debug(msg);
-        ArrayList<ThreadSecurityContext> a = threadsecuritycontexts.get();
+        List<ThreadSecurityContext> a = threadsecuritycontexts.get();
         a.get(a.size()-1).indent++;
         return true;
     }
@@ -87,7 +89,7 @@ public class SecurityLogger extends Logger
 
     public static boolean outdent()
     {
-        ArrayList<ThreadSecurityContext> a = threadsecuritycontexts.get();
+        List<ThreadSecurityContext> a = threadsecuritycontexts.get();
         if (a.get(a.size()-1).indent > 0)
             a.get(a.size()-1).indent--;
         return true;
@@ -121,7 +123,7 @@ public class SecurityLogger extends Logger
     }
 
 
-    static ThreadLocal<ArrayList<ThreadSecurityContext>> threadsecuritycontexts = new ThreadLocal<ArrayList<ThreadSecurityContext>>()
+    static ThreadLocal<List<ThreadSecurityContext>> threadsecuritycontexts = new ThreadLocal<List<ThreadSecurityContext>>()
     {
         @Override
         protected ArrayList<ThreadSecurityContext> initialValue()
@@ -135,7 +137,7 @@ public class SecurityLogger extends Logger
 
     private static Object indentMsg(Object msg)
     {
-        ArrayList<ThreadSecurityContext> a = threadsecuritycontexts.get();
+        List<ThreadSecurityContext> a = threadsecuritycontexts.get();
         int indent = a.get(a.size()-1).indent;
         if (0 >= indent)
             return msg;

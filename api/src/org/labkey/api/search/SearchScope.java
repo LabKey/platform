@@ -19,10 +19,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 
 /**
-  * User: adam
-  * Date: 2/18/12
-  * Time: 2:06 PM
-  */
+ * Options for how widely or narrowly to search on the server, based on the number of containers to include.
+ * User: adam
+ * Date: 2/18/12
+ */
 public enum SearchScope
 {
     All() {

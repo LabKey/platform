@@ -1255,7 +1255,6 @@ api/src/org/labkey/api/security/permissions/EditSpecimenDataPermission.java -tex
 api/src/org/labkey/api/security/permissions/EnableRestrictedModules.java -text
 api/src/org/labkey/api/security/permissions/InsertPermission.java -text
 api/src/org/labkey/api/security/permissions/Permission.java -text
-api/src/org/labkey/api/security/permissions/PermissionManager.java -text
 api/src/org/labkey/api/security/permissions/ReadPermission.java -text
 api/src/org/labkey/api/security/permissions/ReadSomePermission.java -text
 api/src/org/labkey/api/security/permissions/SeeUserEmailAddressesPermission.java -text

@@ -70,7 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Main entry point for HTTP requests to be fed by views and actions as implemented in LabKey Server. Receives
  * incoming requests for *.view, *.api, and so forth.
  *
- * Must keep {@link ActionURL} in sync.
+ * Must keep {@link ActionURL} in sync so that URLs are routed to the appropriate action to handle them.
  */
 public class ViewServlet extends HttpServlet
 {

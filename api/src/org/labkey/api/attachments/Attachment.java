@@ -37,7 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * Attachment is not quite a full blown Entity so we have some duplication here
+ * Attachments are files stored as BLOBs in the database.
+ * They are not quite a full blown Entity so we have some duplication here with what's defined in {@link org.labkey.api.data.Entity}
  * <p/>
  * NOTE: Attachment is only used to list the attachments, it does not contain document data
  * and cannot be used directly to insert or update attachments.

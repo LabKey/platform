@@ -16,11 +16,11 @@
 
 package org.labkey.api.search;
 
-/*
-* User: adam
-* Date: Mar 10, 2011
-* Time: 9:04:45 AM
-*/
+/**
+ * Indicates that something about the full-text search engine or indexer is messed up.
+ * User: adam
+ * Date: Mar 10, 2011
+ */
 
 import org.labkey.api.util.MinorConfigurationException;
 

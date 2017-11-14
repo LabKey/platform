@@ -22,11 +22,16 @@ import org.apache.commons.lang3.StringUtils;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-
+/**
+ * Options for storing passwords securely via cryptographic hashes.
+ */
 public enum Crypt
 {
+    /** For compatibility with historic data only, do not use for newly stored passwords */
     MD5(new _md5(), "md5"),
+    /** For compatibility with historic data only, do not use for newly stored passwords */
     SaltMD5(new _saltmd5(), "salt"),
+    /** The preferred and more secure option for storing hashed passwords */
     BCrypt(new _bcrypt(), "bc");
 
     final _Crypt _crypt;

@@ -16,10 +16,10 @@
 package org.labkey.api.security;
 
 /**
-* User: adam
-* Date: 1/14/12
-* Time: 12:10 PM
-*/
+ * Different types of entities that can interact with the system, such as users and groups.
+ * User: adam
+ * Date: 1/14/12
+ */
 public enum PrincipalType
 {
     USER('u', "User"),

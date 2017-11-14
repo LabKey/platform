@@ -44,17 +44,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-/*
-* User: Dave
-* Date: Apr 27, 2009
-* Time: 10:58:34 AM
-*/
-
 /**
  * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy for a resource
  * using SecurityMananger.getPolicy(). Note that this class is immutable once constructed, so it may
  * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
+
+ * User: Dave
+ * Date: Apr 27, 2009
  */
 public class SecurityPolicy implements HasPermission
 {

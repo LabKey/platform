@@ -21,7 +21,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.exp.Lsid;
 
 /**
- * Recognizes {@link ExpData} based on their LSIDs to identify specific flavors that have custom handling within the
+ * Recognizes {@link ExpData} based on the namespace prefix in their LSIDs to identify specific flavors that have custom handling within the
  * application
  */
 public class DataType

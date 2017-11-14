@@ -32,8 +32,6 @@ public interface ScriptReference
     /**
      * The eval family of methods will run the compiled script in the execution context.  Passing in
      * the map bindings is the same as setting the bindings in the ScriptContext.ENGINE_SCOPE.
-     * @return
-     * @throws ScriptException
      */
     Object eval() throws ScriptException;
     Object eval(Map<String, ?> bindings) throws ScriptException;
@@ -46,29 +44,18 @@ public interface ScriptReference
     /**
      * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
      * The scope is the top-level script context.
-     * @param name
-     * @return
-     * @throws ScriptException
      */
     boolean hasFn(String name) throws ScriptException;
 
     /**
      * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
      * @param thiz The scope to interrogate (must be a Rhino Scriptable object.)
-     * @param name
-     * @return
-     * @throws ScriptException
      */
     boolean hasFn(Object thiz, String name) throws ScriptException;
 
     /**
      * Calls a JavaScript function after {@link eval()}uating the compiled script.  These are loose
      * functions defined in the top-level of the script and not methods of objects.
-     * @param name
-     * @param args
-     * @return
-     * @throws ScriptException
-     * @throws NoSuchMethodException
      */
     Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException;
     <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException;
@@ -77,11 +64,6 @@ public interface ScriptReference
      * Calls a JavaScript function after {@link eval()}uating the compiled script.  These are loose
      * functions defined in the top-level of the script and not methods of objects.
      * @param thiz The scope to invoke the function in.
-     * @param name
-     * @param args
-     * @return
-     * @throws ScriptException
-     * @throws NoSuchMethodException
      */
     Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
     <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;

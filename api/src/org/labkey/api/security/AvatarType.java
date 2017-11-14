@@ -20,6 +20,9 @@ import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 
+/**
+ * Identifies avatar files (user-account associated image/icon
+ */
 public class AvatarType implements AttachmentType
 {
     private static final AvatarType INSTANCE = new AvatarType();

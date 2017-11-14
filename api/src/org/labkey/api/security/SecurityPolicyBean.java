@@ -20,12 +20,12 @@ import org.labkey.api.data.Container;
 import java.util.Date;
 
 
-/*
-* User: Dave
-* Date: May 6, 2009
-* Time: 10:17:57 AM
-*/
-
+/**
+ * Simple bean object representing a policy over a {@link SecurableResource}. Consider using {@link SecurityPolicy} instead
+ * which provides significantly more functionality.
+ * User: Dave
+ * Date: May 6, 2009
+ */
 public class SecurityPolicyBean
 {
     private String _resourceId;

@@ -24,6 +24,7 @@ import org.labkey.api.writer.VirtualFile;
 import java.util.Set;
 
 /**
+ * Captures the values for options that can be set when importing or exporting a folder archive.
  * User: jeckels
  * Date: Jan 18, 2012
  */

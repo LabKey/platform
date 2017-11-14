@@ -20,9 +20,9 @@ import org.json.JSONObject;
 import org.labkey.api.util.Pair;
 
 /**
+ * Captures options for auto-complete actions requested from the browser (typically based on partial input).
  * User: adam
  * Date: Sep 23, 2007
- * Time: 5:43:55 PM
  */
 public final class AjaxCompletion extends Pair<String, String>
 {

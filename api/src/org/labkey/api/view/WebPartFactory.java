@@ -36,6 +36,7 @@ public interface WebPartFactory
     String LOCATION_MENUBAR = "menubar";
     String LOCATION_BODY = "!content";
 
+    /** Web parts should have unique names across all modules */
     String getName();
 
     /**
@@ -50,6 +51,7 @@ public interface WebPartFactory
 
     String getDefaultLocation();
 
+    /** @return the locations ({@link #LOCATION_RIGHT}, {@link #LOCATION_MENUBAR}, {@link #LOCATION_BODY} in which the web part is allowed to be placed */
     Set<String> getAllowableLocations();
 
     WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException;
@@ -58,16 +60,25 @@ public interface WebPartFactory
 
     Portal.WebPart createWebPart();
 
+    /**
+     * For web parts that can be placed in multiple locations and configure themselves differently
+     * depending on where they are placed, create an instance for the desired location
+     */
     Portal.WebPart createWebPart(String location);
 
     boolean isEditable();
 
+    /**
+     * @return true if after adding this web part to a portal page, the user should be taken to the configuration
+     * page to finish setting it up
+     */
     boolean showCustomizeOnInsert();
 
     Module getModule();
 
     void setModule(Module module);
 
+    /** For backwards compatibility, names that this web part might have been previously called and should still match it for existing portal configurations */
     List<String> getLegacyNames();
 
     boolean isAvailable(Container c, String location);

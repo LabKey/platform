@@ -29,37 +29,37 @@ import org.labkey.api.security.permissions.Permission;
 
 public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 {
-    public Container getContainer();
+    Container getContainer();
 
-    public ColumnInfo addColumn(C column);
-    public ColumnInfo addColumn(String alias, C column);
-    public ColumnInfo getColumn(C column);
-    public ColumnInfo createColumn(String alias, C column);
-    public ColumnInfo addColumn(ColumnInfo column);
+    ColumnInfo addColumn(C column);
+    ColumnInfo addColumn(String alias, C column);
+    ColumnInfo getColumn(C column);
+    ColumnInfo createColumn(String alias, C column);
+    ColumnInfo addColumn(ColumnInfo column);
     // Adds a column so long as there is not already one of that name.
-    public boolean safeAddColumn(ColumnInfo column);
-    public void setTitleColumn(String titleColumn);
+    boolean safeAddColumn(ColumnInfo column);
+    void setTitleColumn(String titleColumn);
 
     /**
      * Add a column which can later have its ForeignKey set to be such that the column displays a property value.
      * The returned could will have the integer value of the ObjectId.
      */
-    public ColumnInfo createPropertyColumn(String alias);
+    ColumnInfo createPropertyColumn(String alias);
 
-    public void addCondition(SQLFragment condition, FieldKey... fieldKeys);
-    public void addRowIdCondition(SQLFragment rowidCondition);
-    public void addLSIDCondition(SQLFragment lsidCondition);
+    void addCondition(SQLFragment condition, FieldKey... fieldKeys);
+    void addRowIdCondition(SQLFragment rowidCondition);
+    void addLSIDCondition(SQLFragment lsidCondition);
 
-    public void setDetailsURL(DetailsURL detailsURL);
-    public void setInsertURL(DetailsURL insertURL);
-    public void setUpdateURL(DetailsURL updateURL);
-    public void setImportURL(DetailsURL importURL);
+    void setDetailsURL(DetailsURL detailsURL);
+    void setInsertURL(DetailsURL insertURL);
+    void setUpdateURL(DetailsURL updateURL);
+    void setImportURL(DetailsURL importURL);
 
     /** Add the standard set of columns to the table */
-    public void populate();
+    void populate();
 
     /** By default, only delete is allowed. Allows specific usages to enable other actions like update */
-    public void addAllowablePermission(Class<? extends Permission> permission);
+    void addAllowablePermission(Class<? extends Permission> permission);
 
     /**
      * Add columns directly to the table itself, and optionally also as a single column that is a FK to the full set of properties
@@ -69,9 +69,10 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      */
     ColumnInfo addColumns(Domain domain, @Nullable String legacyName);
 
-    public void setDescription(String description);
+    void setDescription(String description);
 
-    public void setDomain(Domain domain);
+    void setDomain(Domain domain);
 
-    public void setPublicSchemaName(String schemaName);
+    /** Allows experiment-based tables to be exposed in other schemas, such as samples sets being exposed in the "samples" schema */
+    void setPublicSchemaName(String schemaName);
 }

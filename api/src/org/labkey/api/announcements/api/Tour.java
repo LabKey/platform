@@ -18,19 +18,21 @@ package org.labkey.api.announcements.api;
 import org.json.JSONObject;
 
 /**
+ * Tours offer a guided walkthrough some part of the UI with a click-through, highlighting specific elements.
+ * They are defined as JSON.
  * Created by Marty on 1/19/2015.
  */
 public interface Tour
 {
-    public Integer getRowId();
-    public void setRowId(Integer id);
-    public String getTitle();
-    public void setTitle(String title);
-    public String getDescription();
-    public void setDescription(String description);
-    public String getJson();
-    public void setJson(String json);
-    public Integer getMode();
-    public void setMode(Integer mode);
-    public JSONObject abbrevDef();
+    Integer getRowId();
+    void setRowId(Integer id);
+    String getTitle();
+    void setTitle(String title);
+    String getDescription();
+    void setDescription(String description);
+    String getJson();
+    void setJson(String json);
+    Integer getMode();
+    void setMode(Integer mode);
+    JSONObject abbrevDef();
 }

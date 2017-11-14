@@ -24,7 +24,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -36,7 +35,6 @@ import java.util.Set;
  *
  * User: adam
  * Date: 11/9/11
- * Time: 5:18 AM
  */
 public class NotImpersonatingContext implements ImpersonationContext
 {
