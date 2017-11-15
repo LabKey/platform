@@ -337,7 +337,9 @@ public class XarReader extends AbstractXarImporter
         {
             for (DeferredDataLoad deferredDataLoad : _deferredDataLoads)
             {
-                if (deferredDataLoad.getData().getFile().exists())
+                if (deferredDataLoad.getData().getFile() == null)
+                    continue;
+                else if (deferredDataLoad.getData().getFile().exists())
                     deferredDataLoad.getData().importDataFile(_job, _xarSource);
                 else
                     getLog().warn("Data file " + deferredDataLoad.getData().getFile() + " does not exist and could not be loaded.");
