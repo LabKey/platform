@@ -410,7 +410,6 @@ api/src/org/labkey/api/data/ServerPrimaryKeyLock.java -text
 api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/ShowRowsConverter.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
-api/src/org/labkey/api/data/SqlColumn.java -text
 api/src/org/labkey/api/data/SqlExecutingSelector.java -text
 api/src/org/labkey/api/data/SqlExecutor.java -text
 api/src/org/labkey/api/data/SqlFactory.java -text

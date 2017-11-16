@@ -71,7 +71,7 @@ import java.util.Set;
  * Represents a column (be it a real column in a table or a calculated expression) that's part of
  * a {@link TableInfo}. Knows how to generate SQL to get its own value.
  */
-public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
+public class ColumnInfo extends ColumnRenderProperties
 {
     public static final String DEFAULT_PROPERTY_URI_PREFIX = "http://terms.fhcrc.org/dbschemas/";
 
