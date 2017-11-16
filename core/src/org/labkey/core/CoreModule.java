@@ -232,6 +232,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -283,6 +284,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Start up the default Quartz scheduler, used in many places
         try
         {
+            // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
+            Properties props = System.getProperties();
+            props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
             StdSchedulerFactory.getDefaultScheduler().start();
         }
         catch (SchedulerException e)
