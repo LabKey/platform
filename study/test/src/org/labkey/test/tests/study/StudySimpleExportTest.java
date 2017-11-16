@@ -132,7 +132,9 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .setName(TEST_DATASET_NAME)
                 .submit();
         _listHelper.deleteField("Dataset Fields", 0);
-        _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer);
+        _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer,
+                new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.GTE, "999"));
+        _listHelper.addField("Dataset Fields", "TestString", "TestRequiredString", ListHelper.ListColumnType.String, null, true);
         // Format "TestDate" as "Date"
         _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
         // "TestDateTime" format will default to date-time
@@ -143,7 +145,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .getDataRegion()
                 .clickImportBulkData();
         waitForElement(Locator.name("text"));
-        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29\t2013-10-28 01:23");
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestString\tTestDate\tTestDateTime\nPTID123\t1.0\t999\tABC\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
     }
 
@@ -227,6 +229,34 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         Locator l = Locator.tagWithName("input", "labels");
         assertFormElementEquals(l.index(getElementCount(l) - 1), name);
+    }
+
+    @Test
+    public void verifyDatasetFieldValidators()
+    {
+        log("Field Validators: export study folder to the pipeline as individual files");
+        exportFolderAsIndividualFiles(getFolderName(), false, false, false);
+
+        log("Field Validators: import study into subfolder");
+        createSubfolderAndImportStudyFromPipeline("Field Validators");
+
+        goToProjectHome();
+        clickFolder("Field Validators");
+
+        clickTab("Clinical and Assay Data");
+        waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
+        DataRegionTable.findDataRegion(this).clickImportBulkData();
+        waitForElement(Locator.name("text"));
+
+        log("Verify required field for imported study");
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t999");
+        click(Locator.button("Submit"));
+        waitForText("Data does not contain required field: TestString");
+
+        log("Verify field validator for imported study");
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestString\tTestInt\nPTID123\t999\tZZZ\t333");
+        click(Locator.button("Submit"));
+        waitForText("Value '333' for field 'TestInt' is invalid. TestInt must equals '999'.");
     }
 
     @Test
@@ -354,7 +384,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
         DataRegionTable.findDataRegion(this).clickImportBulkData();
         waitForElement(Locator.name("text"));
-        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t" + visitSeqNumMin);
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestString\nPTID123\t" + visitSeqNumMin + "\tBCD");
         clickButton("Submit");
 
         log("Visit Properties: export study folder to the pipeline as individual files");
