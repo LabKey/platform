@@ -91,7 +91,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     {
         ExpRun run = data.getRun();
 
-        if (run == null || !run.isFinalOutput(data))
+        if (!data.isFinalRunOutput())
             return defaultName;
 
         if (defaultName.startsWith("uploadTemp"))
@@ -109,18 +109,15 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     @Override
     public boolean hasContentToExport(ExpData data, File file)
     {
-        ExpRun run = data.getRun();
-
-        return run != null && run.isFinalOutput(data);
+        return data.isFinalRunOutput();
     }
 
     @Override
     public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
     {
-        ExpRun run = data.getRun();
-
-        if (run != null && run.isFinalOutput(data))
+        if (data.isFinalRunOutput())
         {
+            ExpRun run = data.getRun();
             ExpProtocol protocol = run.getProtocol();
             if (protocol != null)
             {

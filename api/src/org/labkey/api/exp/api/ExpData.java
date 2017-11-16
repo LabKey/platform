@@ -58,6 +58,8 @@ public interface ExpData extends ExpProtocolOutput
      */
     boolean isGenerated();
 
+    boolean isFinalRunOutput();
+
     @Nullable
     ExpDataClass getDataClass();
 
