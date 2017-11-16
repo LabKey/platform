@@ -35,7 +35,6 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -95,7 +94,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         if (run == null || !run.isFinalOutput(data))
             return defaultName;
 
-        return FilenameUtils.getFullPath(defaultName) + FilenameUtils.getBaseName(defaultName) + ".tsv";
+        if (defaultName.startsWith("uploadTemp"))
+            return FilenameUtils.getBaseName(defaultName) + ".tsv";
+        else
+            return FilenameUtils.getFullPath(defaultName) + FilenameUtils.getBaseName(defaultName) + ".tsv";
     }
 
     @Override
@@ -109,10 +111,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     {
         ExpRun run = data.getRun();
 
-        if (run == null || !run.isFinalOutput(data))
-            return false;
-
-        return NetworkDrive.exists(file) && file.isFile();
+        return run != null && run.isFinalOutput(data);
     }
 
     @Override
