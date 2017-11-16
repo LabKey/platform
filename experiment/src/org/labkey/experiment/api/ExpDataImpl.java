@@ -39,6 +39,7 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.pipeline.PipeRoot;
@@ -283,6 +284,16 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public boolean isGenerated()
     {
         return _object.isGenerated();
+    }
+
+    @Override
+    public boolean isFinalRunOutput()
+    {
+        ExpRun run = getRun();
+        if (run == null)
+            return false;
+        else
+            return run.isFinalOutput(this);
     }
 
     @Override

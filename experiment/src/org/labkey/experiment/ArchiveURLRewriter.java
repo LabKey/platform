@@ -112,7 +112,7 @@ public class ArchiveURLRewriter extends URLRewriter
                 {
                     name = uniquifyFileName(name, directoryName, null);
                 }
-                if (f.exists() || (data.getRun() != null && data.getRun().isFinalOutput(data)))
+                if (f.exists() || (data.isFinalRunOutput()))
                 {
                     _files.put(f, new FileInfo(data, f, name, dataHandler, user));
                 }
