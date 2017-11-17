@@ -133,7 +133,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .submit();
         _listHelper.deleteField("Dataset Fields", 0);
         _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer,
-                new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.GTE, "999"));
+                new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"));
         _listHelper.addField("Dataset Fields", "TestString", "TestRequiredString", ListHelper.ListColumnType.String, null, true);
         // Format "TestDate" as "Date"
         _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
