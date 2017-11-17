@@ -113,7 +113,6 @@ public class FileSystemResource extends AbstractWebdavResource
 
     private boolean _dataQueried = false;
     private List<ExpData> _data;
-    private boolean _mergeFromParent;
     private Map<String, String> _customProperties;
 
     private enum FileType { file, directory, notpresent }
@@ -131,14 +130,13 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.append(name));
     }
 
-    public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
+    public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
     {
         this(folder.getPath(), name);
         _folder = folder;
         _name = name;
         setPolicy(policy);
         _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
-        _mergeFromParent = mergeFromParent;
     }
 
     public FileSystemResource(FileSystemResource folder, String relativePath)
@@ -329,69 +327,11 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
-    /**
-     * To improve backwards compatibility with existing external processes, copy files from
-     * the original location on the file system into the @files directory if they don't exist
-     * in the @files directory or are newer.
-     */
-    final protected void mergeFilesIfNeeded()
-    {
-        if (_mergeFromParent && isCollection())
-        {
-            mergeFiles(getFile());
-        }
-    }
-
-    public static void mergeFiles(File atFilesDirectory)
-    {
-        File[] parentFiles = atFilesDirectory.getParentFile().listFiles((FileFilter) FileFileFilter.FILE);
-        if (parentFiles != null)
-        {
-            for (File parentFile : parentFiles)
-            {
-                long lastModified = parentFile.lastModified();
-                File destFile = new File(atFilesDirectory, parentFile.getName());
-                // lastModified() returns 0 if the file doesn't exist, so this check works in either case
-                if (destFile.lastModified() < parentFile.lastModified())
-                {
-                    _log.info("Detected updated file '" + parentFile + "', moving to @files subdirectory");
-                    try
-                    {
-                        if (destFile.exists() && !destFile.delete())
-                        {
-                            _log.warn("Failed to delete outdated file '" + destFile + "' from @files location");
-                        }
-                        FileUtils.moveFile(parentFile, destFile);
-                        // Preserve the file's timestamp
-                        if (!destFile.setLastModified(lastModified))
-                        {
-                            _log.warn("Filed to set timestamp on " + destFile);
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        // Don't fail the request because of this error
-                        _log.warn("Unable to copy file '" + parentFile + "' from legacy location to new @files location");
-                    }
-                }
-                else
-                {
-                    if (!parentFile.delete())
-                    {
-                        _log.warn("Failed to delete file '" + parentFile + "' from legacy location");
-                    }
-                }
-            }
-        }
-    }
-
-
     @NotNull
     public Collection<String> listNames()
     {
         if (!isCollection())
             return Collections.emptyList();
-        mergeFilesIfNeeded();
         Set<String> result = new TreeSet<>();
         if (_files != null)
         {
@@ -426,7 +366,6 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public WebdavResource find(String name)
     {
-        mergeFilesIfNeeded();
         return new FileSystemResource(this, name);
     }
 

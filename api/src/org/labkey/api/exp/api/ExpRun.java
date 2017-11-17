@@ -53,7 +53,7 @@ public interface ExpRun extends ExpObject
     /** Stored in the exp.experimentrun table */
     // TODO - Merge this with getComment() (backed by ontology manager) on ExpObject
     String getComments();
-    /** Stored in the exp.experiment table */
+    /** Stored in the exp.experimentrun table */
     void setComments(String comments);
 
     void setEntityId(String entityId);

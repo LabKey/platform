@@ -621,7 +621,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(descriptor, false);
             if (!policy.isEmpty())
             {
-                return policy.hasPermission(user, perm);
+                // Issue 32103: even if custom SecurityPolicy present, the original creator/owner always has permissions
+                return policy.hasPermission(user, perm) || isOwner(user);
             }
             else
             {

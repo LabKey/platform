@@ -271,7 +271,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                             }
                         }
                         if (targetFile != null)
-                            resource = new FileSystemResource(this, name, targetFile, parentContainer.getPolicy(), false);
+                            resource = new FileSystemResource(this, name, targetFile, parentContainer.getPolicy());
 
                     }
 
@@ -285,7 +285,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                 File fileRootFile = getFileRootFile(parentContainer);
                 if (fileRootFile != null)
                 {
-                    FileSystemResource fileRootResource = new FileSystemResource(this, "@files", fileRootFile, parentContainer.getPolicy(), false);
+                    FileSystemResource fileRootResource = new FileSystemResource(this, "@files", fileRootFile, parentContainer.getPolicy());
                     if (child.equals("@files"))
                         return fileRootResource;
                     return new FileSystemResource(fileRootResource, child);

@@ -36,6 +36,7 @@ public class DefaultTransformResult implements TransformResult
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
     private File _uploadedFile;
     private String _assayId;
+    private String _comments;
     private String _warnings;
     private List<File> _files;
     private static final Logger LOG = Logger.getLogger(DefaultTransformResult.class);
@@ -137,5 +138,17 @@ public class DefaultTransformResult implements TransformResult
     public void setAssayId(String assayId)
     {
         _assayId = assayId;
+    }
+
+    @Override
+    public String getComments()
+    {
+        return _comments;
+    }
+
+    @Override
+    public void setComments(String comments)
+    {
+        _comments = comments;
     }
 }

@@ -96,7 +96,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
     public static final String TRANSFORMED_RUN_INFO_FILE = "transformedRunProperties.tsv";
-    public static final String ASSAY_ID = "assayId";
     public static final String TRANS_ERR_FILE = "errors.html";
 
     private Map<String, String> _formFields = new HashMap<>();
@@ -904,8 +903,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     transformedProps = new HashMap<>();
                     for (Map<String, Object> row : parseRunInfo(transformedRunProps))
                     {
-                        String name = String.valueOf(row.get("name"));
-                        String value = String.valueOf(row.get("value"));
+                        String name = row.get("name") == null ? null : String.valueOf(row.get("name"));
+                        String value = row.get("value") == null ? null : String.valueOf(row.get("value"));
 
                         if (name != null && value != null)
                             transformedProps.put(name, value);
@@ -946,8 +945,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         result.setRunProperties(runProps);
                     if (batchPropTransformed)
                         result.setBatchProperties(batchProps);
-                    if (transformedProps.containsKey(ASSAY_ID))
-                        result.setAssayId(transformedProps.get(ASSAY_ID));
+                    if (transformedProps.containsKey(Props.assayId.name()))
+                        result.setAssayId(transformedProps.get(Props.assayId.name()));
+                    if (transformedProps.containsKey(Props.runComments.name()))
+                        result.setComments(transformedProps.get(Props.runComments.name()));
                 }
                 if (runDataUploadedFile != null)
                     result.setUploadedFile(runDataUploadedFile);

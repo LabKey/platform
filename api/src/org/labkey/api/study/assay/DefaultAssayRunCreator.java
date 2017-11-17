@@ -313,6 +313,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (null != transformResult.getAssayId())
                 run.setName(transformResult.getAssayId());
+            if (null != transformResult.getComments())
+                run.setComments(transformResult.getComments());
             if (!transformResult.getRunProperties().isEmpty())
             {
                 Map<DomainProperty, String> props = transformResult.getRunProperties();
