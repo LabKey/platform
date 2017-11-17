@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.study.assay.AssayManager" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.study.xml.impl.AssayDefinitionImpl" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -48,8 +50,10 @@
 
 <% if (!hasAssayProtocols) { %>
 <p>
-    <em>No assay designs are available in this folder.</em>
-    <a class="labkey-text-link" href="https://www.labkey.org/wiki/Documentation/page.view?name?defineAssaySchema">Assay Help</a>
+    <div>
+        <em>No assay designs are available in this folder. </em>
+        <%=text(new HelpTopic("defineAssaySchema").getLinkHtml("Assay Help"))%>
+    </div>
 </p>
 <% } %>
 
