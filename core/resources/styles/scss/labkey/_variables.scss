@@ -345,6 +345,11 @@ $lk-webpart-border-top: 3px solid $lk-webpart-accent-color !default;
 $lk-webpart-title-color: $lk-panel-default-text !default;
 $lk-webpart-title-hover-color: $lk-brand-color !default;
 
+// These are used for nested webpart/portal frames
+$lk-webpart-nested-border-top: 0 !default;
+$lk-webpart-nested-title-color: $white !default;
+$lk-webpart-nested-title-color-hover: $lk-webpart-nested-title-color !default;
+
 $lk-portal-content-left-flex: 8 !default;
 $lk-portal-content-right-flex: 4 !default;
 $lk-portal-content-right-min-width: 240px !default;

@@ -195,12 +195,6 @@ public class FileContentController extends SpringActionController
             if (null == fileSet)
             {
                 p = svc.getMappedAttachmentDirectory(getContainer(), false);
-                if (p != null && p.getFileSystemDirectory() != null)
-                {
-                    // For FileContent files, check if there's a newer copy in the legacy directory that needs to be
-                    // moved into the @files directory
-                    FileSystemResource.mergeFiles(p.getFileSystemDirectory());
-                }
             }
             else
                 p = svc.getRegisteredDirectory(getContainer(), fileSet);

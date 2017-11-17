@@ -94,11 +94,9 @@
   font-weight: $lk-panel-title-font-weight;
 
   & > a {
-    color: $lk-webpart-title-color;
     text-transform: $lk-panel-title-text-transform;
 
     &:hover {
-      color: $lk-webpart-title-hover-color;
       text-decoration: $lk-link-hover-decoration;
     }
   }
@@ -190,6 +188,7 @@
   }
 }
 
+/* This is an override of $line-height-computed for _type.scss */
 h1, .h1, h2, .h2, h3, .h3 {
   margin-top: 10px;
 }

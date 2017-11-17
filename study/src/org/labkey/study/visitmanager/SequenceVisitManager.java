@@ -50,7 +50,6 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -539,10 +538,9 @@ public class SequenceVisitManager extends VisitManager
         List<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
         if (visits.isEmpty())
             return "-1";
-        DecimalFormat f = new DecimalFormat("0.0###");
-        return generateSequenceToVisit(visits, sn, f, 1);
+        return generateSequenceToVisit(visits, sn, 1);
     }
-    private String generateSequenceToVisit(List<VisitImpl> visits, String sn, DecimalFormat f, int indent)
+    private String generateSequenceToVisit(List<VisitImpl> visits, String sn, int indent)
     {
         if (visits.size() <= 16)
         {
@@ -550,10 +548,14 @@ public class SequenceVisitManager extends VisitManager
             boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin()==v.getSequenceNumMax());
             if (allEqual)
             {
-                _indent(sb,indent); sb.append("CASE " + sn);
+                _indent(sb,indent);
+                sb.append("CASE ").append(sn);
                 for (VisitImpl v : visits)
                 {
-                    _indent(sb,indent); sb.append("WHEN ").append(f.format(v.getSequenceNumMin())).append(" THEN " ).append(v.getId());
+                    _indent(sb,indent);
+                    sb.append("WHEN ");
+                    v.appendSqlSequenceNumMin(sb);
+                    sb.append(" THEN " ).append(v.getId());
                 }
                 _indent(sb,indent); sb.append("ELSE -1");
                 _indent(sb,indent); sb.append("END");
@@ -565,11 +567,17 @@ public class SequenceVisitManager extends VisitManager
                 {
                     if (v.getSequenceNumMin() == v.getSequenceNumMax())
                     {
-                        _indent(sb, indent); sb.append(" WHEN ").append(sn).append(" = ").append(f.format(v.getSequenceNumMin())).append(" THEN ").append(v.getId());
+                        _indent(sb, indent);
+                        sb.append(" WHEN ").append(sn).append(" = ");
+                        v.appendSqlSequenceNumMin(sb);
+                        sb.append(" THEN ").append(v.getId());
                     }
                     else
                     {
-                        _indent(sb,indent); sb.append(" WHEN ").append(sn).append(" BETWEEN ").append(f.format(v.getSequenceNumMin())).append(" AND ").append(f.format(v.getSequenceNumMax())).append(" THEN ").append(v.getId());
+                        _indent(sb,indent);
+                        sb.append(" WHEN ").append(sn).append(" BETWEEN ");
+                        v.appendSqlSequenceNumMin(sb).append(" AND ");
+                        v.appendSqlSequenceNumMax(sb).append(" THEN ").append(v.getId());
                     }
                 }
                 _indent(sb,indent); sb.append("ELSE -1");
@@ -586,12 +594,13 @@ public class SequenceVisitManager extends VisitManager
             {
                 partEnd = visits.size()*part / 4;
                 VisitImpl v = visits.get(partEnd);
-                _indent(sb,indent); sb.append("WHEN ").append(sn).append(" < ").append(f.format(v.getSequenceNumMin())).append(" THEN");
-                sb.append(generateSequenceToVisit(visits.subList(partStart, partEnd), sn, f, indent+1));
+                _indent(sb,indent); sb.append("WHEN ").append(sn).append(" < ");
+                v.appendSqlSequenceNumMin(sb).append(" THEN");
+                sb.append(generateSequenceToVisit(visits.subList(partStart, partEnd), sn, indent+1));
                 partStart = partEnd;
             }
             _indent(sb,indent); sb.append("ELSE");
-            sb.append(generateSequenceToVisit(visits.subList(partStart, visits.size()), sn, f, indent+1));
+            sb.append(generateSequenceToVisit(visits.subList(partStart, visits.size()), sn, indent+1));
             _indent(sb,indent); sb.append("END");
             return sb.toString();
         }

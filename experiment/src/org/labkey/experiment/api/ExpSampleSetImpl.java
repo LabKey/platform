@@ -160,7 +160,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void setParentColName(@Nullable String parentColumnName)
     {
-        _object.setParentCol(parentColumnName);
+        _object.setParentCol(prefixNameWithDomainLSID(parentColumnName));
     }
 
     public void setIdColNames(@NotNull List<String> names)
@@ -170,13 +170,13 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
         if (names.size() > 0)
         {
-            _object.setIdCol1(names.get(0));
+            _object.setIdCol1(prefixNameWithDomainLSID(names.get(0)));
             if (names.size() > 1)
             {
-                _object.setIdCol2(names.get(1));
+                _object.setIdCol2(prefixNameWithDomainLSID(names.get(1)));
                 if (names.size() > 2)
                 {
-                    _object.setIdCol3(names.get(2));
+                    _object.setIdCol3(prefixNameWithDomainLSID(names.get(2)));
                     if (names.size() > 3)
                     {
                         throw new IllegalArgumentException("Only three ID columns are supported, but " + names.size() + " were requested: " + names);
@@ -184,6 +184,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
                 }
             }
         }
+    }
+
+    private String prefixNameWithDomainLSID(String name)
+    {
+        return name.startsWith(getLSID() + "#") ? name : getLSID() + "#" + name;
     }
 
     @Nullable

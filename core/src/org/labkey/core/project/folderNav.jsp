@@ -146,7 +146,7 @@
             var menu = $('.folder-tree');
             var s = menu.find('.nav-tree-selected');
             if (s && s.length > 0) {
-                try { s[0].scrollIntoView({block: 'center'}); } catch(e) { s[0].scrollIntoView(); /* default support */ }
+                menu.animate({ scrollTop: s.offset().top - parseInt(menu.css('maxHeight'), 10) }, 0);
             }
 
             menu.on('click', '.clbl span.marked', toggle);

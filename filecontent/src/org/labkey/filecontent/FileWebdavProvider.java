@@ -107,7 +107,7 @@ public class FileWebdavProvider implements WebdavService.Provider
                     AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, false);
                     if (dir != null)
                     {
-                        return new _FilesResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy(), true);
+                        return new _FilesResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
                     }
                 }
                 catch (MissingRootDirectoryException e)
@@ -122,9 +122,9 @@ public class FileWebdavProvider implements WebdavService.Provider
 
     class _FilesResource extends FileSystemResource
     {
-        public _FilesResource(WebdavResource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
+        public _FilesResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
         {
-            super(folder,name,file,policy,mergeFromParent);
+            super(folder, name, file, policy);
         }
 
         public _FilesResource(FileSystemResource folder, String relativePath)
@@ -154,7 +154,6 @@ public class FileWebdavProvider implements WebdavService.Provider
         @Override
         public WebdavResource find(String name)
         {
-            mergeFilesIfNeeded();
             return new _FilesResource(this, name);
         }
     }

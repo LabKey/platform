@@ -154,7 +154,7 @@ public class WikiController extends SpringActionController
     {
         ModelAndView template = super.getTemplate(context, mv, action, page);
 
-        if (template instanceof HomeTemplate && !(action instanceof EditWikiAction))
+        if (template instanceof HomeTemplate && !(action instanceof EditWikiAction) && !page.getTemplate().equals(PageConfig.Template.Print))
         {
             WebPartView toc = new WikiTOC(context);
             page.addClientDependencies(toc.getClientDependencies());

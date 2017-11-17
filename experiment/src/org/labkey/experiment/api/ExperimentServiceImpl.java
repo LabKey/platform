@@ -3158,17 +3158,6 @@ public class ExperimentServiceImpl implements ExperimentService
                     throw new SQLException("Attempting to delete a Data from another container");
                 }
 
-                // Delete any runs using the data if the ProtocolImplementation allows it
-                List<ExpRunImpl> runArray = getRunsUsingDataIds(Arrays.asList(data.getRowId()));
-                for (ExpRun run : runsDeletedWithInput(runArray))
-                {
-                    Container runContainer = run.getContainer();
-                    if (!runContainer.hasPermission(user, DeletePermission.class))
-                        throw new UnauthorizedException();
-
-                    deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
-                }
-
                 SqlExecutor executor = new SqlExecutor(getExpSchema());
                 executor.execute("DELETE FROM " + getTinfoDataAliasMap() + " WHERE LSID = ?", data.getLSID());
 

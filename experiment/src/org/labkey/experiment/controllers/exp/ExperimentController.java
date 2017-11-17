@@ -2862,12 +2862,6 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpData> datas = getDatas(deleteForm, true);
 
-            for (ExpRun run : getRuns(datas))
-            {
-                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
-                    throw new UnauthorizedException();
-            }
-
             for (ExpData data : datas)
             {
                 data.delete(getUser());
@@ -2877,20 +2871,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpData> datas = getDatas(deleteForm, false);
-            List<ExpRun> runs = getRuns(datas);
 
-            return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
-        }
-
-        private List<ExpRun> getRuns(List<ExpData> datas)
-                throws SQLException
-        {
-            List<ExpRun> runsToDelete = new ArrayList<>();
-            List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingDatas(datas);
-            for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
-                runsToDelete.add(run);
-
-            return runsToDelete;
+            return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm);
         }
 
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)

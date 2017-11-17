@@ -575,6 +575,7 @@ core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/DialogTemplate.java -text
+core/src/org/labkey/core/view/template/bootstrap/PrintTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/WizardTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/bootstrap.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/bootstrapbody.jsp -text

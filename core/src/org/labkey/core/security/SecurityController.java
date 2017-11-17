@@ -1447,6 +1447,8 @@ public class SecurityController extends SpringActionController
                 Boolean modified;
                 for (Container container: containers)
                 {
+                    if (container.isInheritedAcl())
+                        continue;
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(container, container.getPolicy());
                     Collection<Role> roles = policy.getEffectiveRoles(clone);
                     roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms

@@ -19,6 +19,8 @@ package org.labkey.study.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
@@ -28,9 +30,11 @@ import org.labkey.api.data.Transient;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.study.StudySchema;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -102,6 +106,26 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             return VisitImpl.formatSequenceNum(_sequenceMin);
         else
             return VisitImpl.formatSequenceNum(_sequenceMin) + "-" + VisitImpl.formatSequenceNum(_sequenceMax);
+    }
+
+
+    public static StringBuilder appendSqlSequenceNum(StringBuilder sb, double d)
+    {
+        if (d == Math.round(d))
+            return sb.append((long)d);
+        return sb.append(BigDecimal.valueOf((long)Math.round(d * 10000),4).toPlainString());
+    }
+
+    /* always formats using "." */
+    public StringBuilder appendSqlSequenceNumMin(StringBuilder sb)
+    {
+        return appendSqlSequenceNum(sb, _sequenceMin);
+    }
+
+    /* always formats using "." */
+    public StringBuilder appendSqlSequenceNumMax(StringBuilder sb)
+    {
+        return appendSqlSequenceNum(sb, _sequenceMax);
     }
 
 
@@ -391,5 +415,40 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static double calcDefaultDateBasedProtocolDay(double sequenceMin, double sequenceMax)
     {
         return (double)Math.round((sequenceMin + sequenceMax)/2);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testFormat()
+        {
+            VisitImpl v;
+            Container c = JunitUtil.getTestContainer();
+
+            v = new VisitImpl(c,0.0, 0.9999, "label", (Type)null);
+            assertEquals("0", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("0.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+
+            v = new VisitImpl(c,1.0, 1.09999999999999999, "label", (Type)null);
+            assertEquals("1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("1.1000", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+
+            v = new VisitImpl(c, 2.0, 2.0099, "label", (Type)null);
+            assertEquals("2", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("2.0099", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+
+            v = new VisitImpl(c, 3.0, 3.0000999999, "label", (Type)null);
+            assertEquals("3", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("3.0001", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+
+            v = new VisitImpl(c,-1.0, "label", (Type)null);
+            assertEquals("-1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("-1", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+
+            v = new VisitImpl(c,12345678901.1234, 99999999999.9999, "label", (Type)null);
+            assertEquals("12345678901.1234", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("99999999999.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+        }
     }
 }

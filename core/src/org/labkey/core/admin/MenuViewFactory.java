@@ -44,7 +44,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -90,7 +89,7 @@ public class MenuViewFactory
                 protected void renderDataRegion(PrintWriter out) throws Exception
                 {
                     boolean seenAtLeastOne = false;
-                    out.write("<table style='width:50'>");
+                    out.write("<table>");
                     TableInfo tableInfo = getTable();
                     if (null != tableInfo)
                     {
@@ -168,7 +167,7 @@ public class MenuViewFactory
                 @Override
                 protected void renderView(Object model, PrintWriter out) throws Exception
                 {
-                    out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                    out.write("<table><tr><td style='vertical-align:top;padding:4px;white-space:pre;'>");
                     out.write("No schema or query selected.");
                     out.write("</td></tr></table>");
                 }
@@ -231,7 +230,7 @@ public class MenuViewFactory
                 }
 
                 boolean seenAtLeastOne = false;
-                out.write("<table style='width:50'>");
+                out.write("<table>");
                 ArrayList<StringBuilder> cells = new ArrayList<>();
                 for (Container container : containers)
                 {
@@ -264,7 +263,7 @@ public class MenuViewFactory
                 writeCells(cells, out);
 
                 if (!seenAtLeastOne)
-                    out.write("<tr><td style='vertical-align:top;padding:4px'>No folders selected.</td></tr>");
+                    out.write("<tr><td style='vertical-align:top;padding:4px;white-space:pre;'>No folders selected.</td></tr>");
                 out.write("</table>");
             }
         };
@@ -289,7 +288,7 @@ public class MenuViewFactory
                 if (index < cells.size())
                 {
                     StringBuilder cell = cells.get(index);
-                    out.write("<td style='vertical-align:top;padding:0px 4px'>");
+                    out.write("<td style='vertical-align:top;padding:0px 4px;white-space:pre;'>");
                     out.write(cell.toString());
                     out.write("</td>");
                 }

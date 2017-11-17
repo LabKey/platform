@@ -20,7 +20,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServiceImpl;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.labkey.core.view.template.bootstrap.BootstrapBodyTemplate;
 import org.labkey.core.view.template.bootstrap.BootstrapTemplate;
 import org.labkey.core.view.template.bootstrap.DialogTemplate;
@@ -51,7 +51,7 @@ public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
             case Framed:
             case Print:
             {
-                return new PrintTemplate(body, page);
+                return new PrintTemplate(context, body, page);
             }
             case Dialog:
             {
