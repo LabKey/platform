@@ -18,7 +18,6 @@ package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.Set;
 
 /*
@@ -28,6 +27,15 @@ import java.util.Set;
 */
 public class PostgreSql93Dialect extends PostgreSql92Dialect
 {
+    public PostgreSql93Dialect()
+    {
+    }
+
+    public PostgreSql93Dialect(boolean standardConformingStrings)
+    {
+        super(standardConformingStrings);
+    }
+
     @NotNull
     @Override
     protected Set<String> getReservedWords()
@@ -38,9 +46,11 @@ public class PostgreSql93Dialect extends PostgreSql92Dialect
         return words;
     }
 
-    @Override
-    public void addAdminWarningMessages(Collection<String> messages)
-    {
-        // Override the 9.2 override... no warnings for 9.3+
-    }
+//  Uncomment when it's time to deprecate 9.3
+//    @Override
+//    public void addAdminWarningMessages(Collection<String> messages)
+//    {
+//        messages.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + PostgreSqlDialectFactory.RECOMMENDED);
+//    }
+//
 }

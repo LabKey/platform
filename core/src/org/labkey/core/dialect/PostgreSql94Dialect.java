@@ -35,4 +35,11 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
 
         return words;
     }
+
+//  Uncomment when it's time to deprecate 9.3
+//    @Override
+//    public void addAdminWarningMessages(Collection<String> messages)
+//    {
+//        // Override the 9.3 override... no warnings for 9.4+
+//    }
 }
