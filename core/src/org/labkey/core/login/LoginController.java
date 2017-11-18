@@ -2038,6 +2038,7 @@ public class LoginController extends SpringActionController
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
+            getPageConfig().setNoIndex();
 
             if (null != _finishView)
                 return _finishView;

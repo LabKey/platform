@@ -100,6 +100,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -237,7 +238,7 @@ public class CoreController extends SpringActionController
         @Override
         public String getFeedbackURL()
         {
-            return "https://www.labkey.org/UX Refresh Feedback/core-feedback.view";
+            return "https://www.labkey.org/UX Refresh Feedback/core-feedback.view?serverSessionId=" + AppProps.getInstance().getServerSessionGUID();
         }
 
         @Override
@@ -2071,10 +2072,25 @@ public class CoreController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
-    public class FeedbackAction extends FormViewAction<ViewForm>
+    public static class FeedbackForm extends ViewForm
     {
-        public ModelAndView getView(ViewForm form, boolean reshow, BindException errors) throws Exception
+        private String _serverSessionId;
+
+        public String getServerSessionId()
+        {
+            return _serverSessionId;
+        }
+
+        public void setServerSessionId(String serverSessionId)
+        {
+            _serverSessionId = serverSessionId;
+        }
+    }
+
+    @RequiresNoPermission
+    public class FeedbackAction extends FormViewAction<FeedbackForm>
+    {
+        public ModelAndView getView(FeedbackForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             if (PageFlowUtil.useExperimentalCoreUI())
@@ -2088,17 +2104,17 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ViewForm form, BindException errors) throws Exception
+        public boolean handlePost(FeedbackForm form, BindException errors) throws Exception
         {
             return true;
         }
 
-        public ActionURL getSuccessURL(ViewForm form)
+        public ActionURL getSuccessURL(FeedbackForm form)
         {
             return null;
         }
 
-        public void validateCommand(ViewForm target, Errors errors)
+        public void validateCommand(FeedbackForm target, Errors errors)
         {
         }
     }

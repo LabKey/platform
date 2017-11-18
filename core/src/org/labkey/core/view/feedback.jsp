@@ -16,6 +16,8 @@
      */
 %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.CoreController" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -24,6 +26,9 @@
     {
         dependencies.add("internal/jQuery");
     }
+%>
+<%
+    CoreController.FeedbackForm form = (CoreController.FeedbackForm) HttpView.currentModel();
 %>
 
 <script type="text/javascript">
@@ -113,6 +118,7 @@
         <labkey:form layout="horizontal" id="feedbackform" method="POST" enctype="multipart/form-data" >
             <labkey:csrf/>
 
+            <labkey:input type="hidden" name="quf_serverSessionId" value="<%= h(form.getServerSessionId()) %>" id="sessionId"/>
             <labkey:input name="quf_title" label="Title" placeholder="Title" id="feedbacktitle"/>
             <labkey:input name="quf_description" label="Description" type="textarea" id="feedbackdescription"
                           placeholder="Description"/>
