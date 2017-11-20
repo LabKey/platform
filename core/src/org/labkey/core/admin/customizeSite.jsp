@@ -167,6 +167,19 @@ Click the Save button at any time to accept the current settings and continue.</
     <th style="width: 35em;"></th>
     <th></th>
 </tr>
+<%
+    if (!hasAdminOpsPerms)
+    {
+%>
+    <tr>
+        <td colspan=2>&nbsp;</td>
+    </tr>
+    <tr>
+        <td colspan=2><strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong></td>
+    </tr>
+<%
+    }
+%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
