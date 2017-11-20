@@ -28,10 +28,10 @@ import org.labkey.api.security.permissions.Permission;
 public enum PHI
 {
     // Important: Must be in order of least to most restrictive level so ordinal reflects each level's rank.
-    NotPHI(null),
-    Limited(LimitedPHIPermission.class),
-    PHI(FullPHIPermission.class),
-    Restricted(RestrictedPHIPermission.class);
+    NotPHI(null, "Not PHI"),
+    Limited(LimitedPHIPermission.class, "Limited PHI"),
+    PHI(FullPHIPermission.class, "Full PHI"),
+    Restricted(RestrictedPHIPermission.class, "Restricted");
 
     public static PHI fromString(@Nullable String value)
     {
@@ -42,11 +42,13 @@ public enum PHI
         return null;
     }
 
+    private final String _label;
     private final Class<? extends Permission> _permission;
 
-    PHI(@Nullable Class<? extends Permission> permission)
+    PHI(@Nullable Class<? extends Permission> permission, String label)
     {
         _permission = permission;
+        _label = label;
     }
 
     public int getRank()
@@ -83,5 +85,10 @@ public enum PHI
             return Limited;
 
         return NotPHI;
+    }
+
+    public String getLabel()
+    {
+        return _label;
     }
 }

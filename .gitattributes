@@ -645,6 +645,7 @@ api/src/org/labkey/api/exp/property/Domain.java -text
 api/src/org/labkey/api/exp/property/DomainAuditProvider.java -text
 api/src/org/labkey/api/exp/property/DomainKind.java -text
 api/src/org/labkey/api/exp/property/DomainProperty.java -text
+api/src/org/labkey/api/exp/property/DomainPropertyAuditProvider.java -text
 api/src/org/labkey/api/exp/property/IPropertyType.java -text
 api/src/org/labkey/api/exp/property/IPropertyValidator.java -text
 api/src/org/labkey/api/exp/property/Lookup.java -text
