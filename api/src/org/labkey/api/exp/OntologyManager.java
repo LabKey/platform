@@ -86,6 +86,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static com.google.common.base.Objects.firstNonNull;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
@@ -2652,11 +2653,9 @@ public class OntologyManager
                         errors.add("field '" + name + "' is specified more than once.");
                 }
 
-                List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
-                assert null != conditionalFormats;
-
-                List<? extends IPropertyValidator> validators = (List<? extends IPropertyValidator>) m.get("Validators");
-                assert null != validators;
+                // Note: These will be null in the SchemaTsv case
+                List<ConditionalFormat> conditionalFormats = firstNonNull((List<ConditionalFormat>) m.get("ConditionalFormats"), Collections.emptyList());
+                List<? extends IPropertyValidator> validators = firstNonNull((List<? extends IPropertyValidator>) m.get("Validators"), Collections.emptyList());
 
                 ret.add(domainName, domainURI, pd, validators, conditionalFormats);
             }
