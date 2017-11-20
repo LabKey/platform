@@ -16,9 +16,11 @@
 
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
@@ -51,8 +53,10 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -67,6 +71,7 @@ import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -395,6 +400,8 @@ public class DomainImpl implements Domain
                     baseProperties.add(s.getName());
             }
 
+            // Compile audit info for every property change
+            List<PropertyChangeAuditInfo> propertyAuditInfo = new ArrayList<>();
 
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
@@ -404,6 +411,7 @@ public class DomainImpl implements Domain
                     impl.delete(user);
                     propsDropped.add(impl);
                     propChanged = true;
+                    propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, "Deleted", ""));
                 }
             }
 
@@ -443,6 +451,7 @@ public class DomainImpl implements Domain
                             checkRequiredStatus.add(impl);
                         propsAdded.add(impl);
                         propChanged = true;
+                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, "Created", makeNewPropAuditComment(impl)));
                     }
                     else
                     {
@@ -464,6 +473,7 @@ public class DomainImpl implements Domain
 
                         if (impl.isDirty())
                         {
+                            propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, "Modified", makeModifiedPropAuditComment(impl, impl._pdOld)));
                             if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
                             {
                                 finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
@@ -500,8 +510,6 @@ public class DomainImpl implements Domain
                 {
                     StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
                 }
-
-                addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
             }
 
             if (!checkRequiredStatus.isEmpty() && null != kind)
@@ -520,6 +528,13 @@ public class DomainImpl implements Domain
             if (getDomainKind() != null)
                 getDomainKind().invalidate(this);
 
+            if (propChanged)
+            {
+                final Integer domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
+                propertyAuditInfo.forEach(auditInfo -> {
+                    addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails());
+                });
+            }
             transaction.commit();
         }
     }
@@ -545,7 +560,36 @@ public class DomainImpl implements Domain
         }
     }
 
-    private void addAuditEvent(@Nullable User user, String comment)
+    private static class PropertyChangeAuditInfo
+    {
+        private final DomainProperty _prop;
+        private final String _action;
+        private final String _details;    // to go in comments
+
+        public PropertyChangeAuditInfo(DomainProperty prop, String action, String details)
+        {
+            _prop = prop;
+            _action = action;
+            _details = details;
+        }
+
+        public DomainProperty getProp()
+        {
+            return _prop;
+        }
+
+        public String getAction()
+        {
+            return _action;
+        }
+
+        public String getDetails()
+        {
+            return _details;
+        }
+    }
+
+    private Integer addAuditEvent(@Nullable User user, String comment)
     {
         if (user != null)
         {
@@ -557,8 +601,183 @@ public class DomainImpl implements Domain
             event.setDomainUri(getTypeURI());
             event.setDomainName(getName());
 
-            AuditLogService.get().addEvent(user, event);
+            AuditTypeEvent retEvent = AuditLogService.get().addEvent(user, event);
+            return null != retEvent ? retEvent.getRowId() : null;
         }
+        return null;
+    }
+
+    private void addPropertyAuditEvent(@Nullable User user, DomainProperty prop, String action, Integer domainEventId, String domainName, String comment)
+    {
+        DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                new DomainPropertyAuditProvider.DomainPropertyAuditEvent(getContainer().getId(), prop.getPropertyURI(), prop.getName(),
+                                                                         action, domainEventId, domainName, comment);
+        AuditLogService.get().addEvent(user, event);
+    }
+
+    private String makeNewPropAuditComment(DomainProperty prop)
+    {
+        StringBuilder str = new StringBuilder();
+        str.append("Name: ").append(prop.getName()).append("; ");
+        str.append("Label: ").append(renderCheckingBlank(prop.getLabel())).append("; ");
+        str.append("Type: ").append(prop.getPropertyType().getXarName()).append("; ");
+        if (prop.getPropertyType().getJdbcType().isText())
+            str.append("Scale: ").append(prop.getScale()).append("; ");
+        str.append("Description: ").append(renderCheckingBlank(prop.getDescription())).append("; ");
+        str.append("Format: ").append(renderCheckingBlank(prop.getFormat())).append("; ");
+        str.append("URL: ").append(renderCheckingBlank(prop.getURL())).append("; ");
+        str.append("PHI: ").append(prop.getPHI().toString()).append("; ");
+        str.append("ImportAliases: ").append(renderImportAliases(prop.getPropertyDescriptor())).append("; ");
+        str.append("Validators: ").append(renderValidators(prop.getPropertyDescriptor())).append("; ");
+        str.append("ConditionalFormats: ").append(renderConditionalFormats(prop)).append("; ");
+        str.append("DefaultValueType: ").append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
+        str.append("DefaultScale: ").append(prop.getDefaultScale().getLabel()).append("; ");
+        str.append("Required: ").append(renderBool(prop.isRequired())).append("; ");
+        str.append("Hidden: ").append(renderBool(prop.isHidden())).append("; ");
+        str.append("MvEnabled: ").append(renderBool(prop.isMvEnabled())).append("; ");
+        str.append("Measure: ").append(renderBool(prop.isMeasure())).append("; ");
+        str.append("Dimension: ").append(renderBool(prop.isDimension())).append("; ");
+        str.append("ShownInInsert: ").append(renderBool(prop.isShownInInsertView())).append("; ");
+        str.append("ShownInDetails: ").append(renderBool(prop.isShownInDetailsView())).append("; ");
+        str.append("ShownInUpdate: ").append(renderBool(prop.isShownInUpdateView())).append("; ");
+        str.append("RecommendedVariable: ").append(renderBool(prop.isRecommendedVariable())).append("; ");
+        str.append("ExcludedFromShifting: ").append(renderBool(prop.isExcludeFromShifting())).append("; ");
+        return str.toString();
+    }
+
+    private String makeModifiedPropAuditComment(DomainPropertyImpl prop, PropertyDescriptor pdOld)
+    {
+        StringBuilder str = new StringBuilder();
+        if (!pdOld.getName().equals(prop.getName()))
+			str.append("Name: ").append(renderOldVsNew(pdOld.getName(), prop.getName())).append("; ");
+        if (!StringUtils.equals(pdOld.getLabel(), prop.getLabel()))
+			str.append("Label: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getLabel()), renderCheckingBlank(prop.getLabel()))).append("; ");
+        if (null != pdOld.getPropertyType() && !pdOld.getPropertyType().equals(prop.getPropertyType()))
+			str.append("Type: ").append(renderOldVsNew(pdOld.getPropertyType().getXarName(), prop.getPropertyType().getXarName())).append("; ");
+        if (prop.getPropertyType().getJdbcType().isText())
+            if (pdOld.getScale() != prop.getScale())
+			    str.append("Scale: ").append(renderOldVsNew(Integer.toString(pdOld.getScale()), Integer.toString(prop.getScale()))).append("; ");
+        if (!StringUtils.equals(prop.getDescription(), prop.getDescription()))
+			str.append("Description: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDescription()), renderCheckingBlank(prop.getDescription()))).append("; ");
+        if (!StringUtils.equals(prop.getFormat(), prop.getFormat()))
+			str.append("Format: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getFormat()), renderCheckingBlank(prop.getFormat()))).append("; ");
+        if (!StringUtils.equals((null != pdOld.getURL() ? pdOld.getURL().toString() : null), prop.getURL()))
+			str.append("URL: ").append(renderOldVsNew(renderCheckingBlank(null != pdOld.getURL() ? pdOld.getURL().toString() : null), renderCheckingBlank(prop.getURL()))).append("; ");
+        if (!pdOld.getPHI().equals(prop.getPHI()))
+			str.append("PHI: ").append(renderOldVsNew(pdOld.getPHI().getLabel(), prop.getPHI().getLabel())).append("; ");
+
+        renderImportAliasesDiff(prop, pdOld, str);
+        renderValidatorsDiff(prop, pdOld, str);
+        renderConditionalFormatsDiff(prop, pdOld, str);
+        renderDefaultValueTypeDiff(prop, pdOld, str);
+
+        if (!pdOld.getDefaultScale().getLabel().equals(prop.getDefaultScale().getLabel()))
+			str.append("DefaultScale: ").append(renderOldVsNew(pdOld.getDefaultScale().getLabel(), prop.getDefaultScale().getLabel())).append("; ");
+        if (pdOld.isRequired() != prop.isRequired())
+			str.append("Required: ").append(renderOldVsNew(renderBool(pdOld.isRequired()), renderBool(prop.isRequired()))).append("; ");
+        if (pdOld.isHidden() != prop.isHidden())
+			str.append("Hidden: ").append(renderOldVsNew(renderBool(pdOld.isHidden()), renderBool(prop.isHidden()))).append("; ");
+        if (pdOld.isMvEnabled() != prop.isMvEnabled())
+			str.append("MvEnabled: ").append(renderOldVsNew(renderBool(pdOld.isMvEnabled()), renderBool(prop.isMvEnabled()))).append("; ");
+        if (pdOld.isMeasure() != prop.isMeasure())
+			str.append("Measure: ").append(renderOldVsNew(renderBool(pdOld.isMeasure()), renderBool(prop.isMeasure()))).append("; ");
+        if (pdOld.isDimension() != prop.isDimension())
+			str.append("Dimension: ").append(renderOldVsNew(renderBool(pdOld.isDimension()), renderBool(prop.isDimension()))).append("; ");
+        if (pdOld.isShownInInsertView() != prop.isShownInInsertView())
+			str.append("ShownInInsert: ").append(renderOldVsNew(renderBool(pdOld.isShownInInsertView()), renderBool(prop.isShownInInsertView()))).append("; ");
+        if (pdOld.isShownInDetailsView() != prop.isShownInDetailsView())
+			str.append("ShownInDetails: ").append(renderOldVsNew(renderBool(pdOld.isShownInDetailsView()), renderBool(prop.isShownInDetailsView()))).append("; ");
+        if (pdOld.isShownInUpdateView() != prop.isShownInUpdateView())
+			str.append("ShownInUpdate: ").append(renderOldVsNew(renderBool(pdOld.isShownInUpdateView()), renderBool(prop.isShownInUpdateView()))).append("; ");
+        if (pdOld.isRecommendedVariable() != prop.isRecommendedVariable())
+			str.append("RecommendedVariable: ").append(renderOldVsNew(renderBool(pdOld.isRecommendedVariable()), renderBool(prop.isRecommendedVariable()))).append("; ");
+        if (pdOld.isExcludeFromShifting() != prop.isExcludeFromShifting())
+			str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
+        return str.toString();
+    }
+
+    private String renderCheckingBlank(String value)
+    {
+        return StringUtils.isNotBlank(value) ? value : "<none>";
+    }
+
+    private String renderValidators(PropertyDescriptor prop)
+    {
+         Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+         if (validators.isEmpty())
+             return "<none>";
+         List<String> strings = new ArrayList<>();
+         validators.forEach(validator -> {
+             strings.add(validator.getName() + " [" + validator.getTypeURI() + "]");
+         });
+         return StringUtils.join(strings, ", ");
+    }
+
+    private void renderValidatorsDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
+    {
+        String oldValidators = renderValidators(pdOld);
+        String validators = renderValidators(prop.getPropertyDescriptor());
+        if (!StringUtils.equals(oldValidators, validators))
+            str.append("Validators: ").append("old: ").append(oldValidators).append(", new: ").append(validators).append("; ");
+    }
+
+    private String renderConditionalFormats(DomainProperty prop)
+    {
+        List<ConditionalFormat> formats = prop.getConditionalFormats();
+        if (formats.isEmpty())
+            return "<none>";
+        return "<has formats>";
+    }
+
+    private void renderConditionalFormatsDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
+    {
+        List<ConditionalFormat> oldFormats = DomainPropertyManager.get().getConditionalFormats(pdOld);
+        List<ConditionalFormat> formats = prop.getConditionalFormats();
+
+        if (oldFormats.size() != formats.size())
+            str.append("ConditionalFormats: ").append("old: ").append(oldFormats.size())
+               .append(" formats, new: ").append(formats.size()).append(" formats; ");
+    }
+
+    private String renderImportAliases(PropertyDescriptor prop)
+    {
+        Set<String> aliases = prop.getImportAliasSet();
+        if (aliases.isEmpty())
+            return "<none>";
+        return StringUtils.join(aliases, ",");
+    }
+
+    private void renderImportAliasesDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
+    {
+        String oldAliases = renderImportAliases(pdOld);
+        String aliases = renderImportAliases(prop.getPropertyDescriptor());
+        if (!StringUtils.equals(oldAliases, aliases))
+            str.append("ImportAliases: ").append("old: ").append(oldAliases).append(", new: ").append(aliases).append("; ");
+    }
+
+    private String renderDefaultValueType(PropertyDescriptor prop)
+    {
+        DefaultValueType type = prop.getDefaultValueTypeEnum();
+        if (null == type)
+            return "<none>";
+        return type.getLabel();
+    }
+
+    private void renderDefaultValueTypeDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
+    {
+        if (pdOld.getDefaultValueTypeEnum() != prop.getDefaultValueTypeEnum())
+            str.append("DefaultValueType: ").append("old: ").append(renderDefaultValueType(pdOld)).append(", new: ")
+               .append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
+    }
+
+    private String renderBool(boolean value)
+    {
+        return value ? "true" : "false";
+    }
+
+    private String renderOldVsNew(String oldVal, String newVal)
+    {
+        return oldVal + " -> " + newVal;
     }
 
     public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)

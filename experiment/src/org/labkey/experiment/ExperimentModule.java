@@ -36,6 +36,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainAuditProvider;
+import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -277,6 +278,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentService.get().registerDataType(new LogDataType());
 
         AuditLogService.get().registerAuditType(new DomainAuditProvider());
+        AuditLogService.get().registerAuditType(new DomainPropertyAuditProvider());
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
 
