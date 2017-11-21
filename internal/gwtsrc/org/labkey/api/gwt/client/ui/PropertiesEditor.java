@@ -117,7 +117,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private com.extjs.gxt.ui.client.widget.TabPanel _extraPropertiesTabPanel = new com.extjs.gxt.ui.client.widget.TabPanel();
     private Image _spacerImage;
     protected boolean _warnAboutDelete = true;
-    private static final String BAD_NAME_ERROR_MESSAGE = "We recommend that names only contain letters, numbers, spaces, and underscores (_), and start with a letter or underscore.";
+    private static final String BAD_NAME_WARNING_MESSAGE = "To improve compatibility with SQL queries, R scripts, and other code, consider using field names that only contain letters, numbers, and underscores (_), and start with a letter or underscore.";
 
     public enum FieldStatus
     {
@@ -816,21 +816,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             if (text == null || text.isEmpty())
                 return null;
-            String error = validateFieldName(text);
-            if (null != error)
-                return error;
-            if (text.contains(" "))
-                return "Name should not contain spaces.";
-            return null;
+            return validateFieldName(text);
         }
     }
 
-    /** @return null if the field name is OK, the error string otherwise. */
+    /** @return null if the field name has no questionable characters or the error string otherwise. */
     protected String validateFieldName(String value)
     {
-        if (value == null || PropertiesEditorUtil.isLegalName(value))
+        if (value == null || (PropertiesEditorUtil.isLegalName(value) && !value.contains(" ")))
             return null;
-        return BAD_NAME_ERROR_MESSAGE;
+        return BAD_NAME_WARNING_MESSAGE;
     }
 
     public void refreshRow(final int index, final Row rowObject)
