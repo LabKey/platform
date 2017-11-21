@@ -17,8 +17,11 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.UnexpectedException;
 
@@ -349,12 +352,50 @@ abstract public class QNode implements Cloneable
     public static class TestCase extends Assert
     {
         SqlParser parser = new SqlParser();
-        private QNode p(String x)
+
+        //* simple resovler for expression testing */
+        QExpr resolveFields(QExpr expr, @Nullable QNode parent, @Nullable Object referant)
+        {
+            FieldKey key = expr.getFieldKey();
+            if (key != null)
+            {
+                // TODO : have some known fields e.g. a,b,c,x,y,z
+            }
+
+            QExpr methodName = null;
+            if (expr instanceof QMethodCall)
+            {
+                methodName = (QExpr)expr.childList().get(0);
+                if (null == methodName.getFieldKey())
+                    methodName = null;
+            }
+
+            QExpr ret = (QExpr) expr.clone();
+            for (QNode child : expr.children())
+            {
+                //
+                if (child == methodName)
+                    ret.appendChild(new QField(null, methodName.getTokenText(), child));
+                else
+                    ret.appendChild(resolveFields((QExpr)child, expr, referant));
+            }
+            return ret;
+        }
+
+
+        private QNode parse(String x)
         {
             List<QueryParseException> errors = new ArrayList<>();
             QNode node = parser.parseExpr(x, errors);
             assertTrue(errors.isEmpty());
             return node;
+        }
+
+        private QExpr bind(String x)
+        {
+            QNode node = parse(x);
+            QExpr expr = resolveFields((QExpr)node, null, null);
+            return expr;
         }
 
         private void test(String t)
@@ -364,10 +405,28 @@ abstract public class QNode implements Cloneable
 
         private void test(String exprA, String exprB)
         {
-            QNode a = p(exprA);
-            QNode b = p(exprB); 
+            QNode a = parse(exprA);
+            QNode b = parse(exprB);
             assertEquals(a, b);
         }
+
+        private void test(String expr, JdbcType t)
+        {
+            QExpr n = bind(expr);
+            assertEquals(n.getSqlType(), t);
+        }
+
+
+        @Test
+        public void testType() throws Exception
+        {
+            test("CONVERT(now(),SQL_DATE)", JdbcType.DATE);
+            test("CAST(now() AS DATE)", JdbcType.DATE);
+            test("CASE WHEN 1=1 THEN CONVERT(now(),SQL_DATE) ELSE CAST(now() AS DATE) END", JdbcType.DATE);
+            test("1 + 2.0", JdbcType.DOUBLE);
+            test("'hello' | 'world'", JdbcType.VARCHAR);
+        }
+
 
         @Test
         public void testEquals() throws SQLException, ServletException
@@ -377,20 +436,20 @@ abstract public class QNode implements Cloneable
             test("a","A");
             test("a", "\"a\"");
             test("a","\"A\"");
-            assertNotEquals(p("a"), p("a.b"));
-            assertNotEquals(p("b"), p("a.b"));
+            assertNotEquals(parse("a"), parse("a.b"));
+            assertNotEquals(parse("b"), parse("a.b"));
 
             // string case sensitive
             test("'a'");
-            assertNotEquals(p("'a'"), p("'A'"));
+            assertNotEquals(parse("'a'"), parse("'A'"));
 
             test("3 * 5 + 4");
             test("CASE WHEN 1=1 THEN TRUE ELSE FALSE END");
             test("fn(A,5+4)");
-            assertNotEquals(p("SUM(a)"), p("COUNT(a)"));
-            assertNotEquals(p("a+b"), p("a-b"));
+            assertNotEquals(parse("SUM(a)"), parse("COUNT(a)"));
+            assertNotEquals(parse("a+b"), parse("a-b"));
             // tree equals does not do arithmetic
-            assertNotEquals(p("1+2"), p("2+1"));
+            assertNotEquals(parse("1+2"), parse("2+1"));
         }
     }
 }

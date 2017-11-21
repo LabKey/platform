@@ -625,6 +625,27 @@ public abstract class Method
                 typeName = typeName.substring(4);
             return typeName;
         }
+
+        @Override
+        public JdbcType getJdbcType(JdbcType[] args)
+        {
+            throw new IllegalStateException("CONVERT/CAST can't figure out type using this method");
+        }
+
+        public JdbcType getTypeFromArgs(QNode args)
+        {
+            List<QNode> children = args.childList();
+            if (children.size() < 2)
+                return JdbcType.VARCHAR;
+
+            String sqlEscapeTypeName = ((QString)children.get(1)).getValue();
+            if (sqlEscapeTypeName.startsWith("SQL_"))
+                sqlEscapeTypeName = sqlEscapeTypeName.substring(4);
+
+            JdbcType jdbcType = JdbcType.OTHER;
+            try { jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType; }catch (IllegalArgumentException x) {/* */}
+            return jdbcType;
+        }
     }
 
     static class PassthroughInfo extends AbstractQueryMethodInfo

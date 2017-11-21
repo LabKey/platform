@@ -143,14 +143,20 @@ public class QMethodCall extends QExpr
     @Override @NotNull
     public JdbcType getSqlType()
     {
+        MethodInfo method = getMethod(null);        // UNDONE: passthrough queries won't work unless we pass in dialect here
+        if (method == null)
+            return JdbcType.OTHER;
+
+        if (method instanceof Method.ConvertInfo)
+        {
+            return ((Method.ConvertInfo)method).getTypeFromArgs(this.getLastChild());
+        }
+
         List<QNode> children = getLastChild().childList();
         int len = children.size();
         JdbcType[] args = new JdbcType[len];
         for (int i=0 ; i<len ; i++)
             args[i] = ((QExpr)children.get(i)).getSqlType();
-        MethodInfo method = getMethod(null);        // UNDONE: passthrough queries won't work unless we pass in dialect here
-        if (method == null)
-            return JdbcType.OTHER;
         return method.getJdbcType(args);
     }
 }
