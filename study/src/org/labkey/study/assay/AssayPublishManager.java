@@ -19,6 +19,7 @@ package org.labkey.study.assay;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -107,14 +108,15 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
+ * Manages the copy-to-study operation that links assay rows into datasets in the target study, creating the dataset
+ * if needed.
  * User: Mark Igra
  * Date: Aug 16, 2006
- * Time: 1:11:27 PM
  */
 public class AssayPublishManager implements AssayPublishService
 {
-    private TableInfo tinfoUpdateLog;
     private static final int MIN_ASSAY_ID = 5000;
+    private static final Logger LOG = Logger.getLogger(AssayPublishManager.class);
 
     public synchronized static AssayPublishManager getInstance()
     {
@@ -124,9 +126,7 @@ public class AssayPublishManager implements AssayPublishService
 
     private TableInfo getTinfoUpdateLog()
     {
-        if (tinfoUpdateLog == null)
-            tinfoUpdateLog = StudySchema.getInstance().getTableInfoUploadLog();
-        return tinfoUpdateLog;
+        return StudySchema.getInstance().getTableInfoUploadLog();
     }
 
     /**
@@ -154,7 +154,6 @@ public class AssayPublishManager implements AssayPublishService
             if ("Date".equalsIgnoreCase(pdName) && TimepointType.VISIT != timetype)
                 continue;
             PropertyType type = types.get(pdName);
-            String typeURI = type.getTypeUri();
             PropertyDescriptor pd = new PropertyDescriptor(null,
                     type, pdName, targetContainer);
             if (type.getJavaType() == Double.class)
@@ -221,12 +220,7 @@ public class AssayPublishManager implements AssayPublishService
                 targetStudy = (Container) dataMap.get("TargetStudy");
             assert targetStudy != null;
 
-            List<Map<String, Object>> maps = partitionedDataMaps.get(targetStudy);
-            if (maps == null)
-            {
-                maps = new ArrayList<>(dataMap.size());
-                partitionedDataMaps.put(targetStudy, maps);
-            }
+            List<Map<String, Object>> maps = partitionedDataMaps.computeIfAbsent(targetStudy, k -> new ArrayList<>(dataMap.size()));
             maps.add(dataMap);
         }
 
@@ -373,12 +367,7 @@ public class AssayPublishManager implements AssayPublishService
                 if (entry.getKey().equalsIgnoreCase("sourcelsid"))
                 {
                     String lsid = String.valueOf(entry.getValue());
-                    int[] count = lsidMap.get(lsid);
-                    if (count == null)
-                    {
-                        count = new int[1];
-                        lsidMap.put(lsid, count);
-                    }
+                    int[] count = lsidMap.computeIfAbsent(lsid, k -> new int[1]);
                     count[0]++;
                     break;
                 }
@@ -833,6 +822,7 @@ public class AssayPublishManager implements AssayPublishService
     /** Automatically copy assay data to a study if the design is set up to do so */
     public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container)
     {
+        LOG.debug("Considering whether to attempt auto-copy results from assay run " + run.getName() + " from container " + container.getPath());
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI) != null)
         {
@@ -840,6 +830,7 @@ public class AssayPublishManager implements AssayPublishService
             String targetStudyContainerId = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI).getStringValue();
             if (targetStudyContainerId != null)
             {
+                LOG.debug("Found configured target study container ID, " + targetStudyContainerId + " for auto-copy with " + run.getName() + " from container " + container.getPath());
                 final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
                 if (targetStudyContainer != null)
                 {
@@ -861,6 +852,8 @@ public class AssayPublishManager implements AssayPublishService
                             // We don't have permission to create or add to
                             return Collections.emptyList();
                         }
+
+                        LOG.debug("Resolved target study in container " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
 
                         FieldKey ptidFK = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
                         FieldKey visitFK = provider.getTableMetadata(protocol).getVisitIDFieldKey(study.getTimepointType());
@@ -897,18 +890,27 @@ public class AssayPublishManager implements AssayPublishService
                                     // 13647: Conversion exception in assay auto copy-to-study
                                     if (study.getTimepointType().isVisitBased())
                                     {
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, Float.parseFloat(visit.toString()), objectId);
+                                        float visitId = Float.parseFloat(visit.toString());
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, visitId, objectId);
+                                        LOG.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                                     }
                                     else
                                     {
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, (Date) ConvertUtils.convert(visit.toString(), Date.class), objectId);
+                                        Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, date, objectId);
+                                        LOG.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                                     }
                                     keys.put(objectId, key);
+                                }
+                                else
+                                {
+                                    LOG.debug("Missing ptid and/or visit info for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                                 }
                             }
                         });
 
                         List<String> copyErrors = new ArrayList<>();
+                        LOG.debug("Identified " + keys + " rows with sufficient data to copy to " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
                         provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, copyErrors);
                         return copyErrors;
                     }
