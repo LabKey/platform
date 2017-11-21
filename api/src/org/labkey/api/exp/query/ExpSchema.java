@@ -147,6 +147,14 @@ public class ExpSchema extends AbstractExpSchema
                 ExpQCFlagTable result = ExperimentService.get().createQCFlagsTable(QCFlags.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
+        },
+        Files
+        {
+            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            {
+                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
+                return expSchema.setupTable(result);
+            }
         };
 
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName);
