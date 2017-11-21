@@ -83,35 +83,23 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.DataClass);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
-        ColumnInfo lsidColumn = addColumn(Column.LSID);
-        lsidColumn.setHidden(true);
-        addColumn(Column.DataFileUrl);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
-        addColumn(Column.DownloadLink);
-        addColumn(Column.ViewFileLink);
+
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
         addColumn(Column.InlineThumbnail);
-        addColumn(Column.Flag);
         addColumn(Column.SourceProtocolApplication).setHidden(true);
         addColumn(Column.Protocol).setHidden(true);
         addContainerColumn(Column.Folder, null);
-        addColumn(Column.FileExists);
-        addColumn(Column.FileSize);
-        addColumn(Column.FileExtension);
         addColumn(Column.ViewOrDownload);
         addColumn(Column.Generated);
         addColumn(Column.LastIndexed);
 
-        List<FieldKey> defaultCols = new ArrayList<>();
-        defaultCols.add(FieldKey.fromParts(Column.Name));
-        defaultCols.add(FieldKey.fromParts(Column.Run));
-        defaultCols.add(FieldKey.fromParts(Column.DataFileUrl));
-        setDefaultVisibleColumns(defaultCols);
-
+        addFileColumns(false);
+        setDefaultColumns();
         setTitleColumn("Name");
 
         // Only include the dataClassId parameter if the ExpData row has a DataClass
@@ -123,6 +111,31 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
+
+        ColumnInfo colInputs = addColumn(Column.Inputs);
+        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+
+        ColumnInfo colOutputs = addColumn(Column.Outputs);
+        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+
+    }
+
+    public List<String> addFileColumns(boolean isFilesTable)
+    {
+        List<String> customProps = new ArrayList<>();
+        ColumnInfo lsidColumn = addColumn(Column.LSID);
+        lsidColumn.setHidden(true);
+        if (!isFilesTable)
+            addColumn(Column.DataFileUrl).setUserEditable(false);
+
+        addColumn(Column.DownloadLink).setUserEditable(isFilesTable);
+        addColumn(Column.ViewFileLink).setUserEditable(isFilesTable);
+        addColumn(Column.FileExists).setUserEditable(isFilesTable);
+        addColumn(Column.FileSize).setUserEditable(isFilesTable);
+        addColumn(Column.FileExtension).setUserEditable(isFilesTable);
+        ColumnInfo flagCol = addColumn(Column.Flag);
+        if (isFilesTable)
+            flagCol.setLabel("Description");
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         String domainURI = svc.getDomainURI(getContainer());
@@ -138,17 +151,22 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                     // don't set container on property column so that inherited domain properties work
                     ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
                     addColumn(projectColumn);
+                    customProps.add(projectColumn.getAlias());
                 }
                 setDomain(domain);
             }
         }
 
-        ColumnInfo colInputs = addColumn(Column.Inputs);
-        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+        return customProps;
+    }
 
-        ColumnInfo colOutputs = addColumn(Column.Outputs);
-        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
-
+    public void setDefaultColumns()
+    {
+        List<FieldKey> defaultCols = new ArrayList<>();
+        defaultCols.add(FieldKey.fromParts(Column.Name));
+        defaultCols.add(FieldKey.fromParts(Column.Run));
+        defaultCols.add(FieldKey.fromParts(Column.DataFileUrl));
+        setDefaultVisibleColumns(defaultCols);
     }
 
     @Override
@@ -227,7 +245,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 runId.setUserEditable(false);
                 return runId;
             case Flag:
-                return   createFlagColumn(alias);
+                return createFlagColumn(alias);
             case DownloadLink:
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));

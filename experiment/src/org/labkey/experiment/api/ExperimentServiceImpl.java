@@ -1100,6 +1100,11 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpQCFlagTableImpl(name, schema);
     }
 
+    public ExpDataTable createFilesTable(String name, UserSchema schema)
+    {
+        return new ExpFilesTableImpl(name, schema);
+    }
+
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)

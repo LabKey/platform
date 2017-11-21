@@ -1,0 +1,160 @@
+package org.labkey.experiment.api;
+
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ExpFilesTableImpl extends ExpDataTableImpl
+{
+    public ExpFilesTableImpl(String name, UserSchema schema)
+    {
+        super(name, schema);
+        addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
+    }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
+
+    public void populate()
+    {
+        addColumn(Column.RowId).setHidden(true);
+        ColumnInfo nameCol = addColumn(Column.Name);
+        nameCol.setUserEditable(true);
+        nameCol.setShownInUpdateView(false);
+        nameCol.setShownInDetailsView(true);
+        nameCol.setShownInInsertView(false);
+
+        ExpSchema schema = getExpSchema();
+        ColumnInfo runCol = addColumn(Column.Run);
+        runCol.setFk(schema.getRunIdForeignKey());
+        runCol.setUserEditable(true);
+        runCol.setShownInUpdateView(false);
+        runCol.setShownInDetailsView(true);
+        runCol.setShownInInsertView(false);
+
+        addContainerColumn(Column.Folder, null);
+
+        List<String> customProps = addFileColumns(true);
+        if (showAbsoluteFilePath())
+        {
+            ColumnInfo dataFileUrlCol = addColumn(Column.DataFileUrl);
+            dataFileUrlCol.setUserEditable(false);
+            dataFileUrlCol.setHidden(true);
+            addColumn(getAbsolutePathColumn());
+        }
+
+        addColumn(Column.Created);
+        addColumn(Column.CreatedBy);
+        addColumn(Column.Modified);
+        addColumn(Column.ModifiedBy);
+
+        setDefaultColumns(customProps);
+        setTitleColumn("Name");
+
+        DetailsURL detailsURL = DetailsURL.fromString("/query/detailsQueryRow.view?schemaName=exp&query.queryName=Files&RowId=${rowId}");
+        setDetailsURL(detailsURL);
+        getColumn(Column.RowId).setURL(detailsURL);
+        getColumn(Column.Name).setURL(detailsURL);
+        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
+        setDeleteURL(new DetailsURL(deleteUrl));
+    }
+
+    public void setDefaultColumns(List<String> customProps)
+    {
+        List<FieldKey> defaultCols = new ArrayList<>();
+        defaultCols.add(FieldKey.fromParts(Column.Name));
+        defaultCols.add(FieldKey.fromParts(Column.Run));
+        defaultCols.add(FieldKey.fromParts(Column.DownloadLink));
+        defaultCols.add(FieldKey.fromParts(Column.FileExists));
+        defaultCols.add(FieldKey.fromParts(Column.FileSize));
+        defaultCols.add(FieldKey.fromParts(Column.Flag));
+        customProps.forEach(prop -> defaultCols.add(FieldKey.fromParts(prop)));
+        if (showAbsoluteFilePath())
+        {
+            defaultCols.add(FieldKey.fromParts("AbsoluteFilePath"));
+        }
+        setDefaultVisibleColumns(defaultCols);
+    }
+
+    protected boolean showAbsoluteFilePath()
+    {
+        Container container = getUserSchema().getContainer();
+        return (null != container && SecurityManager.canSeeFilePaths(container, getUserSchema().getUser()));
+    }
+
+    private ColumnInfo getAbsolutePathColumn()
+    {
+        ColumnInfo result = wrapColumn("AbsoluteFilePath", _rootTable.getColumn("RowId"));
+        result.setTextAlign("left");
+        result.setJdbcType(JdbcType.VARCHAR);
+        result.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ExpDataFileColumn(colInfo)
+                {
+                    @Override
+                    protected void renderData(Writer out, ExpData data) throws IOException
+                    {
+                        String val;
+                        if (data == null || data.getFile() == null || !data.getFile().exists())
+                            val = "";
+                        else
+                        {
+                            val = data.getFile().getAbsolutePath();
+                        }
+                        out.write(val);
+                    }
+
+                    @Override
+                    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+                    {
+                        out.write("<input type=\"text\" class=\"form-control\" name=\"quf_AbsoluteFilePath\" size=\"40\">");
+                    }
+
+                    @Override
+                    protected Object getJsonValue(ExpData data)
+                    {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isEditable()
+                    {
+                        return true;
+                    }
+
+                };
+            }
+        });
+        result.setDescription("The absolute file path of the file record.");
+        result.setUserEditable(true);
+        result.setShownInUpdateView(false);
+        result.setShownInInsertView(true);
+        result.setShownInDetailsView(true);
+
+        return result;
+    }
+
+}

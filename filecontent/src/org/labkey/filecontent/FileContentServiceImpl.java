@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -44,9 +45,11 @@ import org.labkey.api.files.FileListener;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -58,7 +61,9 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 
@@ -73,8 +78,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
@@ -884,6 +891,77 @@ public class FileContentServiceImpl implements FileContentService
     {
         return _containerListener;
     }
+
+    public Set<Map<String, Object>> getNodes(boolean isShowOverridesOnly, @Nullable String browseUrl, @Nullable String showAdminUrl, Container c)
+    {
+        Set<Map<String, Object>> children = new LinkedHashSet<>();
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+
+        try {
+            AttachmentDirectory root = svc.getMappedAttachmentDirectory(c, false);
+
+            if (root != null)
+            {
+                boolean isDefault = svc.isUseDefaultRoot(c);
+                if (!isDefault || !isShowOverridesOnly)
+                {
+                    ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+                    Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectory());
+                    node.put("default", svc.isUseDefaultRoot(c));
+                    node.put("configureURL", config.getEncodedLocalURIString());
+                    node.put("browseURL", browseUrl);
+                    node.put("webdavURL", FilesWebPart.getRootPath(c, FILES_LINK));
+
+                    children.add(node);
+                }
+            }
+
+            for (AttachmentDirectory fileSet : svc.getRegisteredDirectories(c))
+            {
+                ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
+                Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory());
+                node.put("configureURL", config.getEncodedLocalURIString());
+                node.put("browseURL", browseUrl);
+                node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
+
+                children.add(node);
+            }
+
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+            if (pipeRoot != null)
+            {
+                boolean isDefault = PipelineService.get().hasSiteDefaultRoot(c);
+                if (!isDefault || !isShowOverridesOnly)
+                {
+                    ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
+                    ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
+                    Map<String, Object> node = createFileSetNode(PIPELINE_LINK, pipeRoot.getRootPath());
+                    node.put("default", isDefault );
+                    node.put("configureURL", config.getEncodedLocalURIString());
+                    node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
+                    node.put("webdavURL", FilesWebPart.getRootPath(c, PIPELINE_LINK));
+
+                    children.add(node);
+                }
+            }
+        }
+        catch (MissingRootDirectoryException | UnsetRootDirectoryException e){}
+        return children;
+    }
+
+    protected Map<String, Object> createFileSetNode(String name, File dir)
+    {
+        Map<String, Object> node = new HashMap<>();
+        if (dir != null)
+        {
+            node.put("name", name);
+            node.put("path", dir.getPath());
+            node.put("leaf", true);
+        }
+        return node;
+    }
+
+
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends AssertionError

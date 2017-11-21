@@ -926,6 +926,7 @@ experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpFilesTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpIdentifiableBaseImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpIdentifiableEntityImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpInputTableImpl.java -text

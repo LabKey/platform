@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -50,6 +51,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
@@ -59,6 +61,9 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 
+import java.io.File;
+
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -67,6 +72,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.files.FileContentService.PIPELINE_LINK;
 
 /**
  * User: klum
@@ -258,7 +265,17 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     {
         String dataFileUrl = null;
 
-        if (!row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+        if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+        {
+            dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
+        }
+        else if (row.containsKey("AbsoluteFilePath") &&
+                !row.containsKey(ExpDataTable.Column.RowId.name()) &&
+                !row.containsKey(ExpDataTable.Column.LSID.name()))
+        {
+            dataFileUrl = getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
+        }
+        else
         {
             try
             {
@@ -283,11 +300,24 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 throw new ValidationException("Unable to get the DataFileUrl: " + e.getMessage());
             }
         }
-        else
-            dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
+
 
         ExpData data = ExperimentService.get().getExpDataByURL(dataFileUrl, container);
         return new Pair<>(data, dataFileUrl);
+    }
+
+    private String getDataFileUrlFromAbsoluteFilePath(String absoluteFilePath)
+    {
+        try
+        {
+            File file = new File(absoluteFilePath);
+            File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
+            return canonicalFile.toURI().toURL().toString();
+        }
+        catch (MalformedURLException e)
+        {
+            return null;
+        }
     }
 
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
@@ -327,6 +357,14 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             if (row.containsKey(COL_COMMENT.toString()))
             {
                 Object comment = row.get(COL_COMMENT.toString());
+                if (comment instanceof String)
+                    data.setComment(user, (String)comment);
+                else
+                    data.setComment(user, null);
+            }
+            else if (row.containsKey(ExpDataTable.Column.Flag.name()))
+            {
+                Object comment = row.get(ExpDataTable.Column.Flag.name());
                 if (comment instanceof String)
                     data.setComment(user, (String)comment);
                 else
@@ -423,6 +461,25 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         {
             return getResource(String.valueOf(keys.get(KEY_COL_ID)));
         }
+        else
+        {
+            String absoluteFilePath = null;
+            if (keys.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+                absoluteFilePath = getAbsolutePathFromDataFileUrl(String.valueOf(keys.get(ExpDataTable.Column.DataFileUrl.name())));
+            else if (keys.containsKey(ExpDataTable.Column.RowId.name()))
+            {
+                String rowIdStr = String.valueOf(keys.get(ExpDataTable.Column.RowId.name()));
+                ExpData data = ExperimentService.get().getExpData(Integer.valueOf(rowIdStr));
+                if (data != null && data.getDataFileUrl() != null)
+                    absoluteFilePath = getAbsolutePathFromDataFileUrl(data.getDataFileUrl());
+            }
+            else if (keys.containsKey("AbsoluteFilePath"))
+                absoluteFilePath = String.valueOf(keys.get("AbsoluteFilePath"));
+
+            if (absoluteFilePath != null)
+                return getWebdavUrlFromAbsoluteFilePath(absoluteFilePath, _container);
+        }
+
         return null;
     }
 
@@ -443,5 +500,61 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             }
         }
         return WebdavService.get().getResolver().lookup(path);
+    }
+
+    private String getAbsolutePathFromDataFileUrl(String dataFileUrl)
+    {
+        URI uri;
+        try
+        {
+            uri = new URI(dataFileUrl);
+            File f = new File(uri);
+            return f.getAbsolutePath();
+        }
+        catch (URISyntaxException e)
+        {
+            _log.error("Unable to get file from uri: " + dataFileUrl);
+            return null;
+        }
+    }
+
+    private WebdavResource getWebdavUrlFromAbsoluteFilePath(@NotNull String absoluteFilePath, Container container)
+    {
+        WebdavResource targetResource = null;
+        Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(false, null, null, container);
+        for (Map<String, Object> child : children)
+        {
+            String rootName = (String) child.get("name");
+            // skip default @pipeline, which is the same as @files
+            if (PIPELINE_LINK.equals(rootName) && (boolean) child.get("default"))
+                continue;
+
+            String rootPath = (String) child.get("path");
+            if (absoluteFilePath.startsWith(rootPath))
+            {
+                String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
+                String rootDavUrl = (String) child.get("webdavURL");
+
+                if (rootDavUrl == null)
+                    continue;
+
+                if (rootDavUrl.endsWith("/"))
+                    rootDavUrl = rootDavUrl.substring(0, rootDavUrl.length() - 1);
+
+                if (offset.startsWith("/"))
+                    offset = offset.substring(1);
+
+                String davUrl = rootDavUrl + "/" + offset;
+                WebdavResource resource = getResource(davUrl);
+                if (targetResource == null)
+                    targetResource = resource;
+                else
+                {
+                    _log.error("More than one webdav resource found for file: " + absoluteFilePath);
+                    return null;
+                }
+            }
+        }
+        return targetResource;
     }
 }

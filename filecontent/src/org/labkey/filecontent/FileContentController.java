@@ -689,57 +689,9 @@ public class FileContentController extends SpringActionController
             if (c == null)
                 c = ContainerManager.getRoot();
 
-            Set<Map<String, Object>> children = new LinkedHashSet<>();
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-
-            try {
-                AttachmentDirectory root = svc.getMappedAttachmentDirectory(c, false);
-                ActionURL browse = new ActionURL(BeginAction.class, c);
-
-                if (root != null)
-                {
-                    boolean isDefault = svc.isUseDefaultRoot(c);
-                    if (!isDefault || !form.isShowOverridesOnly())
-                    {
-                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-                        Map<String, Object> node = createFileSetNode("@files", root.getFileSystemDirectory());
-                        node.put("default", svc.isUseDefaultRoot(c));
-                        node.put("configureURL", config.getEncodedLocalURIString());
-                        node.put("browseURL", browse.getEncodedLocalURIString());
-
-                        children.add(node);
-                    }
-                }
-
-                for (AttachmentDirectory fileSet : svc.getRegisteredDirectories(c))
-                {
-                    ActionURL config = new ActionURL(ShowAdminAction.class, c);
-                    Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory());
-                    node.put("configureURL", config.getEncodedLocalURIString());
-                    node.put("browseURL", browse.getEncodedLocalURIString());
-
-                    children.add(node);
-                }
-
-                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
-                if (pipeRoot != null)
-                {
-                    boolean isDefault = PipelineService.get().hasSiteDefaultRoot(c);
-                    if (!isDefault || !form.isShowOverridesOnly())
-                    {
-                        ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
-                        ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
-                        Map<String, Object> node = createFileSetNode("@pipeline", pipeRoot.getRootPath());
-                        node.put("default", isDefault );
-                        node.put("configureURL", config.getEncodedLocalURIString());
-                        node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
-
-                        children.add(node);
-                    }
-                }
-            }
-            catch (MissingRootDirectoryException e){}
-            catch (UnsetRootDirectoryException e){}
+            ActionURL browse = new ActionURL(BeginAction.class, c);
+            ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
+            Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(form.isShowOverridesOnly(), browse.getEncodedLocalURIString(), config.getEncodedLocalURIString(), c);
 
             for (Container child : c.getChildren())
             {
@@ -784,7 +736,7 @@ public class FileContentController extends SpringActionController
                 if (root != null)
                 {
 
-                    Map<String, Object> node = createFileSetNode(NODE_LABEL, root.getFileSystemDirectory());
+                    Map<String, Object> node = FileContentServiceImpl.getInstance().createFileSetNode(NODE_LABEL, root.getFileSystemDirectory());
 
                     if (containsFileWebPart(c))
                     {
@@ -855,17 +807,7 @@ public class FileContentController extends SpringActionController
             };
         }
 
-        protected Map<String, Object> createFileSetNode(String name, File dir)
-        {
-            Map<String, Object> node = new HashMap<>();
-            if (dir != null)
-            {
-                node.put("name", name);
-                node.put("path", dir.getPath());
-                node.put("leaf", true);
-            }
-            return node;
-        }
+
     }
 
 
