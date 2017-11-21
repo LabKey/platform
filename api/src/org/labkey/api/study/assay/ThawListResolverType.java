@@ -427,11 +427,6 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             return("Could not find table " + queryName);
         }
 
-        if (table.getPkColumnNames().size() != 1)
-        {
-            return("Table must have exactly one primary key column defined.");
-        }
-
         return validateThawListColumns(table.getColumnNameSet(), makeThawListName(schemaName, queryName, container), false);
     }
 

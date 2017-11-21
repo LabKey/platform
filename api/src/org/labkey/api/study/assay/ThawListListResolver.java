@@ -70,8 +70,13 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer) throws ExperimentException
     {
         List<String> pkNames = _tableInfo.getPkColumnNames();
-        assert pkNames.size() == 1;
-        FieldKey pkFieldKey = FieldKey.fromParts(pkNames.get(0));
+        FieldKey pkFieldKey;
+
+        if (pkNames.size() == 1)
+            pkFieldKey = FieldKey.fromParts(pkNames.get(0));
+        else
+            pkFieldKey = FieldKey.fromParts(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
+
         ColumnInfo col = _tableInfo.getColumn(pkFieldKey);
         Object convertedID;
         try
@@ -86,11 +91,13 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkFieldKey, convertedID), null);
         Map<String, Object>[] rows = selector.setForDisplay(true).getMapArray();
 
-        assert rows.length <= 1;
-
         if (rows.length == 0)
         {
             throw new ThawListResolverException("Can not resolve thaw list entry for specimenId: " + specimenID);
+        }
+        else if (rows.length > 1)
+        {
+            throw new ThawListResolverException("More than one thaw list entry was found for specimenId: " + specimenID);
         }
         else
         {

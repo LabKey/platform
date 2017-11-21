@@ -608,12 +608,12 @@ LABKEY.Assay = new function()
 
             if (config.properties) {
                 for (var key in config.properties)
-                    formData.append("properties['" + key + "']", config.properties[key]);
+                    formData.append("properties['" + key + "']", JSON.stringify(config.properties[key]));
             }
 
             if (config.batchProperties) {
                 for (var key in config.batchProperties)
-                    formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
+                    formData.append("batchProperties['" + key + "']", JSON.stringify(config.batchProperties[key]));
             }
 
             if (config.dataRows)
