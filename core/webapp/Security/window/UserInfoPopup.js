@@ -190,7 +190,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                     html += '<tr><td>';
                     if (isMemberGroup)
                     {
-                        var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? this.cache.projectId : '/'),{id:user.UserId});
+                        var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId) : '/'),{id:user.UserId});
                         html += '<a style="font-size: 95%; font-weight: bold;" href="' + url + '">' + (user.Container ? "" : "Site:&nbsp;") + Ext4.String.htmlEncode(user.Name) + '</a>';
                     }
                     else
@@ -215,11 +215,11 @@ Ext4.define('Security.window.UserInfoPopup', {
                     var url;
                     if (isMemberGroup)
                     {
-                        url = LABKEY.ActionURL.buildURL('security','groupPermission',this.cache.projectId,{id:user.UserId});
+                        url = LABKEY.ActionURL.buildURL('security','groupPermission',(this.cache.projectPath ? this.cache.projectPath : this.cache.projectId),{id:user.UserId});
                     }
                     else
                     {
-                        url = LABKEY.ActionURL.buildURL('user','userAccess',this.cache.projectId,{userId:user.UserId});
+                        url = LABKEY.ActionURL.buildURL('user','userAccess',(this.cache.projectPath ? this.cache.projectPath : this.cache.projectId),{userId:user.UserId});
                     }
 
                     html += this.getOpenWindowMarkup('permissions', url) + '</td></tr>';
