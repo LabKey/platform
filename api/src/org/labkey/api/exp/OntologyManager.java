@@ -2577,13 +2577,13 @@ public class OntologyManager
         public final List<? extends IPropertyValidator> validators;
         public final List<ConditionalFormat> formats;
 
-        ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, List<? extends IPropertyValidator> validators, List<ConditionalFormat> formats)
+        ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats)
         {
             this.domainName = domainName;
             this.domainURI = domainURI;
             this.pd = pd;
-            this.validators = validators;
-            this.formats = formats;
+            this.validators = null != validators ? validators : Collections.emptyList();
+            this.formats = null != formats ? formats : Collections.emptyList();
         }
     }
 
@@ -2592,7 +2592,7 @@ public class OntologyManager
     {
         public final ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
 
-        void add(String domainName, String domainURI, PropertyDescriptor pd, List<? extends IPropertyValidator> validators, List<ConditionalFormat> formats)
+        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats)
         {
             properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd, validators, formats));
         }
@@ -2654,8 +2654,8 @@ public class OntologyManager
                 }
 
                 // Note: These will be null in the SchemaTsv case
-                List<ConditionalFormat> conditionalFormats = firstNonNull((List<ConditionalFormat>) m.get("ConditionalFormats"), Collections.emptyList());
-                List<? extends IPropertyValidator> validators = firstNonNull((List<? extends IPropertyValidator>) m.get("Validators"), Collections.emptyList());
+                @Nullable List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
+                @Nullable List<? extends IPropertyValidator> validators = (List<? extends IPropertyValidator>) m.get("Validators");
 
                 ret.add(domainName, domainURI, pd, validators, conditionalFormats);
             }
