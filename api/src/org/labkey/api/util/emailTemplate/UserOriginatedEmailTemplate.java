@@ -24,6 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Convenience base class for email templates that will be used in the context of a specific user,
+ * typically the user who initiated the action that is causing the email to be sent (such as posting
+ * to a message forum).
+ *
  * Created by xingyang on 12/7/15.
  */
 public abstract class UserOriginatedEmailTemplate extends EmailTemplate
@@ -43,12 +47,12 @@ public abstract class UserOriginatedEmailTemplate extends EmailTemplate
 
     public UserOriginatedEmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
     {
-        this(name, subject, body, description, contentType, DEFAULT_SENDER);
+        this(name, subject, body, description, contentType, DEFAULT_SENDER, DEFAULT_REPLY_TO);
     }
 
-    public UserOriginatedEmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName)
+    public UserOriginatedEmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName, @Nullable String replyToEmail)
     {
-        super(name, subject, body, description, contentType, senderDisplayName);
+        super(name, subject, body, description, contentType, senderDisplayName, replyToEmail);
         _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user who originated the action"){
             public String getValue(Container c) {
                 return _originatingUser == null ? null : _originatingUser.getFirstName();
@@ -62,6 +66,11 @@ public abstract class UserOriginatedEmailTemplate extends EmailTemplate
         _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user who originated the action"){
             public String getValue(Container c) {
                 return _originatingUser == null ? null : _originatingUser.getFriendlyName();
+            }
+        });
+        _replacements.add(new ReplacementParam<String>("userEmail", String.class, "Email address of the user who originated the action"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getEmail();
             }
         });
 

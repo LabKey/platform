@@ -24,13 +24,14 @@ import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
+ * Manages admin-customized email templates by persisting in the property store.
+ *
  * User: Karl Lum
  * Date: Jan 15, 2007
  */
@@ -41,7 +42,10 @@ public class EmailTemplateService
     private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
     private static final String MESSAGE_SUBJECT_PART = "subject";
     private static final String MESSAGE_BODY_PART = "body";
+    /** Sender display name */
     private static final String MESSAGE_FROM_PART = "from";
+    /** Reply to email address */
+    private static final String MESSAGE_REPLY_TO_PART = "replyToEmail";
     private static final String EMAIL_TEMPLATE_DELIM = "/";
 
     private static final EmailTemplateService instance = new EmailTemplateService();
@@ -53,10 +57,12 @@ public class EmailTemplateService
     }
     private EmailTemplateService(){}
 
+    /** Adds an entry to the list of known and customizable templates */
     public void registerTemplate(Class<? extends EmailTemplate> templateClass)
     {
         synchronized(_templates)
         {
+            _log.debug("Registering email template " + templateClass.getName());
             if (_templates.contains(templateClass))
                 throw new IllegalStateException("Template : " + templateClass.getName() + " has previously been registered.");
 
@@ -76,6 +82,7 @@ public class EmailTemplateService
     /** Looks at folder-level, site-level and default templates */
     public <T extends EmailTemplate> T getEmailTemplate(Class<T> templateClass, Container c)
     {
+        //noinspection unchecked
         return (T)_getEmailTemplates(c).get(templateClass);
     }
 
@@ -85,14 +92,7 @@ public class EmailTemplateService
 
         if (!c.isRoot())
         {
-            Iterator<EmailTemplate> i = templates.iterator();
-            while (i.hasNext())
-            {
-                if (!i.next().getEditableScopes().isEditableIn(c))
-                {
-                    i.remove();
-                }
-            }
+            templates.removeIf(emailTemplate -> !emailTemplate.getEditableScopes().isEditableIn(c));
         }
 
         templates.sort((o1, o2) ->
@@ -169,6 +169,8 @@ public class EmailTemplateService
                         et.setBody(entry.getValue());
                     else if (MESSAGE_FROM_PART.equals(partType))
                         et.setSenderName((entry.getValue()));
+                    else if (MESSAGE_REPLY_TO_PART.equals(partType))
+                        et.setReplyToEmail((entry.getValue()));
                 }
                 // do nothing, we don't necessarily care about stale template properties
                 catch (Exception e)
@@ -179,12 +181,13 @@ public class EmailTemplateService
         }
     }
 
-    public Class<? extends EmailTemplate> getTemplateClass(String className)
+    private Class<? extends EmailTemplate> getTemplateClass(String className)
     {
         try {
             Class c = Class.forName(className);
             if (EmailTemplate.class.isAssignableFrom(c))
             {
+                //noinspection unchecked
                 return (Class<? extends EmailTemplate>)c;
             }
             throw new IllegalArgumentException("The specified class: " + c.getName() + " is not an instance of EmailTemplate");
@@ -228,6 +231,8 @@ public class EmailTemplateService
                 template.getBody());
         map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART,
                 template.getSenderName());
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_REPLY_TO_PART,
+                template.getReplyToEmail());
         map.save();
     }
 
@@ -239,6 +244,7 @@ public class EmailTemplateService
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART);
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART);
+        map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_REPLY_TO_PART);
         map.save();
     }
 }

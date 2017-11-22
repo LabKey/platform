@@ -26,9 +26,11 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -40,17 +42,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Admin-customizable template for sending automated emails from the server. Subclasses are used
+ * for each specific type of email to send. A simple substitution syntax allows for replacing sections
+ * with dynamic content.
+ *
  * User: Karl Lum
  * Date: Jan 15, 2007
  */
 public abstract class EmailTemplate
 {
     private static final Logger LOG = Logger.getLogger(EmailTemplate.class);
+    /** Pattern for recognizing substitution syntax, which is of the form ^TOKEN^ */
     private static final Pattern SCRIPT_PATTERN = Pattern.compile("\\^(.*?)\\^");
     private static final List<ReplacementParam> REPLACEMENT_PARAMS = new ArrayList<>();
+    /** Separates the token name from how it should be formatted (for date and numeric values)  */
     private static final String FORMAT_DELIMITER = "|";
 
     protected static final String DEFAULT_SENDER = "^siteShortName^";
+    protected static final String DEFAULT_REPLY_TO = "^siteEmailAddress^";
 
     /**
      * Distinguishes between the types of email that might be sent. Additionally, used to ensure correct encoding
@@ -88,6 +97,7 @@ public abstract class EmailTemplate
         public abstract String format(String sourceValue, ContentType sourceType);
     }
 
+    /** Defines whether a template can be customized on just the site-level, or also on a per-folder basis */
     public enum Scope
     {
         Site
@@ -115,6 +125,7 @@ public abstract class EmailTemplate
     private String _body;
     private String _subject;
     @Nullable private String _senderName;
+    @Nullable private String _replyToEmail;
     private String _description;
     private int _priority = 50;
     /** Scope is the locations in which the user should be able to edit this template. It should always be the same
@@ -133,6 +144,9 @@ public abstract class EmailTemplate
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<String>("siteShortName", String.class, "Header short name"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
+        });
+        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("siteEmailAddress", String.class, "System email address"){
+            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<String>("contextPath", String.class, "Web application context path"){
             public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
@@ -177,10 +191,10 @@ public abstract class EmailTemplate
 
     public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
     {
-        this(name, subject, body, description, contentType, DEFAULT_SENDER);
+        this(name, subject, body, description, contentType, DEFAULT_SENDER, DEFAULT_REPLY_TO);
     }
 
-    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName)
+    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName, @Nullable String replyToEmail)
     {
         _name = name;
         _subject = subject;
@@ -188,6 +202,7 @@ public abstract class EmailTemplate
         _description = description;
         _contentType = contentType;
         _senderName = senderDisplayName;
+        _replyToEmail = replyToEmail;
     }
 
     @NotNull public String getName(){return _name;}
@@ -205,6 +220,8 @@ public abstract class EmailTemplate
     /* package */ void setContainer(Container c){_container = c;}
     @Nullable public String getSenderName(){return _senderName;}
     public void setSenderName(@Nullable String senderName){_senderName = senderName;}
+    @Nullable public String getReplyToEmail(){return _replyToEmail;}
+    public void setReplyToEmail(@Nullable String senderEmail){_replyToEmail = senderEmail;}
 
     @NotNull
     public ContentType getContentType()
@@ -287,6 +304,30 @@ public abstract class EmailTemplate
         return null;
     }
 
+    /** Sets the sender (with reply-to if needed), subject, and body of the email */
+    public void renderAllToMessage(MailHelper.MultipartMessage message, Container c) throws MessagingException, UnsupportedEncodingException
+    {
+        message.setEncodedHtmlContent(renderBody(c));
+        message.setSubject(renderSubject(c));
+        renderSenderToMessage(message, c);
+    }
+
+    /** Sets the sender (with reply-to if needed) of the email */
+    public void renderSenderToMessage(MailHelper.MultipartMessage message, Container c) throws UnsupportedEncodingException, MessagingException
+    {
+        message.setFrom(renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+        String replyTo = renderReplyTo(c);
+        if (replyTo != null)
+        {
+            message.setHeader("Reply-To", replyTo);
+        }
+    }
+
+    public String renderReplyTo(Container c)
+    {
+        return render(c, getReplyToEmail());
+    }
+
     public String renderSubject(Container c)
     {
         return render(c, getSubject());
@@ -313,6 +354,10 @@ public abstract class EmailTemplate
 
     protected String render(Container c, String text)
     {
+        if (text == null)
+        {
+            return null;
+        }
         StringBuilder sb = new StringBuilder();
         Matcher m = SCRIPT_PATTERN.matcher(text);
         int start;
