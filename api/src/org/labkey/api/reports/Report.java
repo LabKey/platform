@@ -29,11 +29,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.thumbnail.ThumbnailProvider;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
@@ -175,6 +177,21 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * serialized to the database, json, xml etc.
      */
     Map<String, Object> serialize(Container container, User user);
+
+    default String getExternalEditorName()
+    {
+        return null;
+    }
+
+    default Pair<String, String> startExternalEditor(ViewContext context, String script, BindException errors)
+    {
+        return null;
+    }
+
+    default void saveFromExternalEditor(ContainerUser context, String script)
+    {
+        throw new UnsupportedOperationException("No external editor defined for report class " + this.getClass().getSimpleName());
+    }
 
     /**
      * Reports which are query or result set oriented, can implement this interface to

@@ -32,7 +32,7 @@ public class RDockerScriptEngineFactory extends ExternalScriptEngineFactory
     {
         RStudioService rs = ServiceRegistry.get(RStudioService.class);
         if (null != rs && rs.isConfigured() && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
-            return new RDockerScriptEngine(_def, rs);
+            return new RDockerScriptEngine(_def, rs, rs.getMount() + "/R_Sandbox");
         else return null;
     }
 }

@@ -17,6 +17,8 @@ package org.labkey.api.reports;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.file.PathMapperImpl;
@@ -41,11 +43,25 @@ public class RDockerScriptEngine extends RScriptEngine
     private static RStudioService _rs;
     private static String _remoteWorkingDir;
 
-    public RDockerScriptEngine(ExternalScriptEngineDefinition def, RStudioService rs)
+    /**
+     * This constructor provides an instance which can be used to prepare, but not run, script files.
+     * It provides a minimal EngingeDefinition and no RStudioService instance.
+     * @param remoteWorkingDir The remote directory to map
+     */
+    public RDockerScriptEngine(String remoteWorkingDir)
+    {
+        this(mockEngineDefinition(), null, remoteWorkingDir);
+    }
+
+    /**
+     * If an RStudioService is instance is passed to this constructor, it provides an instance which can both
+     * prepare and run script files.
+     */
+    public RDockerScriptEngine(@NotNull ExternalScriptEngineDefinition def, @Nullable RStudioService rs, @NotNull String remoteWorkingDir)
     {
         super(def);
         _rs = rs;
-        _remoteWorkingDir = _rs.getMount() + "/R_Sandbox";
+        _remoteWorkingDir = remoteWorkingDir;
 
         def.setPathMap(new PathMapperImpl(){
 
@@ -90,16 +106,23 @@ public class RDockerScriptEngine extends RScriptEngine
     @Override
     protected Object eval(File scriptFile, ScriptContext context) throws ScriptException
     {
-        StringBuffer output = new StringBuffer();
-        try (CustomTiming t = MiniProfiler.custom("docker", "execute r in docker container"))
+        if (null != _rs)
         {
-            _rs.executeR(scriptFile, getRWorkingDir(context), _remoteWorkingDir, InputFiles());
-            appendConsoleOutput(context, output);
-            return output.toString();
+            StringBuffer output = new StringBuffer();
+            try (CustomTiming t = MiniProfiler.custom("docker", "execute r in docker container"))
+            {
+                _rs.executeR(scriptFile, getRWorkingDir(context), _remoteWorkingDir, InputFiles());
+                appendConsoleOutput(context, output);
+                return output.toString();
+            }
+            catch (Exception e)
+            {
+                throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', msg " + e.getMessage() + ").\n" + e.toString());
+            }
         }
-        catch (Exception e)
+        else
         {
-            throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', msg " + e.getMessage() + ").\n" + e.toString());
+            throw new ScriptException("Script evaluation attempted with no RStudioService instance available.");
         }
     }
 
@@ -127,5 +150,14 @@ public class RDockerScriptEngine extends RScriptEngine
     public String getRemotePath(String localURI)
     {
         return RserveScriptEngine.makeLocalToRemotePath(_def, localURI);
+    }
+
+    @NotNull
+    private static LabKeyScriptEngineManager.EngineDefinition mockEngineDefinition()
+    {
+        LabKeyScriptEngineManager.EngineDefinition engineDef = new LabKeyScriptEngineManager.EngineDefinition();
+        engineDef.setExtensions(new String[]{"R", "r"});
+        engineDef.setPandocEnabled(true); // TODO: ?
+        return engineDef;
     }
 }

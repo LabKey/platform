@@ -71,6 +71,7 @@
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
+    Pair<ActionURL, String> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(c, report);
     List<Pair<String, String>> params = getActionURL().getParameters();
 
     // Initial view URL uses all parameters
@@ -159,6 +160,12 @@
 
         Ext4.onReady(function(){
 
+            var externalEditSettings;
+            <% if (null != externalEditorSettings) { %>
+                externalEditSettings = {};
+                externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
+                externalEditSettings.name = <%=q(externalEditorSettings.getValue())%>;
+            <% } %>
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
                 renderTo        : <%=q(renderId)%>,
                 readOnly        : <%=readOnly%>,
@@ -166,6 +173,7 @@
                 minWidth        : 500,
                 initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
                 saveURL         : <%=q(saveURL.getLocalURIString())%>,
+                externalEditSettings: externalEditSettings,
                 baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
                 preferSourceTab : <%=mode.preferSourceTab()%>,
                 sourceAndHelp   : <%=sourceAndHelp%>,

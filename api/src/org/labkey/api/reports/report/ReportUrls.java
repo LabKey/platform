@@ -21,6 +21,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -52,4 +53,5 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlQueryReport(Container c, Report r);
     ActionURL urlManageNotifications(Container c);
     ActionURL urlModuleThumbnail(Container c);
+    Pair<ActionURL, String> urlAjaxExternalEditScriptReport(Container c, Report r);
 }

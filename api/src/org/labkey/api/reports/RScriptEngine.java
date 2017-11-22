@@ -54,7 +54,12 @@ public class RScriptEngine extends ExternalScriptEngine
         return new RScriptEngineFactory(_def);
     }
 
-    protected File prepareScriptFile(String script, ScriptContext context, List<String> extensions)
+    public File prepareScript(String script)
+    {
+        return prepareScriptFile(script, context, Arrays.asList(_def.getExtensions()), false);
+    }
+
+    protected File prepareScriptFile(String script, ScriptContext context, List<String> extensions, boolean createWrapper)
     {
         File scriptFile = null;
         if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
@@ -68,10 +73,13 @@ public class RScriptEngine extends ExternalScriptEngine
             List<String> preprocessExtensions = Arrays.asList(getKnitrExtension(context, extensions));
             scriptFile = writeScriptFile(script, context, preprocessExtensions);
 
-            // write a new script (the acutal .R script to be run) as the preprocessing script and use
-            // this as the script file we pass to the script engine
-            String preprocessScript = createKnitrScript(context, scriptFile);
-            scriptFile = writeScriptFile(preprocessScript, context, extensions);
+            if (createWrapper)
+            {
+                // write a new script (the acutal .R script to be run) as the preprocessing script and use
+                // this as the script file we pass to the script engine
+                String preprocessScript = createKnitrScript(context, scriptFile);
+                scriptFile = writeScriptFile(preprocessScript, context, extensions);
+            }
         }
         else
         {
@@ -88,7 +96,7 @@ public class RScriptEngine extends ExternalScriptEngine
 
         if (!extensions.isEmpty())
         {
-            File scriptFile = prepareScriptFile(script, context, extensions);
+            File scriptFile = prepareScriptFile(script, context, extensions, true);
             return eval(scriptFile, context);
         }
         else

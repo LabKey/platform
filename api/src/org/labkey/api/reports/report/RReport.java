@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
@@ -28,7 +29,9 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.RDockerScriptEngine;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -38,6 +41,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -54,6 +58,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.PrintWriters;
+import org.springframework.validation.BindException;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -122,6 +127,63 @@ public class RReport extends ExternalScriptEngineReport
 
         // bypass the normal discovery mechanism
         return mgr.getEngineByExtension("r");
+    }
+
+    @Nullable
+    private RStudioService getRStudioService()
+    {
+        RStudioService rs = ServiceRegistry.get().getService(RStudioService.class);
+        if (null != rs && rs.isEditInRStudioAvailable())
+            return rs;
+        else return null;
+    }
+
+    @Override
+    public String getExternalEditorName()
+    {
+        return null != getRStudioService() ? "RStudio" : null;
+    }
+
+    @Override
+    public Pair<String, String> startExternalEditor(ViewContext context, String script, BindException errors)
+    {
+        Pair<String, String> externalEditor = null;
+        RStudioService rs = getRStudioService();
+        if (null != rs)
+        {
+            try
+            {
+                externalEditor = rs.editInRStudio(createFilesForRStudio(context, rs.getMount()), getEntityId(), context, errors);
+            }
+            catch (Exception e)
+            {
+                errors.addError(new LabKeyError(e));
+            }
+
+            if (errors.hasErrors())
+                externalEditor = null;
+        }
+        return externalEditor;
+    }
+
+    private File createFilesForRStudio(ViewContext context, String remoteDir) throws Exception
+    {
+        // TODO: separate file creation into methods that return strings/streams to the methods that write files,
+        // and call those new methods instead of writing out files here
+        File inputDataFile = createInputDataFile(context);
+        RScriptEngine engine = new RDockerScriptEngine(remoteDir);
+        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+        bindings.put(RScriptEngine.KNITR_FORMAT, getKnitrFormat());
+        bindings.put(RScriptEngine.PANDOC_USE_DEFAULT_OUTPUT_FORMAT, isUseDefaultOutputOptions());
+        bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
+        String script = createScript(engine, context, new ArrayList<>(), inputDataFile, null);
+        return engine.prepareScript(script);
+    }
+
+    public void saveFromExternalEditor(ContainerUser context, String script)
+    {
+        getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, this.stripScriptProlog(script));
+        ReportService.get().saveReport(context, this.getDescriptor().getReportKey(), this);
     }
 
     private boolean requestRemote()

@@ -143,7 +143,7 @@ public class RserveScriptEngine extends RScriptEngine
             LOG.info("Reusing RServe connection in use: " + rh.isInUse());
         }
 
-        File scriptFile = prepareScriptFile(script, context, extensions);
+        File scriptFile = prepareScriptFile(script, context, extensions, true);
 
         try
         {

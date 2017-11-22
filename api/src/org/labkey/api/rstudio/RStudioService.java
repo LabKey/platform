@@ -16,7 +16,10 @@
 package org.labkey.api.rstudio;
 
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -30,6 +33,7 @@ import java.util.List;
 public interface RStudioService
 {
     String R_DOCKER_SANDBOX = "rDockerSandbox";
+    String NO_RSTUDIO = "RStudio module is not present.";
 
     default boolean isConfigured()
     {
@@ -38,12 +42,22 @@ public interface RStudioService
 
     default String getMount()
     {
-        throw new UnsupportedOperationException("RStudio module is not present.");
+        throw new UnsupportedOperationException(NO_RSTUDIO);
     }
 
     default void executeR(File scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputFiles) throws IOException
     {
-        throw new UnsupportedOperationException("RStudio module is not present.");
+        throw new UnsupportedOperationException(NO_RSTUDIO);
+    }
+
+    default boolean isEditInRStudioAvailable()
+    {
+        return false;
+    }
+
+    default Pair<String, String> editInRStudio(File scriptFile, String entityId, ViewContext viewContext, BindException errors)
+    {
+        throw new UnsupportedOperationException(NO_RSTUDIO);
     }
 
     // the no-explanation version, just return null if user is not eligible
