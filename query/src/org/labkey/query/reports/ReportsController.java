@@ -345,6 +345,16 @@ public class ReportsController extends SpringActionController
         {
             return new ActionURL(ManageNotificationsAction.class, c);
         }
+
+        @Override
+        public Pair<ActionURL, String> urlAjaxExternalEditScriptReport(Container c, Report r)
+        {
+            String externalEditor = r.getExternalEditorName();
+            if (null != externalEditor)
+                return new Pair<>(new ActionURL(AjaxExternalEditScriptReportAction.class, c), externalEditor);
+            else
+                return null;
+        }
     }
 
     public ReportsController() throws Exception
@@ -1536,6 +1546,16 @@ public class ReportsController extends SpringActionController
             }
         }
 
+        protected String getErrorCode()
+        {
+            return "saveScriptReport";
+        }
+
+        protected boolean isManageThumbnails()
+        {
+            return true;
+        }
+
         @Override
         public ApiResponse execute(RReportBean form, BindException errors) throws Exception
         {
@@ -1545,7 +1565,7 @@ public class ReportsController extends SpringActionController
             {
                 if (getUser().isGuest())
                 {
-                    errors.reject("saveScriptReport", "You must be logged in to be able to save reports");
+                    errors.reject(getErrorCode(), "You must be logged in to be able to save reports");
                     return null;
                 }
 
@@ -1553,50 +1573,89 @@ public class ReportsController extends SpringActionController
 
                 if (null == report)
                 {
-                    errors.reject("saveScriptReport", "Report not found.");
+                    errors.reject(getErrorCode(), "Report not found.");
                 }
                 // on new reports, check for duplicates
                 else if (null == report.getDescriptor().getReportId())
                 {
                     if (ReportService.get().reportNameExists(getViewContext(), report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(report.getDescriptor())))
                     {
-                        errors.reject("saveScriptReport", "There is already a report with the name of: '" + report.getDescriptor().getReportName() +
+                        errors.reject(getErrorCode(), "There is already a report with the name of: '" + report.getDescriptor().getReportName() +
                                 "'. Please specify a different name.");
                     }
                 }
             }
             catch (Exception e)
             {
-                errors.reject("saveScriptReport", e.getMessage());
+                errors.reject(getErrorCode(), e.getMessage());
             }
 
             if (errors.hasErrors())
                 return null;
 
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
             int newId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
             report = ReportService.get().getReport(getContainer(), newId);  // Re-select saved report so we get EntityId, etc.
 
-            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-            if (null != svc && (form.getThumbnailType() != null))
+            if (isManageThumbnails())
             {
-                if (form.getThumbnailType().equals(ThumbnailType.NONE.name()))
+                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                if (null != svc && (form.getThumbnailType() != null))
                 {
-                    // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
-                    svc.deleteThumbnail(report, ImageType.Large);
-                }
-                else if (form.getThumbnailType().equals(ThumbnailType.AUTO.name()))
-                {
-                    svc.replaceThumbnail(report, ImageType.Large, ThumbnailType.AUTO, getViewContext());
+                    if (form.getThumbnailType().equals(ThumbnailType.NONE.name()))
+                    {
+                        // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
+                        svc.deleteThumbnail(report, ImageType.Large);
+                    }
+                    else if (form.getThumbnailType().equals(ThumbnailType.AUTO.name()))
+                    {
+                        svc.replaceThumbnail(report, ImageType.Large, ThumbnailType.AUTO, getViewContext());
+                    }
                 }
             }
 
-            ActionURL defaultRedirectUrl = ReportUtil.getRunReportURL(getViewContext(), report, false);
-            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : defaultRedirectUrl);
-            response.put("success", true);
+            return createResponse(form, report, errors);
+        }
 
+        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", true);
+            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : ReportUtil.getRunReportURL(getViewContext(), report, false));
+            return response;
+        }
+    }
+
+    @RequiresNoPermission
+    public class AjaxExternalEditScriptReportAction extends AjaxSaveScriptReportAction
+    {
+        @Override
+        protected String getErrorCode()
+        {
+            return "externalEditScriptReport";
+        }
+
+        @Override
+        protected boolean isManageThumbnails()
+        {
+            return false;
+        }
+
+        @Override
+        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Pair<String, String> externalEditor = report.startExternalEditor(getViewContext(), form.getScript(), errors);
+            if (null == externalEditor) // TODO: Process errors?
+            {
+                response.put("success", false);
+            }
+            else
+            {
+                response.put("success", true);
+                response.put("externalUrl", externalEditor.getKey());
+                response.put("externalWindowTitle", externalEditor.getValue());
+            }
             return response;
         }
     }

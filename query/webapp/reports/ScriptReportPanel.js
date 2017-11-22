@@ -493,10 +493,10 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             scope: this,
             handler: function() {
                 if (this.reportConfig.reportId) {
-                    this.save();
+                    this.save(this.saveURL);
                 }
                 else {
-                    this.showSaveReportPrompt('Save Report', false);
+                    this.showSaveReportPrompt(this.saveURL, 'Save Report', false);
                 }
             }
         });
@@ -508,9 +508,27 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             style: 'margin-left: 5px;',
             scope: this,
             handler: function() {
-                this.showSaveReportPrompt('Save Report As', true);
+                this.showSaveReportPrompt(this.saveURL, 'Save Report As', true);
             }
         });
+
+        if (this.externalEditSettings) {
+            items.push({
+                        xtype : 'button',
+                        text : 'Edit in ' + this.externalEditSettings.name,
+                        hidden  : this.readOnly,
+                        style: 'margin-left: 5px;',
+                        scope : this,
+                        handler : function() {
+                            if (this.reportConfig.reportId)
+                                this.save(this.externalEditSettings.url);
+                            else {
+                                this.showSaveReportPrompt(this.externalEditSettings.url, 'Create New Report', false);
+                            }
+                        }
+                    }
+            );
+        }
 
         items.push({
             xtype: 'button',
@@ -559,14 +577,14 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return this.formPanel;
     },
 
-    showSaveReportPrompt : function(title, isSaveAs) {
+    showSaveReportPrompt : function(saveUrl, title, isSaveAs) {
         Ext4.MessageBox.show({
             title   : title,
             msg     : 'Please enter a report name:',
             buttons : Ext4.MessageBox.OKCANCEL,
             fn      : function(btnId, name) {
                 if (btnId == 'ok')
-                    this.save(name, isSaveAs);
+                    this.save(saveUrl, name, isSaveAs);
             },
             prompt  : true,
             scope   : this
@@ -611,7 +629,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return url;
     },
 
-    save : function(name, isSaveAs) {
+    save : function(url, name, isSaveAs) {
 
         var form = this.formPanel.getForm();
 
@@ -630,14 +648,17 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             data.script = this.codeMirror.getValue();
 
             Ext4.Ajax.request({
-                url : this.saveURL,
+                url : url,
                 method  : 'POST',
                 success : function(resp, opt) {
                     var o = Ext4.decode(resp.responseText);
 
                     if (o.success) {
                         this.resetDirty();
-                        window.location = o.redirect;
+                        if (o.externalUrl)
+                            this.openExternalEditor(o);
+                        else
+                            window.location = o.redirect;
                     }
                     else {
                         LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
@@ -648,5 +669,13 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 scope   : this
             });
         }
+    },
+
+    openExternalEditor : function (o) {
+        this.readOnly = true;
+        this.codeMirror.readOnly = true;
+        window.open(o.externalUrl, o.externalWindowTitle);
+        // TODO: Disable the external editor button? What about the "Save" button? Could just not have it submit the script content?
+        // Or just redirect to new landing page with returnUrl?
     }
 });
