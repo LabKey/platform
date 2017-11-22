@@ -15,8 +15,11 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 
 import java.util.Map;
@@ -24,22 +27,23 @@ import java.util.Map;
 /**
  * User: matthewb
  * Date: Sep 27, 2009
- * Time: 3:10:17 PM
  *
  * This is a helper class for DetailsURL.  Rather than needing to subclass DetailsURL to provide a
  * container value, you may provide a ContainerContext instead.
  */
 public interface ContainerContext
 {
-    public Container getContainer(Map context);
+    Container getContainer(Map context);
 
-    public static class FieldKeyContext implements ContainerContext
+    /** Determines the container to use based on the value of a column in the results for each row */
+    class FieldKeyContext implements ContainerContext
     {
-        FieldKey _key;
+        @NotNull
+        final FieldKey _key;
 
-        public FieldKeyContext(FieldKey key)
+        public FieldKeyContext(@NotNull FieldKey key)
         {
-            setFieldKey(key);
+            _key = key;
         }
 
         public FieldKeyContext copy()
@@ -56,25 +60,25 @@ public interface ContainerContext
             Object o = context.get(_key);
             if (null == o && null == _key.getParent())
                 o = context.get(_key.getName());
-            if (null == o)
-                return null;
             if (o instanceof Container)
                 return (Container)o;
             if (o instanceof String)
                 return ContainerManager.getForId((String)o);
             if (o instanceof Integer)
                 return ContainerManager.getForRowId((Integer)o);
+
+            // We couldn't resolve a container in the row of data we're rendering, so fall back to the current container
+            // for the request in general, if available. This can happen if a custom query doesn't pull a Container
+            // column from the source table to make available in the query's results.
+            if (context instanceof RenderContext)
+                return ((RenderContext)context).getViewContext().getContainer();
+
             return null;
         }
 
         public FieldKey getFieldKey()
         {
             return _key;
-        }
-
-        public void setFieldKey(FieldKey key)
-        {
-            _key = key;
         }
     }
 }
