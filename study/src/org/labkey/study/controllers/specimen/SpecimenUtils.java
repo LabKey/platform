@@ -482,7 +482,7 @@ public class SpecimenUtils
             template.setOriginatingUser(getUser());
 
         MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-        message.setFrom(template.renderFrom(getContainer(), settings.getReplyToEmailAddress(getUser())));
+        template.renderSenderToMessage(message, getContainer());
         message.setEncodedHtmlContent(template.renderBody(getContainer()));
         message.setSubject(template.renderSubject(getContainer()));
 

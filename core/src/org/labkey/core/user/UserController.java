@@ -97,7 +97,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
@@ -144,7 +143,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
-import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
 import java.awt.image.BufferedImage;
@@ -2284,7 +2282,7 @@ public class UserController extends SpringActionController
 
         Container c = getContainer();
         m.setTemplate(et, c);
-        m.addFrom(new Address[]{et.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress())});
+        et.renderSenderToMessage(m, c);
         m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(oldEmailAddress + ";"));
 
         return m;

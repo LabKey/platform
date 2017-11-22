@@ -40,7 +40,6 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
@@ -356,7 +355,7 @@ public class ChangeSummary
                     template.init(_issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, recipient, _issueProperties);
 
                     m.setSubject(template.renderSubject(container));
-                    m.setFrom(template.renderFrom(container, LookAndFeelProperties.getInstance(container).getSystemEmailAddress()));
+                    template.renderSenderToMessage(m, container);
                     m.setHeader("References", references);
                     String body = template.renderBody(container);
 

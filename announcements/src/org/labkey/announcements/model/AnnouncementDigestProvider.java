@@ -26,7 +26,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
@@ -129,9 +128,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         template.init(bean);
 
         MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-        message.setEncodedHtmlContent(template.renderBody(c));
-        message.setSubject(template.renderSubject(c));
-        message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+        template.renderAllToMessage(message, c);
         message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient.getEmail()));
 
         return message;

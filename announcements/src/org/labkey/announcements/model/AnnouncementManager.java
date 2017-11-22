@@ -51,7 +51,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
@@ -356,10 +355,7 @@ public class AnnouncementManager
             NotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NotificationEmailTemplate.class, c);
             template.init(notificationBean, sender);
             MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-
-            message.setEncodedHtmlContent(template.renderBody(c));
-            message.setSubject(template.renderSubject(c));
-            message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+            template.renderAllToMessage(message, c);
 
             return message;
         }

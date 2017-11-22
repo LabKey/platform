@@ -171,6 +171,11 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
                 Collections.singletonList(form.getUser().getEmail()), template.renderSubject(form.getContainer()));
         msg.setSenderName(template.renderSenderName(form.getContainer()));
         msg.addContent(MimeType.HTML, template.renderBody(form.getContainer()));
+        String replyTo = template.renderReplyTo(form.getContainer());
+        if (replyTo != null)
+        {
+            msg.setHeader("Reply-To", replyTo);
+        }
 
         return msg;
     }

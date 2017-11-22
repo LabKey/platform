@@ -5525,6 +5525,7 @@ public class AdminController extends SpringActionController
 
                 template.setSubject(form.getEmailSubject());
                 template.setSenderName(form.getEmailSender());
+                template.setReplyToEmail(form.getEmailReplyTo());
                 template.setBody(form.getEmailMessage());
 
                 String[] errorStrings = new String[1];
@@ -5579,6 +5580,7 @@ public class AdminController extends SpringActionController
         private String _templateClass;
         private String _emailSubject;
         private String _emailSender;
+        private String _emailReplyTo;
         private String _emailMessage;
         private String _returnURL;
         private String _templateDescription;
@@ -5591,6 +5593,8 @@ public class AdminController extends SpringActionController
         public String getEmailSender(){return _emailSender;}
         public void setEmailMessage(String body){_emailMessage = body;}
         public String getEmailMessage(){return _emailMessage;}
+        public String getEmailReplyTo(){return _emailReplyTo;}
+        public void setEmailReplyTo(String emailReplyTo){_emailReplyTo = emailReplyTo;}
 
         public String getTemplateDescription()
         {
