@@ -864,6 +864,20 @@ public class AssayPublishManager implements AssayPublishService
 
                         // Do a query to get all the info we need to do the copy
                         TableInfo resultTable = schema.createDataTable(false);
+
+                        // Check if we can resolve the PTID column by name. See issue 32281
+                        if (resultTable.getColumn(ptidFK) == null)
+                        {
+                            for (ColumnInfo c : resultTable.getColumns())
+                            {
+                                // Check for a column with the PTID concept URI instead
+                                if (org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                                {
+                                    ptidFK = c.getFieldKey();
+                                }
+                            }
+                        }
+
                         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
                         final ColumnInfo ptidColumn = cols.get(ptidFK);
                         final ColumnInfo visitColumn = cols.get(visitFK);
