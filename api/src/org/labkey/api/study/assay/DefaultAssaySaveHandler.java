@@ -357,7 +357,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         {
             if (data.getDataFileUrl() == null)
             {
-                data.delete(context.getUser());
+                data.delete(context.getUser(), false);
             }
         }
     }

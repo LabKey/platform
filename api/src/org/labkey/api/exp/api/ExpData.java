@@ -21,6 +21,7 @@ import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.User;
 
 import java.io.File;
 import java.net.URI;
@@ -68,4 +69,8 @@ public interface ExpData extends ExpProtocolOutput
     /** @return the search document id for this material */
     String getDocumentId();
 
+    /**
+     * Delete the data, optionally including any runs using this Data as an input.
+     */
+    void delete(User user, boolean deleteRunsUsingData);
 }
