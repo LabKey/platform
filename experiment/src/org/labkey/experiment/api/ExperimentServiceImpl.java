@@ -177,6 +177,8 @@ import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
+    private static final Logger LOG = Logger.getLogger(ExperimentServiceImpl.class);
+
     private DatabaseCache<MaterialSource> materialSourceCache;
     private StringKeyCache<Protocol> protocolCache;
 
@@ -1906,7 +1908,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Set<ExpRun> oldRuns = new HashSet<>(oldCollectRunsToInvestigate(start, options));
         if (!runs.equals(oldRuns))
         {
-            Logger.getLogger(ExperimentServiceImpl.class).warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestiate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
+            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestiate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
             return false;
         }
         return true;
@@ -3065,6 +3067,11 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
     {
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, true);
+    }
+
+    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials)
+    {
         if (selectedMaterialIds.isEmpty())
             return;
 
@@ -3084,17 +3091,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             beforeDeleteMaterials(user, container, materials);
 
-            for (ExpMaterial material : materials)
+            for (ExpMaterialImpl material : materials)
             {
                 // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-                List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
-                for (ExpRun run : runsDeletedWithInput(runArray))
+                if (deleteRunsUsingMaterials)
                 {
-                    Container runContainer = run.getContainer();
-                    if (!runContainer.hasPermission(user, DeletePermission.class))
-                        throw new UnauthorizedException();
-
-                    deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+                    deleteRunsUsingInput(user, material.getDataObject());
                 }
 
                 SqlExecutor executor = new SqlExecutor(getExpSchema());
@@ -3135,7 +3137,37 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    private void deleteRunsUsingInput(User user, ProtocolOutput item)
+    {
+        List<? extends ExpRun> runsUsingItem;
+        if (item instanceof Data)
+            runsUsingItem = getRunsUsingDataIds(Arrays.asList(item.getRowId()));
+        else if (item instanceof Material)
+            runsUsingItem = getRunsUsingMaterials(item.getRowId());
+        else
+            throw new IllegalArgumentException("Expected Data or Material");
+
+        List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItem);
+        if (runsToDelete.isEmpty())
+            LOG.debug("No runs to delete for item '" + item.getName() + "'");
+        else
+            LOG.debug("Deleting runs using input item '" + item.getName() + "': " + runsToDelete.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+        for (ExpRun run : runsToDelete)
+        {
+            Container runContainer = run.getContainer();
+            if (!runContainer.hasPermission(user, DeletePermission.class))
+                throw new UnauthorizedException();
+
+            deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+        }
+    }
+
     public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds) throws ExperimentException
+    {
+        deleteDataByRowIds(user, container, selectedDataIds, true);
+    }
+
+    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds, boolean deleteRunsUsingData) throws ExperimentException
     {
         if (selectedDataIds.isEmpty())
             return;
@@ -3161,6 +3193,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (!data.getContainer().equals(container))
                 {
                     throw new SQLException("Attempting to delete a Data from another container");
+                }
+
+                // Delete any runs using the data if the ProtocolImplementation allows it
+                if (deleteRunsUsingData)
+                {
+                    deleteRunsUsingInput(user, data);
                 }
 
                 SqlExecutor executor = new SqlExecutor(getExpSchema());
