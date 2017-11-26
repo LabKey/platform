@@ -21,11 +21,40 @@
             testPageOffset: testPageOffset,
             testParameterizedQueries: testParameterizedQueries,
             testRemovableFilters: testRemovableFilters,
+            testHidePagingCount: testHidePagingCount,
             testShowAllTotalRows: testShowAllTotalRows
         };
 
         var PAGE_OFFSET = 4;
         var PAGE_OFFSET_SKIPP = false;
+
+        function assertPagingCount(region, first, last, total) {
+            var headerId = '#' + region.domId + '-headerbar';
+            var pagingEl = $(headerId).find('.paging-widget > a');
+
+            try {
+                if (pagingEl.length !== 1) {
+                    throw 'Unable to find paging widget for this region.';
+                }
+                else {
+                    var compare = '' + first + ' - ' + last;
+                    if (total !== undefined) {
+                        compare += ' of ' + total;
+                    }
+
+                    if (compare !== pagingEl.text()) {
+                        throw 'Failed paging count assertion.\nExpected : "' + compare + '"\nActual: "' + pagingEl.text() + '"';
+                    }
+                }
+
+                return true;
+            }
+            catch (e) {
+                console.log(e);
+                alert(e);
+                return false;
+            }
+        }
 
         function getRowCount(region) {
             if (!region) {
@@ -464,6 +493,64 @@
                             }
                         }
                     }
+                }
+            });
+        }
+
+        function testHidePagingCount() {
+            var loadCount = 0;
+            var schema = 'Samples';
+            var query = 'sampleDataTest1';
+
+            LABKEY.Query.selectRows({
+                schemaName: schema,
+                queryName: query,
+                success: function(ssr) {
+                    var TOTAL_EXPECTED_ROWS = ssr.rowCount;
+
+                    new LABKEY.QueryWebPart({
+                        title: 'Hide Paging Count (#32206)',
+                        schemaName: schema,
+                        queryName: query,
+                        maxRows: 2,
+                        renderTo: RENDERTO,
+                        failure: function() {
+                            alert('Failed test: Hide Paging Count.');
+                        },
+                        listeners: {
+                            render: function(dr) {
+                                // timeout is used here to defer displaying error until after region is rendered.
+                                // Less confusing when comparing error against current region state.
+                                setTimeout(function() {
+                                    if (loadCount === 0) {
+                                        loadCount++;
+                                        if (assertPagingCount(dr, 1, 2, TOTAL_EXPECTED_ROWS)) {
+                                            dr.showPaginationCount = false;
+                                            dr.refresh();
+                                        }
+                                    }
+                                    else if (loadCount === 1) {
+                                        loadCount++;
+                                        if (assertPagingCount(dr, 1, 2)) {
+                                            dr.showAllRows(); // should remain hidden if all rows are shown
+                                        }
+                                    }
+                                    else if (loadCount === 2) {
+                                        loadCount++;
+                                        if (assertPagingCount(dr, 1, TOTAL_EXPECTED_ROWS)) {
+                                            dr.setPageOffset(2); // should remain hidden if offset changes
+                                        }
+                                    }
+                                    else if (loadCount === 3) {
+                                        loadCount++;
+                                        if (assertPagingCount(dr, 3, 4)) {
+                                            LABKEY.Utils.signalWebDriverTest('testHidePagingCount');
+                                        }
+                                    }
+                                }, 100);
+                            }
+                        }
+                    });
                 }
             });
         }
