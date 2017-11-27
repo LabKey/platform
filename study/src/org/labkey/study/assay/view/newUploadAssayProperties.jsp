@@ -19,39 +19,15 @@
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
-
-    if (PageFlowUtil.useExperimentalCoreUI())
-    {
 %>
-        <labkey:form layout="horizontal">
-            <labkey:input type="displayfield" label="Name" value="<%= text(bean.getProtocol().getName()) %>" />
-            <% if (!StringUtils.isEmpty(bean.getProtocol().getDescription())) { %>
-                <labkey:input type="displayfield" label="Description" value="<%= text(bean.getProtocol().getProtocolDescription()) %>" />
-            <% } %>
-        </labkey:form>
-<%
-    }
-    else
-    {
-%>
-        <table>
-            <tr>
-                <td class="labkey-form-label" nowrap="true">Name</td>
-                <td width="100%"><%= h(bean.getProtocol().getName()) %></td>
-            </tr>
-            <% if (!StringUtils.isEmpty(bean.getProtocol().getDescription())) { %>
-                <tr>
-                    <td class="labkey-form-label" nowrap="true">Description</td>
-                    <td><%= h(bean.getProtocol().getProtocolDescription()) %></td>
-                </tr>
-            <% } %>
-        </table>
-<%
-    }
-%>
+<labkey:form layout="horizontal">
+    <labkey:input type="displayfield" label="Name" value="<%= text(bean.getProtocol().getName()) %>" />
+    <% if (!StringUtils.isEmpty(bean.getProtocol().getDescription())) { %>
+    <labkey:input type="displayfield" label="Description" value="<%= text(bean.getProtocol().getProtocolDescription()) %>" />
+    <% } %>
+</labkey:form>

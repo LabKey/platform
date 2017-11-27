@@ -56,8 +56,6 @@ public class RelatedIssuesView extends VBox
     public RelatedIssuesView(@NotNull ViewContext context, @NotNull Set<Integer> relatedIssues)
     {
         setFrame(FrameType.DIV);
-        if (!PageFlowUtil.useExperimentalCoreUI())
-            setBodyClass("labkey-indented");
         setIncludeBreak(false);
 
         TableInfo issues = IssuesSchema.getInstance().getTableInfoIssues();
@@ -108,10 +106,7 @@ public class RelatedIssuesView extends VBox
 
             // NOTE: We could probably use FrameType.TITLE, but it adds too much padding-top
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(issueListDef.lookupContainer(), issueListDef.getName());
-            if (PageFlowUtil.useExperimentalCoreUI())
-                addView(new HtmlView("<b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
-            else
-                addView(new HtmlView("<br><b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
+            addView(new HtmlView("<b>Related " + PageFlowUtil.filter(names.pluralName) + "</b>"));
 
             ViewContext ctx = new ViewContext(context);
             ctx.setContainer(issueListDef.lookupContainer());

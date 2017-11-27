@@ -444,14 +444,10 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         {
             clearLoading(_root);
             _root.add(_buttons);
-            if (!PropertyUtil.useExperimentalCoreUI())
-                _root.add(new HTML("<br/>"));
 
             _propertiesPanel = new ListPropertiesPanel(_readonly);
             _root.add(new WebPartPanel("List Properties", _propertiesPanel));
 
-            if (!PropertyUtil.useExperimentalCoreUI())
-                _root.add(new HTML("<br/>"));
             _propTable.setReadOnly(_readonly);
             _schemaPanel = new ListSchema(_propTable);
             _root.add(new WebPartPanel("List Fields", _schemaPanel));

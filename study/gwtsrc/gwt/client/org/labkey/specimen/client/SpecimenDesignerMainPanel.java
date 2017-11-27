@@ -22,7 +22,6 @@ import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -114,9 +113,6 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
 
         for (GWTDomain<GWTPropertyDescriptor> domain : Arrays.asList(domainEvent, domainVial, domainSpecimen))
         {
-            if (!PropertyUtil.useExperimentalCoreUI())
-                _rootPanel.add(new HTML("<br/>"));
-
             // Make sure required properties cannot be edited or moved
             for (GWTPropertyDescriptor property : domain.getFields())
                 if (property.isRequired())
@@ -147,13 +143,9 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
             vPanel.add(editor.getWidget());
 
             final WebPartPanel panel = new WebPartPanel(domain.getName(), vPanel);
-            if (!PropertyUtil.useExperimentalCoreUI())
-                panel.setWidth("100%");
             _rootPanel.add(panel);
         }
 
-        if (!PropertyUtil.useExperimentalCoreUI())
-            _rootPanel.add(new HTML("<br/>"));
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
 

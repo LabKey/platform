@@ -72,24 +72,12 @@
                 %><tr><%
                 if (links.getChildren().size() > 1)
                 {
-                    if (PageFlowUtil.useExperimentalCoreUI())
-                    {
-                        out.write("<td class=\"lk-menu-drop dropdown\"> ");
-                        out.write("<a href=\"#\" data-toggle=\"dropdown\" style=\"color:#333333;\" class=\"dropdown-toggle fa fa-caret-down\"> &nbsp; </a>");
-                        out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
-                        PopupMenuView.renderTree(links, out);
-                        out.write("</ul>");
-                        out.write("</td>");
-                    }
-                    else
-                    {
-                        pmw = new PopupMenuView(links);
-                        pmw.setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-                        %><td><%
-                            include(pmw, out);
-                        %></td><%
-                    }
-
+                    out.write("<td class=\"lk-menu-drop dropdown\"> ");
+                    out.write("<a href=\"#\" data-toggle=\"dropdown\" style=\"color:#333333;\" class=\"dropdown-toggle fa fa-caret-down\"> &nbsp; </a>");
+                    out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
+                    PopupMenuView.renderTree(links, out);
+                    out.write("</ul>");
+                    out.write("</td>");
                 }
                 %><td><a href="<%=h(list.urlShowData(c))%>"><%=h(list.getName())%></a></td></tr><%
             }

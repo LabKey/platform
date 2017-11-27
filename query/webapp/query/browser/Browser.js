@@ -8,8 +8,6 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     layout: 'border',
 
-    bindResize: true,
-
     // allow this component to resize the height to fit the browser window
     autoResize: {
         skipHeight: false
@@ -23,22 +21,15 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     cls: 'schemabrowser',
 
+    height: 600,
+    width: '100%',
+
     constructor : function(config) {
         this.callParent([config]);
         this.addEvents('schemasloaded', 'selectschema', 'selectquery');
     },
 
     initComponent : function() {
-
-        if (LABKEY.experimental.useExperimentalCoreUI) {
-            // TODO: Once migrated, move these to be a part of the normal property setters
-            this.width = '100%';
-            this.height = 600;
-        }
-        else {
-            this.boxMinHeight =600;
-            this.boxMinWidth = 450;
-        }
 
         this.tabFactory = LABKEY.query.browser.SchemaBrowserTabFactory;
 
@@ -93,10 +84,6 @@ Ext4.define('LABKEY.query.browser.Browser', {
             this._initHistory();
         }
 
-        if (this.bindResize) {
-            this._initResize();
-        }
-
         this.selectQueryTask = new Ext4.util.DelayedTask(this._selectQueryTaskHandler, this);
         this.on('selectquery', this.onSelectQuery, this);
         this.on('schemasloaded', this._bindURL, this, {single: true});
@@ -137,23 +124,6 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     _initHistory : function() {
         Ext4.History.on('change', this.onHistoryChange, this);
-    },
-
-    _initResize : function() {
-        if (!LABKEY.experimental.useExperimentalCoreUI) {
-            var resize = function(w, h) {
-                LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32);
-            };
-
-            Ext4.EventManager.onWindowResize(resize, this);
-
-            this.on('afterrender', function() {
-                Ext4.defer(function() {
-                    var size = Ext4.getBody().getBox();
-                    resize.call(this, size.width, size.height);
-                }, 300, this);
-            });
-        }
     },
 
     _initTbar : function() {

@@ -61,8 +61,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -491,26 +489,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         protected boolean isDisabledInput(RenderContext ctx)
         {
             return !super.isDisabledInput() && ctx.getMode() != DataRegion.MODE_INSERT;
-        }
-
-        @Override
-        public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
-        {
-            if (PageFlowUtil.useExperimentalCoreUI())
-                super.renderInputCell(ctx, out, span);
-            else
-            {
-                // UX Refresh: when this is being removed, just remove the entire override of renderInputCell
-                if (ctx.getMode() == DataRegion.MODE_INSERT)
-                {
-                    super.renderInputCell(ctx, out, span);
-                }
-                else
-                {
-                    super.renderHiddenFormInput(ctx, out);
-                    super.renderDetailsData(ctx, out, span);
-                }
-            }
         }
     }
 

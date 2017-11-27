@@ -62,8 +62,7 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
 
         this.cache.getSchema(this.schemaName, function(schema) {
 
-            var label,
-                items = [],
+            var items = [],
                 links = this.formatSchemaLinks(schema),
                 childSchemaNames = [],
                 userDefined = [],
@@ -74,23 +73,13 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                 items.push(links);
             }
 
-            if (LABKEY.experimental.useExperimentalCoreUI) {
-                label = {
-                    tag: 'h2',
-                    html: Ext4.htmlEncode(this.schemaName.toDisplayString() + ' Schema')
-                };
-            }
-            else {
-                label = {
-                    tag: 'div',
-                    cls: 'lk-qd-name',
-                    html: Ext4.htmlEncode(this.schemaName.toDisplayString() + ' Schema')
-                };
-            }
-
             items.push({
                 xtype: 'box',
-                autoEl: label
+                autoEl: {
+                    tag: 'h2',
+                    // cls: 'lk-qd-name',
+                    html: Ext4.htmlEncode(this.schemaName.toDisplayString() + ' Schema')
+                }
             },{
                 xtype: 'box',
                 autoEl: {

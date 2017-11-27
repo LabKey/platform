@@ -134,11 +134,8 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                 " at a time. " + subjectNounUpper + " chart views allow the user to step through charts for each " +
                 subjectNounLower + " shown in any dataset grid."));
         panel.setWidget(row, 0, hp);
-        WebPartPanel wpp = new WebPartPanel("Study Options", panel);
-        if (!PropertyUtil.useExperimentalCoreUI())
-            wpp.setWidth("100%");
 
-        return wpp;
+        return new WebPartPanel("Study Options", panel);
     }
 
     public GWTChart getChart()

@@ -413,21 +413,11 @@
         var _appendPlotDiv = function(region)
         {
             var plotDivId = LABKEY.Utils.id();
-            var html = '<div id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></div>';
 
-            if (LABKEY.experimental.useExperimentalCoreUI) {
-                region.displaySection({
-                    append: true,
-                    html: html
-                })
-            }
-            else {
-                region.addMessage({
-                    html: html,
-                    part: 'plotAnalyticsProvider',
-                    append: true
-                });
-            }
+            region.displaySection({
+                append: true,
+                html: '<div id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></div>'
+            });
 
             return plotDivId;
         };

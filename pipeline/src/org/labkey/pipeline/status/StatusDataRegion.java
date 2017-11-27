@@ -87,10 +87,7 @@ public class StatusDataRegion extends DataRegion
         ActionURL urlFilter = ctx.getSortFilterURLHelper();
         SimpleFilter filters = new SimpleFilter(urlFilter, getName());
 
-        if (PageFlowUtil.useExperimentalCoreUI())
-            out.write("<table style=\"margin-bottom:10px;\">");
-        else
-            out.write("<table>");
+        out.write("<table style=\"margin-bottom:10px;\">");
         out.write("<tr><td>Show:</td>");
 
         String name = "StatusFiles.Status~" + CompareType.NOT_IN.getPreferredUrlKey();

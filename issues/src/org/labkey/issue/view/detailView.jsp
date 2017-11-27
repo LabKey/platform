@@ -63,13 +63,11 @@
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
     final boolean hasInsertPerms = c.hasPermission(getUser(), InsertPermission.class);
-    final boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
     List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
 
-    //rip these out when transitioning to newUI
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
     List<DomainProperty> extraColumns = new ArrayList<>();
@@ -136,12 +134,10 @@
             additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
         }
     }
-%>
 
-<% if (!bean.isPrint())
-{
+    if (!bean.isPrint())
+    {
 %>
-
 <script type="text/javascript">
     var hidden = true;
 
@@ -174,121 +170,62 @@
         hidden = !hidden;
     }
 </script>
-<%  if (newUI)
-    { %>
-        <div style="display:inline-block;margin-bottom:10px;">
-            <div style="float:left;">
-                <% if (bean.getHasUpdatePermissions()) { %>
-                <%= button("Update").href(IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)) %>
-                <% }
-                    if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions()) { %>
-                <%= button("Resolve").href(IssuesController.issueURL(c, IssuesController.ResolveAction.class).addParameter("issueId", issueId)) %>
-                <% }
-                else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions()) { %>
-                <%= button("Close").href(IssuesController.issueURL(c, IssuesController.CloseAction.class).addParameter("issueId", issueId)) %>
-                <%= button("Reopen").href(IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)) %>
-                <% }
-                else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions()) { %>
-                <%= button("Reopen").href(IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)) %>
-                <% } %>
-            </div>
-            <div style="float:left;margin-left:3px;" class="dropdown">
-                <button data-toggle="dropdown" class="btn btn-default">More <i class="fa fa-caret-down"></i></button>
-                <ul class="dropdown-menu dropdown-menu-left">
-                    <% NavTree navTree = new NavTree();
-                        if (bean.getHasUpdatePermissions() && hasInsertPerms)
-                        {
-                            navTree.addChild("New " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())));
-                        }
-                        if (!getUser().isGuest())
-                        {
-                            navTree.addChild("Create related " + names.singularName.toLowerCase(), relatedIssues.toString());
-                            navTree.addChild("Email preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
-                        }
-                        if ( IssueManager.hasRelatedIssues(issue, user))
-                        {
-                            NavTree child = new NavTree("Show related comments", "javascript:void(0);");
-                            child.setScript("javascript:toggleComments(this)");
-                            navTree.addChild(child);
-                        }
-                        if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
-                            navTree.addChild("Move", "javascript:moveIssue()");
-                        navTree.addChild("Print", context.cloneActionURL().replaceParameter("_print", "1"));
-                        navTree.addChildren(additionalHeaderLinks);
-                        PopupMenuView.renderTree(navTree, out); %>
-                </ul>
-            </div>
-            <div style="float:left;margin-left:20px;">
-                <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
-                    <div class="input-group">
-                        <labkey:input name="issueId" formGroup="false" placeholder="ID # or Search Term"/>
-                        <div class="input-group-btn">
-                            <%= button("Search").addClass("btn btn-default").iconCls("search").submit(true) %>
-                        </div>
-                    </div>
-                </labkey:form>
-            </div>
-        </div>
-<%  }
-    else
-    { %>
-        <labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
-            <table><tr><%
+<div style="display:inline-block;margin-bottom:10px;">
+    <div style="float:left;">
+        <% if (bean.getHasUpdatePermissions()) { %>
+        <%= button("Update").href(IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)) %>
+        <% }
+            if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions()) { %>
+        <%= button("Resolve").href(IssuesController.issueURL(c, IssuesController.ResolveAction.class).addParameter("issueId", issueId)) %>
+        <% }
+        else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions()) { %>
+        <%= button("Close").href(IssuesController.issueURL(c, IssuesController.CloseAction.class).addParameter("issueId", issueId)) %>
+        <%= button("Reopen").href(IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)) %>
+        <% }
+        else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions()) { %>
+        <%= button("Reopen").href(IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)) %>
+        <% } %>
+    </div>
+    <div style="float:left;margin-left:3px;" class="dropdown">
+        <button data-toggle="dropdown" class="btn btn-default">More <i class="fa fa-caret-down"></i></button>
+        <ul class="dropdown-menu dropdown-menu-left">
+            <% NavTree navTree = new NavTree();
                 if (bean.getHasUpdatePermissions() && hasInsertPerms)
-                {%>
-                    <td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())))%></td><%
-                }%>
-                    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())).deleteParameter("error"))%></td><%
-                if (bean.getHasUpdatePermissions())
-                {%>
-                    <td><%= textLink("update", IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId))%></td><%
+                {
+                    navTree.addChild("New " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())));
                 }
-                if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions())
-                {%>
-                    <td><%= textLink("resolve", IssuesController.issueURL(c, IssuesController.ResolveAction.class).addParameter("issueId", issueId))%></td><%
-                }
-                else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions())
-                {%>
-                    <td><%= textLink("close", IssuesController.issueURL(c, IssuesController.CloseAction.class).addParameter("issueId", issueId))%></td>
-                    <td><%= textLink("reopen", IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId))%></td><%
-                }
-                else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
-                {%>
-                    <td><%= textLink("reopen", IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId))%></td><%
-                }
-                if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
-                {%>
-                    <td><%= textLink("move", "javascript:void(0)", "Issues.window.MoveIssue.create(" + issueId + ", " + PageFlowUtil.jsString(issueDef.getName()) + ")", "")%></td><%
-                }%>
-                    <td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td><%
-
                 if (!getUser().isGuest())
-                {%>
-                    <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
-                    <td><%= textLink("create related " + names.singularName.toLowerCase(), relatedIssues.toString()) %></td><%
+                {
+                    navTree.addChild("Create related " + names.singularName.toLowerCase(), relatedIssues.toString());
+                    navTree.addChild("Email preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
                 }
                 if ( IssueManager.hasRelatedIssues(issue, user))
-                {%>
-                    <td><%= PageFlowUtil.textLink("show related comments", "javascript:void(0)", "javascript:toggleComments(this)", null) %></td><%
-                }
-
-                for (NavTree headerLink : additionalHeaderLinks)
                 {
-                    String linkText = headerLink.isDisabled()
-                            ? "<span class='labkey-disabled-text-link'>" + headerLink.getText() + "</span>"
-                            : textLink(headerLink.getText(), headerLink.getHref());
-                %>
-                    <td><%= linkText %></td>
-                <%}
-                %>
-                <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
-            </tr></table>
-        </labkey:form><%
-    }
-} else { %>
-    <div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div><%
-}%>
-
+                    NavTree child = new NavTree("Show related comments", "javascript:void(0);");
+                    child.setScript("javascript:toggleComments(this)");
+                    navTree.addChild(child);
+                }
+                if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
+                    navTree.addChild("Move", "javascript:moveIssue()");
+                navTree.addChild("Print", context.cloneActionURL().replaceParameter("_print", "1"));
+                navTree.addChildren(additionalHeaderLinks);
+                PopupMenuView.renderTree(navTree, out); %>
+        </ul>
+    </div>
+    <div style="float:left;margin-left:20px;">
+        <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
+            <div class="input-group">
+                <labkey:input name="issueId" formGroup="false" placeholder="ID # or Search Term"/>
+                <div class="input-group-btn">
+                    <%= button("Search").addClass("btn btn-default").iconCls("search").submit(true) %>
+                </div>
+            </div>
+        </labkey:form>
+    </div>
+</div>
+<% } else { %>
+<div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div>
+<% } %>
 <labkey:panel type="portal">
 <table class="issue-fields" style="width:75%;">
     <tr>

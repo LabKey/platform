@@ -108,7 +108,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private RenderContext _renderContext;
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
-    boolean _newUI = PageFlowUtil.useExperimentalCoreUI();
 
     /**
      * A map of additional information to display on the issue's detail page. It will be displayed as a table row,
@@ -431,7 +430,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        dc.renderDetailsCaptionCell(renderContext, writer, _newUI ? "lk-form-label" : null);
+                        dc.renderDetailsCaptionCell(renderContext, writer, "lk-form-label");
                         sb.append(writer);
                     }
                     return sb.toString();
@@ -449,18 +448,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         final StringBuilder sb = new StringBuilder();
         if (label != null)
         {
-            if (_newUI)
-            {
-                sb.append("<td class=\"lk-form-label\">").append(label);
-                if (label.length() < 100) //prevents silly-looking colons on extremely long labels (see: email prefs)
-                    sb.append(":");
-                sb.append("</td>");
-            }
-
-            else
-            {
-                sb.append("<td class=\"labkey-form-label\">").append(label).append("</td>");
-            }
+            sb.append("<td class=\"lk-form-label\">").append(label);
+            if (label.length() < 100) //prevents silly-looking colons on extremely long labels (see: email prefs)
+                sb.append(":");
+            sb.append("</td>");
 
             return sb.toString();
         }
@@ -522,9 +513,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         sb.append(field);
         sb.append("\" value=\"");
         sb.append(filter(value));
-        sb.append("\" onchange=\"LABKEY.setDirty(true);return true;");
-        if (PageFlowUtil.useExperimentalCoreUI())
-            sb.append("\" class=\"form-control\" ");
+        sb.append("\" onchange=\"LABKEY.setDirty(true);return true;\" class=\"form-control\"");
         if (null == extra)
             sb.append("\">");
         else

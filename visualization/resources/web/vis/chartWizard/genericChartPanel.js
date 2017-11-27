@@ -15,7 +15,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     savedReportInfo : null,
     hideViewData : false,
     reportLoaded : true,
-    autoResize: true,
     hideSave: false,
     dataPointLimit: 10000,
 
@@ -93,13 +92,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.items = [this.getCenterPanel()];
 
         this.callParent();
-
-        if (!LABKEY.experimental.useExperimentalCoreUI && this.autoResize)
-        {
-            Ext4.EventManager.onWindowResize(function(w,h){
-                this.resizeToViewport(w,h);
-            }, this, {buffer: 500});
-        }
 
         if (this.savedReportInfo)
             this.loadSavedConfig();
@@ -2014,12 +2006,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.chartDefinitionChanged.delay(500);
     },
 
-    resizeToViewport : function(w,h) {
-        if (!this.hasChartData())
-            return;
-
-        var width = Math.max(800, w - this.el.getX() - 20);
-        this.setWidth(width);
+    resizeToViewport : function() {
+        console.warn('DEPRECATED: As of Release 17.3 ' + this.$className + '.resizeToViewport() is no longer supported.');
     },
 
     onSaveBtnClicked : function(isSaveAs)

@@ -405,25 +405,14 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             displayText += ' (' + queryDetails.title + ')';
         }
 
-        var children = [];
-
-        if (LABKEY.experimental.useExperimentalCoreUI) {
-            children.push({
-                tag: 'h2',
-                children: [{
-                    tag: 'a',
-                    href: viewDataUrl,
-                    html: Ext4.htmlEncode(schemaKey.toDisplayString()) + '.' + Ext4.htmlEncode(displayText)
-                }]
-            });
-        }
-        else {
-            children.push({
+        var children = [{
+            tag: 'h2',
+            children: [{
                 tag: 'a',
                 href: viewDataUrl,
                 html: Ext4.htmlEncode(schemaKey.toDisplayString()) + '.' + Ext4.htmlEncode(displayText)
-            });
-        }
+            }]
+        }];
 
         if (queryDetails.isUserDefined && queryDetails.moduleName) {
             var _tip = '' +

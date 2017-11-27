@@ -235,8 +235,6 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             _propertiesPanel = new DatasetProperties();
             _root.add(new WebPartPanel("Dataset Properties", _propertiesPanel));
-            if (!PropertyUtil.useExperimentalCoreUI())
-                _root.add(new HTML("<br/>"));
 
             _schemaPanel = new DatasetSchema(_propTable);
             _root.add(new WebPartPanel("Dataset Fields", _schemaPanel));

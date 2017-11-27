@@ -268,7 +268,7 @@ var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
 
 var f = new LABKEY.ext.FormPanel({
     width:955,
-    labelWidth:170 + (!LABKEY.experimental.useExperimentalCoreUI?20:0),
+    labelWidth:170,
     border:false,
     standardSubmit:true,
     items:[
@@ -331,25 +331,16 @@ Ext.onReady(function()
     loadTables();
 
     // attach helpPopup as tooltips to field labels
-    Ext.each(f.form.items.items, function (item) {
+    Ext.each(f.form.items.items, function(item) {
         if (item.rendered && Ext.isDefined(item.helpPopup)) {
-            var labelTxt = item.fieldLabel;
-            if (LABKEY.experimental.useExperimentalCoreUI) {
-                labelTxt += ' <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="right" title="' + item.helpPopup.html + '"></i> :';
-            }
-            else {
-                labelTxt += ' <span class="labkey-help-pop-up" title="' + item.helpPopup.html + '">?</span> :'
-            }
-
             var labelEl = item.getEl().up('.x-form-item', 10, true).child('.x-form-item-label');
             if (labelEl) {
+                var labelTxt = item.fieldLabel + ' <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="right" title="' + item.helpPopup.html + '"></i> :';
                 labelEl.update(labelTxt);
             }
         }
     });
-    if (LABKEY.experimental.useExperimentalCoreUI) {
-        $('[data-toggle="tooltip"]').tooltip();
-    }
+    $('[data-toggle="tooltip"]').tooltip();
 });
 
 // Populate the "Database Schema Name" combo box with new data source's schemas

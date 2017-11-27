@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
-<%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.data.DataRegionSelection"%>
 <%@ page import="org.labkey.api.exp.property.DomainProperty"%>
 <%@ page import="org.labkey.api.security.User"%>
@@ -64,21 +63,7 @@
 
     if (!bean.isPrint())
     {
-        if (!PageFlowUtil.useExperimentalCoreUI())
-        {
 %>
-<labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
-    <table><tr>
-        <td><%= textLink("new " + names.singularName.toLowerCase(), IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
-        <td><%= textLink("view grid", IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
-        <td><%= textLink("print", printLink)%></td>
-        <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
-    </tr></table>
-</labkey:form>
-<%
-        }
-        else
-        {%>
 <div class="row">
     <div class="col-sm-3" style="margin-bottom: 5px">
         <a class="btn btn-default" style="margin-bottom: 8px;" href="<%=context.cloneActionURL().replaceParameter("_print", "1")%>">Print</a>
@@ -101,7 +86,7 @@
     var toggleRelatedFns = {};
     var toggleTimestampFns = {};
 </script>
-        <%}
+<%
     }
 
     for (String issueId : issueIds )
@@ -131,34 +116,33 @@
             else
                 column2Props.add(prop);
         }
-        if (PageFlowUtil.useExperimentalCoreUI())
+
+        List<DomainProperty> propertiesList = new ArrayList<>(bean.getCustomColumnConfiguration().getCustomProperties());
+        Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
+
+        propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
+                .filter(propertyMap::containsKey)
+                .map((Function<String, DomainProperty>) propertyMap::get)
+                .collect(Collectors.toList()));
+
+
+        List<NavTree> additionalHeaderLinks = new ArrayList<>();
+        for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
         {
-            List<DomainProperty> propertiesList = new ArrayList<>(bean.getCustomColumnConfiguration().getCustomProperties());
-            Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
-
-            propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
-                    .filter(propertyMap::containsKey)
-                    .map((Function<String, DomainProperty>) propertyMap::get)
-                    .collect(Collectors.toList()));
-
-
-            List<NavTree> additionalHeaderLinks = new ArrayList<>();
-            for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
+            if (issueListDef != null)
             {
-                IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
-                if (issueListDef != null)
-                {
-                    boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
-                    additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
-                }
+                boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
+                additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
             }
+        }
 
-            String recentTimeStampId = "recentTimeStamp" + issueId;
-            String timestampsToggleId = "timestampsToggle" + issueId;
-            String stampExpandIconId = "stampExpandIcon" + issueId;
-            String allTimeStampsId = "allTimeStamps" + issueId;
-            String relatedCommentsToggleId = "relatedCommentsToggle" + issueId;
-            String relatedCommentsDivClassName = "relatedIssue" + issueId;
+        String recentTimeStampId = "recentTimeStamp" + issueId;
+        String timestampsToggleId = "timestampsToggle" + issueId;
+        String stampExpandIconId = "stampExpandIcon" + issueId;
+        String allTimeStampsId = "allTimeStamps" + issueId;
+        String relatedCommentsToggleId = "relatedCommentsToggle" + issueId;
+        String relatedCommentsDivClassName = "relatedIssue" + issueId;
 %>
 <script type="text/javascript">
     var hidden = true;
@@ -362,72 +346,4 @@
         </labkey:panel>
     </div>
 </div>
-<%}
-else
-{%>
-<table width=640>
-    <tr><td colspan="3"><h3><%=h(issueId)%> : <%=h(issue.getTitle())%></h3></td></tr>
-    <tr>
-        <td valign="top" width="34%"><table>
-            <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
-            <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Type</td><td><%=h(issue.getType())%></td></tr>
-            <tr><td class="labkey-form-label">Area</td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label">Priority</td><td><%=h(issue.getPriority())%></td></tr>
-            <tr><td class="labkey-form-label">Milestone</td><td><%=h(issue.getMilestone())%></td></tr>
-        </table></td>
-        <td valign="top" width="33%"><table>
-            <tr><td class="labkey-form-label">Opened&nbsp;By</td><td><%=h(issue.getCreatedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Opened</td><td><%=h(bean.writeDate(issue.getCreated()))%></td></tr>
-            <tr><td class="labkey-form-label">Resolved By</td><td><%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Resolved</td><td><%=h(bean.writeDate(issue.getResolved()))%></td></tr>
-            <tr><td class="labkey-form-label">Resolution</td><td><%=h(issue.getResolution())%></td></tr>
-            <%
-                if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
-                {%>
-            <tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%>
-            </td></tr>
-            <%
-                }
-                for (DomainProperty prop : column1Props)
-                {%>
-            <%=text(bean.renderColumn(prop, getViewContext()))%><%
-            }%>
-        </table></td>
-        <td valign="top" width="33%"><table>
-            <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Changed</td><td><%=h(bean.writeDate(issue.getModified()))%></td></tr>
-            <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%></td></tr>
-            <%
-                for (DomainProperty prop : column2Props)
-                {%>
-            <%=text(bean.renderColumn(prop, getViewContext()))%><%
-            }%>
-        </table></td>
-    </tr>
-</table>
-<% if (bean.getCallbackURL() != null) { %>
-<input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
-<% } boolean firstComment = true;
-for (Issue.Comment comment : issue.getComments()) {
-    if (firstComment) { firstComment = false; }
-    else { %><hr><% }
-%>
-<table width="100%"><tr><td align="left"><b>
-    <%=h(bean.writeDate(comment.getCreated()))%>
-</b></td><td align="right"><b>
-    <%=h(comment.getCreatedByName(user))%>
-</b></td></tr></table>
-<%=text(comment.getComment())%>
-<%=text(bean.renderAttachments(context, comment))%>
-<%
-    }
-%>
-<br>
-<br>
-<%
-    }
-%>
 <%}%>

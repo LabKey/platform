@@ -160,7 +160,6 @@ function restoreDefaultPage()
     updatePageList();
 }
 </script>
-<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <labkey:form id="change-wiki-form" className="col-md-6 col-lg-5" method="POST">
     <labkey:select
             label="Folder containing the page to display"
@@ -216,87 +215,3 @@ function restoreDefaultPage()
     <%= button("Submit").submit(true).id("btnSubmit") %>
     <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
 </labkey:form>
-<% } else { %>
-<labkey:form id="change-wiki-form" method="POST">
-<table>
-    <tr>
-        <td colspan="2">
-            To display a different wiki page in this web part, first select the folder containing the page
-            you want to display, then select the name of the page.<br><br>
-        </td>
-    </tr>
-    <tr>
-        <td width="20%" nowrap="1">
-        Folder containing the page to display:
-        </td>
-        <td width="80%">
-        <select name="webPartContainer" onkeyup="updatePageList();" onchange="updatePageList();"><%
-            String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
-            for (Container c : me.getContainerList())
-            {
-                boolean selected = false;
-                //if there's no property setting for container, select the current container.
-                if (webPartContainer == null)
-                {
-                    if (null != currentContainer && c.getId().equals(currentContainer.getId()))
-                        selected = true;
-                }
-                else if (c.getId().equals(webPartContainer))
-                {
-                    selected = true;
-                }
-                out.write("\n");
-                %><option<%=selected(selected)%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option><%
-            }
-        %></select>
-        <%=textLink("Reset to Folder Default Page", "javascript:restoreDefaultPage();")%>
-        </td>
-     </tr>
-    <tr>
-        <td width="20%" nowrap="1">
-        Name and title of the page to display:
-        </td>
-        <td width="80%">
-        <select name="name">
-            <%
-            //if current container has no pages
-            if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
-            {%>
-                <option selected value="">&lt;no pages&gt;</option>
-            <%}
-            else
-            {
-                for (Map.Entry<String, String> entry : me.getContainerNameTitleMap().entrySet())
-                {
-                    String name = entry.getKey();
-                    String title = entry.getValue();
-
-                    //if there's a "default" page and no other page has been selected as default, select it.
-                    if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
-                    {%>
-                        <option selected value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
-                    <%}
-                    else
-                    {%>
-                        <option<%=selected(name.equals(webPart.getPropertyMap().get("name")))%> value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
-                    <%}
-                }
-            }%>
-        </select>
-        </td>
-    </tr>
-<tr>
-    <td colspan="2" align="left">
-        <table>
-            <tr>
-                <td align="left">
-                    <%= button("Submit").submit(true).id("btnSubmit") %>
-                    <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
-                </td>
-            </tr>
-        </table>
-    </td>
-</tr>
-</table>
-</labkey:form>
-<% } %>

@@ -1834,7 +1834,6 @@ query/webapp/query/columnPicker.js -text
 query/webapp/query/columnProperties.gif -text
 query/webapp/query/olap.js -text
 query/webapp/query/query.png -text
-query/webapp/query/schemaBrowser.css -text
 query/webapp/query/testquery.js -text
 query/webapp/query/validateQueries.js -text
 query/webapp/reports/ScriptReportPanel.css -text
@@ -1936,7 +1935,6 @@ search/src/org/labkey/search/view/fullTextSearch.jsp -text
 search/src/org/labkey/search/view/indexerAdmin.jsp -text
 search/src/org/labkey/search/view/indexerStats.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
-search/src/org/labkey/search/view/search2.jsp -text
 search/src/org/labkey/search/view/searchStats.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text

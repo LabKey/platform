@@ -20,7 +20,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     maxCharts: 30,
     dataLimit: 10000,
     measureMetadataRequestCounter: 0,
-    autoResize: true,
 
     initComponent : function()
     {
@@ -153,13 +152,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }],
             items: []
         });
-
-        if (!LABKEY.experimental.useExperimentalCoreUI && this.autoResize)
-        {
-            Ext4.EventManager.onWindowResize(function(w,h){
-                this.resizeToViewport(w,h);
-            }, this, {buffer: 500});
-        }
 
         this.items = [
             this.getFiltersPanel(),
@@ -789,12 +781,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.loaderFn();
     },
 
-    resizeToViewport : function(w,h) {
-        if (!this.rendered)
-            return;
-
-        var width = Math.max(800, w - this.el.getX() - 20);
-        this.setWidth(width);
+    resizeToViewport : function() {
+        console.warn('DEPRECATED: As of Release 17.3 ' + this.$className + '.resizeToViewport() is no longer supported.');
     },
 
     getFilterSchemaName : function()

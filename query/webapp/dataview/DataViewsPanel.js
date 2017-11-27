@@ -256,49 +256,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // Initialize and bind "Full" store
         this.getFullStore().on('load', this.refreshViewStore, this);
-
-        this._initResize();
-    },
-
-    _initResize : function() {
-        if (!LABKEY.experimental.useExperimentalCoreUI) {
-            this.on('render', function(panel) {
-                if (panel.fullPage) {
-
-                    var size = Ext4.getBody().getViewSize();
-                    LABKEY.ext4.Util.resizeToViewport(panel, size.width, size.height);
-                }
-            }, this, {single: true});
-
-            var resize = function(w, h) {
-                if (this && this.doLayout) {
-
-                    if (this.fullPage) {
-                        LABKEY.ext4.Util.resizeToViewport(this, w, h);
-                    }
-                    else {
-                        // Issue 18337: having multiple data view panels on same page causes resizing issues
-                        var lfh = Ext4.query('div.labkey-folder-header');
-                        var lsp  = Ext4.query('td.labkey-side-panel');
-
-                        if (lfh.length > 0)
-                        {
-                            // use the full width of the tab panel header bar minus the width  of the narrow webpart panel
-                            var labkeyProjWidth = Ext4.get(lfh[0]).getWidth();
-                            var leftPanelWidth = 0;
-                            if (lsp.length > 0)
-                                leftPanelWidth = Ext4.get(lsp[0]).getWidth();
-
-                            var width = labkeyProjWidth - leftPanelWidth - 30;
-                            this.setWidth(Ext4.Array.max([width, 625]));
-                            this.doLayout();
-                        }
-                    }
-                }
-            };
-
-            Ext4.EventManager.onWindowResize(resize, this, {delay: 250});
-        }
     },
 
     /**

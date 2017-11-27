@@ -15,14 +15,12 @@
      * limitations under the License.
      */
 %>
-<%@page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.search.SearchUrls"%>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -35,7 +33,6 @@
 %>
 <span class="labkey-error"><%=h(request.getParameter("error"))%></span><br/>
 <%  } %>
-<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <div style="display:inline-block;margin-bottom:10px;">
     <% if (c.hasPermission(getUser(), InsertPermission.class)) { %>
     <div style="float:left;">
@@ -53,27 +50,3 @@
         </labkey:form>
     </div>
 </div>
-<% } else { %>
-<%--OLD UI--%>
-
-<table>
-    <tr>
-    <td nowrap><labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="horizontal">
-        <%
-        if (c.hasPermission(getUser(), InsertPermission.class))
-        {%>
-        <%= button("New " + names.singularName).href(new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef)) %>&nbsp;&nbsp;&nbsp;<%
-        }%>
-        <input type="text" size="5" name="issueId"/>
-        <%= button("Jump to " + names.singularName).submit(true).attributes("align=\"top\" vspace=\"2\"") %></labkey:form></td>
-    <td width=100%>&nbsp;</td>
-    <td align="right" nowrap>
-        <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>">
-            <input type="text" size="30" name="q" value="">
-            <input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>">
-            <%= button("Search").submit(true).attributes("align=\"top\" vspace=\"2\"")%>
-        </labkey:form>
-    </td>
-    </tr>
-</table>
-<% } %>

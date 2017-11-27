@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     IssuesController.SummaryBean bean = ((JspView<IssuesController.SummaryBean>) HttpView.currentView()).getModelBean();
@@ -34,7 +33,7 @@
 
     if (bean.hasPermission)
     {
-        if (PageFlowUtil.useExperimentalCoreUI() && bean.bugs.isEmpty())
+        if (bean.bugs.isEmpty())
         {%>
             <div style="margin-bottom: 8px">There are no issues in this list.</div>
             <%= button("New " + names.singularName.toLowerCase()).href(bean.insertURL) %>
@@ -44,12 +43,9 @@
 %>
 <table class="table-condensed table-striped table-bordered">
     <tr><td>User</td><td>Open</td><td>Resolved</td>
-<%
-        for (Map<String, Object> bug : bean.bugs)
-        {
-%>
+    <% for (Map<String, Object> bug : bean.bugs) { %>
     <tr>
-      <td>
+        <td>
       <% if (null != bug.get("displayName")) {
           ActionURL url = getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".AssignedTo/DisplayName~eq", bug.get("displayName").toString());%>
         <a href="<%=h(url)%>"><%=h(bug.get("displayName"))%></a>
@@ -57,26 +53,21 @@
           ActionURL url = getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".AssignedTo/DisplayName~isblank", null);%>
          <a href="<%=h(url)%>"><i>Unassigned</i></a>
       <% } %>
-      </td>
-    <td align="right"><%=bug.get("open")%></td>
-    <td align="right"><%=bug.get("resolved")%></td>
+        </td>
+        <td align="right"><%=bug.get("open")%></td>
+        <td align="right"><%=bug.get("resolved")%></td>
     </tr>
 <% } %>
 </table>
-<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <div class="labkey-button-bar-separate">
 <%= button("view open " + names.pluralName.toLowerCase()).href(getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open")) %>
 <%= button("new " + names.singularName.toLowerCase()).href(bean.insertURL) %>
 </div>
-<% } else { %>
-<%=textLink("view open " + names.pluralName, getBaseListURL(bean.issueDefName).addParameter("issues-" + bean.issueDefName + ".Status~eq", "open"))%>
-<%=textLink("submit new " + names.singularName, bean.insertURL)%>
 <%
         }
     }
-}
-else
-{
+    else
+    {
 %>
 <span>
   <% if (user.isGuest()) { %>

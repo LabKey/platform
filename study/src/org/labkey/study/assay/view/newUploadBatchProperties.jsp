@@ -21,55 +21,26 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 
-    if (PageFlowUtil.useExperimentalCoreUI())
-    {
 %>
-        <labkey:form layout="horizontal">
+<labkey:form layout="horizontal">
 <%
-        for (Map.Entry<DomainProperty, String> entry : bean.getBatchProperties().entrySet())
+    for (Map.Entry<DomainProperty, String> entry : bean.getBatchProperties().entrySet())
+    {
+        if (entry.getKey().isShownInInsertView())
         {
-            if (entry.getKey().isShownInInsertView())
-            {
 %>
-                <labkey:input type="displayfield"
-                      label="<%= text(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %>"
-                      value="<%= text(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>"
-                />
+    <labkey:input type="displayfield"
+          label="<%= text(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %>"
+          value="<%= text(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>"
+    />
 <%
-            }
         }
-%>
-        </labkey:form>
-<%
-    }
-    else
-    {
-%>
-        <table>
-<%
-            for (Map.Entry<DomainProperty, String> entry : bean.getBatchProperties().entrySet())
-            {
-                if (entry.getKey().isShownInInsertView())
-                {
-%>
-                <tr>
-                    <td class="labkey-form-label" nowrap><%= h(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %></td>
-                    <td>
-                        <%= h(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>
-                    </td>
-                </tr>
-<%
-                }
-            }
-%>
-        </table>
-<%
     }
 %>
+</labkey:form>

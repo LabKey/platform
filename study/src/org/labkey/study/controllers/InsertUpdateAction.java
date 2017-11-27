@@ -27,8 +27,6 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
@@ -146,14 +144,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                         @Override
                         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
                         {
-                            boolean newUI = PageFlowUtil.useExperimentalCoreUI();
                             boolean disabledInput = isDisabledInput();
                             String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
 
                             out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
-                            if (newUI)
-                                out.write(" class=\"form-control\"");
-                            out.write(">\n");
+                            out.write(" class=\"form-control\">\n");
                             if (getBoundColumn().isNullable())
                                 out.write("\t<option value=\"\">");
                             for (Cohort cohort : cohorts)

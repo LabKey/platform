@@ -55,7 +55,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.FolderManagement;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -748,9 +747,6 @@ public class SearchController extends SpringActionController
             getPageConfig().setNoIndex();
             getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 
-            // TODO: When this is no longer experimental copy contents of search2.jsp into search.jsp and remove.
-            if (PageFlowUtil.useExperimentalCoreUI())
-                return new JspView<>("/org/labkey/search/view/search2.jsp", form);
             return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
 

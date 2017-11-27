@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -79,35 +78,11 @@
            The default timepoint duration will determine the number of days included in automatically created timepoints.
        </li>
     </ul>
-<%
-    if (PageFlowUtil.useExperimentalCoreUI())
-    {
-%>
     <labkey:input type="text" id="startDateInput" name="startDate" label="Start Date"
                   contextContent="A start date is required for date based studies."
                   value="<%=formatDate(form.getStartDate())%>" />
     <labkey:input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration"
                   label="Default Timepoint Duration" value="<%=h(form.getDefaultTimepointDuration())%>" />
-<%
-    }
-    else
-    {
-%>
-    <table>
-        <tr>
-            <td class="labkey-form-label"><label for="startDateInput">Start Date</label><%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></td>
-            <td><input type="text" id="startDateInput" name="startDate" value="<%=formatDate(form.getStartDate())%>">
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-form-label"><label for="defaultTimepointDurationInput">Default Timepoint Duration</label></td>
-            <td><input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration" value="<%=h(form.getDefaultTimepointDuration())%>">
-            </td>
-        </tr>
-    </table>
-<%
-    }
-%>
     <%= button("Update").submit(true) %>
     <%= generateBackButton() %>
 </labkey:form>
@@ -136,20 +111,7 @@ assign dataset data to the correct timepoints.</p>
         rowCount++;
 %>
     <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
-<%
-    if (PageFlowUtil.useExperimentalCoreUI())
-    {
-%>
         <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId()))) %></td>
-<%
-    }
-    else
-    {
-%>
-        <td><%=textLink("edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId())))%></td>
-<%
-    }
-%>
         <td><%=h(timepoint.getLabel())%></td>
         <td><%=h(""+timepoint.getSequenceNumMin())%></td>
         <td><%=h(""+timepoint.getSequenceNumMax())%></td>
