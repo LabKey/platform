@@ -577,7 +577,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 autoScroll: true,
                 border: false,
                 cls: 'labkey-fieldmeta-tree',
-                height: LABKEY.experimental.useExperimentalCoreUI ? 200 : 190,
+                height: 200,
                 rootVisible: false,
                 store: treeStore,
                 dockedItems: [{
@@ -636,7 +636,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         cls: 'labkey-customview-panel',
                         flex: 1,
                         border: false,
-                        margin: LABKEY.experimental.useExperimentalCoreUI ? '0 5px 0 0' : 0,
+                        margin: '0 5px 0 0',
                         items: [
                             {
                                 xtype: 'box',

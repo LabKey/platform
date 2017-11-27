@@ -216,40 +216,7 @@ function handleTabsInTextArea()
 }
 
 function showMenu(parent, menuElementId, align) {
-    if (LABKEY.experimental.useExperimentalCoreUI) {
-        console.error('A menu still exists that is attempting to use showMenu(). Element id: ' + menuElementId);
-    }
-
-    if (!align)
-    {
-        align = "tl-bl?";
-    }
-
-    var menu, cls = 'labkey-menu-button-active';
-    if (typeof(Ext4) != 'undefined')
-    {
-        menu = Ext4.menu.Manager.get(menuElementId);
-
-        if (menu)
-        {
-            // attach class listeners
-            menu.on('show', function() { Ext4.get(this).addCls(cls); }, parent);
-            menu.on('beforehide', function() { Ext4.get(this).removeCls(cls); }, parent);
-
-            menu.show();
-            menu.alignTo(parent, align);
-        }
-        else
-        {
-            console.error('Menu is not available:', menuElementId);
-        }
-    }
-    else
-    {
-        console.warn("No menu registered :" + menuElementId);
-    }
-
-    return menu;
+    console.error('A menu still exists that is attempting to use showMenu(). Element id: ' + menuElementId);
 }
 
 // If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.

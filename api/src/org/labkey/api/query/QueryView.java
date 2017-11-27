@@ -1346,6 +1346,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    // This should be removed after useExperimentalCoreUI is migrated
     protected MenuButton createPageSizeMenuButton()
     {
         final int maxRows = getMaxRows();

@@ -16,65 +16,12 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Portal.AddWebParts bean = (Portal.AddWebParts)HttpView.currentModel();
-    Container c = getContainer();
-    ActionURL currentURL = getActionURL();
+
+    // TODO: Reconsider use of a .jsp
 %>
-<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
-<div>
-    <%=text(Portal.addWebPartWidgets(bean, getViewContext()))%>
-</div>
-<% } else {%>
-<table width="100%">
-<tr>
-    <td align="left">
-		<form action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
-		<table><tr><td>
-		<input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
-		<input type="hidden" name="location" value="<%=h(bean.location)%>"/>
-        <%=generateReturnUrlFormField(currentURL)%>
-        <select name="name">
-            <option value="">&lt;Select Web Part&gt;</option>
-<%          for (Map.Entry<String, String> entry : bean.webPartNames.entrySet())
-            {
-                %><option value="<%=h(entry.getKey())%>"><%=h(entry.getValue())%></option> <%
-            } %>
-        </select>
-        </td><td>
-        <%= button("Add").submit(true) %>
-        </td></tr></table>
-       </form>
-    </td>
-<% if (bean.rightWebPartNames != null && !bean.rightWebPartNames.isEmpty())
-    { %>
-    <td align="right">
-        <form action="<%=urlProvider(ProjectUrls.class).getAddWebPartURL(c)%>">
-        <table><tr><td>
-        <input type="hidden" name="pageId" value="<%=h(bean.pageId)%>"/>
-        <input type="hidden" name="location" value="right"/>
-        <%=generateReturnUrlFormField(currentURL)%>
-        <select name="name">
-            <option value="">&lt;Select Web Part&gt;</option>
-<%          for (Map.Entry<String, String> entry : bean.rightWebPartNames.entrySet())
-            {
-                %><option value="<%=h(entry.getKey())%>"><%=h(entry.getValue())%></option> <%
-            } %>
-        </select>
-        </td><td>
-            <%= button("Add").submit(true) %>
-        </td></tr></table>
-        </form>
-    </td>
-<%  } %>
-</tr>
-</table>
-<% } %>
+<%=text(Portal.addWebPartWidgets(bean, getViewContext()))%>

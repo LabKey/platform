@@ -7,7 +7,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     extend : 'Ext.Panel',
 
-    width: LABKEY.experimental.useExperimentalCoreUI === true ? 230 : 260,
+    width: 230,
 
     statics : {
         LOADED : true,
@@ -31,7 +31,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     ctCls: 'dataset-facet-filter-ct',
     regionCtCls: 'dataset-facet-filter-region-ct',
     minHeight : 450,
-    newUI: LABKEY.experimental.useExperimentalCoreUI === true,
     style: 'padding-right: 5px;',
 
     constructor : function(config) {
@@ -54,11 +53,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
         var topEl = this.getContainerEl(config.dataRegion);
 
-        if (this.newUI) {
-            topEl.addCls(this.regionCtCls);
-        } else {
-            tableEl.setWidth(tableEl.getBox().width);
-        }
+        topEl.addCls(this.regionCtCls);
 
         if (topEl) {
             var targetHTML = '<div id="' + renderTarget + '" class="' + this.ctCls + '" lk-region-facet-name="' + config.dataRegion.name + '"></div>';
@@ -172,27 +167,14 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         var region = this.getDataRegion();
         var el = this.getContainerEl(region);
         if (el) {
-            if (this.newUI) {
-                el.addCls(this.regionCtCls);
-            }
-            else {
-                var reqWidth = this.getRequiredWidth(region);
-                if (el.getBox().width < reqWidth) {
-                    el.setWidth(reqWidth);
-                }
-            }
+            el.addCls(this.regionCtCls);
         }
     },
 
     _afterHide : function() {
         var el = this.getContainerEl(this.getDataRegion());
         if (el) {
-            if (this.newUI) {
-                el.removeCls(this.regionCtCls);
-            }
-            else {
-                el.setWidth(null);
-            }
+            el.removeCls(this.regionCtCls);
         }
     },
 
@@ -203,10 +185,6 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             this._isRegionBound = true;
             dr.on('render', this.onRegionRender, this);
         }
-    },
-
-    getRequiredWidth : function(dr) {
-        return this.width + 10 + this.getDataRegionTableEl(dr).getBox().width;
     },
 
     getDataRegion : function() {
@@ -220,15 +198,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     onRegionRender : function(dr) {
         // Give access to to this filter panel to the Data Region
         if (dr) {
-            if (this.newUI) {
-                this.getContainerEl(dr).addCls(this.regionCtCls);
-            }
-            else {
-                var tableEl = this.getDataRegionTableEl(dr);
-                if (tableEl) {
-                    tableEl.setWidth(tableEl.getBox().width);
-                }
-            }
+            this.getContainerEl(dr).addCls(this.regionCtCls);
 
             var box = this.getBox();
             this._resizeTask(this, box.width, box.height);
