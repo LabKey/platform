@@ -312,8 +312,6 @@ public class StudyUnionTableInfo extends VirtualTable
     }
 
 
-
-
     private void makeColumnInfos(Set<PropertyDescriptor> sharedProperties)
     {
         TableInfo template = DatasetDefinition.getTemplateTableInfo();
