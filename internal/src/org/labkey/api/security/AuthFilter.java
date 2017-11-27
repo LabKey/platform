@@ -17,7 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -29,7 +28,6 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.view.ViewServlet;
-import sun.util.resources.cldr.se.CurrencyNames_se;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
