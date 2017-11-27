@@ -1843,7 +1843,6 @@ public class AdminController extends SpringActionController
         private boolean _testInPage = false;
 
         private String _defaultDomain;
-        private String _defaultLsidAuthority;
         private String _pipelineToolsDirectory;
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
@@ -2861,7 +2860,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction
     public class AttachmentsAction extends SimpleViewAction
     {
         @Override
@@ -2878,7 +2877,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @AdminConsoleAction
     public class FindAttachmentParentsAction extends SimpleViewAction
     {
         @Override

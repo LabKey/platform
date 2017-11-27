@@ -768,16 +768,21 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     // - Enumerate all tables in all schemas in the labkey scope
     // - Enumerate columns and identify potential attachment parents (currently, EntityId columns and ObjectIds extracted from LSIDs)
     // - Create a UNION query that selects the candidate ids along with a constant column that lists the table name
-    private void addSelectAllEntityIdsSql(SQLFragment sql, Set<String> schemasToIgnore)
+    private void addSelectAllEntityIdsSql(SQLFragment sql, Set<String> userRequestedSchemasToIgnore)
     {
         List<String> selectStatements = new LinkedList<>();
+        Set<String> schemasToIgnore = Sets.newCaseInsensitiveHashSet(userRequestedSchemasToIgnore);
+
+        // Temp schema causes problems because materialized tables disappear but stay in the cached list. This is probably a bug with
+        // MaterializedQueryHelper... it should clear the temp DbSchema when it deletes a temp table. TODO: fix MQH & remove this workaround
+        schemasToIgnore.add("temp");
 
         DbScope.getLabKeyScope().getSchemaNames().stream()
-            .filter(schemaName->!schemasToIgnore.contains(schemaName)) // Exclude any passed in schema names
+            .filter(schemaName->!schemasToIgnore.contains(schemaName)) // Exclude unwanted schema names
             .map(schemaName->DbSchema.get(schemaName, DbSchemaType.Bare))
             .forEach(schema-> schema.getTableNames().stream()
                 .map(schema::getTable)
-                .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or fake-o tables)
+                .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or virtual tables)
                 .map(SchemaTableInfo::getColumns)
                 .flatMap(Collection::stream)
                 .filter(ColumnRenderProperties::isStringType)
