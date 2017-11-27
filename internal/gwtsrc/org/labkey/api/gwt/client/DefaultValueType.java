@@ -27,13 +27,12 @@ import java.io.Serializable;
 
 public enum DefaultValueType implements Serializable, IsSerializable
 {
-    FIXED_EDITABLE("Editable default", "An editable default value will be entered for the user.  The default value will be the same for every user for every upload."),
-    FIXED_NON_EDITABLE("Fixed value", "Fixed values cannot be edited by the user.  This option is used to save fixed data with each inserted data row."),
-    LAST_ENTERED("Last entered", "An editable default value will be entered for the user's first use of the form.  During subsequent uploads, the user will see their last entered value.");
+    FIXED_EDITABLE("Editable default", "An editable default value will be entered for the user. The default value will be the same for every user for every insert."),
+    FIXED_NON_EDITABLE("Fixed value", "Fixed values cannot be edited by the user. This option is used to save fixed data with each inserted data row."),
+    LAST_ENTERED("Last entered", "An editable default value will be entered for the user's first use of the form. During subsequent inserts, the user will see their last entered value as the default.");
 
     private String _label;
     private String _helpText;
-    private static String _helpPopupHtml;
 
     // Needed for GWT serialization to work correctly, at least in dev mode
     DefaultValueType() {}
@@ -52,22 +51,5 @@ public enum DefaultValueType implements Serializable, IsSerializable
     public String getHelpText()
     {
         return _helpText;
-    }
-
-    public static String getHelpPopupHtml()
-    {
-        if (_helpPopupHtml == null)
-        {
-            StringBuilder helpString = new StringBuilder();
-            for (int i = 0; i < values().length; i++)
-            {
-                DefaultValueType type = values()[i];
-                helpString.append("<b>").append(type.getLabel()).append("</b>: ").append(type.getHelpText());
-                if (i < values().length - 1)
-                    helpString.append("<br><br>");
-            }
-            _helpPopupHtml = helpString.toString();
-        }
-        return _helpPopupHtml;
     }
 }

@@ -124,13 +124,18 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     continue;
                 if (!PageFlowUtil.useExperimentalCoreUI())
                     renderInputError(ctx, out, 1, renderer);
+                boolean isFile = ((DefaultableDisplayColumn) renderer).getJavaType() == File.class;
                 out.write("<tr>");
 
                 renderer.renderDetailsCaptionCell(ctx, out, "control-label lk-form-row-label");
-                renderer.renderInputCell(ctx, out, 1);
+
+                if (isFile)
+                    out.write("<td></td>"); // No input for file
+                else
+                    renderer.renderInputCell(ctx, out, 1);
 
                 out.write("<td>");
-                if (((DefaultableDisplayColumn) renderer).getJavaType() == File.class)
+                if (isFile)
                     out.write("Defaults cannot be set for file fields.");
                 else
                 {
@@ -322,7 +327,6 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         {
             String propName = ColumnInfo.propNameFromName(property.getName());
             String value = encodePropertyValues(domainIdForm, propName);
-            String label = property.getPropertyDescriptor().getNonBlankCaption();
             PropertyType type = property.getPropertyDescriptor().getPropertyType();
             if (value != null && value.length() > 0)
             {
@@ -334,6 +338,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 catch (ConversionException e)
                 {
                     failedValidation = true;
+                    String label = property.getPropertyDescriptor().getNonBlankCaption();
                     errors.reject(SpringActionController.ERROR_MSG,
                             label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
                 }

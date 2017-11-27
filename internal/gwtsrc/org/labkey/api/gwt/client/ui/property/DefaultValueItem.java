@@ -174,13 +174,15 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     {
         String name = _defaultValueTypes.getValue(_defaultValueTypes.getSelectedIndex());
         DefaultValueType newType = DefaultValueType.valueOf(name);
-        // we're "changed" if the old type doesn't equal the new type, unless the old type was null
+
+        // we're "changed" if the old default value type doesn't equal the new type, UNLESS the old type was null
         // (indicating a legacy list) and the new value equals the domain default:
         boolean changed = (newType != field.getDefaultValueType()) &&
-                !(field.getDefaultValueType() == null && _domain.getDefaultDefaultValueType() == newType);
+            !(field.getDefaultValueType() == null && _domain.getDefaultDefaultValueType() == newType);
 
         if (changed)
             field.setDefaultValueType(newType);
+
         return changed;
     }
 
@@ -245,6 +247,4 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     {
         updateEnabledState(field);
     }
-
-
 }
