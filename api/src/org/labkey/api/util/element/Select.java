@@ -58,6 +58,8 @@ public class Select extends Input
             sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
         if (getSize() != null)
             sb.append(" size=\"").append(getSize()).append("\"");
+        if (isMultiple())
+            sb.append(" multiple");
 
         doInputEvents(sb);
 
