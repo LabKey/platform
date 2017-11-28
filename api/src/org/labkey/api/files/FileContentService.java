@@ -56,14 +56,16 @@ public interface FileContentService
      * Returns the file root of the specified container. If not explicitly defined,
      * it will default to a path relative to the first parent container with an override
      */
-    File getFileRoot(Container c);
+    @Nullable
+    File getFileRoot(@NotNull Container c);
 
     /**
      * Returns the file root for a container of the specified content type
      */
-    File getFileRoot(Container c, ContentType type);
+    @Nullable
+    File getFileRoot(@NotNull Container c, @NotNull ContentType type);
 
-    void setFileRoot(Container c, File root);
+    void setFileRoot(@NotNull Container c, @Nullable File root);
 
     void disableFileRoot(Container container);
     boolean isFileRootDisabled(Container container);
