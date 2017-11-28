@@ -54,14 +54,17 @@ import java.util.Set;
 
 public class DomainPropertyImpl implements DomainProperty
 {
-    DomainImpl _domain;
-    PropertyDescriptor _pdOld;
+    private final DomainImpl _domain;
+
     PropertyDescriptor _pd;
+    PropertyDescriptor _pdOld;
     boolean _deleted;
-    boolean _schemaChanged;
-    boolean _schemaImport;
-    List<PropertyValidatorImpl> _validators;
-    List<ConditionalFormat> _formats;
+
+    private boolean _schemaChanged;
+    private boolean _schemaImport;
+    private List<PropertyValidatorImpl> _validators;
+    private List<ConditionalFormat> _formats;
+    private String _defaultValue;
 
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
@@ -495,6 +498,17 @@ public class DomainPropertyImpl implements DomainProperty
     public void setDefaultValueType(String defaultValueTypeName)
     {
         _pd.setDefaultValueType(defaultValueTypeName);
+    }
+
+    @Override
+    public void setDefaultValue(String value)
+    {
+        _defaultValue = value;
+    }
+
+    public String getDefaultValue()
+    {
+        return _defaultValue;
     }
 
     public Lookup getLookup()
