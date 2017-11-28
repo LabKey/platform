@@ -32,11 +32,7 @@ public interface DatasetServiceAsync extends LookupServiceAsync
 {
     void getDataset(int id, AsyncCallback<GWTDataset> async);
 
-    void getDomainDescriptor(String typeURI, String domainContainerId, AsyncCallback<GWTDomain> async);
-
     void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
 
     void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
-
-    void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema, AsyncCallback<List<String>> async);
 }

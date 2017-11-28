@@ -29,7 +29,7 @@ import java.util.List;
  */
 public interface DatasetService extends LookupService
 {
-    public GWTDataset getDataset(int id);
+    GWTDataset getDataset(int id);
 
     /**
      * @param ds  Dataset this domain belongs to
@@ -37,8 +37,6 @@ public interface DatasetService extends LookupService
      * @param dd New Domain
      * @return List of errors
      */
-    public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd);
-    public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema);
-    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId);
-    public GWTDomain getDomainDescriptor(String typeURI);
+    List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd);
+    GWTDomain getDomainDescriptor(String typeURI);
 }

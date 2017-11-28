@@ -42,6 +42,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -323,45 +324,6 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
         }
     }
 
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain domain, String tsv)
-    {
-        try
-        {
-            List<String> errors = new ArrayList<>();
-
-            if (!checkCanUpdate(ds, errors))
-                return errors;
-
-            List<Map<String, Object>> maps = null;
-            if (null != tsv && tsv.length() > 0)
-            {
-                TabLoader loader = new TabLoader(tsv, true);
-                maps = loader.load();
-            }
-
-            try
-            {
-                boolean success = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer(), getUser());
-                if (!success)
-                    errors.add("No properties were successfully imported.");
-
-                if (errors.isEmpty())
-                    errors = updateDataset(ds, domain.getDomainURI());
-            }
-            catch (ChangePropertyDescriptorException e)
-            {
-                errors.add(e.getMessage() == null ? e.toString() : e.getMessage());
-            }
-
-            return errors.isEmpty() ? null : errors;
-        }
-        catch (IOException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-    }
-
-
     private boolean checkCanUpdate(GWTDataset ds, List<String> errors)
     {
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -388,17 +350,6 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
         }
         return true;
     }
-
-
-    @Override
-    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId)
-    {
-        GWTDomain domain = super.getDomainDescriptor(typeURI, domainContainerId);
-        domain.setDefaultValueOptions(new DefaultValueType[]
-                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
-        return domain;
-    }
-
 
     @Override
     public GWTDomain getDomainDescriptor(String typeURI)
