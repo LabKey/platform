@@ -347,7 +347,6 @@ public class ColumnInfo extends ColumnRenderProperties
             setLabel(col.getLabel());
         if (col.shortLabel != null)
             setShortLabel(col.getShortLabel());
-        setDefaultValue(col.getDefaultValue());
         setJdbcDefaultValue(col.getJdbcDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
@@ -379,6 +378,7 @@ public class ColumnInfo extends ColumnRenderProperties
             setRangeURI(col.getRangeURI());
         setIsUnselectable(col.isUnselectable());
         setDefaultValueType(col.getDefaultValueType());
+        setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
@@ -571,12 +571,19 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public void setJdbcDefaultValue(String jdbcDefaultValue)
     {
+        checkLocked();
         this.jdbcDefaultValue = jdbcDefaultValue;
     }
 
     public String getDefaultValue()
     {
         return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue)
+    {
+        checkLocked();
+        this.defaultValue = defaultValue;
     }
 
     @Nullable
@@ -1862,13 +1869,6 @@ public class ColumnInfo extends ColumnRenderProperties
     }
 
 
-    public void setDefaultValue(String defaultValue)
-    {
-        checkLocked();
-        this.defaultValue = defaultValue;
-    }
-
-
     public void setScale(int scale)
     {
         checkLocked();
@@ -2032,6 +2032,7 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public void setValidators(List<? extends IPropertyValidator> validators)
     {
+        checkLocked();
         this.validators = validators;
     }
 
@@ -2048,7 +2049,7 @@ public class ColumnInfo extends ColumnRenderProperties
         {
             FieldKey r = null==remap ? null : remap.get(getMvColumnName());
             if (null != r && r.getParent()==null)
-                    setMvColumnName(r);
+                setMvColumnName(r);
         }
 
         remapUrlFieldKeys(parent, remap);
@@ -2146,6 +2147,7 @@ public class ColumnInfo extends ColumnRenderProperties
 
     protected void setColumnLogging(ColumnLogging columnLogging)
     {
+        checkLocked();
         _columnLogging = columnLogging;
     }
 

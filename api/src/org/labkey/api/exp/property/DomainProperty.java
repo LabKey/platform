@@ -88,8 +88,8 @@ public interface DomainProperty extends ImportAliasable
     String getURL();
 
     DefaultValueType getDefaultValueTypeEnum();
-
     void setDefaultValueTypeEnum(DefaultValueType defaultValueType);
+    void setDefaultValue(String value);
 
     PropertyType getPropertyType();
     int getSqlType();
