@@ -220,12 +220,6 @@ public class DomainEditorServiceBase extends BaseRemoteService
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());
     }
 
-    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId)
-    {
-        Container domainContainer = ContainerManager.getForId(domainContainerId);
-        return DomainUtil.getDomainDescriptor(getUser(), typeURI, domainContainer);
-    }
-
     /** @return Errors encountered during the save attempt */
     @NotNull
     public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)

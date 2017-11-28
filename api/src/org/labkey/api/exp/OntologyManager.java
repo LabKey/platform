@@ -83,8 +83,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static org.labkey.api.search.SearchService.PROPERTY;
@@ -1176,19 +1174,14 @@ public class OntologyManager
     }
 
 
-    public static void moveContainer(final Container c, Container oldParent, Container newParent) throws SQLException
+    public static void moveContainer(@NotNull final Container c, @NotNull Container oldParent, @NotNull Container newParent) throws SQLException
     {
         _log.debug("OntologyManager.moveContainer  " + c.getName() + " " + oldParent.getName() + "->" + newParent.getName());
 
-        final Container oldProject = (null != oldParent ? oldParent.getProject() : c);
-        Container newProject = c;
-
-        if (null != newParent)
-        {
-            newProject = newParent.getProject();
-            if (null == newProject) // if container is promoted to a project
-                newProject = c.getProject();
-        }
+        final Container oldProject = oldParent.getProject();
+        Container newProject = newParent.getProject();
+        if (null == newProject) // if container is promoted to a project
+            newProject = c.getProject();
 
         if ((null != oldProject) && oldProject.getId().equals(newProject.getId()))
         {
@@ -2295,8 +2288,8 @@ public class OntologyManager
         if (null == pds || 0 == pds.size())
             return;
         PreparedStatement stmt = getExpSchema().getScope().getConnection().prepareStatement(insertSql);
-        ObjectFactory f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map m = null;
+        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+        Map<String, Object> m = null;
         for (PropertyDescriptor pd : pds)
         {
             m = f.toMap(pd, m);
@@ -2328,8 +2321,8 @@ public class OntologyManager
         if (null == pds || 0 == pds.size())
             return;
         PreparedStatement stmt = getExpSchema().getScope().getConnection().prepareStatement(updateSql);
-        ObjectFactory f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map m = null;
+        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+        Map<String, Object> m = null;
         for (PropertyDescriptor pd : pds)
         {
             m = f.toMap(pd, m);
@@ -2411,163 +2404,6 @@ public class OntologyManager
     {
         mapCache.clear();
     }
-
-
-    /**
-     * @return whether the import was successful or not. Check the errors collection for details
-     */
-    @Deprecated // use PropertyService
-    public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, final Container container, User user)
-            throws ChangePropertyDescriptorException
-    {
-        return importTypes(name -> new Pair<>(domainURI, container), null, maps, errors, container, false, user, null);
-    }
-
-
-    /**
-     * @return whether the import was successful or not. Check the errors collection for details
-     * @deprecated Use Domain.importTypes
-     * TODO rewrite to use createPropertyDescriptors()
-     */
-    @Deprecated
-    public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates, User user, @Nullable Domain domain)
-            throws ChangePropertyDescriptorException
-    {
-        //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
-        Map<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<>();
-        Map<String, PropertyDescriptor> allProps = new LinkedHashMap<>();
-        Map<String, Map<String, PropertyDescriptor>> newPropsByDomain = new TreeMap<>();
-        // Case insensitive set since we don't want property names that differ only by case
-        Map<String, Set<String>> newPropertyURIsByDomain = new HashMap<>();
-        Map<String, PropertyDescriptor> pdNewMap;
-        // propertyURI -> ConditionalFormats
-        Map<String, List<ConditionalFormat>> allConditionalFormats = new HashMap<>();
-
-        Map<String, DomainDescriptor> domainMap = new HashMap<>();
-
-        for (Map<String, Object> m : maps)
-        {
-            String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
-            Pair<String, Container> p = uriFactory.getDomainURI(domainName);
-            String domainURI = p.first;
-            Container propertyContainer = null != p.second ? p.second : defaultContainer;
-
-            String name = StringUtils.trimToEmpty(((String) m.get("property")));
-            String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
-            if (propertyURI.length() == 0)
-                propertyURI = domainURI + "." + name;
-            if (-1 != name.indexOf('#'))
-            {
-                propertyURI = name;
-                name = name.substring(name.indexOf('#') + 1);
-            }
-            if (name.length() == 0)
-            {
-                String e = "'property' field is required";
-                if (!errors.contains(e))
-                    errors.add(e);
-                continue;
-            }
-
-            PropertyDescriptor pd = _propertyDescriptorFromRowMap(propertyContainer, domainURI, propertyURI, name, m, errors);
-            if (pd != null)
-            {
-                List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
-                if (conditionalFormats != null && !conditionalFormats.isEmpty())
-                {
-                    allConditionalFormats.put(pd.getPropertyURI(), conditionalFormats);
-                }
-                if (null != allProps.put(pd.getPropertyURI(), pd))
-                {
-                    if (!ignoreDuplicates)
-                        errors.add("Duplicate definition of property: " + pd.getPropertyURI());
-                }
-
-                DomainDescriptor dd = null;
-                if (null != domainURI)
-                {
-                    dd = domainMap.get(domainURI);
-                    if (null == dd)
-                    {
-                        dd = ensureDomainDescriptor(domainURI, domainName, propertyContainer);
-                        domainMap.put(domainURI, dd);
-                    }
-                }
-
-                if (null != dd)
-                {
-                    pdNewMap = newPropsByDomain.computeIfAbsent(dd.getDomainURI(), k -> new LinkedHashMap<>());
-                    pdNewMap.put(pd.getPropertyURI(), pd);
-
-                    // Need to do a case insensitive check for duplicate property names
-                    Set<String> caseInsensitivePropertyNames = newPropertyURIsByDomain.computeIfAbsent(dd.getDomainURI(), k -> new CaseInsensitiveHashSet());
-                    if (!caseInsensitivePropertyNames.add(pd.getPropertyURI()))
-                    {
-                        errors.add("'" + dd.getName() + "' has multiple fields named '" + pd.getName() + "'");
-                    }
-                }
-                else
-                {
-                    // put only the domain-less allProps in this list
-                    propsWithoutDomains.put(pd.getPropertyURI(), pd);
-                }
-            }
-        }
-
-        if (!errors.isEmpty())
-            return false;
-
-        for (String dURI : newPropsByDomain.keySet())
-        {
-            DomainDescriptor dd = domainMap.get(dURI);
-            assert (null != dd);
-
-            pdNewMap = newPropsByDomain.get(dURI);
-            List<PropertyDescriptor> domainProps = getPropertiesForType(dURI, dd.getContainer());
-            int sortOrder = domainProps.size();
-
-            for (PropertyDescriptor pdToInsert : pdNewMap.values())
-            {
-                PropertyDescriptor pdInserted = null;
-                if (null != domain)
-                {
-                    domain.addPropertyOfPropertyDescriptor(pdToInsert);
-                }
-                else
-                {
-                    if (domainProps.size() == 0)
-                    {
-                        // this is much faster than insertOrUpdatePropertyDescriptor()
-                        if (pdToInsert.getPropertyId() == 0)
-                            insertPropertyDescriptor(pdToInsert);
-                        pdInserted = ensurePropertyDomain(pdToInsert, dd, sortOrder++);
-                    }
-                    if (null == pdInserted)
-                        insertOrUpdatePropertyDescriptor(pdToInsert, dd, sortOrder++);
-                }
-            }
-        }
-
-        for (PropertyDescriptor pdToInsert : propsWithoutDomains.values())
-        {
-            ensurePropertyDescriptor(pdToInsert);
-        }
-
-        for (Map.Entry<String, List<ConditionalFormat>> entry : allConditionalFormats.entrySet())
-        {
-            PropertyDescriptor pd = allProps.get(entry.getKey());
-            PropertyService.get().saveConditionalFormats(user, getPropertyDescriptor(pd.getPropertyURI(), pd.getContainer()), entry.getValue());
-        }
-
-        for (DomainDescriptor dd : domainMap.values())
-        {
-            // flush caches again
-            updateDomainDescriptor(dd);
-        }
-
-        return true;
-    }
-
 
     public static class ImportPropertyDescriptor
     {
