@@ -121,7 +121,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public @Nullable File getFileRoot(Container c, ContentType type)
+    public @Nullable File getFileRoot(@NotNull Container c, ContentType type)
     {
         switch (type)
         {
@@ -158,7 +158,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public @Nullable File getFileRoot(Container c)
+    public @Nullable File getFileRoot(@NotNull Container c)
     {
         if (c == null)
             return null;
@@ -235,7 +235,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void setFileRoot(Container c, File path)
+    public void setFileRoot(@NotNull Container c, @Nullable File path)
     {
         if (c.isWorkbookOrTab())
             throw new IllegalArgumentException("File roots cannot be set of workbooks or tabs");
