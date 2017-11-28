@@ -820,7 +820,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(InsertPermission.class)
-     public class UpdateSurveyResponseAttachmentsAction extends ApiAction<SurveyAttachmentForm>
+    public class UpdateSurveyResponseAttachmentsAction extends ApiAction<SurveyAttachmentForm>
     {
         @Override
         public ApiResponse execute(SurveyAttachmentForm form, BindException errors) throws Exception
@@ -864,7 +864,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
                                     Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
 
-                                    response.put("success", row.isEmpty());
+                                    response.put("success", !row.isEmpty());
                                     response.put("value", row.get(form.getQuestionName()));
                                 }
 

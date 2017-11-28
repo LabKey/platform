@@ -466,19 +466,29 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
 
                 if (form.hasUpload() && form.isDirty())
                 {
-                    var options = {
-                        method  :'POST',
-                        form    : form,
-                        params  : {rowId : this.rowId, questionName : cmp.name},
-                        url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponseAttachments.api'),
-                        success : function() {
+                    var attachmentFiles = cmp.getFormPanel().items;
+                    if (attachmentFiles && attachmentFiles.length === 1) {
+                        var uploadedFile = attachmentFiles.get(0).fileInputEl.dom.files[0];
 
-                            // need to refresh the component
-                        },
-                        failure : LABKEY.Utils.displayAjaxErrorResponse,
-                        scope : this
-                    };
-                    form.doAction(new Ext4.form.action.Submit(options));
+                        if (uploadedFile) {
+                            var formData = new FormData();
+                            formData.append('file', uploadedFile);
+                            formData.append('rowId', this.rowId);
+                            formData.append('questionName', cmp.name);
+
+                            LABKEY.Ajax.request({
+                                method  : 'POST',
+                                url     : LABKEY.ActionURL.buildURL('survey', 'updateSurveyResponseAttachments.api'),
+                                form    : formData,
+                                success : function() {
+
+                                    // need to refresh the component
+                                },
+                                failure : LABKEY.Utils.displayAjaxErrorResponse,
+                                scope : this
+                            });
+                        }
+                    }
                 }
             }
         }
