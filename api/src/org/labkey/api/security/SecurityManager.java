@@ -3281,7 +3281,7 @@ public class SecurityManager
                 .forEach(prop -> {
                     User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                     String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
                     for (String roleName : roles)
                     {
                         roleName = StringUtils.stripStart(roleName, null);
