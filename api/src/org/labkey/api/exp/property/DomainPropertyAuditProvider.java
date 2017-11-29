@@ -31,11 +31,11 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
 {
     public static final String EVENT_NAME = "DomainPropertyAuditEvent";
 
-    public static final String COLUMN_NAME_PROPERTY_URI = "PropertyUri";
-    public static final String COLUMN_NAME_PROPERTY_NAME = "PropertyName";
-    public static final String COLUMN_NAME_DOMAIN_EVENT_ID = "DomainEventId";
-    public static final String COLUMN_NAME_ACTION = "Action";
-    public static final String COLUMN_NAME_DOMAIN_NAME = "DomainName";
+    private static final String COLUMN_NAME_PROPERTY_URI = "PropertyUri";
+    private static final String COLUMN_NAME_PROPERTY_NAME = "PropertyName";
+    private static final String COLUMN_NAME_DOMAIN_EVENT_ID = "DomainEventId";
+    private static final String COLUMN_NAME_ACTION = "Action";
+    private static final String COLUMN_NAME_DOMAIN_NAME = "DomainName";
 
     protected static final List<FieldKey> DEFAULT_VISIBLE_COLUMNS = new ArrayList<>();
 
@@ -76,6 +76,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)DomainPropertyAuditEvent.class;
@@ -127,8 +128,8 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
 
     public static class DomainPropertyAuditDomainKind extends AbstractAuditDomainKind
     {
-        public static final String NAME = "DomainPropertyAuditDomain";
-        public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+        private static final String NAME = "DomainPropertyAuditDomain";
+        private static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;
 
