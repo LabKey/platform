@@ -29,7 +29,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("clientapi/ext3");
+        dependencies.add("Ext4");
     }
 %>
 <%
@@ -49,6 +49,9 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
     .labkey-title-area-line {
         margin-right: 15px !important;
     }
+    .child-checkbox {
+        margin-left: 20px;
+    }
 </style>
 
 <labkey:errors/>
@@ -56,7 +59,7 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
 
 <script type="text/javascript">
 
-Ext.onReady(function(){
+Ext4.onReady(function(){
 
     LABKEY.Ajax.request({
         url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
@@ -65,15 +68,13 @@ Ext.onReady(function(){
             exportType: <%=q(form.getExportType().toString())%>
         },
         scope: this,
-        success: function (response)
-        {
-            var responseText = Ext.decode(response.responseText);
+        success: function (response) {
+            var responseText = Ext4.decode(response.responseText);
             initExportForm(responseText['writers']);
         }
     });
 
-    var initExportForm = function(folderWriters)
-    {
+    var initExportForm = function(folderWriters) {
         var formItemsCol1 = [],
             formItemsCol2 = [],
             showStudyOptions = false;
@@ -81,9 +82,8 @@ Ext.onReady(function(){
         formItemsCol1.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Folder objects to export:</span>'});
         formItemsCol1.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
 
-        Ext.each(folderWriters, function(writer)
-        {
-            var parentName = Ext.util.Format.htmlEncode(writer['name']),
+        Ext4.each(folderWriters, function(writer) {
+            var parentName = Ext4.util.Format.htmlEncode(writer['name']),
                 checked = writer['selectedByDefault'],
                 children = writer['children'];
 
@@ -98,15 +98,13 @@ Ext.onReady(function(){
                 objectType: "parent"
             });
 
-            if (Ext.isArray(children))
-            {
-                Ext.each(children, function(childName)
-                {
-                    childName = Ext.util.Format.htmlEncode(childName);
+            if (Ext4.isArray(children)) {
+                Ext4.each(children, function(childName) {
+                    childName = Ext4.util.Format.htmlEncode(childName);
 
                     formItemsCol1.push({
                         xtype: "checkbox",
-                        style: {marginLeft: "20px"},
+                        fieldCls : 'child-checkbox',
                         hideLabel: true,
                         boxLabel: childName,
                         name: "types",
@@ -120,20 +118,18 @@ Ext.onReady(function(){
             }
 
             // if there is a study writer shown, set a boolean variable so we know whether or not the show the study related options
-            if (parentName == "Study")
-            {
+            if (parentName == "Study") {
                 showStudyOptions = true;
             }
         });
 
-        formItemsCol1.push({xtype: "spacer", height: 20});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'container', layout: 'hbox', items:[
             {xtype: 'checkbox', hideLabel: true, boxLabel: 'Exclude Columns At This PHI Level And Higher:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions',
                 listeners : {
-                    check : function(cmp, checked){
+                    change : function(cmp, checked){
                         var radioGroup = cmp.ownerCt.getComponent('phi_level');
                         if (radioGroup)
                             radioGroup.setDisabled(!checked);
@@ -142,14 +138,14 @@ Ext.onReady(function(){
             },
             {xtype: 'radiogroup', hideLabel: true, columns : 1, disabled : true, itemId : 'phi_level',
                 items: [
-                    {boxLabel: 'Limited', name: 'exportPhiLevel', inputValue: 'Limited', checked : true, style:'margin-left: 2px'},
-                    {boxLabel: 'Full', name: 'exportPhiLevel', inputValue: 'PHI', style:'margin-left: 2px'},
-                    {boxLabel: 'Restricted', name: 'exportPhiLevel', inputValue: 'Restricted', style:'margin-left: 2px'}
+                    {boxLabel: 'Limited', fieldCls: 'export-phi-level', name: 'exportPhiLevel', inputValue: 'Limited', checked : true, style:'margin-left: 2px'},
+                    {boxLabel: 'Full', fieldCls: 'export-phi-level', name: 'exportPhiLevel', inputValue: 'PHI', style:'margin-left: 2px'},
+                    {boxLabel: 'Restricted', fieldCls: 'export-phi-level', name: 'exportPhiLevel', inputValue: 'Restricted', style:'margin-left: 2px'}
                 ]
             }
         ]});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', fieldCls: 'shift-dates', name: 'shiftDates', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', fieldCls: 'alternate-ids', name: 'alternateIds', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Mask Clinic Names<%=PageFlowUtil.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Export to:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
@@ -158,19 +154,18 @@ Ext.onReady(function(){
             hideLabel: true,
             columns: 1,
             items: [
-                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", name: "location", inputValue: 0, style:"margin-left: 2px"},
-                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", name: "location", inputValue: 1, style:"margin-left: 2px"},
-                {boxLabel: "Browser as zip file", name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
+                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: 0, style:"margin-left: 2px"},
+                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", cls: 'export-location', name: "location", inputValue: 1, style:"margin-left: 2px"},
+                {boxLabel: "Browser as zip file", cls: 'export-location', name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
             ]
         });
-        formItemsCol2.push({xtype: "spacer", height: 20});
+        formItemsCol2.push({xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
 
-        var exportForm = new LABKEY.ext.FormPanel({
+        var exportForm = new Ext4.form.Panel({
             renderTo: 'exportForm',
             border: false,
             standardSubmit: true,
             layout: 'column',
-            height: '100%',
             defaults: {
                 xtype: 'container',
                 layout: 'form'
@@ -193,19 +188,24 @@ Ext.onReady(function(){
                     exportForm.getForm().submit();
                 }
             }],
-            buttonAlign:'left'
-        });
+            buttonAlign:'left',
+            listeners : {
+                render : {
+                    fn : function(panel) {
+                        Ext4.each(Ext4.ComponentQuery.query('checkbox[objectType=parent]'), function(cmp) {
 
-        // add listeners to each of the parent checkboxes
-        var parentCbs = exportForm.find("objectType", "parent");
-        Ext.each(parentCbs, function(cb) {
-            cb.on("check", function(cmp, checked) {
-                var children = exportForm.find("parentId", cb.getItemId());
-                Ext.each(children, function(child) {
-                    child.setValue(checked);
-                    child.setDisabled(!checked);
-                });
-            });
+                            cmp.on("change", function(cmp, checked) {
+                                var children = Ext4.ComponentQuery.query('checkbox[parentId=' + cmp.getItemId() + ']')
+                                Ext4.each(children, function(child) {
+                                    child.setValue(checked);
+                                    child.setDisabled(!checked);
+                                });
+                            });
+
+                        });
+                    }
+                }
+            }
         });
     }
 });
