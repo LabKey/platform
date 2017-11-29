@@ -89,6 +89,14 @@ public class ModuleProperty
         this(module, name, InputType.text);
     }
 
+    public ModuleProperty(Module module, String name, InputType inputType, String description, String label, boolean canSetPerContainer)
+    {
+        this(module, name,inputType);
+        _description = description;
+        _label = label;
+        _canSetPerContainer = canSetPerContainer;
+    }
+
     public ModuleProperty(Module module, String name, InputType inputType)
     {
         _module = module;
