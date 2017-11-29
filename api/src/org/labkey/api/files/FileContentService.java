@@ -194,4 +194,20 @@ public interface FileContentService
     SQLFragment listFilesQuery(@NotNull User currentUser);
 
     void setWebfilesEnabled(boolean enabled);
+
+    /**
+     * Return file's virtual folder path that's relative to container's file root. Roots are matched in order of @files, @pipeline and then each @filesets.
+     * @param dataFileUrl The data file Url of file
+     * @param container Container in the file system
+     * @return folder relative to file root
+     */
+    String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container);
+
+    /**
+     * Ensure an entry in the exp.data table exists for all files.
+     * @param qus QueryUpdateService for exp.data
+     * @param user user
+     * @param container container
+     */
+    void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container);
 }
