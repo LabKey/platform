@@ -407,7 +407,7 @@ public class DomainImpl implements Domain
                     impl.delete(user);
                     propsDropped.add(impl);
                     propChanged = true;
-                    propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, "Deleted", ""));
+                    propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, false));
                 }
             }
 
@@ -483,14 +483,14 @@ public class DomainImpl implements Domain
                     // Auditing:gather validators and conditional formats before save; then build diff using new validators and formats after save
                     boolean isNew = impl.isNew();
                     PropertyDescriptor pdOld = impl._pdOld;
-                    String oldValidators = null != pdOld ? renderValidators(pdOld) : null;
-                    String oldFormats = null != pdOld ? renderConditionalFormats(pdOld) : null;
+                    String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
+                    String oldFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
                     if (isNew)
-                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, "Created", makeNewPropAuditComment(impl)));
+                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
-                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, "Modified", makeModifiedPropAuditComment(impl, pdOld, oldValidators, oldFormats)));
+                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
                 }
             }
 
@@ -571,35 +571,6 @@ public class DomainImpl implements Domain
         }
     }
 
-    private static class PropertyChangeAuditInfo
-    {
-        private final DomainProperty _prop;
-        private final String _action;
-        private final String _details;    // to go in comments
-
-        public PropertyChangeAuditInfo(DomainProperty prop, String action, String details)
-        {
-            _prop = prop;
-            _action = action;
-            _details = details;
-        }
-
-        public DomainProperty getProp()
-        {
-            return _prop;
-        }
-
-        public String getAction()
-        {
-            return _action;
-        }
-
-        public String getDetails()
-        {
-            return _details;
-        }
-    }
-
     private Integer addAuditEvent(@Nullable User user, String comment)
     {
         if (user != null)
@@ -626,210 +597,247 @@ public class DomainImpl implements Domain
         AuditLogService.get().addEvent(user, event);
     }
 
-    private String makeNewPropAuditComment(DomainProperty prop)
+    private static class PropertyChangeAuditInfo
     {
-        StringBuilder str = new StringBuilder();
-        str.append("Name: ").append(prop.getName()).append("; ");
-        str.append("Label: ").append(renderCheckingBlank(prop.getLabel())).append("; ");
-        str.append("Type: ").append(prop.getPropertyType().getXarName()).append("; ");
-        if (prop.getPropertyType().getJdbcType().isText())
-            str.append("Scale: ").append(prop.getScale()).append("; ");
+        private final DomainProperty _prop;
+        private final String _action;
+        private final String _details;    // to go in comments
 
-        Lookup lookup = prop.getLookup();
-        if (null != lookup)
+        public PropertyChangeAuditInfo(DomainPropertyImpl prop, boolean isCreated)
+        {
+            _prop = prop;
+            _action = isCreated ? "Created" : "Deleted";
+            _details = isCreated ? makeNewPropAuditComment(prop) : "";
+        }
+
+        public PropertyChangeAuditInfo(DomainPropertyImpl prop, PropertyDescriptor pdOld,
+                                       String oldValidators, String oldFormats)
+        {
+            _prop = prop;
+            _action = "Modified";
+            _details = makeModifiedPropAuditComment(prop, pdOld, oldValidators, oldFormats);
+        }
+
+        public DomainProperty getProp()
+        {
+            return _prop;
+        }
+
+        public String getAction()
+        {
+            return _action;
+        }
+
+        public String getDetails()
+        {
+            return _details;
+        }
+
+        private String makeNewPropAuditComment(DomainProperty prop)
+        {
+            StringBuilder str = new StringBuilder();
+            str.append("Name: ").append(prop.getName()).append("; ");
+            str.append("Label: ").append(renderCheckingBlank(prop.getLabel())).append("; ");
+            str.append("Type: ").append(prop.getPropertyType().getXarName()).append("; ");
+            if (prop.getPropertyType().getJdbcType().isText())
+                str.append("Scale: ").append(prop.getScale()).append("; ");
+
+            Lookup lookup = prop.getLookup();
+            if (null != lookup)
+            {
+                str.append("Lookup: [");
+                if (null != lookup.getContainer())
+                    str.append("Container: ").append(lookup.getContainer().getName()).append(", ");
+                str.append("Schema: ").append(lookup.getSchemaName()).append(", ")
+                   .append("Query: ").append(lookup.getQueryName()).append("]; ");
+            }
+
+            str.append("Description: ").append(renderCheckingBlank(prop.getDescription())).append("; ");
+            str.append("Format: ").append(renderCheckingBlank(prop.getFormat())).append("; ");
+            str.append("URL: ").append(renderCheckingBlank(prop.getURL())).append("; ");
+            str.append("PHI: ").append(prop.getPHI().toString()).append("; ");
+            str.append("ImportAliases: ").append(renderImportAliases(prop.getPropertyDescriptor())).append("; ");
+            str.append("Validators: ").append(renderValidators(prop.getPropertyDescriptor())).append("; ");
+            str.append("ConditionalFormats: ").append(renderConditionalFormats(prop.getPropertyDescriptor())).append("; ");
+            str.append("DefaultValueType: ").append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
+            str.append("DefaultScale: ").append(prop.getDefaultScale().getLabel()).append("; ");
+            str.append("Required: ").append(renderBool(prop.isRequired())).append("; ");
+            str.append("Hidden: ").append(renderBool(prop.isHidden())).append("; ");
+            str.append("MvEnabled: ").append(renderBool(prop.isMvEnabled())).append("; ");
+            str.append("Measure: ").append(renderBool(prop.isMeasure())).append("; ");
+            str.append("Dimension: ").append(renderBool(prop.isDimension())).append("; ");
+            str.append("ShownInInsert: ").append(renderBool(prop.isShownInInsertView())).append("; ");
+            str.append("ShownInDetails: ").append(renderBool(prop.isShownInDetailsView())).append("; ");
+            str.append("ShownInUpdate: ").append(renderBool(prop.isShownInUpdateView())).append("; ");
+            str.append("RecommendedVariable: ").append(renderBool(prop.isRecommendedVariable())).append("; ");
+            str.append("ExcludedFromShifting: ").append(renderBool(prop.isExcludeFromShifting())).append("; ");
+            return str.toString();
+        }
+
+        private String makeModifiedPropAuditComment(DomainPropertyImpl prop, PropertyDescriptor pdOld, String oldValidators, String oldFormats)
+        {
+            StringBuilder str = new StringBuilder();
+            if (!pdOld.getName().equals(prop.getName()))
+                str.append("Name: ").append(renderOldVsNew(pdOld.getName(), prop.getName())).append("; ");
+            if (!StringUtils.equals(pdOld.getLabel(), prop.getLabel()))
+                str.append("Label: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getLabel()), renderCheckingBlank(prop.getLabel()))).append("; ");
+            if (null != pdOld.getPropertyType() && !pdOld.getPropertyType().equals(prop.getPropertyType()))
+                str.append("Type: ").append(renderOldVsNew(pdOld.getPropertyType().getXarName(), prop.getPropertyType().getXarName())).append("; ");
+            if (prop.getPropertyType().getJdbcType().isText())
+                if (pdOld.getScale() != prop.getScale())
+                    str.append("Scale: ").append(renderOldVsNew(Integer.toString(pdOld.getScale()), Integer.toString(prop.getScale()))).append("; ");
+
+            if (!StringUtils.equals(pdOld.getLookupSchema(), prop.getPropertyDescriptor().getLookupSchema()) ||
+                !StringUtils.equals(pdOld.getLookupQuery(), prop.getPropertyDescriptor().getLookupQuery()) ||
+                !StringUtils.equals(pdOld.getLookupContainer(), prop.getPropertyDescriptor().getLookupContainer()))
+            {
+                renderLookupDiff(prop.getPropertyDescriptor(), pdOld, str);
+            }
+
+            if (!StringUtils.equals(pdOld.getDescription(), prop.getDescription()))
+                str.append("Description: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDescription()), renderCheckingBlank(prop.getDescription()))).append("; ");
+            if (!StringUtils.equals(prop.getFormat(), prop.getFormat()))
+                str.append("Format: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getFormat()), renderCheckingBlank(prop.getFormat()))).append("; ");
+            if (!StringUtils.equals((null != pdOld.getURL() ? pdOld.getURL().toString() : null), prop.getURL()))
+                str.append("URL: ").append(renderOldVsNew(renderCheckingBlank(null != pdOld.getURL() ? pdOld.getURL().toString() : null), renderCheckingBlank(prop.getURL()))).append("; ");
+            if (!pdOld.getPHI().equals(prop.getPHI()))
+                str.append("PHI: ").append(renderOldVsNew(pdOld.getPHI().getLabel(), prop.getPHI().getLabel())).append("; ");
+
+            renderImportAliasesDiff(prop, pdOld, str);
+            renderValidatorsDiff(prop, oldValidators, str);
+            renderConditionalFormatsDiff(prop, oldFormats, str);
+            renderDefaultValueTypeDiff(prop, pdOld, str);
+
+            if (!pdOld.getDefaultScale().getLabel().equals(prop.getDefaultScale().getLabel()))
+                str.append("DefaultScale: ").append(renderOldVsNew(pdOld.getDefaultScale().getLabel(), prop.getDefaultScale().getLabel())).append("; ");
+            if (pdOld.isRequired() != prop.isRequired())
+                str.append("Required: ").append(renderOldVsNew(renderBool(pdOld.isRequired()), renderBool(prop.isRequired()))).append("; ");
+            if (pdOld.isHidden() != prop.isHidden())
+                str.append("Hidden: ").append(renderOldVsNew(renderBool(pdOld.isHidden()), renderBool(prop.isHidden()))).append("; ");
+            if (pdOld.isMvEnabled() != prop.isMvEnabled())
+                str.append("MvEnabled: ").append(renderOldVsNew(renderBool(pdOld.isMvEnabled()), renderBool(prop.isMvEnabled()))).append("; ");
+            if (pdOld.isMeasure() != prop.isMeasure())
+                str.append("Measure: ").append(renderOldVsNew(renderBool(pdOld.isMeasure()), renderBool(prop.isMeasure()))).append("; ");
+            if (pdOld.isDimension() != prop.isDimension())
+                str.append("Dimension: ").append(renderOldVsNew(renderBool(pdOld.isDimension()), renderBool(prop.isDimension()))).append("; ");
+            if (pdOld.isShownInInsertView() != prop.isShownInInsertView())
+                str.append("ShownInInsert: ").append(renderOldVsNew(renderBool(pdOld.isShownInInsertView()), renderBool(prop.isShownInInsertView()))).append("; ");
+            if (pdOld.isShownInDetailsView() != prop.isShownInDetailsView())
+                str.append("ShownInDetails: ").append(renderOldVsNew(renderBool(pdOld.isShownInDetailsView()), renderBool(prop.isShownInDetailsView()))).append("; ");
+            if (pdOld.isShownInUpdateView() != prop.isShownInUpdateView())
+                str.append("ShownInUpdate: ").append(renderOldVsNew(renderBool(pdOld.isShownInUpdateView()), renderBool(prop.isShownInUpdateView()))).append("; ");
+            if (pdOld.isRecommendedVariable() != prop.isRecommendedVariable())
+                str.append("RecommendedVariable: ").append(renderOldVsNew(renderBool(pdOld.isRecommendedVariable()), renderBool(prop.isRecommendedVariable()))).append("; ");
+            if (pdOld.isExcludeFromShifting() != prop.isExcludeFromShifting())
+                str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
+            return str.toString();
+        }
+
+        private String renderCheckingBlank(String value)
+        {
+            return StringUtils.isNotBlank(value) ? value : "<none>";
+        }
+
+        private static String renderValidators(PropertyDescriptor prop)
+        {
+             Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+             if (validators.isEmpty())
+                 return "<none>";
+             List<String> strings = new ArrayList<>();
+             validators.forEach(validator -> strings.add(validator.getName() + " [" +
+                     StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
+             );
+             return StringUtils.join(strings, ", ");
+        }
+
+        private static String renderConditionalFormats(PropertyDescriptor prop)
+        {
+            List<ConditionalFormat> formats = DomainPropertyManager.get().getConditionalFormats(prop);
+            if (formats.isEmpty())
+                return "<none>";
+            return Integer.toString(formats.size());
+        }
+
+        private void renderValidatorsDiff(DomainProperty prop, String oldValidators, StringBuilder str)
+        {
+            String validators = renderValidators(prop.getPropertyDescriptor());
+            if (!StringUtils.equals(oldValidators, validators))
+                str.append("Validators: ").append("old: ").append(oldValidators).append(", new: ").append(validators).append("; ");
+        }
+
+        private void renderConditionalFormatsDiff(DomainProperty prop, String oldFormats, StringBuilder str)
+        {
+            String formats = renderConditionalFormats(prop.getPropertyDescriptor());
+            if (!StringUtils.equals(oldFormats, formats))
+                str.append("ConditionalFormats: ").append("old: ").append(oldFormats).append(", new: ").append(formats).append("; ");
+        }
+
+        private String renderImportAliases(PropertyDescriptor prop)
+        {
+            Set<String> aliases = prop.getImportAliasSet();
+            if (aliases.isEmpty())
+                return "<none>";
+            return StringUtils.join(aliases, ",");
+        }
+
+        private void renderImportAliasesDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
+        {
+            String oldAliases = renderImportAliases(pdOld);
+            String aliases = renderImportAliases(prop.getPropertyDescriptor());
+            if (!StringUtils.equals(oldAliases, aliases))
+                str.append("ImportAliases: ").append("old: ").append(oldAliases).append(", new: ").append(aliases).append("; ");
+        }
+
+        private String renderDefaultValueType(PropertyDescriptor prop)
+        {
+            DefaultValueType type = prop.getDefaultValueTypeEnum();
+            if (null == type)
+                return "<none>";
+            return type.getLabel();
+        }
+
+        private void renderDefaultValueTypeDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
+        {
+            if (pdOld.getDefaultValueTypeEnum() != prop.getDefaultValueTypeEnum())
+                str.append("DefaultValueType: ").append("old: ").append(renderDefaultValueType(pdOld)).append(", new: ")
+                   .append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
+        }
+
+        private String renderBool(boolean value)
+        {
+            return value ? "true" : "false";
+        }
+
+        private String renderOldVsNew(String oldVal, String newVal)
+        {
+            return oldVal + " -> " + newVal;
+        }
+
+        private void renderLookupDiff(PropertyDescriptor pdNew, PropertyDescriptor pdOld, StringBuilder str)
         {
             str.append("Lookup: [");
-            if (null != lookup.getContainer())
-                str.append("Container: ").append(lookup.getContainer().getName()).append(", ");
-            str.append("Schema: ").append(lookup.getSchemaName()).append(", ")
-               .append("Query: ").append(lookup.getQueryName()).append("]; ");
+            if (!StringUtils.equals(pdOld.getLookupContainer(), pdNew.getLookupContainer()))
+                str.append("Container: ").append("old: ").append(getContainerName(pdOld.getLookupContainer())).append(", new: ")
+                   .append(getContainerName(pdNew.getLookupContainer())).append(", ");
+            if (!StringUtils.equals(pdOld.getLookupSchema(), pdNew.getLookupSchema()))
+                str.append("Schema: ").append("old: ").append(pdOld.getLookupSchema()).append(", new: ")
+                   .append(pdNew.getLookupSchema()).append(", ");
+            if (!StringUtils.equals(pdOld.getLookupQuery(), pdNew.getLookupQuery()))
+                str.append("Query: ").append("old: ").append(pdOld.getLookupQuery()).append(", new: ")
+                   .append(pdNew.getLookupQuery());
+            str.append("]; ");
         }
 
-        str.append("Description: ").append(renderCheckingBlank(prop.getDescription())).append("; ");
-        str.append("Format: ").append(renderCheckingBlank(prop.getFormat())).append("; ");
-        str.append("URL: ").append(renderCheckingBlank(prop.getURL())).append("; ");
-        str.append("PHI: ").append(prop.getPHI().toString()).append("; ");
-        str.append("ImportAliases: ").append(renderImportAliases(prop.getPropertyDescriptor())).append("; ");
-        str.append("Validators: ").append(renderValidators(prop.getPropertyDescriptor())).append("; ");
-        str.append("ConditionalFormats: ").append(renderConditionalFormats(prop.getPropertyDescriptor())).append("; ");
-        str.append("DefaultValueType: ").append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
-        str.append("DefaultScale: ").append(prop.getDefaultScale().getLabel()).append("; ");
-        str.append("Required: ").append(renderBool(prop.isRequired())).append("; ");
-        str.append("Hidden: ").append(renderBool(prop.isHidden())).append("; ");
-        str.append("MvEnabled: ").append(renderBool(prop.isMvEnabled())).append("; ");
-        str.append("Measure: ").append(renderBool(prop.isMeasure())).append("; ");
-        str.append("Dimension: ").append(renderBool(prop.isDimension())).append("; ");
-        str.append("ShownInInsert: ").append(renderBool(prop.isShownInInsertView())).append("; ");
-        str.append("ShownInDetails: ").append(renderBool(prop.isShownInDetailsView())).append("; ");
-        str.append("ShownInUpdate: ").append(renderBool(prop.isShownInUpdateView())).append("; ");
-        str.append("RecommendedVariable: ").append(renderBool(prop.isRecommendedVariable())).append("; ");
-        str.append("ExcludedFromShifting: ").append(renderBool(prop.isExcludeFromShifting())).append("; ");
-        return str.toString();
-    }
-
-    private String makeModifiedPropAuditComment(DomainPropertyImpl prop, PropertyDescriptor pdOld, String oldValidators, String oldFormats)
-    {
-        StringBuilder str = new StringBuilder();
-        if (!pdOld.getName().equals(prop.getName()))
-			str.append("Name: ").append(renderOldVsNew(pdOld.getName(), prop.getName())).append("; ");
-        if (!StringUtils.equals(pdOld.getLabel(), prop.getLabel()))
-			str.append("Label: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getLabel()), renderCheckingBlank(prop.getLabel()))).append("; ");
-        if (null != pdOld.getPropertyType() && !pdOld.getPropertyType().equals(prop.getPropertyType()))
-			str.append("Type: ").append(renderOldVsNew(pdOld.getPropertyType().getXarName(), prop.getPropertyType().getXarName())).append("; ");
-        if (prop.getPropertyType().getJdbcType().isText())
-            if (pdOld.getScale() != prop.getScale())
-			    str.append("Scale: ").append(renderOldVsNew(Integer.toString(pdOld.getScale()), Integer.toString(prop.getScale()))).append("; ");
-
-        if (!StringUtils.equals(pdOld.getLookupSchema(), prop.getPropertyDescriptor().getLookupSchema()) ||
-            !StringUtils.equals(pdOld.getLookupQuery(), prop.getPropertyDescriptor().getLookupQuery()) ||
-            !StringUtils.equals(pdOld.getLookupContainer(), prop.getPropertyDescriptor().getLookupContainer()))
+        private String getContainerName(String containerId)
         {
-            renderLookupDiff(prop.getPropertyDescriptor(), pdOld, str);
+            if (null != containerId)
+            {
+                Container container = ContainerManager.getForId(containerId);
+                if (null != container)
+                    return container.getName();
+            }
+            return null;
         }
-
-        if (!StringUtils.equals(pdOld.getDescription(), prop.getDescription()))
-			str.append("Description: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDescription()), renderCheckingBlank(prop.getDescription()))).append("; ");
-        if (!StringUtils.equals(prop.getFormat(), prop.getFormat()))
-			str.append("Format: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getFormat()), renderCheckingBlank(prop.getFormat()))).append("; ");
-        if (!StringUtils.equals((null != pdOld.getURL() ? pdOld.getURL().toString() : null), prop.getURL()))
-			str.append("URL: ").append(renderOldVsNew(renderCheckingBlank(null != pdOld.getURL() ? pdOld.getURL().toString() : null), renderCheckingBlank(prop.getURL()))).append("; ");
-        if (!pdOld.getPHI().equals(prop.getPHI()))
-			str.append("PHI: ").append(renderOldVsNew(pdOld.getPHI().getLabel(), prop.getPHI().getLabel())).append("; ");
-
-        renderImportAliasesDiff(prop, pdOld, str);
-        renderValidatorsDiff(prop, oldValidators, str);
-        renderConditionalFormatsDiff(prop, oldFormats, str);
-        renderDefaultValueTypeDiff(prop, pdOld, str);
-
-        if (!pdOld.getDefaultScale().getLabel().equals(prop.getDefaultScale().getLabel()))
-			str.append("DefaultScale: ").append(renderOldVsNew(pdOld.getDefaultScale().getLabel(), prop.getDefaultScale().getLabel())).append("; ");
-        if (pdOld.isRequired() != prop.isRequired())
-			str.append("Required: ").append(renderOldVsNew(renderBool(pdOld.isRequired()), renderBool(prop.isRequired()))).append("; ");
-        if (pdOld.isHidden() != prop.isHidden())
-			str.append("Hidden: ").append(renderOldVsNew(renderBool(pdOld.isHidden()), renderBool(prop.isHidden()))).append("; ");
-        if (pdOld.isMvEnabled() != prop.isMvEnabled())
-			str.append("MvEnabled: ").append(renderOldVsNew(renderBool(pdOld.isMvEnabled()), renderBool(prop.isMvEnabled()))).append("; ");
-        if (pdOld.isMeasure() != prop.isMeasure())
-			str.append("Measure: ").append(renderOldVsNew(renderBool(pdOld.isMeasure()), renderBool(prop.isMeasure()))).append("; ");
-        if (pdOld.isDimension() != prop.isDimension())
-			str.append("Dimension: ").append(renderOldVsNew(renderBool(pdOld.isDimension()), renderBool(prop.isDimension()))).append("; ");
-        if (pdOld.isShownInInsertView() != prop.isShownInInsertView())
-			str.append("ShownInInsert: ").append(renderOldVsNew(renderBool(pdOld.isShownInInsertView()), renderBool(prop.isShownInInsertView()))).append("; ");
-        if (pdOld.isShownInDetailsView() != prop.isShownInDetailsView())
-			str.append("ShownInDetails: ").append(renderOldVsNew(renderBool(pdOld.isShownInDetailsView()), renderBool(prop.isShownInDetailsView()))).append("; ");
-        if (pdOld.isShownInUpdateView() != prop.isShownInUpdateView())
-			str.append("ShownInUpdate: ").append(renderOldVsNew(renderBool(pdOld.isShownInUpdateView()), renderBool(prop.isShownInUpdateView()))).append("; ");
-        if (pdOld.isRecommendedVariable() != prop.isRecommendedVariable())
-			str.append("RecommendedVariable: ").append(renderOldVsNew(renderBool(pdOld.isRecommendedVariable()), renderBool(prop.isRecommendedVariable()))).append("; ");
-        if (pdOld.isExcludeFromShifting() != prop.isExcludeFromShifting())
-			str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
-        return str.toString();
-    }
-
-    private String renderCheckingBlank(String value)
-    {
-        return StringUtils.isNotBlank(value) ? value : "<none>";
-    }
-
-    private String renderValidators(PropertyDescriptor prop)
-    {
-         Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
-         if (validators.isEmpty())
-             return "<none>";
-         List<String> strings = new ArrayList<>();
-         validators.forEach(validator -> strings.add(validator.getName() + " [" +
-                 StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
-         );
-         return StringUtils.join(strings, ", ");
-    }
-
-    private void renderValidatorsDiff(DomainProperty prop, String oldValidators, StringBuilder str)
-    {
-        String validators = renderValidators(prop.getPropertyDescriptor());
-        if (!StringUtils.equals(oldValidators, validators))
-            str.append("Validators: ").append("old: ").append(oldValidators).append(", new: ").append(validators).append("; ");
-    }
-
-    private String renderConditionalFormats(PropertyDescriptor prop)
-    {
-        List<ConditionalFormat> formats = DomainPropertyManager.get().getConditionalFormats(prop);
-        if (formats.isEmpty())
-            return "<none>";
-        return Integer.toString(formats.size());
-    }
-
-    private void renderConditionalFormatsDiff(DomainProperty prop, String oldFormats, StringBuilder str)
-    {
-        String formats = renderConditionalFormats(prop.getPropertyDescriptor());
-        if (!StringUtils.equals(oldFormats, formats))
-            str.append("ConditionalFormats: ").append("old: ").append(oldFormats).append(", new: ").append(formats).append("; ");
-    }
-
-    private String renderImportAliases(PropertyDescriptor prop)
-    {
-        Set<String> aliases = prop.getImportAliasSet();
-        if (aliases.isEmpty())
-            return "<none>";
-        return StringUtils.join(aliases, ",");
-    }
-
-    private void renderImportAliasesDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
-    {
-        String oldAliases = renderImportAliases(pdOld);
-        String aliases = renderImportAliases(prop.getPropertyDescriptor());
-        if (!StringUtils.equals(oldAliases, aliases))
-            str.append("ImportAliases: ").append("old: ").append(oldAliases).append(", new: ").append(aliases).append("; ");
-    }
-
-    private String renderDefaultValueType(PropertyDescriptor prop)
-    {
-        DefaultValueType type = prop.getDefaultValueTypeEnum();
-        if (null == type)
-            return "<none>";
-        return type.getLabel();
-    }
-
-    private void renderDefaultValueTypeDiff(DomainProperty prop, PropertyDescriptor pdOld, StringBuilder str)
-    {
-        if (pdOld.getDefaultValueTypeEnum() != prop.getDefaultValueTypeEnum())
-            str.append("DefaultValueType: ").append("old: ").append(renderDefaultValueType(pdOld)).append(", new: ")
-               .append(renderDefaultValueType(prop.getPropertyDescriptor())).append("; ");
-    }
-
-    private String renderBool(boolean value)
-    {
-        return value ? "true" : "false";
-    }
-
-    private String renderOldVsNew(String oldVal, String newVal)
-    {
-        return oldVal + " -> " + newVal;
-    }
-
-    private void renderLookupDiff(PropertyDescriptor pdNew, PropertyDescriptor pdOld, StringBuilder str)
-    {
-        str.append("Lookup: [");
-        if (!StringUtils.equals(pdOld.getLookupContainer(), pdNew.getLookupContainer()))
-            str.append("Container: ").append("old: ").append(getContainerName(pdOld.getLookupContainer())).append(", new: ")
-               .append(getContainerName(pdNew.getLookupContainer())).append(", ");
-        if (!StringUtils.equals(pdOld.getLookupSchema(), pdNew.getLookupSchema()))
-            str.append("Schema: ").append("old: ").append(pdOld.getLookupSchema()).append(", new: ")
-               .append(pdNew.getLookupSchema()).append(", ");
-        if (!StringUtils.equals(pdOld.getLookupQuery(), pdNew.getLookupQuery()))
-            str.append("Query: ").append("old: ").append(pdOld.getLookupQuery()).append(", new: ")
-               .append(pdNew.getLookupQuery());
-        str.append("]; ");
-    }
-
-    private String getContainerName(String containerId)
-    {
-        if (null != containerId)
-        {
-            Container container = ContainerManager.getForId(containerId);
-            if (null != container)
-                return container.getName();
-        }
-        return null;
     }
 
     public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)
