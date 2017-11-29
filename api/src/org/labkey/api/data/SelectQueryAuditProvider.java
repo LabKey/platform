@@ -67,7 +67,7 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
     @Override
     public String getDescription()
     {
-        return "Information about select queries that have logged columns";
+        return "Lists specific columns and identified data relating to explicitly logged queries";
     }
 
     @Override
