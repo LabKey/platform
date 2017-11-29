@@ -53,12 +53,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
@@ -66,6 +64,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -322,13 +321,19 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
     {
-
         WebdavResource resource = davResourceFromKeys(row);
 
         Pair<ExpData, String> p = findData(container, row);
         ExpData data = p.getKey();
         String dataFileUrl = p.getValue();
 
+        if (row.containsKey("AbsoluteFilePath")) // AbsoluteFilePath is a valid key for inserting exp.files record through api
+        {
+            String filePath = String.valueOf(row.get("AbsoluteFilePath"));
+            File file = new File(filePath);
+            if (!(file.exists() && Files.isRegularFile(file.toPath())))
+                throw new ValidationException("File not found or file type not allowed: " + String.valueOf(row.get("AbsoluteFilePath")));
+        }
 
         if (resource != null)
         {
@@ -455,23 +460,23 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     {
         if (keys.containsKey(KEY_COL_DAV))
         {
-            return getResource(String.valueOf(keys.get(KEY_COL_DAV)));
+            return FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_DAV)));
         }
         else if (keys.containsKey(KEY_COL_ID))
         {
-            return getResource(String.valueOf(keys.get(KEY_COL_ID)));
+            return FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_ID)));
         }
         else
         {
             String absoluteFilePath = null;
             if (keys.containsKey(ExpDataTable.Column.DataFileUrl.name()))
-                absoluteFilePath = getAbsolutePathFromDataFileUrl(String.valueOf(keys.get(ExpDataTable.Column.DataFileUrl.name())));
+                absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(String.valueOf(keys.get(ExpDataTable.Column.DataFileUrl.name())));
             else if (keys.containsKey(ExpDataTable.Column.RowId.name()))
             {
                 String rowIdStr = String.valueOf(keys.get(ExpDataTable.Column.RowId.name()));
                 ExpData data = ExperimentService.get().getExpData(Integer.valueOf(rowIdStr));
                 if (data != null && data.getDataFileUrl() != null)
-                    absoluteFilePath = getAbsolutePathFromDataFileUrl(data.getDataFileUrl());
+                    absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(data.getDataFileUrl());
             }
             else if (keys.containsKey("AbsoluteFilePath"))
                 absoluteFilePath = String.valueOf(keys.get("AbsoluteFilePath"));
@@ -481,41 +486,6 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
 
         return null;
-    }
-
-    @Nullable
-    private WebdavResource getResource(String uri)
-    {
-        Path path = Path.decode(uri);
-
-        if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
-        {
-            String newPath = path.toString();
-            int idx = newPath.indexOf(WebdavService.getPath().toString());
-
-            if (idx != -1)
-            {
-                newPath = newPath.substring(idx);
-                path = Path.parse(newPath);
-            }
-        }
-        return WebdavService.get().getResolver().lookup(path);
-    }
-
-    private String getAbsolutePathFromDataFileUrl(String dataFileUrl)
-    {
-        URI uri;
-        try
-        {
-            uri = new URI(dataFileUrl);
-            File f = new File(uri);
-            return f.getAbsolutePath();
-        }
-        catch (URISyntaxException e)
-        {
-            _log.error("Unable to get file from uri: " + dataFileUrl);
-            return null;
-        }
     }
 
     private WebdavResource getWebdavUrlFromAbsoluteFilePath(@NotNull String absoluteFilePath, Container container)
@@ -545,7 +515,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     offset = offset.substring(1);
 
                 String davUrl = rootDavUrl + "/" + offset;
-                WebdavResource resource = getResource(davUrl);
+                WebdavResource resource = FileContentServiceImpl.getInstance().getResource(davUrl);
                 if (targetResource == null)
                     targetResource = resource;
                 else

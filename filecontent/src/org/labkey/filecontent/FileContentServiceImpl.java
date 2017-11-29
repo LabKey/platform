@@ -27,6 +27,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerListener;
@@ -50,6 +54,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -62,16 +67,22 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -895,19 +906,18 @@ public class FileContentServiceImpl implements FileContentService
     public Set<Map<String, Object>> getNodes(boolean isShowOverridesOnly, @Nullable String browseUrl, @Nullable String showAdminUrl, Container c)
     {
         Set<Map<String, Object>> children = new LinkedHashSet<>();
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
         try {
-            AttachmentDirectory root = svc.getMappedAttachmentDirectory(c, false);
+            AttachmentDirectory root = getMappedAttachmentDirectory(c, false);
 
             if (root != null)
             {
-                boolean isDefault = svc.isUseDefaultRoot(c);
+                boolean isDefault = isUseDefaultRoot(c);
                 if (!isDefault || !isShowOverridesOnly)
                 {
                     ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
                     Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectory());
-                    node.put("default", svc.isUseDefaultRoot(c));
+                    node.put("default", isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browseUrl);
                     node.put("webdavURL", FilesWebPart.getRootPath(c, FILES_LINK));
@@ -916,13 +926,14 @@ public class FileContentServiceImpl implements FileContentService
                 }
             }
 
-            for (AttachmentDirectory fileSet : svc.getRegisteredDirectories(c))
+            for (AttachmentDirectory fileSet : getRegisteredDirectories(c))
             {
                 ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
                 Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory());
                 node.put("configureURL", config.getEncodedLocalURIString());
                 node.put("browseURL", browseUrl);
                 node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
+                node.put("rootType", "fileset");
 
                 children.add(node);
             }
@@ -961,7 +972,168 @@ public class FileContentServiceImpl implements FileContentService
         return node;
     }
 
+    public String getAbsolutePathFromDataFileUrl(String dataFileUrl)
+    {
+        try
+        {
+            URI uri = new URI(dataFileUrl);
+            File f = new File(uri);
+            return f.getAbsolutePath();
+        }
+        catch (URISyntaxException e)
+        {
+            _log.error("Unable to get file from uri: " + dataFileUrl);
+            return null;
+        }
+    }
 
+    @Override
+    public String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container)
+    {
+        String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl);
+        Set<Map<String, Object>> children = getNodes(false, null, null, container);
+        for (Map<String, Object> child : children)
+        {
+            String rootName = (String) child.get("name");
+            // skip default @pipeline, which is the same as @files
+            if (PIPELINE_LINK.equals(rootName) && (boolean) child.get("default"))
+                continue;
+
+            String rootPath = (String) child.get("path");
+            if (absoluteFilePath.startsWith(rootPath))
+            {
+                String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
+                int lastSlash = offset.lastIndexOf("/");
+                if (lastSlash <= 0)
+                    return "/";
+                else
+                    return offset.substring(0, lastSlash);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container)
+    {
+        if (qus == null)
+            return;
+
+        synchronized (_fileDataUpToDateCache)
+        {
+            if (_fileDataUpToDateCache.get(container) != null) // already synced in the past 5 minutes, skip
+                return;
+
+            _fileDataUpToDateCache.put(container, true);
+        }
+
+        List<String> existingDataFileUrls = getDataFileUrls(container);
+        Collection<AttachmentDirectory> filesets = getRegisteredDirectories(container);
+        Set<Map<String, Object>> children = getNodes(false, null, null, container);
+        for (Map<String, Object> child : children)
+        {
+            String rootName = (String) child.get("name");
+            // skip default @pipeline, which is the same as @files
+            if (PIPELINE_LINK.equals(rootName) && (boolean) child.get("default"))
+                continue;
+
+            String rootDavUrl = (String) child.get("webdavURL");
+            WebdavResource resource = getResource(rootDavUrl);
+            if (resource == null)
+                continue;
+
+            List<Map<String, Object>> rows = new ArrayList<>();
+            BatchValidationException errors = new BatchValidationException();
+            File file = resource.getFile();
+
+            if (file == null)
+            {
+                String rootType = (String) child.get("rootType");
+                if ("fileset".equals(rootType))
+                {
+                    for (AttachmentDirectory fileset : filesets)
+                    {
+                        if (fileset.getName().equals(rootName))
+                        {
+                            try
+                            {
+                                file = fileset.getFileSystemDirectory();
+                            }
+                            catch (MissingRootDirectoryException e)
+                            {
+                                _log.error("Unable to list files for fileset: " + rootName);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (file == null)
+                return;
+
+            try
+            {
+                Files.walk(file.toPath(), 100) // prevent symlink loop
+                        .filter(Files::isRegularFile) // exclude symlink & directories
+                        .forEach(path -> {
+                            try
+                            {
+                                String url = path.toUri().toURL().toString();
+                                if (!existingDataFileUrls.contains(url))
+                                    rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", url)));
+                            }
+                            catch (MalformedURLException e)
+                            {
+                                _log.error("Unable to parse file path: " + path);
+                            }
+
+                        });
+
+                qus.insertRows(user, container, rows, errors, null, null);
+            }
+            catch (Exception e)
+            {
+                _log.error("Error listing content of directory: " + file.getAbsolutePath());
+            }
+        }
+    }
+
+    public List<String> getDataFileUrls(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK);
+        TableSelector selector = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("DataFileUrl"), filter, null);
+        return selector.getArrayList(String.class);
+    }
+
+    public Path getPath(String uri)
+    {
+        Path path = Path.decode(uri);
+
+        if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
+        {
+            String newPath = path.toString();
+            int idx = newPath.indexOf(WebdavService.getPath().toString());
+
+            if (idx != -1)
+            {
+                newPath = newPath.substring(idx);
+                path = Path.parse(newPath);
+            }
+        }
+        return path;
+    }
+
+    @Nullable
+    public WebdavResource getResource(String uri)
+    {
+        Path path = getPath(uri);
+        return WebdavService.get().getResolver().lookup(path);
+    }
+
+    // Cache with short-lived entries so that exp.files can perform reasonably
+    private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends AssertionError

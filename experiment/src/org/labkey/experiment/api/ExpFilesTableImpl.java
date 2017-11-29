@@ -10,12 +10,15 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -24,10 +27,13 @@ import java.util.List;
 
 public class ExpFilesTableImpl extends ExpDataTableImpl
 {
+    protected FileContentService _svc = ServiceRegistry.get().getService(FileContentService.class);
+
     public ExpFilesTableImpl(String name, UserSchema schema)
     {
         super(name, schema);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
+        _svc.ensureFileData(getUpdateService(), schema.getUser(), schema.getContainer());
     }
 
     @Override
@@ -64,6 +70,8 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
             addColumn(getAbsolutePathColumn());
         }
 
+        addColumn(getRelativeFolderColumn());
+
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
@@ -89,6 +97,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         defaultCols.add(FieldKey.fromParts(Column.FileExists));
         defaultCols.add(FieldKey.fromParts(Column.FileSize));
         defaultCols.add(FieldKey.fromParts(Column.Flag));
+        defaultCols.add(FieldKey.fromParts("RelativeFolder"));
         customProps.forEach(prop -> defaultCols.add(FieldKey.fromParts(prop)));
         if (showAbsoluteFilePath())
         {
@@ -152,6 +161,48 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setUserEditable(true);
         result.setShownInUpdateView(false);
         result.setShownInInsertView(true);
+        result.setShownInDetailsView(true);
+
+        return result;
+    }
+
+    private ColumnInfo getRelativeFolderColumn()
+    {
+        ColumnInfo result = wrapColumn("RelativeFolder", _rootTable.getColumn("RowId"));
+        result.setTextAlign("left");
+        result.setJdbcType(JdbcType.VARCHAR);
+        result.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ExpDataFileColumn(colInfo)
+                {
+                    @Override
+                    protected void renderData(Writer out, ExpData data) throws IOException
+                    {
+                        String val;
+                        if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
+                            val = null;
+                        else
+                        {
+                            val = _svc.getDataFileRelativeFileRootPath(data.getDataFileUrl(), getContainer());
+                        }
+                        out.write(val == null ? "Not found" : val);
+                    }
+
+                    @Override
+                    protected Object getJsonValue(ExpData data)
+                    {
+                        return null;
+                    }
+
+                };
+            }
+        });
+        result.setDescription("The virtual folder path relative to file root of the container.");
+        result.setUserEditable(true);
+        result.setShownInUpdateView(false);
+        result.setShownInInsertView(false);
         result.setShownInDetailsView(true);
 
         return result;

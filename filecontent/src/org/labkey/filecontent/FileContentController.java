@@ -68,7 +68,6 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QuerySettings;
@@ -106,7 +105,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileEmailConfig;
@@ -924,7 +922,7 @@ public class FileContentController extends SpringActionController
 
                     for (Map<String, Object> fileProps : _files)
                     {
-                        WebdavResource resource = getResource(String.valueOf(fileProps.get("id")));
+                        WebdavResource resource = FileContentServiceImpl.getInstance().getResource(String.valueOf(fileProps.get("id")));
                         if (resource != null && !resource.getActions(getUser()).isEmpty())
                         {
                             errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, resource.getName(), "has been previously processed, properties cannot be edited"));
@@ -957,24 +955,6 @@ public class FileContentController extends SpringActionController
                     }
                 }
             }
-        }
-
-        private WebdavResource getResource(String uri)
-        {
-            Path path = Path.decode(uri);
-
-            if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
-            {
-                String newPath = path.toString();
-                int idx = newPath.indexOf(WebdavService.getPath().toString());
-
-                if (idx != -1)
-                {
-                    newPath = newPath.substring(idx);
-                    path = Path.parse(newPath);
-                }
-            }
-            return WebdavService.get().getResolver().lookup(path);
         }
 
         private List<Map<String, Object>> parseFromJSON(Map<String, Object> props)
@@ -1034,19 +1014,7 @@ public class FileContentController extends SpringActionController
         @Override
         public void validateForm(CustomFilePropsForm form, Errors errors)
         {
-            Path path = Path.decode(form.getUri());
-
-            if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
-            {
-                String newPath = path.toString();
-                int idx = newPath.indexOf(WebdavService.getPath().toString());
-
-                if (idx != -1)
-                {
-                    newPath = newPath.substring(idx);
-                    path = Path.parse(newPath);
-                }
-            }
+            Path path = FileContentServiceImpl.getInstance().getPath(form.getUri());
             _resource = WebdavService.get().getResolver().lookup(path);
 
             if (_resource != null)
