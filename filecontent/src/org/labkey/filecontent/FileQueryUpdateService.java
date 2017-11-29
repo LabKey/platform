@@ -202,8 +202,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             Object o = keys.get(ExpDataTable.Column. DataFileUrl.name());
             filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), o);
         }
+        else if (keys.containsKey("AbsoluteFilePath"))
+        {
+            String dataFileUrl = getDataFileUrlFromAbsoluteFilePath((String) keys.get("AbsoluteFilePath"));
+            filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), dataFileUrl);
+        }
         else
-            throw new QueryUpdateServiceException("Either RowId, LSID, or DataFileURL is required to get ExpData.");
+            throw new QueryUpdateServiceException("Either RowId, LSID, DataFileURL or AbsoluteFilePath is required to get ExpData.");
 
         // Just look in the current container
         filter.addCondition(FieldKey.fromParts(ExpDataTable.Column.Folder.name()), container.getId());

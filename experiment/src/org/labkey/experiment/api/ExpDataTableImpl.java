@@ -126,7 +126,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         ColumnInfo lsidColumn = addColumn(Column.LSID);
         lsidColumn.setHidden(true);
         if (!isFilesTable)
-            addColumn(Column.DataFileUrl).setUserEditable(false);
+            addColumn(Column.DataFileUrl);
 
         addColumn(Column.DownloadLink).setUserEditable(isFilesTable);
         addColumn(Column.ViewFileLink).setUserEditable(isFilesTable);

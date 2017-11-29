@@ -65,8 +65,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         if (showAbsoluteFilePath())
         {
             ColumnInfo dataFileUrlCol = addColumn(Column.DataFileUrl);
-            dataFileUrlCol.setUserEditable(false);
-            dataFileUrlCol.setHidden(true);
+            dataFileUrlCol.setUserEditable(true);
+            dataFileUrlCol.setShownInInsertView(false);
+            dataFileUrlCol.setShownInUpdateView(false);
             addColumn(getAbsolutePathColumn());
         }
 
@@ -126,14 +127,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
                     @Override
                     protected void renderData(Writer out, ExpData data) throws IOException
                     {
-                        String val;
-                        if (data == null || data.getFile() == null || !data.getFile().exists())
-                            val = "";
-                        else
-                        {
-                            val = data.getFile().getAbsolutePath();
-                        }
-                        out.write(val);
+                        String val = ((String)getJsonValue(data));
+                        if (val != null)
+                            out.write(val);
                     }
 
                     @Override
@@ -145,7 +141,14 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
                     @Override
                     protected Object getJsonValue(ExpData data)
                     {
-                        return null;
+                        String val;
+                        if (data == null || data.getFile() == null || !data.getFile().exists())
+                            val = "";
+                        else
+                        {
+                            val = data.getFile().getAbsolutePath();
+                        }
+                        return val;
                     }
 
                     @Override
@@ -180,6 +183,13 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
                     @Override
                     protected void renderData(Writer out, ExpData data) throws IOException
                     {
+                        String val = ((String)getJsonValue(data));
+                        out.write(val == null ? "Not found" : val);
+                    }
+
+                    @Override
+                    protected Object getJsonValue(ExpData data)
+                    {
                         String val;
                         if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
                             val = null;
@@ -187,13 +197,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
                         {
                             val = _svc.getDataFileRelativeFileRootPath(data.getDataFileUrl(), getContainer());
                         }
-                        out.write(val == null ? "Not found" : val);
-                    }
-
-                    @Override
-                    protected Object getJsonValue(ExpData data)
-                    {
-                        return null;
+                        return val;
                     }
 
                 };
