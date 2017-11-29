@@ -19,6 +19,7 @@ import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.data.PHI;
 import org.labkey.test.Locator;
+import org.labkey.test.SortDirection;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -148,7 +149,8 @@ public class StudyPHIExportTest extends StudyExportTest
            since it's the most unique thing on the page, we can use it to see a specific user and verify that
            the date fields did change
          */
-        assertNotSame("2005-01-01", drt.getDataAsText(drt.getRow("1.Date of Birth", "1965-03-06"), "Contact Date"));
+        drt.setSort("DEMbdt", SortDirection.ASC);   // bring our record into view
+        assertNotSame("2005-01-01", drt.getDataAsText(drt.getRow("1.Date of Birth", "3/6/1965"), "Contact Date"));
         verifyStatsDoNotMatch(_originalFirstMouseStats, alteredFirstMouseStats);
         verifyParticipantGroups(_originalFirstMouseStats.get("Mouse Id"), alteredFirstMouseStats.get("Mouse Id"));
 
