@@ -76,7 +76,7 @@ import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.data.xml.queryCustomView.OperatorType;
-import org.labkey.query.audit.QueryAuditProvider;
+import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.olap.ServerManager;
@@ -2627,7 +2627,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount)
     {
-        QueryAuditProvider.QueryAuditEvent event = new QueryAuditProvider.QueryAuditEvent(c.getId(), comment);
+        QueryExportAuditProvider.QueryExportAuditEvent event = new QueryExportAuditProvider.QueryExportAuditEvent(c.getId(), comment);
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -2724,14 +2724,14 @@ public class QueryServiceImpl implements QueryService
                         {
                             case INSERT:
                             {
-                                String newRecord = QueryAuditProvider.encodeForDataMap(row);
+                                String newRecord = QueryExportAuditProvider.encodeForDataMap(row);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord);
                                 break;
                             }
                             case DELETE:
                             {
-                                String oldRecord = QueryAuditProvider.encodeForDataMap(row);
+                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(row);
                                 if (oldRecord != null)
                                     event.setOldRecordMap(oldRecord);
                                 break;
@@ -2760,11 +2760,11 @@ public class QueryServiceImpl implements QueryService
                                     }
                                 }
 
-                                String oldRecord = QueryAuditProvider.encodeForDataMap(originalRow);
+                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(originalRow);
                                 if (oldRecord != null)
                                     event.setOldRecordMap(oldRecord);
 
-                                String newRecord = QueryAuditProvider.encodeForDataMap(modifiedRow);
+                                String newRecord = QueryExportAuditProvider.encodeForDataMap(modifiedRow);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord);
                                 break;

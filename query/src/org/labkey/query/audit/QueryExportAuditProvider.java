@@ -44,7 +44,7 @@ import java.util.Set;
  *
  * UNDONE: Fancy QueryAuditViewFactory.QueryDetailsColumn
  */
-public class QueryAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
+public class QueryExportAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String QUERY_AUDIT_EVENT = "QueryExportAuditEvent";
     public static final String COLUMN_NAME_SCHEMA_NAME = "SchemaName";
@@ -70,7 +70,7 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     protected AbstractAuditDomainKind getDomainKind()
     {
-        return new QueryAuditDomainKind();
+        return new QueryExportAuditDomainKind();
     }
 
     @Override
@@ -105,7 +105,7 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
-        return (Class<K>)QueryAuditEvent.class;
+        return (Class<K>)QueryExportAuditEvent.class;
     }
 
     @Override
@@ -147,19 +147,19 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
 
-    public static class QueryAuditEvent extends AuditTypeEvent
+    public static class QueryExportAuditEvent extends AuditTypeEvent
     {
         private String _schemaName;
         private String _queryName;
         private String _detailsUrl;
         private int _dataRowCount;
 
-        public QueryAuditEvent()
+        public QueryExportAuditEvent()
         {
             super();
         }
 
-        public QueryAuditEvent(String container, String comment)
+        public QueryExportAuditEvent(String container, String comment)
         {
             super(QUERY_AUDIT_EVENT, container, comment);
         }
@@ -217,14 +217,14 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
         }
     }
 
-    public static class QueryAuditDomainKind extends AbstractAuditDomainKind
+    public static class QueryExportAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "QueryAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;
 
-        public QueryAuditDomainKind()
+        public QueryExportAuditDomainKind()
         {
             super(QUERY_AUDIT_EVENT);
 

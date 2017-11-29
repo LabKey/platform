@@ -82,7 +82,7 @@ import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
 import org.labkey.query.analytics.RemoveColumnAnalyticsProvider;
 import org.labkey.query.analytics.SummaryStatisticsAnalyticsProvider;
-import org.labkey.query.audit.QueryAuditProvider;
+import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
@@ -264,7 +264,7 @@ public class QueryModule extends DefaultModule
         }
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
 
-        AuditLogService.get().registerAuditType(new QueryAuditProvider());
+        AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
         AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());

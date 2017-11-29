@@ -112,7 +112,7 @@ import org.labkey.query.LinkedTableInfo;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
-import org.labkey.query.audit.QueryAuditProvider;
+import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
@@ -5876,22 +5876,22 @@ public class QueryController extends SpringActionController
         public boolean doAction(QueryExportAuditForm form, BindException errors) throws Exception
         {
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
-            TableInfo queryExportAuditTable = auditSchema.getTable(QueryAuditProvider.QUERY_AUDIT_EVENT);
+            TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
 
             TableSelector selector = new TableSelector(queryExportAuditTable,
                     PageFlowUtil.set(
-                            QueryAuditProvider.COLUMN_NAME_SCHEMA_NAME,
-                            QueryAuditProvider.COLUMN_NAME_QUERY_NAME,
-                            QueryAuditProvider.COLUMN_NAME_DETAILS_URL),
+                            QueryExportAuditProvider.COLUMN_NAME_SCHEMA_NAME,
+                            QueryExportAuditProvider.COLUMN_NAME_QUERY_NAME,
+                            QueryExportAuditProvider.COLUMN_NAME_DETAILS_URL),
                     new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_ROW_ID), form.getRowId()), null);
 
             Map<String, Object> result = selector.getMap();
             if (result == null)
                 throw new NotFoundException("Query export audit event not found for rowId");
 
-            String schemaName = (String)result.get(QueryAuditProvider.COLUMN_NAME_SCHEMA_NAME);
-            String queryName = (String)result.get(QueryAuditProvider.COLUMN_NAME_QUERY_NAME);
-            String detailsURL = (String)result.get(QueryAuditProvider.COLUMN_NAME_DETAILS_URL);
+            String schemaName = (String)result.get(QueryExportAuditProvider.COLUMN_NAME_SCHEMA_NAME);
+            String queryName = (String)result.get(QueryExportAuditProvider.COLUMN_NAME_QUERY_NAME);
+            String detailsURL = (String)result.get(QueryExportAuditProvider.COLUMN_NAME_DETAILS_URL);
 
             if (schemaName == null || queryName == null)
                 throw new NotFoundException("Query export audit event has not schemaName or queryName");
@@ -5991,8 +5991,8 @@ public class QueryController extends SpringActionController
 
             if (oldRecord != null || newRecord != null)
             {
-                Map<String,String> oldData = QueryAuditProvider.decodeFromDataMap(oldRecord);
-                Map<String,String> newData = QueryAuditProvider.decodeFromDataMap(newRecord);
+                Map<String,String> oldData = QueryExportAuditProvider.decodeFromDataMap(oldRecord);
+                Map<String,String> newData = QueryExportAuditProvider.decodeFromDataMap(newRecord);
 
                 return new AuditChangesView(comment, oldData, newData);
             }

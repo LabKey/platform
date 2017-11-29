@@ -1588,7 +1588,7 @@ query/src/org/labkey/query/analytics/AggregatesMinAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesSumAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/RemoveColumnAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/SummaryStatisticsAnalyticsProvider.java -text
-query/src/org/labkey/query/audit/QueryAuditProvider.java -text
+query/src/org/labkey/query/audit/QueryExportAuditProvider.java -text
 query/src/org/labkey/query/audit/QueryUpdateAuditProvider.java -text
 query/src/org/labkey/query/controllers/AbstractExternalSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
