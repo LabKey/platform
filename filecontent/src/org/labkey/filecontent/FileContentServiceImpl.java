@@ -1074,8 +1074,9 @@ public class FileContentServiceImpl implements FileContentService
 
             try
             {
-                Files.walk(file.toPath(), 100) // prevent symlink loop
-                        .filter(Files::isRegularFile) // exclude symlink & directories
+                java.nio.file.Path rootPath = file.toPath();
+                Files.walk(rootPath, 100) // prevent symlink loop
+                        .filter(path -> !Files.isSymbolicLink(path) && path.compareTo(rootPath) != 0) // exclude symlink & root
                         .forEach(path -> {
                             try
                             {
