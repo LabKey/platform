@@ -52,7 +52,8 @@ import java.util.Set;
 public class RecompilingJspClassLoader extends JspClassLoader
 {
     private static final Logger _log = Logger.getLogger(RecompilingJspClassLoader.class);
-    private static final String JSP_PATH = "/classes/java/jsp";
+    private static final String JSP_PATH = "/jspTempDir/classes";
+//    private static final String JSP_PATH = "/classes/java/jsp";
     private static final String JSP_PACKAGE_PATH = JSP_PACKAGE.replaceAll("\\.", "/");
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<>();
     private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
