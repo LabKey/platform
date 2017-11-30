@@ -338,6 +338,8 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             File file = new File(filePath);
             if (!(file.exists() && Files.isRegularFile(file.toPath())))
                 throw new ValidationException("File not found or file type not allowed: " + String.valueOf(row.get("AbsoluteFilePath")));
+            if (resource == null)
+                throw new ValidationException("File not found under container's managed file roots: " + String.valueOf(row.get("AbsoluteFilePath")));
         }
 
         if (resource != null)

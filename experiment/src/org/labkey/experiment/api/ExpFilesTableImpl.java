@@ -1,5 +1,6 @@
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -15,6 +16,9 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -210,6 +214,15 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setShownInDetailsView(true);
 
         return result;
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (perm.equals(InsertPermission.class))
+            if (!showAbsoluteFilePath())
+                return false;
+        return super.hasPermission(user, perm);
     }
 
 }
