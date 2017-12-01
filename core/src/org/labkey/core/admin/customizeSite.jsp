@@ -337,9 +337,37 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label">SSL port number (specified in server config file)</td>
     <td><input type="text" name="sslPort" id="sslPort" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
+
 <tr>
-    <td class="labkey-form-label">Allow API session keys</td>
-    <td><labkey:checkbox id="allowSessionKeys" name="allowSessionKeys" checked="<%= appProps.isAllowSessionKeys()%>" value="true"/></td>
+    <td>&nbsp;</td>
+</tr>
+<tr>
+    <td colspan=2>Configure API Keys (<%=text(bean.helpLink)%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">Allow standard API keys</td>
+    <td><labkey:checkbox id="allowApiKeys" name="allowApiKeys" checked="<%=false /* TODO: method on AppProps() */%>" value="true"/></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Expire standard API keys</td>
+    <td><select name="apiKeyExpirationSeconds" id="apiKeyExpirationSeconds">
+        <option value=-1 <%=selectedEq(-1, 0 /* TODO: method on AppProps */)%>>Never</option>
+<%
+    final int SECONDS_PER_DAY = 60*60*24;
+    if (AppProps.getInstance().isDevMode())
+    { %>
+        <option value=10 <%=selectedEq(10, 0 /* TODO: method on AppProps */)%>>10 seconds - for testing purposes only</option>
+<%  } %>
+        <option value=<%=7*SECONDS_PER_DAY%> <%=selectedEq(7*SECONDS_PER_DAY, 0 /* TODO: method on AppProps */)%>>7 days</option>
+        <option value=<%=30*SECONDS_PER_DAY%> <%=selectedEq(30*SECONDS_PER_DAY, 0 /* TODO: method on AppProps */)%>>30 days</option>
+        <option value=<%=90*SECONDS_PER_DAY%> <%=selectedEq(90*SECONDS_PER_DAY, 0 /* TODO: method on AppProps */)%>>90 days</option>
+        <option value=<%=365*SECONDS_PER_DAY%> <%=selectedEq(365*SECONDS_PER_DAY, 0 /* TODO: method on AppProps */)%>>365 days</option>
+    </select></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Allow session API keys</td>
+    <td><labkey:checkbox id="allowSessionKeys" name="allowSessionKeys" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
 
 <tr>
