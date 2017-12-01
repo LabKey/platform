@@ -992,14 +992,22 @@ public class FileContentServiceImpl implements FileContentService
     {
         String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl);
         Set<Map<String, Object>> children = getNodes(false, null, null, container);
+        String filesRoot = null; // the path for @files
         for (Map<String, Object> child : children)
         {
             String rootName = (String) child.get("name");
-            // skip default @pipeline, which is the same as @files
-            if (PIPELINE_LINK.equals(rootName) && (boolean) child.get("default"))
-                continue;
-
             String rootPath = (String) child.get("path");
+
+            // skip default @pipeline, which is the same as @files
+            if (PIPELINE_LINK.equals(rootName))
+            {
+                 if((boolean) child.get("default") || rootPath.equals(filesRoot))
+                     continue;
+            }
+
+            if (FILES_LINK.equals(rootName))
+                filesRoot = rootPath;
+
             if (absoluteFilePath.startsWith(rootPath))
             {
                 String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
@@ -1030,12 +1038,21 @@ public class FileContentServiceImpl implements FileContentService
         List<String> existingDataFileUrls = getDataFileUrls(container);
         Collection<AttachmentDirectory> filesets = getRegisteredDirectories(container);
         Set<Map<String, Object>> children = getNodes(false, null, null, container);
+        String filesRoot = null; // the path for @files
         for (Map<String, Object> child : children)
         {
             String rootName = (String) child.get("name");
+            String rootPathVal = (String) child.get("path");
+
             // skip default @pipeline, which is the same as @files
-            if (PIPELINE_LINK.equals(rootName) && (boolean) child.get("default"))
-                continue;
+            if (PIPELINE_LINK.equals(rootName))
+            {
+                if((boolean) child.get("default") || rootPathVal.equals(filesRoot))
+                    continue;
+            }
+
+            if (FILES_LINK.equals(rootName))
+                filesRoot = rootPathVal;
 
             String rootDavUrl = (String) child.get("webdavURL");
             WebdavResource resource = getResource(rootDavUrl);

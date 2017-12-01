@@ -58,6 +58,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 
@@ -226,7 +227,10 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             _columns.add(new FieldKey(null, ExpDataTable.Column.LSID.name()));
             _columns.add(new FieldKey(null, ExpDataTable.Column.Flag.name()));
             _columns.add(COL_COMMENT);
-            _columns.add(new FieldKey(null, ExpDataTable.Column.DataFileUrl.name()));
+            FieldKey dataFileUrl = new FieldKey(null, ExpDataTable.Column.DataFileUrl.name());
+            // dataFileUrl field is permission controlled
+            if (getQueryTable().getColumn(dataFileUrl) != null)
+                _columns.add(new FieldKey(null, ExpDataTable.Column.DataFileUrl.name()));
 
             Domain domain = getFileProperties(c);
             if (domain != null)
@@ -296,7 +300,17 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                         _log.error("More than one row returned for data file: " + filter);
 
                     if (rowMap != null)
-                        dataFileUrl = String.valueOf(rowMap.get(ExpDataTable.Column.DataFileUrl.name()));
+                    {
+                        dataFileUrl = String.valueOf(rowMap.get(ExpDataTable.Column.DataFileUrl.name())); // dataFileUrl may not be accessible due to permission
+                        if ((dataFileUrl == null || "null".equals(dataFileUrl)) && rowMap.containsKey(ExpDataTable.Column.RowId.name()))
+                        {
+                            int rowId = (int) rowMap.get(ExpDataTable.Column.RowId.name());
+                            ExpData data = ExperimentService.get().getExpData(rowId);
+                            if (data != null)
+                                dataFileUrl = data.getDataFileUrl();
+                        }
+                    }
+
                 }
             }
             catch (Exception e)
@@ -419,6 +433,10 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 }, sb.toString());
             }
             return row;
+        }
+        else if (!(StringUtils.isEmpty(dataFileUrl) || "null".equals(dataFileUrl)))
+        {
+            throw new ValidationException("File not found under container's managed file roots.");
         }
         return null;
     }
