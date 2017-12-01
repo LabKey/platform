@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -32,10 +33,12 @@ public enum Crypt
     /** For compatibility with historic data only, do not use for newly stored passwords */
     SaltMD5(new _saltmd5(), "salt"),
     /** The preferred and more secure option for storing hashed passwords */
-    BCrypt(new _bcrypt(), "bc");
+    BCrypt(new _bcrypt(), "bc"),
+    /** A fast but strong hash for use when dictionary attacks are not a concern (don't use to hash passwords, but good for hashing random strings or file contents) */
+    SHA256(new _sha256(), "sha256");
 
-    final _Crypt _crypt;
-    final String _prefix;
+    private final _Crypt _crypt;
+    private final String _prefix;
 
     Crypt(_Crypt crypt, String prefix)
     {
@@ -47,18 +50,22 @@ public enum Crypt
     {
         return _crypt.matches(credentials, digest);
     }
+
     public String digest(String credentials)
     {
         return _crypt.digest(credentials);
     }
+
     public String digestWithPrefix(String credentials)
     {
         return _prefix + _crypt.digest(credentials);
     }
+
     public boolean acceptPrefix(String prefix)
     {
         return prefix.startsWith(_prefix);
     }
+
     public boolean matchesWithPrefix(String credentials, String digest)
     {
         return _crypt.matches(credentials, digest.substring(_prefix.length()));
@@ -68,12 +75,13 @@ public enum Crypt
 
     private interface _Crypt
     {
-        public abstract boolean matches(String credentials, String digest);
-        public abstract String digest(String credentials);
+        boolean matches(String credentials, String digest);
+        String digest(String credentials);
     }
 
 
-    private static final MessageDigest md;
+    private static final MessageDigest md5;
+
     static
     {
         MessageDigest instance;
@@ -87,35 +95,74 @@ public enum Crypt
             instance = null;
         }
 
-        md = instance;
+        md5 = instance;
     }
 
 
-
-    public static class _md5 implements _Crypt
+    private static class _md5 implements _Crypt
     {
         public boolean matches(String credentials, String digest)
         {
             return digest.equals(digest(credentials));
         }
 
+        public String digest(String credentials)
+        {
+            if (null == credentials)
+                credentials = "";
+
+            synchronized (md5)
+            {
+                md5.reset();
+                md5.update(credentials.getBytes());
+                return encodeHex(md5.digest());
+            }
+        }
+    }
+
+
+    private static final MessageDigest sha256;
+
+    static
+    {
+        MessageDigest instance;
+
+        try
+        {
+            instance = MessageDigest.getInstance("SHA-256");
+        }
+        catch (NoSuchAlgorithmException x)
+        {
+            instance = null;
+        }
+
+        sha256 = instance;
+    }
+
+
+    private static class _sha256 implements _Crypt
+    {
+        public boolean matches(String credentials, String digest)
+        {
+            return digest.equals(digest(credentials));
+        }
 
         public String digest(String credentials)
         {
             if (null == credentials)
                 credentials = "";
 
-            synchronized (md)
+            synchronized (sha256)
             {
-                md.reset();
-                md.update(credentials.getBytes());
-                return (encodeHex(md.digest()));
+                sha256.reset();
+                sha256.update(credentials.getBytes(StandardCharsets.UTF_8));
+                return encodeHex(sha256.digest());
             }
         }
     }
 
 
-    public static class _saltmd5 implements _Crypt
+    private static class _saltmd5 implements _Crypt
     {
         public boolean matches(String credentials, String digest)
         {
@@ -133,17 +180,18 @@ public enum Crypt
             credentials = StringUtils.trimToEmpty(credentials);
             salt = makeSalt(salt);
 
-            synchronized (md)
+            synchronized (md5)
             {
-                md.reset();
-                md.update(salt.getBytes());
-                md.update(credentials.getBytes());
-                return salt + encodeBase64(md.digest());
+                md5.reset();
+                md5.update(salt.getBytes(StandardCharsets.UTF_8));
+                md5.update(credentials.getBytes());
+                return salt + encodeBase64(md5.digest());
             }
         }
     }
 
-    public static class _bcrypt implements _Crypt
+
+    private static class _bcrypt implements _Crypt
     {
         @Override
         public boolean matches(String credentials, String digest)
@@ -154,9 +202,9 @@ public enum Crypt
         @Override
         public String digest(String credentials)
         {
-            long n = System.nanoTime();
+//            long n = System.nanoTime();
             String ret = org.labkey.api.security.BCrypt.hashpw(credentials, org.labkey.api.security.BCrypt.gensalt(11));
-            double d = (System.nanoTime() - n)/1000000000.0;
+//            double d = (System.nanoTime() - n)/1000000000.0;
             return ret;
         }
     }
@@ -251,7 +299,7 @@ public enum Crypt
 
     public static String encodeBase64(byte[] bytes)
     {
-        return new String(Base64.encodeBase64(bytes));    
+        return new String(Base64.encodeBase64(bytes), StandardCharsets.UTF_8);
     }
     
 
