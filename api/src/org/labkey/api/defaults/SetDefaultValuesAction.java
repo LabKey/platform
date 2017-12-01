@@ -122,8 +122,6 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             {
                 if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
                     continue;
-                if (!PageFlowUtil.useExperimentalCoreUI())
-                    renderInputError(ctx, out, 1, renderer);
                 boolean isFile = ((DefaultableDisplayColumn) renderer).getJavaType() == File.class;
                 out.write("<tr>");
 

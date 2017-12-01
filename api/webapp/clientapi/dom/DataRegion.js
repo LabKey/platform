@@ -19,7 +19,6 @@ if (!LABKEY.DataRegions) {
     var REPORTID_PREFIX = '.reportId';
     var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
     var OFFSET_PREFIX = '.offset';
-    var NEW_UI = LABKEY.experimental.useExperimentalCoreUI === true;
     var MAX_ROWS_PREFIX = '.maxRows', SHOW_ROWS_PREFIX = '.showRows';
     var CONTAINER_FILTER_NAME = '.containerFilterName';
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
@@ -771,23 +770,21 @@ if (!LABKEY.DataRegions) {
         });
         _getRowSelectors(this).on('click', function() { me.selectRow.call(me, this); });
 
-        if (NEW_UI) {
-            // experimental click row highlight
-            var rows = form.find('.labkey-data-region > tbody > tr');
-            rows.on('click', function(e) {
-                if (e.target && e.target.tagName.toLowerCase() === 'td') {
-                    $(this).siblings('tr').removeClass('lk-row-hl');
-                    $(this).addClass('lk-row-hl');
-                }
-            });
-            rows.on('mouseenter', function(e) {
-                $(this).siblings('tr').removeClass('lk-row-over');
-                $(this).addClass('lk-row-over');
-            });
-            rows.on('mouseleave', function(e) {
-                $(this).removeClass('lk-row-over');
-            });
-        }
+        // click row highlight
+        var rows = form.find('.labkey-data-region > tbody > tr');
+        rows.on('click', function(e) {
+            if (e.target && e.target.tagName.toLowerCase() === 'td') {
+                $(this).siblings('tr').removeClass('lk-row-hl');
+                $(this).addClass('lk-row-hl');
+            }
+        });
+        rows.on('mouseenter', function() {
+            $(this).siblings('tr').removeClass('lk-row-over');
+            $(this).addClass('lk-row-over');
+        });
+        rows.on('mouseleave', function() {
+            $(this).removeClass('lk-row-over');
+        });
     };
 
     /**
@@ -1295,10 +1292,8 @@ if (!LABKEY.DataRegions) {
     };
 
     LABKEY.DataRegion.prototype.hideContext = function() {
-        if (NEW_UI) {
-            _getContextBarSelector(this).hide();
-            _getViewBarSelector(this).hide();
-        }
+        _getContextBarSelector(this).hide();
+        _getViewBarSelector(this).hide();
     };
 
     /**
@@ -1311,21 +1306,6 @@ if (!LABKEY.DataRegions) {
 
             if (!keepContent)
                 this.removeAllMessages();
-        }
-    };
-
-    /**
-     * @ignore
-     * @private
-     * Toggle expand/collapse state for the message area content.
-     */
-    LABKEY.DataRegion.prototype.toggleMessageArea = function() {
-        if (this.msgbox && this.msgbox.isVisible()) {
-
-            if (this.msgbox.getToggleEl().hasClass('fa-minus'))
-                this.msgbox.collapse();
-            else
-                this.msgbox.expand();
         }
     };
 
@@ -1383,17 +1363,15 @@ if (!LABKEY.DataRegions) {
     };
 
     LABKEY.DataRegion.prototype.showContext = function() {
-        if (NEW_UI) {
-            _initContexts();
+        _initContexts();
 
-            var ctx = _getContextBarSelector(this);
-            if (ctx.html().trim() !== '') {
-                ctx.show();
-            }
-            var view = _getViewBarSelector(this);
-            if (view.html().trim() !== '') {
-                view.show();
-            }
+        var ctx = _getContextBarSelector(this);
+        if (ctx.html().trim() !== '') {
+            ctx.show();
+        }
+        var view = _getViewBarSelector(this);
+        if (view.html().trim() !== '') {
+            view.show();
         }
     };
 
@@ -1522,7 +1500,7 @@ if (!LABKEY.DataRegions) {
     //
 
     var _initPaging = function() {
-        if (NEW_UI && this.showPagination) {
+        if (this.showPagination) {
             var ct = _getBarSelector(this).find('.labkey-pagination');
 
             if (ct && ct.length) {
@@ -1819,53 +1797,27 @@ if (!LABKEY.DataRegions) {
     // Customize View
     //
     var _initCustomViews = function() {
-        if (NEW_UI) {
-            if (this.view && this.view.session) {
-                // clear old contents
-                _getViewBarSelector(this).find('.labkey-button-bar').remove();
+        if (this.view && this.view.session) {
+            // clear old contents
+            _getViewBarSelector(this).find('.labkey-button-bar').remove();
 
-                _getViewBarSelector(this).append([
-                    '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
+            _getViewBarSelector(this).append([
+                '<div class="labkey-button-bar" style="margin-top:10px;float:left;">',
                     '<span style="padding:0 10px;">This grid view has been modified.</span>',
                     '<span class="labkey-button unsavedview-revert">Revert</span>',
                     '<span class="labkey-button unsavedview-edit">Edit</span>',
                     '<span class="labkey-button unsavedview-save">Save</span>',
-                    '</div>'
-                ].join(''));
-                _getViewBarSelector(this).find('.unsavedview-revert').off('click').on('click', $.proxy(function() {
-                    _revertCustomView(this);
-                }, this));
-                _getViewBarSelector(this).find('.unsavedview-edit').off('click').on('click', $.proxy(function() {
-                    this.showCustomizeView(undefined);
-                }, this));
-                _getViewBarSelector(this).find('.unsavedview-save').off('click').on('click', $.proxy(function() {
-                    _saveSessionCustomView(this);
-                }, this));
-            }
-        }
-        else {
-            if (this.view && this.view.session && this.getMessage('customizeview') == undefined) {
-                var msg;
-                if (this.view.savable) {
-                    msg = (this.viewName ? "The current grid view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> grid view") + " is unsaved.";
-                    msg += " &nbsp;";
-                    msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
-                    msg += "&nbsp;";
-                    msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
-                    msg += "&nbsp;";
-                    msg += "<span class='labkey-button unsavedview-save'>Save</span>";
-                }
-                else {
-                    msg = ("The current grid view has been customized.");
-                    msg += "&nbsp;";
-                    msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
-                    msg += "&nbsp;";
-                    msg += "<span class='labkey-button unsavedview-edit'>Edit</span>";
-                }
-
-                // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
-                this.addMessage(msg, 'customizeview');
-            }
+                '</div>'
+            ].join(''));
+            _getViewBarSelector(this).find('.unsavedview-revert').off('click').on('click', $.proxy(function() {
+                _revertCustomView(this);
+            }, this));
+            _getViewBarSelector(this).find('.unsavedview-edit').off('click').on('click', $.proxy(function() {
+                this.showCustomizeView(undefined);
+            }, this));
+            _getViewBarSelector(this).find('.unsavedview-save').off('click').on('click', $.proxy(function() {
+                _saveSessionCustomView(this);
+            }, this));
         }
     };
 
@@ -2195,12 +2147,7 @@ if (!LABKEY.DataRegions) {
      */
     var _initHeaderLocking = function() {
         if (this._allowHeaderLock === true) {
-            if (NEW_UI) {
-                this.hLock = new NewHeaderLock(this);
-            }
-            else {
-                this.hLock = new HeaderLock(this);
-            }
+            this.hLock = new HeaderLock(this);
         }
     };
 
@@ -2929,11 +2876,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getDrawerSelector = function(region) {
-        if (NEW_UI) {
-            return $('#' + region.domId + '-drawer');
-        }
-
-        return _getHeaderSelector(region).find('.labkey-ribbon');
+        return $('#' + region.domId + '-drawer');
     };
 
     var _getFormSelector = function(region) {
@@ -3067,7 +3010,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _buttonSelectionBind = function(region, cls, fn) {
-        var partEl = NEW_UI ? region.msgbox.getParent().find('div[data-msgpart="selection"]') : region.msgbox;
+        var partEl = region.msgbox.getParent().find('div[data-msgpart="selection"]');
         partEl.find('.labkey-button' + cls).off('click').on('click', $.proxy(function() {
             fn.call(this);
         }, region));
@@ -3692,20 +3635,14 @@ if (!LABKEY.DataRegions) {
 
             if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
                 el.removeClass('labkey-disabled-button');
-                if (!NEW_UI) {
-                    el.addClass('labkey-button');
-                }
             }
             else {
                 el.addClass('labkey-disabled-button');
-                if (!NEW_UI) {
-                    el.removeClass('labkey-button');
-                }
             }
         });
     };
 
-    var NewHeaderLock = function(region) {
+    var HeaderLock = function(region) {
 
         // init
         if (!region.headerLock()) {
@@ -3851,269 +3788,6 @@ if (!LABKEY.DataRegions) {
         return {
             disable: disable
         }
-    };
-
-    var HeaderLock = function(region) {
-
-        var me = this,
-            timeout;
-
-        var calculateHeaderPosition = function() {
-            var el, s, src, i = 0;
-
-            for (; i < me.rowContent.length; i++) {
-                src = $(me.firstRow[i]);
-                el = $(me.rowContent[i]);
-
-                s = {
-                    width: src.width(),
-                    height: el.height()
-                }; // note: width coming from data row, not header
-
-                el.width(s.width); // 15420
-
-                $(me.rowSpacerContent[i]).height(s.height).width(s.width);
-            }
-
-            me.hdrCoord = findPos();
-
-            onScroll();
-        };
-
-        var disable = function() {
-            me.region._allowHeaderLock = false;
-
-            if (timeout) {
-                clearTimeout(timeout);
-            }
-
-            $(window).unbind('load', onResize);
-            $(window).unbind('resize', onResize);
-            $(window).unbind('scroll', onScroll);
-            $(document).unbind('DOMNodeInserted', onResize);
-        };
-
-        var ensurePaginationVisible = function() {
-            if (me.paginationEl) {
-                // in case header locking is not on
-                if (!me.region.headerLock() || !me.hdrCoord || me.hdrCoord.length == 0) {
-                    me.hdrCoord = findPos();
-                }
-
-                var measure = $('body').width() - me.hdrCoord[0];
-                if (measure < me.headerRow.width()) {
-                    me.paginationEl.width(measure);
-                }
-            }
-        };
-
-        /**
-         * Returns an array of containing the following values:
-         * [0] - X-coordinate of the top of the object relative to the offset parent.
-         * [1] - Y-coordinate of the top of the object relative to the offset parent.
-         * [2] - Y-coordinate of the bottom of the object.
-         * [3] - The height of the header for this Data Region. This includes the button bar if it is present.
-         * This method assumes interaction with the Header of the Data Region.
-         */
-        var findPos = function() {
-            var o,
-                pos,
-                curbottom,
-                hdrOffset = 0;
-
-            if (me.includeHeader) {
-                o = (me.hdrLocked ? me.headerSpacer : me.headerRow);
-                hdrOffset = me.headerSpacer.height();
-            }
-            else {
-                o = (me.hdrLocked ? me.colHeaderRowSpacer : me.colHeaderRow);
-            }
-
-            pos = o.offset();
-            curbottom = pos.top + me.table.height() - (o.height() * 2);
-
-            return [ pos.left, pos.top, curbottom, hdrOffset ];
-        };
-
-        var onResize = function() {
-            if (!me.table) {
-                return;
-            }
-
-            if (me.region.headerLock()) {
-                if (timeout) {
-                    clearTimeout(timeout);
-                }
-                timeout = setTimeout(resizeTask, 110);
-            }
-            else {
-                ensurePaginationVisible();
-            }
-        };
-
-        /**
-         * WARNING: This function is called often. Performance implications for each line.
-         */
-        var onScroll = function() {
-            if (window.pageYOffset >= me.hdrCoord[1] && window.pageYOffset < me.hdrCoord[2]) {
-                // The header has reached the top of the window and needs to be locked
-                var tWidth = me.table.width();
-                var left = me.hdrCoord[0] - window.pageXOffset;
-
-                var hrStyle = {
-                    left: left,
-                    'min-width': tWidth
-                };
-
-                var chrStyle = {
-                    left: left,
-                    top: me.hdrCoord[3],
-                    'min-width': tWidth
-                };
-
-                // following properties only need to be set when enabling locking
-                if (!me.hdrLocked) {
-                    hrStyle.top = 0;
-                    hrStyle.position = 'fixed';
-                    hrStyle['z-index'] = 9000; // 13229
-
-                    chrStyle.background = 'white';
-                    chrStyle['box-shadow'] = '-2px 5px 5px #DCDCDC';
-                    chrStyle.position = 'fixed';
-                    chrStyle['z-index'] = 9000; // 13229
-
-                    if (me.includeHeader) {
-                        me.headerSpacer.show();
-                    }
-                    me.colHeaderRowSpacer.show();
-                    me.hdrLocked = true;
-                }
-
-                if (me.includeHeader) {
-                    me.headerRow.css(hrStyle);
-                }
-                me.colHeaderRow.css(chrStyle);
-                me.headerRowContent.css('min-width', tWidth - 3);
-            }
-            else if (me.hdrLocked && window.pageYOffset >= me.hdrCoord[2]) {
-                // The bottom of the Data Region is near the top of the window and the locked header
-                // needs to start 'sliding' out of view.
-                var top = me.hdrCoord[2] - window.pageYOffset;
-                if (me.includeHeader) {
-                    me.headerRow.css({ top: top });
-                }
-                me.colHeaderRow.css({ top: (top + me.hdrCoord[3]) });
-            }
-            else if (me.hdrLocked && window.pageYOffset < me.hdrCoord[1]) {
-                // only reset if the header is locked
-                reset();
-            }
-        };
-
-        /**
-         * Adjusts the header styling to the best approximate of what the defaults are when the header is not locked
-         */
-        var reset = function() {
-            me.hdrLocked = false;
-            if (me.includeHeader) {
-                me.headerRow.removeAttr('style');
-                me.headerSpacer.hide();
-                me.headerSpacer.height(me.headerRow.height());
-            }
-            me.headerRowContent.css('min-width', '');
-            me.colHeaderRow.removeAttr('style');
-            me.colHeaderRowSpacer.hide();
-            calculateHeaderPosition();
-        };
-
-        var resizeTask = function() {
-            reset();
-            ensurePaginationVisible();
-        };
-
-        // init
-        if (!region.headerLock()) {
-            region._allowHeaderLock = false;
-            return;
-        }
-
-        this.region = region;
-
-        // initialize constants
-        this.headerRow = $('#' + region.domId + '-header-row');
-        if (!this.headerRow) {
-            region._allowHeaderLock = false;
-            return;
-        }
-
-        this.table = $('#' + region.domId);
-        this.headerRowContent = this.headerRow.children('td');
-        this.headerSpacer = $('#' + region.domId + '-header-row-spacer');
-        this.colHeaderRow = $('#' + region.domId + '-column-header-row');
-        this.colHeaderRowSpacer = $('#' + region.domId + '-column-header-row-spacer');
-        this.paginationEl = $('#' + region.domId + '-header');
-
-        // check if the header row is being used
-        this.includeHeader = this.headerRow.is(':visible');
-
-        // initialize row contents
-        // Check if we have colHeaderRow and colHeaderRowSpacer - they won't be present if there was an SQLException
-        // during query execution, so we didn't get column metadata back
-        if (this.colHeaderRow) {
-            this.rowContent = this.colHeaderRow.find('td.labkey-column-header');
-        }
-        if (this.colHeaderRowSpacer) {
-            this.rowSpacerContent = this.colHeaderRowSpacer.find('td.labkey-column-header');
-        }
-        this.firstRow = this.table.find('tr.labkey-alternate-row').first().children('td');
-
-        // performance degradation
-        var tooManyColumns = this.rowContent.length > 100;
-        var tooManyRows = (region.rowCount && region.rowCount > 1000);
-
-        if (tooManyColumns || tooManyRows) {
-            region._allowHeaderLock = false;
-            return;
-        }
-
-        // If no data rows exist just turn off header locking
-        if (this.firstRow.length == 0) {
-            this.firstRow = this.table.find('tr.labkey-row').first().children('td');
-            if (this.firstRow.length == 0) {
-                region._allowHeaderLock = false;
-                return;
-            }
-        }
-
-        // initialize additional listeners
-        $(window).one('load', onResize);
-        $(window).on('resize', onResize);
-        $(document).bind('DOMNodeInserted', onResize); // Issue #13121
-        $(window).scroll(onScroll);
-
-        ensurePaginationVisible();
-
-        // initialize panel listeners
-        // 13669: customize view jumping when using drag/drop to reorder columns/filters/sorts
-        // must manage DOMNodeInserted Listeners due to panels possibly dynamically adding elements to page
-        region.on('afterpanelshow', function() {
-            $(document).unbind('DOMNodeInserted', onResize); // suspend listener
-            onResize();
-        }, this);
-
-        region.on('afterpanelhide', function() {
-            $(document).bind('DOMNodeInserted', onResize); // resume listener
-            onResize();
-        }, this);
-
-        this.hdrCoord = [];
-
-        reset();
-
-        // public methods
-        return {
-            disable: disable
-        };
     };
 
     //
@@ -4336,7 +4010,6 @@ if (!LABKEY.DataRegions) {
     var MsgProto = MessageArea.prototype;
 
     MsgProto.bindRegion = function(region) {
-        this.parentDataRegion = region;
         this.parentSel = '#' + region.domId + '-msgbox';
     };
 
@@ -4353,13 +4026,10 @@ if (!LABKEY.DataRegions) {
             this.parts[p] += msg;
             this.render(p, msg);
         }
-        else
-        {
+        else {
             this.parts[p] = msg;
             this.render(p);
         }
-
-        this.expand();
     };
 
     MsgProto.getMessage = function(part) {
@@ -4397,130 +4067,49 @@ if (!LABKEY.DataRegions) {
     };
 
     MsgProto.getParent = function() {
-        var parent = $(this.parentSel);
-
-        // ensure container div is present
-        if (!NEW_UI && parent.find('div.dataregion_msgbox_ct').length === 0) {
-            parent.find('td.labkey-dataregion-msgbox').append('<div class="dataregion_msgbox_ct"></div>');
-        }
-
-        return parent;
+        return $(this.parentSel);
     };
 
     MsgProto.render = function(partToUpdate, appendMsg) {
         var hasMsg = false,
-            me = this;
+            me = this,
+            parent = this.getParent();
 
-        if (NEW_UI) {
-            var parent = this.getParent();
+        $.each(this.parts, function(part, msg) {
 
-            $.each(this.parts, function(part, msg) {
-
-                if (msg) {
-                    // If this is modified, update the server-side renderer in DataRegion.java renderMessages()
-                    var partEl = parent.find('div[data-msgpart="' + part + '"]');
-                    if (partEl.length === 0) {
-                        parent.append([
-                            '<div class="lk-region-bar" data-msgpart="' + part + '">',
-                            msg,
-                            '</div>'
-                        ].join(''));
-                    }
-                    else if (partToUpdate !== undefined && partToUpdate === part) {
-                        if (appendMsg !== undefined)
-                            partEl.append(appendMsg);
-                        else
-                            partEl.html(msg)
-                    }
-
-                    hasMsg = true;
+            if (msg) {
+                // If this is modified, update the server-side renderer in DataRegion.java renderMessages()
+                var partEl = parent.find('div[data-msgpart="' + part + '"]');
+                if (partEl.length === 0) {
+                    parent.append([
+                        '<div class="lk-region-bar" data-msgpart="' + part + '">',
+                        msg,
+                        '</div>'
+                    ].join(''));
                 }
-                else {
-                    parent.find('div[data-msgpart="' + part + '"]').remove();
-                    delete me.parts[part];
+                else if (partToUpdate !== undefined && partToUpdate === part) {
+                    if (appendMsg !== undefined)
+                        partEl.append(appendMsg);
+                    else
+                        partEl.html(msg)
                 }
-            });
 
-            if (hasMsg) {
-                this.show();
-                $(this).trigger('rendermsg', [this, this.parts]);
+                hasMsg = true;
             }
             else {
-                this.hide();
-                parent.html('');
+                parent.find('div[data-msgpart="' + part + '"]').remove();
+                delete me.parts[part];
             }
+        });
+
+        if (hasMsg) {
+            this.show();
+            $(this).trigger('rendermsg', [this, this.parts]);
         }
         else {
-            var parentCt = this.getParent().find('.dataregion_msgbox_ct'),
-                msgCls = '',
-                partCls, partEl;
-
-            $.each(this.parts, function(part, msg) {
-                partCls = 'labkey-dataregion-msg-part-' + part;
-
-                if (msg) {
-
-                    partEl = parentCt.find('.' + partCls);
-                    if (partEl.length === 0) {
-                        msgCls = 'labkey-dataregion-msg ' + partCls + (hasMsg ? ' labkey-dataregion-msg-sep' : '');
-                        parentCt.append('<div class="' + msgCls + '">' + msg + '</div>');
-                    }
-                    else if (partToUpdate !== undefined && partToUpdate === part) {
-
-                        if (appendMsg !== undefined)
-                            partEl.append(appendMsg);
-                        else
-                            partEl.html(msg)
-                    }
-
-                    hasMsg = true;
-                }
-                else {
-                    parentCt.find('.' + partCls).remove();
-                    delete me.parts[part];
-                }
-            });
-
-            if (hasMsg) {
-                this.show();
-                $(this).trigger('rendermsg', [this, this.parts]);
-            }
-            else {
-                this.hide();
-                parentCt.html('');
-            }
+            this.hide();
+            parent.html('');
         }
-    };
-
-    MsgProto.expand = function() {
-        if (!NEW_UI && this.isVisible()) {
-            this.getParent().find('.labkey-dataregion-msg').show();
-
-            var toggle = this.getToggleEl();
-            toggle.removeClass('fa-plus');
-            toggle.addClass('fa-minus');
-            toggle.prop('title', 'Collapse message');
-
-            _getHeaderSelector(this.parentDataRegion).trigger('resize');
-        }
-    };
-
-    MsgProto.collapse = function() {
-        if (!NEW_UI && this.isVisible()) {
-            this.getParent().find('.labkey-dataregion-msg').hide();
-
-            var toggle = this.getToggleEl();
-            toggle.removeClass('fa-minus');
-            toggle.addClass('fa-plus');
-            toggle.prop('title', 'Expand message');
-
-            _getHeaderSelector(this.parentDataRegion).trigger('resize');
-        }
-    };
-
-    MsgProto.getToggleEl = function() {
-        // TODO: Can be removed once NEW_UI is permanent
-        return this.getParent().find('.labkey-dataregion-msg-toggle');
     };
 
     MsgProto.show = function() { this.getParent().show(); };
@@ -4776,151 +4365,6 @@ if (!LABKEY.DataRegions) {
         config._useQWPDefaults = true;
         return LABKEY.DataRegion.create(config);
     };
-
-    if (!$.fn.tab) {
-        // TAB CLASS DEFINITION
-        // ====================
-        var Tab = function (element) {
-            this.element = $(element);
-        };
-
-        Tab.VERSION = '3.3.6';
-
-        Tab.TRANSITION_DURATION = 150;
-
-        Tab.prototype.show = function () {
-            var $this    = this.element;
-            var $ul      = $this.closest('ul:not(.dropdown-menu)');
-            var selector = $this.data('target');
-
-            if (!selector) {
-                selector = $this.attr('href');
-                selector = selector && selector.replace(/.*(?=#[^\s]*$)/, ''); // strip for ie7
-            }
-
-            if ($this.parent('li').hasClass('active')) {
-                return;
-            }
-
-            var $previous = $ul.find('.active:last a');
-            var hideEvent = $.Event('hide.bs.tab', {
-                relatedTarget: $this[0]
-            });
-            var showEvent = $.Event('show.bs.tab', {
-                relatedTarget: $previous[0]
-            });
-
-            $previous.trigger(hideEvent);
-            $this.trigger(showEvent);
-
-            if (showEvent.isDefaultPrevented() || hideEvent.isDefaultPrevented()) {
-                return;
-            }
-
-            var $target = $(selector);
-
-            this.activate($this.closest('li'), $ul);
-            this.activate($target, $target.parent(), function () {
-                $previous.trigger({
-                    type: 'hidden.bs.tab',
-                    relatedTarget: $this[0]
-                });
-                $this.trigger({
-                    type: 'shown.bs.tab',
-                    relatedTarget: $previous[0]
-                })
-            })
-        };
-
-        Tab.prototype.activate = function (element, container, callback) {
-            var $active = container.find('> .active');
-            var transition = callback
-                    && $.support.transition
-                    && ($active.length && $active.hasClass('fade') || !!container.find('> .fade').length);
-
-            function next() {
-                $active
-                        .removeClass('active')
-                        .find('> .dropdown-menu > .active')
-                        .removeClass('active')
-                        .end()
-                        .find('[data-toggle="tab"]')
-                        .attr('aria-expanded', false);
-
-                element
-                        .addClass('active')
-                        .find('[data-toggle="tab"]')
-                        .attr('aria-expanded', true);
-
-                if (transition) {
-                    element[0].offsetWidth; // reflow for transition
-                    element.addClass('in');
-                }
-                else {
-                    element.removeClass('fade');
-                }
-
-                if (element.parent('.dropdown-menu').length) {
-                    element
-                            .closest('li.dropdown')
-                            .addClass('active')
-                            .end()
-                            .find('[data-toggle="tab"]')
-                            .attr('aria-expanded', true)
-                }
-
-                callback && callback();
-            }
-
-            $active.length && transition ?
-                    $active.one('bsTransitionEnd', next).emulateTransitionEnd(Tab.TRANSITION_DURATION) :
-                    next();
-
-            $active.removeClass('in');
-        };
-
-
-        // TAB PLUGIN DEFINITION
-        // =====================
-
-        function Plugin(option) {
-            return this.each(function () {
-                var $this = $(this);
-                var data  = $this.data('bs.tab');
-
-                if (!data) $this.data('bs.tab', (data = new Tab(this)));
-                if (typeof option == 'string') data[option]()
-            })
-        }
-
-        var old = $.fn.tab;
-
-        $.fn.tab = Plugin;
-        $.fn.tab.Constructor = Tab;
-
-
-        // TAB NO CONFLICT
-        // ===============
-
-        $.fn.tab.noConflict = function () {
-            $.fn.tab = old;
-            return this;
-        };
-
-
-        // TAB DATA-API
-        // ============
-
-        var clickHandler = function (e) {
-            e.preventDefault();
-            Plugin.call($(this), 'show');
-        };
-
-        $(document)
-                .on('click.bs.tab.data-api', '[data-toggle="tab"]', clickHandler)
-                .on('click.bs.tab.data-api', '[data-toggle="pill"]', clickHandler)
-    }
-
 })(jQuery);
 
 /**

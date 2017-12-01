@@ -49,29 +49,23 @@ public class CrosstabDataRegion extends DataRegion
         _numMemberMeasures = numMemberMeasures;
         _numRowAxisCols = numRowAxisCols;
         _allowHeaderLock = false;
-//        _log.info("Measures       : " + _numMeasures);
-//        _log.info("Member Measures: " + _numMemberMeasures);
-//        _log.info("Row Axis Cols  : " + _numRowAxisCols);
     }
 
     @Override
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         if (_numMemberMeasures > 0)
         {
             //add a row for the column axis label if there is one
-            out.write(newUI ? "<thead><tr>\n" : "<tr>\n");
-            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
-            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), out);
-            out.write(newUI ? "</tr></thead>\n" : "</tr>\n");
+            out.write("<thead><tr>");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, false);
+            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), out, false);
+            out.write("</tr></thead>");
 
             //add an extra row for the column dimension members
-            out.write(newUI ? "<thead><tr>\n" : "<tr>\n");
-            if (newUI)
-                renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 1, false);
+            out.write("<thead><tr>");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, false);
 
             List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
@@ -91,7 +85,7 @@ public class CrosstabDataRegion extends DataRegion
                 {
                     if (_numMeasures != _numMemberMeasures || colDim.getMemberUrl(currentMember) != null)
                     {
-                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), out, alternate);
                     }
                 }
 
@@ -110,7 +104,7 @@ public class CrosstabDataRegion extends DataRegion
             }
 
             //end the col dimension member header row
-            out.write(newUI ? "</tr></thead>\n" : "</tr>\n");
+            out.write("</tr></thead>");
         }
 
         //call the base class to finish rendering the headers
@@ -142,44 +136,21 @@ public class CrosstabDataRegion extends DataRegion
         return PageFlowUtil.filter(caption);
     }
 
-    protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out) throws IOException
-    {
-        renderColumnGroupHeader(groupWidth, caption, out, 1, false);
-    }
-
-    protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out, int groupHeight, boolean alternate) throws IOException
+    protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out, boolean alternate) throws IOException
     {
         if (groupWidth <= 0)
             return;
 
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.write("<th colspan=\"");
-            out.write(String.valueOf(groupWidth));
-            out.write("\" class=\"labkey-data-region");
-            if (alternate)
-                out.write(" labkey-alternate-col");
-            if (isShowBorders())
-                out.write(" labkey-show-borders");
-            out.write(" labkey-group-column-header");
-            out.write("\">\n");
-            out.write(caption == null ? "" : caption);
-            out.write("</th>\n");
-        }
-        else
-        {
-            out.write("<td align=\"center\" colspan=\"");
-            out.write(String.valueOf(groupWidth));
-            out.write("\" rowspan=\"");
-            out.write(String.valueOf(groupHeight));
-            out.write("\" class=\"labkey-data-region");
-            if (alternate)
-                out.write(" labkey-alternate-col");
-            if (isShowBorders())
-                out.write(" labkey-show-borders");
-            out.write("\">\n");
-            out.write(caption == null ? "" : caption);
-            out.write("</td>\n");
-        }
+        out.write("<th colspan=\"");
+        out.write(String.valueOf(groupWidth));
+        out.write("\" class=\"labkey-data-region");
+        if (alternate)
+            out.write(" labkey-alternate-col");
+        if (isShowBorders())
+            out.write(" labkey-show-borders");
+        out.write(" labkey-group-column-header");
+        out.write("\">\n");
+        out.write(caption == null ? "" : caption);
+        out.write("</th>\n");
     }
 }

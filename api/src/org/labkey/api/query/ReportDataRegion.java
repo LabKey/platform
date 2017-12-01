@@ -32,9 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: klum
@@ -76,63 +74,18 @@ public class ReportDataRegion extends DataRegion
     @Override
     public void render(RenderContext ctx, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            _request = request;
-            _response = response;
+        _request = request;
+        _response = response;
 
-            String name = _report.getDescriptor().getReportName();
-            String source = StringUtils.defaultIfEmpty(_report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName), "default");
+        String name = _report.getDescriptor().getReportName();
+        String source = StringUtils.defaultIfEmpty(_report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName), "default");
 
-            String msg = "<span class=\"labkey-strong\">Name:</span>&nbsp;" + PageFlowUtil.filter(name);
-            msg += "&nbsp;";
-            msg += "<span class=\"labkey-strong\" style=\"padding-left: 30px;\">Source:</span>&nbsp;" + PageFlowUtil.filter(source);
+        String msg = "<span class=\"labkey-strong\">Name:</span>&nbsp;" + PageFlowUtil.filter(name);
+        msg += "&nbsp;";
+        msg += "<span class=\"labkey-strong\" style=\"padding-left: 30px;\">Source:</span>&nbsp;" + PageFlowUtil.filter(source);
 
-            addMessage(new Message(msg, MessageType.INFO, "report"));
-            super.render(ctx, request, response);
-            return;
-        }
-
-        try
-        {
-            StringBuilder viewmsg = new StringBuilder();
-            StringBuilder filter = new StringBuilder();
-
-            Writer out = response.getWriter();
-            Map<String, String> messages = new LinkedHashMap<>();
-
-            addViewMessage(viewmsg, ctx);
-            addFilterMessage(filter, ctx, true);
-
-            messages.put(MessagePart.view.name(), viewmsg.toString());
-            if (filter.length() > 0)
-                messages.put(MessagePart.filter.name(), filter.toString());
-
-            // for now set the width to 100%, but we want to be smarter about calculating the viewport width less scroll
-            out.write("<table class=\"labkey-data-region\"");
-            out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
-
-            String name = getName();
-            if (name != null)
-            {
-                out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
-            }
-            out.write(">");
-
-            renderHeader(ctx, out, true);
-
-            out.write("<tr><td>");
-            _reportView.render(ctx, request, response);
-            out.write("</td></tr>");
-
-            out.write("</table>");
-
-            renderHeaderScript(ctx, out, messages, false);
-        }
-        catch (Exception e)
-        {
-            throw new IOException(e);
-        }
+        addMessage(new Message(msg, MessageType.INFO, "report"));
+        super.render(ctx, request, response);
     }
 
     @Override
@@ -161,11 +114,6 @@ public class ReportDataRegion extends DataRegion
             _buttonBar.render(ctx, out);
     }
 
-    @Override
-    protected void renderPagination(RenderContext ctx, Writer out, PaginationLocation location) throws IOException
-    {
-    }
-
     public ButtonBar getButtonBar()
     {
         return _buttonBar;
@@ -174,22 +122,6 @@ public class ReportDataRegion extends DataRegion
     public void setButtonBar(ButtonBar buttonBar)
     {
         _buttonBar = buttonBar;
-    }
-
-    // TODO: Remove once converted to new UI
-    protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
-    {
-        // the name of the report
-        headerMessage.append("<span class=\"labkey-strong\">Name:</span>&nbsp;");
-        headerMessage.append("<span style=\"padding:5px 10px 5px 0;\">");
-        headerMessage.append(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
-        headerMessage.append("</span>&nbsp;");
-
-        // the name of the view this report is built over
-        headerMessage.append("<span class=\"labkey-strong\">Source:</span>&nbsp;");
-        headerMessage.append("<span style=\"padding:5px 45px 5px 5px;\">");
-        headerMessage.append(PageFlowUtil.filter(StringUtils.defaultIfEmpty(_report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName), "default")));
-        headerMessage.append("</span>&nbsp;");
     }
 
     @Override

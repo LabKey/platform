@@ -54,7 +54,6 @@ import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationUrls;
@@ -65,7 +64,6 @@ import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -210,12 +208,6 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    public enum PaginationLocation
-    {
-        TOP,
-        BOTTOM,
-    }
-
     public enum MessagePart
     {
         view,
@@ -303,8 +295,7 @@ public class DataRegion extends DisplayElement
 
     public void addColumns(TableInfo tinfo, String colNames)
     {
-        List<ColumnInfo> cols = tinfo.getColumns(colNames);
-        addColumns(cols);
+        addColumns(tinfo.getColumns(colNames));
     }
 
     public List<String> getDisplayColumnNames()
@@ -719,36 +710,6 @@ public class DataRegion extends DisplayElement
         _table = table;
     }
 
-    // TODO: Remove after switch over to new UI -- replaced by DataRegion.prepareFilters
-    private String getFilterErrorMessage(RenderContext ctx) throws IOException
-    {
-        StringBuilder buf = new StringBuilder();
-        Set<FieldKey> ignoredColumns = ctx.getIgnoredFilterColumns();
-        if (!ignoredColumns.isEmpty())
-        {
-            if (ignoredColumns.size() == 1)
-            {
-                FieldKey field = ignoredColumns.iterator().next();
-                buf.append("Ignoring filter/sort on column '").append(field.toDisplayString()).append("' because it does not exist.");
-            }
-            else
-            {
-                String comma = "";
-                buf.append("Ignoring filter/sort on columns ");
-                for (FieldKey field : ignoredColumns)
-                {
-                    buf.append(comma);
-                    comma = ", ";
-                    buf.append("'");
-                    buf.append(field.toDisplayString());
-                    buf.append("'");
-                }
-                buf.append(" because they do not exist.");
-            }
-        }
-        return buf.toString();
-    }
-
     protected boolean isDefaultView(RenderContext ctx)
     {
         return (ctx.getView() == null || StringUtils.isEmpty(ctx.getView().getName()));
@@ -925,173 +886,19 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    /**
-     * Adds any filter error messages and optionally the filter description that is applied to the current context.
-     *
-     * @param headerMessage         The StringBuilder to append messages to
-     * @param showFilterDescription Specifies whether the filter description should be added
-     */
-    protected void addFilterMessage(StringBuilder headerMessage, RenderContext ctx, boolean showFilterDescription) throws IOException
-    {
-        String filterErrorMsg = getFilterErrorMessage(ctx);
-        String filterDescription = null;
-        if (showFilterDescription)
-        {
-            SimpleFilter urlFilter = getValidFilter(ctx);
-
-            if (urlFilter != null && urlFilter.displayFilterText())
-            {
-                filterDescription = urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
-                {
-                    @Override
-                    public String format(FieldKey fieldKey)
-                    {
-                        String formatted = super.format(fieldKey);
-                        for (String hiddenFilter : HIDDEN_FILTER_COLUMN_SUFFIXES)
-                        {
-                            if (formatted.toLowerCase().endsWith("/" + hiddenFilter.toLowerCase()) ||
-                                    formatted.toLowerCase().endsWith("." + hiddenFilter.toLowerCase()))
-                            {
-                                formatted = formatted.substring(0, formatted.length() - (hiddenFilter.length() + 1));
-                            }
-                        }
-                        int dotIndex = formatted.lastIndexOf('.');
-                        if (dotIndex >= 0)
-                            formatted = formatted.substring(dotIndex + 1);
-                        int slashIndex = formatted.lastIndexOf('/');
-                        if (slashIndex >= 0)
-                            formatted = formatted.substring(slashIndex);
-                        return formatted;
-                    }
-                });
-            }
-        }
-        if (filterErrorMsg != null && filterErrorMsg.length() > 0)
-            headerMessage.append("<span class=\"labkey-error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
-
-        String sectionSeparator = "";
-
-        Map<String, Object> parameters = getQueryParameters();
-        if (!parameters.isEmpty())
-        {
-            headerMessage.append("<span class=\"labkey-strong\">Parameters:</span>&nbsp;");
-            String separator = "";
-            for (Map.Entry<String, Object> entry : parameters.entrySet())
-            {
-                headerMessage.append(separator);
-                separator = ", ";
-                headerMessage.append(PageFlowUtil.filter(entry.getKey()));
-                headerMessage.append("&nbsp;=&nbsp;");
-                headerMessage.append(PageFlowUtil.filter(entry.getValue()));
-            }
-            headerMessage.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Clear All").href("#")
-                    .onClick(getJavaScriptObjectReference() + ".clearAllParameters(); return false;"));
-            sectionSeparator = "<br/><br/>";
-        }
-
-        if (filterDescription != null)
-        {
-            headerMessage.append(sectionSeparator);
-            headerMessage.append("<span class=\"labkey-strong\">Filter:</span>&nbsp;");
-            headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
-            headerMessage.append(PageFlowUtil.button("Clear All").href("#")
-                    .onClick(getJavaScriptObjectReference() + ".clearAllFilters(); return false;"));
-        }
-    }
-
     protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
     {
     }
 
-    protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    private void renderHeader(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
-        headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
-        headerMessage.append("<span style='padding:5px 45px 5px 0;'>");
-        if (isDefaultView(ctx))
-            headerMessage.append("default");
-        else
-            headerMessage.append(PageFlowUtil.filter(ctx.getView().getLabel()));
-
-        headerMessage.append("</span>&nbsp;");
-    }
-
-    protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
-    {
-        renderHeader(ctx, out, renderButtons, 0);
-    }
-
-    private void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException
-    {
-        // TODO: Remove the colCount parameter once new UI is in place
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
-            _renderButtonBarNew(ctx, out, renderButtons);
-            _renderPaginationNew(ctx, out);
-            out.write("</div>");
-            _renderDrawer(ctx, out);
-            _renderViewBar(ctx, out);
-            _renderContextBar(ctx, out);
-        }
-        else
-        {
-            out.write("\n<tr");
-            if (!shouldRenderHeader(renderButtons))
-                out.write(" style=\"display:none\"");
-            out.write(" id=\"" + PageFlowUtil.filter(getDomId() + "-header-row") + "\">");
-
-            out.write("<td colspan=\"");
-            out.write(String.valueOf(colCount));
-            out.write("\" class=\"labkey-data-region-header-container\">\n");
-
-            out.write("<table class=\"labkey-data-region-header\" cellpadding=\"0\" cellspacing=\"0\" id=\"" + PageFlowUtil.filter(getDomId() + "-header") + "\">\n");
-            out.write("<tr><td nowrap>\n");
-            if (renderButtons)
-            {
-                renderButtons(ctx, out);
-            }
-            out.write("</td>");
-
-            out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
-            renderPagination(ctx, out, PaginationLocation.TOP);
-            out.write("</td></tr>\n");
-
-            renderRibbon(ctx, out);
-            renderMessageBox(ctx, out);
-
-            // end table.labkey-data-region-header
-            out.write("</table>\n");
-
-            out.write("\n</td></tr>");
-
-            if (this.getAllowHeaderLock())
-            {
-                out.write("\n<tr");
-                if (!shouldRenderHeader(renderButtons))
-                    out.write(" style=\"display:none\"");
-                out.write(" id=\"" + PageFlowUtil.filter(getDomId() + "-header-row-spacer") + "\" style=\"display: none;\">");
-
-                out.write("<td colspan=\"");
-                out.write(String.valueOf(colCount));
-                out.write("\" class=\"labkey-data-region-header-container\">\n");
-
-                out.write("<table class=\"labkey-data-region-header\">\n");
-                out.write("<tr><td nowrap>\n");
-                out.write("</td>");
-
-                out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
-                renderPagination(ctx, out, PaginationLocation.TOP);
-                out.write("</td></tr>\n");
-
-                renderRibbon(ctx, out);
-                renderMessageBox(ctx, out);
-
-                // end table.labkey-data-region-header
-                out.write("</table>\n");
-
-                out.write("\n</td></tr>");
-            }
-        }
+        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
+        _renderButtonBarNew(ctx, out, renderButtons);
+        _renderPaginationNew(ctx, out);
+        out.write("</div>");
+        _renderDrawer(ctx, out);
+        _renderViewBar(ctx, out);
+        _renderContextBar(ctx, out);
     }
 
     protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
@@ -1153,35 +960,13 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                if (PageFlowUtil.useExperimentalCoreUI())
-                    _renderTableNew(ctx, out, rs);
-                else
-                    _renderTableOld(ctx, out, rs);
+                _renderTableNew(ctx, out, rs);
             }
         }
         finally
         {
             ResultSetUtil.close(rs);
         }
-    }
-
-    private void renderRibbon(RenderContext ctx, Writer out) throws IOException
-    {
-        out.write("<tr>");
-        out.write("<td colspan=\"2\" class=\"labkey-ribbon\" style=\"display:none;\"></td>");
-        out.write("</tr>\n");
-    }
-
-    private void renderMessageBox(RenderContext ctx, Writer out) throws IOException
-    {
-        out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\" style=\"display:none\">");
-        out.write("<td colspan=\"2\" class=\"labkey-dataregion-msgbox\">");
-        out.write("<span class=\"labkey-dataregion-msg-toggle fa fa-minus\" "
-                + "onclick=\"" + getJavaScriptObjectReference() + ".toggleMessageArea();\" "
-                + "title=\"Collapse message\" alt=\"close\"></span>");
-        out.write("<div></div>");
-        out.write("</td>");
-        out.write("</tr>\n");
     }
 
     private void _renderParameterForm(RenderContext ctx, Writer out) throws IOException
@@ -1202,72 +987,6 @@ public class DataRegion extends DisplayElement
         {
             throw new RuntimeException(ex);
         }
-    }
-
-    private void _renderTableOld(RenderContext ctx, Writer out, ResultSet rs) throws IOException, SQLException
-    {
-        boolean renderButtons = _gridButtonBar.shouldRender(ctx);
-        if (renderButtons && _buttonBarConfigs != null && !_buttonBarConfigs.isEmpty())
-        {
-            if (_gridButtonBar.isLocked())
-                _gridButtonBar = new ButtonBar(_gridButtonBar);
-            _gridButtonBar.setConfigs(ctx, _buttonBarConfigs);
-            addMessage(getMissingCaptionMessage());
-        }
-
-        boolean showRecordSelectors = getShowRecordSelectors(ctx);
-
-        List<DisplayColumn> renderers = getDisplayColumns();
-
-        //determine number of HTML table columns...watch out for hidden display columns
-        //and include one extra if showing record selectors
-        int colCount = 0;
-
-        for (DisplayColumn col : renderers)
-        {
-            if (col.isVisible(ctx))
-                colCount++;
-        }
-
-        if (showRecordSelectors)
-            colCount++;
-
-        if (rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
-        {
-            _rowCount = ((TableResultSet) rs).getSize();
-            if (_complete && _totalRows == null)
-                _totalRows = getOffset() + _rowCount.intValue();
-        }
-
-        if (!_showPagination && rs instanceof TableResultSet)
-        {
-            TableResultSet tableRS = (TableResultSet) rs;
-            if (!tableRS.isComplete())
-            {
-                out.write("<span class=\"labkey-message\">");
-                out.write(tableRS.getTruncationMessage(getMaxRows()));
-                out.write("</span>");
-            }
-        }
-
-        renderRegionStart(ctx, out, renderButtons, showRecordSelectors, renderers);
-
-        renderHeader(ctx, out, renderButtons, colCount);
-
-        if (!_errorCreatingResults)
-        {
-            out.write("<tbody>");
-            renderTableContent(ctx, out, showRecordSelectors, renderers, colCount);
-            out.write("</tbody>");
-        }
-
-        renderFooter(ctx, out, renderButtons, colCount);
-
-        renderRegionEnd(ctx, out, renderButtons, renderers);
-
-        renderHeaderScript(ctx, out, prepareMessages(ctx), showRecordSelectors);
-
-        renderAnalyticsProvidersScripts(ctx, out);
     }
 
     private void _renderTableNew(RenderContext ctx, Writer out, ResultSet rs) throws IOException, SQLException
@@ -1306,6 +1025,18 @@ public class DataRegion extends DisplayElement
             if (_complete && _totalRows == null)
                 _totalRows = getOffset() + _rowCount.intValue();
         }
+
+        // TODO: This needs to be migrated to new UI
+//        if (!_showPagination && rs instanceof TableResultSet)
+//        {
+//            TableResultSet tableRS = (TableResultSet) rs;
+//            if (!tableRS.isComplete())
+//            {
+//                out.write("<span class=\"labkey-message\">");
+//                out.write(tableRS.getTruncationMessage(getMaxRows()));
+//                out.write("</span>");
+//            }
+//        }
 
         Map<String, String> messages = prepareMessages(ctx);
 
@@ -1567,6 +1298,7 @@ public class DataRegion extends DisplayElement
         out.write("\n</colgroup>");
     }
 
+    // TODO: Need to migrate or remove usage of renderer.renderGridEnd
     protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
     {
         out.write("\n</table></div>");
@@ -1690,82 +1422,6 @@ public class DataRegion extends DisplayElement
         return dataRegionJSON;
     }
 
-    protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException
-    {
-        if (needToRenderFooter(renderButtons))
-        {
-            out.write("<tr><td colspan=\"");
-            out.write(String.valueOf(colCount));
-            out.write("\" class=\"labkey-data-region-header-container\">\n");
-            out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter(getDomId() + "-footer") + "\">\n");
-            out.write("<tr><td nowrap>\n");
-            if (renderButtons && _buttonBarPosition.atBottom())
-            {
-                // 7024: don't render bottom buttons if the button bar already
-                // appears at the top and it's a small result set
-                if (!_buttonBarPosition.atTop() || !isSmallResultSet())
-                    _gridButtonBar.render(ctx, out);
-            }
-            out.write("</td>");
-
-            out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
-            if (_showPagination && _buttonBarPosition.atBottom())
-                renderPagination(ctx, out, PaginationLocation.BOTTOM);
-            out.write("</td></tr>\n");
-
-            renderRibbon(ctx, out);
-
-            out.write("</table>");
-
-            out.write("</td></tr>");
-        }
-
-        boolean firstScript = true;
-
-        for (ButtonBarConfig buttonBarConfig : _buttonBarConfigs)
-        {
-            if (buttonBarConfig.getOnRenderScript() != null)
-            {
-                if (firstScript)
-                {
-                    firstScript = false;
-                    out.write("<script type=\"text/javascript\">\n");
-                    out.write("+function($){$(function(){\n");
-                }
-                // We need to give any included scripts time to load, so wait for our desired function to available
-                // before invoking it.
-                //NOTE: because the onRender function could be part of a namespace not yet defined, we split the string and test
-                //whether each node exists
-                out.write("var tester = function() {  \n" +
-                        "\tvar name = '" + buttonBarConfig.getOnRenderScript() + "'.split('.'); \n" +
-                        "\tvar obj = this; \n" +
-                        "\tfor(var i=0;i<name.length;i++){\n" +
-                        "\tobj = obj[name[i]];\n" +
-                        "\tif(undefined === obj) return false;\n" +
-                        "\tif(!LABKEY || !LABKEY.DataRegions || !LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]) return false;\n" +
-                        "\treturn true;\n" +
-                        "\t}\n" +
-                        "}\n" +
-                        "var onTrue = function() { " +
-                        "\t" + buttonBarConfig.getOnRenderScript() + "(LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "]); \n" +
-                        "}\n" +
-                        "LABKEY.Utils.onTrue( { testCallback: tester, scope: this, success: onTrue, failure: function(e){console.log('Error calling dataregion onRender function');console.log(e);} });\n");
-            }
-        }
-
-        if (!firstScript)
-        {
-            out.write("})}(jQuery);\n");
-            out.write("</script>\n");
-        }
-    }
-
-    protected boolean needToRenderFooter(boolean renderButtons)
-    {
-        return (renderButtons && _buttonBarPosition.atBottom() && (!_buttonBarPosition.atTop() || !isSmallResultSet()))
-                || (_showPagination && !isSmallResultSet() && _buttonBarPosition.atBottom());
-    }
-
     protected boolean isSmallResultSet()
     {
         if (_totalRows != null && _totalRows < 5)
@@ -1773,70 +1429,6 @@ public class DataRegion extends DisplayElement
         if (_complete && getOffset() == 0 && _rowCount != null && _rowCount.intValue() < 5)
             return true;
         return false;
-    }
-
-    protected void renderPagination(RenderContext ctx, Writer out, PaginationLocation location) throws IOException
-    {
-        if (_showPagination)
-        {
-            if (isSmallResultSet())
-                return;
-
-            NumberFormat fmt = NumberFormat.getInstance();
-
-            if ((_buttonBarPosition.atTop() && location == PaginationLocation.TOP) ||
-                    (_buttonBarPosition._atBottom && location == PaginationLocation.BOTTOM))
-            {
-                out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
-
-                if (getMaxRows() > 0 && getOffset() >= 2 * getMaxRows())
-                    paginateLink(out, "First Page", "<b>&laquo;</b> First", 0);
-
-                if (getMaxRows() > 0 && getOffset() >= getMaxRows())
-                    paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", getOffset() - getMaxRows());
-
-                if (_rowCount != null)
-                    out.write("<em>" + fmt.format(getOffset() + 1) + "</em> - <em>" + fmt.format(getOffset() + _rowCount.intValue()) + "</em> ");
-
-                if (_totalRows != null)
-                {
-                    if (_rowCount != null)
-                        out.write("of <em>" + fmt.format(_totalRows) + "</em> ");
-
-                    if (getMaxRows() > 0)
-                    {
-                        long remaining = _totalRows.longValue() - getOffset();
-                        long lastPageSize = _totalRows.longValue() % getMaxRows();
-                        if (lastPageSize == 0)
-                            lastPageSize = getMaxRows();
-                        long lastPageOffset = _totalRows.longValue() - lastPageSize;
-
-                        if (remaining > getMaxRows())
-                        {
-                            long nextOffset = getOffset() + getMaxRows();
-                            if (nextOffset > _totalRows.longValue())
-                                nextOffset = lastPageOffset;
-                            paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", nextOffset);
-                        }
-
-                        if (remaining > 2 * getMaxRows())
-                            paginateLink(out, "Last Page", "Last <b>&raquo;</b>", lastPageOffset);
-                    }
-                }
-                else
-                {
-                    if (!_complete)
-                        paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", getOffset() + getMaxRows());
-                }
-
-                out.write("</div>");
-            }
-        }
-    }
-
-    protected void paginateLink(Writer out, String title, String text, long newOffset) throws IOException
-    {
-        out.write("<a title=\"" + title + "\" href=\"javascript:LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].setOffset(" + newOffset + ");\">" + text + "</a> ");
     }
 
     protected void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
@@ -1859,40 +1451,24 @@ public class DataRegion extends DisplayElement
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+        out.write("<thead>");
+        out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" class=\"labkey-col-header-row\">");
 
-        if (newUI)
-            out.write("<thead>");
-        out.write("\n<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" " + (newUI ? "class=\"labkey-col-header-row\"" : "") + ">");
+        DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
+        DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
-        DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
-        DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;
-
-        if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
+        if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
         {
-            out.write(newUI ? "<th " : "<td ");
-            out.write("class=\"labkey-column-header labkey-selectors\"");
+            out.write(" <th class=\"labkey-column-header labkey-selectors\"");
 
-            if (newUI)
-            {
-                int width = 0;
-                if (showRecordSelectors)
-                    width += 45; // account for drop menu
-                if (detailsColumn != null)
-                    width += 15;
-                if (updateColumn != null)
-                    width += 15;
-                out.write(" style=\"width:" + width + "px;\"");
-            }
-
-            String headerId = "column-header-" + UniqueID.getServerSessionScopedUID();
-            if (!newUI)
-            {
-                out.write("id=\"");
-                out.write(PageFlowUtil.filter(headerId));
-            }
-
-            out.write("\">");
+            int width = 0;
+            if (showRecordSelectors)
+                width += 45; // account for drop menu
+            if (detailsColumn != null)
+                width += 15;
+            if (updateColumn != null)
+                width += 15;
+            out.write(" style=\"width:" + width + "px;\">");
 
             if (showRecordSelectors)
             {
@@ -1937,99 +1513,31 @@ public class DataRegion extends DisplayElement
                     navtree.addChild(showAll);
                 }
 
-                if (newUI)
-                {
-                    out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
-                    out.write(TOGGLE_CHECKBOX_NAME);
-                    out.write("\" ");
-                    out.write(">");
+                out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
+                out.write(TOGGLE_CHECKBOX_NAME);
+                out.write("\">");
 
-                    out.write("<span class=\"dropdown-toggle\" data-toggle=\"dropdown\"></span>");
-                    out.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
-                    PopupMenuView.renderTree(navtree, out);
-                    out.write("</ul>");
-                    out.write("</th>");
-                }
-                else
-                {
-                    out.write("<div>");
-                    out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
-                    out.write(TOGGLE_CHECKBOX_NAME);
-                    out.write("\" ");
-                    out.write(">");
-                    out.write("<span style=\"display:inline-block; background: url('");
-                    out.write(ctx.getViewContext().getContextPath());
-                    out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
-                    out.write("></span>");
-                    out.write("</div>");
-
-                    PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
-                    popup.renderMenuScript(out);
-
-                    out.write("<script type=\"text/javascript\">\n");
-                    out.write("Ext4.onReady(function () {\n");
-                    out.write("var header = Ext4.get(");
-                    out.write(PageFlowUtil.jsString(headerId));
-                    out.write(");\n");
-                    out.write("if (header) {\n");
-                    out.write("  header.on('click', function (evt, el, o) {\n");
-                    out.write("    showMenu(el, ");
-                    out.write(PageFlowUtil.qh(popup.getSafeID()));
-                    out.write(", null);\n");
-                    out.write("  });\n");
-                    out.write("}\n");
-                    out.write("});\n");
-                    out.write("</script>\n");
-                    out.write("</td>");
-                }
+                out.write("<span class=\"dropdown-toggle\" data-toggle=\"dropdown\"></span>");
+                out.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
+                PopupMenuView.renderTree(navtree, out);
+                out.write("</ul>");
             }
+
+            out.write("</th>");
         }
 
         for (DisplayColumn renderer : renderers)
         {
             if (renderer.isVisible(ctx))
             {
-                if (newUI && (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn))
+                if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
                     continue;
 
                 renderer.renderGridHeaderCell(ctx, out);
             }
         }
 
-        out.write("</tr>\n");
-
-        if (!newUI && this.getAllowHeaderLock())
-        {
-            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row-spacer") + "\">");
-
-            if (showRecordSelectors)
-            {
-                out.write("<td valign=\"top\" class=\"labkey-column-header labkey-selectors>");
-
-                out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" ");
-                out.write(">");
-
-                out.write("<span style=\"display:inline-block; background: url('");
-                out.write(ctx.getViewContext().getContextPath());
-                out.write("/_images/arrow_down.png') right no-repeat; width: 16px; height: 10px;\"");
-                out.write("></span>");
-
-                out.write("</td>");
-            }
-
-            for (DisplayColumn renderer : renderers)
-            {
-                if (renderer.isVisible(ctx))
-                {
-                    renderer.renderGridHeaderCell(ctx, out);
-                }
-            }
-
-            out.write("</tr>\n");
-        }
-
-        if (newUI)
-            out.write("</thead>");
+        out.write("</tr></thead>");
     }
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
@@ -2038,12 +1546,10 @@ public class DataRegion extends DisplayElement
         {
             out.write("<tr class=\"labkey-col-total labkey-row\">");
 
-            boolean newUI = PageFlowUtil.useExperimentalCoreUI();
+            DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
+            DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
-            DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
-            DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;;
-
-            if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
+            if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
             {
                 out.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
             }
@@ -2052,7 +1558,7 @@ public class DataRegion extends DisplayElement
             {
                 if (renderer.isVisible(ctx))
                 {
-                    if (newUI && (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn))
+                    if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
                         continue;
 
                     out.write("<td nowrap ");
@@ -2144,24 +1650,22 @@ public class DataRegion extends DisplayElement
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
     protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         out.write("<tr");
         String rowClass = getRowClass(ctx, rowIndex);
         if (rowClass != null)
             out.write(" class=\"" + rowClass + "\"");
         out.write(">");
 
-        DisplayColumn detailsColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, true) : null;
-        DisplayColumn updateColumn = newUI ? getDetailsUpdateColumn(ctx, renderers, false) : null;;
+        DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
+        DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
-        if (showRecordSelectors || (newUI && (detailsColumn != null || updateColumn != null)))
+        if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
             renderActionColumn(ctx, out, rowIndex, showRecordSelectors, updateColumn, detailsColumn);
 
         for (DisplayColumn renderer : renderers)
             if (renderer.isVisible(ctx))
             {
-                if (newUI && (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn))
+                if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
                         continue;
 
                 renderer.renderGridDataCell(ctx, out);
@@ -2173,12 +1677,15 @@ public class DataRegion extends DisplayElement
     protected DisplayColumn getDetailsUpdateColumn(RenderContext ctx, List<DisplayColumn> renderers, boolean getDetailsCol)
     {
         for (DisplayColumn renderer : renderers)
+        {
             if (renderer.isVisible(ctx))
             {
                 if ((renderer instanceof DetailsColumn && getDetailsCol)
                         || (renderer instanceof UpdateColumn && !getDetailsCol))
                     return renderer;
             }
+        }
+
         return null;
     }
 
@@ -2192,14 +1699,11 @@ public class DataRegion extends DisplayElement
             out.write(" lk-region-form=\"" + PageFlowUtil.filter(name) + "\" ");
         }
 
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            String cls = "form-horizontal";
-            if (mode == MODE_DETAILS)
-                cls += " form-mode-details";
+        String cls = "form-horizontal";
+        if (mode == MODE_DETAILS)
+            cls += " form-mode-details";
 
-            out.write(" class=\"" + cls + "\" ");
-        }
+        out.write(" class=\"" + cls + "\" ");
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
@@ -2257,7 +1761,7 @@ public class DataRegion extends DisplayElement
         return _recordSelectorValueColumns;
     }
 
-    protected void renderRecordSelector(RenderContext ctx, Writer out, int rowIndex) throws IOException
+    protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
         out.write(getRecordSelectorName(ctx));
@@ -2284,14 +1788,6 @@ public class DataRegion extends DisplayElement
             out.write(" DISABLED");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
-
-        // When header locking is enabled, the first row is used to set the header column widths
-        // so we need to write out a span matching the down arrow icon in .toggle header to ensure the header has a proper width.
-        if (!PageFlowUtil.useExperimentalCoreUI() && rowIndex == 0)
-        {
-            out.write("<span style=\"display: inline-block; width: 16px; height: 10px;\">&nbsp;</span>");
-        }
-
     }
 
     protected void renderActionColumn(RenderContext ctx, Writer out, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
@@ -2299,21 +1795,15 @@ public class DataRegion extends DisplayElement
         if (!showRecordSelectors && updateColumn == null && detailsColumn == null)
             return;
 
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         out.write("<td class=\"labkey-selectors\" nowrap>");
 
         if (showRecordSelectors)
-            renderRecordSelector(ctx, out, rowIndex);
+            renderRecordSelector(ctx, out);
+        if (updateColumn != null)
+            renderGridCellContents(ctx, out, updateColumn, "fa fa-pencil lk-dr-action-icon");
+        if (detailsColumn != null)
+            renderGridCellContents(ctx, out, detailsColumn, "fa fa-info-circle lk-dr-action-icon");
 
-        // An example of what edit/details could look like
-        if (newUI)
-        {
-            if (updateColumn != null)
-                renderGridCellContents(ctx, out, updateColumn, "fa fa-pencil lk-dr-action-icon");
-            if (detailsColumn != null)
-                renderGridCellContents(ctx, out, detailsColumn, "fa fa-info-circle lk-dr-action-icon");
-        }
         out.write("</td>");
     }
 
@@ -2426,29 +1916,12 @@ public class DataRegion extends DisplayElement
 
         RowMap rowMap = null;
         int rowIndex = 0;
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         try (ResultSet rs = ctx.getResults())
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
-            if (!newUI)
-            {
-                out.write("<table");
-                out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
-                out.write(" class=\"lk-details-table\"");
-
-                String name = getName();
-                if (name != null)
-                {
-                    out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
-                }
-                out.write(">\n");
-            }
-            else
-            {
-                out.write("<table>");
-            }
+            out.write("<table>");
 
             while (rs.next())
             {
@@ -2467,9 +1940,6 @@ public class DataRegion extends DisplayElement
                     renderer.renderInputWrapperEnd(out);
                     out.write("</tr>");
                 }
-
-                if (!newUI)
-                    out.write("<tr><td style='font-size:1'>&nbsp;</td></tr>");
             }
 
             if (rowIndex == 0)
@@ -2659,19 +2129,10 @@ public class DataRegion extends DisplayElement
 
     protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer, int span) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         Set<String> errors = getErrors(ctx, renderer);
 
-        if (newUI)
-        {
-            out.write("<tr class=\"form-group" + (errors.size() > 0 ? " has-error" : "") + "\">");
-        }
-        else
-        {
-            // In the new UI renderInputError is handled within renderInputCell
-            renderInputError(errors, out, span);
-            out.write("<tr>");
-        }
+        out.write("<tr class=\"form-group" + (errors.size() > 0 ? " has-error" : "") + "\">");
+
         renderer.renderDetailsCaptionCell(ctx, out, null);
 
         if (renderer.isEditable())
@@ -2708,34 +2169,10 @@ public class DataRegion extends DisplayElement
         return errors;
     }
 
-    protected void renderInputError(RenderContext ctx, Writer out, int span, DisplayColumn... renderers)
-            throws IOException
-    {
-        renderInputError(getErrors(ctx, renderers), out, span);
-    }
-
-    private void renderInputError(Set<String> errors, Writer out, int span) throws IOException
-    {
-        if (PageFlowUtil.useExperimentalCoreUI())
-            return;
-
-        if (!errors.isEmpty())
-        {
-            out.write("  <tr><td colspan=");
-            out.write(Integer.toString(span + 1));
-            out.write(">");
-            for (String error : errors)
-                out.write(error);
-            out.write("</td></tr>");
-        }
-    }
-
-
     private void renderForm(RenderContext ctx, Writer out) throws IOException
     {
         int action = ctx.getMode();
         Map valueMap = ctx.getRow();
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
         //if user doesn't have read permissions, don't render anything
         if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) ||
@@ -2805,8 +2242,7 @@ public class DataRegion extends DisplayElement
 
         if (!_groupTables.isEmpty())
         {
-            if (newUI)
-                out.write("<table class=\"labkey-group-tables\">");
+            out.write("<table class=\"labkey-group-tables\">");
 
             for (GroupTable groupTable : _groupTables)
             {
@@ -2834,16 +2270,12 @@ public class DataRegion extends DisplayElement
                     {
                         out.write("<td/>");
                     }
+
                     for (String heading : groupHeadings)
                     {
-                        if (newUI)
-                            out.write("<td nowrap><label class=\"control-label\">");
-                        else
-                            out.write("<td valign=\"bottom\" class=\"labkey-form-label\">");
+                        out.write("<td nowrap><label class=\"control-label\">");
                         out.write(PageFlowUtil.filter(heading));
-                        if (newUI)
-                            out.write("</label>");
-                        out.write("</td>");
+                        out.write("</label></td>");
                     }
                 }
                 else
@@ -2877,8 +2309,6 @@ public class DataRegion extends DisplayElement
                 {
                     for (DisplayColumnGroup group : groups)
                     {
-                        if (!newUI)
-                            renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                         out.write("<tr>");
                         writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
                         if (group.isCopyable() && hasCopyable)
@@ -2900,12 +2330,6 @@ public class DataRegion extends DisplayElement
                 }
                 else
                 {
-                    if (!newUI)
-                    {
-                        for (DisplayColumnGroup group : groups)
-                            renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
-                    }
-
                     for (int i = 0; i < groupHeadings.size(); i++)
                     {
                         out.write("<tr");
@@ -2914,14 +2338,9 @@ public class DataRegion extends DisplayElement
                             out.write(" class=\"" + rowClass + "\"");
                         out.write(">");
 
-                        if (newUI)
-                            out.write("<td nowrap><label class=\"control-label\">");
-                        else
-                            out.write("<td class=\"labkey-form-label\" nowrap>");
+                        out.write("<td nowrap><label class=\"control-label\">");
                         out.write(PageFlowUtil.filter(groupHeadings.get(i)));
-                        if (newUI)
-                            out.write("</label>");
-                        out.write("</td>");
+                        out.write("</label></td>");
 
                         for (DisplayColumnGroup group : groups)
                         {
@@ -2940,8 +2359,7 @@ public class DataRegion extends DisplayElement
                 out.write("</script>");
             }
 
-            if (newUI)
-                out.write("</table>");
+            out.write("</table>");
         }
 
         out.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
@@ -2988,38 +2406,20 @@ public class DataRegion extends DisplayElement
                 }
             }
         }
-        if (newUI)
-        {
-            out.write("</td></tr>");
-            out.write("</table>");
-        }
 
+        out.write("</td></tr></table>");
         buttonBar.render(ctx, out);
-
-        if (!newUI)
-        {
-            out.write("</td></tr>");
-            out.write("</table>");
-        }
         renderFormEnd(ctx, out);
     }
 
     private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer out, DisplayColumn col) throws IOException
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
-            col.renderDetailsCaptionCell(ctx, out, "control-header-label");
-        else
-            col.renderDetailsCaptionCell(ctx, out, null);
+        col.renderDetailsCaptionCell(ctx, out, "control-header-label");
     }
 
     private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
-        if (newUI)
-            out.write("<td nowrap><label class=\"control-label\">");
-        else
-            out.write("<td class=\"labkey-form-label\">");
+        out.write("<td nowrap><label class=\"control-label\">");
 
         out.write("<input type=\"checkbox\" name=\"~~SELECTALL~~\" onchange=\"");
         for (DisplayColumnGroup group : groups)
@@ -3029,9 +2429,7 @@ public class DataRegion extends DisplayElement
         out.write("\" />");
         out.write("Same" + PageFlowUtil.helpPopup("Same", "If selected, all entries on this row will have the same value"));
 
-        if (newUI)
-            out.write("</label>");
-        out.write("</td>");
+        out.write("</label></td>");
     }
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
@@ -3326,11 +2724,7 @@ public class DataRegion extends DisplayElement
 
     protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         StringBuilder headerMsg = new StringBuilder();
-        StringBuilder filterMsg = new StringBuilder();
-        StringBuilder viewMsg = new StringBuilder();
 
         addHeaderMessage(headerMsg, ctx);
         if (headerMsg.length() > 0)
@@ -3339,33 +2733,11 @@ public class DataRegion extends DisplayElement
         //issue 13538: do not try to display filters if error, since this could result in a ConversionException
         if (!_errorCreatingResults)
         {
-            if (newUI)
-            {
-                prepareParameters(ctx);
-                prepareFilters(ctx);
-            }
-            else
-            {
-                addFilterMessage(filterMsg, ctx, isShowFilterDescription());
-                if (filterMsg.length() > 0)
-                    addMessage(new Message(filterMsg.toString(), MessageType.INFO, MessagePart.filter));
-            }
+            prepareParameters(ctx);
+            prepareFilters(ctx);
         }
 
-        // don't generate a view message if this is the default view and the filter is empty
-        if (newUI)
-        {
-            prepareView(ctx);
-        }
-        else
-        {
-            if (!isDefaultView(ctx) || filterMsg.length() > 0)
-            {
-                addViewMessage(viewMsg, ctx);
-                if (viewMsg.length() > 0)
-                    addMessage(new Message(viewMsg.toString(), MessageType.INFO, MessagePart.view));
-            }
-        }
+        prepareView(ctx);
 
         Map<String, String> messages = new LinkedHashMap<>();
 
