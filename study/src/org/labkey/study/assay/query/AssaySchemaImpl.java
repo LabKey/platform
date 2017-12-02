@@ -132,6 +132,13 @@ public class AssaySchemaImpl extends AssaySchema
             }
         }
 
+        // fallback to the provider's display name
+        for (AssayProvider provider : getAllProviders())
+        {
+            if (name.equalsIgnoreCase(provider.getName()))
+                return getProviderSchema(provider);
+        }
+
         return super.getSchema(name);
     }
 

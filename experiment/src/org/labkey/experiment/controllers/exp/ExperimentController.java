@@ -91,6 +91,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -203,6 +204,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -2686,8 +2688,17 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                deleteObjects(deleteForm);
-                return true;
+                try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+                {
+                    deleteObjects(deleteForm);
+                    tx.commit();
+                }
+                catch (BatchValidationException v)
+                {
+                    v.addToErrors(errors);
+                }
+
+                return !errors.hasErrors();
             }
         }
 
@@ -2704,7 +2715,7 @@ public class ExperimentController extends SpringActionController
             return appendRootNavTrail(root).addChild("Confirm Deletion");
         }
 
-        protected abstract void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException;
+        protected abstract void deleteObjects(DeleteForm deleteForm) throws Exception;
     }
 
     @RequiresPermission(DeletePermission.class)
@@ -2858,21 +2869,78 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm) throws Exception
         {
             List<ExpData> datas = getDatas(deleteForm, true);
 
-            for (ExpData data : datas)
+            for (ExpRun run : getRuns(datas))
             {
-                data.delete(getUser());
+                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
+                    throw new UnauthorizedException();
             }
+
+            // Issue 32076: Delete the exp.Data objects using QueryUpdateService so trigger scripts will be executed
+            Map<Optional<ExpDataClass>, List<ExpData>> byDataClass = datas.stream().collect(Collectors.groupingBy(d -> Optional.ofNullable(d.getDataClass())));
+            for (Optional<ExpDataClass> opt : byDataClass.keySet())
+            {
+                SchemaKey schemaKey;
+                String queryName;
+                ExpDataClass dc = opt.orElse(null);
+                List<ExpData> ds = byDataClass.get(opt);
+                if (dc == null)
+                {
+                    // Reference to exp.Data table
+                    schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
+                    queryName = ExpSchema.TableType.Data.name();
+                }
+                else
+                {
+                    // Reference to exp.data.<DataClass> table
+                    schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.name());
+                    queryName = dc.getName();
+                }
+
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaKey);
+                if (schema == null)
+                    throw new IllegalStateException("Failed to get schema '" + schemaKey + "'");
+
+                TableInfo table = schema.getTable(queryName);
+                if (table == null)
+                    throw new IllegalStateException("Failed to get table '" + queryName + "' in schema '" + schemaKey + "'");
+
+                QueryUpdateService qus = table.getUpdateService();
+                if (qus == null)
+                    throw new IllegalStateException();
+
+                qus.deleteRows(getUser(), getContainer(), toKeys(ds), null, null);
+            }
+        }
+
+        protected List<Map<String, Object>> toKeys(List<ExpData> datas)
+        {
+            return datas.stream().map(d -> CaseInsensitiveHashMap.<Object>of("rowId", d.getRowId())).collect(Collectors.toList());
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
-            List<ExpData> datas = getDatas(deleteForm, false);
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, false);
 
-            return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm);
+            List<ExpData> datas = getDatas(deleteForm, false);
+            List<ExpRun> runs = getRuns(datas);
+
+            return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
+        }
+
+        private List<ExpRun> getRuns(List<ExpData> datas)
+                throws SQLException
+        {
+            List<ExpRun> runsToDelete = new ArrayList<>();
+            List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingDatas(datas);
+            for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                runsToDelete.add(run);
+
+            return runsToDelete;
         }
 
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
