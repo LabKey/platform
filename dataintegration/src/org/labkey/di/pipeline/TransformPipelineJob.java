@@ -61,15 +61,18 @@ import java.util.stream.Collectors;
  */
 public class TransformPipelineJob extends PipelineJob implements TransformJobSupport, PropertiesJobSupport, FileAnalysisJobSupport
 {
+    static final String ETL_PREFIX = "ETL Job: ";
+    private static final String LOG_EXTENSION = "etl.log";
+
     private final TransformDescriptor _etlDescriptor;
+    private final Map<String,VariableMapImpl> _stepVariableMaps = new HashMap<>();
+    private final Set<String> _outputFileBaseNames = new LinkedHashSet<>();
+    private final VariableMapImpl _variableMap = new VariableMapImpl(null);
+
     private int _runId;
     private Integer _recordCount;
     private TransformJobContext _transformJobContext;
-    private final VariableMapImpl _variableMap = new VariableMapImpl(null);
-    private final Map<String,VariableMapImpl> _stepVariableMaps = new HashMap<>();
-    public static final String ETL_PREFIX = "ETL Job: ";
-    private static final String LOG_EXTENSION = "etl.log";
-    private final Set<String> _outputFileBaseNames = new LinkedHashSet<>();
+
     private transient DbScope.Transaction _sourceTx;
     private transient DbScope.Transaction _targetTx;
 
@@ -502,9 +505,10 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
      *   FileAnalysisJobSupport methods & parameters support
      *
     */
+    private final Map<String, String> _parameters = new HashMap<>();
+
     private File _analysisDirectory;
     private String _baseName;
-    private Map<String, String> _parameters = new HashMap<>();
 
     @Override
     public Map<String, String> getParameters()
