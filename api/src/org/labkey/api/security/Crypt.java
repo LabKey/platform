@@ -114,7 +114,7 @@ public enum Crypt
             synchronized (md5)
             {
                 md5.reset();
-                md5.update(credentials.getBytes());
+                md5.update(credentials.getBytes(StandardCharsets.UTF_8));
                 return encodeHex(md5.digest());
             }
         }
@@ -166,7 +166,7 @@ public enum Crypt
     {
         public boolean matches(String credentials, String digest)
         {
-            return digest.equals(_digest(credentials,digest));
+            return digest.equals(_digest(credentials, digest));
         }
 
         @Override
@@ -184,7 +184,7 @@ public enum Crypt
             {
                 md5.reset();
                 md5.update(salt.getBytes(StandardCharsets.UTF_8));
-                md5.update(credentials.getBytes());
+                md5.update(credentials.getBytes(StandardCharsets.UTF_8));
                 return salt + encodeBase64(md5.digest());
             }
         }
