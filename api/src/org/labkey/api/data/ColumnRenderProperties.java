@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * Time: 12:00:28 PM
  *
  * These are fields used by ColumnInfo and PropertyDescriptor that primarily affect
- * how the field in rendered in the HTML grids, forms, and pickers
+ * how the field is rendered in the HTML grids, forms, and pickers
  */
 public abstract class ColumnRenderProperties implements ImportAliasable
 {

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Common methods for fields/properties that may be referred to by various names in incoming data. Useful so that
+ * Common methods for fields/properties that may be referred to by various names in incoming data. Useful so that we
  * can resolve them in a consistent way across different data types.
  *
  * User: jeckels
@@ -32,17 +32,17 @@ import java.util.Set;
  */
 public interface ImportAliasable
 {
-    public boolean isMvEnabled();
+    boolean isMvEnabled();
 
-    public Set<String> getImportAliasSet();
+    Set<String> getImportAliasSet();
 
-    public String getName();
+    String getName();
 
-    public String getLabel();
+    String getLabel();
 
-    public String getPropertyURI();
+    String getPropertyURI();
 
-    public static class Helper
+    class Helper
     {
         /**
          * Creates a mapping of many different possible names (actual name, label/caption, property URI, etc).
