@@ -93,15 +93,18 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         PathListenerManager plm = new PathListenerManager();
         PathListenerManager previous = _listenerMap.putIfAbsent(directory, plm);     // Atomic operation
         String fileStoreType = Files.getFileStore(directory).type();
+        if (null != fileStoreType)
+            fileStoreType = fileStoreType.toLowerCase();
 
         // Register directory with the WatchService, if it's new
         if (null == previous)
         {
-            if ("cifs".equalsIgnoreCase(fileStoreType) || "smbfs".equalsIgnoreCase(fileStoreType) || "nfs".equalsIgnoreCase(fileStoreType))
-            {
-                LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
-                _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-            }
+                // ensure we catch variations such as both nfs and nfs4
+                if (null != fileStoreType && ( fileStoreType.startsWith("cifs") || fileStoreType.startsWith("smbfs") || fileStoreType.startsWith("nfs") ))
+                {
+                    LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
+                    _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+                }
             else
             {
                 LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath().toString());
@@ -109,7 +112,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             }
         }
         else
+        {
+            LOG.debug("Detected previously registered file watcher service for file system of type '" + fileStoreType + "'. for directory: " + directory.toAbsolutePath().toString());
             plm = previous;
+        }
 
         // Add the listener and its requested events
         plm.addListener(listener, events);
