@@ -172,11 +172,8 @@ LABKEY.Utils = new function(impl, $) {
         else if (window.Ext) {
             Ext.Msg.alert(title?Ext.util.Format.htmlEncode(title):"", msg?Ext.util.Format.htmlEncode(msg):"");
         }
-        else if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true) {
-            displayModal(title, msg);
-        }
         else {
-            alert(LABKEY.Utils.encodeHtml(title + ' : ' + msg));
+            displayModal(title, msg);
         }
     };
 

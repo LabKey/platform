@@ -134,48 +134,24 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         String filename = getFileName(value);
         String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
-        String labelId = GUID.makeGUID();
 
-        if (newUI)
+        Input.InputBuilder input = new Input.InputBuilder()
+                .type("file")
+                .name(getInputPrefix() + formFieldName)
+                .disabled(isDisabledInput(ctx))
+                .needsWrapping(false);
+
+        if (null != filename)
         {
-            Input.InputBuilder input = new Input.InputBuilder()
-                    .type("file")
-                    .name(getInputPrefix() + formFieldName)
-                    .disabled(isDisabledInput(ctx))
-                    .needsWrapping(false);
-
-            if (null != filename)
-                renderThumbnailAndRemoveLink(out, ctx, filename, input.build().toString());
-            else
-                out.write(input.build().toString());
+            // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
+            renderThumbnailAndRemoveLink(out, ctx, filename, input.build().toString());
         }
         else
         {
-            // TODO: modify outputName to return a String and use that here
-            String filePicker = "<input name=\"" + PageFlowUtil.filter(formFieldName) + "\"";
-
-            String setFocusId = (String)ctx.get("setFocusId");
-            if (null != setFocusId)
-            {
-                filePicker += (" id=\"" + setFocusId + "\"");
-                ctx.remove("setFocusId");
-            }
-
-            filePicker += " type=\"file\" size=\"60\" onchange=\"showPathname(this, &quot;" + labelId + "&quot;)\">&nbsp;<label id=\"" + labelId + "\"></label>\n";
-
-            if (null == filename)
-            {
-                // No existing value, so render just the regular <input type=file> element
-                out.write(filePicker);
-            }
-            else
-            {
-                // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-                renderThumbnailAndRemoveLink(out, ctx, filename, filePicker);
-            }
+            // No existing value, so render just the regular <input type=file> element
+            out.write(input.build().toString());
         }
     }
 

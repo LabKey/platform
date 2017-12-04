@@ -101,7 +101,7 @@ LABKEY.Utils = new function()
         if (nextRow == null)
             return null;
 
-        if (LABKEY.experimental.useExperimentalCoreUI && targetTagName)
+        if (targetTagName)
         {
             if (nextRow.tagName != targetTagName)
                 return null;
@@ -119,7 +119,7 @@ LABKEY.Utils = new function()
     {
         var collapse = false;
         var url = elem.href;
-        if (LABKEY.experimental.useExperimentalCoreUI && targetTagName)
+        if (targetTagName)
         {
             while (elem.tagName != targetTagName)
                 elem = elem.parentNode;

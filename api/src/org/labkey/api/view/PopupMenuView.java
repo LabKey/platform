@@ -86,7 +86,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
     public static void renderTree(NavTree tree, Writer out) throws IOException
     {
-        if (tree == null || !PageFlowUtil.useExperimentalCoreUI())
+        if (tree == null)
             return;
 
         // These flags act as a trimming boundaries for menu separators. They are used to prevent

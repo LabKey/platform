@@ -1935,8 +1935,8 @@ public class DataRegion extends DisplayElement
                         continue;
                     out.write("<tr>");
                     renderer.renderDetailsCaptionCell(ctx, out, null);
-                    renderer.renderInputWrapperBegin(out, 1);
-                    renderer.renderDetailsData(ctx, out, 1);
+                    renderer.renderInputWrapperBegin(out);
+                    renderer.renderDetailsData(ctx, out);
                     renderer.renderInputWrapperEnd(out);
                     out.write("</tr>");
                 }
@@ -2127,7 +2127,7 @@ public class DataRegion extends DisplayElement
             out.write(error);
     }
 
-    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer, int span) throws IOException
+    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
     {
         Set<String> errors = getErrors(ctx, renderer);
 
@@ -2136,11 +2136,11 @@ public class DataRegion extends DisplayElement
         renderer.renderDetailsCaptionCell(ctx, out, null);
 
         if (renderer.isEditable())
-            renderer.renderInputCell(ctx, out, span);
+            renderer.renderInputCell(ctx, out);
         else
         {
-            renderer.renderInputWrapperBegin(out, span);
-            renderer.renderDetailsData(ctx, out, span);
+            renderer.renderInputWrapperBegin(out);
+            renderer.renderDetailsData(ctx, out);
             renderer.renderInputWrapperEnd(out);
         }
 
@@ -2235,7 +2235,7 @@ public class DataRegion extends DisplayElement
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-            renderFormField(ctx, out, renderer, span);
+            renderFormField(ctx, out, renderer);
             if (null != renderer.getColumnInfo())
                 renderedColumns.add(renderer.getColumnInfo().getName());
         }
@@ -2323,7 +2323,7 @@ public class DataRegion extends DisplayElement
                         {
                             if (!shouldRender(col, ctx))
                                 continue;
-                            col.renderInputCell(ctx, out, span);
+                            col.renderInputCell(ctx, out);
                         }
                         out.write("\t</tr>");
                     }
@@ -2347,7 +2347,7 @@ public class DataRegion extends DisplayElement
                             DisplayColumn col = group.getColumns().get(i);
                             if (!shouldRender(col, ctx))
                                 continue;
-                            col.renderInputCell(ctx, out, span);
+                            col.renderInputCell(ctx, out);
                         }
                         out.write("\t</tr>");
                     }

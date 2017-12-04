@@ -41,7 +41,7 @@
     if (tabContainer.isContainerTab() || tabContainer.isWorkbook())
         tabContainer = tabContainer.getParent();
 
-    boolean isTabEditMode = PageFlowUtil.isTabEditMode(context, tabContainer);
+    boolean isTabEditMode = PageFlowUtil.isPageAdminMode(context);
     AppBarView me = (AppBarView) HttpView.currentView();
     AppBar bean = me.getModelBean();
     if (null == bean)

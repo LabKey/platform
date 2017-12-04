@@ -53,8 +53,6 @@ public class PopupUserView extends PopupMenuView
         ActionURL currentURL = context.getActionURL();
         NavTree tree = new NavTree();
 
-        if (!PageFlowUtil.useExperimentalCoreUI())
-            tree.setText(user.getFriendlyName());
         tree.setId("userMenu");
 
         NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
@@ -73,20 +71,17 @@ public class PopupUserView extends PopupMenuView
         NavTree feedBack = new NavTree("Give UI Feedback", PageFlowUtil.urlProvider(CoreUrls.class).getFeedbackURL());
         feedBack.setTarget("_blank");
 
-        if (PageFlowUtil.useExperimentalCoreUI())
+        tree.addSeparator();
+
+        if (pageConfig != null)
         {
-            tree.addSeparator();
+            NavTree help = PopupHelpView.createNavTree(context, pageConfig.getHelpTopic());
 
-            if (pageConfig != null)
-            {
-                NavTree help = PopupHelpView.createNavTree(context, pageConfig.getHelpTopic());
-
-                for (NavTree child : help.getChildren())
-                    tree.addChild(child);
-            }
-
-            tree.addChild(feedBack);
+            for (NavTree child : help.getChildren())
+                tree.addChild(child);
         }
+
+        tree.addChild(feedBack);
 
         return tree;
     }

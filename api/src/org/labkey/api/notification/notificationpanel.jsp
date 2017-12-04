@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -105,19 +104,12 @@
     });
 })(jQuery);
 </script>
-<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <li>
     <a href="#" onclick="LABKEY.Notification.showPanel(); return false;">
         <i class="fa fa-inbox labkey-notification-inbox"></i>
         <span id=<%=q(notificationCountId)%>>&nbsp;</span>
     </a>
 </li>
-<% } else { %>
-<a href="#" class="labkey-menu-text-link" onclick="LABKEY.Notification.showPanel(); return false;">
-    <span class="fa fa-inbox labkey-notification-inbox"></span>
-    <span id=<%=q(notificationCountId)%>>&nbsp;</span>
-</a>
-<% } %>
 
 
 

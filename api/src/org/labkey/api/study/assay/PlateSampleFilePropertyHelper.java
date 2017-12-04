@@ -48,7 +48,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -346,19 +345,9 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                             ".  This information is used to determine data processing and to map " + nounV2.toLowerCase() +
                             " values to plate locations.");
 
-                    if (PageFlowUtil.useExperimentalCoreUI())
-                    {
-                        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-                        out.write(nounV1 + " Metadata" + helpPopup + " *");
-                        out.write("</td>");
-                    }
-                    else
-                    {
-                        out.write("<td class='labkey-form-label'>");
-                        out.write(nounV1 + " Metadata" + helpPopup + " *");
-                        out.write("</td>");
-                    }
-
+                    out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
+                    out.write(nounV1 + " Metadata" + helpPopup + " *");
+                    out.write("</td>");
                 }
             }
 

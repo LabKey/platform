@@ -80,37 +80,27 @@
                                 break;
                             }
                         }
-                        if (LABKEY.experimental.useExperimentalCoreUI)
-                        {
-                            var targetUpButtonClass = getUpDownButtons(targetTable).upButton.className;
-                            var targetDownButtonClass= getUpDownButtons(targetTable).downButton.className;
-                            updateUpDownButtons(targetTable, getUpDownButtons(swapTable).upButton.className, getUpDownButtons(swapTable).downButton.className);
-                            updateUpDownButtons(swapTable, targetUpButtonClass, targetDownButtonClass);
-                        }
+
+                        var targetUpButtonClass = getUpDownButtons(targetTable).upButton.className;
+                        var targetDownButtonClass= getUpDownButtons(targetTable).downButton.className;
+                        updateUpDownButtons(targetTable, getUpDownButtons(swapTable).upButton.className, getUpDownButtons(swapTable).downButton.className);
+                        updateUpDownButtons(swapTable, targetUpButtonClass, targetDownButtonClass);
                     }
                 }
                 else if (action === REMOVE_ACTION)
                 {
                     var adjacentWebparts = getAdjacentWebparts(targetTable);
-                    if (!LABKEY.experimental.useExperimentalCoreUI)
+
+                    if (adjacentWebparts.below)
                     {
-                        // These fixed Issue: 11833.
-                        // They remove the <br> elements between each webpart. These are not present in new UI.
-                        var breakEl   = targetTable.previousElementSibling;
-                        var breakNode = targetTable.previousSibling;
-                        targetTable.parentNode.removeChild(breakEl || breakNode); // TODO: Does not properly remove in IE7
+                        updateUpDownButtons(adjacentWebparts.below, getUpDownButtons(targetTable).upButton.className, undefined);
                     }
-                    if (LABKEY.experimental.useExperimentalCoreUI)
+
+                    if (adjacentWebparts.above)
                     {
-                        if (adjacentWebparts.below)
-                        {
-                            updateUpDownButtons(adjacentWebparts.below, getUpDownButtons(targetTable).upButton.className, undefined);
-                        }
-                        if (adjacentWebparts.above)
-                        {
-                            updateUpDownButtons(adjacentWebparts.above, undefined, getUpDownButtons(targetTable).downButton.className);
-                        }
+                        updateUpDownButtons(adjacentWebparts.above, undefined, getUpDownButtons(targetTable).downButton.className);
                     }
+
                     targetTable.parentNode.removeChild(targetTable);
                 }
             }
@@ -118,18 +108,9 @@
 
         function getAdjacentWebparts(webpart)
         {
-            var above;
-            var below;
-            if (LABKEY.experimental.useExperimentalCoreUI)
-            {
-                above = webpart.previousElementSibling;
-                below = webpart.nextElementSibling;
-            }
-            else
-            {
-                above = webpart.previousElementSibling.previousElementSibling;
-                below = webpart.nextElementSibling.nextElementSibling;
-            }
+            var above = webpart.previousElementSibling;
+            var below = webpart.nextElementSibling;
+
             return {
                 above: above && above.getAttribute("name") === "webpart" ? above : undefined,
                 below: below && below.getAttribute("name") === "webpart" ? below : undefined

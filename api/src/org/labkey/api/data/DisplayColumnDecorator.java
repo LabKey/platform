@@ -430,9 +430,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
     {
-        _column.renderDetailsData(ctx, out, span);
+        _column.renderDetailsData(ctx, out);
     }
 
     @Override
@@ -472,9 +472,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderInputCell(RenderContext ctx, Writer out) throws IOException
     {
-        _column.renderInputCell(ctx, out, span);
+        _column.renderInputCell(ctx, out);
     }
 
     @Override

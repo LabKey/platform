@@ -42,68 +42,32 @@ LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"
          */
         setTrail: function (currentPageTitle, ancestors, documentTitle, encode)
         {
-            var elem;
-
-            if (LABKEY.experimental.useExperimentalCoreUI)
+            var elem = document.querySelector('.lk-body-title');
+            if (elem)
             {
-                elem = document.querySelector('.lk-body-title');
-                if (elem)
-                {
-                    var newTrail = '';
-                    var newTitle = '<h3>' + (encode !== false ? LABKEY.Utils.encodeHtml(currentPageTitle) : currentPageTitle) + '</h3>';
+                var newTrail = '';
+                var newTitle = '<h3>' + (encode !== false ? LABKEY.Utils.encodeHtml(currentPageTitle) : currentPageTitle) + '</h3>';
 
-                    var trailEl = elem.querySelector('.breadcrumb');
-                    if (trailEl && ancestors)
+                var trailEl = elem.querySelector('.breadcrumb');
+                if (trailEl && ancestors)
+                {
+                    newTrail = '<ol class="breadcrumb">';
+                    for (var i=0; i < ancestors.length; i++)
                     {
-                        newTrail = '<ol class="breadcrumb">';
-                        for (var i=0; i < ancestors.length; i++)
+                        var a = ancestors[i];
+                        if (a.url && a.title)
                         {
-                            var a = ancestors[i];
-                            if (a.url && a.title)
-                            {
-                                newTrail += '<li><a href="' + a.url + '">' + LABKEY.Utils.encodeHtml(a.title) + '</a></li>';
-                            }
-                            else if (a.title)
-                            {
-                                newTrail += '<li><span>' + LABKEY.Utils.encodeHtml(a.title) + '</span></li>';
-                            }
+                            newTrail += '<li><a href="' + a.url + '">' + LABKEY.Utils.encodeHtml(a.title) + '</a></li>';
                         }
-                        newTrail += '</ol>';
+                        else if (a.title)
+                        {
+                            newTrail += '<li><span>' + LABKEY.Utils.encodeHtml(a.title) + '</span></li>';
+                        }
                     }
-
-                    elem.innerHTML = newTrail + newTitle;
-                }
-            }
-            else
-            {
-                elem = document.getElementById("labkey-nav-trail-current-page");
-                if (elem)
-                {
-                    elem.innerHTML = currentPageTitle;
-                    elem.style.visibility = "visible";
+                    newTrail += '</ol>';
                 }
 
-                elem = document.getElementById("navTrailAncestors");
-                if (elem && ancestors)
-                {
-                    var html = "",
-                        sep = "";
-                    for (var idx = 0; idx < ancestors.length; ++idx)
-                    {
-                        html += sep;
-                        if (ancestors[idx].url && ancestors[idx].title)
-                        {
-                            html += "<a href='" + ancestors[idx].url + "'>" + ancestors[idx].title + "</a>";
-                        }
-                        else if (ancestors[idx].title)
-                        {
-                            html += ancestors[idx].title;
-                        }
-                        sep = ' &gt; ';
-                    }
-                    elem.innerHTML = html;
-                    elem.visibility = "visible";
-                }
+                elem.innerHTML = newTrail + newTitle;
             }
 
             //set document title:

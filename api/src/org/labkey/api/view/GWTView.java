@@ -17,8 +17,6 @@
 package org.labkey.api.view;
 
 import com.google.gwt.core.client.EntryPoint;
-import org.apache.commons.lang3.BooleanUtils;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.*;
 
@@ -51,7 +49,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             _properties.put("contextPath", context.getContextPath());
             _properties.put("header1Size", ThemeFont.getThemeFont(context.getContainer()).getHeader_1Size());
             _properties.put("loadingStyle", "");
-            _properties.put("newCoreUI", BooleanUtils.toStringTrueFalse(PageFlowUtil.useExperimentalCoreUI()));
         }
 
         public String getModuleName()

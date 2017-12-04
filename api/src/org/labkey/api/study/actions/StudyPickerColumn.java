@@ -87,11 +87,6 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         out.write("</td>");
     }
 
-    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
-    {
-        super.renderDetailsData(ctx, out, 1);
-    }
-
     protected boolean isDisabledInput()
     {
         return getColumnInfo().getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
@@ -109,39 +104,22 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 
         boolean disabled = isDisabledInput();
 
-        if (PageFlowUtil.useExperimentalCoreUI())
+        Select.SelectBuilder select = new Select.SelectBuilder()
+                .name(_inputName)
+                .disabled(disabled);
+        List<Option> options = new ArrayList<>();
+        options.add(new Option.OptionBuilder().label("[None]").build());
+        for (Study study : studies)
         {
-            Select.SelectBuilder select = new Select.SelectBuilder()
-                    .name(_inputName)
-                    .disabled(disabled);
-            List<Option> options = new ArrayList<>();
-            options.add(new Option.OptionBuilder().label("[None]").build());
-            for (Study study : studies)
-            {
-                Container container = study.getContainer();
-                options.add(new Option.OptionBuilder()
-                        .label(PageFlowUtil.filter(container.getPath() + " (" + study.getLabel()) + ")")
-                        .value(PageFlowUtil.filter(container.getId()))
-                        .selected(container.getId().equals(value))
-                        .build()
-                );
-            }
-            out.write(select.addOptions(options).toString());
+            Container container = study.getContainer();
+            options.add(new Option.OptionBuilder()
+                    .label(PageFlowUtil.filter(container.getPath() + " (" + study.getLabel()) + ")")
+                    .value(PageFlowUtil.filter(container.getId()))
+                    .selected(container.getId().equals(value))
+                    .build()
+            );
         }
-        else
-        {
-            out.write("<select name=\"" + _inputName + "\"" + (disabled ? " DISABLED" : "") + ">\n");
-            out.write("    <option value=\"\">[None]</option>\n");
-            for (Study study : studies)
-            {
-                Container container = study.getContainer();
-                out.write("    <option value=\"" + PageFlowUtil.filter(container.getId()) + "\"");
-                if (container.getId().equals(value))
-                    out.write(" SELECTED");
-                out.write(">" + PageFlowUtil.filter(container.getPath() + " (" + study.getLabel()) + ")</option>\n");
-            }
-            out.write("</select>");
-        }
+        out.write(select.addOptions(options).toString());
         
         if (disabled)
             out.write("<input type=\"hidden\" name=\"" +_inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");

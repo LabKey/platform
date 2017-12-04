@@ -17,13 +17,8 @@ package org.labkey.api.view.menu;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
 
 import java.io.PrintWriter;
@@ -49,19 +44,9 @@ public class FolderMenu extends NavTreeMenu
     @Nullable
     public static List<NavTree> getNavTree(ViewContext context)
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
+        if (context.getContainer() != null)
         {
-            if (context.getContainer() != null)
-            {
-                return Collections.singletonList(ContainerManager.getFolderListForUser(ContainerManager.getRoot(), context));
-            }
-
-            return null;
-        }
-
-        if (context.getContainer().getProject() != null)
-        {
-            return Collections.singletonList(ContainerManager.getFolderListForUser(context.getContainer().getProject(), context));
+            return Collections.singletonList(ContainerManager.getFolderListForUser(ContainerManager.getRoot(), context));
         }
 
         return null;
@@ -70,33 +55,16 @@ public class FolderMenu extends NavTreeMenu
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
+        NavTree root;
         List<NavTree> elements = getElements();
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            NavTree root;
+        ViewContext context = getViewContext();
 
-            ViewContext context = getViewContext();
-
-            // as shown above in getNavTree, if elements is not null, then there will only be one element.
-            if (null != elements && (root = elements.get(0)) != null && root.hasChildren())
-            {
-                out.print("<div class=\"folder-nav\">");
-                renderChildLinks(root, "", root.getId(), context, out, null);
-                out.print("</div>");
-            }
-        }
-        else
+        // as shown above in getNavTree, if elements is not null, then there will only be one element.
+        if (null != elements && (root = elements.get(0)) != null && root.hasChildren())
         {
-            if (null != elements)
-            {
-                out.print("<div class=\"folder-nav\"><ul class=\"folder-nav-top\">");
-                for (NavTree element : elements)
-                {
-                    if (null != element)
-                        renderLinksOLD(element, 0, "", element.getId(), getViewContext(), out);
-                }
-                out.print("</ul></div>");
-            }
+            out.print("<div class=\"folder-nav\">");
+            renderChildLinks(root, "", root.getId(), context, out, null);
+            out.print("</div>");
         }
     }
 
@@ -177,107 +145,5 @@ public class FolderMenu extends NavTreeMenu
                 renderChildLinks(nav, pathToHere, rootId, context, out, false);
         }
         out.print("</li>");
-    }
-
-    private void renderLinksOLD(NavTree nav, int level, String pathToHere, String rootId,
-                                ViewContext context, PrintWriter out) throws URISyntaxException
-    {
-        Container c = context.getContainer();
-        ActionURL currentUrl = context.getActionURL();
-        if (c.isWorkbookOrTab())
-        {
-            currentUrl = currentUrl.clone();
-            currentUrl.setPath(currentUrl.getParsedPath().getParent());
-        }
-        if (c.isWorkbookOrTab())
-            c = c.getParent();
-        ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-        String pattern = startURL.getLocalURIString();
-
-        String link = nav.getHref();
-        boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
-        if (level == 0 && null != nav.getText())
-            level = 1;
-
-        boolean hasChildren = nav.hasChildren();
-
-        // When we post the expanded path, we need to use the escaped key so that embedded
-        // '/' characters in the key are not confused with path separators
-        if (null != nav.getText())
-            pathToHere = pathToHere + "/" + nav.getEscapedKey();
-
-        boolean collapsed = nav.isCollapsed();
-
-        if (hasChildren)
-        {
-            // the 'pathToHere' has been saved in the session if stateExpanded == true
-            boolean stateExpanded = NavTreeManager.getExpandedPathsCopy(context, rootId).contains(pathToHere);
-
-            if (collapsed && !stateExpanded)
-            {
-                Container folder = ContainerManager.getContainerService().getForPath(pathToHere);
-                if (null != folder && (folder.isProject() || c.hasAncestor(folder)))
-                {
-                    collapsed = false;
-                    if (folder.isProject())
-                        NavTreeManager.expandCollapsePath(context, rootId, pathToHere, false);
-                }
-            }
-            else if (stateExpanded)
-            {
-                collapsed = false; // respect the session setting
-            }
-        }
-
-        if (level > 0)
-        {
-            out.print("<li " + (hasChildren ? "class=\"clbl" + (collapsed ? " collapse-folder" : " expand-folder") + "\"" : "") + ">");
-
-            out.print("<span");
-            if (hasChildren)
-                out.print(" class=\"marked\"");
-            out.print(">&nbsp;</span>"); // Safari
-
-            if (null != link)
-            {
-                if (!StringUtils.isEmpty(nav.getId()))
-                    out.printf("<a id=\"%s\" href=\"%s\"", filter(nav.getId()), filter(link));
-                else
-                    out.printf("<a href=\"%s\"", filter(link));
-
-                if (selected)
-                    out.print(" class=\"nav-tree-selected\" id=\"folder-target\"");
-
-                if (nav.isNoFollow())
-                    out.print(" rel=\"nofollow\"");
-
-                if (hasChildren)
-                {
-                    ActionURL expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), pathToHere, rootId);
-                    out.printf(" expandurl=\"%s\"", filter(expandCollapseUrl));
-                }
-
-                out.print(">");
-                out.print(filter(nav.getText()));
-                out.print("</a>");
-            }
-            else
-            {
-                out.print("<span class=\"noread\">");
-                out.print(filter(nav.getText()));
-                out.print("</span>");
-            }
-        }
-
-        if (hasChildren)
-        {
-            out.print("<ul>");
-            for (NavTree child : nav.getChildren())
-                renderLinksOLD(child, level + 1, pathToHere, rootId, context, out);
-            out.print("</ul>");
-        }
-
-        if (level > 0)
-            out.print("</li>");
     }
 }

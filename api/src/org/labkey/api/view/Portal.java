@@ -872,9 +872,7 @@ public class Portal
     {
         public String pageId;
         public String location;
-        public boolean rightEmpty; // used by new ui
-        public Map<String, String> webPartNames; // used by old ui
-        public Map<String, String> rightWebPartNames; // used by old ui
+        public boolean rightEmpty;
     }
 
     private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection<String> occupiedLocations)
@@ -887,56 +885,22 @@ public class Portal
         }
 
         boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            for (String regionName : regionNames)
-            {
-                if (!regionName.equals(WebPartFactory.LOCATION_RIGHT) || !rightEmpty)
-                {
-                    //TODO: Make addPartView a real class & move to ProjectController
-                    AddWebParts addPart = new AddWebParts();
-                    addPart.pageId = id;
-                    addPart.location = regionName;
-                    addPart.rightEmpty = rightEmpty;
 
-                    WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
-                    addPartView.setFrame(WebPartView.FrameType.NONE);
-                    addViewToRegion(template, regionName, addPartView);
-                }
+        for (String regionName : regionNames)
+        {
+            if (!regionName.equals(WebPartFactory.LOCATION_RIGHT) || !rightEmpty)
+            {
+                //TODO: Make addPartView a real class & move to ProjectController
+                AddWebParts addPart = new AddWebParts();
+                addPart.pageId = id;
+                addPart.location = regionName;
+                addPart.rightEmpty = rightEmpty;
+
+                WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
+                addPartView.setFrame(WebPartView.FrameType.NONE);
+                addViewToRegion(template, regionName, addPartView);
             }
         }
-        else
-        {
-            AddWebParts bodyAddPart = null;
-            Map<String, String> rightParts = null;
-
-            for (String regionName : regionNames)
-            {
-                Map<String, String> partsToAdd = Portal.getPartsToAdd(c, regionName);
-
-                if (WebPartFactory.LOCATION_RIGHT.equals(regionName) && rightEmpty)
-                    rightParts = partsToAdd;
-                else
-                {
-                    //TODO: Make addPartView a real class & move to ProjectController
-                    AddWebParts addPart = new AddWebParts();
-                    addPart.pageId = id;
-                    addPart.location = regionName;
-                    addPart.webPartNames = partsToAdd;
-                    WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
-                    addPartView.setFrame(WebPartView.FrameType.NONE);
-
-                    // save these off in case we have to re-shuffle due to an empty right region:
-                    if (HttpView.BODY.equals(regionName))
-                        bodyAddPart = addPart;
-
-                    addViewToRegion(template, regionName, addPartView);
-                }
-            }
-            if (rightEmpty && bodyAddPart != null && rightParts != null)
-                bodyAddPart.rightWebPartNames = rightParts;
-        }
-
     }
 
     public static String addWebPartWidgets(AddWebParts bean, ViewContext viewContext)
@@ -1090,7 +1054,7 @@ public class Portal
                         if (!part.isPermanent())
                             navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
 
-                        if (PageFlowUtil.useExperimentalCoreUI() && allowHideFrame)
+                        if (allowHideFrame)
                         {
                             if (part.hasFrame())
                                 navTree.addChild("Hide Frame", getToggleFrameURL(context, part), null, "fa fa-eye-slash");

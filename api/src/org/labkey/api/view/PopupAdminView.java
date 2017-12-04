@@ -152,7 +152,7 @@ public class PopupAdminView extends PopupMenuView
 
         if (!c.isRoot())
         {
-            if (PageFlowUtil.useExperimentalCoreUI() && isFolderAdmin(context))
+            if (isFolderAdmin(context))
             {
                 String pageAdminTxt = PageFlowUtil.isPageAdminMode(context) ? "Exit Page Admin Mode" : "Page Admin Mode";
                 ActionURL pageAdminUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, context.getActionURL());

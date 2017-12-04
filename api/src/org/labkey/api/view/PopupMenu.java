@@ -25,7 +25,6 @@ import org.labkey.api.util.UniqueID;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -120,8 +119,6 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuButton(@Nullable RenderContext ctx, Writer out, boolean requiresSelection, @Nullable ActionButton button) throws IOException
     {
-        boolean usingNewUI = PageFlowUtil.useExperimentalCoreUI();
-
         if (null == _navTree.getText())
             return;
 
@@ -131,16 +128,8 @@ public class PopupMenu extends DisplayElement
         Map<String, String> attributes = new HashMap<>();
         String onClickScript = null;
 
-        if (usingNewUI)
-        {
-            out.append("<div class=\"lk-menu-drop dropdown\">");
-            attributes.put("data-toggle", "dropdown");
-        }
-        else
-        {
-            onClickScript = "showMenu(this, " + PageFlowUtil.qh(_safeID) + ",'" + _align.getExtPosition() + "');";
-            attributes.put("lk-menu-id", _safeID);
-        }
+        out.append("<div class=\"lk-menu-drop dropdown\">");
+        attributes.put("data-toggle", "dropdown");
 
         String dataRegionName = null;
 
@@ -194,68 +183,22 @@ public class PopupMenu extends DisplayElement
             }
         }
 
-        if (usingNewUI)
+        out.append("<ul class=\"dropdown-menu dropdown-menu-left\">");
+        try
         {
-            out.append("<ul class=\"dropdown-menu dropdown-menu-left\">");
-            try
-            {
-                PopupMenuView.renderTree(_navTree, out);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-            out.append("</ul>");
-            out.append("</div>");
+            PopupMenuView.renderTree(_navTree, out);
         }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+        out.append("</ul></div>");
     }
 
-
+    @Deprecated
     public void renderMenuScript(Writer out) throws IOException
     {
-        if (!PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.append("<script type=\"text/javascript\">\n");
-            renderExtMenu(out);
-            out.append("\n</script>");
-        }
-    }
-
-    private void renderExtMenu(Writer out) throws IOException
-    {
-        out.append("if (typeof(Ext4) != 'undefined') { Ext4.onReady(function() {");
-        out.append(renderUnregScript());
-        out.append(" var m = Ext4.create('Ext.menu.Menu',");
-        out.append(renderMenuModel(_navTree.getChildren(), _safeID, _singletonMenu));
-        out.append("); }); } else { console.error('Unable to render menu. Ext4 is not available.'); }");
-    }
-
-    private String renderUnregScript()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    var oldMenu = Ext4.menu.Manager.get(");
-        sb.append(PageFlowUtil.qh(_safeID));
-        sb.append(");\n");
-        sb.append("    if(oldMenu)\n");
-        sb.append("    {\n");
-        sb.append("        oldMenu.removeAll();\n");
-        sb.append("        Ext4.menu.Manager.unregister(oldMenu);\n");
-        sb.append("    }\n");
-        return sb.toString();
-    }
-
-    private static String renderMenuModel(Collection<NavTree> trees, String id, boolean singletonMenu)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("{showSeparator: false, ");
-        sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
-        sb.append("items:");
-        boolean useIds = singletonMenu;
-        NavTree.toJS(trees, sb, true, useIds);
-        sb.append("}");
-
-        return sb.toString();
+        /* No longer used after 17.3 UI update -- consider removal */
     }
 
     public Align getAlign()

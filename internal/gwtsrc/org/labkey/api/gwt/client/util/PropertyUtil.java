@@ -131,6 +131,6 @@ public class PropertyUtil
 
     public static boolean useExperimentalCoreUI()
     {
-        return "true".equals(getServerProperty("newCoreUI"));
+        return true;
     }
 }

@@ -263,7 +263,6 @@ public class AuthenticationManager
 
     private static @Nullable String getAuthLogoHtml(URLHelper currentURL, String prefix)
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         Collection<SSOAuthenticationProvider> ssoProviders = AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class);
 
         if (ssoProviders.isEmpty())
@@ -274,15 +273,7 @@ public class AuthenticationManager
         for (SSOAuthenticationProvider provider : ssoProviders)
         {
             LinkFactory factory = provider.getLinkFactory();
-            String link = factory.getLink(currentURL, prefix);
-
-            if (!newUI && html.length() > 0)
-                html.append("&nbsp;");
-
-            if (newUI)
-                html.append("<li>").append(link).append("</li>");
-            else
-                html.append(link);
+            html.append("<li>").append(factory.getLink(currentURL, prefix)).append("</li>");
         }
 
         return html.toString();
@@ -1362,28 +1353,13 @@ public class AuthenticationManager
 
         private @NotNull String getLink(URLHelper returnURL, String prefix)
         {
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
-                String content = _providerName;
-                String img = getImg(prefix);
-
-                if (null != img)
-                    content = img;
-
-                return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + content + "</a>";
-            }
-
+            String content = _providerName;
             String img = getImg(prefix);
 
-            if (null == img)
-            {
-                if (LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
-                    return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\"><font size=\"4\">" + _providerName + "</font></a>";
-                else
-                    return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\"><font size=\"2\" color=\"yellow\">" + _providerName + "</font></a>";
-            }
-            else
-                return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + img + "</a>";
+            if (null != img)
+                content = img;
+
+            return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + content + "</a>";
         }
 
         public ActionURL getURL(URLHelper returnURL)

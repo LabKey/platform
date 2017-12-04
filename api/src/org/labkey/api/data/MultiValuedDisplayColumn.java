@@ -138,8 +138,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         // TODO: Call super in empty values case?
     }
 
-    @Override
-    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
     {
         renderGridCellContents(ctx, out);
     }
@@ -187,9 +186,9 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderInputCell(RenderContext ctx, Writer out) throws IOException
     {
-        renderInputWrapperBegin(out, span);
+        renderInputWrapperBegin(out);
         renderInputHtml(ctx, out, getInputValue(ctx));
         renderInputWrapperEnd(out);
     }

@@ -15,12 +15,10 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,13 +29,11 @@ import java.util.List;
 public class VBox extends WebPartView
 {
     protected final List<ModelAndView> _views;
-    protected boolean _includeBreak;
 
     public VBox(ModelAndView... views)
     {
         super(FrameType.NONE);
         _views = new ArrayList<>(Arrays.asList(views));
-        _includeBreak = true;
     }
 
     public boolean isVisible()
@@ -68,32 +64,13 @@ public class VBox extends WebPartView
         return ret;
     }
 
-    public boolean isIncludeBreak()
-    {
-        return _includeBreak;
-    }
-
-    public void setIncludeBreak(boolean includeBreak)
-    {
-        _includeBreak = includeBreak;
-    }
-
     @Override
     public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        PrintWriter out = response.getWriter();
-
-        String sep = "";
         for (ModelAndView view : _views)
         {
             if (null == view)
                 continue;
-            if (!PageFlowUtil.useExperimentalCoreUI())
-            {
-                out.println(sep);
-                if (_includeBreak)
-                    sep = "<br/>";
-            }
             include(view);
         }
     }

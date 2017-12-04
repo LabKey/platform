@@ -43,7 +43,6 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -195,14 +194,6 @@
                     _LOCK = false;
                 }
             });
-
-            <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
-            var _resize = function(w,h) {
-                LABKEY.ext4.Util.resizeToViewport(panel, w, -1); // don't fit to height
-            };
-
-            Ext4.EventManager.onWindowResize(_resize);
-            <% } %>
         });
     }
 </script>

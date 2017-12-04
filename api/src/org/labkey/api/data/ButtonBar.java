@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.DisplayElement;
 
@@ -152,8 +151,6 @@ public class ButtonBar extends DisplayElement
         if (!shouldRender(ctx))
             return;
 
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
         out.write("<div");
@@ -170,11 +167,7 @@ public class ButtonBar extends DisplayElement
             // This is redundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
             if (el.shouldRender(ctx))
             {
-                if (!newUI)
-                    out.write("<span>");
                 el.render(ctx, out);
-                if (!newUI)
-                    out.write("</span>");
             }
         }
         out.write("</div>");

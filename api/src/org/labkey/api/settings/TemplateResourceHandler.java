@@ -49,10 +49,7 @@ public enum TemplateResourceHandler
 
         protected String getDefaultLink(Container c)
         {
-            if (PageFlowUtil.useExperimentalCoreUI())
-                return "/_images/lk-noTAG-" + resolveLogoThemeName(c) + ".svg";
-
-            return "/_images/defaultlogo.png";
+            return "/_images/lk-noTAG-" + resolveLogoThemeName(c) + ".svg";
         }
 
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
@@ -90,10 +87,7 @@ public enum TemplateResourceHandler
 
         protected String getDefaultLink(Container c)
         {
-            if (PageFlowUtil.useExperimentalCoreUI())
-                return "/_images/mobile-logo-" + resolveLogoThemeName(c) + ".svg";
-
-            return "/_images/defaultlogo.png";
+            return "/_images/mobile-logo-" + resolveLogoThemeName(c) + ".svg";
         }
 
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
@@ -181,20 +175,7 @@ public enum TemplateResourceHandler
 
     public ResourceURL getURL(Container c)
     {
-        try
-        {
-            Container settingsContainer = LookAndFeelProperties.getSettingsContainer(c);
-            CacheableWriter writer = getWriterForContainer(settingsContainer);
-
-            if (CacheableWriter.noDocument == writer && !PageFlowUtil.useExperimentalCoreUI())
-                settingsContainer = ContainerManager.getRoot();
-
-            return new ResourceURL(getResourceName(), settingsContainer);
-        }
-        catch (IOException | ServletException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new ResourceURL(getResourceName(), LookAndFeelProperties.getSettingsContainer(c));
     }
 
 

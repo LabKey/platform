@@ -592,7 +592,6 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);
         boolean filtered = isFiltered(ctx);
@@ -603,9 +602,8 @@ public abstract class DisplayColumn extends RenderColumn
         NavTree navTree = getPopupNavTree(ctx, baseId, sort, filtered);
         boolean hasMenu = navTree != null;
 
-        out.write(newUI ? "<th " : "<td ");
-        out.write("class=\"labkey-column-header ");
-        if (newUI && hasMenu)
+        out.write("<th class=\"labkey-column-header ");
+        if (hasMenu)
             out.write("dropdown dropdown-rollup ");
         out.write(getGridHeaderClass());
         if (sortField != null)
@@ -657,76 +655,28 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("\"");
         }
 
-        // Issue 11392: id is double html filtered: once for the baseId of the popupmenu and again for rendering into the attribute value.
-        String safeHeaderId = "column-header-" + UniqueID.getServerSessionScopedUID();
-        if (!newUI && hasMenu)
-        {
-            out.write(" id=\"");
-            out.write(PageFlowUtil.filter(safeHeaderId));
-            out.write("\"");
-        }
-
         out.write(" column-name=\"");
         out.write(PageFlowUtil.filter(ctx.getCurrentRegion().getName() + ":" + columnName));
-        out.write("\"");
-
-        out.write(">\n");
-        if (!newUI)
-            out.write("<div>");
+        out.write("\">");
 
         renderTitle(ctx, out);
 
-        if (newUI)
-        {
-            out.write("<span class=\"fa fa-filter\"></span>");
-            out.write("<span class=\"fa fa-sort-up\"></span>");
-            out.write("<span class=\"fa fa-sort-down\"></span>");
-
-            if (hasMenu)
-                out.write("<span class=\"fa fa-chevron-circle-down\"></span>");
-        }
-        else
-        {
-            out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-grid-filter-icon\"/>");
-            out.write("<img src=\"" + ctx.getRequest().getContextPath() + "/_.gif\" class=\"labkey-column-header-sort-icon\"/>");
-        }
-
-        if (!newUI)
-            out.write("</div>");
+        out.write("<span class=\"fa fa-filter\"></span>");
+        out.write("<span class=\"fa fa-sort-up\"></span>");
+        out.write("<span class=\"fa fa-sort-down\"></span>");
 
         if (hasMenu)
         {
-            if (newUI)
-            {
-                // 31304: click target should fill the entire cell
-                out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
-                out.write("<ul class=\"dropdown-menu\">");
-                PopupMenuView.renderTree(navTree, out);
-                out.write("</ul>");
-            }
-            else
-            {
-                PopupMenu popup = new PopupMenu(navTree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
-                popup.renderMenuScript(out);
+            out.write("<span class=\"fa fa-chevron-circle-down\"></span>");
 
-                out.write("<script type=\"text/javascript\">\n");
-                out.write("Ext4.onReady(function () {\n");
-                out.write("var header = Ext4.get(");
-                out.write(PageFlowUtil.jsString(safeHeaderId));
-                out.write(");\n");
-                out.write("if (header) {\n");
-                out.write("  header.on('click', function (evt, el, o) {\n");
-                out.write("    showMenu(el, ");
-                out.write(PageFlowUtil.qh(popup.getSafeID()));
-                out.write(", null);\n");
-                out.write("  });\n");
-                out.write("}\n");
-                out.write("});\n");
-                out.write("</script>\n");
-            }
+            // 31304: click target should fill the entire cell
+            out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
+            out.write("<ul class=\"dropdown-menu\">");
+            PopupMenuView.renderTree(navTree, out);
+            out.write("</ul>");
         }
 
-        out.write(newUI ? "</th>" : "</td>");
+        out.write("</th>");
     }
 
     private Sort getSort(RenderContext ctx)
@@ -1031,18 +981,9 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == _caption)
             return;
 
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-            renderTitle(ctx, out);
-            out.write("</td>");
-        }
-        else
-        {
-            out.write("<td class=\"labkey-form-label\">");
-            renderTitle(ctx, out);
-            out.write("</td>");
-        }
+        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
+        renderTitle(ctx, out);
+        out.write("</td>");
     }
 
     public String getDetailsData(RenderContext ctx)
@@ -1050,7 +991,7 @@ public abstract class DisplayColumn extends RenderColumn
         StringWriter writer = new StringWriter();
         try
         {
-            renderDetailsData(ctx, writer, 1);
+            renderDetailsData(ctx, writer);
         }
         catch (Exception e)
         {
@@ -1059,7 +1000,7 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
     {
         renderDetailsCellContents(ctx, out);
     }
@@ -1069,7 +1010,7 @@ public abstract class DisplayColumn extends RenderColumn
         StringWriter writer = new StringWriter();
         try
         {
-            renderInputCell(ctx, writer, 1);
+            renderInputCell(ctx, writer);
         }
         catch (Exception e)
         {
@@ -1130,40 +1071,16 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            out.write(new Input.InputBuilder()
-                    .name(getInputPrefix() + formFieldName)
-                    .type("hidden")
-                    .value(value)
-                    .toString());
-        }
-        else
-        {
-            out.write("<input type=\"hidden\"");
-            outputName(ctx, out, formFieldName);
-            out.write(" value=\"");
-            if (null != value)
-            {
-                // it's important to use ConvertUtils here, since 'value' might be a string (if populated via
-                // an initial values map), or it might be an array containing a single string (if populated via
-                // request.getParameterMap() during an error reshow).  ConvertUtils normalizes these values.
-                out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
-            }
-            out.write("\">");
-        }
+        out.write(new Input.InputBuilder()
+                .name(getInputPrefix() + formFieldName)
+                .type("hidden")
+                .value(value)
+                .toString());
     }
 
-    public void renderInputWrapperBegin(Writer out, int span) throws IOException
+    public void renderInputWrapperBegin(Writer out) throws IOException
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI(); //when removing the newUI the span argument should be factored
-
-        if (newUI)
-            out.write("<td>");
-        else if (null == _caption)
-            out.write("<td colspan=\"" + (span + 1) + "\">");
-        else
-           out.write("<td colspan=\"" + span + "\">");
+        out.write("<td>");
     }
 
     public void renderInputWrapperEnd(Writer out) throws IOException
@@ -1171,9 +1088,9 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("</td>");
     }
 
-    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    public void renderInputCell(RenderContext ctx, Writer out) throws IOException
     {
-        renderInputWrapperBegin(out, span);
+        renderInputWrapperBegin(out);
         renderInputHtml(ctx, out, getInputValue(ctx));
         renderInputWrapperEnd(out);
     }

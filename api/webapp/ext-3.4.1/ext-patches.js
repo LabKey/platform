@@ -248,85 +248,82 @@ if (Ext.isIE7 || Ext.isIE8) {
 // - }else if (Ext.isWebKit){
 // + }else if (Ext.isWebKit || Ext.isGecko){
 
++function() {
+    var _initComponent = Ext.Window.prototype.initComponent;
 
-if (LABKEY.experimental.useExperimentalCoreUI) {
-    +function() {
-        var _initComponent = Ext.Window.prototype.initComponent;
+    /**
+     * Allow responsive modal interaction for Ext.Window components.
+     * At small screen width (user configurable), the popup will take full screen width.
+     * For modal dialog with 'closable' set to true, clicking outside the popup will close the popup.
+     * Configs:
+     *      suppressResponsive: true to opt out of this feature, default false
+     *      smallScreenWidth: the pixel screen width at which responsive sizing kicks in, default 480
+     *      maximizeOnSmallScreen: true to maximize popup to full screen width and height on small screen,
+     *                              false to only take full width, default false.
+     *      closableOnMaskClick: true to always support closing closable modal by click on mask regardless of screen size,
+     *                            otherwise only closable on mask click for small screens, default false
+     *      useExtStyle: true to use ext style, false to use bootstrap style, default true
+     */
+    Ext.override(Ext.Window, {
+        initComponent : function() {
+            if (this.suppressResponsive) {
+                _initComponent.apply(this, arguments);
+                return;
+            }
 
-        /**
-         * Allow responsive modal interaction for Ext.Window components.
-         * At small screen width (user configurable), the popup will take full screen width.
-         * For modal dialog with 'closable' set to true, clicking outside the popup will close the popup.
-         * Configs:
-         *      suppressResponsive: true to opt out of this feature, default false
-         *      smallScreenWidth: the pixel screen width at which responsive sizing kicks in, default 480
-         *      maximizeOnSmallScreen: true to maximize popup to full screen width and height on small screen,
-         *                              false to only take full width, default false.
-         *      closableOnMaskClick: true to always support closing closable modal by click on mask regardless of screen size,
-         *                            otherwise only closable on mask click for small screens, default false
-         *      useExtStyle: true to use ext style, false to use bootstrap style, default true
-         */
-        Ext.override(Ext.Window, {
-            initComponent : function() {
-                if (this.suppressResponsive) {
-                    _initComponent.apply(this, arguments);
-                    return;
+            // experimental, change look of windows
+            var useBootstrapStyle = this.useExtStyle === undefined ? false : !this.useExtStyle;
+            if (useBootstrapStyle) {
+                if (!this.cls)
+                    this.cls = '';
+                this.cls += ' modal-content';
+                this.shadow = false;
+            }
+
+            var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
+            useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
+            useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
+
+            if (useMaxWidth) {
+                if (this.maximizeOnSmallScreen) {
+                    this.maximized = true;
                 }
-
-                // experimental, change look of windows
-                var useBootstrapStyle = this.useExtStyle === undefined ? false : !this.useExtStyle;
-                if (useBootstrapStyle) {
-                    if (!this.cls)
-                        this.cls = '';
-                    this.cls += ' modal-content';
-                    this.shadow = false;
-                }
-
-                var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
-                useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
-                useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
-
-                if (useMaxWidth) {
-                    if (this.maximizeOnSmallScreen) {
-                        this.maximized = true;
-                    }
-                    else {
-                        var getBodyContainerWidth = function() {
-                            var containerWidth = window.innerWidth;
-                            var parent = Ext.getBody();
-                            var container = parent.query('> div.container');
+                else {
+                    var getBodyContainerWidth = function() {
+                        var containerWidth = window.innerWidth;
+                        var parent = Ext.getBody();
+                        var container = parent.query('> div.container');
+                        if (container && container[0])
+                            containerWidth = container[0].offsetWidth;
+                        else {
+                            // if template is not body
+                            container = parent.query('> div > div.container');
                             if (container && container[0])
                                 containerWidth = container[0].offsetWidth;
-                            else {
-                                // if template is not body
-                                container = parent.query('> div > div.container');
-                                if (container && container[0])
-                                    containerWidth = container[0].offsetWidth;
-                            }
+                        }
 
-                            return containerWidth;
-                        };
-
-                        var windowWidth = window.innerWidth;
-                        var containerWidth = getBodyContainerWidth();
-                        if (windowWidth - containerWidth < 30)
-                            this.width = containerWidth - 20 * 2; // reserve extra padding for scrollbar
-                        else
-                            this.width = containerWidth;
-                    }
-                }
-
-                var me = this;
-                if (this.modal && this.closable && (useMaxWidth || this.closableOnMaskClick)) {
-                    this.clickOutHandler = function() {
-                        me.close(me.closeAction);
+                        return containerWidth;
                     };
-                    this.clickOutParentCmp = Ext.getBody();
-                    this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.ext-el-mask' });
-                }
 
-                _initComponent.apply(this, arguments);
+                    var windowWidth = window.innerWidth;
+                    var containerWidth = getBodyContainerWidth();
+                    if (windowWidth - containerWidth < 30)
+                        this.width = containerWidth - 20 * 2; // reserve extra padding for scrollbar
+                    else
+                        this.width = containerWidth;
+                }
             }
-        });
-    }();
-}
+
+            var me = this;
+            if (this.modal && this.closable && (useMaxWidth || this.closableOnMaskClick)) {
+                this.clickOutHandler = function() {
+                    me.close(me.closeAction);
+                };
+                this.clickOutParentCmp = Ext.getBody();
+                this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.ext-el-mask' });
+            }
+
+            _initComponent.apply(this, arguments);
+        }
+    });
+}();

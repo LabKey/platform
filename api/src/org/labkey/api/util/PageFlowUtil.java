@@ -69,11 +69,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
@@ -89,7 +87,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -111,10 +108,8 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -182,30 +177,8 @@ public class PageFlowUtil
         if (context == null || context.getContainer() == null || !context.hasPermission("PageAdminMode", AdminPermission.class))
             return false;
 
-        if (!useExperimentalCoreUI())
-            return true;
-
         HttpSession session = context.getSession();
         return session != null && session.getAttribute(SESSION_PAGE_ADMIN_MODE) != null;
-    }
-
-    /** This is to be removed/replace by the isPageAdminMode() above after useExperimentalCoreUI is turned on **/
-    @Deprecated
-    public static boolean isTabEditMode(ViewContext context, Container tabContainer)
-    {
-        if (!useExperimentalCoreUI())
-        {
-            HttpSession session = context != null ? context.getSession() : null;
-            if (session == null)
-                return false;
-
-            String tabEditMode = session.getAttribute(SESSION_TAB_EDIT_MODE) == null ? "" : (String) session.getAttribute(SESSION_TAB_EDIT_MODE);
-            return tabContainer != null && tabEditMode.equals(tabContainer.getId());
-        }
-        else
-        {
-            return isPageAdminMode(context);
-        }
     }
 
     static public String filterXML(String s)
@@ -1106,23 +1079,6 @@ public class PageFlowUtil
         }
     }
 
-
-    public static Content getViewContent(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception
-    {
-        final StringWriter writer = new StringWriter();
-        HttpServletResponse servletResponse = new HttpServletResponseWrapper(response)
-        {
-            public PrintWriter getWriter()
-            {
-                return new PrintWriter(writer);
-            }
-        };
-        mv.getView().render(mv.getModel(), request, servletResponse);
-        String sheet = writer.toString();
-        return new Content(sheet);
-    }
-
-
     public static void sendContent(HttpServletRequest request, HttpServletResponse response, Content content, String contentType) throws IOException
     {
         // TODO content.getContentType()
@@ -1664,23 +1620,13 @@ public class PageFlowUtil
             else if (AppProps.getInstance().isExt3Required())
                 resources.add(ClientDependency.fromPath("Ext3"));
 
-            if (useExperimentalCoreUI())
-            {
-                // TODO: Turn this into a lib.xml
-                resources.add(ClientDependency.fromPath("internal/jQuery"));
-                resources.add(ClientDependency.fromPath("core/css/core.js"));
-            }
+            // TODO: Turn this into a lib.xml
+            resources.add(ClientDependency.fromPath("internal/jQuery"));
+            resources.add(ClientDependency.fromPath("core/css/core.js"));
 
             // Always include clientapi and internal
             resources.add(ClientDependency.fromPath("clientapi"));
-
-            if (PageFlowUtil.useExperimentalCoreUI())
-                resources.add(ClientDependency.fromPath("internal"));
-            else
-            {
-                resources.add(ClientDependency.fromPath("Ext4"));
-                resources.add(ClientDependency.fromPath("util.js"));
-            }
+            resources.add(ClientDependency.fromPath("internal"));
         }
 
         if (extraResources != null)
@@ -1705,8 +1651,6 @@ public class PageFlowUtil
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
     private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
     {
-        WebTheme theme = WebThemeManager.getTheme(c);
-
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
 
@@ -1720,75 +1664,26 @@ public class PageFlowUtil
 
         if (includeDefaultResources)
         {
-            if (useExperimentalCoreUI())
+            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css")));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css")));
+
+            ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+            if (c.isRoot())
             {
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css")));
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css")));
-
-                ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
-
-                if (c.isRoot())
-                {
                     /* Add the root customStylesheet */
-                    if (null != rootCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-                }
-                else
-                {
-                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-                    /* Add the container relative customStylesheet */
-                    if (null != containerCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-                    else if (null != rootCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-                }
+                if (null != rootCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
             }
             else
             {
-                String fontAwesomeCss = AppProps.getInstance().isDevMode() ? "font-awesome.css" : "font-awesome.min.css";
-                F.format(link, PageFlowUtil.filter(staticResourceUrl("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
+                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
-                F.format(link, PageFlowUtil.filter(staticResourceUrl(theme.getStyleSheet())));
-
-                ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
-
-                if (!c.isRoot())
-                {
-                    /* Add the themeStylesheet */
-                    if (coreUrls.getThemeStylesheetURL(c) != null)
-                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
-                    else
-                    {
-                        /* In this case a themeStylesheet was not found in a subproject to default to the root */
-                        if (coreUrls.getThemeStylesheetURL() != null)
-                            F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-                    }
-                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-                    /* Add the customStylesheet */
-                    if (null != containerCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-                    else
-                    {
-                        if (null != rootCustomStylesheetURL)
-                            F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-                    }
-                }
-                else
-                {
-                    /* Add the root themeStylesheet */
-                    if (coreUrls.getThemeStylesheetURL() != null)
-                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-
-                    /* Add the root customStylesheet */
-                    if (null != rootCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
-                }
-
-                sb.append("<link href=\"");
-                sb.append(filter(staticResourceUrl("printStyle.css")));
-                sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
+                    /* Add the container relative customStylesheet */
+                if (null != containerCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                else if (null != rootCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
             }
         }
 
@@ -1819,25 +1714,13 @@ public class PageFlowUtil
                     if (!ext3Included && paths.startsWith("ext-3.4.1/ext-all"))
                     {
                         ext3Included = true;
-                        String cssPath;
-                        if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext3_" + themeName + ".css";
-                        else
-                            cssPath = extJsRoot() + "/resources/css/ext-all.css";
-
-                        extCSS.add(cssPath);
+                        extCSS.add("/core/css/ext3_" + themeName + ".css");
                     }
 
                     if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
                     {
                         ext4Included = true;
-                        String cssPath;
-                        if (useExperimentalCoreUI())
-                            cssPath = "/core/css/ext4_" + themeName + ".css";
-                        else
-                            cssPath = ext4ThemeRoot() + "/" + themeName + "/ext-all.css";
-
-                        extCSS.add(cssPath);
+                        extCSS.add("/core/css/ext4_" + themeName + ".css");
                     }
 
                     if (ext3Included && ext4Included)
@@ -1908,40 +1791,23 @@ public class PageFlowUtil
         return "ext-3.4.1";
     }
 
-    public static final String ext4ThemeRoot()
-    {
-        return "ext-theme";
-    }
-
     public static String resolveThemeName(Container c)
     {
         String themeName = WebTheme.DEFAULT.getFriendlyName();
 
         if (c != null)
         {
-            if (useExperimentalCoreUI())
-            {
-                themeName = LookAndFeelProperties.getInstance(c).getThemeName();
+            themeName = LookAndFeelProperties.getInstance(c).getThemeName();
 
-                // Only for 17.2 release
-                if (!"seattle".equalsIgnoreCase(themeName) &&
-                        !"overcast".equalsIgnoreCase(themeName) &&
-                        !"harvest".equalsIgnoreCase(themeName) &&
-                        !"leaf".equalsIgnoreCase(themeName) &&
-                        !"ocean".equalsIgnoreCase(themeName) &&
-                        !"mono".equalsIgnoreCase(themeName) &&
-                        !"madison".equalsIgnoreCase(themeName))
-                    return WebTheme.EXPERIMENTAL_DEFAULT_THEME_NAME;
-            }
-            else
-            {
-                WebTheme theme = WebThemeManager.getTheme(c);
-
-                if (!theme.isEditable())
-                {
-                    themeName = theme.getFriendlyName();
-                }
-            }
+            // TODO: This needs to be refactored to allow themes by convention
+            if (!"seattle".equalsIgnoreCase(themeName) &&
+                    !"overcast".equalsIgnoreCase(themeName) &&
+                    !"harvest".equalsIgnoreCase(themeName) &&
+                    !"leaf".equalsIgnoreCase(themeName) &&
+                    !"ocean".equalsIgnoreCase(themeName) &&
+                    !"mono".equalsIgnoreCase(themeName) &&
+                    !"madison".equalsIgnoreCase(themeName))
+                return WebTheme.EXPERIMENTAL_DEFAULT_THEME_NAME;
         }
 
         return themeName.toLowerCase();

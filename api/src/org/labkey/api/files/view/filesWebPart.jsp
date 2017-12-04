@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -32,7 +31,6 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("File");
-        dependencies.add("Ext4ClientApi"); // LABKEY.ext4.Util.resizeToViewport
     }
 %>
 <%
@@ -73,28 +71,15 @@
     else
     {
 %>
-<% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
-<!-- 19142: Browser action tooltips are clipped in IE -->
-<style type="text/css">
-    #ext-quicktips-tip-innerCt {
-        white-space: nowrap;
-    }
-</style>
-<% } %>
 <div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
         var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=text(sep)%>'<%=text(action.name())%>'<% sep = ","; }%>];
         var startDirectory;
 
-        <%
-            if (bean.getDirectory() != null)
-            {
-        %>
+        <% if (bean.getDirectory() != null) { %>
         startDirectory = <%=PageFlowUtil.jsString(bean.getDirectory().toString())%>;
-        <%
-            }
-        %>
+        <% } %>
 
         var config = {
             renderTo: <%=q(bean.getContentId())%>,
@@ -124,14 +109,10 @@
             }
         };
 
-        <%
-            if (bean.isListing())
-            {
-        %>
+        <% if (bean.isListing()) { %>
         Ext4.apply(config, {
             allowSelection: false,
             expandUpload: false,
-            minWidth: LABKEY.experimental.useExperimentalCoreUI ? undefined : 250,
             useServerActions: false,
             useServerFileProperties: false,
             showColumnHeaders: false,
@@ -148,31 +129,9 @@
                 collapsed: true
             }
         });
-        <%
-            }
-        %>
-
-        var fb = Ext4.create('File.panel.Browser', config);
-
-        var _resize = function(w, h) {
-            if (!fb || !fb.rendered)
-                return;
-
-            <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
-            var paddingX = <%= me.getFrame() == WebPartView.FrameType.PORTAL ? 26 : 20 %>;
-            var paddingY = <%= me.getFrame() == WebPartView.FrameType.PORTAL ? 95 : 35 %>;
-            LABKEY.ext4.Util.resizeToViewport(fb, w, h, paddingX, paddingY);
-            <% } %>
-            fb.detailCheck();
-        };
-
-        <% if (bean.isAutoResize() && !PageFlowUtil.useExperimentalCoreUI()) { %>
-        Ext4.EventManager.onWindowResize(_resize);
-        Ext4.defer(function(){
-            var size = Ext4.getBody().getBox();
-            _resize(size.width, size.height);
-        }, 300);
         <% } %>
+
+        Ext4.create('File.panel.Browser', config);
     });
 </script>
 <%

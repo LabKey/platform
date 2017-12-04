@@ -370,59 +370,7 @@ LABKEY.ext.Utils = new function() {
          */
         resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
-            if (LABKEY.experimental.useExperimentalCoreUI) {
-                resizeToContainer.apply(this, arguments);
-                return;
-            }
-
-            if (!extContainer || !extContainer.rendered)
-                return;
-
-            if (width < 0 && height < 0)
-                return;
-
-            var padding = [];
-            if (offsetX === undefined || offsetX === null)
-                offsetX = 35;
-            if (offsetY === undefined || offsetY === null)
-                offsetY = 35;
-
-            if (paddingX !== undefined && paddingX !== null)
-                padding.push(paddingX);
-            else
-            {
-
-                var bp = Ext.get('bodypanel');
-                if (bp) {
-                    var t  = Ext.query('table.labkey-proj');
-                    if (t && t.length > 0) {
-                        t = Ext.get(t[0]);
-                        padding.push((t.getWidth()-(bp.getWidth())) + offsetX);
-                    }
-                    else
-                        padding.push(offsetX);
-                }
-                else
-                    padding.push(offsetX);
-            }
-            if (paddingY !== undefined && paddingY !== null)
-                padding.push(paddingY);
-            else
-                padding.push(offsetY);
-
-            var xy = extContainer.el.getXY();
-            var size = {
-                width  : Math.max(100, width - xy[0] - padding[0]),
-                height : Math.max(100, height - xy[1] - padding[1])
-            };
-
-            if (width < 0)
-                extContainer.setHeight(size.height);
-            else if (height < 0)
-                extContainer.setWidth(size.width);
-            else
-                extContainer.setSize(size);
-            extContainer.doLayout();
+            resizeToContainer.apply(this, arguments);
         }
     };
 };

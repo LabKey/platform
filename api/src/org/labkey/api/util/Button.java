@@ -135,8 +135,6 @@ public class Button extends DisplayElement
 
     private String generateOnClick(String id)
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-
         // prepare onclick method and overrides
         final String onClick = getOnClick() == null ? "" : getOnClick();
 
@@ -152,10 +150,7 @@ public class Button extends DisplayElement
 
         if (isDisableOnClick())
         {
-            if (newUI)
-                onClickMethod += ";LABKEY.Utils.addClass(this," + qDisabledCls + ");";
-            else
-                onClickMethod += ";LABKEY.Utils.replaceClass(this," + qCls + "," + qDisabledCls + ");";
+            onClickMethod += ";LABKEY.Utils.addClass(this," + qDisabledCls + ");";
         }
 
         if (isSubmit())
@@ -173,12 +168,7 @@ public class Button extends DisplayElement
 
                 if (isDisableOnClick())
                 {
-                    onClickMethod += "else{";
-                    if (newUI)
-                        onClickMethod += ";LABKEY.Utils.removeClass(this," + qDisabledCls + ");";
-                    else
-                        onClickMethod += ";LABKEY.Utils.replaceClass(this," + qDisabledCls + "," + qCls + ");";
-                    onClickMethod += "}";
+                    onClickMethod += "else{LABKEY.Utils.removeClass(this," + qDisabledCls + ");}";
                 }
             }
         }
@@ -199,8 +189,7 @@ public class Button extends DisplayElement
     @Override
     public String toString()
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
-        boolean iconOnly = newUI && getIconCls() != null;
+        boolean iconOnly = getIconCls() != null;
         StringBuilder sb = new StringBuilder();
         String submitId = GUID.makeGUID();
         final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
@@ -211,25 +200,16 @@ public class Button extends DisplayElement
             sb.append("id=\"").append(submitId).append("\"/>");
         }
 
-        // enabled
-        // OLD UI: MENU_CLS is used in place of CLS
-        // NEW UI: CLS is always applied, MENU_CLS is not used
-        sb.append("<a class=\"");
-        if (isEnabled())
-            sb.append(isDropdown() ? (newUI ? CLS : MENU_CLS) : CLS);
-        else
-        {
-            if (newUI)
-                sb.append(CLS);
+        sb.append("<a class=\"").append(CLS);
+        if (!isEnabled())
             sb.append(" ").append(DISABLEDCLS);
-        }
 
         if (typeCls != null)
             sb.append(" ").append(PageFlowUtil.filter(typeCls));
         else if (isSubmit())
             sb.append(" ").append(PRIMARY_CLS);
 
-        if (newUI && isDropdown())
+        if (isDropdown())
             sb.append(" labkey-down-arrow");
         if (getCssClass() != null)
             sb.append(" ").append(PageFlowUtil.filter(getCssClass()));

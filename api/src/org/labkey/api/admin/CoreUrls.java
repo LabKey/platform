@@ -28,8 +28,6 @@ import org.labkey.api.view.ActionURL;
  */
 public interface CoreUrls extends UrlProvider
 {
-    ActionURL getThemeStylesheetURL();
-    ActionURL getThemeStylesheetURL(Container c);
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
 

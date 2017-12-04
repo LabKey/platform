@@ -1075,7 +1075,7 @@ public class ContainerManager
         User user = context.getUser();
         Container currentProject = context.getContainer().getProject();
         String projectNavTreeId = PROJECT_LIST_ID;
-        if (PageFlowUtil.useExperimentalCoreUI() && currentProject != null)
+        if (currentProject != null)
             projectNavTreeId += currentProject.getId();
 
         NavTree navTree = (NavTree) NavTreeManager.getFromCache(projectNavTreeId, context);
@@ -1625,8 +1625,7 @@ public class ContainerManager
         if (project != null)
         {
             NavTreeManager.uncacheTree(project.getId());
-            if (PageFlowUtil.useExperimentalCoreUI())
-                NavTreeManager.uncacheTree(PROJECT_LIST_ID + project.getId());
+            NavTreeManager.uncacheTree(PROJECT_LIST_ID + project.getId());
         }
     }
 

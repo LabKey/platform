@@ -859,7 +859,6 @@ public class QueryView extends WebPartView<Object>
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        boolean newUI = PageFlowUtil.useExperimentalCoreUI();
         MenuButton queryButton = createQueryPickerButton("Query");
         queryButton.setVisible(getSettings().getAllowChooseQuery());
         bar.add(queryButton);
@@ -902,14 +901,6 @@ public class QueryView extends WebPartView<Object>
                 }
                 bar.add(b);
             }
-
-            if (!newUI)
-                bar.add(createPrintButton());
-        }
-
-        if (!newUI && view.getDataRegion().getShowPagination())
-        {
-            bar.add(createPageSizeMenuButton());
         }
     }
 
@@ -1058,10 +1049,7 @@ public class QueryView extends WebPartView<Object>
 
     protected String getInsertButtonText(String btnTxt)
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
-            return StringUtils.capitalize(btnTxt.toLowerCase());
-        else
-            return btnTxt;
+        return StringUtils.capitalize(btnTxt.toLowerCase());
     }
 
     @Nullable
@@ -1346,86 +1334,6 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    // This should be removed after useExperimentalCoreUI is migrated
-    protected MenuButton createPageSizeMenuButton()
-    {
-        final int maxRows = getMaxRows();
-        final boolean showingAll = getShowRows() == ShowRows.ALL;
-        final boolean showingSelected = getShowRows() == ShowRows.SELECTED;
-        final boolean showingUnselected = getShowRows() == ShowRows.UNSELECTED;
-
-        MenuButton pageSizeMenu = new MenuButton("Paging", getBaseMenuId() + ".Menu.PageSize")
-        {
-            @Override
-            public void render(RenderContext ctx, Writer out) throws IOException
-            {
-                if (PageFlowUtil.useExperimentalCoreUI())
-                {
-                    super.render(ctx, out);
-                    return;
-                }
-
-                addSeparator();
-
-                // We don't know if record selectors are showing until render time so we
-                // need to add in the Show Selected/Unselected menu items at this time.
-                DataRegion rgn = ctx.getCurrentRegion();
-                final String jsObject = rgn.getJavaScriptObjectReference();
-
-                if (rgn.getShowRecordSelectors(ctx) || showingSelected || showingUnselected)
-                {
-                    NavTree item = addMenuItem("Show Selected", null,
-                            jsObject + ".showSelected()", showingSelected);
-                    item.setId("Page Size:Selected");
-                    item = addMenuItem("Show Unselected", null,
-                            jsObject + ".showUnselected()", showingUnselected);
-                    item.setId("Page Size:Unselected");
-                }
-
-                NavTree item = addMenuItem("Show All", null,
-                        jsObject + ".showAll()", showingAll);
-                item.setId("Page Size:All");
-
-                super.render(ctx, out);
-            }
-
-            @Override
-            public boolean shouldRender(RenderContext ctx)
-            {
-                Results rs = ctx.getResults();
-                if (rs == null)
-                    return false;
-                if (rs.isComplete() &&
-                        ctx.getCurrentRegion().getOffset() == 0 &&
-                        !(showingAll || showingSelected || showingUnselected || maxRows > 0))
-                    return false;
-                return super.shouldRender(ctx);
-            }
-        };
-
-        // insert current maxRows into sorted list of possible sizes
-        List<Integer> sizes = new LinkedList<>(PageFlowUtil.useExperimentalCoreUI() ? Arrays.asList(20, 40, 100, 250) : Arrays.asList(40, 100, 250, 1000));
-        if (maxRows > 0)
-        {
-            int index = Collections.binarySearch(sizes, maxRows);
-            if (index < 0)
-            {
-                sizes.add(-index - 1, maxRows);
-            }
-        }
-
-        final String jsObject = DataRegion.getJavaScriptObjectReference(getDataRegionName());
-        for (Integer pageSize : sizes)
-        {
-            boolean checked = (pageSize == maxRows);
-            NavTree item = pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", null,
-                    jsObject + ".setMaxRows(" + String.valueOf(pageSize) + ")", checked);
-            item.setId("Page Size:" + pageSize);
-        }
-
-        return pageSizeMenu;
-    }
-
     public ReportService.ItemFilter getViewItemFilter()
     {
         return _itemFilter;
@@ -1454,40 +1362,18 @@ public class QueryView extends WebPartView<Object>
         NavTree menu = button.getNavTree();
         menu.setId(getBaseMenuId() + ".Menu.GridViews");
 
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            if (getSettings().isAllowCustomizeView())
-                addCustomizeViewItems(button);
+        if (getSettings().isAllowCustomizeView())
+            addCustomizeViewItems(button);
 
-            if (!getQueryDef().isTemporary())
-            {
-                button.addSeparator();
-                addGridViews(button, target, current);
-                button.addSeparator();
-                addManageViewItems(button, PageFlowUtil.map(
-                        "schemaName", getSchema().getSchemaName(),
-                        "queryName", getSettings().getQueryName()));
-                addFilterItems(button);
-            }
-        }
-        else
+        if (!getQueryDef().isTemporary())
         {
-            // existing views
-            if (!getQueryDef().isTemporary())
-            {
-                addGridViews(button, target, current);
-                button.addSeparator();
-            }
-
-            if (getSettings().isAllowCustomizeView())
-                addCustomizeViewItems(button);
-            if (!getQueryDef().isTemporary())
-            {
-                addManageViewItems(button, PageFlowUtil.map(
-                        "schemaName", getSchema().getSchemaName(),
-                        "queryName", getSettings().getQueryName()));
-                addFilterItems(button);
-            }
+            button.addSeparator();
+            addGridViews(button, target, current);
+            button.addSeparator();
+            addManageViewItems(button, PageFlowUtil.map(
+                    "schemaName", getSchema().getSchemaName(),
+                    "queryName", getSettings().getQueryName()));
+            addFilterItems(button);
         }
 
         return button;
@@ -1586,46 +1472,18 @@ public class QueryView extends WebPartView<Object>
             MenuButton reportButton = createReportButton();
             MenuButton chartButton = createChartButton();
 
-            if (PageFlowUtil.useExperimentalCoreUI())
+            if (reportButton.getNavTree().hasChildren())
             {
-                if (reportButton.getNavTree().hasChildren())
-                {
-                    chartButton.setTooltip("Charts / Reports");
-                    NavTree chartMenu = chartButton.getNavTree();
-                    chartMenu.addSeparator();
-                    for (NavTree child : reportButton.getNavTree().getChildren())
-                        chartButton.addMenuItem(child);
-                }
-
-                if (chartButton.getNavTree().hasChildren())
-                    bar.add(chartButton);
+                chartButton.setTooltip("Charts / Reports");
+                NavTree chartMenu = chartButton.getNavTree();
+                chartMenu.addSeparator();
+                for (NavTree child : reportButton.getNavTree().getChildren())
+                    chartButton.addMenuItem(child);
             }
-            else
-            {
-                bar.add(reportButton);
-                if (chartButton.getNavTree().hasChildren())
-                    bar.add(chartButton);
-            }
+
+            if (chartButton.getNavTree().hasChildren())
+                bar.add(chartButton);
         }
-    }
-
-    // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
-    @Nullable
-    protected MenuButton populateMoreMenu(DataView view)
-    {
-        MenuButton moreMenu = null;
-
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            moreMenu = new MenuButton("More");
-
-            NavTree print = new NavTree("Print", urlFor(QueryAction.printRows));
-            print.setTarget("_blank");
-
-            moreMenu.addMenuItem(print);
-        }
-
-        return moreMenu;
     }
 
     public ReportService.ItemFilter getItemFilter()

@@ -24,7 +24,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -282,7 +281,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             Path iconPath = Path.parse(ft.getFolderIconPath());
 
             //TODO support folder type icons in new UI
-            if (PageFlowUtil.useExperimentalCoreUI() && iconPath.toString().equals(DefaultFolderType.DEFAULT_FOLDER_ICON_PATH))
+            if (iconPath.toString().equals(DefaultFolderType.DEFAULT_FOLDER_ICON_PATH))
             {
                 return "";
             }

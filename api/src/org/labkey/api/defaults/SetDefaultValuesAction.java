@@ -130,7 +130,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (isFile)
                     out.write("<td></td>"); // No input for file
                 else
-                    renderer.renderInputCell(ctx, out, 1);
+                    renderer.renderInputCell(ctx, out);
 
                 out.write("<td>");
                 if (isFile)

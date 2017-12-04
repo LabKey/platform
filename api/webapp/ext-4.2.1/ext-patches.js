@@ -28,91 +28,89 @@ Ext4.apply(Ext4.Ajax.defaultHeaders, LABKEY.defaultHeaders);
     });
 })();
 
-if (LABKEY.experimental.useExperimentalCoreUI) {
-    +function() {
-        Ext4.ns('LABKEY.ext4.Util');
-        LABKEY.ext4.Util.resizeToContainer = function(ct, options) {
-            if (!ct || !ct.rendered) {
-                return;
-            }
++function() {
+    Ext4.ns('LABKEY.ext4.Util');
+    LABKEY.ext4.Util.resizeToContainer = function(ct, options) {
+        if (!ct || !ct.rendered) {
+            return;
+        }
 
-            // default options
-            var config = {
-                offsetY: 60,
-                overrideMinWidth: false,
-                paddingHeight: 0,
-                paddingWidth: 1, // allow 1 px padding to avoid occasional border cutoff
-                skipHeight: true,
-                skipWidth: false
-            };
-
-            // container-specified options
-            if (ct && Ext4.isObject(ct.autoResize)) {
-                config = Ext4.apply(config, ct.autoResize);
-            }
-
-            // explicit options
-            if (Ext4.isObject(options)) {
-                config = Ext4.apply(config, options);
-            }
-            // else ignore parameters
-
-            if (config.skipWidth && config.skipHeight) {
-                return;
-            }
-
-            var height = 0;
-            var width = 0;
-
-            if (!config.skipWidth) {
-                width = ct.el.parent().getBox().width;
-            }
-            if (!config.skipHeight) {
-                height = window.innerHeight - ct.el.getXY()[1];
-            }
-
-            var padding = [config.paddingWidth, config.paddingHeight];
-
-            var size = {
-                width: Math.max(100, width - padding[0]),
-                height: Math.max(100, height - padding[1] - config.offsetY)
-            };
-
-            if (config.skipWidth) {
-                ct.setHeight(size.height);
-                if (config.overrideMinWidth) {
-                    ct.minWidth = size.width;
-                }
-            }
-            else if (config.skipHeight) {
-                ct.setWidth(size.width);
-            }
-            else {
-                ct.setSize(size);
-            }
-            ct.doLayout();
+        // default options
+        var config = {
+            offsetY: 60,
+            overrideMinWidth: false,
+            paddingHeight: 0,
+            paddingWidth: 1, // allow 1 px padding to avoid occasional border cutoff
+            skipHeight: true,
+            skipWidth: false
         };
 
-        Ext4.override(Ext4.AbstractComponent, {
-            initContainer: function(ct) {
-                // examine the specified render target (e.g. via renderTo property or comp.render('someTarget'))
-                this._validAutoResizeRenderTarget = Ext4.isString(ct);
-                return this.callParent(arguments);
-            },
-            afterRender: function() {
-                var me = this;
-                me.callParent(arguments);
-                if (!me.ownerCt && me._validAutoResizeRenderTarget === true && (me.autoResize === true || Ext4.isObject(me.autoResize)) && Ext4.isFunction(me.doLayout)) {
-                    me.on('afterrender', function() {
-                        var resize = function() { LABKEY.ext4.Util.resizeToContainer(this, { AUTO_RESIZE_FLAG: true }) };
-                        Ext4.EventManager.onWindowResize(resize, this, {delay: 75});
-                        Ext4.defer(function() { resize.call(this) }, 100, this);
-                    }, me, {single: true});
-                }
+        // container-specified options
+        if (ct && Ext4.isObject(ct.autoResize)) {
+            config = Ext4.apply(config, ct.autoResize);
+        }
+
+        // explicit options
+        if (Ext4.isObject(options)) {
+            config = Ext4.apply(config, options);
+        }
+        // else ignore parameters
+
+        if (config.skipWidth && config.skipHeight) {
+            return;
+        }
+
+        var height = 0;
+        var width = 0;
+
+        if (!config.skipWidth) {
+            width = ct.el.parent().getBox().width;
+        }
+        if (!config.skipHeight) {
+            height = window.innerHeight - ct.el.getXY()[1];
+        }
+
+        var padding = [config.paddingWidth, config.paddingHeight];
+
+        var size = {
+            width: Math.max(100, width - padding[0]),
+            height: Math.max(100, height - padding[1] - config.offsetY)
+        };
+
+        if (config.skipWidth) {
+            ct.setHeight(size.height);
+            if (config.overrideMinWidth) {
+                ct.minWidth = size.width;
             }
-        });
-    }();
-}
+        }
+        else if (config.skipHeight) {
+            ct.setWidth(size.width);
+        }
+        else {
+            ct.setSize(size);
+        }
+        ct.doLayout();
+    };
+
+    Ext4.override(Ext4.AbstractComponent, {
+        initContainer: function(ct) {
+            // examine the specified render target (e.g. via renderTo property or comp.render('someTarget'))
+            this._validAutoResizeRenderTarget = Ext4.isString(ct);
+            return this.callParent(arguments);
+        },
+        afterRender: function() {
+            var me = this;
+            me.callParent(arguments);
+            if (!me.ownerCt && me._validAutoResizeRenderTarget === true && (me.autoResize === true || Ext4.isObject(me.autoResize)) && Ext4.isFunction(me.doLayout)) {
+                me.on('afterrender', function() {
+                    var resize = function() { LABKEY.ext4.Util.resizeToContainer(this, { AUTO_RESIZE_FLAG: true }) };
+                    Ext4.EventManager.onWindowResize(resize, this, {delay: 75});
+                    Ext4.defer(function() { resize.call(this) }, 100, this);
+                }, me, {single: true});
+            }
+        }
+    });
+}();
 
 /**
  * @Override
@@ -884,102 +882,99 @@ Ext4.define('Ext4.override.data.TreeStore', {
     remoteFilter: false
 });
 
+/**
+ * Patch to allow responsive modal interaction for Ext4 Ext.Window components.
+ * At small screen width (user configurable), the popup will take full screen width.
+ * For modal dialog with 'closable' set to true, clicking outside the popup will close the popup.
+ * Configs:
+ *      suppressResponsive: true to opt out of this feature, default false
+ *      smallScreenWidth: the pixel screen width at which responsive sizing kicks in, default 480
+ *      maximizeOnSmallScreen: true to maximize popup to full screen width and height on small screen,
+ *                              false to only take full width, default false.
+ *      closableOnMaskClick: true to always support closing modal by click on mask regardless of screen size,
+ *                            otherwise only closable on mask click for small screens, default false
+ *      useExtStyle: true to use ext style, false to use bootstrap-like style, default true
+ */
+Ext4.override(Ext4.window.Window, {
+    constructor: function() {
+        var isAutoShow = this.autoShow || (arguments && arguments[0] ? arguments[0].autoShow : false);
+        if (isAutoShow) {
+            // temporarily disable autoShow so that responsive configs are applied before show
+            this.autoShow = false;
+            if (arguments && arguments[0] && arguments[0].autoShow)
+                arguments[0].autoShow = false;
+        }
 
-if (LABKEY.experimental.useExperimentalCoreUI) {
-    /**
-     * Patch to allow responsive modal interaction for Ext4 Ext.Window components.
-     * At small screen width (user configurable), the popup will take full screen width.
-     * For modal dialog with 'closable' set to true, clicking outside the popup will close the popup.
-     * Configs:
-     *      suppressResponsive: true to opt out of this feature, default false
-     *      smallScreenWidth: the pixel screen width at which responsive sizing kicks in, default 480
-     *      maximizeOnSmallScreen: true to maximize popup to full screen width and height on small screen,
-     *                              false to only take full width, default false.
-     *      closableOnMaskClick: true to always support closing modal by click on mask regardless of screen size,
-     *                            otherwise only closable on mask click for small screens, default false
-     *      useExtStyle: true to use ext style, false to use bootstrap-like style, default true
-     */
-    Ext4.override(Ext4.window.Window, {
-        constructor: function() {
-            var isAutoShow = this.autoShow || (arguments && arguments[0] ? arguments[0].autoShow : false);
-            if (isAutoShow) {
-                // temporarily disable autoShow so that responsive configs are applied before show
-                this.autoShow = false;
-                if (arguments && arguments[0] && arguments[0].autoShow)
-                    arguments[0].autoShow = false;
-            }
+        this.callParent(arguments);
 
-            this.callParent(arguments);
-
-            if (this.suppressResponsive) {
-                if (isAutoShow && !this.isContained) {
-                    this.autoShow = true;
-                    this.show();
-                }
-                return;
-            }
-
-            // experimental, change look of windows
-            var useBootstrapStyle = this.useExtStyle === undefined ? false : !this.useExtStyle;
-            if (useBootstrapStyle) {
-                if (!this.bodyCls)
-                    this.bodyCls = '';
-                this.bodyCls += ' modal-body';
-                if (!this.cls)
-                    this.cls = '';
-                this.cls += ' modal-content';
-                this.shadow = false;
-            }
-
-            var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
-            useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
-            useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
-
-            if (useMaxWidth) {
-                if (this.maximizeOnSmallScreen) {
-                    this.maximized = true;
-                }
-                else {
-                    var getBodyContainerWidth = function() {
-                        var containerWidth = window.innerWidth;
-                        var parent = Ext4.getBody();
-                        var container = parent.query("> div.container");
-                        if (container && container[0])
-                            containerWidth = container[0].offsetWidth;
-                        else {
-                            // if template is not body
-                            container = parent.query("> div > div.container");
-                            if (container && container[0])
-                                containerWidth = container[0].offsetWidth;
-                        }
-
-                        return containerWidth;
-                    };
-
-                    var windowWidth = window.innerWidth;
-                    var containerWidth = getBodyContainerWidth();
-                    if (windowWidth - containerWidth < 30)
-                        this.width = containerWidth - 20*2; // reserve extra padding for scrollbar
-                    else
-                        this.width = containerWidth;
-                }
-            }
-
-            var me = this;
-            if (this.modal && this.closable && (useMaxWidth || this.closableOnMaskClick)) {
-                var parentCmp = Ext4.getBody();
-                this.clickOutHandler = function(){
-                    me.close(me.closeAction);
-                };
-                this.clickOutParentCmp = parentCmp;
-                this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.x4-mask' });
-            }
-
+        if (this.suppressResponsive) {
             if (isAutoShow && !this.isContained) {
                 this.autoShow = true;
                 this.show();
             }
+            return;
         }
-    });
-}
+
+        // experimental, change look of windows
+        var useBootstrapStyle = this.useExtStyle === undefined ? false : !this.useExtStyle;
+        if (useBootstrapStyle) {
+            if (!this.bodyCls)
+                this.bodyCls = '';
+            this.bodyCls += ' modal-body';
+            if (!this.cls)
+                this.cls = '';
+            this.cls += ' modal-content';
+            this.shadow = false;
+        }
+
+        var useMaxWidth = window.innerWidth < (this.smallScreenWidth ? this.smallScreenWidth : 481);
+        useMaxWidth = useMaxWidth || (this.width && (this.width > window.innerWidth)); // if configured width is large than available screen size.
+        useMaxWidth = useMaxWidth || (this.minWidth && (this.minWidth > window.innerWidth)); // if configured min-width is large than available screen size.
+
+        if (useMaxWidth) {
+            if (this.maximizeOnSmallScreen) {
+                this.maximized = true;
+            }
+            else {
+                var getBodyContainerWidth = function() {
+                    var containerWidth = window.innerWidth;
+                    var parent = Ext4.getBody();
+                    var container = parent.query("> div.container");
+                    if (container && container[0])
+                        containerWidth = container[0].offsetWidth;
+                    else {
+                        // if template is not body
+                        container = parent.query("> div > div.container");
+                        if (container && container[0])
+                            containerWidth = container[0].offsetWidth;
+                    }
+
+                    return containerWidth;
+                };
+
+                var windowWidth = window.innerWidth;
+                var containerWidth = getBodyContainerWidth();
+                if (windowWidth - containerWidth < 30)
+                    this.width = containerWidth - 20*2; // reserve extra padding for scrollbar
+                else
+                    this.width = containerWidth;
+            }
+        }
+
+        var me = this;
+        if (this.modal && this.closable && (useMaxWidth || this.closableOnMaskClick)) {
+            var parentCmp = Ext4.getBody();
+            this.clickOutHandler = function(){
+                me.close(me.closeAction);
+            };
+            this.clickOutParentCmp = parentCmp;
+            this.mon(this.clickOutParentCmp, 'click', this.clickOutHandler, this, { delegate: '.x4-mask' });
+        }
+
+        if (isAutoShow && !this.isContained) {
+            this.autoShow = true;
+            this.show();
+        }
+    }
+});
 
