@@ -24,7 +24,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateColumn;
@@ -87,7 +86,6 @@ public class LocationQueryView extends QueryView
         ActionButton b = createPrintButton();
         if (null != b)
             bar.add(createPrintButton());
-        bar.add(createPageSizeMenuButton());
     }
 
     @Override

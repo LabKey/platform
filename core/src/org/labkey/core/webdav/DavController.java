@@ -88,7 +88,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.DirectRequest;
@@ -5738,17 +5737,7 @@ public class DavController extends SpringActionController
                 JspView<ListPage> v = new JspView<>(DavController.class, "davListing.jsp", page);
                 config.addClientDependencies(v.getClientDependencies());
 
-                DefaultModelAndView template;
-
-                if (PageFlowUtil.useExperimentalCoreUI())
-                {
-                    template = new BootstrapBodyTemplate(getViewContext(), v, config);
-                }
-                else
-                {
-                    template = new BodyTemplate(v, config);
-                }
-
+                DefaultModelAndView template = new BootstrapBodyTemplate(getViewContext(), v, config);
                 template.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             return WebdavStatus.SC_OK;

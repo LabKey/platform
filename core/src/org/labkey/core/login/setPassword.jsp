@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
@@ -46,8 +45,6 @@
 
         for (NamedObject input : bean.nonPasswordInputs)
         {
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
         %>
                 <labkey:input
                     type="text"
@@ -57,26 +54,12 @@
                     value="<%=h(input.getDefaultValue())%>"
                 />
         <%
-            }
-            else
-            {
-        %>
-                <div style="padding-top: 1em;">
-                    <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
-                    <br/>
-                    <input id="<%=input.getObject()%>" type="text" name="<%=input.getObject()%>" value="<%= h(input.getDefaultValue()) %>" style="width:20em;">
-                </div>
-        <%
-            }
         }
 
         for (NamedObject input : bean.passwordInputs)
         {
             String contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
                     ? DbLoginManager.getPasswordRule().getSummaryRuleHTML() : "";
-
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
         %>
                 <labkey:input
                     type="password"
@@ -86,20 +69,6 @@
                     contextContent="<%=text(contextContent)%>"
                 />
         <%
-            }
-            else
-            {
-        %>
-                <div style="padding-top: 1em;">
-                    <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
-                    <% if (LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())) { %>
-                    <span style="font-size: smaller;">(<%=text(DbLoginManager.getPasswordRule().getSummaryRuleHTML())%>)</span>
-                    <% } %>
-                    <br/>
-                    <input id="<%=input.getObject()%>" type="password" name="<%=input.getObject()%>" style="width:20em;">
-                </div>
-        <%
-            }
         }
         %>
         <div>

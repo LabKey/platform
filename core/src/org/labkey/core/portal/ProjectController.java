@@ -1335,16 +1335,8 @@ public class ProjectController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             _webPartName = request.getParameter(GetWebPartAction.PARAM_WEBPART);
 
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
-                if (!"foldernav".equals(_webPartName))
-                    errors.reject("You must provide a valid navigation part value for the " + GetWebPartAction.PARAM_WEBPART + " parameter!");
-            }
-            else
-            {
-                if (null == _webPartName || (!_webPartName.equals("foldernav") && !_webPartName.equals("projectnav")))
-                    errors.reject("You must provide a valid navigation part value for the " + GetWebPartAction.PARAM_WEBPART + " parameter!");
-            }
+            if (!"foldernav".equals(_webPartName))
+                errors.reject("You must provide a valid navigation part value for the " + GetWebPartAction.PARAM_WEBPART + " parameter!");
         }
 
         @Override

@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.api.security.permissions.UserManagementPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
@@ -47,81 +46,30 @@
     if (form.getIsChangeEmailRequest())
     {
 %>
-        <labkey:form action="<%=h(buildURL(ChangeEmailAction.class, Method.Post))%>" method="POST" layout="horizontal">
+<labkey:form action="<%=h(buildURL(ChangeEmailAction.class, Method.Post))%>" method="POST" layout="horizontal">
 <%
-            if (!isUserManager)
-            {
-%>
-                <p>NOTE: You will need to know your account password and have access to your new email address to change your email address!</p>
-<%
-            }
-
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
-%>
-                <labkey:input type="text" name="currentEmail" id="currentEmail" label="Current Email" value="<%=h(currentEmail)%>" isReadOnly="true"/>
-                <labkey:input type="text" name="requestedEmail" id="requestedEmail" label="New Email" value="<%=h(form.getRequestedEmail())%>" />
-                <labkey:input type="text" name="requestedEmailConfirmation" id="requestedEmailConfirmation" label="Retype New Email" value="<%=h(form.getRequestedEmailConfirmation())%>" />
-<%
-            }
-            else
-            {
-%>
-                <table>
-                    <tr>
-                        <td>Current Email:</td>
-                        <td><%=h(currentEmail)%></td>
-                    </tr>
-                    <tr>
-                        <td>New Email:</td>
-                        <td><input type="text" name="requestedEmail" id="requestedEmail" value="<%=h(form.getRequestedEmail())%>"></td>
-                    </tr>
-                    <tr>
-                        <td>New Email (verify):</td>
-                        <td><input type="text" name="requestedEmailConfirmation" id="requestedEmailConfirmation" value="<%=h(form.getRequestedEmailConfirmation())%>"></td>
-                    </tr>
-                </table>
-<%
-            }
-%>
-            <labkey:input type="hidden" name="userId" value="<%=form.getUserId()%>"/>
-            <labkey:input type="hidden" name="isChangeEmailRequest" value="true"/>
-            <labkey:csrf/>
-            <%= button("Submit").submit(true) %>
-            <%= button("Cancel").href(cancelURL) %>
-        </labkey:form>
+        if (!isUserManager) { %>
+            <p>NOTE: You will need to know your account password and have access to your new email address to change your email address!</p>
+        <% } %>
+    <labkey:input type="text" name="currentEmail" id="currentEmail" label="Current Email" value="<%=h(currentEmail)%>" isReadOnly="true"/>
+    <labkey:input type="text" name="requestedEmail" id="requestedEmail" label="New Email" value="<%=h(form.getRequestedEmail())%>" />
+    <labkey:input type="text" name="requestedEmailConfirmation" id="requestedEmailConfirmation" label="Retype New Email" value="<%=h(form.getRequestedEmailConfirmation())%>" />
+    <labkey:input type="hidden" name="userId" value="<%=form.getUserId()%>"/>
+    <labkey:input type="hidden" name="isChangeEmailRequest" value="true"/>
+    <labkey:csrf/>
+    <%= button("Submit").submit(true) %>
+    <%= button("Cancel").href(cancelURL) %>
+</labkey:form>
 <%
     }
     else if (form.getIsPasswordPrompt())
     {
+        String resetPasswordLink = "<a href=" + buildURL(LoginController.ResetPasswordAction.class) + ">forgot password</a>";
 %>
         <p>For security purposes, please enter your password.</p>
         <labkey:form action="<%=h(buildURL(ChangeEmailAction.class, Method.Post))%>" method="POST" layout="horizontal">
-<%
-            if (PageFlowUtil.useExperimentalCoreUI())
-            {
-                String resetPasswordLink = "<a href=" + buildURL(LoginController.ResetPasswordAction.class) + ">forgot password</a>";
-%>
-                <labkey:input type="text" name="currentEmail" id="currentEmail" label="Email" value="<%=h(currentEmail)%>" isReadOnly="true"/>
-                <labkey:input id="password" name="password" type="password" label="Password" contextContent="<%=resetPasswordLink%>"/>
-<%
-            }
-            else
-            {
-%>
-                <table>
-                    <tr>
-                        <td>Email:</td>
-                        <td><%=h(currentEmail)%></td>
-                    </tr>
-                    <tr>
-                        <td><label for="password">Password <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>:</label></td>
-                        <td><input id="password" name="password" type="password" tabindex="2" autofocus></td>
-                    </tr>
-                </table>
-<%
-            }
-%>
+            <labkey:input type="text" name="currentEmail" id="currentEmail" label="Email" value="<%=h(currentEmail)%>" isReadOnly="true"/>
+            <labkey:input id="password" name="password" type="password" label="Password" contextContent="<%=resetPasswordLink%>"/>
             <labkey:input type="hidden" name="userId" value="<%=form.getUserId()%>"/>
             <labkey:input type="hidden" name="requestedEmail" value="<%=h(form.getRequestedEmail())%>"/>
             <labkey:input type="hidden" name="verificationToken" value="<%=h(form.getVerificationToken())%>"/>

@@ -127,16 +127,11 @@
                         if (response && response.otherLoginMechanismsContent)
                         {
                             otherLoginSections[0].hidden = false;
-                            if (LABKEY.experimental && LABKEY.experimental.useExperimentalCoreUI === true) {
-                                otherLoginContents[0].innerHTML = [
-                                    '<ul class="sso-list">',
-                                    response.otherLoginMechanismsContent,
-                                    '</ul>'
-                                ].join('');
-                            }
-                            else {
-                                otherLoginContents[0].innerHTML = response.otherLoginMechanismsContent;
-                            }
+                            otherLoginContents[0].innerHTML = [
+                                '<ul class="sso-list">',
+                                response.otherLoginMechanismsContent,
+                                '</ul>'
+                            ].join('');
                         }
                         else
                         {

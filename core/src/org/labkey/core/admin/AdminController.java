@@ -344,11 +344,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            AdminBean bean = new AdminBean(getUser());
-            if (PageFlowUtil.useExperimentalCoreUI())
-                return new JspView<>("/org/labkey/core/admin/adminConsole.jsp", bean);
-            else // TODO remove the admin.jsp after conversion to new UI
-                return new JspView<>("/org/labkey/core/admin/admin.jsp", bean);
+            return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean(getUser()));
         }
 
         public NavTree appendNavTrail(NavTree root)

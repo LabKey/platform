@@ -33,7 +33,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
+        dependencies.add("internal/jQuery");
     }
 %>
 <%
@@ -43,7 +43,6 @@
     Container c = getContainer();
     List<Container> containers = ContainerManager.containersToRootList(c);
     int size = containers.size();
-    boolean newUI = PageFlowUtil.useExperimentalCoreUI();
 
     ActionURL startURL = c.getStartURL(getUser()); // 30975: Return to startURL due to async view context
 
@@ -58,9 +57,7 @@
 <%!
     public _HtmlString getTrailSeparator()
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
-            return _hs("&nbsp;/&nbsp;");
-        return _hs("&nbsp;<img src=\"" + getWebappURL("/_images/arrow_breadcrumb.png") + "\" alt=\"\">&nbsp;");
+        return _hs("&nbsp;/&nbsp;");
     }
 
     public _HtmlString getTrailLink(Container c, User u)
@@ -100,7 +97,7 @@
             }
         %>
     </div>
-<% } if (newUI) {%>
+<% } %>
 <div class="folder-tree"><% me.include(form.getFolderMenu(), out); %></div>
 <div class="folder-menu-buttons">
     <% if (getUser().hasRootAdminPermission()) { %>
@@ -159,89 +156,3 @@
         });
     }(jQuery);
 </script>
-<% } else { %>
-<div id="folder-tree-wrap" class="folder-tree"><% me.include(form.getFolderMenu(), out); %></div>
-<script type="text/javascript">
-    Ext4.onReady(function() {
-
-        var expandCls = 'expand-folder';
-        var collapseCls = 'collapse-folder';
-
-        var toggle = function(selector) {
-            var p = selector.parent();
-
-            if (p) {
-                var collapse = p.hasCls(expandCls);
-
-                collapse ? p.replaceCls(expandCls, collapseCls) : p.replaceCls(collapseCls, expandCls);
-
-                var a = p.child('a');
-                if (a) {
-                    var url = a.getAttribute('expandurl');
-                    if (url) {
-                        url += (collapse ? '&collapse=true' : '');
-                        Ext4.Ajax.request({ url : url });
-                    }
-                }
-            }
-        };
-
-        // nodes - the set of +/- icons
-        var nodes = Ext4.DomQuery.select('.folder-nav .clbl span.marked');
-        for (var n=0; n < nodes.length; n++) {
-            Ext4.get(nodes[n]).on('click', function(x,node) { toggle(Ext4.get(node)); });
-        }
-
-        // scrollIntoView
-        var siv = function(t, ct) {
-            ct = Ext4.getDom(ct) || Ext4.getBody().dom;
-            var el = t.dom,
-                    offsets = t.getOffsetsTo(ct),
-                    // el's box
-                    top = offsets[1] + ct.scrollTop,
-                    bottom = top + el.offsetHeight,
-                    // ct's box
-                    ctClientHeight = ct.clientHeight,
-                    ctScrollTop = parseInt(ct.scrollTop, 10),
-                    ctBottom = ctScrollTop + ctClientHeight,
-                    ctHalf = (ctBottom / 2);
-
-            if (bottom > ctBottom) { // outside the visible area
-                ct.scrollTop = bottom - (ctClientHeight / 2);
-            }
-            else if (bottom > ctHalf) { // centering
-                ct.scrollTop = bottom - ctHalf;
-            }
-
-            // corrects IE, other browsers will ignore
-            ct.scrollTop = ct.scrollTop;
-
-            return this;
-        };
-
-        // Folder Scrolling
-        var t = Ext4.get('folder-target');
-        if (t) { siv(t, Ext4.get('folder-tree-wrap')); }
-    });
-</script>
-<div class="folder-menu-buttons">
-<%
-    if (c.hasPermission(user, AdminPermission.class))
-    {
-%>
-    <span class="button-icon"><a href="<%=createFolderURL%>" title="New Subfolder"><span class="fa-stack fa-1x labkey-fa-stacked-wrapper"><span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span><span class="fa fa-plus-circle fa-stack-1x"></span></span></a></span>
-<%
-    }
-%>
-    <span class="button-icon"><a id="permalink_vis" href="#" title="Permalink Page"><span class="fa fa-link labkey-main-menu-icon" alt="Permalink Page"></span></a></span>
-    <script type="text/javascript">
-        (function(){
-            var p = document.getElementById('permalink');
-            var pvis = document.getElementById('permalink_vis');
-            if (p && pvis) {
-                pvis.href = p.href;
-            }
-        })();
-    </script>
-</div>
-<%  } %>

@@ -20,7 +20,6 @@ Ext4.define('Security.panel.PermissionEditor', {
             layout: 'border',
             bodyStyle: 'background-color: transparent;',
             border: false,
-            minWidth: LABKEY.experimental.useExperimentalCoreUI ? undefined : 930,
             items: this.getItems()
         });
 

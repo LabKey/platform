@@ -389,7 +389,6 @@ core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/ValidateDomainsPipelineJob.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
-core/src/org/labkey/core/admin/adminConsole.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
 core/src/org/labkey/core/admin/createFolder.jsp -text
@@ -553,7 +552,6 @@ core/src/org/labkey/core/test/buttons.jsp -text
 core/src/org/labkey/core/test/complex.jsp -text
 core/src/org/labkey/core/test/form.jsp -text
 core/src/org/labkey/core/test/tags.jsp -text
-core/src/org/labkey/core/themeStylesheet.jsp -text
 core/src/org/labkey/core/thumbnail/ThumbnailCache.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailServiceImpl.java -text
 core/src/org/labkey/core/user/DeactivateUsersBean.java -text
@@ -568,7 +566,6 @@ core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
 core/src/org/labkey/core/view/feedback.jsp -text
-core/src/org/labkey/core/view/feedbackOldUI.jsp -text
 core/src/org/labkey/core/view/styleGuide.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapBodyTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/BootstrapHeader.java -text
@@ -635,9 +632,7 @@ core/webapp/notification/Notification.css -text
 core/webapp/notification/Notification.js -text
 core/webapp/notification/NotificationViewAll.css -text
 core/webapp/notification/NotificationViewAll.js -text
-core/webapp/printStyle.css -text
 core/webapp/register.js -text
-core/webapp/stylesheet.css -text
 core/webpack/buildThemes.js -text
 core/webpack/style.config.js -text
 dataintegration/module.properties -text

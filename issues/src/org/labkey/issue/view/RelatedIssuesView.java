@@ -56,7 +56,6 @@ public class RelatedIssuesView extends VBox
     public RelatedIssuesView(@NotNull ViewContext context, @NotNull Set<Integer> relatedIssues)
     {
         setFrame(FrameType.DIV);
-        setIncludeBreak(false);
 
         TableInfo issues = IssuesSchema.getInstance().getTableInfoIssues();
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("issueId"), relatedIssues, CompareType.IN);

@@ -145,7 +145,7 @@ Ext4.onReady(function() {
     var panelCfg = {
         id: 'projects-panel-<%=webPartId%>',
         iconField: 'iconurl',
-        iconCls: LABKEY.experimental.useExperimentalCoreUI ? 'fa-folder-open' : '',
+        iconCls: 'fa-folder-open',
         labelField: 'DisplayName',
         urlField: 'url',
         region : 'center',

@@ -49,7 +49,6 @@ import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -146,19 +145,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
             if (form.getThemeName() != null)
             {
-                if (PageFlowUtil.useExperimentalCoreUI())
-                {
-                    // while experimenting, allow any theme name
-                    props.setThemeName(form.getThemeName());
-                }
-                else
-                {
-                    WebTheme theme = WebThemeManager.getTheme(form.getThemeName());
-                    if (theme != null)
-                    {
-                        props.setThemeName(theme.getFriendlyName());
-                    }
-                }
+                props.setThemeName(form.getThemeName());
 
                 ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
                 if (themeFont != null)

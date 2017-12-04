@@ -35,8 +35,7 @@
 <div id="fmp"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
-
-        var folderPanel = Ext4.create('LABKEY.ext4.panel.FolderManagement', {
+        Ext4.create('LABKEY.ext4.panel.FolderManagement', {
             renderTo: 'fmp',
             height: 700,
             minWidth: 600,
@@ -44,14 +43,5 @@
             requiredPermission: <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
             showContainerTabs: true
         });
-
-        <% if (!PageFlowUtil.useExperimentalCoreUI()) { %>
-        Ext4.EventManager.onWindowResize(function(w, h) {
-            if (!folderPanel.rendered)
-                return;
-
-            LABKEY.ext4.Util.resizeToViewport(folderPanel, w, h);
-        });
-        <% } %>
     });
 </script>

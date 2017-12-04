@@ -30,7 +30,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -65,7 +64,6 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -100,7 +98,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -119,7 +116,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResolver;
@@ -166,7 +162,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CoreController extends SpringActionController
 {
-    private static final Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<>();
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
     private static final Logger _log = Logger.getLogger(CoreController.class);
 
@@ -184,23 +179,6 @@ public class CoreController extends SpringActionController
             ActionURL url = new ActionURL(actionClass, c);
             url.addParameter("revision", AppProps.getInstance().getLookAndFeelRevision());
             return url;
-        }
-
-        @Override
-        public ActionURL getThemeStylesheetURL()
-        {
-            return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
-        }
-
-        @Override
-        public ActionURL getThemeStylesheetURL(Container c)
-        {
-            Container project = c.getProject();
-            LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
-
-            if (laf.hasProperties())
-                return getRevisionURL(ThemeStylesheetAction.class, project);
-            return null;
         }
 
         @Override
@@ -291,42 +269,6 @@ public class CoreController extends SpringActionController
         }
 
         abstract Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception;
-    }
-
-
-    // TODO: Remove this action and all associated code once new UI is enabled
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    @AllowedDuringUpgrade
-    @AllowedBeforeInitialUserIsSet
-    @IgnoresAllocationTracking
-    public class ThemeStylesheetAction extends BaseStylesheetAction
-    {
-        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
-        {
-            Container container = getContainer();
-            Content content = null;
-            Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-
-            if (container != null && !AppProps.getInstance().isDevMode()) // in dev mode we don't use the caching
-            {
-                content = _themeStylesheetCache.get(container);
-            }
-            
-            if (null == content || !dependsOn.equals(content.dependencies))
-            {
-                JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
-                view.setFrame(WebPartView.FrameType.NOT_HTML);
-                Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
-                content  = new Content(compileCSS(contentRaw.content));
-                content.dependencies = dependsOn;
-                content.compressed = compressCSS(content.content);
-
-                if (container != null)
-                    _themeStylesheetCache.put(container, content);
-            }
-            return content;
-        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -598,20 +540,6 @@ public class CoreController extends SpringActionController
 
         return content;
     }
-
-
-    private static String compileCSS(String s)
-    {
-        if (!StringUtilsLabKey.isText(s))
-        {
-            return "\n/* CSS FILE CONTAINS NON-PRINTABLE CHARACTERS */\n";
-        }
-        else
-        {
-            return s;
-        }
-    }
-
 
     private static byte[] compressCSS(String s)
     {
@@ -2093,9 +2021,7 @@ public class CoreController extends SpringActionController
         public ModelAndView getView(FeedbackForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            if (PageFlowUtil.useExperimentalCoreUI())
-                return new JspView<>("/org/labkey/core/view/feedback.jsp", form, errors);
-            return new JspView<>("/org/labkey/core/view/feedbackOldUI.jsp", form, errors);
+            return new JspView<>("/org/labkey/core/view/feedback.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
