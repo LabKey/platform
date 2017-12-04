@@ -23,6 +23,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
 import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
@@ -160,11 +161,9 @@ public class StudyDataspaceTest extends StudyBaseTest
         clickFolder(FOLDER_STUDY5);
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Export"));
-        Locator assayScheduleLoc = Locator.css("input[value='Assay Schedule']");
-        waitForElement(assayScheduleLoc);
-        uncheckCheckbox(assayScheduleLoc);
-        uncheckCheckbox(Locator.css("input[value='Treatment Data']"));
-        checkRadioButton(Locator.radioButtonByNameAndValue("location", "0"));
+        new Checkbox(Locator.tagWithText("label", "Assay Schedule").precedingSibling("input").findElement(getDriver())).uncheck();
+        new Checkbox(Locator.tagWithText("label", "Treatment Data").precedingSibling("input").findElement(getDriver())).uncheck();
+        checkRadioButton(Locator.tagWithClass("table", "export-location").index(0));
         clickButton("Export");
 
         // Load study in another folder
