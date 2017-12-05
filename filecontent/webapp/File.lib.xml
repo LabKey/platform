@@ -20,7 +20,7 @@
         <script path="File/FileContent.css"/>
     </library>
     <dependencies>
-        <dependency path="Ext4"/>
+        <dependency path="Ext4ClientApi"/> <!-- Needed for EditCustomFileProps.js -->
         <dependency path="Dropzone"/>
         <dependency path="internal-FileDrop"/>
     </dependencies>

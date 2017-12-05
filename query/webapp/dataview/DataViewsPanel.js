@@ -147,7 +147,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     index: -1,
 
-    minHeight: 200,
+    statics: {
+        MAX_HEIGHT: 3000,
+        MAX_DYNAMIC_HEIGHT: 700,
+        MIN_HEIGHT: 200
+    },
 
     // delete views template
     deleteTpl: new Ext4.XTemplate(
@@ -357,13 +361,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         this.addVisibleNodes(fullStoreRoot, viewStore.getRootNode());
 
-        if (this._useDynamicHeight) {
-            // use dynamic height calculated from number of rows in results set
-            this.setHeight(this.getCalculatedPanelHeight());
-        }
-        else {
-            // use custom height the user specified
-            this.setHeight(this._height);
+        if (!this.customMode) {
+            this.adjustHeight();
         }
     },
 
@@ -449,8 +448,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         if (json.webpart) {
             this._height = parseInt(json.webpart.height);
-            this.setHeight(this._height);
             this._useDynamicHeight = (json.webpart.useDynamicHeight === 'true');
+            this.adjustHeight();
         }
         this.dateFormat = LABKEY.extDefaultDateFormat;
         this.dateRenderer = function(value) {
@@ -467,20 +466,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
      * Invoked each time the column model is modified from the customize view
      */
     updateConfiguration : function() {
+        this.getCenter().getEl().mask('Initializing...');
 
-        var handler = function(json) {
+        this.getConfiguration(function(json) {
             this.getCenter().getEl().unmask();
             this._height = parseInt(json.webpart.height);
             this.getCenter().removeAll(true);
-            if (this._useDynamicHeight)
-                this.setHeight(this.getCalculatedPanelHeight());
-            else
-                this.setHeight(this._height);
+            this.adjustHeight();
             this.initGrid(json.visibleColumns);
             this.getFullStore().load();
-        };
-        this.getCenter().getEl().mask('Initializing...');
-        this.getConfiguration(handler, this);
+        }, this);
     },
 
     getConfiguration : function(handler, scope) {
@@ -497,8 +492,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             url    : LABKEY.ActionURL.buildURL('reports', 'browseData.api', null, extraParams),
             method : 'GET',
             success: function(response) {
-                if (handler)
-                {
+                if (handler) {
                     var json = Ext4.decode(response.responseText);
                     handler.call(scope || this, json);
                 }
@@ -623,12 +617,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             store    : this.getViewStore(),
             tbar     : this.getSearchToolbar(),
             border   : false, frame: false,
-            layout   : 'fit',
             cls      : 'iScroll', // webkit custom scroll bars
             scroll   : 'vertical',
             columns  : this.initGridColumns(visibleColumns),
             multiSelect: this.manageView,
-            region   : 'center',
             viewConfig : {
                 stripeRows : true,
                 listeners  : {
@@ -927,10 +919,16 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
     },
 
+    adjustHeight : function(offset) {
+        var newHeight = (offset ? offset : 0) + (this._useDynamicHeight ? this.getCalculatedPanelHeight() : this._height);
+        if (newHeight !== this.getHeight()) {
+            this.setHeight(newHeight);
+        }
+    },
+
     getCalculatedPanelHeight : function () {
 
         var count = 0;
-        var heightSize;
         var dataViewPanelHeaderSize = 125;
         var heightPerRecord = 25;
         var rootNode = this.getFullStore().getRootNode();
@@ -944,16 +942,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        heightSize = count * heightPerRecord + dataViewPanelHeaderSize;
-        // make the maximum height that can be dynamically computed be 700,
-        // if user wants it bigger it can be customized up to 3000
-        if (heightSize > 700) {
-            heightSize = 700;
+        var height = count * heightPerRecord + dataViewPanelHeaderSize;
+        // make the maximum height that can be dynamically computed be MAX_DYNAMIC_HEIGHT,
+        // if user wants it bigger it can be customized up to MAX_HEIGHT
+        if (height > LABKEY.ext4.DataViewsPanel.MAX_DYNAMIC_HEIGHT) {
+            height = LABKEY.ext4.DataViewsPanel.MAX_DYNAMIC_HEIGHT;
         }
-        if (heightSize < 200) {
-            heightSize = 200;
+        else if (height < LABKEY.ext4.DataViewsPanel.MIN_HEIGHT) {
+            height = LABKEY.ext4.DataViewsPanel.MIN_HEIGHT;
         }
-        return heightSize;
+
+        return height;
     }, 
 
     applySearchFilter : function() {
@@ -992,6 +991,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         return this.allowEdit;
     },
 
+    /* called from dataViews.jsp -- customizeDataViews */
     /**
      * Takes the panel into/out of customize mode. Customize mode allows users to view edit links,
      * administrate view categories and determine what data types should be shown.
@@ -1006,21 +1006,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onEnableCustomMode : function() {
 
-        var handler = function(json) {
-            this.getNorth().getEl().unmask();
-            this._displayCustomMode(json);
-        };
-
-        if (this.getHeight() < 260) {
-            // temporarily make the height bigger so the admin panel will completely show
-            this.setHeight(260)
-        }
-        this.customMode = true;
         var north = this.getNorth();
         north.show(null, function() {
             this.getEl().mask('Loading Customize...');
         }, north);
-        this.getConfiguration(handler, this);
+
+        this.adjustHeight(260);
+        this.customMode = true;
+
+        this.getConfiguration(function(json) {
+            this.getNorth().getEl().unmask();
+            this._displayCustomMode(json);
+        }, this);
     },
 
     onDisableCustomMode : function() {
@@ -1032,6 +1029,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.refreshViewStore();
     },
 
+    /* called from dataViews.jsp -- editDataViews */
     edit : function() {
         if (this.isEditable()) {
             this.fireEvent((this.editMode ? 'disableEditMode' : 'enableEditMode'), this);
@@ -1052,6 +1050,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.applySearchFilter();
     },
 
+    /* called from dataViews.jsp -- deleteDataViews */
     deleteSelected : function() {
 
         var gpSelModel = this.gridPanel.getSelectionModel();
@@ -1144,59 +1143,87 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         if (Ext4.isArray(data.types)) {
             for (var i=0; i < data.types.length; i++) {
-                cbItems.push({boxLabel : data.types[i].name, name : data.types[i].name, checked : data.types[i].visible, width: 150, uncheckedValue : '0'});
+                cbItems.push({
+                    boxLabel: data.types[i].name,
+                    name: data.types[i].name,
+                    checked: data.types[i].visible,
+                    width: 150,
+                    uncheckedValue : '0'
+                });
             }
         }
 
         if (data.visibleColumns) {
-            for (var col in data.visibleColumns) {
-                var prop = data.visibleColumns[col];
-                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 125, maxWidth: 150, handler : function(){this.updateConfig = true;}, scope : this});
-            }
+            Ext4.iterate(data.visibleColumns, function(col, prop) {
+                cbColumns.push({
+                    boxLabel: col,
+                    name: col,
+                    checked: prop.checked === true,
+                    uncheckedValue: '0',
+                    width: 125,
+                    maxWidth: 150,
+                    handler: function() {
+                        this.updateConfig = true;
+                    },
+                    scope: this
+                });
+            });
         }
 
         // default height is dynamically sized to number of rows
-        sizeItems.push({boxLabel : 'Default (dynamic)', name : 'height', inputValue : true, minWidth: 75, checked : this._useDynamicHeight, handler : function(grp, chk){
-            var fields = this.query('numberfield');
+        sizeItems.push({
+            boxLabel: 'Default (dynamic)',
+            name: 'height',
+            inputValue: true,
+            minWidth: 75,
+            checked: this._useDynamicHeight === true,
+            handler: function(grp, chk) {
+                var fields = this.query('numberfield');
 
-            if (grp.getValue()) {
-                if (grp.inputValue === true) {
-                    this._useDynamicHeight = true;
+                if (grp.getValue()) {
+                    this._useDynamicHeight = grp.inputValue === true;
+                    this.updateConfig = true;
                 }
-                else {
-                    this._useDynamicHeight = false;
+
+                // always show the custom height size selector even when dynamic is selected, but make it disabled
+                if (fields && fields.length === 1) {
+                    fields[0].setVisible(true);
+                    fields[0].setDisabled(chk);
                 }
-                this.updateConfig = true;
-            }
-            // always show the custom height size selector even when dynamic is selected, but make it disabled
-            if (fields && fields.length == 1) {
-                fields[0].setVisible(true);
-                fields[0].setDisabled(chk);
-            }
-        }, scope : this});
+            },
+            scope: this
+        });
 
         // custom height
-        sizeItems.push({boxLabel : 'Custom', name : 'height', inputValue : 0, minWidth: 75, checked : !this._useDynamicHeight, handler : function(grp, chk){
-            var fields = this.query('numberfield');
+        sizeItems.push({
+            boxLabel: 'Custom',
+            name: 'height',
+            inputValue: 0,
+            minWidth: 75,
+            checked: !this._useDynamicHeight,
+            handler: function(grp, chk) {
+                var fields = this.query('numberfield');
 
-            if (grp.getValue())
-            {
-                if (grp.inputValue === 0) {
-                    this._useDynamicHeight = false;
+                if (grp.getValue()) {
+                    if (grp.inputValue === 0) {
+                        this._useDynamicHeight = false;
+                    }
                 }
-            }
-            else {
-                this._useDynamicHeight = true;
-                // remove any value the user may have placed in the height input box before they clicked the use dynamic height radio button
-                fields[0].setValue(this._height);
-            }
-            this.updateConfig = true;
-            // always show the custom height size selector, and make it enabled
-            if (fields && fields.length == 1) {
-                fields[0].setVisible(true);
-                fields[0].setDisabled(!chk);
-            }
-        }, scope : this});
+                else {
+                    this._useDynamicHeight = true;
+                    // remove any value the user may have placed in the height input box before they clicked the use dynamic height radio button
+                    fields[0].setValue(this._height);
+                }
+                this.updateConfig = true;
+
+                // always show the custom height size selector, and make it enabled
+                if (fields && fields.length === 1) {
+                    fields[0].setVisible(true);
+                    fields[0].setDisabled(!chk);
+                }
+            },
+            scope: this
+        });
 
         var namePanel = Ext4.create('Ext.form.Panel', {
             border : false,
@@ -1221,18 +1248,22 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 items      : sizeItems
             },{
                 xtype           : 'numberfield',
-                minValue        : 200,
-                maxValue        : 3000,
+                minValue        : LABKEY.ext4.DataViewsPanel.MIN_HEIGHT,
+                maxValue        : LABKEY.ext4.DataViewsPanel.MAX_HEIGHT,
                 value           : this._height,
                 emptyText       : '200',
                 disabled        : this._useDynamicHeight,
                 name            : 'height',
-                listeners       : {change: {fn: function (cmp, newValue){
-                    this.updateConfig = true;
-                    if (parseInt(newValue) <= 3000 && parseInt(newValue) >= 200) {
-                        this._height = parseInt(newValue);
-                    }
-                }, scope: this}}
+                listeners: {
+                    change: function(cmp, newValue) {
+                        this.updateConfig = true;
+                        var height = parseInt(newValue);
+                        if (height >= LABKEY.ext4.DataViewsPanel.MIN_HEIGHT && height <= LABKEY.ext4.DataViewsPanel.MAX_HEIGHT) {
+                            this._height = height;
+                        }
+                    },
+                    scope: this
+                }
             },{
                 xtype      : 'radiogroup',
                 fieldLabel : 'Sort',
@@ -1240,17 +1271,27 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 height     : 50,
                 width      : 250,
                 items      : [{
-                    boxLabel: 'Alphabetical', name: 'sortOrder', inputValue: 'ALPHABETICAL', checked: this.sortOrder === 'ALPHABETICAL', handler: function (grp){
+                    boxLabel: 'Alphabetical',
+                    name: 'sortOrder',
+                    inputValue: 'ALPHABETICAL',
+                    checked: this.sortOrder === 'ALPHABETICAL',
+                    handler: function (grp) {
                         if (grp.getValue()) {
                             this.updateConfig = true;
                         }
-                    }, scope : this
+                    },
+                    scope: this
                 },{
-                    boxLabel: 'By Display Order', name: 'sortOrder', inputValue: 'BY_DISPLAY_ORDER', checked: this.sortOrder === 'BY_DISPLAY_ORDER', handler: function (grp){
+                    boxLabel: 'By Display Order',
+                    name: 'sortOrder',
+                    inputValue: 'BY_DISPLAY_ORDER',
+                    checked: this.sortOrder === 'BY_DISPLAY_ORDER',
+                    handler: function (grp) {
                         if (grp.getValue()) {
                             this.updateConfig = true;
                         }
-                    }, scope : this
+                    },
+                    scope: this
                 }]
             }]
         });
@@ -1528,6 +1569,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         window.show();
     },
 
+    /* called from dataViews.jsp -- reorderReports */
     onReorderReports : function() {
 
         var window = LABKEY.study.DataViewUtil.getReorderReportsDialog();
