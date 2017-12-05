@@ -3318,7 +3318,7 @@ public class SecurityManager
         }
         catch (SecurityManager.UserManagementException e)
         {
-            throw new ConfigurationException("Unale to add new user for: " + email, e);
+            throw new ConfigurationException("Unable to add new user for: " + email, e);
         }
     }
 
