@@ -256,7 +256,7 @@ public class AuthenticationManager
         return _allProviders;
     }
 
-    private static boolean hasSSOAuthenticationProvider()
+    public static boolean hasSSOAuthenticationProvider()
     {
         return !AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class).isEmpty();
     }

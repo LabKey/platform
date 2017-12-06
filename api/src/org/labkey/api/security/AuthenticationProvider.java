@@ -114,7 +114,19 @@ public interface AuthenticationProvider
          * @return The redirect URL
          */
         URLHelper getURL(String secret);
+
         LinkFactory getLinkFactory();
+
+        /**
+         * Allows an SSO auth provider to define that it should be used automatically instead of showing the standard
+         * login form with an SSO link. Ex. if CAS auth is the only option, allow autoRedirect to that provider URL from
+         * the login action.
+         * @return boolean indicating if this provider is set to autoRedirect
+         */
+        default boolean isAutoRedirect()
+        {
+            return false;
+        }
     }
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
