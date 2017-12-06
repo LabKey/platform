@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.core.authentication.test.TestSsoController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<p>SSO Test Authentication: Type an email address below to "authenticate" as that user</p>
-<form <%=formAction(TestSsoController.ValidateAction.class, Method.Post)%>>
-    <table>
-        <tr>
-            <td valign="top"><input type="text" name="email" value="" autofocus></td>
-        </tr>
-    </table>
-    <input type="submit" name="Authenticate" value="Authenticate">
-</form>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
+<labkey:form action="<%=h(buildURL(TestSsoController.ValidateAction.class))%>" method="post" layout="horizontal">
+    <labkey:input type="text" name="email" value="" size="50"
+                  label="SSO Test Authentication"
+                  contextContent="Type an email address below to \"authenticate\" as that user."
+    />
+    <%= button("Authenticate").submit(true) %>
+</labkey:form>

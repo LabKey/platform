@@ -42,12 +42,13 @@ configuration you should consult with your network administrator. You may also w
 <br>
 
 <labkey:form name="testLdap" method="post" action="testLdap.post">
-<table>
+<table class="lk-fields-table">
     <tr><td>LDAP Server URL:</td><td><input id="server" type="text" name="server" style="width:400;" value="<%=h(form.getServer())%>"></td></tr>
     <tr><td>Security Principal:</td><td><input id="principal" type="text" name="principal" style="width:400;" value="<%=h(form.getPrincipal())%>"></td></tr>
     <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:400;" value="<%=h(form.getPassword())%>"></td></tr>
     <tr><td>Use SASL Authentication:</td><td><input id="SASL" type="checkbox" name="SASL"<%=checked(form.getSASL())%>></td></tr>
-    <tr><td colspan=2 align=center style="height:50">
+    <tr><td colspan=2 style="height:50">
+        <br/>
         <%=generateReturnUrlFormField(form)%>
         <%= button("Test").submit(true) %>
         <%= button("Done").href(form.getReturnURLHelper(LdapController.getConfigureURL(false)))%>

@@ -31,7 +31,7 @@
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <labkey:form action="<%=h(buildURL(LoginController.ConfigureDbLoginAction.class))%>" method="post">
-<table>
+<table class="lk-fields-table">
     <tr>
         <td class="labkey-form-label">Password Strength</td>
         <td><table class="labkey-data-region-legacy labkey-show-borders"><%

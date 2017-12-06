@@ -44,26 +44,29 @@
     }
 </style>
 
-<table>
-    <tr><td colspan="6">These are the installed primary authentication providers:<br><br></td></tr>
+<labkey:panel title="Installed primary authentication providers">
+    <% appendProviders(out, primary, urls, canEdit); %>
+</labkey:panel>
 
 <%
-    appendProviders(out, primary, urls, canEdit);
-
     if (!secondary.isEmpty())
     {
 %>
-        <tr><td colspan="6">&nbsp;</td></tr>
-        <tr><td colspan="6">These are the installed secondary authentication providers:<br><br></td></tr>
+        <labkey:panel title="Installed secondary authentication providers">
+            <% appendProviders(out, secondary, urls, canEdit); %>
+        </labkey:panel>
 <%
-        appendProviders(out, secondary, urls, canEdit);
     }
 %>
-    <tr><td colspan="6">&nbsp;</td></tr>
-    <tr><td colspan="6">Other options:</td></tr>
-    <tr><td colspan="6">&nbsp;</td></tr>
+
+<labkey:panel title="Other options">
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <td>&nbsp;</td>
+        <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Status</td>
+        <td class="labkey-column-header">Description</td>
+    </tr>
+    <tr class="labkey-alternate-row">
         <td>Self sign-up</td>
         <td>
         <% if (AuthenticationManager.isRegistrationEnabled())
@@ -94,11 +97,9 @@
         }
         %>
         </td>
-        <td colspan="2">&nbsp;</td>
         <td>Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.</td>
     </tr>
-    <tr>
-        <td>&nbsp;</td>
+    <tr class="labkey-row">
         <td>Auto-create authenticated users</td>
         <td>
             <% if (!isExternalProviderEnabled)
@@ -133,11 +134,9 @@
             }
             %>
         </td>
-        <td colspan="2">&nbsp;</td>
         <td>Accounts are created automatically when new users authenticate via LDAP or SSO.<%=h(isExternalProviderEnabled ? "" : " This option is available only when an LDAP or SSO provider is enabled.")%></td>
     </tr>
-    <tr>
-        <td>&nbsp;</td>
+    <tr class="labkey-alternate-row">
         <td>Self-service email changes</td>
         <td>
             <%
@@ -169,21 +168,30 @@
                 }
             %>
         </td>
-        <td colspan="2">&nbsp;</td>
         <td>Users can change their own email address if their password is managed by LabKey Server.</td>
     </tr>
-    <tr><td colspan="6">&nbsp;</td></tr>
-    <tr><td colspan="6">
-    <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
-    </td></tr>
 </table>
+</labkey:panel>
+
+<%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
 
 <%!
     private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, Boolean canEdit) throws IOException
     {
+        out.write("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
+
+        out.write("<tr>\n" +
+                "    <td class=\"labkey-column-header\">Name</td>\n" +
+                "    <td class=\"labkey-column-header\">Status</td>\n" +
+                "    <td class=\"labkey-column-header\">Configuration</td>\n" +
+                "    <td class=\"labkey-column-header\">Logos</td>\n" +
+                "    <td class=\"labkey-column-header\">Description</td>\n" +
+                "</tr>");
+
+        int rowIndex = 0;
         for (AuthenticationProvider authProvider : providers)
         {
-            out.write("<tr><td>&nbsp;&nbsp;</td><td>");
+            out.write("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
             out.write(PageFlowUtil.filter(authProvider.getName()));
             out.write("</td>");
 
@@ -245,6 +253,10 @@
             out.write("</td>");
 
             out.write("</tr>\n");
+
+            rowIndex++;
         }
+
+        out.write("</table>");
     }
 %>

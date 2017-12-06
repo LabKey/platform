@@ -26,7 +26,7 @@
     AuthLogoBean bean = me.getModelBean();
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %><labkey:form enctype="multipart/form-data" method="post">
-<table>
+<table class="lk-fields-table">
 <%=formatMissedErrorsInTable("form", 3)%>
 <tr>
     <td colspan="3"><input type="hidden" name="name" value="<%=h(bean.provider.getName())%>"></td>
