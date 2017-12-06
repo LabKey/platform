@@ -1041,6 +1041,15 @@ public class LoginController extends SpringActionController
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }
+        else if (request.getParameter("_skipAutoRedirect") == null && AuthenticationManager.hasSSOAuthenticationProvider())
+        {
+            // see if any of the SSO auth providers are set to autoRedirect from the login action
+            for (SSOAuthenticationProvider ssoAuthenticationProvider : AuthenticationManager.getActiveProviders(SSOAuthenticationProvider.class))
+            {
+                if (ssoAuthenticationProvider.isAutoRedirect())
+                    return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper()));
+            }
+        }
 
         page.setTemplate(PageConfig.Template.Dialog);
         page.setIncludeLoginLink(false);
