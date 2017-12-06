@@ -61,4 +61,5 @@
 %>
 --%>
     </select>
+    <br/><br/>
 </labkey:form>
