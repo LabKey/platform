@@ -544,9 +544,11 @@ public class SecurityManager
         {
             String apikey = getApiKey("apikey", basicCredentials, request);
 
-            // TODO: Look up API key
-
-            // TODO: Maybe set AUTHENTICATION_METHOD to "Basic"?
+            if (null != apikey)
+            {
+                u = ApiKeyManager.get().authenticateFromApiKey(apikey);
+                // TODO: Maybe set AUTHENTICATION_METHOD to "Basic" on success?
+            }
         }
 
         if (null == u && null != basicCredentials)

@@ -26,8 +26,11 @@ import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.report.ReportType;
+import org.labkey.api.security.ApiKeyManager;
+import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AvatarType;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
@@ -63,6 +66,7 @@ public class ApiModule extends CodeOnlyModule
     @Override
     protected void doStartup(ModuleContext moduleContext)
     {
+        SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
     }
 
     @Override
@@ -72,6 +76,14 @@ public class ApiModule extends CodeOnlyModule
             Constants.TestCase.class,
             DataIteratorUtil.TestCase.class,
             SqlScanner.TestCase.class
+        );
+    }
+
+    @Override
+    public @NotNull Set<Class> getIntegrationTests()
+    {
+        return ImmutableSet.of(
+            ApiKeyManager.TestCase.class
         );
     }
 }

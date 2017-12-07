@@ -162,4 +162,9 @@ public class CoreSchema
     {
         return getSchema().getTable("QCState");
     }
+
+    public TableInfo getTableAPIKeys()
+    {
+        return getSchema().getTable("APIKeys");
+    }
 }
