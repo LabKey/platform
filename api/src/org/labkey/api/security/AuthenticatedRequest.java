@@ -63,7 +63,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     private static final Logger _log = Logger.getLogger(AuthenticatedRequest.class);
 
     private final User _user;
-    boolean _loggedIn = false;
+    private boolean _loggedIn;
     private HttpSession _session = null;
 
     public static AuthenticatedRequest create(@NotNull HttpServletRequest request, @NotNull User user)
@@ -73,7 +73,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         return new AuthenticatedRequest(request, user);
     }
 
-    public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
+    private AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
     {
         super(request instanceof AuthenticatedRequest ? (HttpServletRequest)((AuthenticatedRequest)request).getRequest() : request);
         _user = user;

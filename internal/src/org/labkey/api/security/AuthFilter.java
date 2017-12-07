@@ -27,6 +27,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.Filter;
@@ -37,7 +38,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URL;
 
@@ -50,7 +50,7 @@ public class AuthFilter implements Filter
     private static volatile boolean _sslChecked = false;
     private static SecurityPointcutService _securityPointcut = null;
 
-    public void init(FilterConfig filterConfig) throws ServletException
+    public void init(FilterConfig filterConfig)
     {
     }
 
@@ -155,56 +155,44 @@ public class AuthFilter implements Filter
         // basic auth is attempted in this filter, etc.
         ensureFirstRequestHandled(req);
 
-        User user = (User) req.getUserPrincipal();
+        assert null == req.getUserPrincipal();
+
+        User user = null;
+        UnauthorizedImpersonationException e = null;
+
+        try
+        {
+            Pair<User, HttpServletRequest> pair = SecurityManager.attemptAuthentication(req);
+
+            if (null != pair)
+            {
+                user = pair.getKey();
+                req = pair.getValue();
+            }
+        }
+        catch (UnauthorizedImpersonationException uie)
+        {
+            // Impersonating admin must have had permissions revoked. Save away the details now, we'll then stash
+            // the admin user in the request, then render unauthorized impersonation exception, then stop impersonating.
+            ImpersonationContextFactory factory = uie.getFactory();
+            user = factory.getAdminUser();
+            e = uie;
+        }
 
         if (null == user)
+            user = User.guest;
+        else
+            UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
+
+        req = AuthenticatedRequest.create(req, user);
+
+        if (null != e)
         {
-            // Handle session API key, if allowed, present, and valid
-            if (AppProps.getInstance().isAllowSessionKeys())
-            {
-                String apiKey = req.getHeader("apikey");
-
-                if (null != apiKey)
-                {
-                    HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
-
-                    if (null != session)
-                    {
-                        req = new SessionReplacingRequest(req, session);
-                    }
-                }
-            }
-
-            UnauthorizedImpersonationException e = null;
-
-            try
-            {
-                user = SecurityManager.getAuthenticatedUser(req);
-            }
-            catch (UnauthorizedImpersonationException uie)
-            {
-                // Impersonating admin must have had permissions revoked. Save away the details now, we'll then stash
-                // the admin user in the request, then render unauthorized impersonation exception, then stop impersonating.
-                ImpersonationContextFactory factory = uie.getFactory();
-                user = factory.getAdminUser();
-                e = uie;
-            }
-
-            if (null == user)
-                user = User.guest;
-            else
-                UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
-
-            req = AuthenticatedRequest.create(req, user);
-
-            if (null != e)
-            {
-                // Render unauthorized impersonation exception so admin knows what's going on
-                ExceptionUtil.handleException(req, resp, e, null, false);
-                SecurityManager.stopImpersonating(req, e.getFactory());    // Needs to happen after rendering exception page, otherwise session gets messed up
-                ((AuthenticatedRequest)req).close();
-                return;
-            }
+            // Render unauthorized impersonation exception so admin knows what's going on
+            ExceptionUtil.handleException(req, resp, e, null, false);
+            SecurityManager.stopImpersonating(req, e.getFactory());    // Needs to happen after rendering exception page, otherwise session gets messed up
+            ((AuthenticatedRequest)req).close();
+            return;
         }
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);

@@ -214,7 +214,7 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthConfigProperty(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
-    public static boolean getAuthConfigProperty(String key, Boolean defaultValue)
+    public static boolean getAuthConfigProperty(String key, boolean defaultValue)
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String value = props.get(key);

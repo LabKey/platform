@@ -73,6 +73,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
@@ -401,18 +402,38 @@ public class SecurityManager
         }
     }
 
-    // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-    public static @Nullable User authenticateBasic(HttpServletRequest request, String basic)
+
+    private static @Nullable Pair<String, String> getBasicCredentials(HttpServletRequest request)
     {
-        try
+        // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+        String authorization = request.getHeader("Authorization");
+        Pair<String, String> ret = null;
+
+        if (null != authorization && authorization.startsWith("Basic"))
         {
+            String basic = authorization.substring("Basic".length()).trim();
             byte[] decode = Base64.decodeBase64(basic.getBytes());
             String auth = new String(decode);
             int colon = auth.indexOf(':');
             if (-1 == colon)
                 return null;
-            String rawEmail = auth.substring(0, colon);
+            String username = auth.substring(0, colon);
             String password = auth.substring(colon+1);
+
+            ret = new Pair<>(username, password);
+        }
+
+        return ret;
+    }
+
+
+    // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Pair<String, String> basicCredentials)
+    {
+        try
+        {
+            String rawEmail = basicCredentials.getKey();
+            String password = basicCredentials.getValue();
             if (rawEmail.toLowerCase().equals("guest"))
                 return User.guest;
             new ValidEmail(rawEmail);  // validate email address
@@ -445,77 +466,97 @@ public class SecurityManager
     }
 
 
-    public static User getAuthenticatedUser(HttpServletRequest request)
+    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request)
     {
-        User u = (User) request.getUserPrincipal();
+        Pair<String, String> basicCredentials = getBasicCredentials(request);
 
-        if (null == u)
+        // Handle session API key early, if allowed, present, and valid
+        if (AppProps.getInstance().isAllowSessionKeys())
         {
-            HttpSession session = request.getSession(false);
-            User sessionUser = getSessionUser(session);
+            String apiKey = getApiKey("session", basicCredentials, request);
 
-            if (null != sessionUser)
+            if (null != apiKey)
             {
-                // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
-                // group memberships are calculated on every request (but just once)
-                assert sessionUser._groups == null;
+                HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
-                ImpersonationContextFactory factory = (ImpersonationContextFactory)session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
-
-                if (null != factory)
+                if (null != session)
                 {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                    request = new SessionReplacingRequest(request, session);
                 }
-                else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
-                {
-                    sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
-                }
-
-                List<AuthenticationValidator> validators = getValidators(session);
-
-                // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
-                if (null != validators)
-                {
-                    boolean valid = true;
-
-                    // Enumerate all validators on every request (no short circuit) in case the validators have internal state or side effects
-                    for (AuthenticationValidator validator : validators)
-                    {
-                        valid &= validator.test(request);
-                    }
-
-                    if (!valid)
-                    {
-                        // If impersonating, stop so it gets logged
-                        if (sessionUser.isImpersonated())
-                        {
-                            SecurityManager.stopImpersonating(request, factory);
-                            sessionUser = sessionUser.getImpersonatingUser(); // Need to logout the admin
-                        }
-
-                        // Now logout the session user
-                        logoutUser(request, sessionUser);
-                        sessionUser = null;
-                    }
-                }
-
-                u = sessionUser;
             }
         }
 
-        if (null == u)
+        assert null == request.getUserPrincipal();
+
+        User u = null;
+        HttpSession session = request.getSession(false);
+        User sessionUser = getSessionUser(session);
+
+        if (null != sessionUser)
         {
-            // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-            String authorization = request.getHeader("Authorization");
-            if (null != authorization && authorization.startsWith("Basic"))
+            // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
+            // group memberships are calculated on every request (but just once)
+            assert sessionUser._groups == null;
+
+            ImpersonationContextFactory factory = (ImpersonationContextFactory)session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
+
+            if (null != factory)
             {
-                u = authenticateBasic(request, authorization.substring("Basic".length()).trim());
-                if (null != u)
+                sessionUser.setImpersonationContext(factory.getImpersonationContext());
+            }
+            else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
+            {
+                sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
+            }
+
+            List<AuthenticationValidator> validators = getValidators(session);
+
+            // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
+            if (null != validators)
+            {
+                boolean valid = true;
+
+                // Enumerate all validators on every request (no short circuit) in case the validators have internal state or side effects
+                for (AuthenticationValidator validator : validators)
                 {
-                    request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-                    // accept Guest as valid credentials from authenticateBasic()
-                    return u;
+                    valid &= validator.test(request);
                 }
+
+                if (!valid)
+                {
+                    // If impersonating, stop so it gets logged
+                    if (sessionUser.isImpersonated())
+                    {
+                        SecurityManager.stopImpersonating(request, factory);
+                        sessionUser = sessionUser.getImpersonatingUser(); // Need to logout the admin
+                    }
+
+                    // Now logout the session user
+                    logoutUser(request, sessionUser);
+                    sessionUser = null;
+                }
+            }
+
+            u = sessionUser;
+        }
+
+        if (null == u && true /* TODO: check AppProps setting */)
+        {
+            String apikey = getApiKey("apikey", basicCredentials, request);
+
+            // TODO: Look up API key
+
+            // TODO: Maybe set AUTHENTICATION_METHOD to "Basic"?
+        }
+
+        if (null == u && null != basicCredentials)
+        {
+            u = authenticateBasic(request, basicCredentials);
+            if (null != u)
+            {
+                request.setAttribute(AUTHENTICATION_METHOD, "Basic");
+                // accept Guest as valid credentials from authenticateBasic()
+                return new Pair<>(u, request);
             }
         }
 
@@ -540,8 +581,33 @@ public class SecurityManager
             u = AuthenticationManager.attemptRequestAuthentication(request);
         }
 
-        return null == u || u.isGuest() ? null : u;
+        return null == u || u.isGuest() ? null : new Pair<>(u, request);
     }
+
+
+    /**
+     * Determine if an API key is present, checking basic auth first and then "apikey" header. Return the API key if it's
+     * present and it matches the requested type. Otherwise return null.
+     * @param type API key type
+     * @param basicCredentials Basic auth credentials
+     * @param request Current request
+     * @return First API key found, if it matches the requested type. Otherwise null.
+     */
+    private static @Nullable String getApiKey(String type, @Nullable Pair<String, String> basicCredentials, HttpServletRequest request)
+    {
+        // Prefer Basic auth
+        if (null != basicCredentials && "apikey".equals(basicCredentials.getKey()))
+        {
+            String apiKey = basicCredentials.getValue();
+            return apiKey.startsWith(type) ? apiKey : null;
+        }
+
+        // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
+        String apiKey = request.getHeader("apikey");
+
+        return null != apiKey && apiKey.startsWith(type) ? apiKey : null;
+    }
+
 
     /**
      * Works like a standard HTTP session but intended for transform scripts and other
