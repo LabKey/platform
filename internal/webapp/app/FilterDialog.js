@@ -65,9 +65,9 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
             ui: 'footer',
             items: [
                 {xtype: 'button', text: 'OK', handler: this.onApply, scope: this},
-                {xtype: 'button', text: 'CANCEL', handler: this.onClose, scope: this},
-                {xtype: 'button', text: 'CLEAR FILTER', handler: this.clearFilter, scope: this},
-                {xtype: 'button', text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this}
+                {xtype: 'button', text: 'Cancel', handler: this.onClose, scope: this},
+                {xtype: 'button', text: 'Clear Filter', handler: this.clearFilter, scope: this},
+                {xtype: 'button', text: 'Clear All Filters', handler: this.clearAllFilters, scope: this}
             ]
         }];
 

@@ -118,12 +118,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     configureButtons : function() {
         var buttons = [
             {text: 'OK', handler: this.onApply, scope: this},
-            {text: 'CANCEL', handler: this.closeDialog, scope: this}
+            {text: 'Cancel', handler: this.closeDialog, scope: this}
         ];
 
         if (this.getDataRegion()) {
-            buttons.push({text: 'CLEAR FILTER', handler: this.clearFilter, scope: this});
-            buttons.push({text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this});
+            buttons.push({text: 'Clear Filter', handler: this.clearFilter, scope: this});
+            buttons.push({text: 'Clear All Filters', handler: this.clearAllFilters, scope: this});
         }
 
         return buttons;
