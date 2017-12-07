@@ -36,8 +36,9 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
@@ -71,6 +72,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String FILES_TABLE_NAME = "Files";
     public static final String QCSTATE_TABLE_NAME = "QCState";
+    public static final String API_KEYS_TABLE_NAME = "APIKeys";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
@@ -87,11 +89,14 @@ public class CoreQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return PageFlowUtil.set(
-                USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
-                MODULES_TABLE_NAME,
-                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME,
-                CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME);
+        Set<String> names = PageFlowUtil.set(
+            USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
+            GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME);
+
+        if (getUser().hasRootPermission(UserManagementPermission.class))
+            names.add(API_KEYS_TABLE_NAME);
+
+        return names;
     }
 
 
@@ -122,6 +127,8 @@ public class CoreQuerySchema extends UserSchema
             return getFilesTable();
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
             return getQCStateTable();
+        if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
+            return new ApiKeysTableInfo(this);
         return null;
     }
 
