@@ -667,4 +667,14 @@
       </column>
     </columns>
   </table>
+
+  <table tableName="APIKeys" tableDbType="TABLE">
+      <description>Contains one row per API key.</description>
+      <columns>
+          <column columnName="CreatedBy"/>
+          <column columnName="Created"/>
+          <column columnName="Crypt"/>
+          <column columnName="Expiration"/>
+      </columns>
+  </table>
 </tables>
