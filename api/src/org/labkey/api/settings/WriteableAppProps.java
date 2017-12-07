@@ -191,6 +191,16 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(USE_CONTAINER_RELATIVE_URL, b);
     }
 
+    public void setAllowApiKeys(boolean b)
+    {
+        storeBooleanValue(ALLOW_API_KEYS, b);
+    }
+
+    public void setApiKeyExpirationSeconds(int seconds)
+    {
+        storeIntValue(API_KEY_EXPIRATION_SECONDS, seconds);
+    }
+
     public void setAllowSessionKeys(boolean b)
     {
         storeBooleanValue(ALLOW_SESSION_KEYS, b);

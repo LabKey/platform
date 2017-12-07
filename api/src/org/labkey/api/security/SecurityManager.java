@@ -540,7 +540,7 @@ public class SecurityManager
             u = sessionUser;
         }
 
-        if (null == u && true /* TODO: check AppProps setting */)
+        if (null == u && AppProps.getInstance().isAllowApiKeys())
         {
             String apikey = getApiKey("apikey", basicCredentials, request);
 

@@ -204,6 +204,10 @@ public interface AppProps
      */
     boolean isSetUseContainerRelativeURL();
 
+    boolean isAllowApiKeys();
+
+    int getApiKeyExpirationSeconds();
+
     boolean isAllowSessionKeys();
 
     // configurable http security settings
