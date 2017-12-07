@@ -369,7 +369,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         DataRegionTable regressionTable = DataRegion(getDriver()).withName("test17021").waitFor();
         regressionTable.setUpFacetedFilter("PrimaryType", "Blood (Whole)");
         assertElementNotPresent(Locator.linkWithText("Semen"));
-        clickButton("CANCEL",0);
+        clickButton("Cancel",0);
     }
 
     private void verifyExportImport()
