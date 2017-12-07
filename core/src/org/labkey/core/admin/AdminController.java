@@ -1331,6 +1331,8 @@ public class AdminController extends SpringActionController
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
             props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
+            props.setAllowApiKeys(form.isAllowApiKeys());
+            props.setApiKeyExpirationSeconds(form.getApiKeyExpirationSeconds());
             props.setAllowSessionKeys(form.isAllowSessionKeys());
 
             try
@@ -1862,6 +1864,8 @@ public class AdminController extends SpringActionController
         private String _baseServerUrl;
         private String _callbackPassword;
         private boolean _useContainerRelativeURL;
+        private boolean _allowApiKeys;
+        private int _apiKeyExpirationSeconds;
         private boolean _allowSessionKeys;
 
         private String _CSRFCheck;
@@ -2115,6 +2119,26 @@ public class AdminController extends SpringActionController
         public void setUseContainerRelativeURL(boolean useContainerRelativeURL)
         {
             _useContainerRelativeURL = useContainerRelativeURL;
+        }
+
+        public boolean isAllowApiKeys()
+        {
+            return _allowApiKeys;
+        }
+
+        public void setAllowApiKeys(boolean allowApiKeys)
+        {
+            _allowApiKeys = allowApiKeys;
+        }
+
+        public int getApiKeyExpirationSeconds()
+        {
+            return _apiKeyExpirationSeconds;
+        }
+
+        public void setApiKeyExpirationSeconds(int apiKeyExpirationSeconds)
+        {
+            _apiKeyExpirationSeconds = apiKeyExpirationSeconds;
         }
 
         public boolean isAllowSessionKeys()
