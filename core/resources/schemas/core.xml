@@ -671,6 +671,7 @@
   <table tableName="APIKeys" tableDbType="TABLE">
       <description>Contains one row per API key.</description>
       <columns>
+          <column columnName="RowId"/>
           <column columnName="CreatedBy">
               <fk>
                   <fkColumnName>UserId</fkColumnName>

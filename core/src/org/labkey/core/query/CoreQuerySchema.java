@@ -38,7 +38,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
