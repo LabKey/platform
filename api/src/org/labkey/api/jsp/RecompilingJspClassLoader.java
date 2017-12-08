@@ -52,7 +52,8 @@ import java.util.Set;
 public class RecompilingJspClassLoader extends JspClassLoader
 {
     private static final Logger _log = Logger.getLogger(RecompilingJspClassLoader.class);
-    private static final String JSP_PATH = "/classes/java/jsp";
+    private static final String JSP_JAVA_PATH = "/jspTempDir/classes";
+    private static final String JSP_CLASSES_DIR = "/classes/java/jsp";
     private static final String JSP_PACKAGE_PATH = JSP_PACKAGE.replaceAll("\\.", "/");
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<>();
     private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
@@ -67,14 +68,15 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
         for (ResourceFinder finder : finders)
         {
-            File jspTempBuildDirectory = new File(finder.getBuildPath() + JSP_PATH);
-            File classFile = new File(jspTempBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
+            File jspJavaFileBuildDirectory = new File(finder.getBuildPath() + JSP_JAVA_PATH);
+            File jspClassesFileBuildDirectory = new File(finder.getBuildPath() + JSP_CLASSES_DIR);
+            File classFile = new File(jspClassesFileBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
             File sourceFile = null;
             if (null != finder.getSourcePath())
                 sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(packageName, jspFilename)));
 
             if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
-                return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFilename);
+                return getCompiledClassFile(classFile, jspJavaFileBuildDirectory, jspClassesFileBuildDirectory, finder, packageName, jspFilename);
         }
 
         return super.loadClass(context, packageName, jspFilename);
@@ -82,7 +84,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
 
     @JavaRuntimeVersion  // Change CompilerTargetVM and CompilerSourceVM settings below
-    private Class getCompiledClassFile(File classFile, File jspTempBuildDirectory, ResourceFinder finder, String packageName, String jspFileName)
+    private Class getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String packageName, String jspFileName)
     {
         String relativePath = getSourceJspPath(packageName, jspFileName);
         // Create File object for JSP source
@@ -105,7 +107,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     _log.info("Recompiling " + relativePath);
 
                     // Copy .jsp file from source to build staging directory
-                    File stagingJsp = new File(jspTempBuildDirectory.getParent() + "/webapp", relativePath);
+                    File stagingJsp = new File(jspJavaFileBuildDirectory.getParent() + "/webapp", relativePath);
                     if (!stagingJsp.getParentFile().exists())
                         stagingJsp.getParentFile().mkdirs();
                     FileUtil.copyFile(sourceFile, stagingJsp);
@@ -123,8 +125,8 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     // Compile the .jsp file
                     JspC jasper = new JspC();
-                    jasper.setUriroot(jspTempBuildDirectory.getParent() + "/webapp");
-                    jasper.setOutputDir(jspTempBuildDirectory.getAbsolutePath());
+                    jasper.setUriroot(jspJavaFileBuildDirectory.getParent() + "/webapp");
+                    jasper.setOutputDir(jspJavaFileBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
                     jasper.setCompilerTargetVM("1.8");
                     jasper.setCompilerSourceVM("1.8");
@@ -139,8 +141,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     jasper.execute();
 
                     // Compile the _jsp.java file
-                    String stagingJava = classFile.getAbsolutePath().replaceFirst("\\.class", ".java");
-                    compileJavaFile(stagingJava, cp.getPath(), jspFileName);
+                    String stagingJava = classFile.getAbsolutePath()
+                            .replace(jspClassesFileBuildDir.getAbsolutePath(), jspJavaFileBuildDirectory.getAbsolutePath())
+                            .replaceFirst("\\.class", ".java");
+                    compileJavaFile(stagingJava, cp.getPath(), jspFileName, jspClassesFileBuildDir.getAbsolutePath());
 
                     _classLoaders.remove(finder);
 
@@ -153,7 +157,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                 if (null == loader)
                 {
                     // Convert directory to a URL
-                    URL url = jspTempBuildDirectory.toURI().toURL();
+                    URL url = jspClassesFileBuildDir.toURI().toURL();
                     loader = new URLClassLoader(new URL[]{url}, Thread.currentThread().getContextClassLoader());
                     _classLoaders.put(finder, loader);
                 }
@@ -185,11 +189,11 @@ public class RecompilingJspClassLoader extends JspClassLoader
     }
 
 
-    private void compileJavaFile(String filePath, String classPath, String jspFilename) throws Exception
+    private void compileJavaFile(String filePath, String classPath, String jspFilename, String classDirPath) throws Exception
     {
         ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath, "-g");
+        int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath, "-d", classDirPath, "-g");
 
         if (0 != ret)
             throw new JspCompilationException(jspFilename, errorStream.toString());
