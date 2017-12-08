@@ -70,7 +70,8 @@ public class ApiKeyManager
     public @Nullable User authenticateFromApiKey(@NotNull String apiKey)
     {
         SimpleFilter filter = new SimpleFilter(getStillValidClause());
-        Integer userId = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Collections.singleton("CreatedBy"), filter, null).getObject(crypt(apiKey), Integer.class);
+        filter.addCondition(FieldKey.fromParts("Crypt"), crypt(apiKey));
+        Integer userId = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Collections.singleton("CreatedBy"), filter, null).getObject(Integer.class);
 
         return null != userId ? UserManager.getUser(userId) : null;
     }
