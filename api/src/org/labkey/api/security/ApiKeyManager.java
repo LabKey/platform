@@ -47,8 +47,12 @@ public class ApiKeyManager
      */
     public @NotNull String createKey(@NotNull User user, int expirationSeconds)
     {
-//        if (user.isGuest())
-//            throw new Exception();
+        if (user.isGuest())
+            throw new IllegalStateException("Can't create an API key for a guest");
+
+        // If impersonating, create an API key for the impersonating admin. Admins can't create an API key for an impersonated user.
+        if (user.isImpersonated())
+            user = user.getImpersonationContext().getAdminUser();
 
         String apiKey = "apikey|" + GUID.makeHash();
 
@@ -90,7 +94,7 @@ public class ApiKeyManager
     public static class TestCase extends Assert
     {
         @Test
-        public void test() throws InterruptedException
+        public void testCreateAndExpire() throws InterruptedException
         {
             User user = TestContext.get().getUser();
             String oneSecondKey = ApiKeyManager.get().createKey(user, 1);
@@ -101,6 +105,13 @@ public class ApiKeyManager
             assertNull("API key should have expired after one second", ApiKeyManager.get().authenticateFromApiKey(oneSecondKey));
 
             assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(noExpireKey));
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testGuest()
+        {
+            // Should throw
+            ApiKeyManager.get().createKey(User.guest, -1);
         }
     }
 

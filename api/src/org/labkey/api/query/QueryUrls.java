@@ -36,4 +36,10 @@ public interface QueryUrls extends UrlProvider
     /**
      * @param baseURL URL from which to preserve parameters (such as schemaName and queryName) when creating the new URL  */
     ActionURL urlExecuteQuery(@NotNull ActionURL baseURL);
+    /**
+     * @param c Container
+     * @param schema Query schema name
+     * @param query Query name
+     */
+    ActionURL urlExecuteQuery(Container c, String schema, String query);
 }

@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.servlet.http.HttpSession;
 
 /**
- * API keys are bound to a single HTTP session, and offer a way to authenticate headless clients when they are
+ * Session keys are bound to a single HTTP session, and offer a way to authenticate headless clients when they are
  * targeting data that requires user interaction, like two-factor authentication or accepting terms of use.
  * Created by adam on 4/3/2016.
  */

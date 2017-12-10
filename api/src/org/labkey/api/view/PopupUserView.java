@@ -58,9 +58,9 @@ public class PopupUserView extends PopupMenuView
         NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
         tree.addChild(account);
 
-        if (AppProps.getInstance().isAllowSessionKeys())
+        if (allowApiKeyPage(user))
         {
-            NavTree apikey = new NavTree("API Key", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
+            NavTree apikey = new NavTree("API Keys", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
             tree.addChild(apikey);
         }
 
@@ -84,5 +84,10 @@ public class PopupUserView extends PopupMenuView
         tree.addChild(feedBack);
 
         return tree;
+    }
+
+    public static boolean allowApiKeyPage(User user)
+    {
+        return AppProps.getInstance().isAllowApiKeys() || AppProps.getInstance().isAllowSessionKeys() || user.isInSiteAdminGroup();
     }
 }
