@@ -437,6 +437,11 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
 
             var val = item.getValue();
+
+            if(item.originalConfig.formatter && typeof item.originalConfig.formatter === "function" ) {
+                val = item.originalConfig.formatter(val);
+            }
+
             if(Ext4.isArray(val)){
                 if(val.length > 1)
                     op = 'in';
