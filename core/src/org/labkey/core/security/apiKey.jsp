@@ -16,15 +16,20 @@
  */
 %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.security.SessionApiKeyManager" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -52,29 +57,122 @@
     {
         %><%=ex.getMessage()%><%
     }
-    String id = SessionApiKeyManager.get().createKey(request, session);
+
+    boolean apiKeys = AppProps.getInstance().isAllowApiKeys();
+    boolean sessionKeys = AppProps.getInstance().isAllowSessionKeys();
+
+    if (getUser().isInSiteAdminGroup())
+    {
+        if (!apiKeys && !sessionKeys)
+        {
+            %>API keys are currently disabled on this site. <%
+        }
 %>
-This API key can be used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. Using an API key avoids
-copying and storing your credentials on the client machine. Also, all client API access is tied to the current browser session, which means the code runs under the
-current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state, etc.). It also means the API key
-will likely lose authorization when the session expires, e.g., when you sign out via the browser or the server automatically times out your session.
+As a site administrator, you can configure API keys on the <%=PageFlowUtil.unstyledTextLink("Site Settings page", urlProvider(AdminUrls.class).getCustomizeSiteURL())%>.
+
+<%
+        if (apiKeys)
+        {
+%>
+You can manage API keys generated on the server via <%=PageFlowUtil.unstyledTextLink("this query", urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), "core", "APIKeys"))%>.
+<%
+        }
+%>
 <br/><br/>
-<input id="session-token" value="<%=h(id)%>" style="width: 300px;" readonly/>
+<%
+    }
+%>
+API keys are used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. You can authenticate with
+an API key to avoid using and storing your LabKey password on the client machine. An API key can be specified in .netrc, provided to API functions, or used
+with external clients that support Basic authentication. API keys have security benefits over passwords (they are tied to a specific server, they're usually
+configured to expire, and they can be revoked), but a valid API key provides complete access to your data and actions, so it should be kept secret.
+<br/><br/>
+<%
+    if (apiKeys)
+    {
+        int expiration = AppProps.getInstance().getApiKeyExpirationSeconds();
+        final String expirationMessage;
+
+        if (-1 == expiration)
+        {
+            expirationMessage = "never expire, although administrators can revoke them manually.";
+        }
+        else
+        {
+            String duration = DateUtil.formatDuration(expiration * 1000);
+            duration = duration.replace("s", " seconds").replace("d", " days");
+            expirationMessage = "expire after " + duration + "; administrators can also revoke API keys before they expire.";
+        }
+%>
+This server allows API keys. <%=text("They are currently configured to " + expirationMessage)%> (For example, if an API key is accidentally revealed
+to others.) API keys are appropriate for authenticating ad hoc interactions within statistical tools (e.g., R, RStudio, SAS) or programming languages
+(e.g., Java, Python), as well authenticating API use from automated scripts.
+<br/><br/>
+<%=button("Generate API key").onClick("createApiKey('apikey');")%>
+<input id="apikey-token" style="width: 300px;" readonly/>
+<%= button("Copy to clipboard").id("apikey-token-copy").attributes("data-clipboard-target=\"#apikey-token\"") %>
+<br/>
+<div id="apikey-rusage" style="display: none">
+    <br/>
+    <h3>R usage</h3>
+    <div style="padding:10pt; border:solid 1px grey">
+        <code>
+            library(Rlabkey)<br>
+            labkey.setDefaults(apiKey="<span id="apikey-rkey"></span>")<br>
+            <% if (null != baseServerURL) { %>
+            labkey.setDefaults(baseUrl="<%=h(baseServerURL.getURIString())%>")<br>
+            <% } %>
+        </code>
+    </div>
+</div>
+<br/><br/>
+<%
+    }
+
+    if (sessionKeys)
+    {
+%>
+This server<%=text(apiKeys ? " also" : "")%> allows session API keys. A session API key is tied to your current browser session, which means all API calls
+execute in your current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state, etc.). It also
+means the API key will no longer represent a logged in user when the session expires, e.g., when you sign out via the browser or the server automatically times
+out your session. Since they expire quickly, session API keys are most appropriate for deployments with regulatory compliance requirements where interactions
+require specifying current role &amp; PHI level and accepting terms of use.
+<br/><br/>
+<%=button("Generate session API key").onClick("createApiKey('session');")%>
+<input id="session-token" style="width: 310px;" readonly/>
 <%= button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
-<br/><br/>
+<br/>
+<div id="session-rusage" style="display: none">
+<br/>
 <h3>R usage</h3>
 <div style="padding:10pt; border:solid 1px grey">
 <code>
     library(Rlabkey)<br>
-    labkey.setDefaults(apiKey="<%=h(id)%>")<br>
+    labkey.setDefaults(apiKey="<span id="session-rkey"></span>")<br>
     <% if (null != baseServerURL) { %>
     labkey.setDefaults(baseUrl="<%=h(baseServerURL.getURIString())%>")<br>
     <% } %>
 </code>
 </div>
+</div>
 <br/><br/>
+<%
+    }
+%>
 <%= button("Done").href(returnURL) %>
 <script type="application/javascript">
+    (function($) {
+        var clip = new Clipboard('#apikey-token-copy');
+        clip.on('success', function(e) {
+            $(e.trigger).html('Copied!'); e.clearSelection();
+            setTimeout(function() { $(e.trigger).html('Copy to clipboard'); }, 2500);
+        });
+        clip.on('error', function(e) {
+            var controlKey = navigator && navigator.appVersion && navigator.appVersion.indexOf("Mac") != -1 ? "Command" : "Ctrl";
+            $(e.trigger).html('Press ' + controlKey + '+C to copy'); }
+        );
+    })(jQuery);
+
     (function($) {
         var clip = new Clipboard('#session-token-copy');
         clip.on('success', function(e) {
@@ -86,4 +184,19 @@ will likely lose authorization when the session expires, e.g., when you sign out
             $(e.trigger).html('Press ' + controlKey + '+C to copy'); }
         );
     })(jQuery);
+
+    function createApiKey(type) {
+        LABKEY.Ajax.request({
+            url: <%=q(buildURL(SecurityController.CreateApiKeyAction.class))%>,
+            method: 'POST',
+            params: {type: type},
+            success: function (ctx) {
+                var apikey = JSON.parse(ctx.response).apikey;
+                document.getElementById(type + "-token").value = apikey;
+                document.getElementById(type + "-rkey").innerHTML = apikey;
+                document.getElementById(type + "-rusage").style.display = 'block';
+            },
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.displayAjaxErrorResponse, this, true)
+        });
+    }
 </script>

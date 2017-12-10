@@ -28,6 +28,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -79,6 +80,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.PopupUserView;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -1911,8 +1913,8 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            if (!AppProps.getInstance().isAllowSessionKeys())
-                throw new UnauthorizedException("Session API keys are not shown on this site. Contact a site administrator.");
+            if (!PopupUserView.allowApiKeyPage(getUser()))
+                throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/core/security/apiKey.jsp", form);
@@ -1921,7 +1923,53 @@ public class SecurityController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            root.addChild("API Keys");
+            return root;
+        }
+    }
+
+    public static class CreateApiKeyForm
+    {
+        private String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+    }
+
+    @RequiresLogin
+    public class CreateApiKeyAction extends MutatingApiAction<CreateApiKeyForm>
+    {
+        @Override
+        public Object execute(CreateApiKeyForm form, BindException errors) throws Exception
+        {
+            final String apiKey;
+
+            switch (form.getType())
+            {
+                case "apikey":
+                    apiKey = ApiKeyManager.get().createKey(getUser(), AppProps.getInstance().getApiKeyExpirationSeconds());
+                    break;
+                case "session":
+                    ViewContext ctx = getViewContext();
+                    apiKey = SessionApiKeyManager.get().createKey(ctx.getRequest(), ctx.getSession());
+                    break;
+                default:
+                    throw new NotFoundException("Invalid type specified");
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (null != apiKey)
+                response.put("apikey", apiKey);
+
+            return response;
         }
     }
 

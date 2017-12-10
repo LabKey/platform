@@ -346,11 +346,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Allow standard API keys</td>
+    <td class="labkey-form-label">Allow API keys</td>
     <td><labkey:checkbox id="allowApiKeys" name="allowApiKeys" checked="<%=AppProps.getInstance().isAllowApiKeys()%>" value="true"/></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Expire standard API keys</td>
+    <td class="labkey-form-label">Expire API keys</td>
 <%
     final int currentExpiration = AppProps.getInstance().getApiKeyExpirationSeconds();
 %>
@@ -369,7 +369,7 @@ Click the Save button at any time to accept the current settings and continue.</
     </select></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Allow session API keys</td>
+    <td class="labkey-form-label">Allow session keys</td>
     <td><labkey:checkbox id="allowSessionKeys" name="allowSessionKeys" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
 

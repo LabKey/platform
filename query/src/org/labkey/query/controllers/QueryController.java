@@ -384,6 +384,7 @@ public class QueryController extends SpringActionController
 
     public static class QueryUrlsImpl implements QueryUrls
     {
+        @Override
         public ActionURL urlSchemaBrowser(Container c)
         {
             return new ActionURL(BeginAction.class, c);
@@ -473,6 +474,15 @@ public class QueryController extends SpringActionController
             return result;
         }
 
+        @Override
+        public ActionURL urlExecuteQuery(Container c, String schemaName, String queryName)
+        {
+            return new ActionURL(ExecuteQueryAction.class, c)
+                .addParameter(QueryParam.schemaName, schemaName)
+                .addParameter(QueryParam.queryName, queryName);
+        }
+
+        @Override
         public ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
         {
             return new ActionURL(ExportExcelTemplateAction.class, c)
