@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: Mark Igra
@@ -73,4 +74,11 @@ public interface WikiService
 
     void addWikiListener(WikiChangeListener listener);
     void removeWikiListener(WikiChangeListener listener);
+
+    /**
+     * Add a view to the standard wiki page template
+     * @param view View to include on page that includes various settings for display
+     */
+    void addAdditionalTemplateView(WikiTemplateView view);
+    List<WikiTemplateView> getAdditionalTemplateViews();
 }
