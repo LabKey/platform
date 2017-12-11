@@ -282,6 +282,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                     bodyStyle : 'background-color: transparent;',
                     items: [{
                         xtype  : 'panel',
+                        autoScroll : true,
                         border : false,
                         itemId : 'buttonArea',
                         bodyStyle : 'background-color: transparent;'
