@@ -100,7 +100,7 @@ List others = [
 
 List javax = [
         "javax.validation:validation-api:${validationApiVersion}",
-        "javax.xml:jaxrpc:${jaxrpcVersion}",
+        "javax.xml:jaxrpc-api:${jaxrpcVersion}",
 ]
 
 configurations {
