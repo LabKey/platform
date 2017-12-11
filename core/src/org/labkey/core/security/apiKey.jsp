@@ -162,19 +162,13 @@ require specifying current role &amp; PHI level and accepting terms of use.
 <%= button("Done").href(returnURL) %>
 <script type="application/javascript">
     (function($) {
-        var clip = new Clipboard('#apikey-token-copy');
-        clip.on('success', function(e) {
-            $(e.trigger).html('Copied!'); e.clearSelection();
-            setTimeout(function() { $(e.trigger).html('Copy to clipboard'); }, 2500);
-        });
-        clip.on('error', function(e) {
-            var controlKey = navigator && navigator.appVersion && navigator.appVersion.indexOf("Mac") != -1 ? "Command" : "Ctrl";
-            $(e.trigger).html('Press ' + controlKey + '+C to copy'); }
-        );
+        addCopyToClipboard($, '#apikey-token-copy');
+        addCopyToClipboard($, '#session-token-copy');
     })(jQuery);
 
-    (function($) {
-        var clip = new Clipboard('#session-token-copy');
+    function addCopyToClipboard($, id)
+    {
+        var clip = new Clipboard(id);
         clip.on('success', function(e) {
             $(e.trigger).html('Copied!'); e.clearSelection();
             setTimeout(function() { $(e.trigger).html('Copy to clipboard'); }, 2500);
@@ -183,7 +177,7 @@ require specifying current role &amp; PHI level and accepting terms of use.
             var controlKey = navigator && navigator.appVersion && navigator.appVersion.indexOf("Mac") != -1 ? "Command" : "Ctrl";
             $(e.trigger).html('Press ' + controlKey + '+C to copy'); }
         );
-    })(jQuery);
+    }
 
     function createApiKey(type) {
         LABKEY.Ajax.request({
