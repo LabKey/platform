@@ -93,6 +93,7 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiTemplateView;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
@@ -156,21 +157,24 @@ public class WikiController extends SpringActionController
 
         if (template instanceof HomeTemplate && !(action instanceof EditWikiAction) && !page.getTemplate().equals(PageConfig.Template.Print))
         {
+            VBox vbox = new VBox();
+
+            SearchService ss = SearchService.get();
+            if (null != ss)
+                vbox.addView(ss.getSearchView(false, 0, false, true));
+
             WebPartView toc = new WikiTOC(context);
             page.addClientDependencies(toc.getClientDependencies());
 
-            SearchService ss = SearchService.get();
-
-            if (null == ss)
+            for (WikiTemplateView view : WikiManager.get().getAdditionalTemplateViews())
             {
-                ((HomeTemplate)template).setView(WebPartFactory.LOCATION_RIGHT, toc);
+                if (WikiManager.shouldIncludeView(context, view))
+                    vbox.addView(view.getView());
             }
-            else
-            {
-                WebPartView searchView = ss.getSearchView(false, 0, false, true);
 
-                ((HomeTemplate)template).setView(WebPartFactory.LOCATION_RIGHT, new VBox(searchView, toc));
-            }
+            vbox.addView(toc); //TODO: establish insertion order?
+
+            ((HomeTemplate)template).setView(WebPartFactory.LOCATION_RIGHT, vbox);
         }
 
         return template;
