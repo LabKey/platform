@@ -202,14 +202,18 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 int inserted = _importRowsUsingDIB(user, container, loader, null, context, new HashMap<>());
 
-                //Make entry to audit log if anything was inserted
-                if (inserted > 0)
-                    ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
+                if (!errors.hasErrors())
+                {
+                    //Make entry to audit log if anything was inserted
+                    if (inserted > 0)
+                        ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
 
-                transaction.commit();
-                ListManager.get().indexList(_list); // TODO: Add to a post-commit task?
+                    transaction.commit();
+                    ListManager.get().indexList(_list); // TODO: Add to a post-commit task?
+                    return inserted;
+                }
 
-                return inserted;
+                return 0;
             }
             catch (SQLException x)
             {
