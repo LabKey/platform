@@ -272,8 +272,11 @@ public class AuthenticationManager
 
         for (SSOAuthenticationProvider provider : ssoProviders)
         {
-            LinkFactory factory = provider.getLinkFactory();
-            html.append("<li>").append(factory.getLink(currentURL, prefix)).append("</li>");
+            if (!provider.isAutoRedirect())
+            {
+                LinkFactory factory = provider.getLinkFactory();
+                html.append("<li>").append(factory.getLink(currentURL, prefix)).append("</li>");
+            }
         }
 
         return html.toString();
