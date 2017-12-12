@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,8 @@ public interface ExpRun extends ExpObject
     List<? extends ExpData> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType appType);
     File getFilePathRoot();
     void setFilePathRoot(File filePathRoot);
+    Path getFilePathRootPath();
+    void setFilePathRootPath(Path filePathRoot);
     void setProtocol(ExpProtocol protocol);
     void setJobId(Integer jobId);
     ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);

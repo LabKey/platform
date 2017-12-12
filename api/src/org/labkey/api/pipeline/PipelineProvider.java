@@ -26,6 +26,7 @@ import org.labkey.api.module.Module;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -233,6 +234,11 @@ abstract public class PipelineProvider
         return _owningModule;
     }
 
+    public boolean supportsCloud()
+    {
+        return false;
+    }
+
     /**
      * @return Web part shown on the setup page.
      */
@@ -353,6 +359,16 @@ abstract public class PipelineProvider
         actionURL.setAction(action);
 //        Uncomment to debug GWT app - can't just edit the URL and reload because it's a POST
 //        actionURL.addParameter("gwt.codesvr", "127.0.0.1:9997");
+        directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
+      }
+
+    protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, List<Path> files,
+                             boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
+    {
+        if (!includeAll && (files == null || files.size() == 0))
+            return;
+        ActionURL actionURL = directory.cloneHref();
+        actionURL.setAction(action);
         directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
       }
 

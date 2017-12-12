@@ -41,6 +41,7 @@ public interface FileContentService
     String FILES_LINK = "@files";
     String FILE_SETS_LINK = "@filesets";
     String PIPELINE_LINK = "@pipeline";
+    String CLOUD_LINK = "@cloud";
 
     static @Nullable FileContentService get()
     {

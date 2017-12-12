@@ -19,6 +19,8 @@ import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -46,6 +48,8 @@ public interface PipelineDirectory
      * @return List of filtered files.
      */
     File[] listFiles(FileFilter filter);
+
+    List<Path> listFiles(DirectoryStream.Filter<Path> filter);
 
     String getPathParameter();
 

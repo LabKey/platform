@@ -26,6 +26,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -139,6 +141,60 @@ public class PipelinePathForm extends ViewForm
                     throw new NotFoundException("Could not find file '" + file + "'");
                 }
                 result.add(file);
+            }
+        }
+
+        return result;
+    }
+
+    public List<Path> getValidatedPaths(Container c, boolean allowNonExistentFiles)
+    {
+        PipeRoot pr = getPipeRoot(c);
+
+        Path dir = pr.resolveToNioPath(getPath());
+        if (dir == null || !Files.exists(dir))
+            throw new NotFoundException("Could not find path " + getPath());
+
+        if ((getFile() == null || getFile().length == 0) && (getFileIds() == null || getFileIds().length == 0))
+        {
+            throw new NotFoundException("No files specified");
+        }
+
+        List<Path> result = new ArrayList<>();
+        for (String fileName : _file)
+        {
+            Path path = pr.resolveToNioPath(getPath() + "/" + fileName);
+            if (!allowNonExistentFiles && (null == path || !Files.exists(path)))
+            {
+                throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");
+            }
+            if (null != path)
+                result.add(path);
+        }
+
+        ExperimentService es = ExperimentService.get();
+        if (_fileIds != null)
+        {
+            for (int fileId : _fileIds)
+            {
+                ExpData data = es.getExpData(fileId);
+                if(data == null)
+                {
+                    throw new NotFoundException("Could not find file associated with Data Id: '" + fileId);
+                }
+
+                if (!data.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    throw new NotFoundException("Insufficient permissions for file '" + data.getFile());
+                }
+
+                Path path = pr.resolveToNioPath(data.getDataFileURI().getPath());
+                if (!allowNonExistentFiles && (null == path || !Files.exists(path)))
+                {
+                    throw new NotFoundException("Could not find file '" + path.getFileName().toString() + "'");
+                }
+                if (null != path)
+                    result.add(path);
             }
         }
 

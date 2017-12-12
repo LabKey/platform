@@ -44,6 +44,8 @@ public interface ExpData extends ExpProtocolOutput
 
     String getDataFileUrl();
 
+    boolean hasFileScheme();
+
     /** @return the file if this data is backed by a 'file:'-style URI. */
     @Nullable
     File getFile();

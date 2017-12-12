@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.Permission;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -45,6 +46,15 @@ public interface PipeRoot extends SecurableResource
 
     @NotNull
     File getRootPath();
+
+    @NotNull
+    Path getRootNioPath();
+
+    @Nullable
+    Path resolveToNioPath(String path);
+
+    @Nullable
+    Path resolveToNioPathFromUrl(String url);
 
     /**
      * @return the file that's at the given relativePath from the pipeline root. Will be null if the relative path

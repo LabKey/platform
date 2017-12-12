@@ -34,6 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
@@ -191,6 +193,23 @@ public class FileUtil
             return name.substring(name.lastIndexOf('.') + 1, name.length());
         }
         return null;
+    }
+
+    public static boolean hasCloudScheme(URI uri)
+    {
+        return "s3".equalsIgnoreCase(uri.getScheme());
+    }
+
+    public static boolean hasCloudScheme(String url)
+    {
+        try
+        {
+            return hasCloudScheme(new URI(url));
+        }
+        catch (URISyntaxException e)
+        {
+            return false;
+        }
     }
 
     /**

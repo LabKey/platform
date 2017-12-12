@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Set;
 
@@ -75,4 +76,20 @@ public interface CloudStoreService
      * Add cloud storage portal tab with web part
      */
     void addCloudStorageTab(Container container);
+
+    /**
+     * Return nio.Path to cloud file/directory
+     */
+    Path getPath(Container container, String storeName, org.labkey.api.util.Path path);
+
+    /**
+     * Return path relative to cloud store
+     */
+    String getRelativePath(Container container, String storeName, String url);
+
+    /**
+     * Return nio.Path matching url (which has bucket, etc.)
+     */
+    Path getPathFromUrl(Container container, String url);
+
 }

@@ -21,6 +21,10 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Represents an action that might be performed on a set of files in the pipeline.
@@ -31,12 +35,17 @@ public class PipelineAction
 {
     String _description;
     NavTree _links;
-    File[] _files;
+    List<Path> _files;
     boolean _allowMultiSelect;
     boolean _allowEmptySelect;
 
     /** Use NavTree to create a drop-down menu with submenus for the specified files */
     public PipelineAction(NavTree links, File[] files, boolean allowMultiSelect, boolean allowEmptySelect)
+    {
+        this(links, Arrays.stream(files).map(file -> file.toPath()).collect(Collectors.toList()), allowMultiSelect, allowEmptySelect);
+    }
+
+    public PipelineAction(NavTree links, List<Path> files, boolean allowMultiSelect, boolean allowEmptySelect)
     {
         _links = links;
         _files = files;
@@ -58,12 +67,19 @@ public class PipelineAction
         _links.setId(id);
     }
 
+    /** Use a simple button for the specified files */
+    public PipelineAction(String id, String label, URLHelper href, List<Path> files, boolean allowMultiSelect, boolean allowEmptySelect)
+    {
+        this(new NavTree(label, href), files, allowMultiSelect, allowEmptySelect);
+        _links.setId(id);
+    }
+
     public String getLabel()
     {
         return _links.getText();
     }
 
-    public File[] getFiles()
+    public List<Path> getFiles()
     {
         return _files;
     }
@@ -96,8 +112,8 @@ public class PipelineAction
 
         JSONArray files = new JSONArray();
         if (null != _files)
-            for (File f : _files)
-                files.put(f.getName());
+            for (Path f : _files)
+                files.put(f.getFileName());
         o.put("files", files);
 
         return o;

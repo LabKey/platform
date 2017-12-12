@@ -53,8 +53,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 
-import java.io.File;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,7 +144,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                     try
                     {
                         getModelBean().setRoot(dir);
-                        getModelBean().setRootDirectory(dir.getFileSystemDirectory());
+                        getModelBean().setRootDirectory(dir.getFileSystemDirectory().toPath());
                     }
                     catch (MissingRootDirectoryException e)
                     {
@@ -379,7 +379,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
 
-            if (null != root && root.isValid() && null != dir && root.getRootPath().equals(dir.getFileSystemDirectory()))
+            if (null != root && root.isValid() && null != dir && root.getUri().equals(dir.getFileSystemDirectory().toURI()))
             {
                 return true;
             }
@@ -425,7 +425,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             if (dir != null)
             {
                 getModelBean().setRoot(dir);
-                getModelBean().setRootDirectory(dir.getFileSystemDirectory());
+                getModelBean().setRootDirectory(dir.getFileSystemDirectory().toPath());
             }
         }
         catch (MissingRootDirectoryException ex)
@@ -469,7 +469,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private String _contentId;
         private boolean _isPipelineRoot;
         private String _statePrefix;
-        private File _rootDirectory;
+        private java.nio.file.Path _rootDirectory;
         private boolean _expandFileUpload;
         private boolean _disableGeneralAdminSettings;
         private Integer _height = null;
@@ -641,15 +641,15 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             {
                 return isCloudStoreEnabled(container);
             }
-            return (_rootDirectory != null && _rootDirectory.exists());
+            return (_rootDirectory != null && Files.exists(_rootDirectory));
         }
 
-        public File getRootDirectory()
+        public java.nio.file.Path getRootDirectory()
         {
             return _rootDirectory;
         }
 
-        public void setRootDirectory(File rootDirectory)
+        public void setRootDirectory(java.nio.file.Path rootDirectory)
         {
             _rootDirectory = rootDirectory;
         }

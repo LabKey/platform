@@ -71,6 +71,7 @@ import org.labkey.api.view.ViewContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -314,6 +315,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpData> getExpData(Container c);
     ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
     ExpData getExpDataByURL(File f, @Nullable Container c);
+    ExpData getExpDataByURL(Path p, @Nullable Container c);
     List<? extends ExpData> getAllExpDataByURL(String canonicalURL);
 
     TableInfo getTinfoMaterial();
