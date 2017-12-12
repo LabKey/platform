@@ -49,6 +49,10 @@
         <attribute>
             <name>target</name>
         </attribute>
+        <attribute>
+            <name>submit</name>
+            <type>java.lang.Boolean</type>
+        </attribute>
     </tag>
     <tag>
         <name>selectAll</name>

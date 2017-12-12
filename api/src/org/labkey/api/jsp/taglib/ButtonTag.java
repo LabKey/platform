@@ -37,6 +37,7 @@ public class ButtonTag extends SimpleTagBase
     String _value;
     String _id;
     String _target;
+    Boolean _submit = true;
 
     public void doTag() throws JspException, IOException
     {
@@ -58,7 +59,7 @@ public class ButtonTag extends SimpleTagBase
 
             String onClickScript = "";
             if (_onclick != null)
-                onClickScript = (h(_onclick));
+                onClickScript = _onclick;
             if (_action != null)
                 onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';");
 
@@ -67,7 +68,7 @@ public class ButtonTag extends SimpleTagBase
             if (_value != null)
                 attributes.put("value", _value);
 
-            button.submit(true).onClick(onClickScript).attributes(attributes);
+            button.submit(_submit).onClick(onClickScript).attributes(attributes);
         }
 
         if (null != _disableOnClick)
@@ -134,5 +135,10 @@ public class ButtonTag extends SimpleTagBase
     public void setTarget(String target)
     {
         _target = target;
+    }
+
+    public void setSubmit(Boolean submit)
+    {
+        _submit = submit;
     }
 }
