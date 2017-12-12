@@ -23,9 +23,11 @@ import org.labkey.pipeline.api.PipeRootImpl;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +102,52 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         return (fileInEntry != null && fileInEntry.equals(f));
     }
 
+    @Override
+    public List<Path> listFiles(DirectoryStream.Filter<Path> filter)
+    {
+        ArrayList<Path> listFiles = new ArrayList<>();
+        try
+        {
+            if (_root.isCloudRoot())
+            {
+                if (_root.isValid())
+                {
+                    Path dirPath = _root.resolveToNioPath(_relativePath);
+                    if (null != dirPath)
+                        Files.newDirectoryStream(dirPath).forEach(path -> {
+                            try
+                            {
+                                if (filter.accept(path))
+                                    listFiles.add(path);
+                            }
+                            catch (IOException e)
+                            {
+                                // Ignore
+                            }
+                        });
+                }
+            }
+            else
+            {
+                ensureFiles();
+
+                // Actually do the filtering.
+                for (File f : _files.values())
+                {
+                    Path path = f.toPath();
+                    if (filter.accept(path))
+                        listFiles.add(path);
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            // TODO: log error, but otherwise ignore
+            String foo = e.getMessage();
+        }
+        return listFiles;
+    }
+
     public File[] listFiles(FileFilter filter)
     {
         ensureFiles();
@@ -121,10 +169,10 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         // Sort each action's array of Files
         for (PipelineAction a : _actions)
         {
-            File[] f = a.getFiles();
-            if (null != f && f.length > 1)
+            List<Path> f = a.getFiles();
+            if (null != f && f.size() > 1)
             {
-                Arrays.sort(f, Comparator.comparing(File::getPath, String.CASE_INSENSITIVE_ORDER));
+                f.sort((p1, p2) -> p1.getFileName().toString().compareToIgnoreCase(p2.getFileName().toString()));
             }
         }
 
@@ -134,18 +182,18 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             int rc;
             if (action1.equals(action2))
                 return 0;
-            File[] files1 = action1.getFiles();
-            File[] files2 = action2.getFiles();
+            List<Path> files1 = action1.getFiles();
+            List<Path> files2 = action2.getFiles();
             if (files1 == files2)
                 return 0;
-            if (files1 == null || files1.length == 0)
+            if (files1 == null || files1.size() == 0)
                 return -1;
-            if (files2 == null || files2.length == 0)
+            if (files2 == null || files2.size() == 0)
                 return 1;
-            rc = files2.length - files1.length;
+            rc = files2.size() - files1.size();
             if (rc != 0)
                 return rc;
-            rc = files1[0].getPath().compareToIgnoreCase(files2[0].getPath());
+            rc = files1.get(0).getFileName().toString().compareToIgnoreCase(files2.get(0).getFileName().toString());
             if (rc != 0)
                 return rc;
             rc = action1.getLabel().compareToIgnoreCase(action2.getLabel());

@@ -54,6 +54,7 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -202,6 +203,11 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public String getDataFileUrl()
     {
         return _object.getDataFileUrl();
+    }
+
+    public boolean hasFileScheme()
+    {
+        return !FileUtil.hasCloudScheme(getDataFileUrl());
     }
 
     @Nullable

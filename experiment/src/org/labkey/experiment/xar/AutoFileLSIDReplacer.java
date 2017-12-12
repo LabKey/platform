@@ -24,6 +24,7 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.xar.Replacer;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.security.MessageDigest;
@@ -59,7 +60,7 @@ public class AutoFileLSIDReplacer implements Replacer
                 throw new XarFormatException("You must specify a dataFileURL when using AutoFileLSID");
             }
 
-            String canonicalURL = _source.getCanonicalDataFileURL(_dataFileURL);
+            String canonicalURL = !FileUtil.hasCloudScheme(_dataFileURL) ? _source.getCanonicalDataFileURL(_dataFileURL) : _dataFileURL;
 
             ExpData data = ExperimentService.get().getExpDataByURL(canonicalURL, _container);
             if (data != null)

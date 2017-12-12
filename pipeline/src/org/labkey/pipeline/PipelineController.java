@@ -121,6 +121,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -222,6 +223,10 @@ public class PipelineController extends SpringActionController
             errors.reject(ERROR_MSG, "UNC paths are not supported for pipeline roots. Consider creating a Network Drive configuration in the Admin Console under Site Settings.");
             return null;
         }
+
+        if (path.startsWith("s3://") || path.startsWith("/@cloud"))
+            return URI.create(path);
+
         File fileRoot = new File(path);
 
         // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
@@ -438,7 +443,7 @@ public class PipelineController extends SpringActionController
             if (root != null)
             {
                 bean.setRootPath(root.getWebdavURL());
-                bean.setRootDirectory(root.getRootPath());
+                bean.setRootDirectory(root.getRootNioPath());
             }
 
             setTitle("Pipeline Files");
@@ -495,8 +500,16 @@ public class PipelineController extends SpringActionController
             if (relativePath.startsWith("/"))
                 relativePath = relativePath.substring(1);
 
-            File fileCurrent = pr.resolvePath(relativePath);
-            if (fileCurrent == null || !fileCurrent.exists())
+            if (pr.isCloudRoot() && null != pr.getCloudStoreName())
+            {
+                if (relativePath.startsWith(pr.getCloudStoreName()))
+                    relativePath = relativePath.replace(pr.getCloudStoreName(), "");
+                if (relativePath.startsWith("//"))
+                    relativePath = relativePath.substring(1);
+            }
+
+            java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
+            if (fileCurrent == null || !Files.exists(fileCurrent))
             {
                 throw new NotFoundException("File not found: " + form.getPath());
             }
@@ -516,7 +529,10 @@ public class PipelineController extends SpringActionController
             {
                 boolean showAllActions = form.isAllActions();
                 if (provider.isShowActionsIfModuleInactive() || activeModules.contains(provider.getOwningModule()))
-                    provider.updateFileProperties(getViewContext(), pr, entry, showAllActions);
+                {
+                    if (!pr.isCloudRoot() || provider.supportsCloud())      // Don't include non-cloud providers if this is cloud pipeline root
+                        provider.updateFileProperties(getViewContext(), pr, entry, showAllActions);
+                }
             }
 
             // keep actions in consistent order for display

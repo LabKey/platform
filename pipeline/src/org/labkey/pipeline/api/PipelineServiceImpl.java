@@ -169,7 +169,9 @@ public class PipelineServiceImpl implements PipelineService
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container, type);
         if (null != pipelineRoot)
         {
-            return new PipeRootImpl(pipelineRoot);
+            PipeRootImpl pipeRoot = new PipeRootImpl(pipelineRoot);
+            if (pipeRoot.isValid())
+                return pipeRoot;
         }
 
         // if we haven't found a 'real' pipeline root, default to pipeline root same as file root for this container

@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -58,6 +59,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -224,11 +226,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public File getFilePathRoot()
     {
-        if (_object.getFilePathRoot() == null)
-        {
+        if (_object.getFilePathRoot() == null || FileUtil.hasCloudScheme(_object.getFilePathRoot()))
             return null;
-        }
-        return new File(_object.getFilePathRoot());
+        else
+            return new File(_object.getFilePathRoot());
     }
 
     @Override
@@ -236,6 +237,24 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         ensureUnlocked();
         _object.setFilePathRoot(file == null ? null : file.getAbsolutePath());
+    }
+
+    @Override
+    public Path getFilePathRootPath()
+    {
+        if (_object.getFilePathRoot() == null)
+            return null;
+        else if (FileUtil.hasCloudScheme(_object.getFilePathRoot()))
+            return CloudStoreService.get().getPathFromUrl(getContainer(), _object.getFilePathRoot());
+        else
+            return new File(_object.getFilePathRoot()).toPath();
+    }
+
+    @Override
+    public void setFilePathRootPath(Path filePathRoot)
+    {
+        ensureUnlocked();
+        _object.setFilePathRoot(filePathRoot == null ? null : filePathRoot.toUri().toString());
     }
 
     @Override

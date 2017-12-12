@@ -16,8 +16,10 @@
 
 package org.labkey.pipeline.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
@@ -44,7 +46,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -55,11 +60,40 @@ public class PipeRootImpl implements PipeRoot
 
     private String _containerId;
     private final URI[] _uris;
-    private transient File[] _rootPaths;
+    private File[] _rootPaths = null;
     private final String _entityId;
     private final boolean _searchable;
+    private String _cloudStoreName;         // Only used for cloud
+
+    private enum ROOT_BASE
+    {
+        files
+        {
+            String getDavName()
+            {
+                return FileContentService.FILES_LINK;
+            }
+        },
+        pipeline
+        {
+            String getDavName()
+            {
+                return FileContentService.PIPELINE_LINK;
+            }
+        },
+        cloud
+        {
+            String getDavName()
+            {
+                return FileContentService.CLOUD_LINK;
+            }
+        };
+
+        abstract String getDavName();
+    }
+
     /** true if this root is based on the site or project default file root */
-    private boolean _isDefaultRoot;
+    private ROOT_BASE _defaultRoot;
 
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -68,21 +102,35 @@ public class PipeRootImpl implements PipeRoot
         _uris = null;
         _entityId = null;
         _searchable = false;
+        _defaultRoot = ROOT_BASE.pipeline;
     }
 
     public PipeRootImpl(PipelineRoot root, boolean isDefaultRoot)
     {
         this(root);
-        _isDefaultRoot = isDefaultRoot;
+        _defaultRoot = isDefaultRoot ? ROOT_BASE.files : ROOT_BASE.pipeline;
     }
 
     public PipeRootImpl(PipelineRoot root)
     {
+        String rootPath = root.getPath().startsWith("/@cloud") ? root.getPath().replace("/@cloud", "") : root.getPath();
+        _defaultRoot = root.getPath().startsWith("/@cloud") ? ROOT_BASE.cloud : ROOT_BASE.pipeline;
+
         _containerId = root.getContainerId();
         _uris = new URI[root.getSupplementalPath() == null ? 1 : 2];
+
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        {
+            Container container = getContainer();
+            _cloudStoreName = rootPath.substring(1, rootPath.indexOf("/", 1));
+            rootPath = rootPath.substring(rootPath.indexOf("/", 1) + 1);
+            if (null == container)
+                throw new IllegalStateException("Container missing");
+        }
+
         try
         {
-            _uris[0] = new URI(root.getPath());
+            _uris[0] = new URI(rootPath);
             if (root.getSupplementalPath() != null)
             {
                 _uris[1] = new URI(root.getSupplementalPath());
@@ -136,6 +184,18 @@ public class PipeRootImpl implements PipeRoot
         return getRootPaths()[0];
     }
 
+    @NotNull
+    public Path getRootNioPath()
+    {
+        assert _uris.length > 0;
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        {
+            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, new org.labkey.api.util.Path(_uris[0].getPath()));
+        }
+        else
+            return getRootPath().toPath();
+    }
+
     public synchronized File[] getRootPaths()
     {
         if (_rootPaths == null)
@@ -150,8 +210,16 @@ public class PipeRootImpl implements PipeRoot
         return _rootPaths;
     }
 
+    public List<URI> getRootURIs()
+    {
+        return Arrays.asList(_uris);
+    }
+
     private File findRootPath(File file)
     {
+        if (isCloudRoot())
+            return null;
+        
         for (File root : getRootPaths())
         {
             // First, see if the file is under the root as it is:
@@ -176,6 +244,18 @@ public class PipeRootImpl implements PipeRoot
                 }
             }
             catch (IOException e) {}
+        }
+        return null;
+    }
+
+    private Path findRootPath(Path file)
+    {
+        Path root = getRootNioPath();
+
+        // First, see if the file is under the root as it is:
+        if (URIUtil.isDescendant(root.toUri(), file.toUri()))
+        {
+            return root;
         }
         return null;
     }
@@ -210,6 +290,54 @@ public class PipeRootImpl implements PipeRoot
             return null;
         }
         return file;
+    }
+
+    @Nullable
+    public Path resolveToNioPath(String path)
+    {
+        if (null == path)
+            throw new NotFoundException("Must specify a file path");
+
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        {
+            // Remove leading "./" sometimes added by the client side FileBrowser
+            if (path.startsWith("./"))
+                path = path.substring(2);
+
+            // Return the path to the default location
+            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName,
+                                                   new org.labkey.api.util.Path(_uris[0].getPath(), path));
+            // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
+        }
+        else
+        {
+            File  file = resolvePath(path);
+            return null != file ? file.toPath() : null;
+        }
+    }
+
+    @Override
+    @Nullable
+    public Path resolveToNioPathFromUrl(String url)
+    {
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        {
+            return resolveToNioPath(CloudStoreService.get().getRelativePath(getContainer(), _cloudStoreName, url));
+        }
+        else
+        {
+            try
+            {
+                URI uri = new URI(url);
+                if (!FileUtil.hasCloudScheme(uri))
+                    return new File(uri).toPath();
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+        }
+        return null;
     }
 
     public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException
@@ -253,6 +381,26 @@ public class PipeRootImpl implements PipeRoot
         return ret;
     }
 
+    public String relativePath(Path path)
+    {
+        Path root = findRootPath(path);
+        if (root == null)
+        {
+            return null;
+        }
+        String strRoot = root.toString();
+
+        String strPath = path.toString();
+        if (!strPath.toLowerCase().startsWith(strRoot.toLowerCase()))
+            return null;
+        String ret = strPath.substring(strRoot.length());
+        if (ret.startsWith(File.separator) || ret.startsWith("/"))
+        {
+            return ret.substring(1);
+        }
+        return ret;
+    }
+
     public boolean isUnderRoot(File file)
     {
         return findRootPath(file) != null;
@@ -286,6 +434,17 @@ public class PipeRootImpl implements PipeRoot
             return _containerId;
 
         return _entityId;
+    }
+
+    @Nullable
+    public String getCloudStoreName()
+    {
+        return _cloudStoreName;
+    }
+
+    public boolean isCloudRoot()
+    {
+        return ROOT_BASE.cloud.equals(_defaultRoot);
     }
 
     @NotNull
@@ -336,33 +495,47 @@ public class PipeRootImpl implements PipeRoot
 
     public String getWebdavURL()
     {
-        String davName = _isDefaultRoot ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK;
+        String davName = _defaultRoot.getDavName();
         Container c = getContainer();
         assert null != c;
         if (null == c)
             return null;
-        return FilesWebPart.getRootPath(getContainer(), davName);
+        return FilesWebPart.getRootPath(getContainer(), davName, _cloudStoreName);
     }
 
     @Override
     public List<String> validate()
     {
         List<String> result = new ArrayList<>();
-        int i = 0;
-        for (File rootPath : getRootPaths())
+        if (null != _uris)
         {
-            if (!NetworkDrive.exists(rootPath))
+            for (URI uri : _uris)
             {
-                result.add("Pipeline root does not exist.");
+                if (!FileUtil.hasCloudScheme(uri))
+                {
+                    File rootPath = new File(uri);
+                    if (!NetworkDrive.exists(rootPath))
+                    {
+                        result.add("Pipeline root does not exist.");
+                    }
+                    else if (!rootPath.isDirectory())
+                    {
+                        result.add("Pipeline root is not a directory.");
+                    }
+                    else if (URIUtil.resolve(uri, uri, "test") == null)
+                    {
+                        result.add("Pipeline root is invalid.");
+                    }
+                }
+                else if (isCloudRoot() && !isCloudStoreEnabled())
+                {
+                    result.add("Cloud store not enabled.");
+                }
             }
-            else if (!rootPath.isDirectory())
-            {
-                result.add("Pipeline root is not a directory.");
-            }
-            else if (URIUtil.resolve(_uris[i], _uris[i], "test") == null)
-            {
-                result.add("Pipeline root is invalid.");
-            }
+        }
+        else
+        {
+            result.add("Pipeline root is invalid.");
         }
         return result;
     }
@@ -376,11 +549,18 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public void configureForm(SetupForm form)
     {
-        File[] roots = getRootPaths();
-        form.setPath(roots[0].getPath());
-        if (roots.length > 1)
+        String uriPath = _uris[0].getPath();
+        if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
-            form.setSupplementalPath(roots[1].getPath());
+            form.setPath("/@cloud/" + _cloudStoreName + (StringUtils.isNotBlank(uriPath) ? "/" + uriPath : ""));
+        }
+        else
+        {
+            form.setPath(uriPath);
+        }
+        if (_uris.length > 1)
+        {
+            form.setSupplementalPath(_uris[1].getPath());
         }
 
         form.setSearchable(isSearchable());
@@ -389,7 +569,7 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public boolean isDefault()
     {
-        return _isDefaultRoot;
+        return ROOT_BASE.files == _defaultRoot;
     }
 
     @Override
@@ -406,5 +586,10 @@ public class PipeRootImpl implements PipeRoot
             result.append("'");
         }
         return result.toString();
+    }
+
+    private boolean isCloudStoreEnabled()
+    {
+        return CloudStoreService.get().isEnabled(_cloudStoreName, getContainer());
     }
 }

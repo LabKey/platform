@@ -146,6 +146,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -2770,6 +2771,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return result;
     }
 
+    @Override
     public ExpDataImpl getExpDataByURL(File file, @Nullable Container c)
     {
         File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
@@ -2782,6 +2784,15 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             throw new UnexpectedException(e);
         }
+    }
+
+    @Override
+    public ExpDataImpl getExpDataByURL(Path path, @Nullable Container c)
+    {
+        if (!FileUtil.hasCloudScheme(path.toUri()))
+            return getExpDataByURL(path.toFile(), c);
+
+        return getExpDataByURL(path.toUri().toString(), c);
     }
 
     @Override
@@ -4409,7 +4420,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 
-        if (run.getFilePathRoot() == null)
+        if (run.getFilePathRootPath() == null)
         {
             throw new IllegalArgumentException("You must set the file path root on the experiment run");
         }
