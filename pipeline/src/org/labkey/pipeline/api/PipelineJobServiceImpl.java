@@ -598,6 +598,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _remoteExecutionEngines.add(engine);
     }
 
+    @SuppressWarnings("unused") // Can be called via reflection by Spring pipeline initialization
     public void setRemoteExecutionEngines(@NotNull List<RemoteExecutionEngine<?>> remoteExecutionEngines)
     {
         Set<String> locations = new CaseInsensitiveHashSet();
