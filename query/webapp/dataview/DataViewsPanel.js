@@ -1167,7 +1167,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     },
                     scope: this
                 });
-            });
+            }, this);
         }
 
         // default height is dynamically sized to number of rows
