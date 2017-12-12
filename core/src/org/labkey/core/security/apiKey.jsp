@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -108,9 +109,13 @@ This server allows API keys. <%=text("They are currently configured to " + expir
 to others.) API keys are appropriate for authenticating ad hoc interactions within statistical tools (e.g., R, RStudio, SAS) or programming languages
 (e.g., Java, Python), as well authenticating API use from automated scripts.
 <br/><br/>
-<%=button("Generate API key").onClick("createApiKey('apikey');")%>
-<input id="apikey-token" style="width: 300px;" readonly/>
-<%= button("Copy to clipboard").id("apikey-token-copy").attributes("data-clipboard-target=\"#apikey-token\"") %>
+
+<labkey:form layout="inline">
+    <%=button("Generate API key").onClick("createApiKey('apikey');")%>
+    <labkey:input id="apikey-token" size="40" isReadOnly="true"/>
+    <%=button("Copy to clipboard").id("apikey-token-copy").attributes("data-clipboard-target=\"#apikey-token\"") %>
+</labkey:form>
+
 <br/>
 <div id="apikey-rusage" style="display: none">
     <br/>
@@ -132,15 +137,19 @@ to others.) API keys are appropriate for authenticating ad hoc interactions with
     if (sessionKeys)
     {
 %>
-This server<%=text(apiKeys ? " also" : "")%> allows session API keys. A session API key is tied to your current browser session, which means all API calls
-execute in your current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state, etc.). It also
-means the API key will no longer represent a logged in user when the session expires, e.g., when you sign out via the browser or the server automatically times
-out your session. Since they expire quickly, session API keys are most appropriate for deployments with regulatory compliance requirements where interactions
-require specifying current role &amp; PHI level and accepting terms of use.
+This server<%=text(apiKeys ? " also" : "")%> allows session keys. A session key is tied to your current browser session, which means all API calls
+execute in your current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state,
+etc.). It also means the key will no longer represent a logged in user when the session expires, e.g., when you sign out via the browser or the
+server automatically times out your session. Since they expire quickly, session keys are most appropriate for deployments with regulatory
+compliance requirements where interactions require specifying current role &amp; PHI level and accepting terms of use.
 <br/><br/>
-<%=button("Generate session API key").onClick("createApiKey('session');")%>
-<input id="session-token" style="width: 310px;" readonly/>
-<%= button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
+
+<labkey:form layout="inline">
+    <%=button("Generate session key").onClick("createApiKey('session');")%>
+    <labkey:input id="session-token" size="42" isReadOnly="true"/>
+    <%=button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
+</labkey:form>
+
 <br/>
 <div id="session-rusage" style="display: none">
 <br/>
