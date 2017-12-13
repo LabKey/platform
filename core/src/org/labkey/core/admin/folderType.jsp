@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="org.labkey.core.admin.AdminController.FolderTypeAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.FolderTypeForm" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
@@ -234,7 +235,7 @@ function validate()
     return false;
 }
 </script>
-<labkey:form name="folderModules" id="folderModules" method="POST" onsubmit="return validate();">
+<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=h(buildURL(FolderTypeAction.class))%>" onsubmit="return validate();">
     <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>
