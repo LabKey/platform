@@ -2456,13 +2456,7 @@ public class OntologyManager
             String name = StringUtils.trimToEmpty(((String) m.get("property")));
             String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
             if (propertyURI.length() == 0)
-                propertyURI = domainURI + "." + name;
-            int idx = name.indexOf('#');
-            if (-1 != idx && name.length() > (idx + 1))
-            {
-                propertyURI = name;
-                name = name.substring(idx + 1);
-            }
+                propertyURI = domainURI + "." + Lsid.encodePart(name);
             if (name.length() == 0)
             {
                 String e = "'property' field is required";
