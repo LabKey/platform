@@ -326,9 +326,6 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            if (_job.getErrors() > 0)
-                throw new XarFormatException("Errors encountered during import");
-
             transaction.commit();
         }
         catch (SQLException e)
@@ -359,6 +356,17 @@ public class XarReader extends AbstractXarImporter
         {
             ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
         }
+    }
+
+    private void logErrorAndThrow(String msg) throws XarFormatException
+    {
+        logErrorAndThrow(msg, null);
+    }
+
+    private void logErrorAndThrow(String msg, @Nullable Throwable t) throws XarFormatException
+    {
+        getLog().error(msg, t);
+        throw new XarFormatException(msg, t);
     }
 
     private String prefixNameWithDomainLSID(String lsid, String name)
@@ -398,7 +406,7 @@ public class XarReader extends AbstractXarImporter
             {
                 DomainProperty dp = findPropertyByUriOrName(domain, keyField);
                 if (dp == null)
-                    getLog().error("Failed to find keyField '" + keyField + " when importing SampleSet with LSID '" + lsid + "' ");
+                    logErrorAndThrow("Failed to find keyField '" + keyField + " when importing SampleSet with LSID '" + lsid + "' ");
                 else
                     propertyURIs.add(dp.getPropertyURI());
             }
@@ -408,7 +416,7 @@ public class XarReader extends AbstractXarImporter
         {
             DomainProperty dp = findPropertyByUriOrName(domain, sampleSet.getParentField());
             if (dp == null)
-                getLog().error("Failed to find parentField '" + sampleSet.getParentField() + " when importing SampleSet with LSID '" + lsid + "' ");
+                logErrorAndThrow("Failed to find parentField '" + sampleSet.getParentField() + " when importing SampleSet with LSID '" + lsid + "' ");
             else
                 materialSource.setParentCol(dp.getPropertyURI());
         }
@@ -416,9 +424,6 @@ public class XarReader extends AbstractXarImporter
         {
             materialSource.setNameExpression(sampleSet.getNameExpression());
         }
-
-        if (_job.getErrors() > 0)
-            throw new XarFormatException("Errors encountered importing SampleSet with LSID '" + lsid + "'");
 
         if (existingMaterialSource != null)
         {
@@ -1704,14 +1709,11 @@ public class XarReader extends AbstractXarImporter
             catch (ConversionException e)
             {
                 val = sVal.getStringValue();
-                getLog().error("Failed to parse value " + val
+                logErrorAndThrow("Failed to parse value " + val
                         + ":   Declared as type " + valType + " ; returned as string instead", e);
             }
             mSimpleProperties.put(key, val);
         }
-
-        if (_job.getErrors() > 0)
-            throw new XarFormatException("Errors encountered loading properties map");
 
         return mSimpleProperties;
     }
