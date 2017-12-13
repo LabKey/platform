@@ -74,6 +74,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         super(ms);
     }
 
+    @Override
     public URLHelper detailsURL()
     {
         ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
@@ -81,26 +82,31 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return ret;
     }
 
+    @Override
     public Container getContainer()
     {
         return _object.getContainer();
     }
 
+    @Override
     public int getRowId()
     {
         return _object.getRowId();
     }
 
+    @Override
     public String getMaterialLSIDPrefix()
     {
         return _object.getMaterialLSIDPrefix();
     }
 
+    @Override
     public String getDescription()
     {
         return _object.getDescription();
     }
 
+    @Override
     public boolean canImportMoreSamples()
     {
         return hasNameAsIdCol() || getIdCol1() != null;
@@ -113,16 +119,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             return null;
         }
 
-        for (DomainProperty property : getType().getProperties())
-        {
-            if (uri.equals(property.getPropertyURI()))
-            {
-                return property;
-            }
-        }
-        return null;
+        return getType().getPropertyByURI(uri);
     }
 
+    @Override
     @NotNull
     public List<DomainProperty> getIdCols()
     {
@@ -148,49 +148,59 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return result;
     }
 
+    @Override
     public boolean hasIdColumns()
     {
         return _object.getIdCol1() != null;
     }
 
+    @Override
     public boolean hasNameAsIdCol()
     {
         return ExpMaterialTable.Column.Name.name().equals(_object.getIdCol1());
     }
 
-    public void setParentColName(@Nullable String parentColumnName)
+    // NOTE: intentionally not public in ExpSampleSet interface
+    public void setParentCol(@Nullable String parentColumnPropertyURI)
     {
-        _object.setParentCol(prefixNameWithDomainLSID(parentColumnName));
+        _object.setParentCol(getPropertyOrThrow(parentColumnPropertyURI).getPropertyURI());
     }
 
-    public void setIdColNames(@NotNull List<String> names)
+    // NOTE: intentionally not public in ExpSampleSet interface
+    public void setIdCols(@NotNull List<String> propertyURIs)
     {
         if (_object.getNameExpression() != null)
             throw new IllegalArgumentException("Can't set both a name expression and idCols");
 
-        if (names.size() > 0)
+        if (propertyURIs.size() > 0)
         {
-            _object.setIdCol1(prefixNameWithDomainLSID(names.get(0)));
-            if (names.size() > 1)
+            _object.setIdCol1(getPropertyOrThrow(propertyURIs.get(0)).getPropertyURI());
+            if (propertyURIs.size() > 1)
             {
-                _object.setIdCol2(prefixNameWithDomainLSID(names.get(1)));
-                if (names.size() > 2)
+                _object.setIdCol2(getPropertyOrThrow(propertyURIs.get(1)).getPropertyURI());
+                if (propertyURIs.size() > 2)
                 {
-                    _object.setIdCol3(prefixNameWithDomainLSID(names.get(2)));
-                    if (names.size() > 3)
+                    _object.setIdCol3(getPropertyOrThrow(propertyURIs.get(2)).getPropertyURI());
+                    if (propertyURIs.size() > 3)
                     {
-                        throw new IllegalArgumentException("Only three ID columns are supported, but " + names.size() + " were requested: " + names);
+                        throw new IllegalArgumentException("Only three ID columns are supported, but " + propertyURIs.size() + " were requested: " + propertyURIs);
                     }
                 }
             }
         }
     }
 
-    private String prefixNameWithDomainLSID(String name)
+    @NotNull
+    private DomainProperty getPropertyOrThrow(String propertyURI)
     {
-        return name.startsWith(getLSID() + "#") ? name : getLSID() + "#" + name;
+        DomainProperty dp = getDomainProperty(propertyURI);
+        if (dp == null)
+            throw new IllegalArgumentException("Failed to find property '" + propertyURI + "'");
+
+        return dp;
     }
 
+    @Override
     @Nullable
     public DomainProperty getIdCol1()
     {
@@ -209,21 +219,25 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return result;
     }
 
+    @Override
     public DomainProperty getIdCol2()
     {
         return getDomainProperty(_object.getIdCol2());
     }
 
+    @Override
     public DomainProperty getIdCol3()
     {
         return getDomainProperty(_object.getIdCol3());
     }
 
+    @Override
     public DomainProperty getParentCol()
     {
         return getDomainProperty(_object.getParentCol());
     }
 
+    // NOTE: intentionally not public in ExpSampleSet interface
     public void setNameExpression(String expression)
     {
         if (hasIdColumns() && !hasNameAsIdCol())
@@ -511,23 +525,27 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
 
+    @Override
     public void setDescription(String s)
     {
         ensureUnlocked();
         _object.setDescription(s);
     }
 
+    @Override
     public void setMaterialLSIDPrefix(String s)
     {
         ensureUnlocked();
         _object.setMaterialLSIDPrefix(s);
     }
 
+    @Override
     public List<ExpMaterialImpl> getSamples()
     {
         return getSamples(getContainer());
     }
 
+    @Override
     public List<ExpMaterialImpl> getSamples(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -536,12 +554,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
     }
 
+    @Override
     @Deprecated
     public ExpMaterialImpl getSample(String name)
     {
         return getSample(getContainer(), name);
     }
 
+    @Override
     public ExpMaterialImpl getSample(Container c, String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -554,6 +574,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return new ExpMaterialImpl(material);
     }
 
+    @Override
     @NotNull
     public Domain getType()
     {
@@ -620,12 +641,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
 
+    @Override
     public void setContainer(Container container)
     {
         ensureUnlocked();
         _object.setContainer(container);
     }
 
+    @Override
     public void save(User user)
     {
         boolean isNew = _object.getRowId() == 0;
@@ -660,6 +683,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         ExperimentServiceImpl.get().indexSampleSet(this);
     }
 
+    @Override
     public void delete(User user)
     {
         try

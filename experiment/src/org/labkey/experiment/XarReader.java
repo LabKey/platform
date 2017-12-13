@@ -24,6 +24,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -176,7 +177,8 @@ public class XarReader extends AbstractXarImporter
             // for one particular error type, try a fallback strategy
             if (bHasDerivedTypeErrorsOnly)
             {
-                try {
+                try
+                {
                     XmlObject xObj = error.getObjectLocation();
                     XmlObject xObjWild;
                     String typeName;
@@ -202,7 +204,7 @@ public class XarReader extends AbstractXarImporter
                             }
                         }
                     }
-               // if failback strategy throws, just report original error
+                    // if fallback strategy throws, just report original error
                 } catch (Exception ignored) {   }
             }
             bHasDerivedTypeErrorsOnly = false;
@@ -324,6 +326,9 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
+            if (_job.getErrors() > 0)
+                throw new XarFormatException("Errors encountered during import");
+
             transaction.commit();
         }
         catch (SQLException e)
@@ -356,6 +361,22 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+    private String prefixNameWithDomainLSID(String lsid, String name)
+    {
+        return name.startsWith(lsid + "#") ? name : lsid + "#" + name;
+    }
+
+    // For backwards compatibility, try to find properties by name if it can't be found by uri
+    @Nullable
+    private DomainProperty findPropertyByUriOrName(Domain domain, String name)
+    {
+        String propertyURI = prefixNameWithDomainLSID(domain.getTypeURI(), name);
+        DomainProperty dp = domain.getPropertyByURI(propertyURI);
+        if (dp == null)
+            dp = domain.getPropertyByName(name);
+        return dp;
+    }
+
     private ExpSampleSetImpl loadSampleSet(SampleSetType sampleSet) throws XarFormatException, SQLException
     {
         String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
@@ -368,18 +389,36 @@ public class XarReader extends AbstractXarImporter
         materialSource.setLSID(lsid);
         materialSource.setContainer(getContainer());
         materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), "Material"));
+
+        Domain domain = materialSource.getType();
         if (sampleSet.getKeyFieldArray() != null && sampleSet.getKeyFieldArray().length > 0)
         {
-            materialSource.setIdColNames(Arrays.asList(sampleSet.getKeyFieldArray()));
+            List<String> propertyURIs = new ArrayList<>(sampleSet.getKeyFieldArray().length);
+            for (String keyField : sampleSet.getKeyFieldArray())
+            {
+                DomainProperty dp = findPropertyByUriOrName(domain, keyField);
+                if (dp == null)
+                    getLog().error("Failed to find keyField '" + keyField + " when importing SampleSet with LSID '" + lsid + "' ");
+                else
+                    propertyURIs.add(dp.getPropertyURI());
+            }
+            materialSource.setIdCols(propertyURIs);
         }
         if (sampleSet.getParentField() != null)
         {
-            materialSource.setParentColName(sampleSet.getParentField());
+            DomainProperty dp = findPropertyByUriOrName(domain, sampleSet.getParentField());
+            if (dp == null)
+                getLog().error("Failed to find parentField '" + sampleSet.getParentField() + " when importing SampleSet with LSID '" + lsid + "' ");
+            else
+                materialSource.setParentCol(dp.getPropertyURI());
         }
         if (sampleSet.isSetNameExpression())
         {
             materialSource.setNameExpression(sampleSet.getNameExpression());
         }
+
+        if (_job.getErrors() > 0)
+            throw new XarFormatException("Errors encountered importing SampleSet with LSID '" + lsid + "'");
 
         if (existingMaterialSource != null)
         {
@@ -553,9 +592,7 @@ public class XarReader extends AbstractXarImporter
     private void loadExperiment(ExperimentType exp) throws SQLException, XarFormatException
     {
         if (exp == null)
-        {
             throw new XarFormatException("No experiment found");
-        }
 
         PropertyCollectionType xbProps = exp.getProperties();
         if (null != xbProps)
@@ -1638,7 +1675,7 @@ public class XarReader extends AbstractXarImporter
         return protocol;
     }
 
-    private Map<String, Object> getSimplePropertiesMap(PropertyCollectionType xbProps)
+    private Map<String, Object> getSimplePropertiesMap(PropertyCollectionType xbProps) throws XarFormatException
     {
         Map<String, Object> mSimpleProperties = new HashMap<>();
         SimpleValueType[] aSVals = xbProps.getSimpleValArray();
@@ -1672,6 +1709,10 @@ public class XarReader extends AbstractXarImporter
             }
             mSimpleProperties.put(key, val);
         }
+
+        if (_job.getErrors() > 0)
+            throw new XarFormatException("Errors encountered loading properties map");
+
         return mSimpleProperties;
     }
 
