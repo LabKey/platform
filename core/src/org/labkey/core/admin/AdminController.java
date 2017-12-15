@@ -3842,8 +3842,6 @@ public class AdminController extends SpringActionController
                 ModuleLoader.getInstance().setDeferUsageReport(false);
                 AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
 
-                ContextListener.afterNewInstallComplete(getUser());
-
                 return true;
             }
             return false;
