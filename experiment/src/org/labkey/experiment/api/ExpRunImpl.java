@@ -254,7 +254,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void setFilePathRootPath(Path filePathRoot)
     {
         ensureUnlocked();
-        _object.setFilePathRoot(filePathRoot == null ? null : filePathRoot.toUri().toString());
+        _object.setFilePathRoot(filePathRoot == null ? null : filePathRoot.toAbsolutePath().toString());
     }
 
     @Override
