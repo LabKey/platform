@@ -1584,7 +1584,6 @@ api/src/org/labkey/api/util/MinorConfigurationException.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/MultiPhaseCPUTimer.java -text
 api/src/org/labkey/api/util/MultisetRateAccumulator.java -text
-api/src/org/labkey/api/util/NewInstallCompleteListener.java -text
 api/src/org/labkey/api/util/NumberUtilsLabKey.java -text
 api/src/org/labkey/api/util/Pair.java -text
 api/src/org/labkey/api/util/Path.java -text
