@@ -350,6 +350,7 @@ public class DomainImpl implements Domain
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
         {
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
+            boolean isDomainNew = false;         // #32406 Need to capture because _new changes during the process
             if (isNew())
             {
                 // consider: optimistic concurrency check here?
@@ -357,6 +358,7 @@ public class DomainImpl implements Domain
                 _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
                 // CONSIDER put back if we want automatic provisioning for several DomainKinds
                 // StorageProvisioner.create(this);
+                isDomainNew = true;
             }
             else
             {
@@ -481,13 +483,13 @@ public class DomainImpl implements Domain
                     }
 
                     // Auditing:gather validators and conditional formats before save; then build diff using new validators and formats after save
-                    boolean isNew = impl.isNew();
+                    boolean isImplNew = impl.isNew();
                     PropertyDescriptor pdOld = impl._pdOld;
                     String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
                     String oldFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
-                    if (isNew)
+                    if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
@@ -532,7 +534,7 @@ public class DomainImpl implements Domain
             if (getDomainKind() != null)
                 getDomainKind().invalidate(this);
 
-            if (isNew())
+            if (isDomainNew)
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
 
             if (propChanged)
@@ -542,7 +544,7 @@ public class DomainImpl implements Domain
                     addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails());
                 });
             }
-            else if (!isNew())
+            else if (!isDomainNew)
             {
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
