@@ -1954,7 +1954,7 @@ public class SecurityController extends SpringActionController
             switch (form.getType())
             {
                 case "apikey":
-                    apiKey = ApiKeyManager.get().createKey(getUser(), AppProps.getInstance().getApiKeyExpirationSeconds());
+                    apiKey = ApiKeyManager.get().createKey(getUser());
                     break;
                 case "session":
                     ViewContext ctx = getViewContext();

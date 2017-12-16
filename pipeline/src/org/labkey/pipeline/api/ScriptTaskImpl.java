@@ -189,7 +189,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
 
-        final String transformSessionId = SecurityManager.beginTransformSession(getJob().getUser());
+        final String apikey = SecurityManager.beginTransformSession(getJob().getUser());
 
         try
         {
@@ -256,7 +256,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
                 bindings.put(ExternalScriptEngine.TIMEOUT, _factory.getTimeout());
 
-            Map<String, String> replacements = createReplacements(_engine, scriptFile, transformSessionId);
+            Map<String, String> replacements = createReplacements(_engine, scriptFile, apikey);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Write task properties file into the work directory
@@ -325,7 +325,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
         finally
         {
-            SecurityManager.endTransformSession(transformSessionId);
+            SecurityManager.endTransformSession(apikey);
             _engine = null;
         }
     }
