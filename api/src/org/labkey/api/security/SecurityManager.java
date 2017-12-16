@@ -76,7 +76,6 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
@@ -157,7 +156,6 @@ public class SecurityManager
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
-    private static final Map<String, Integer> TRANSFORM_SESSIONID_MAP = new HashMap<>();
 
     static
     {
@@ -547,7 +545,7 @@ public class SecurityManager
             if (null != apikey)
             {
                 u = ApiKeyManager.get().authenticateFromApiKey(apikey);
-                // TODO: Maybe set AUTHENTICATION_METHOD to "Basic" on success?
+                request.setAttribute(AUTHENTICATION_METHOD, "Basic");
             }
         }
 
@@ -559,22 +557,6 @@ public class SecurityManager
                 request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                 // accept Guest as valid credentials from authenticateBasic()
                 return new Pair<>(u, request);
-            }
-        }
-
-        if (null == u)
-        {
-            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-            if (transformSessionId == null)
-            {
-                // Support as a GET or POST parameter as well, not just as a cookie
-                transformSessionId = request.getParameter(TRANSFORM_SESSION_ID);
-            }
-            if (transformSessionId != null && TRANSFORM_SESSIONID_MAP.get(transformSessionId) != null)
-            {
-                u = UserManager.getUser(TRANSFORM_SESSIONID_MAP.get(transformSessionId));
-                SecurityManager.setAuthenticatedUser(request, u, true);
             }
         }
 
@@ -597,36 +579,49 @@ public class SecurityManager
      */
     private static @Nullable String getApiKey(String type, @Nullable Pair<String, String> basicCredentials, HttpServletRequest request)
     {
+        String apiKey;
+
         // Prefer Basic auth
         if (null != basicCredentials && "apikey".equals(basicCredentials.getKey()))
         {
-            String apiKey = basicCredentials.getValue();
-            return apiKey.startsWith(type) ? apiKey : null;
+            apiKey = basicCredentials.getValue();
         }
+        else
+        {
+            // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
+            apiKey = request.getHeader("apikey");
 
-        // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
-        String apiKey = request.getHeader("apikey");
+            if (null == apiKey)
+            {
+                // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+                apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+                if (null == apiKey)
+                {
+                    // Support as a GET or POST parameter as well, not just as a cookie
+                    apiKey = request.getParameter(TRANSFORM_SESSION_ID);
+                }
+            }
+        }
 
         return null != apiKey && apiKey.startsWith(type) ? apiKey : null;
     }
 
 
+    private static final int SECONDS_PER_DAY = 60*60*24;
+
     /**
-     * Works like a standard HTTP session but intended for transform scripts and other
-     * API-style usage. Callers should call {@see endTransformSession} when finished, typically in a finally block
-     * @return the ID for the newly started session
+     * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
+     * Callers should call {@see endTransformSession} when finished, typically in a finally block.
+     * @return the apikey for the newly started session
      */
     public static @NotNull String beginTransformSession(@NotNull User user)
     {
-        String token = GUID.makeHash();
-        TRANSFORM_SESSIONID_MAP.put(token, user.getUserId());
-        return token;
+        return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
     }
 
-    public static void endTransformSession(@NotNull String token)
+    public static void endTransformSession(@NotNull String apikey)
     {
-        if (TRANSFORM_SESSIONID_MAP.containsKey(token))
-            TRANSFORM_SESSIONID_MAP.remove(token);
+        ApiKeyManager.get().deleteKey(apikey);
     }
 
 

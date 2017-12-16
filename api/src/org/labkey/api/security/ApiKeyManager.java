@@ -14,6 +14,7 @@ import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
@@ -37,6 +38,16 @@ public class ApiKeyManager
 
     private ApiKeyManager()
     {
+    }
+
+    /**
+     * Create an API key associated with a user and persist it in the database.
+     * @param user User to be associated with the new API key.
+     * @return An API key that expires after the admin-configured duration
+     */
+    public @NotNull String createKey(@NotNull User user)
+    {
+        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds());
     }
 
     /**
@@ -69,6 +80,12 @@ public class ApiKeyManager
         Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
 
         return apiKey;
+    }
+
+    public void deleteKey(String apikey)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apikey));
+        Table.delete(CoreSchema.getInstance().getTableAPIKeys(), filter);
     }
 
     public @Nullable User authenticateFromApiKey(@NotNull String apiKey)

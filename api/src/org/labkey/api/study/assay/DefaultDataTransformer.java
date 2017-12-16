@@ -111,7 +111,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     FileUtil.deleteDirectoryContents(scriptDir);
 
                     // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-                    final String transformSessionId = SecurityManager.beginTransformSession(context.getUser());
+                    final String apikey = SecurityManager.beginTransformSession(context.getUser());
 
                     try
                     {
@@ -127,7 +127,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
 
-                        addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, transformSessionId, paramMap);
+                        addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, apikey, paramMap);
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
@@ -180,7 +180,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                             }
                         }
 
-                        SecurityManager.endTransformSession(transformSessionId);
+                        SecurityManager.endTransformSession(apikey);
                     }
                 }
                 else
