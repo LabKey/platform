@@ -37,6 +37,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.DefaultDataTransformer;
 import org.labkey.api.util.LogPrintWriter;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
@@ -208,7 +209,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 String path = paths[0];
                 scriptFile = new File(path);
 
-                scriptSource = FileUtils.readFileToString(scriptFile);
+                scriptSource = PageFlowUtil.getFileContentsAsString(scriptFile);
             }
             else
             {
