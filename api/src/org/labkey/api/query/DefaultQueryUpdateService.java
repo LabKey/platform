@@ -198,7 +198,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
-        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
+        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty() && row != null)
         {
             String lsid = (String)row.get(objectUriCol.getName());
             if (lsid != null)
