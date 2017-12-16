@@ -26,7 +26,12 @@ import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.PropertyValidationError;
@@ -40,20 +45,36 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.ProtocolIdForm;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUploadXarContext;
+import org.labkey.api.study.assay.DefaultAssayRunCreator;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.PrintWriters;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -120,7 +141,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
         _filesToIgnore.add(runProps);
 
-        try(PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps))))
+        try (PrintWriter pw = PrintWriters.getPrintWriter(runProps))
         {
             // serialize the batch and run properties to a tsv
             Map<DomainProperty, String> mergedProps = new HashMap<>(runProperties);
@@ -442,7 +463,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         // Look for error file and get contents
         String warning = null;
-        if(null != errorFile)
+        if (null != errorFile)
         {
             File errFile = new File(errorFile);
             if (errFile.exists())
@@ -450,7 +471,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 File errors = new File(errorFile);
                 try
                 {
-                    warning = FileUtils.readFileToString(errors, StringUtilsLabKey.DEFAULT_CHARSET);
+                    warning = PageFlowUtil.getFileContentsAsString(errors);
                 }
                 catch (Exception e)
                 {
@@ -559,7 +580,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // Hack to get TSV values to be properly quoted if they include tabs
         TSVWriter writer = createTSVWriter();
 
-        try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps))))
+        try (PrintWriter pw = PrintWriters.getPrintWriter(runProps))
         {
             AssayRunUploadContext<? extends AssayProvider> context = new SampleRunUploadContext(protocol, viewContext);
 
