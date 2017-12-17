@@ -71,6 +71,20 @@ EXEC sys.sp_configure @configname = 'clr enabled', @configvalue = 1 ;
 GO
 RECONFIGURE WITH OVERRIDE ;
 GO
+
+-- Add trusted assembly if we are running on SQLServer 2017
+IF OBJECT_ID(N'sys.trusted_assemblies', N'V') IS NOT NULL
+BEGIN
+  DECLARE @hash VARBINARY(64) = 0x0240D1FD09DBD2398E310A16C7628D1F8F2DB0EC0AFDC0C0617AB49B9480F4B479B1CCAF469B969B53E924922052E7750DD54A4A79F3366979FB7BD617B57ED6;
+  DECLARE @description NVARCHAR(4000) = N'groupconcat, version=0.0.0.0, culture=neutral, publickeytoken=null, processorarchitecture=msil';
+
+  IF NOT EXISTS (SELECT * FROM sys.trusted_assemblies WHERE hash = @hash)
+    EXEC sys.sp_add_trusted_assembly @hash, @description
+
+END
+GO
+
+
 -------------------------------------------------------------------------------------------------------------------------------
 SET ANSI_NULLS, ANSI_PADDING, ANSI_WARNINGS, ARITHABORT, QUOTED_IDENTIFIER ON;
 SET CONCAT_NULL_YIELDS_NULL, NUMERIC_ROUNDABORT OFF;

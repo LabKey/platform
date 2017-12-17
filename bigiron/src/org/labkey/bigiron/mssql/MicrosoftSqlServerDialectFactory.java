@@ -98,6 +98,9 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
         if (version >= 100)
         {
+            if (version >= 140)
+                return new MicrosoftSqlServer2017Dialect(_tableResolver);
+
             if (version >= 130)
                 return new MicrosoftSqlServer2016Dialect(_tableResolver);
 
@@ -167,7 +170,10 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             good("Microsoft SQL Server", 12.0, 13.0, "", MicrosoftSqlServer2014Dialect.class);
 
             // >= 13.0 should result in MicrosoftSqlServer2016Dialect
-            good("Microsoft SQL Server", 13.0, 15.0, "", MicrosoftSqlServer2016Dialect.class);
+            good("Microsoft SQL Server", 13.0, 14.0, "", MicrosoftSqlServer2016Dialect.class);
+
+            // >= 14.0 should result in MicrosoftSqlServer2017Dialect
+            good("Microsoft SQL Server", 14.0, 16.0, "", MicrosoftSqlServer2017Dialect.class);
         }
     }
 
