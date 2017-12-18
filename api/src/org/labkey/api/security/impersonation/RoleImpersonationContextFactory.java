@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -29,6 +30,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -47,10 +49,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
     private final Set<String> _roleNames;
+    private final Set<String> _previuosRoleNames;
     private final ActionURL _returnURL;
     private final String _cacheKey;
 
-    public RoleImpersonationContextFactory(Container project, User adminUser, Collection<Role> roles, ActionURL returnURL)
+    public RoleImpersonationContextFactory(@Nullable Container project, User adminUser, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -60,7 +63,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         StringBuilder cacheKey = new StringBuilder("/impersonationRole=");
         Set<String> roleNames = new HashSet<>();
 
-        for (Role role : roles)
+        for (Role role : newImpersonationRoles)
         {
             String roleName = role.getUniqueName();
             roleNames.add(roleName);
@@ -68,6 +71,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             cacheKey.append(roleName);
             cacheKey.append("|");
         }
+
+        Set<String> oldRoleNames = new HashSet<>();
+        currentImpersonationRoles.forEach(oldRole -> oldRoleNames.add(oldRole.getUniqueName()));
+        _previuosRoleNames = oldRoleNames;
 
         _roleNames = Collections.unmodifiableSet(roleNames);
 
@@ -94,7 +101,33 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         // Stash (and remove) just the registered session attributes (e.g., permissions-related attributes)
         stashRegisteredSessionAttributes(context.getSession());
 
-        // TODO: Audit log?
+        User adminUser = getAdminUser();
+
+        if (!_previuosRoleNames.isEmpty())
+        {
+            UserManager.UserAuditEvent stopEvent = new UserManager.UserAuditEvent(context.getContainer().getId(),
+                    adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_previuosRoleNames), adminUser);
+            AuditLogService.get().addEvent(adminUser, stopEvent);
+        }
+
+        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
+                adminUser.getEmail() + " impersonated role" + getRolesDisplayString(_roleNames), adminUser);
+        AuditLogService.get().addEvent(adminUser, event);
+    }
+
+    private String getRolesDisplayString(Set<String> roleNames)
+    {
+        Set<String> roleDisplayNames = new HashSet<>();
+        for (String name : roleNames)
+            roleDisplayNames.add(RoleManager.getRole(name).getName());
+
+        StringBuilder builder = new StringBuilder();
+        if (roleNames.size() > 1)
+            builder.append("s");
+        builder.append(": ");
+        builder.append(StringUtils.collectionToCommaDelimitedString(roleDisplayNames));
+        builder.append(".");
+        return builder.toString();
     }
 
     public User getAdminUser()
@@ -108,7 +141,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         restoreSessionAttributes(request.getSession(true));
 
-        // TODO: Audit log?
+        User adminUser = getAdminUser();
+        Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
+        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),
+                adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_roleNames), adminUser);
+        AuditLogService.get().addEvent(adminUser, event);
     }
 
     static void addMenu(NavTree menu)

@@ -665,7 +665,7 @@ public class SecurityManager
     }
 
 
-    public static void impersonateRoles(ViewContext viewContext, Collection<Role> roles, ActionURL returnURL)
+    public static void impersonateRoles(ViewContext viewContext, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
@@ -673,7 +673,7 @@ public class SecurityManager
         if (user.hasRootAdminPermission())
             project = null;
 
-        impersonate(viewContext, new RoleImpersonationContextFactory(project, user, roles, returnURL));
+        impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
     }
 
 

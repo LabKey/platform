@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
@@ -79,7 +80,14 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         // Stash (and remove) just the registered session attributes (e.g., permissions-related attributes)
         stashRegisteredSessionAttributes(context.getSession());
 
-        // TODO: Audit log?
+        Group group = SecurityManager.getGroup(_groupId);
+        if (group != null)
+        {
+            User adminUser = getAdminUser();
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
+                    adminUser.getEmail() + " impersonated group: " + group.getName() + ".", adminUser);
+            AuditLogService.get().addEvent(adminUser, event);
+        }
     }
 
     @Override
@@ -87,7 +95,15 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     {
         restoreSessionAttributes(request.getSession(true));
 
-        // TODO: Audit log?
+        Group group = SecurityManager.getGroup(_groupId);
+        if (group != null)
+        {
+            User adminUser = getAdminUser();
+            Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),
+                    adminUser.getEmail() + " stopped impersonating group: " + group.getName() + ".", adminUser);
+            AuditLogService.get().addEvent(adminUser, event);
+        }
     }
 
     @Override
