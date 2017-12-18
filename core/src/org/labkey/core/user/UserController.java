@@ -2816,24 +2816,25 @@ public class UserController extends SpringActionController
         public String impersonate(ImpersonateRolesForm form)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
+            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();
 
             if (ArrayUtils.isEmpty(roleNames))
                 return "Must provide roles";
 
-            Collection<Role> roles = new LinkedList<>();
+            Collection<Role> newImpersonationRoles = new LinkedList<>();
 
             for (String roleName : roleNames)
             {
                 Role role = RoleManager.getRole(roleName);
                 if (null == role)
                     return "Role not found: " + roleName;
-                roles.add(role);
+                newImpersonationRoles.add(role);
             }
 
             ActionURL returnURL = context.isImpersonating() ? context.getReturnURL() : form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
-            SecurityManager.impersonateRoles(getViewContext(), roles, returnURL);
+            SecurityManager.impersonateRoles(getViewContext(), newImpersonationRoles, currentImpersonationRoles, returnURL);
 
             return null;
         }
