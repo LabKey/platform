@@ -5966,6 +5966,43 @@ public class ExperimentServiceImpl implements ExperimentService
         return validator;
     }
 
+    public JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd)
+    {
+        JSONArray json = new JSONArray();
+        JSONObject obj;
+        for (GWTPropertyValidator pv : pd.getPropertyValidators())
+        {
+            obj = new JSONObject();
+            obj.put("name", pv.getName());
+            obj.put("description", pv.getDescription());
+            obj.put("type", pv.getType().getTypeName());
+            obj.put("expression", pv.getExpression());
+            obj.put("errorMessage", pv.getErrorMessage());
+            json.put(obj);
+        }
+
+        return json;
+    }
+
+    public JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd)
+    {
+        JSONObject json = new JSONObject();
+        json.put("name", pd.getName());
+        json.put("required", pd.isRequired());
+        json.put("label", pd.getLabel());
+        json.put("scale", pd.getScale());
+        json.put("format", pd.getFormat());
+        json.put("lookupSchema", pd.getLookupSchema());
+        json.put("lookupQuery", pd.getLookupQuery());
+        json.put("defaultValue", pd.getDefaultValue());
+        json.put("redactedText", pd.getRedactedText());
+        json.put("validators", convertPropertyValidatorsToJson(pd));
+        json.put("rangeURI", pd.getRangeURI());
+        json.put("conceptURI", pd.getConceptURI());
+
+        return json;
+    }
+
     public void addExperimentListener(ExperimentListener listener)
     {
         _listeners.add(listener);
