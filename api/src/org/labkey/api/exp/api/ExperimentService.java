@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -490,6 +491,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException;
     GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException;
     GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException;
+
+    JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd);
+    JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd);
 
     List<ValidationException> onBeforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user);
     List<ValidationException> onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user);
