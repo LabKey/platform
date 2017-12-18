@@ -78,10 +78,10 @@ if (typeof LABKEY == "undefined")
                 // Tell mothership.js to hook event callbacks
                 if (LABKEY.Mothership)
                 {
-                    if (key.indexOf(configs.extJsRoot + "/ext-all") == 0)
+                    if (key.indexOf(configs.extJsRoot + '/ext-all') === 0)
                         LABKEY.Mothership.hookExt3();
 
-                    if (key.indexOf(configs.extJsRoot_42 + "/ext-all") == 0)
+                    if (key.indexOf(configs.extJsRoot_42 + '/ext-all') === 0)
                         LABKEY.Mothership.hookExt4();
                 }
 
@@ -171,6 +171,28 @@ if (typeof LABKEY == "undefined")
                     return msg || configs.unloadMessage;
                 }
             };
+        };
+
+        var checkMute = false;
+
+        var checkCallback = function(methodName, callback, files)
+        {
+            if (checkMute)
+                return;
+
+            if (!isFunction(callback))
+            {
+                console.warn([
+                    'A usage of LABKEY.' + methodName + '() is missing the "callback" parameter.',
+                    'It is recommended that a callback be provided as it will be called once',
+                    methodName + '() can guarantee your resource is loaded.',
+                    (files ? '\nRequested: "' + files.toString() + '"' : ''),
+                    '\nSee https://www.labkey.org/Documentation/wiki-page.view?name=scriptdepend#requiresScript'
+                ].join(' '));
+
+                // do not spam usage warning
+                checkMute = true;
+            }
         };
 
         var createElement = function(tag, innerHTML, attributes)
@@ -342,7 +364,7 @@ if (typeof LABKEY == "undefined")
             {
                 if (xhr.readyState === 4)
                 {
-                    var _success = (xhr.status >= 200 && xhr.status < 300) || xhr.status == 304;
+                    var _success = (xhr.status >= 200 && xhr.status < 300) || xhr.status === 304;
                     _success ? success(xhr) : failure(xhr);
                 }
             };
@@ -367,7 +389,7 @@ if (typeof LABKEY == "undefined")
                 return;
             }
 
-            if (file.indexOf('/') == 0)
+            if (file.indexOf('/') === 0)
             {
                 file = file.substring(1);
             }
@@ -380,10 +402,10 @@ if (typeof LABKEY == "undefined")
                 _requestedCssFiles[key] = true;
 
                 // Support both LabKey and external CSS files
-                if (file.substr(0, 4) != "http")
+                if (file.substr(0, 4) !== 'http')
                 {
                     // local files
-                    fullPath = configs.contextPath + "/" + file + '?' + configs.hash;
+                    fullPath = configs.contextPath + '/' + file + '?' + configs.hash;
                 }
                 else
                 {
@@ -416,6 +438,8 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[2];
             }
 
+            checkCallback('requiresClientAPI', callback);
+
             requiresLib('clientapi', function()
             {
                 requiresExt3ClientAPI(callback, scope);
@@ -430,6 +454,8 @@ if (typeof LABKEY == "undefined")
                 callback = arguments[1];
                 scope = arguments[2];
             }
+
+            checkCallback('requiresExt3', callback);
 
             if (window.Ext)
             {
@@ -450,6 +476,8 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[2];
             }
 
+            checkCallback('requiresExt3ClientAPI', callback);
+
             requiresExt3(function()
             {
                 requiresLib('clientapi/ext3', callback, scope);
@@ -465,6 +493,8 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[2];
             }
 
+            checkCallback('requiresExt4ClientAPI', callback);
+
             requiresExt4Sandbox(function()
             {
                 requiresLib('Ext4ClientApi', callback, scope);
@@ -479,6 +509,8 @@ if (typeof LABKEY == "undefined")
                 callback = arguments[1];
                 scope = arguments[2];
             }
+
+            checkCallback('requiresExt4Sandbox', callback);
 
             if (window.Ext4)
             {
@@ -581,6 +613,8 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[3];
                 inOrder = arguments[4];
             }
+
+            checkCallback('requiresScript', callback, file);
 
             if (isArray(file))
             {
