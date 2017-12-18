@@ -54,6 +54,7 @@ import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -695,6 +696,8 @@ public class ParticipantGroupManager
             return null;
 
         session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId(), group);
+        // don't MemTrack track this one, since it's going in session
+        MemTracker.get().remove(group);
         return group;
     }
 
