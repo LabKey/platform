@@ -35,6 +35,11 @@ public abstract class AbstractSettingsGroup
 
     protected abstract String getGroupName();
 
+    protected User getPropertyConfigUser()
+    {
+        return SITE_CONFIG_USER;
+    }
+
     protected boolean lookupBooleanValue(String name, boolean defaultValue)
     {
         return "TRUE".equalsIgnoreCase(lookupStringValue(name, defaultValue ? "TRUE" : "FALSE" ) );

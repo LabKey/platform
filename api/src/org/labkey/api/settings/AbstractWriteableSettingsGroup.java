@@ -47,7 +47,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
     protected PropertyMap getWriteableProperties(Container c)
     {
-        return PropertyManager.getWritableProperties(SITE_CONFIG_USER, c, getGroupName(), true);
+        return PropertyManager.getWritableProperties(getPropertyConfigUser(), c, getGroupName(), true);
     }
 
     protected Map<String, String> getProperties()
