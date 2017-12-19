@@ -511,7 +511,7 @@ public class PipeRootImpl implements PipeRoot
         {
             for (URI uri : _uris)
             {
-                if (!FileUtil.hasCloudScheme(uri))
+                if (null != uri && StringUtils.isNotBlank(uri.toString()) && !FileUtil.hasCloudScheme(uri))
                 {
                     File rootPath = new File(uri);
                     if (!NetworkDrive.exists(rootPath))
