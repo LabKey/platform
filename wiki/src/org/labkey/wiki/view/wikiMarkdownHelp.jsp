@@ -16,7 +16,7 @@
      */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<table>
+<table class="table-condensed">
     <tr>
         <td colspan=2><b>Markdown Formatting Guide</b> (<a href="https://markdown-it.github.io/" target="_blank">more help</a>)</td>
     </tr>
