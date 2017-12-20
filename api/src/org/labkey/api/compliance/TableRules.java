@@ -35,8 +35,14 @@ public interface TableRules
             return columnInfo -> columnInfo;
         }
 
-        @Override
+        @Override //TODO remove after merge
         public UnaryOperator<SQLFragment> getSqlTransformer()
+        {
+            return sqlFragment -> sqlFragment;
+        }
+
+        @Override
+        public UnaryOperator<SQLFragment> getSqlTransformer(boolean hasPhiColumns)
         {
             return sqlFragment -> sqlFragment;
         }
@@ -44,5 +50,11 @@ public interface TableRules
 
     ColumnInfoFilter getColumnInfoFilter();
     ColumnInfoTransformer getColumnInfoTransformer();
+
+    //TODO remove default keyword for getSqlTransformer(boolean hasPhiColumns) and drop getSqlTransformer() after merge git branch
     UnaryOperator<SQLFragment> getSqlTransformer();
+    default UnaryOperator<SQLFragment> getSqlTransformer(boolean hasPhiColumns)
+    {
+        return sqlFragment -> sqlFragment;
+    }
 }
