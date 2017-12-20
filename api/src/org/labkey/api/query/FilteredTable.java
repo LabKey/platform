@@ -18,13 +18,17 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.compliance.TableRules;
+import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
@@ -63,6 +67,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     protected SchemaType _userSchema;
 
+    private final @NotNull TableRules _rules;
+    private boolean _hasPhiColumn = false;
+
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
     {
         this(table, userSchema, null);
@@ -94,6 +101,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             setContainerFilter(containerFilter);
         else
             applyContainerFilter(ContainerFilter.CURRENT);
+
+        _rules = supportTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+    }
+
+    public boolean supportTableRules()
+    {
+        return false;
     }
 
     @Override
@@ -375,6 +389,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        return getFromSQL(alias, false);
+    }
+
+    public SQLFragment getFromSQL(String alias, boolean skipTransform)
+    {
         SimpleFilter filter = getFilter();
         SQLFragment where = filter.getSQLFragment(_rootTable.getSqlDialect());
         if (where.isEmpty())
@@ -395,7 +414,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
         ret.append("\n").append(filterFrag).append(") ").append(alias);
-        return ret;
+        return skipTransform ? ret : getTransformedFromSQL(ret);
+    }
+
+    public SQLFragment getTransformedFromSQL(SQLFragment sqlFrom)
+    {
+        return _rules.getSqlTransformer(_hasPhiColumn).apply(sqlFrom);
     }
 
     /**
@@ -411,10 +435,19 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public ColumnInfo addColumn(ColumnInfo column)
     {
-        if (null == _aliasManager)
-            _aliasManager = new AliasManager(getSchema());
-        _aliasManager.ensureAlias(column);
-        return super.addColumn(column);
+        ColumnInfo ret = column;
+
+        // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
+        if (_rules.getColumnInfoFilter().test(column))
+        {
+            ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
+            if (null == _aliasManager)
+                _aliasManager = new AliasManager(getSchema());
+            _aliasManager.ensureAlias(column);
+            ret = super.addColumn(transformed);
+        }
+
+        return ret;
     }
 
     @Override
@@ -432,9 +465,25 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         ColumnInfo ret = new AliasedColumn(this, name, column);
+
+        if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
+        {
+            _hasPhiColumn = true;
+            ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment()));
+        }
         propagateKeyField(column, ret);
         addColumn(ret);
         return ret;
+    }
+
+    public Set<FieldKey> getPHIDataLoggingColumns()
+    {
+        return Collections.emptySet();
+    }
+
+    public String getPHILoggingComment()
+    {
+        return "";
     }
 
     public ColumnInfo addWrapColumn(ColumnInfo column)

@@ -2145,7 +2145,7 @@ public class ColumnInfo extends ColumnRenderProperties
         return false;
     }
 
-    protected void setColumnLogging(ColumnLogging columnLogging)
+    public void setColumnLogging(ColumnLogging columnLogging)
     {
         checkLocked();
         _columnLogging = columnLogging;
