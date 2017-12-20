@@ -60,9 +60,9 @@
     String dateTimeFormat = DateUtil.getDateTimeFormatString(c);
     String numberFormat = Formats.getNumberFormatString(c);
 %>
-<table>
+<table class="lk-fields-table">
     <tr>
-        <td>The study schedule defines the data expected for each timepoint.</td>
+        <td style="padding-right: 4px;">The study schedule defines the data expected for each timepoint.</td>
         <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
 <%
@@ -130,7 +130,7 @@
     ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderSettingsURL(c);
 %>
 <labkey:form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
-    <table>
+    <table class="lk-fields-table">
         <tr><td>Default date-time format:</td><td><%=h(StringUtils.trimToEmpty(dateTimeFormat))%></td></tr>
         <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
         <tr><td colspan="2"><br>Default formats can be changed via the <%=textLink(name + " settings page", url)%></td></tr>
