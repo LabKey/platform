@@ -103,7 +103,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
 
     private final @NotNull DatasetDefinition _dsd;
-    private final @NotNull TableRules _rules;
 
     private TableInfo _fromTable;
     private ContainerFilterable _assayResultTable;
@@ -121,7 +120,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         setDescription("Contains up to one row of " + nameLabel + " data for each " + keyDescription + (keyDescription.contains("/") ? " combination." : "."));
         _dsd = dsd;
         _title = dsd.getLabel();
-        _rules = TableRulesManager.get().getTableRules(getContainer(), schema.getUser());
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
         Domain dd = _dsd.getDomain();
@@ -416,19 +414,33 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         addFolderColumn();
     }
 
-    // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
     @Override
-    public ColumnInfo addColumn(ColumnInfo column)
+    public boolean supportTableRules()
     {
-        ColumnInfo ret = column;
+        return true;
+    }
 
-        if (_rules.getColumnInfoFilter().test(column))
+    @Override
+    public Set<FieldKey> getPHIDataLoggingColumns()
+    {
+        String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+        Set<FieldKey> loggingColumns = new HashSet<>(1);
+        for (ColumnInfo col : getColumns())
         {
-            ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
-            ret = super.addColumn(transformed);
+            if (StringUtils.equalsIgnoreCase(subjectColName, col.getName()))
+            {
+                loggingColumns.add(col.getFieldKey());
+                break;
+            }
         }
 
-        return ret;
+        return loggingColumns;
+    }
+
+    @Override
+    public String getPHILoggingComment()
+    {
+        return "PHI accessed in dataset. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
     }
 
     List<FieldKey> _assayDefaultVisibleColumns = null;
@@ -510,7 +522,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
         return getColumn("Folder");
     }
-
 
     /** Wrap a column in our underlying assay data table with one that puts it in the dataset table */
     private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo)
@@ -706,7 +717,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
         {
-            sqlf = super.getFromSQL(alias);
+            sqlf = super.getFromSQL(alias, true);
         }
         else
         {
@@ -718,7 +729,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             if (!includeParticipantVisit)
             {
                 sqlf.append("(SELECT * FROM ");
-                sqlf.append(super.getFromSQL(innerAlias));
+                sqlf.append(super.getFromSQL(innerAlias, true));
             }
             else
             {
@@ -823,7 +834,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             sqlf.appendComment("</DatasetTableImpl>", d);
         }
 
-        return _rules.getSqlTransformer().apply(sqlf);
+        return getTransformedFromSQL(sqlf);
     }
 
 
