@@ -25,6 +25,7 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -357,7 +358,6 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><select name="apiKeyExpirationSeconds" id="apiKeyExpirationSeconds">
         <option value=-1 <%=selectedEq(-1, currentExpiration)%>>Never</option>
 <%
-    final int SECONDS_PER_DAY = 60*60*24;
     if (AppProps.getInstance().isDevMode())
     { %>
         <option value=10 <%=selectedEq(10, currentExpiration)%>>10 seconds - for testing purposes only</option>
@@ -468,12 +468,9 @@ Click the Save button at any time to accept the current settings and continue.</
         <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
         <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
 </tr>
-
-
-    <tr>
+<tr>
     <td>&nbsp;</td>
 </tr>
-
 <tr>
     <td>
         <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
