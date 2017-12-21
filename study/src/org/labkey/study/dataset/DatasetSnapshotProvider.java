@@ -137,17 +137,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return "Study Dataset Snapshot";
     }
 
-    public List<DisplayColumn> getDisplayColumns(QueryForm form, BindException errors) throws Exception
+    public List<DisplayColumn> getDisplayColumns(QueryForm form, BindException errors)
     {
         QueryView view = QueryView.create(form, errors);
         List<DisplayColumn> columns = new ArrayList<>();
 
         for (DisplayColumn c : view.getDisplayColumns())
         {
-            /**
-             * The ObjectId column is present in datasets that are created from assays so that they can get back to
-             * the original assay and the assay can tell which studies the data has been copied to. Having more than
-             * one copy of the same object id value per study is illegal.
+            /*
+              The ObjectId column is present in datasets that are created from assays so that they can get back to
+              the original assay and the assay can tell which studies the data has been copied to. Having more than
+              one copy of the same object id value per study is illegal.
              */
             if ("objectid".equalsIgnoreCase(c.getName()))
                 continue;

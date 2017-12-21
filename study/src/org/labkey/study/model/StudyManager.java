@@ -1225,14 +1225,14 @@ public class StudyManager
         return new VisitImpl(visitStudy.getContainer(), visitIdMin, visitIdMax, label, type);
     }
 
-    public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException
+    public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws ValidationException
     {
         DataIteratorBuilder it = new BeanDataIterator.Builder(VisitAlias.class, aliases);
         importVisitAliases(study, user, it);
     }
 
 
-    public int importVisitAliases(final Study study, User user, DataIteratorBuilder loader) throws IOException, ValidationException
+    public int importVisitAliases(final Study study, User user, DataIteratorBuilder loader) throws ValidationException
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitAliases();
         DbScope scope = tinfo.getSchema().getScope();
@@ -1431,15 +1431,10 @@ public class StudyManager
             throw new IllegalStateException("Study Import/Export expected TableInfo.");
 
         TableSelector selector = new TableSelector(tinfo, containerFilter, null);
-        selector.forEach(new Selector.ForEachBlock<VisitTag>()
-        {
-            @Override
-            public void exec(VisitTag visitTag) throws SQLException
-            {
-                allVisitTagMap.put(visitTag.getName(), visitTag);
-                if (newVisitTagMap.containsKey(visitTag.getName()))
-                    newVisitTagMap.remove(visitTag.getName());
-            }
+        selector.forEach(visitTag -> {
+            allVisitTagMap.put(visitTag.getName(), visitTag);
+            if (newVisitTagMap.containsKey(visitTag.getName()))
+                newVisitTagMap.remove(visitTag.getName());
         }, VisitTag.class);
 
         List<VisitTag> newVisitTags = new ArrayList<>();
@@ -1500,14 +1495,7 @@ public class StudyManager
         final Map<String, VisitTag> visitTags = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
-        new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTag>()
-        {
-            @Override
-            public void exec(VisitTag visitTag) throws SQLException
-            {
-                visitTags.put(visitTag.getName(), visitTag);
-            }
-        }, VisitTag.class);
+        new TableSelector(tinfo, containerFilter, null).forEach(visitTag -> visitTags.put(visitTag.getName(), visitTag), VisitTag.class);
         return visitTags;
     }
 
@@ -1519,14 +1507,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition(FieldKey.fromString("Name"), visitTagName);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
-        new TableSelector(tinfo, filter, null).forEach(new Selector.ForEachBlock<VisitTag>()
-        {
-            @Override
-            public void exec(VisitTag visitTag) throws SQLException
-            {
-                visitTags.add(visitTag);
-            }
-        }, VisitTag.class);
+        new TableSelector(tinfo, filter, null).forEach(visitTags::add, VisitTag.class);
 
         if (visitTags.isEmpty())
             return null;
@@ -1540,15 +1521,10 @@ public class StudyManager
         final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
-        {
-            @Override
-            public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
-            {
-                if (!visitTagMapMap.containsKey(visitTagMapEntry.getVisitId()))
-                    visitTagMapMap.put(visitTagMapEntry.getVisitId(), new ArrayList<VisitTagMapEntry>());
-                visitTagMapMap.get(visitTagMapEntry.getVisitId()).add(visitTagMapEntry);
-            }
+        new TableSelector(tinfo, containerFilter, null).forEach(visitTagMapEntry -> {
+            if (!visitTagMapMap.containsKey(visitTagMapEntry.getVisitId()))
+                visitTagMapMap.put(visitTagMapEntry.getVisitId(), new ArrayList<>());
+            visitTagMapMap.get(visitTagMapEntry.getVisitId()).add(visitTagMapEntry);
         }, VisitTagMapEntry.class);
 
         return visitTagMapMap;
@@ -1559,15 +1535,10 @@ public class StudyManager
         final Map<String, List<VisitTagMapEntry>> visitTagToVisitTagMapEntries = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
-        {
-            @Override
-            public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
-            {
-                if (!visitTagToVisitTagMapEntries.containsKey(visitTagMapEntry.getVisitTag()))
-                    visitTagToVisitTagMapEntries.put(visitTagMapEntry.getVisitTag(), new ArrayList<VisitTagMapEntry>());
-                visitTagToVisitTagMapEntries.get(visitTagMapEntry.getVisitTag()).add(visitTagMapEntry);
-            }
+        new TableSelector(tinfo, containerFilter, null).forEach(visitTagMapEntry -> {
+            if (!visitTagToVisitTagMapEntries.containsKey(visitTagMapEntry.getVisitTag()))
+                visitTagToVisitTagMapEntries.put(visitTagMapEntry.getVisitTag(), new ArrayList<>());
+            visitTagToVisitTagMapEntries.get(visitTagMapEntry.getVisitTag()).add(visitTagMapEntry);
         }, VisitTagMapEntry.class);
 
         return visitTagToVisitTagMapEntries;
@@ -1579,14 +1550,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition(FieldKey.fromString("VisitTag"), visitTagName);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, filter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
-        {
-            @Override
-            public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
-            {
-                visitTagMapEntries.add(visitTagMapEntry);
-            }
-        }, VisitTagMapEntry.class);
+        new TableSelector(tinfo, filter, null).forEach(visitTagMapEntries::add, VisitTagMapEntry.class);
 
         return visitTagMapEntries;
     }
@@ -1744,14 +1708,7 @@ public class StudyManager
     public List<LocationImpl> getLocations(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         final List<LocationImpl> locations = new ArrayList<>();
-        getLocationsSelector(container, filter, sort).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map) throws SQLException
-            {
-                locations.add(new LocationImpl(container, map));
-            }
-        });
+        getLocationsSelector(container, filter, sort).forEachMap(map -> locations.add(new LocationImpl(container, map)));
         return locations;
     }
 
@@ -2169,15 +2126,10 @@ public class StudyManager
 
         StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, dataLsids);
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String lsid = rs.getString("LSID");
-                int visitId = rs.getInt("RowId");
-                visits.put(lsid, getVisitForRowId(study, visitId));
-            }
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+            String lsid = rs.getString("LSID");
+            int visitId = rs.getInt("RowId");
+            visits.put(lsid, getVisitForRowId(study, visitId));
         });
 
         return visits;
@@ -2764,7 +2716,7 @@ public class StudyManager
     }
 
 
-    public List<String> getDatasetLSIDs(User user, DatasetDefinition def) throws ServletException, SQLException
+    public List<String> getDatasetLSIDs(User user, DatasetDefinition def)
     {
         TableInfo tInfo = def.getTableInfo(user, true);
         return new TableSelector(tInfo.getColumn("lsid")).getArrayList(String.class);
@@ -2794,14 +2746,7 @@ public class StudyManager
         final HashMap<VisitMapKey,Boolean> map = new HashMap<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT DatasetId, VisitRowId, Required FROM " + tableVisitMap + " WHERE Container = ?",
-                study.getContainer()).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3));
-            }
-        });
+                study.getContainer()).forEach(rs -> map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3)));
 
         return map;
     }
@@ -2828,16 +2773,11 @@ public class StudyManager
         final List<VisitDataset> visitDatasets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
-                visit.getContainer(), visit.getRowId()).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                int datasetId = rs.getInt("DataSetId");
-                boolean isRequired = rs.getBoolean("Required");
-                visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
-            }
-        });
+                visit.getContainer(), visit.getRowId()).forEach(rs -> {
+                    int datasetId = rs.getInt("DataSetId");
+                    boolean isRequired = rs.getBoolean("Required");
+                    visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
+                });
 
         return visitDatasets;
     }
@@ -2848,17 +2788,11 @@ public class StudyManager
         final List<VisitDataset> visitDatasets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
-                dataset.getContainer(), dataset.getDatasetId()).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                int visitRowId = rs.getInt("VisitRowId");
-                boolean isRequired = rs.getBoolean("Required");
-                visitDatasets.add(new VisitDataset(dataset.getContainer(), dataset.getDatasetId(), visitRowId, isRequired));
-
-            }
-        });
+                dataset.getContainer(), dataset.getDatasetId()).forEach(rs -> {
+                    int visitRowId = rs.getInt("VisitRowId");
+                    boolean isRequired = rs.getBoolean("Required");
+                    visitDatasets.add(new VisitDataset(dataset.getContainer(), dataset.getDatasetId(), visitRowId, isRequired));
+                });
 
         return visitDatasets;
     }
@@ -3418,16 +3352,12 @@ public class StudyManager
                 CONTAINER_COLUMN_NAME + ", " + PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
         final Map<String, ParticipantInfo> alternateIdMap = new HashMap<>();
 
-        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String containerId = rs.getString(CONTAINER_COLUMN_NAME);
-                String participantId = rs.getString(PTID_COLUMN_NAME);
-                String alternateId = isAlternateIds ? rs.getString(ALTERNATEID_COLUMN_NAME) : participantId;     // if !isAlternateIds, use participantId
-                int dateOffset = isShiftDates ? rs.getInt(DATEOFFSET_COLUMN_NAME) : 0;                            // if !isDateShift, use 0 shift
-                alternateIdMap.put(participantId, new ParticipantInfo(containerId, alternateId, dateOffset));
-            }
+        new SqlSelector(schema, sql).forEach(rs -> {
+            String containerId = rs.getString(CONTAINER_COLUMN_NAME);
+            String participantId = rs.getString(PTID_COLUMN_NAME);
+            String alternateId = isAlternateIds ? rs.getString(ALTERNATEID_COLUMN_NAME) : participantId;     // if !isAlternateIds, use participantId
+            int dateOffset = isShiftDates ? rs.getInt(DATEOFFSET_COLUMN_NAME) : 0;                            // if !isDateShift, use 0 shift
+            alternateIdMap.put(participantId, new ParticipantInfo(containerId, alternateId, dateOffset));
         });
 
         return alternateIdMap;
@@ -3842,7 +3772,7 @@ public class StudyManager
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           List<String> errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
-            throws IOException, ServletException, SQLException
+            throws IOException, ServletException
     {
         parseData(user, def, loader, columnMap);
 
@@ -3861,7 +3791,7 @@ public class StudyManager
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey)
-            throws IOException, ServletException, SQLException
+            throws IOException, ServletException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
@@ -3880,7 +3810,7 @@ public class StudyManager
                                           DataIteratorContext context,
                                           DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           QCState defaultQCState, StudyImportContext studyImportContext)
-            throws IOException, ServletException, SQLException
+            throws IOException, ServletException
     {
         parseData(user, def, loader, columnMap);
         Logger logger = null != context.getConfigParameters()
@@ -3913,7 +3843,7 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared) throws IOException, SQLException
+    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared)
     {
         if (errors.hasErrors())
             return false;
@@ -5425,7 +5355,7 @@ public class StudyManager
         }
 
 
-        private void _import(Dataset def, final List<Map<String, Object>> rows, List<String> errors) throws Exception
+        private void _import(Dataset def, final List<Map<String, Object>> rows, List<String> errors) throws IOException, ServletException
         {
             DataLoader dl = new MapLoader(rows);
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
@@ -5552,14 +5482,9 @@ public class StudyManager
 
             // count rows with "X"
             final MutableInt Xcount = new MutableInt(0);
-            new TableSelector(tt).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    if ("X".equals(rs.getString("ValueMVIndicator")))
-                        Xcount.increment();
-                }
+            new TableSelector(tt).forEach(rs -> {
+                if ("X".equals(rs.getString("ValueMVIndicator")))
+                    Xcount.increment();
             });
 
             // legal MV indicator
@@ -5567,14 +5492,9 @@ public class StudyManager
 
             // should have two rows with "X"
             final MutableInt XcountAgain = new MutableInt(0);
-            new TableSelector(tt).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    if ("X".equals(rs.getString("ValueMVIndicator")))
-                        XcountAgain.increment();
-                }
+            new TableSelector(tt).forEach(rs -> {
+                if ("X".equals(rs.getString("ValueMVIndicator")))
+                    XcountAgain.increment();
             });
             assertEquals(Xcount.intValue() + 1, XcountAgain.intValue());
 
@@ -5609,6 +5529,7 @@ public class StudyManager
                 assertEquals(expectedKey, rs.getString(key));
             }
         }
+
         private void importRowVerifyGuid(String[] expectedErrors, Dataset def, Map map, TableInfo tt)  throws Exception
         {
             if(map.containsKey("GUID"))
@@ -6140,7 +6061,7 @@ public class StudyManager
             }
         }
 
-        private void verifyCleanUpAssayConfigurations() throws SQLException
+        private void verifyCleanUpAssayConfigurations()
         {
             _manager.deleteAssaySpecimenVisits(_container, _visits.get(0).getRowId());
             verifyAssayScheduleRowCount(2);
@@ -6186,7 +6107,7 @@ public class StudyManager
             }
         }
 
-        private void populateAssaySchedule() throws SQLException
+        private void populateAssaySchedule()
         {
             _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 1.0, "Visit 1", Visit.Type.BASELINE)));
             _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 2.0, "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
@@ -6204,7 +6125,7 @@ public class StudyManager
             verifyAssayScheduleRowCount(_assays.size() * _visits.size());
         }
 
-        private void populateAssayConfigurations() throws SQLException
+        private void populateAssayConfigurations()
         {
             AssaySpecimenConfigImpl assay1 = new AssaySpecimenConfigImpl(_container, "Assay1", "Assay 1 description");
             assay1.setLab(_lookups.get("Lab"));

@@ -121,7 +121,8 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return _columnLabels;
     }
 
-    public void process(File tsvFile, boolean merge, Logger logger) throws SQLException, IOException, ConversionException, ValidationException
+    // TODO: Remove this? Never called...
+    public void process(File tsvFile, boolean merge, Logger logger) throws IOException, ConversionException, ValidationException
     {
         TabLoader tl = new TabLoader(tsvFile);
         tl.setThrowOnErrors(true);

@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -30,7 +29,6 @@ import org.labkey.study.xml.DatasetsDocument;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.Objects;
 
@@ -50,7 +48,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
 
     // Parses the dataset manifest again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
@@ -103,7 +101,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
         {
             return DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false) != null;
         }
-        catch (IOException|XmlException e)
+        catch (IOException e)
         {
             return false;
         }

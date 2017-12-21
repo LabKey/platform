@@ -32,7 +32,6 @@ import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,12 +75,11 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         }
 
         List<String> errors = new ArrayList<>();
-        DataLoader loader = getDataLoader();
 
-        try
+        try (DataLoader loader = getDataLoader())
         {
             StudyManager.getInstance().importDatasetData(
-                    getUser(),
+                getUser(),
                 def,
                 loader,
                 columnMap,
@@ -92,13 +90,9 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 null
             );
         }
-        catch (IOException | ServletException | SQLException e)
+        catch (IOException | ServletException e)
         {
             throw UnexpectedException.wrap(e);
-        }
-        finally
-        {
-            loader.close();
         }
 
         // On success, delete the import file

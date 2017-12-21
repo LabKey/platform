@@ -2131,17 +2131,12 @@ public class StudyController extends BaseStudyController
                     "SELECT v.RowId FROM study.Visit v WHERE Container = ? AND NOT EXISTS (SELECT * FROM study.ParticipantVisit pv WHERE pv.Container = ? and pv.VisitRowId = v.RowId)",
                     getContainer(), getContainer()
                 )
-            ).forEach(new Selector.ForEachBlock<Integer>()
-                {
-                    @Override
-                    public void exec(Integer rowId) throws SQLException
-                    {
-                        VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
+            ).forEach(rowId -> {
+                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
 
-                        if (null != visit)
-                            visits.add(visit);
-                    }
-                }, Integer.class);
+                if (null != visit)
+                    visits.add(visit);
+            }, Integer.class);
 
             return visits;
         }
@@ -2475,10 +2470,6 @@ public class StudyController extends BaseStudyController
                 errors.addRowError(new ValidationException(x.getMessage()));
                 return -1;
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
 
             if (!result.getKey().isEmpty())
             {
@@ -2541,7 +2532,7 @@ public class StudyController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            _log.warn("DataFax schema definition format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
+            _log.warn("DataFax schema definition format is deprecated and scheduled for removal. Contact LabKey immediately if your organization requires this support.");
             SchemaReader reader = new SchemaTsvReader(getStudyThrowIfNull(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
             return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false);
         }
@@ -3019,7 +3010,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private boolean hasSourceLsids(TableInfo datasetTable) throws SQLException
+    private boolean hasSourceLsids(TableInfo datasetTable)
     {
         SimpleFilter sourceLsidFilter = new SimpleFilter();
         sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);

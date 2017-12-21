@@ -57,7 +57,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
     public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
-    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, XmlException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
@@ -174,7 +174,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
     }
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(StudyImportContext ctx, VirtualFile root, boolean log) throws XmlException, IOException, ImportException
+    public static DatasetsDocument.Datasets getDatasetsManifest(StudyImportContext ctx, VirtualFile root, boolean log) throws IOException, ImportException
     {
         VirtualFile datasetDir = getDatasetDirectory(ctx, root);
 
