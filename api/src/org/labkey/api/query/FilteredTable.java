@@ -288,6 +288,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             ret.setKeyField(false);
         }
+        if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
+        {
+            _hasPhiColumn = true;
+            ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment()));
+        }
         return ret;
     }
 
