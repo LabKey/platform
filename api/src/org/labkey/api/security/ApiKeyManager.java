@@ -6,6 +6,9 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.DbScope.TransactionKind;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -30,6 +33,20 @@ import java.util.Map;
 public class ApiKeyManager
 {
     private final static ApiKeyManager INSTANCE = new ApiKeyManager();
+    private final static TransactionKind TRANSACTION_KIND = new TransactionKind()
+    {
+        @Override
+        public @NotNull String getKind()
+        {
+            return "APIKEY";
+        }
+
+        @Override
+        public boolean isReleaseLocksOnFinalCommit()
+        {
+            return false;
+        }
+    };
 
     public static ApiKeyManager get()
     {
@@ -77,7 +94,11 @@ public class ApiKeyManager
             map.put("Expiration", Date.from(instant));
         }
 
-        Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
+        try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
+        {
+            Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
+            t.commit();
+        }
 
         return apiKey;
     }
@@ -85,14 +106,26 @@ public class ApiKeyManager
     public void deleteKey(String apikey)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apikey));
-        Table.delete(CoreSchema.getInstance().getTableAPIKeys(), filter);
+
+        try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
+        {
+            Table.delete(CoreSchema.getInstance().getTableAPIKeys(), filter);
+            t.commit();
+        }
     }
 
     public @Nullable User authenticateFromApiKey(@NotNull String apiKey)
     {
         SimpleFilter filter = new SimpleFilter(getStillValidClause());
         filter.addCondition(FieldKey.fromParts("Crypt"), crypt(apiKey));
-        Integer userId = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Collections.singleton("CreatedBy"), filter, null).getObject(Integer.class);
+
+        Integer userId;
+
+        try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
+        {
+            userId = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Collections.singleton("CreatedBy"), filter, null).getObject(Integer.class);
+            t.commit();
+        }
 
         return null != userId ? UserManager.getUser(userId) : null;
     }
@@ -122,6 +155,10 @@ public class ApiKeyManager
             assertNull("API key should have expired after one second", ApiKeyManager.get().authenticateFromApiKey(oneSecondKey));
 
             assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(noExpireKey));
+
+            ApiKeyManager.get().deleteKey(oneSecondKey);
+            ApiKeyManager.get().deleteKey(noExpireKey);
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(noExpireKey));
         }
 
         @Test(expected = IllegalStateException.class)
@@ -129,6 +166,25 @@ public class ApiKeyManager
         {
             // Should throw
             ApiKeyManager.get().createKey(User.guest, -1);
+        }
+
+        @Test
+        public void testTransaction()
+        {
+            User user = TestContext.get().getUser();
+
+            String apikey;
+
+            try (Transaction ignored = DbScope.getLabKeyScope().beginTransaction())
+            {
+                apikey = ApiKeyManager.get().createKey(user, 10);
+                assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(apikey));
+            }
+
+            assertEquals("API key should be valid even after rollback", user, ApiKeyManager.get().authenticateFromApiKey(apikey));
+
+            ApiKeyManager.get().deleteKey(apikey);
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(apikey));
         }
     }
 
@@ -150,8 +206,12 @@ public class ApiKeyManager
         @Override
         public void run(Logger log)
         {
-            // Delete all rows that are no longer valid (expired)
-            Table.delete(CoreSchema.getInstance().getTableAPIKeys(), new SimpleFilter(new NotClause(getStillValidClause())));
+            try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
+            {
+                // Delete all rows that are no longer valid (expired)
+                Table.delete(CoreSchema.getInstance().getTableAPIKeys(), new SimpleFilter(new NotClause(getStillValidClause())));
+                t.commit();
+            }
         }
 
         @Override
