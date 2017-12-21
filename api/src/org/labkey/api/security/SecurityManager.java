@@ -466,21 +466,17 @@ public class SecurityManager
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request)
     {
-        Pair<String, String> basicCredentials = getBasicCredentials(request);
+        @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
+        @Nullable String apiKey = AppProps.getInstance().isAllowSessionKeys() || AppProps.getInstance().isAllowApiKeys() ? getApiKey(basicCredentials, request) : null;
 
-        // Handle session API key early, if allowed, present, and valid
-        if (AppProps.getInstance().isAllowSessionKeys())
+        // Handle session API key early, if present, allowed, and valid
+        if (apiKey != null && AppProps.getInstance().isAllowSessionKeys() && apiKey.startsWith("session|"))
         {
-            String apiKey = getApiKey("session", basicCredentials, request);
+            HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
-            if (null != apiKey)
+            if (null != session)
             {
-                HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
-
-                if (null != session)
-                {
-                    request = new SessionReplacingRequest(request, session);
-                }
+                request = new SessionReplacingRequest(request, session);
             }
         }
 
@@ -538,15 +534,12 @@ public class SecurityManager
             u = sessionUser;
         }
 
-        if (null == u && AppProps.getInstance().isAllowApiKeys())
+        if (null == u && null != apiKey && AppProps.getInstance().isAllowApiKeys() && apiKey.startsWith("apikey|"))
         {
-            String apikey = getApiKey("apikey", basicCredentials, request);
+            u = ApiKeyManager.get().authenticateFromApiKey(apiKey);
 
-            if (null != apikey)
-            {
-                u = ApiKeyManager.get().authenticateFromApiKey(apikey);
+            if (null != u)
                 request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-            }
         }
 
         if (null == u && null != basicCredentials)
@@ -570,14 +563,13 @@ public class SecurityManager
 
 
     /**
-     * Determine if an API key is present, checking basic auth first and then "apikey" header. Return the API key if it's
-     * present and it matches the requested type. Otherwise return null.
-     * @param type API key type
+     * Determine if an API key is present, checking basic auth first, then "apikey" header, and then the special "transform"
+     * cookie and parameters. Return the API key if it's present; otherwise return null.
      * @param basicCredentials Basic auth credentials
      * @param request Current request
-     * @return First API key found, if it matches the requested type. Otherwise null.
+     * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable String getApiKey(String type, @Nullable Pair<String, String> basicCredentials, HttpServletRequest request)
+    private static @Nullable String getApiKey(@Nullable Pair<String, String> basicCredentials, HttpServletRequest request)
     {
         String apiKey;
 
@@ -603,11 +595,11 @@ public class SecurityManager
             }
         }
 
-        return null != apiKey && apiKey.startsWith(type) ? apiKey : null;
+        return apiKey;
     }
 
 
-    private static final int SECONDS_PER_DAY = 60*60*24;
+    public static final int SECONDS_PER_DAY = 60*60*24;
 
     /**
      * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
