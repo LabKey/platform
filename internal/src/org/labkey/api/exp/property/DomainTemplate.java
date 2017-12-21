@@ -53,6 +53,7 @@ import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.EHRTemplateType;
 import org.labkey.data.xml.domainTemplate.EHRBillingTemplateType;
+import org.labkey.data.xml.domainTemplate.EHRLookupsTemplateType;
 import org.labkey.data.xml.domainTemplate.IndexType;
 import org.labkey.data.xml.domainTemplate.InitialDataType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -179,6 +180,7 @@ public class DomainTemplate
                (template instanceof SNDTemplateType) ? "SND" :
                (template instanceof EHRTemplateType) ? "EHR" :
                (template instanceof EHRBillingTemplateType) ? "EHR_Billing" :
+               (template instanceof EHRLookupsTemplateType) ? "EHR_Lookups" :
                 null;
     }
 
