@@ -59,8 +59,8 @@ public class PipeRootImpl implements PipeRoot
     private static final String SYSTEM_DIRECTORY_LEGACY = "system";
 
     private String _containerId;
-    private final URI[] _uris;
-    private File[] _rootPaths = null;
+    private final List<URI> _uris = new ArrayList<>();
+    private List<File> _rootPaths = new ArrayList<>();
     private final String _entityId;
     private final boolean _searchable;
     private String _cloudStoreName;         // Only used for cloud
@@ -99,7 +99,6 @@ public class PipeRootImpl implements PipeRoot
     @SuppressWarnings({"UnusedDeclaration"})
     public PipeRootImpl() throws URISyntaxException
     {
-        _uris = null;
         _entityId = null;
         _searchable = false;
         _defaultRoot = ROOT_BASE.pipeline;
@@ -117,7 +116,6 @@ public class PipeRootImpl implements PipeRoot
         _defaultRoot = root.getPath().startsWith("/@cloud") ? ROOT_BASE.cloud : ROOT_BASE.pipeline;
 
         _containerId = root.getContainerId();
-        _uris = new URI[root.getSupplementalPath() == null ? 1 : 2];
 
         if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
@@ -130,10 +128,10 @@ public class PipeRootImpl implements PipeRoot
 
         try
         {
-            _uris[0] = new URI(rootPath);
+            _uris.add(new URI(rootPath));
             if (root.getSupplementalPath() != null)
             {
-                _uris[1] = new URI(root.getSupplementalPath());
+                _uris.add(new URI(root.getSupplementalPath()));
             }
         }
         catch (URISyntaxException e)
@@ -175,36 +173,40 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public URI getUri()
     {
-        return _uris[0];
+        if (_uris.size() == 0)
+            throw new IllegalStateException("No URI.");
+        return _uris.get(0);
     }
 
     @NotNull
     public File getRootPath()
     {
-        return getRootPaths()[0];
+        if (getRootPaths().size() == 0)
+            throw new IllegalStateException("No root path set.");
+        return getRootPaths().get(0);
     }
 
     @NotNull
     public Path getRootNioPath()
     {
-        assert _uris.length > 0;
+        assert _uris.size() > 0;
         if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
-            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, new org.labkey.api.util.Path(_uris[0].getPath()));
+            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, new org.labkey.api.util.Path(_uris.get(0).getPath()));
         }
         else
             return getRootPath().toPath();
     }
 
-    public synchronized File[] getRootPaths()
+    public synchronized List<File> getRootPaths()
     {
-        if (_rootPaths == null)
+        if (_rootPaths.size() == 0)
         {
-            _rootPaths = new File[_uris.length];
-            for (int i = 0; i < _uris.length; i++)
+            for (URI uri : _uris)
             {
-                _rootPaths[i] = new File(_uris[i]);
-                NetworkDrive.ensureDrive(_rootPaths[i].getPath());
+                File file = new File(uri);
+                _rootPaths.add(file);
+                NetworkDrive.ensureDrive(file.getPath());
             }
         }
         return _rootPaths;
@@ -212,7 +214,7 @@ public class PipeRootImpl implements PipeRoot
 
     public List<URI> getRootURIs()
     {
-        return Arrays.asList(_uris);
+        return _uris;
     }
 
     private File findRootPath(File file)
@@ -306,7 +308,7 @@ public class PipeRootImpl implements PipeRoot
 
             // Return the path to the default location
             return CloudStoreService.get().getPath(getContainer(), _cloudStoreName,
-                                                   new org.labkey.api.util.Path(_uris[0].getPath(), path));
+                                                   new org.labkey.api.util.Path(_uris.get(0).getPath(), path));
             // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
         }
         else
@@ -549,21 +551,28 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public void configureForm(SetupForm form)
     {
-        String uriPath = _uris[0].getPath();
-        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        if (_uris.size() > 0)
         {
-            form.setPath("/@cloud/" + _cloudStoreName + (StringUtils.isNotBlank(uriPath) ? "/" + uriPath : ""));
+            String uriPath = _uris.get(0).getPath();
+            if (ROOT_BASE.cloud.equals(_defaultRoot))
+            {
+                form.setPath("/@cloud/" + _cloudStoreName + (StringUtils.isNotBlank(uriPath) ? "/" + uriPath : ""));
+            }
+            else
+            {
+                form.setPath(uriPath);
+            }
+            if (_uris.size() > 1)
+            {
+                form.setSupplementalPath(_uris.get(0).getPath());
+            }
+
+            form.setSearchable(isSearchable());
         }
         else
         {
-            form.setPath(uriPath);
+            form.setPath("");
         }
-        if (_uris.length > 1)
-        {
-            form.setSupplementalPath(_uris[1].getPath());
-        }
-
-        form.setSearchable(isSearchable());
     }
 
     @Override
@@ -577,12 +586,12 @@ public class PipeRootImpl implements PipeRoot
     {
         StringBuilder result = new StringBuilder();
         String separator = "";
-        for (File rootPath : getRootPaths())
+        for (URI rootUri : getRootURIs())
         {
             result.append(separator);
             separator = " and supplemental location ";
             result.append("'");
-            result.append(rootPath);
+            result.append(rootUri.getPath());
             result.append("'");
         }
         return result.toString();

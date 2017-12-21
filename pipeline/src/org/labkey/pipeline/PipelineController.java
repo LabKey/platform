@@ -341,7 +341,7 @@ public class PipelineController extends SpringActionController
 
                     if (!errors.hasErrors() && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
                     {
-                        bean.setConfirmMessage("The pipeline root was set to " + pipeRoot);
+                        bean.setConfirmMessage("The pipeline root was set to " + pipeRoot.toString());
                     }
                 }
 
