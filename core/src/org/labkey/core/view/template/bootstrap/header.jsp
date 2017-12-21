@@ -18,12 +18,14 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.HeaderProperties" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HtmlView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
@@ -33,8 +35,6 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
-<%@ page import="org.labkey.api.view.HtmlView" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -116,7 +116,7 @@
             </li>
 <% } %>
 <% if (PopupAdminView.hasPermission(context)) { %>
-            <li class="dropdown dropdown-rollup">
+            <li class="dropdown dropdown-rollup" id="headerAdminDropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-cog"></i>
                 </a>
@@ -145,7 +145,7 @@
 <% } %>
 
 <% if (isRealUser) { %>
-            <li class="dropdown dropdown-rollup" id="headerUserPopup">
+            <li class="dropdown dropdown-rollup" id="headerUserDropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" >
                     <i class="fa fa-user"></i>
                 </a>
@@ -154,7 +154,7 @@
                 </ul>
             </li>
             <li class="dropdown dropdown-rollup">
-                <a class="hidden-xs dropdown-toggle" href="#" data-toggle="dropdown" data-target="#headerUserPopup" style="padding-left: 8px;"><%=h(user.getDisplayName(user))%></a>
+                <a class="hidden-xs dropdown-toggle" href="#" data-toggle="dropdown" data-target="#headerUserDropdown" style="padding-left: 8px;"><%=h(user.getDisplayName(user))%></a>
             </li>
 <% } %>
 
