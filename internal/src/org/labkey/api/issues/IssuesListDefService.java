@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
@@ -114,7 +115,14 @@ public interface IssuesListDefService
      * @return int RowId for the newly created IssueListDef
      */
     int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular, @Nullable String itemNounPlural);
-    int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular);
+
+    /**
+     * Set the user group that will be used for the 'Assigned To' dropdown for an issue of this definition. Use null for 'All Project Users'.
+     * @param c The container for the IssueListDef
+     * @param issueDefName The name of the IssueListDef
+     * @param group The group or null for 'All Project Users'
+     */
+    void setIssueListDefAssignedToGroup(Container c, @NotNull String issueDefName, @Nullable Group group);
 
     /**
      * Create a new Issue in the IssueListDef for the specified container and user.
