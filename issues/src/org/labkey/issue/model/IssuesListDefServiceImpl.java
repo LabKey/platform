@@ -24,6 +24,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
@@ -143,12 +144,6 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular)
-    {
-        return createIssueListDef(container, user, providerName, label, itemNounSingular, itemNounSingular != null ? itemNounSingular + "s" : null);
-    }
-
-    @Override
     public int createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label, @Nullable String itemNounSingular, @Nullable String itemNounPlural)
     {
         IssueListDef newDef = IssueManager.createIssueListDef(container, user, providerName, label);
@@ -156,6 +151,12 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
             IssueManager.saveEntryTypeNames(newDef.getDomainContainer(user), newDef.getName(), itemNounSingular, itemNounPlural);
 
         return newDef.getRowId();
+    }
+
+    @Override
+    public void setIssueListDefAssignedToGroup(Container c, @NotNull String issueDefName, @Nullable Group group)
+    {
+        IssueManager.saveAssignedToGroup(c, issueDefName, group);
     }
 
     @Override

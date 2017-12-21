@@ -201,19 +201,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
     @Override
-    public void afterUpdate(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            bootstrap();
-    }
-
-    private void bootstrap()
-    {
-        Container supportContainer = ContainerManager.createDefaultSupportContainer();
-        addWebPart(WEB_PART_NAME, supportContainer, null);
-    }
-
-    @Override
     @NotNull
     public Set<Class> getIntegrationTests()
     {
