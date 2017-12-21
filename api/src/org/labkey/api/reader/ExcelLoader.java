@@ -130,7 +130,7 @@ public class ExcelLoader extends DataLoader
         this(file, hasColumnHeaders, null);
     }
 
-    public ExcelLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public ExcelLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
     {
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
@@ -147,7 +147,7 @@ public class ExcelLoader extends DataLoader
         setScrollable(true);
     }
 
-    public ExcelLoader(Workbook workbook, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public ExcelLoader(Workbook workbook, boolean hasColumnHeaders, Container mvIndicatorContainer)
     {
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
@@ -635,7 +635,7 @@ public class ExcelLoader extends DataLoader
             assertEquals(columns[17].clazz, String.class);
         }
 
-        private static void checkData(ExcelLoader loader) throws IOException
+        private static void checkData(ExcelLoader loader)
         {
             List<Map<String, Object>> data = loader.load();
 
@@ -653,7 +653,7 @@ public class ExcelLoader extends DataLoader
         }
 
         @Test
-        public void testDoubleToString() throws IOException
+        public void testDoubleToString()
         {
             ExcelLoader xl = new ExcelLoader();
 

@@ -430,7 +430,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      */
     // Caution: Using this instead of iterating directly has lead to many scalability problems in the past.
     // TODO: Migrate usages to iterator()
-    public List<Map<String, Object>> load() throws IOException
+    public List<Map<String, Object>> load()
     {
         return IteratorUtils.toList(iterator());
     }
@@ -465,7 +465,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     active.add(column);
 
             _activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
-            ArrayListMap.FindMap<String> colMap = new ArrayListMap.FindMap(new CaseInsensitiveHashMap<Integer>());
+            ArrayListMap.FindMap<String> colMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
 
             for (int i = 0; i < _activeColumns.length; i++)
             {

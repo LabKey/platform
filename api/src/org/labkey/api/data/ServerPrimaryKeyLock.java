@@ -68,7 +68,7 @@ public class ServerPrimaryKeyLock implements DbScope.ServerLock
     }
 
     @Override
-    public void lockInterruptibly() throws InterruptedException
+    public void lockInterruptibly()
     {
         lock();
     }
@@ -80,7 +80,7 @@ public class ServerPrimaryKeyLock implements DbScope.ServerLock
     }
 
     @Override
-    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException
+    public boolean tryLock(long time, @NotNull TimeUnit unit)
     {
         throw new UnsupportedOperationException("ServerRowLock does not support tryLock()");
     }

@@ -39,7 +39,7 @@ public class TempTableWriter
 {
     private final Loader _loader;
 
-    public TempTableWriter(Loader loader) throws IOException
+    public TempTableWriter(Loader loader)
     {
         _loader = loader;
     }

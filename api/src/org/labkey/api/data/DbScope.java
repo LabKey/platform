@@ -19,7 +19,6 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -157,7 +156,7 @@ public class DbScope
         void lock();
 
         @Override
-        default void lockInterruptibly() throws InterruptedException
+        default void lockInterruptibly()
         {
             lock();
         }
@@ -169,7 +168,7 @@ public class DbScope
         }
 
         @Override
-        default boolean tryLock(long time, TimeUnit unit) throws InterruptedException
+        default boolean tryLock(long time, @NotNull TimeUnit unit)
         {
             throw new UnsupportedOperationException();
         }
@@ -846,7 +845,7 @@ public class DbScope
 
     @NotNull
     // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
-    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException, IOException, XmlException
+    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException, IOException
     {
         LOG.debug("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
 
@@ -860,7 +859,7 @@ public class DbScope
         return schema;
     }
 
-    private void applyMetaDataXML(DbSchema schema, String schemaName) throws IOException, XmlException
+    private void applyMetaDataXML(DbSchema schema, String schemaName) throws IOException
     {
         // First try the canonical schema name (which could differ in casing from the requested name)
         Resource resource = schema.getSchemaResource();
@@ -987,7 +986,7 @@ public class DbScope
     }
 
 
-    public static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources) throws ServletException
+    public static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources)
     {
         synchronized (_scopes)
         {

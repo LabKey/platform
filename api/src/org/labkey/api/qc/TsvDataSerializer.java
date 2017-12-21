@@ -17,7 +17,6 @@
 package org.labkey.api.qc;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
@@ -26,11 +25,9 @@ import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.writer.PrintWriters;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +45,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
     {
         if (data.size() > 0)
         {
-            try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runDataFile))))
+            try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile))
             {
                 // write the column header
                 List<String> columns = new ArrayList<>(data.get(0).keySet());
@@ -105,10 +102,6 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         try (DataLoader loader = AbstractAssayTsvDataHandler.createLoaderForImport(runData, dataDomain, loaderSettings, shouldInferTypes))
         {
             return loader.load();
-        }
-        catch (IOException ioe)
-        {
-            throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
         }
     }
 }
