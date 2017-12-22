@@ -309,6 +309,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException;
     int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey) throws IOException;
+    int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, boolean useMerge) throws IOException;
 
     @Nullable TableInfo getTable(User user);
     @Nullable TableInfo getTable(User user, Container c);
