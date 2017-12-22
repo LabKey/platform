@@ -19,7 +19,6 @@ package org.labkey.study.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
@@ -36,7 +35,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -53,41 +51,34 @@ import java.util.regex.Pattern;
 */
 public class DatasetFileReader
 {
-    private static final Pattern DEFAULT_PATTERN = Pattern.compile("^\\D*(\\d*).(?:tsv|txt|xls|xlsx)$");
+    public static final Pattern DEFAULT_PATTERN = Pattern.compile("^\\D*(\\d*).(?:tsv|txt|xls|xlsx)$");
 
-    private final StudyImpl _study;
-    private final StudyManager _studyManager = StudyManager.getInstance();
-    private final PipelineJob _job;
-    private final StudyImportContext _studyImportContext;
+    protected final StudyImpl _study;
+    protected final StudyManager _studyManager = StudyManager.getInstance();
+    protected final StudyImportContext _studyImportContext;
 
-    private String _datasetsFileName;
-    private VirtualFile _datasetsDirectory;
-    private Set<String> _datasetsNotFound = new HashSet<>();
+    protected String _datasetsFileName;
+    protected VirtualFile _datasetsDirectory;
+    protected Set<String> _datasetsNotFound = new HashSet<>();
 
-    private ArrayList<DatasetImportRunnable> _runnables = null;
+    protected ArrayList<DatasetImportRunnable> _runnables = null;
 
     public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study)
     {
-        this(datasetsDirectory, datasetsFileName, study, null, null);
+        this(datasetsDirectory, datasetsFileName, study, null);
     }
 
-    public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, PipelineJob job, StudyImportContext studyImportContext)
+    public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, StudyImportContext studyImportContext)
     {
         _datasetsDirectory = datasetsDirectory;
         _datasetsFileName = datasetsFileName;
         _study = study;
-        _job = job;
         _studyImportContext = studyImportContext;
     }
 
     public String getDefinitionFileName()
     {
         return _datasetsFileName;
-    }
-
-    public PipelineJob getJob()
-    {
-        return _job;
     }
 
     public Set<String> getDatasetsNotFound() { return _datasetsNotFound; }
@@ -99,24 +90,24 @@ public class DatasetFileReader
         return Collections.unmodifiableList(_runnables);
     }
 
-    public void validate(List<String> errors) throws IOException
+    protected Pattern getDefaultDatasetPattern()
     {
-        Properties props;
+        return DEFAULT_PATTERN;
+    }
 
-        try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
-        {
-            props = new Properties();
-            props.load(is);
-        }
+    protected String getKeyFromDatasetName(Matcher matcher)
+    {
+        String key = matcher.group(1);
+        if (key != null)
+            return normalizeIntegerString(key);
+        else
+            return null;
+    }
 
-        if (null == _study)
-        {
-            errors.add("Study has not been created yet.");
-            return;
-        }
-
+    protected Map<String, DatasetDefinition> getDatasetDefinitionMap()
+    {
         List<DatasetDefinition> dsArray = _studyManager.getDatasetDefinitions(_study);
-        HashMap<String, DatasetDefinition> dsMap = new HashMap<>(dsArray.size() * 3);
+        Map<String, DatasetDefinition> dsMap = new CaseInsensitiveHashMap<>(dsArray.size() * 3);
         // UNDONE: duplicate labels? dataset named participant?
         for (DatasetDefinition ds : dsArray)
         {
@@ -140,6 +131,26 @@ public class DatasetFileReader
         DatasetDefinition dsParticipant = new DatasetDefinition(_study, -1, "Participant", "Participant", null, null, "StudyParticipant");
         dsMap.put("participant", dsParticipant);
 
+        return dsMap;
+    }
+
+    public void validate(List<String> errors) throws IOException
+    {
+        Properties props = new Properties();
+
+        try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
+        {
+            if (is != null)
+                props.load(is);
+        }
+
+        if (null == _study)
+        {
+            errors.add("Study has not been created yet.");
+            return;
+        }
+
+        Map<String, DatasetDefinition> dsMap = getDatasetDefinitionMap();
         IdentityHashMap<DatasetDefinition, DatasetImportRunnable> jobMap = new IdentityHashMap<>();
 
         //
@@ -147,7 +158,7 @@ public class DatasetFileReader
         //
 
         Action defaultAction = Action.REPLACE;
-        Pattern filePattern = DEFAULT_PATTERN;
+        Pattern filePattern = getDefaultDatasetPattern();
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;
         Date defaultReplaceCutoff = null;
@@ -219,7 +230,7 @@ public class DatasetFileReader
             }
             if (propertyKey.equals("file"))
             {
-                runnable._tsvName = value;
+                runnable._fileName = value;
             }
             else if (propertyKey.equals("action"))
             {
@@ -261,8 +272,7 @@ public class DatasetFileReader
             Matcher m = filePattern.matcher(name);
             if (!m.find())
                 continue;
-            String dsKey = m.group(1);
-            dsKey = normalizeIntegerString(dsKey);
+            String dsKey = getKeyFromDatasetName(m);
             DatasetDefinition ds = dsMap.get(dsKey.toLowerCase());
             if (null == ds)
             {
@@ -282,8 +292,8 @@ public class DatasetFileReader
                 runnable = newImportJob(ds, _datasetsDirectory, name, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
-            else if (runnable._tsvName == null)
-                runnable._tsvName = name;
+            else if (runnable._fileName == null)
+                runnable._fileName = name;
         }
 
         _runnables = new ArrayList<>(jobMap.values());
@@ -319,13 +329,13 @@ public class DatasetFileReader
         }
     }
 
-    private DatasetImportRunnable newImportJob(DatasetDefinition ds, VirtualFile root, String tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
+    private DatasetImportRunnable newImportJob(DatasetDefinition ds, VirtualFile root, String fileName, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
     {
         DatasetImportRunnable runnable;
         if (ds.getDatasetId() == -1 && "Participant".equals(ds.getName()))
-            runnable = new ParticipantImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new ParticipantImportRunnable(_studyImportContext.getLogger(), _study, ds, root, fileName, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
-            runnable = new DatasetImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap, _studyImportContext);
+            runnable = new DatasetImportRunnable(_studyImportContext.getLogger(), _study, ds, root, fileName, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap, _studyImportContext);
         return runnable;
     }
 

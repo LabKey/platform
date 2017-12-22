@@ -45,7 +45,7 @@ public interface SchemaReader
 
     class DatasetImportInfo
     {
-        DatasetImportInfo(String name)
+        public DatasetImportInfo(String name)
         {
             this.name = name;
         }

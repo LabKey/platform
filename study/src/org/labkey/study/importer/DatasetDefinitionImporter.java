@@ -30,6 +30,8 @@ import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.DatasetInferSchemaReader;
+import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
@@ -64,78 +66,97 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, vf))
         {
-            StudyImpl study = ctx.getStudy();
-            StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
-            VirtualFile datasetDir = getDatasetDirectory(ctx, vf);
-
-            List<Integer> orderedIds = null;
-            Map<String, DatasetImportProperties> extraProps = null;
             SchemaReader reader = null;
-            DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, vf, true);  // Log the first manifest load
+            StudyImpl study = ctx.getStudy();
+            List<Integer> orderedIds = null;
 
-            if (null != manifestDatasetsXml)
+            // dataset metadata provided
+            if (ctx.getXml().getDatasets() != null && ctx.getXml().getDatasets().getFile() != null)
             {
-                Container c = ctx.getContainer();
+                StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
+                VirtualFile datasetDir = getDatasetDirectory(ctx, vf);
 
-                // This is only for backwards compatibility; we now export default formats to folder.xml
-                if (manifestDatasetsXml.isSetDefaultDateFormat())
+                Map<String, DatasetImportProperties> extraProps = null;
+                DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, vf, true);  // Log the first manifest load
+
+                if (null != manifestDatasetsXml)
                 {
-                    try
+                    Container c = ctx.getContainer();
+
+                    // This is only for backwards compatibility; we now export default formats to folder.xml
+                    if (manifestDatasetsXml.isSetDefaultDateFormat())
                     {
-                        WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, manifestDatasetsXml.getDefaultDateFormat());
+                        try
+                        {
+                            WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, manifestDatasetsXml.getDefaultDateFormat());
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                        }
                     }
-                    catch (IllegalArgumentException e)
+
+                    // This is only for backwards compatibility; we now export default formats to folder.xml
+                    if (manifestDatasetsXml.isSetDefaultNumberFormat())
                     {
-                        ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                        try
+                        {
+                            WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, manifestDatasetsXml.getDefaultNumberFormat());
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
+                        }
+                    }
+
+                    DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
+
+                    extraProps = getDatasetImportProperties(manifestDatasetsXml);
+
+                    orderedIds = new ArrayList<>(datasets.length);
+
+                    for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+                        orderedIds.add(dataset.getId());
+
+                    String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
+
+                    if (null != metaDataFilename)
+                    {
+                        ctx.getLogger().info("Loading dataset schema from " + metaDataFilename);
+                        reader = new SchemaXmlReader(study, datasetDir, metaDataFilename, extraProps);
                     }
                 }
 
-                // This is only for backwards compatibility; we now export default formats to folder.xml
-                if (manifestDatasetsXml.isSetDefaultNumberFormat())
+                if (null == reader)
                 {
-                    try
+                    StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
+
+                    if (null != schema)
                     {
-                        WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, manifestDatasetsXml.getDefaultNumberFormat());
+                        String schemaTsvSource = schema.getFile();
+                        String labelColumn = schema.getLabelColumn();
+                        String typeNameColumn = schema.getTypeNameColumn();
+                        String typeIdColumn = schema.getTypeIdColumn();
+
+                        ctx.getLogger().info("Loading dataset schema from " + schemaTsvSource);
+                        ctx.getLogger().warn("DataFax schema definition format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
+                        reader = new SchemaTsvReader(study, datasetDir, schemaTsvSource, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                     }
-                    catch (IllegalArgumentException e)
-                    {
-                        ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
-                    }
-                }
-
-                DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
-
-                extraProps = getDatasetImportProperties(manifestDatasetsXml);
-
-                orderedIds = new ArrayList<>(datasets.length);
-
-                for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
-                    orderedIds.add(dataset.getId());
-
-                String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
-
-                if (null != metaDataFilename)
-                {
-                    ctx.getLogger().info("Loading dataset schema from " + metaDataFilename);
-                    reader = new SchemaXmlReader(study, datasetDir, metaDataFilename, extraProps);
                 }
             }
-
-            if (null == reader)
+            else
             {
-                StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
+                // infer column metadata
+                List<String> readerErrors = new ArrayList<>();
 
-                if (null != schema)
-                {
-                    String schemaTsvSource = schema.getFile();
-                    String labelColumn = schema.getLabelColumn();
-                    String typeNameColumn = schema.getTypeNameColumn();
-                    String typeIdColumn = schema.getTypeIdColumn();
+                VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
+                String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
 
-                    ctx.getLogger().info("Loading dataset schema from " + schemaTsvSource);
-                    ctx.getLogger().warn("DataFax schema definition format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
-                    reader = new SchemaTsvReader(study, datasetDir, schemaTsvSource, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
-                }
+                reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
+                ((DatasetInferSchemaReader)reader).validate(readerErrors);
+
+                for (String error : readerErrors)
+                    ctx.getLogger().error(error);
             }
 
             if (null != reader)
@@ -155,7 +176,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
     @Override
     public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
-        return ctx.getXml() != null && ctx.getXml().getDatasets() != null;
+        return ctx.getXml() != null;
     }
 
     public static VirtualFile getDatasetDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException

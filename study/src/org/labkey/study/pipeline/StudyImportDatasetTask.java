@@ -28,6 +28,8 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 
+import java.util.regex.Matcher;
+
 /*
 * User: adam
 * Date: Sep 1, 2009
@@ -52,10 +54,11 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         VirtualFile datasetsDir = getDatasetsDirectory(ctx, root);
         if (datasetsDir != null && getDatasetsFileName(ctx) != null)
         {
-            // check if we have at least one .tsv file in the datasetsDir
+            // check if we have at least one file in the datasetsDir that we can parse
             for (String fileName : datasetsDir.list())
             {
-                if (fileName.toLowerCase().endsWith(".tsv"))
+                Matcher m = DatasetFileReader.DEFAULT_PATTERN.matcher(fileName);
+                if (m.find())
                     return true;
             }
         }
@@ -86,7 +89,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
-        if (null != datasetsXml)
+        if (null != datasetsXml && null != datasetsXml.getDefinition())
             return datasetsXml.getDefinition().getFile();
 
         return null;

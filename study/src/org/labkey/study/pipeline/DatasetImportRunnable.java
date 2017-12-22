@@ -24,6 +24,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
@@ -57,19 +58,19 @@ public class DatasetImportRunnable implements Runnable
     protected String visitDatePropertyName = null;
 
     protected final DatasetDefinition _datasetDefinition;
-    protected final PipelineJob _job;
+    protected final Logger _logger;
     protected final StudyImpl _study;
     @Nullable protected final StudyImportContext _studyImportContext;
     protected final Map<String, String> _columnMap = new DatasetFileReader.OneToOneStringMap();
 
     protected VirtualFile _root;
-    protected String _tsvName;
+    protected String _fileName;
 
-    DatasetImportRunnable(PipelineJob job, StudyImpl study, DatasetDefinition ds, VirtualFile root, String tsv,
+    DatasetImportRunnable(Logger logger, StudyImpl study, DatasetDefinition ds, VirtualFile root, String fileName,
                           AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff,
                           Map<String, String> columnMap, @Nullable StudyImportContext studyImportContext)
     {
-        _job = job;
+        _logger = logger;
         _study = study;
         _datasetDefinition = ds;
         _action = action;
@@ -78,7 +79,7 @@ public class DatasetImportRunnable implements Runnable
         _columnMap.putAll(columnMap);
 
         _root = root;
-        _tsvName = tsv;
+        _fileName = fileName;
         _studyImportContext = studyImportContext;
     }
 
@@ -104,12 +105,25 @@ public class DatasetImportRunnable implements Runnable
         if (_action == AbstractDatasetImportTask.Action.DELETE)
             return;
 
-        if (null == _tsvName)
+        if (null == _fileName)
             errors.add("No file specified");
-        else if (!_root.list().contains(_tsvName))
-            errors.add("File does not exist: " + _tsvName);
+        else if (!_root.list().contains(_fileName))
+            errors.add("File does not exist: " + _fileName);
     }
 
+    public ColumnDescriptor[] getColumns()
+    {
+        try (InputStream is = _root.getInputStream(_fileName))
+        {
+            DataLoader loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
+            return loader.getColumns();
+        }
+        catch (Exception x)
+        {
+            _logger.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _fileName, x);
+        }
+        return new ColumnDescriptor[0];
+    }
 
     public void run()
     {
@@ -121,7 +135,7 @@ public class DatasetImportRunnable implements Runnable
         DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
         QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
-                StudyManager.getInstance().getQCStateForRowId(_job.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
+                StudyManager.getInstance().getQCStateForRowId(_studyImportContext.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
         List<String> errors = new ArrayList<>();
         validate(errors);
@@ -129,7 +143,7 @@ public class DatasetImportRunnable implements Runnable
         if (!errors.isEmpty())
         {
             for (String e : errors)
-                _job.error(_tsvName + " -- " + e);
+                _logger.error(_fileName + " -- " + e);
             return;
         }
 
@@ -137,7 +151,7 @@ public class DatasetImportRunnable implements Runnable
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            final String visitDatePropertyURI = getVisitDateURI(_job.getUser());
+            final String visitDatePropertyURI = getVisitDateURI(_studyImportContext.getUser());
             boolean useCutoff =
                     _action == AbstractDatasetImportTask.Action.REPLACE &&
                     visitDatePropertyURI != null &&
@@ -146,9 +160,9 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
             {
                 assert cpuDelete.start();
-                _job.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
-                int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null, _job.getUser());
-                _job.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
+                _logger.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
+                int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null, _studyImportContext.getUser());
+                _logger.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }
 
@@ -156,9 +170,9 @@ public class DatasetImportRunnable implements Runnable
             {
                 final Integer[] skippedRowCount = new Integer[] { 0 };
 
-                try (InputStream is = _root.getInputStream(_tsvName))
+                try (InputStream is = _root.getInputStream(_fileName))
                 {
-                    loader = DataLoaderService.get().createLoader(_tsvName, null, is, true, _job.getContainer(), TabLoader.TSV_FILE_TYPE);
+                    loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
                     if (useCutoff && loader instanceof TabLoader)
                     {
                         // UNDONE: shouldn't be tied to TabLoader
@@ -183,9 +197,9 @@ public class DatasetImportRunnable implements Runnable
                     }
 
                     assert cpuImport.start();
-                    _job.info(_datasetDefinition.getLabel() + ": Starting import from " + _tsvName);
+                    _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
                     List<String> imported = StudyManager.getInstance().importDatasetData(
-                            _job.getUser(),
+                            _studyImportContext.getUser(),
                             _datasetDefinition,
                             loader,
                             _columnMap,
@@ -194,7 +208,7 @@ public class DatasetImportRunnable implements Runnable
                             //Set to TRUE if MERGEing
                             defaultQCState,
                             _studyImportContext,
-                            _job.getLogger()
+                            _logger
                     );
                     if (errors.size() == 0)
                     {
@@ -206,7 +220,7 @@ public class DatasetImportRunnable implements Runnable
                             if (!undefinedSequenceNums.isEmpty())
                             {
                                 Collections.sort(undefinedSequenceNums);
-                                _job.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
+                                _logger.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
                                 shouldCommit = false;
                             }
                         }
@@ -215,10 +229,10 @@ public class DatasetImportRunnable implements Runnable
                         {
                             assert cpuCommit.start();
                             transaction.commit();
-                            String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
+                            String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _fileName;
                             if (useCutoff && skippedRowCount[0] > 0)
                                 msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
-                            _job.info(msg);
+                            _logger.info(msg);
                             assert cpuCommit.stop();
                         }
                     }
@@ -228,20 +242,20 @@ public class DatasetImportRunnable implements Runnable
         }
         catch (Exception x)
         {
-            _job.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsvName, x);
+            _logger.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _fileName, x);
         }
         finally
         {
             for (String err : errors)
-                _job.error(_tsvName + " -- " + err);
+                _logger.error(_fileName + " -- " + err);
 
             if (_deleteAfterImport)
             {
-                boolean success = _root.delete(_tsvName);
+                boolean success = _root.delete(_fileName);
                 if (success)
-                    _job.info("Deleted file " + _tsvName);
+                    _logger.info("Deleted file " + _fileName);
                 else
-                    _job.error("Could not delete file " + _tsvName);
+                    _logger.error("Could not delete file " + _fileName);
             }
 
             if (loader != null)
@@ -265,7 +279,7 @@ public class DatasetImportRunnable implements Runnable
 
     public String getFileName()
     {
-        return _tsvName;
+        return _fileName;
     }
 
     public DatasetDefinition getDatasetDefinition()

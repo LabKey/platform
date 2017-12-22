@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -23,10 +24,10 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
@@ -43,9 +44,9 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 {
     private String _siteLookup = "RowId";
 
-    ParticipantImportRunnable(PipelineJob job, StudyImpl study, DatasetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    ParticipantImportRunnable(Logger logger, StudyImpl study, DatasetDefinition ds, VirtualFile root, String fileName, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
-        super(job, study, ds, root, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap, null);
+        super(logger, study, ds, root, fileName, action, deleteAfterImport, defaultReplaceCutoff, columnMap, null);
     }
 
 
@@ -66,7 +67,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         }
         catch (Exception x)
         {
-            _job.error("Unexpected error importing file: " + _tsvName, x);
+            _logger.error("Unexpected error importing file: " + _fileName, x);
         }
     }
 
@@ -93,7 +94,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
         try
         {
-            loader = new TabLoader(new BufferedReader(new InputStreamReader(_root.getInputStream(_tsvName))), true);
+            loader = new TabLoader(new BufferedReader(new InputStreamReader(_root.getInputStream(_fileName), StringUtilsLabKey.DEFAULT_CHARSET)), true);
 
             CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<>();
             for (ColumnDescriptor c : loader.getColumns())
@@ -103,7 +104,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             String subjectIdCol = StudyService.get().getSubjectColumnName(container);
             if (!columnMap.containsKey(subjectIdCol))
             {
-                _job.error("Dataset does not contain column " + subjectIdCol + ".");
+                _logger.error("Dataset does not contain column " + subjectIdCol + ".");
                 return;
             }
 

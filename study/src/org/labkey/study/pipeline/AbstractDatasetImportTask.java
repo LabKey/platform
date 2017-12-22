@@ -36,7 +36,6 @@ import org.labkey.study.model.StudyManager;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -90,13 +89,13 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
     }
 
-    public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study) throws PipelineJobException
+    public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study) throws PipelineJobException, ImportException
     {
         doImport(datasetsDirectory, datasetsFileName, job, ctx, study, true);
     }
 
     public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study,
-            boolean syncParticipantVisit) throws PipelineJobException
+            boolean syncParticipantVisit) throws PipelineJobException, ImportException
     {
         if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
             return Collections.emptyList();
@@ -104,17 +103,26 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         if (null == datasetsDirectory || null == datasetsFileName)
             return Collections.emptyList();
 
-        // If a directory and dataset file have been specified then make sure the file exists, #17208
-        if (!datasetsDirectory.list().contains(datasetsFileName))
-        {
-            ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
-            return Collections.emptyList();
-        }
-
         try
         {
             QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
-            DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job, ctx);
+            DatasetFileReader reader;
+            if (ctx.getXml().getDatasets() != null && ctx.getXml().getDatasets().getFile() != null)
+            {
+                // dataset metadata provided
+
+                // If a directory and dataset file have been specified then make sure the file exists, #17208
+                if (!datasetsDirectory.list().contains(datasetsFileName))
+                {
+                    ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
+                    return Collections.emptyList();
+                }
+                reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, ctx);
+            }
+            else
+            {
+                reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
+            }
             List<String> errors = new ArrayList<>();
 
             try
@@ -153,8 +161,8 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 }
                 String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
                 datasets.add(runnable._datasetDefinition);
-                if (runnable._tsvName != null)
-                    statusMsg += " using file " + runnable._tsvName;
+                if (runnable.getFileName() != null)
+                    statusMsg += " using file " + runnable.getFileName();
                 if (job != null)
                     job.setStatus(statusMsg);
 
@@ -164,7 +172,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 }
                 catch (Exception x)
                 {
-                    ctx.getLogger().error("Unexpected error loading " + runnable._tsvName, x);
+                    ctx.getLogger().error("Unexpected error loading " + runnable.getFileName(), x);
                 }
             }
 
