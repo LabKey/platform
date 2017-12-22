@@ -1276,6 +1276,8 @@ public class ModuleLoader implements Filter
         {
             completeStartup();
             attemptStartBackgroundThreads();
+            if (isNewInstall())
+                ContextListener.afterNewInstallComplete();
         }
         catch (Throwable t)
         {

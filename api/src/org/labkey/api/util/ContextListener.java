@@ -34,6 +34,7 @@ public class ContextListener implements ServletContextListener
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
+    private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
 
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
@@ -124,5 +125,16 @@ public class ContextListener implements ServletContextListener
     public static ContextLoaderListener getSpringContextListener()
     {
         return _springContextListener;
+    }
+
+    public static void addNewInstallCompleteListener(NewInstallCompleteListener listener)
+    {
+        _newInstallCompleteListeners.add(listener);
+    }
+
+    public static void afterNewInstallComplete()
+    {
+        for (NewInstallCompleteListener listener : _newInstallCompleteListeners)
+            listener.onNewInstallComplete();
     }
 }
