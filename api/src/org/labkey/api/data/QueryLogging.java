@@ -37,6 +37,7 @@ public class QueryLogging
     private boolean _hasBeenValidated = false;
     private final boolean _readOnly;
     private final boolean _metadataQuery;
+    private boolean _shouldAudit = true;
 
     public QueryLogging()
     {
@@ -152,5 +153,15 @@ public class QueryLogging
     public void setSelectQueryAuditEvent(SelectQueryAuditEvent selectQueryAuditEvent)
     {
         _selectQueryAuditEvent = selectQueryAuditEvent;
+    }
+
+    public boolean isShouldAudit()
+    {
+        return _shouldAudit;
+    }
+
+    public void setShouldAudit(boolean shouldAudit)
+    {
+        this._shouldAudit = shouldAudit;
     }
 }

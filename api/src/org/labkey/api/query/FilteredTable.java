@@ -424,7 +424,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public SQLFragment getTransformedFromSQL(SQLFragment sqlFrom)
     {
-        return _rules.getSqlTransformer(_hasPhiColumn).apply(sqlFrom);
+        return _rules.getSqlTransformer().apply(sqlFrom);
     }
 
     /**

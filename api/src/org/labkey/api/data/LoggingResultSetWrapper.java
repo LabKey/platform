@@ -53,7 +53,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public void close() throws SQLException
     {
-        if (!_queryLogging.isEmpty())
+        if (!_queryLogging.isEmpty() && _queryLogging.isShouldAudit())
         {
             SelectQueryAuditEvent selectQueryAuditEvent = _queryLogging.getSelectQueryAuditEvent();
             if (!_dataLoggingValues.isEmpty() || selectQueryAuditEvent.isLogEmptyResults())
