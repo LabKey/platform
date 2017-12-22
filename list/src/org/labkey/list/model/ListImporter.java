@@ -23,20 +23,24 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ImportTypesHelper;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
@@ -52,7 +56,6 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,114 +68,54 @@ import java.util.Set;
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
+    private boolean _useMerge = false; //TODO: convert to use planned study reload context
+
+    public ListImporter(){
+
+    }
+
+    public ListImporter(boolean useMerge)
+    {
+        _useMerge = useMerge;
+    }
 
     public void process(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
-        TablesDocument tablesDoc;
-        try
-        {
-            XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
-            if (listXml instanceof TablesDocument)
-            {
-                tablesDoc = (TablesDocument)listXml;
-                XmlBeansUtil.validateXmlDocument(tablesDoc, ListWriter.SCHEMA_FILENAME);
-            }
-            else
-                throw new ImportException("Unable to get an instance of TablesDocument from " + ListWriter.SCHEMA_FILENAME);
-        }
-        catch (XmlValidationException xve)
-        {
-            // Note: different constructor than the one below
-            throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, xve);
-        }
-        catch (Exception e)
-        {
-            throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, e);
-        }
-
-        Map<String, ListsDocument.Lists.List> listSettingsMap = new HashMap<>();
-
-        try
-        {
-            XmlObject listSettingsXml = listsDir.getXmlBean(ListWriter.SETTINGS_FILENAME);
-
-            // Settings file is optional
-            if (listSettingsXml instanceof ListsDocument)
-            {
-                ListsDocument listSettingsDoc = (ListsDocument)listSettingsXml;
-                XmlBeansUtil.validateXmlDocument(listSettingsDoc, ListWriter.SETTINGS_FILENAME);
-
-                ListsDocument.Lists.List[] listArray = listSettingsDoc.getLists().getListArray();
-
-                // Create a name->list setting map
-                for (ListsDocument.Lists.List list : listArray)
-                    listSettingsMap.put(list.getName(), list);
-            }
-        }
-        catch (XmlValidationException xve)
-        {
-            // Note: different constructor than the one below
-            throw new InvalidFileException(ListWriter.SETTINGS_FILENAME, xve);
-        }
-        catch (Exception e)
-        {
-            throw new InvalidFileException(ListWriter.SETTINGS_FILENAME, e);
-        }
-
-        TablesType tablesXml = tablesDoc.getTables();
-        List<String> names = new LinkedList<>();
-
+        XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
-        for (TableType tableType : tablesXml.getTableArray())
+        if (listXml != null)
+            recreateDefinedLists(listsDir, lists, listXml, c, user, errors, log);
+
+        Map<String, String> fileTypeMap = new HashMap<>();
+        for (String f : listsDir.list())
         {
-            String name = tableType.getTableName();
-            names.add(name);
-
-            Set<Integer> preferredListIds = new LinkedHashSet<>();
-            ListDefinition def = lists.get(name);
-
-            if (null != def)
+            if (f.endsWith(".tsv") || f.endsWith(".xlsx") || f.endsWith(".xls"))
             {
-                try
-                {
-                    def.delete(user);
-                }
-                catch (OptimisticConflictException e)
-                {
-                    throw new ImportException("Error deleting list \"" + name + "\": " + e.getMessage());
-                }
-                preferredListIds.add(def.getListId());
-            }
-
-            try
-            {
-                boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), errors);
-                assert success;
-            }
-            catch (ImportException e)
-            {
-                throw new ImportException("Error creating list \"" + name + "\": " + e.getMessage());
+                final int idx = f.lastIndexOf(".");
+                fileTypeMap.put(FileUtil.makeLegalName(f.substring(0, idx)), f.substring(idx));
             }
         }
 
-        lists = ListService.get().getLists(c);
-
-        for (String name : names)
+        for (String listName : lists.keySet())
         {
-            ListDefinition def = lists.get(name);
+            ListDefinition def = lists.get(listName);
 
             if (null != def)
             {
-                String legalName = FileUtil.makeLegalName(name);
-                String fileName = legalName + ".tsv";
+                //TODO: Will the file sans-lists.xml necessarily have a fileName that we generated via makeLegalName?
+                String legalName = FileUtil.makeLegalName(listName);
+                String fileName = legalName + fileTypeMap.remove(legalName);
 
-                try (InputStream tsv = listsDir.getInputStream(fileName))
+                try (InputStream stream = listsDir.getInputStream(fileName))
                 {
-                    if (null != tsv)
+                    if (null != stream)
                     {
                         BatchValidationException batchErrors = new BatchValidationException();
-                        DataLoader loader = DataLoader.get().createLoader(fileName, null, tsv, true, null, TabLoader.TSV_FILE_TYPE);
+                        DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
+
+                        if (listXml == null)
+                            resolveDomainChanges(c, user, loader, def, log, errors);
 
                         boolean supportAI = false;
 
@@ -209,8 +152,9 @@ public class ListImporter
                                         new SqlExecutor(ti.getSchema()).execute(check);
                                     }
                                 }
+                                if (errors.isEmpty())
+                                    def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false, _useMerge);
 
-                                def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false);
                                 for (ValidationException v : batchErrors.getRowErrors())
                                     errors.add(v.getMessage());
 
@@ -268,14 +212,22 @@ public class ListImporter
                         }
                         else
                         {
-                            throw new IllegalStateException("Table information not available for list: " + name);
+                            throw new IllegalStateException("Table information not available for list: " + listName);
                         }
                     }
                 }
             }
         }
 
-        log.info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
+        log.info(lists.size() + " list" + (1 == lists.size() ? "" : "s") + " imported");
+        if (fileTypeMap.size() > 0)
+        {
+            log.info("The following files were not imported because the server could not find a list with matching name: ");
+            for (String s : fileTypeMap.keySet())
+            {
+                log.info("\tSkipped " + s + fileTypeMap.get(s));
+            }
+        }
     }
 
     private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
@@ -361,5 +313,158 @@ public class ListImporter
         }
 
         throw new ImportException("pkColumnName is set to \"" + keyName + "\" but column is not defined.");
+    }
+
+    private void recreateDefinedLists(VirtualFile listsDir, Map<String, ListDefinition> listNames, XmlObject listXml, Container c, User user, List<String> errors, Logger log) throws Exception
+    {
+        TablesDocument tablesDoc;
+        try
+        {
+            if (listXml instanceof TablesDocument)
+            {
+                tablesDoc = (TablesDocument)listXml;
+                XmlBeansUtil.validateXmlDocument(tablesDoc, ListWriter.SCHEMA_FILENAME);
+            }
+            else
+                throw new ImportException("Unable to get an instance of TablesDocument from " + ListWriter.SCHEMA_FILENAME);
+        }
+        catch (XmlValidationException xve)
+        {
+            // Note: different constructor than the one below
+            throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, xve);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, e);
+        }
+
+        Map<String, ListsDocument.Lists.List> listSettingsMap = new HashMap<>();
+
+        try
+        {
+            XmlObject listSettingsXml = listsDir.getXmlBean(ListWriter.SETTINGS_FILENAME);
+
+            // Settings file is optional
+            if (listSettingsXml instanceof ListsDocument)
+            {
+                ListsDocument listSettingsDoc = (ListsDocument)listSettingsXml;
+                XmlBeansUtil.validateXmlDocument(listSettingsDoc, ListWriter.SETTINGS_FILENAME);
+
+                ListsDocument.Lists.List[] listArray = listSettingsDoc.getLists().getListArray();
+
+                // Create a name->list setting map
+                for (ListsDocument.Lists.List list : listArray)
+                    listSettingsMap.put(list.getName(), list);
+            }
+        }
+        catch (XmlValidationException xve)
+        {
+            // Note: different constructor than the one below
+            throw new InvalidFileException(ListWriter.SETTINGS_FILENAME, xve);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidFileException(ListWriter.SETTINGS_FILENAME, e);
+        }
+
+        TablesType tablesXml = tablesDoc.getTables();
+
+        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+
+        for (TableType tableType : tablesXml.getTableArray())
+        {
+            boolean replaced = false;
+            String name = tableType.getTableName();
+            Set<Integer> preferredListIds = new LinkedHashSet<>();
+            ListDefinition def = lists.get(name);
+
+            if (null != def)
+            {
+                if (!_useMerge)
+                {
+                    preferredListIds.add(def.getListId());
+
+                    try
+                    {
+                        log.info("Truncating list: " + def.getName());
+                        def.delete(user);
+                        replaced = true;
+                    }
+                    catch (OptimisticConflictException e)
+                    {
+                        throw new ImportException("Error deleting list \"" + name + "\": " + e.getMessage());
+                    }
+                }
+            }
+
+            if (replaced || null == def)
+            {
+                try
+                {
+                    log.info("Recreating list: " + name);
+                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), errors);
+                    assert success;
+                }
+                catch (ImportException e)
+                {
+                    throw new ImportException("Error creating list \"" + name + "\": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void resolveDomainChanges(Container c, User user, DataLoader loader, ListDefinition listDef, Logger log, List<String> errors) throws Exception
+    {
+        Domain domain = listDef.getDomain();
+
+        if (domain != null)
+        {
+            log.info("resolving domain of list: " + listDef.getName());
+            List<? extends DomainProperty> props = listDef.getDomain().getProperties();
+            HashMap<String, DomainProperty> currentColumns = new HashMap<>();
+
+            // Place into map for faster access
+            for (DomainProperty prop : props)
+            {
+                currentColumns.put(prop.getPropertyDescriptor().getName(), prop);
+            }
+
+            // Do a pass over the loader's columns
+            for (ColumnDescriptor loaderCol : loader.getColumns())
+            {
+                JdbcType jdbcType = JdbcType.valueOf(loaderCol.clazz);
+
+                // check for prop/type mismatches
+                if (currentColumns.containsKey(loaderCol.name)
+                        && !currentColumns.get(loaderCol.name).getPropertyDescriptor().getJdbcType().equals(jdbcType))
+                {
+                    errors.add("Failed to import data for '" + listDef.getName() + "'. Column '" + loaderCol.name + "' in the incoming data has type " + jdbcType.name()
+                            + " which does not match existing type: " + currentColumns.get(loaderCol.name).getPropertyDescriptor().getJdbcType());
+                    return;
+                }
+                //add new properties found in the incoming file
+                else if (!currentColumns.containsKey(loaderCol.name))
+                {
+                    PropertyType type = PropertyType.getFromJdbcType(jdbcType);
+                    PropertyDescriptor pd = new PropertyDescriptor(type.getTypeUri(), type, loaderCol.name, c);
+                    domain.addPropertyOfPropertyDescriptor(pd);
+
+                    log.info("\tAdded column " + loaderCol.name + " of type \"" + type.getXarName() + "\" to " + listDef.getName());
+                }
+                currentColumns.remove(loaderCol.name);
+            }
+
+            // Remove properties in the original domain that aren't found in the incoming file
+            for (String columnName : currentColumns.keySet())
+            {
+                if (!currentColumns.get(columnName).isRequired() && !listDef.getKeyName().equals(columnName))
+                {
+                    currentColumns.get(columnName).delete();
+                    log.info("\tDeleted column " + columnName);
+                }
+            }
+
+            domain.save(user);
+        }
     }
 }

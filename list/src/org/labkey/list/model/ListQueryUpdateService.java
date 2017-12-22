@@ -186,11 +186,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey)
+                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, boolean useMerge)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
-        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
+        context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.INSERT);    // this method is used by ListImporter and BackgroundListImporter
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
         context.setAllowImportLookupByAlternateKey(importLookupsByAlternateKey);
         setAttachmentDirectory(attachmentDir);
