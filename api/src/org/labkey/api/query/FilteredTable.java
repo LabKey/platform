@@ -68,7 +68,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     protected SchemaType _userSchema;
 
     private final @NotNull TableRules _rules;
-    private boolean _hasPhiColumn = false;
 
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
     {
@@ -290,7 +289,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         }
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
         {
-            _hasPhiColumn = true;
             ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment()));
         }
         return ret;
@@ -473,7 +471,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
         {
-            _hasPhiColumn = true;
             ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment()));
         }
         propagateKeyField(column, ret);
