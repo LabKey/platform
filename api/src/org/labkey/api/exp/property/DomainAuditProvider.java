@@ -90,7 +90,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     @Override
     public String getDescription()
     {
-        return "Domain events";
+        return "Data about domain creation, deletion and modification";
     }
 
     @Override

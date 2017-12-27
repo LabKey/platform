@@ -71,7 +71,7 @@ public class AuthenticationProviderConfigAuditTypeProvider extends AbstractAudit
     @Override
     public String getDescription()
     {
-        return "Displays information about modifications to the authentication provider configuration.";
+        return "Data about modifications to the authentication provider configuration";
     }
 
     @Override

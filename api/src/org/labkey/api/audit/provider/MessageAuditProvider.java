@@ -75,7 +75,7 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
     @Override
     public String getDescription()
     {
-        return "Message events";
+        return "Data about messages sent from the server.";
     }
 
     @Override
