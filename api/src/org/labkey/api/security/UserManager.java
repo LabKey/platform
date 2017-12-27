@@ -211,6 +211,17 @@ public class UserManager
         return UserCache.getUser(displayName);
     }
 
+    public static List<User> getAppAdmins()
+    {
+        List<User> users = new ArrayList<>();
+        for (User user : getActiveUsers())
+        {
+            if (user.isApplicationAdmin())
+                users.add(user);
+        }
+
+        return users;
+    }
 
     public static void updateActiveUser(User user)
     {
