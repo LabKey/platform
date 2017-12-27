@@ -65,6 +65,8 @@ import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.notification.EmailMessage;
+import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AliasManager;
@@ -110,6 +112,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.WriteableAppProps;
@@ -231,6 +234,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -251,20 +255,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SqlDialectManager.register(new PostgreSqlDialectFactory());
     }
 
-//    NOTE: CoreModule name & version are now updated in module.properties. See #18923.
-//
-//    @Override
-//    public String getName()
-//    {
-//        return CORE_MODULE_NAME;
-//    }
-//
-//    @Override
-//    public double getVersion()
-//    {
-//        return xx.xx;
-//    }
-//
     @Override
     public int compareTo(@NotNull Module m)
     {
@@ -383,7 +373,44 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             svc.registerProvider("core", new PermissionsValidator());
         }
 
+        ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
         configureTemplates();
+    }
+
+    private void sendSystemReadyEmail(List<User> users)
+    {
+        if (users.isEmpty())
+            return;
+
+        Collection<ConfigProperty> properties = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
+        String fromEmail = null;
+        String subject = null;
+        String body = null;
+        for (ConfigProperty prop : properties)
+        {
+            if (prop.getName().equalsIgnoreCase("siteAvailableEmailMessage"))
+                body = StringUtils.trimToNull(prop.getValue());
+            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailSubject"))
+                subject = StringUtils.trimToNull(prop.getValue());
+            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailFrom"))
+                fromEmail = StringUtils.trimToNull(prop.getValue());
+
+        }
+        if (fromEmail == null || subject == null || body == null)
+            return;
+
+        EmailService svc = EmailService.get();
+        List<EmailMessage> messages = new ArrayList<>();
+        for (User user: users)
+        {
+            EmailMessage message = svc.createMessage(fromEmail, Collections.singletonList(user.getEmail()), subject);
+            message.addContent(MimeMap.MimeType.HTML, body);
+            messages.add(message);
+        }
+        // For audit purposes, we use the first user as the originator of the message.
+        // Would be better to have this be a site admin, but we aren't guaranteed to have such a user
+        // for hosted sites.  Another option is to use the guest user here, but that's strange.
+        svc.sendMessages(messages, users.get(0), ContainerManager.getRoot());
     }
 
     @NotNull
