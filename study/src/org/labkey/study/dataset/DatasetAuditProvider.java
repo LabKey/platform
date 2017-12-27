@@ -85,7 +85,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     @Override
     public String getDescription()
     {
-        return "Records modifications to dataset records";
+        return "Data about dataset creation, deletion, and modification";
     }
 
     @Override

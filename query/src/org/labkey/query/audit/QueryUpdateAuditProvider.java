@@ -91,7 +91,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
     @Override
     public String getDescription()
     {
-        return "Query update events";
+        return "Data about insert and update queries.";
     }
 
     @Override

@@ -78,7 +78,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
     @Override
     public String getDescription()
     {
-        return "Displays information about attachment events.";
+        return "Data about attachment additions, deletions, modifications and downloads";
     }
 
     @Override

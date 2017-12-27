@@ -88,7 +88,7 @@ public class QueryExportAuditProvider extends AbstractAuditTypeProvider implemen
     @Override
     public String getDescription()
     {
-        return "Query export events";
+        return "Data about queries used for exporting data.";
     }
 
     @Override

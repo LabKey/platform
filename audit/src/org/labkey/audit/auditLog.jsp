@@ -23,17 +23,15 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String currentView = (String)HttpView.currentModel();
-/*
-    List<AuditTypeProvider> providers = AuditLogService.get().getAuditProviders();
-
-    if (currentView == null)
-        currentView = providers.get(0).getEventName();
-*/
 
     List<AuditTypeProvider> providers = AuditLogService.get().getAuditProviders();
 
+    AuditTypeProvider selectedProvider = null;
     if (currentView == null)
+    {
         currentView = providers.get(0).getEventName();
+        selectedProvider = providers.get(0);
+    }
 
 %>
 <labkey:form action="" method="GET">
@@ -41,25 +39,15 @@
 <%
     for (AuditTypeProvider provider : providers)
     {
+        if (provider.getEventName().equals(currentView))
+            selectedProvider = provider;
 %>
-        <option value="<%=h(provider.getEventName())%>"<%=selected(provider.getEventName().equals(currentView))%>><%=h(provider.getLabel())%></option>
+        <option value="<%=h(provider.getEventName())%>"<%=selected(provider.getEventName().equals(currentView))%> title="<%=h(provider.getDescription())%>"><%=h(provider.getLabel())%></option>
 <%
     }
 %>
-
 %>
-<%--
-<labkey:form action="" method="get">
-    <select name="view" onchange="this.form.submit()">
-<%
-    for (AuditTypeProvider provider : providers)
-    {
-%>
-        <option value="<%=h(provider.getEventName())%>"<%=selected(provider.getEventName().equals(currentView))%>><%=h(provider.getLabel())%></option>
-<%
-    }
-%>
---%>
     </select>
+    &nbsp;&nbsp;<%=h(selectedProvider.getDescription())%>
     <br/><br/>
 </labkey:form>

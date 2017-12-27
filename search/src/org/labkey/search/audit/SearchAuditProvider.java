@@ -74,7 +74,7 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
     @Override
     public String getDescription()
     {
-        return "Search queries";
+        return "Data about search queries and indexing actions";
     }
 
     @Override

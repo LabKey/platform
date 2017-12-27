@@ -88,7 +88,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public String getDescription()
     {
-        return "Information about copy-to-study Assay events.";
+        return "Data about assay data copied and recalled to studies.";
     }
 
     @Override

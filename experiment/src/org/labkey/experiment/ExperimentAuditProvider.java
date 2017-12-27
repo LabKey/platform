@@ -91,7 +91,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     @Override
     public String getDescription()
     {
-        return "Describes information about assay run events.";
+        return "Data about assay run creations, deletions, modifications.";
     }
 
     @Override

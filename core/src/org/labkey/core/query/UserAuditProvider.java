@@ -74,7 +74,7 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     @Override
     public String getDescription()
     {
-        return "Describes information about user logins, impersonations, and modifications.";
+        return "Data about user logins, impersonations, and modifications.";
     }
 
     @Override

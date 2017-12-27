@@ -87,7 +87,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     @Override
     public String getDescription()
     {
-        return "List events";
+        return "Data about list creation, deletion, insertion, etc.";
     }
 
     @Override
