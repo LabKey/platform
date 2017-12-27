@@ -50,6 +50,9 @@ public interface PipeRoot extends SecurableResource
     @NotNull
     Path getRootNioPath();
 
+    @NotNull
+    File getLogDirectory();
+
     @Nullable
     Path resolveToNioPath(String path);
 

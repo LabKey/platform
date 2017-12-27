@@ -36,7 +36,7 @@ class MaintenancePipelineJob extends PipelineJob
     MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
     {
         super(null, info, pipeRoot);
-        setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
+        setLogFile(new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
         _tasks = tasks;
     }
 
