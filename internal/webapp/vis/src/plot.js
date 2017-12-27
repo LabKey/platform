@@ -2146,6 +2146,14 @@ boxPlot.render();
         return new LABKEY.vis.Plot(config);
     };
 
+    LABKEY.vis.TrendingLineShape = {
+        positiveCUSUM: function(){
+            return "M3,-0.5L6,-0.5 6,0.5 3,0.5Z M-3,-0.5L0,-0.5 0,0.5 -3,0.5Z M-9,-0.5L-6,-0.5 -6,0.5 -9,0.5Z";
+        },
+        negativeCUSUM: function(){
+            return "M-9,-0.5L6,-0.5 6,0.5 -9,0.5Z";
+        }
+    };
 
     /**
      * @ Deprecated
