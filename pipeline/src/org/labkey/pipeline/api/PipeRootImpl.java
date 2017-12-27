@@ -198,6 +198,16 @@ public class PipeRootImpl implements PipeRoot
             return getRootPath().toPath();
     }
 
+    @NotNull
+    public File getLogDirectory()
+    {
+        // If pipeline root is in File system, return that; otherwise return temp directory
+        if (isCloudRoot())
+            return FileUtil.getTempDirectory();
+        else
+            return getRootPath();
+    }
+
     public synchronized List<File> getRootPaths()
     {
         if (_rootPaths.size() == 0)

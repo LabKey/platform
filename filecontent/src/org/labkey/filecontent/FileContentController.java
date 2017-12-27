@@ -734,7 +734,7 @@ public class FileContentController extends SpringActionController
                 if (root != null)
                 {
 
-                    Map<String, Object> node = FileContentServiceImpl.getInstance().createFileSetNode(NODE_LABEL, root.getFileSystemDirectory());
+                    Map<String, Object> node = FileContentServiceImpl.getInstance().createFileSetNode(NODE_LABEL, root.getFileSystemDirectory().toPath());
 
                     if (containsFileWebPart(c))
                     {

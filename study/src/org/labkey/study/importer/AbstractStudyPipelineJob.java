@@ -61,7 +61,7 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
 
         setDstContainer(destination);
 
-        File tempLogFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
+        File tempLogFile = new File(root.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
         setLogFile(tempLogFile);
 
         _errors = new NullSafeBindException(this, getLogName());

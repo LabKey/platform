@@ -108,7 +108,7 @@ public class StudyPipeline extends PipelineProvider
 
     public static File logForInputFile(File f, PipeRoot pipeRoot)
     {
-        return new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
+        return new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
     }
 
 

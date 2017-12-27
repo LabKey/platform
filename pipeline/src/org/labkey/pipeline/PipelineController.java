@@ -511,42 +511,44 @@ public class PipelineController extends SpringActionController
             java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
             if (fileCurrent == null || !Files.exists(fileCurrent))
             {
-                throw new NotFoundException("File not found: " + form.getPath());
+                errors.reject(ERROR_MSG, "File not found: " + form.getPath());
             }
-
-            ActionURL browseURL = new ActionURL(BrowseAction.class, c);
-            String browseParam = pr.relativePath(fileCurrent);
-            if ("".equals(browseParam))
+            else
             {
-                browseParam = "./";
-            }
-            browseURL.replaceParameter("path", browseParam);
-
-            PipelineDirectoryImpl entry = new PipelineDirectoryImpl(pr, relativePath, browseURL);
-            List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
-            Set<Module> activeModules = c.getActiveModules(getUser());
-            for (PipelineProvider provider : providers)
-            {
-                boolean showAllActions = form.isAllActions();
-                if (provider.isShowActionsIfModuleInactive() || activeModules.contains(provider.getOwningModule()))
+                ActionURL browseURL = new ActionURL(BrowseAction.class, c);
+                String browseParam = pr.relativePath(fileCurrent);
+                if ("".equals(browseParam))
                 {
-                    if (!pr.isCloudRoot() || provider.supportsCloud())      // Don't include non-cloud providers if this is cloud pipeline root
-                        provider.updateFileProperties(getViewContext(), pr, entry, showAllActions);
+                    browseParam = "./";
                 }
-            }
+                browseURL.replaceParameter("path", browseParam);
 
-            // keep actions in consistent order for display
-            entry.orderActions();
-            JSONArray actions = new JSONArray();
-            for (PipelineAction action : entry.getActions())
-            {
-                actions.put(action.toJSON());
-            }
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("success", true);
-            resp.put("actions", actions);
+                PipelineDirectoryImpl entry = new PipelineDirectoryImpl(pr, relativePath, browseURL);
+                List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
+                Set<Module> activeModules = c.getActiveModules(getUser());
+                for (PipelineProvider provider : providers)
+                {
+                    boolean showAllActions = form.isAllActions();
+                    if (provider.isShowActionsIfModuleInactive() || activeModules.contains(provider.getOwningModule()))
+                    {
+                        if (!pr.isCloudRoot() || provider.supportsCloud())      // Don't include non-cloud providers if this is cloud pipeline root
+                            provider.updateFileProperties(getViewContext(), pr, entry, showAllActions);
+                    }
+                }
 
-            return resp;
+                // keep actions in consistent order for display
+                entry.orderActions();
+                JSONArray actions = new JSONArray();
+                for (PipelineAction action : entry.getActions())
+                {
+                    actions.put(action.toJSON());
+                }
+                ApiSimpleResponse resp = new ApiSimpleResponse();
+                resp.put("success", true);
+                resp.put("actions", actions);
+                return resp;
+            }
+            return new ApiSimpleResponse("success", false);
         }
     }
 

@@ -340,7 +340,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
     {
-        WebdavResource resource = davResourceFromKeys(row);
+        WebdavResource resource = davResourceFromKeys(row, container);
 
         Pair<ExpData, String> p = findData(container, row);
         ExpData data = p.getKey();
@@ -481,7 +481,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Nullable
-    private WebdavResource davResourceFromKeys(Map<String, Object> keys)
+    private WebdavResource davResourceFromKeys(Map<String, Object> keys, Container container)
     {
         if (keys.containsKey(KEY_COL_DAV))
         {
@@ -495,13 +495,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         {
             String absoluteFilePath = null;
             if (keys.containsKey(ExpDataTable.Column.DataFileUrl.name()))
-                absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(String.valueOf(keys.get(ExpDataTable.Column.DataFileUrl.name())));
+                absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(String.valueOf(keys.get(ExpDataTable.Column.DataFileUrl.name())), container);
             else if (keys.containsKey(ExpDataTable.Column.RowId.name()))
             {
                 String rowIdStr = String.valueOf(keys.get(ExpDataTable.Column.RowId.name()));
                 ExpData data = ExperimentService.get().getExpData(Integer.valueOf(rowIdStr));
                 if (data != null && data.getDataFileUrl() != null)
-                    absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(data.getDataFileUrl());
+                    absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(data.getDataFileUrl(), container);
             }
             else if (keys.containsKey("AbsoluteFilePath"))
                 absoluteFilePath = String.valueOf(keys.get("AbsoluteFilePath"));

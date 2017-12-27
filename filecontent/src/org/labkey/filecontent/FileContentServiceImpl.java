@@ -29,6 +29,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -916,7 +917,7 @@ public class FileContentServiceImpl implements FileContentService
                 if (!isDefault || !isShowOverridesOnly)
                 {
                     ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-                    Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectory());
+                    Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectory().toPath());
                     node.put("default", isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browseUrl);
@@ -929,7 +930,7 @@ public class FileContentServiceImpl implements FileContentService
             for (AttachmentDirectory fileSet : getRegisteredDirectories(c))
             {
                 ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
-                Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory());
+                Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory().toPath());
                 node.put("configureURL", config.getEncodedLocalURIString());
                 node.put("browseURL", browseUrl);
                 node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
@@ -946,7 +947,7 @@ public class FileContentServiceImpl implements FileContentService
                 {
                     ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
                     ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
-                    Map<String, Object> node = createFileSetNode(PIPELINE_LINK, pipeRoot.getRootPath());
+                    Map<String, Object> node = createFileSetNode(PIPELINE_LINK, pipeRoot.getRootNioPath());
                     node.put("default", isDefault );
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
@@ -960,25 +961,27 @@ public class FileContentServiceImpl implements FileContentService
         return children;
     }
 
-    protected Map<String, Object> createFileSetNode(String name, File dir)
+    protected Map<String, Object> createFileSetNode(String name, java.nio.file.Path dir)
     {
         Map<String, Object> node = new HashMap<>();
         if (dir != null)
         {
             node.put("name", name);
-            node.put("path", dir.getPath());
+            node.put("path", dir.toAbsolutePath().toString());
             node.put("leaf", true);
         }
         return node;
     }
 
-    public String getAbsolutePathFromDataFileUrl(String dataFileUrl)
+    public String getAbsolutePathFromDataFileUrl(String dataFileUrl, Container container)
     {
         try
         {
             URI uri = new URI(dataFileUrl);
-            File f = new File(uri);
-            return f.getAbsolutePath();
+            if (!FileUtil.hasCloudScheme(uri))
+                return new File(uri).getAbsolutePath();
+            else
+                return CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toString();
         }
         catch (URISyntaxException e)
         {
@@ -990,7 +993,6 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container)
     {
-        String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl);
         Set<Map<String, Object>> children = getNodes(false, null, null, container);
         String filesRoot = null; // the path for @files
         for (Map<String, Object> child : children)
@@ -1008,6 +1010,7 @@ public class FileContentServiceImpl implements FileContentService
             if (FILES_LINK.equals(rootName))
                 filesRoot = rootPath;
 
+            String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl, container);
             if (absoluteFilePath.startsWith(rootPath))
             {
                 String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");

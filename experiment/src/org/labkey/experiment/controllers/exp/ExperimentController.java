@@ -5513,7 +5513,7 @@ public class ExperimentController extends SpringActionController
                 // TODO: Configure module resources with the appropriate log location per container
                 if (form.getModule() != null)
                 {
-                    File logFile = new File(form.getPipeRoot(getContainer()).getRootPath(), "module-resource-xar.log");
+                    File logFile = new File(form.getPipeRoot(getContainer()).getLogDirectory(), "module-resource-xar.log");
                     job.setLogFile(logFile);
                 }
 
