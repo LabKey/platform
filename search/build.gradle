@@ -2,7 +2,7 @@ configurations {
    tika { transitive = false } // we don't want all of the jars that tika depends on to be copied, #30592
 }
 
-ext.luceneVersion="7.0.1"
+ext.luceneVersion="7.2.0"
 
 dependencies {
    external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"

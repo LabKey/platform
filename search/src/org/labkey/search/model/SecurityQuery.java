@@ -101,10 +101,19 @@ class SecurityQuery extends Query
 
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException
+    public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost)
     {
         return new ConstantScoreWeight(this, boost)
         {
+            // NOT cacheable since results depend on the current user's current permissions.
+            // TODO: With this in place (as of Lucene 7.2.0), we should be able to remove the global caching directive
+            // in WritableIndexManagerImpl... after thorough testing! See #26416.
+            @Override
+            public boolean isCacheable(LeafReaderContext ctx)
+            {
+                return false;
+            }
+
             @Override
             public Scorer scorer(LeafReaderContext context) throws IOException
             {

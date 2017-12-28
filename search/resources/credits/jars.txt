@@ -1,7 +1,7 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-lucene-core-7.0.1.jar|Lucene|7.0.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
-lucene-analyzers-common-7.0.1.jar|Lucene Analyzers|7.0.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
-lucene-queryparser-7.0.1.jar|Lucene Query Parsers|7.0.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser support for full-text search
-lucene-backward-codecs-7.0.1.jar|Lucene Backward Compatibility|7.0.1|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Ability to read & upgrade older Lucene indexes
+lucene-core-7.2.0.jar|Lucene|7.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
+lucene-analyzers-common-7.2.0.jar|Lucene Analyzers|7.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
+lucene-queryparser-7.2.0.jar|Lucene Query Parsers|7.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser support for full-text search
+lucene-backward-codecs-7.2.0.jar|Lucene Backward Compatibility|7.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Ability to read & upgrade older Lucene indexes
 {table}
