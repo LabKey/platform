@@ -467,10 +467,10 @@ public class SecurityManager
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request)
     {
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        @Nullable String apiKey = AppProps.getInstance().isAllowSessionKeys() || AppProps.getInstance().isAllowApiKeys() ? getApiKey(basicCredentials, request) : null;
+        @Nullable String apiKey = getApiKey(basicCredentials, request);
 
-        // Handle session API key early, if present, allowed, and valid
-        if (apiKey != null && AppProps.getInstance().isAllowSessionKeys() && apiKey.startsWith("session|"))
+        // Handle session API key early, if present and valid
+        if (apiKey != null && apiKey.startsWith("session|"))
         {
             HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
@@ -534,7 +534,7 @@ public class SecurityManager
             u = sessionUser;
         }
 
-        if (null == u && null != apiKey && AppProps.getInstance().isAllowApiKeys() && apiKey.startsWith("apikey|"))
+        if (null == u && null != apiKey && apiKey.startsWith("apikey|"))
         {
             u = ApiKeyManager.get().authenticateFromApiKey(apiKey);
 
