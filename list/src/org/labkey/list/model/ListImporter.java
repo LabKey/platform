@@ -29,6 +29,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -52,6 +53,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.list.xml.ListsDocument;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,10 +84,9 @@ public class ListImporter
     public void process(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
-        Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
         if (listXml != null)
-            recreateDefinedLists(listsDir, lists, listXml, c, user, errors, log);
+            createDefinedLists(listsDir, listXml, c, user, errors, log);
 
         Map<String, String> fileTypeMap = new HashMap<>();
         for (String f : listsDir.list())
@@ -97,6 +98,7 @@ public class ListImporter
             }
         }
 
+        Map<String, ListDefinition> lists = ListService.get().getLists(c);
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
@@ -114,8 +116,9 @@ public class ListImporter
                         BatchValidationException batchErrors = new BatchValidationException();
                         DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
 
+                        boolean domainResolveSuccess = true;
                         if (listXml == null)
-                            resolveDomainChanges(c, user, loader, def, log, errors);
+                            domainResolveSuccess = resolveDomainChanges(c, user, loader, def, log, errors);
 
                         boolean supportAI = false;
 
@@ -152,7 +155,8 @@ public class ListImporter
                                         new SqlExecutor(ti.getSchema()).execute(check);
                                     }
                                 }
-                                if (errors.isEmpty())
+
+                                if (domainResolveSuccess) // attempting to insert items with a failed domain resolution gets ugly
                                     def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false, _useMerge);
 
                                 for (ValidationException v : batchErrors.getRowErrors())
@@ -315,7 +319,7 @@ public class ListImporter
         throw new ImportException("pkColumnName is set to \"" + keyName + "\" but column is not defined.");
     }
 
-    private void recreateDefinedLists(VirtualFile listsDir, Map<String, ListDefinition> listNames, XmlObject listXml, Container c, User user, List<String> errors, Logger log) throws Exception
+    private void createDefinedLists(VirtualFile listsDir, XmlObject listXml, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         TablesDocument tablesDoc;
         try
@@ -413,7 +417,7 @@ public class ListImporter
         }
     }
 
-    private void resolveDomainChanges(Container c, User user, DataLoader loader, ListDefinition listDef, Logger log, List<String> errors) throws Exception
+    private boolean resolveDomainChanges(Container c, User user, DataLoader loader, ListDefinition listDef, Logger log, List<String> errors) throws IOException
     {
         Domain domain = listDef.getDomain();
 
@@ -440,7 +444,7 @@ public class ListImporter
                 {
                     errors.add("Failed to import data for '" + listDef.getName() + "'. Column '" + loaderCol.name + "' in the incoming data has type " + jdbcType.name()
                             + " which does not match existing type: " + currentColumns.get(loaderCol.name).getPropertyDescriptor().getJdbcType());
-                    return;
+                    return false;
                 }
                 //add new properties found in the incoming file
                 else if (!currentColumns.containsKey(loaderCol.name))
@@ -464,7 +468,16 @@ public class ListImporter
                 }
             }
 
-            domain.save(user);
+            try
+            {
+                domain.save(user);
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                errors.add(e.getMessage());
+                return false;
+            }
         }
+        return true;
     }
 }
