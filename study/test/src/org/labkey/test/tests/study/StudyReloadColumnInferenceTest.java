@@ -57,6 +57,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
         -lists
             -Languages.xlsx
             -Countries.tsv
+            -Instruments.xls
         -study.xml
     * */
     private static final File secondReloadTestFile = TestFileUtils.getSampleData("studyreload/editedMixedFileTypes.zip");
@@ -78,6 +79,11 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     private static final DataToVerify COUNTRIES_FIRST_RELOAD = new DataToVerify(LIST_COUNTRIES, Arrays.asList(COL_COUNTRYNAME), 5, null, null);
     private static final String COL_ACTIVE = "Active";
     private static final DataToVerify COUNTRIES_SECOND_RELOAD = new DataToVerify(LIST_COUNTRIES, Arrays.asList(COL_COUNTRYNAME, COL_ACTIVE), 5, null, null);
+
+    private static final String LIST_INSTRUMENTS = "Instruments";
+    private static final String COL_KEY = "Key";
+    private static final String COL_INSTRUMENTID = "Instrument ID";
+    private static final DataToVerify INSTRUMENTS = new DataToVerify(LIST_INSTRUMENTS, Arrays.asList(COL_KEY, COL_INSTRUMENTID), 6, COL_INSTRUMENTID, Arrays.asList("ABI-4700"));
 
     private static final String DATASET_DEMOGRAPHICS = "Demographics";
     private static final String COL_MOUSID = "mouseid";
@@ -178,6 +184,10 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
         verifyDataset(true, MEDICAL_HISTORY);
         log("Verify lists after study reload with added/removed column, added/movoed/modified rows");
         verifyDataset(false, LANGUAGES_SECOND_RELOAD, COUNTRIES_SECOND_RELOAD);
+
+        // TODO: use case not yet supported as of Dec 2017, uncomment after supporting list creation from excel/tsv without lists.xml file
+//        log("Verify that after second study reload with new list file creates the new list");
+//        verifyDataset(true, INSTRUMENTS);
     }
 
     private DataRegionTable gotoList(String listName)
