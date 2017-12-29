@@ -2918,6 +2918,7 @@ study/test/src/org/labkey/test/tests/study/StudyMergeParticipantsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyPHIExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyProtocolDesignerTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyPublishTest.java -text
+study/test/src/org/labkey/test/tests/study/StudyReloadColumnInferenceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyReloadTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyScheduleTest.java -text
 study/test/src/org/labkey/test/tests/study/StudySecurityTest.java -text
