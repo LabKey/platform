@@ -376,6 +376,10 @@ public class XarExporter
         {
             for (ExpData data : outputData)
             {
+                // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
+                // include a file path in the export, though.  We use the name of the data object as the file name.
+                if (data.getDataFileUrl() == null && data.isFinalRunOutput())
+                    data.setDataFileURI(new File(run.getFilePathRoot(), data.getName()).toURI());
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
             }
