@@ -25,7 +25,7 @@
 
     /**
      * @private
-     * @namespace API that provides the capability to run a Tour on the page highlighing different areas and aspects
+     * @namespace API that provides the capability to run a Tour on the page highlighting different areas and aspects
      *      to show users. <p/>
      *            <p>Additional Documentation:
      *              <ul>
@@ -35,6 +35,9 @@
      */
     LABKEY.help.Tour = new function ()
     {
+        var ID_PREFIX = 'tour-',
+            URL_PREFIX = 'tourstate';
+
         var _hopscotchSessionProperty = 'hopscotch.tour.state',
             _localStorageProperty = "LABKEY.tours.state",
             _tours = {},
@@ -86,6 +89,17 @@
             console.warn("Tour mode not found. TourId: " + id);
         };
 
+        // https://github.com/linkedin/hopscotch/commit/948eff6fa52cb71b7e6688735ae7089dc68873a3
+        var _decodeId = function(id)
+        {
+            if (id.indexOf(ID_PREFIX) === 0) {
+                return id.split(ID_PREFIX)[1];
+            }
+
+            console.warn('Tour: unable to decode id "' + id + '". Expected to start with "' + ID_PREFIX + '".');
+            return id;
+        };
+
         var _display = function (config, step)
         {
             _initHopscotch(function ()
@@ -97,9 +111,18 @@
                 });
                 if (LABKEY.Utils.isString(step))
                     step = parseInt(step);
-                hopscotch.startTour(config, step || 0);
+                var clone = $.extend({}, config, {
+                    id: _encodeId(config.id)
+                });
+                hopscotch.startTour(clone, step || 0);
                 markSeen(config.id);
             }, me);
+        };
+
+        // https://github.com/linkedin/hopscotch/commit/948eff6fa52cb71b7e6688735ae7089dc68873a3
+        var _encodeId = function (id)
+        {
+            return ID_PREFIX + id;
         };
 
         var _get = function (idOrConfig)
@@ -120,9 +143,11 @@
         // Get multipage tour info from URL
         var _getContinue = function ()
         {
-            var config = {};
-            var hash = window.location.hash, prefix = "tourstate:";
-            if (hash && hash.charAt(0) == '#')
+            var config = {},
+                hash = window.location.hash,
+                prefix = URL_PREFIX + ':';
+
+            if (hash && hash.indexOf('#') === 0)
                 hash = hash.substring(1);
             if (hash.substring(0, prefix.length) != prefix)
                 return config;
@@ -310,24 +335,21 @@ LABKEY.Utils.onReady(function() {
          */
         var continueAtLocation = function (href)
         {
-            var context = LABKEY.contextPath;
+            var tour = hopscotch.getCurrTour();
 
-            if (href.charAt(0) != "/")
-            {
-                href = "/" + href;
-            }
-
-            href = context + href;
-
-            if (!hopscotch.getCurrTour())
+            if (!tour)
             {
                 window.location = href;
+                return;
             }
-            var hopscotchState = hopscotch.getCurrTour().id + ":" + hopscotch.getCurrStepNum();
 
-            var a = document.createElement("A");
+            var a = document.createElement('a');
             a.href = href;
-            a.hash = 'tourstate:' + hopscotchState;
+            a.hash = [
+                URL_PREFIX,
+                _decodeId(tour.id),
+                hopscotch.getCurrStepNum()
+            ].join(':');
             window.location = a.href;
         };
 
@@ -387,7 +409,7 @@ LABKEY.Utils.onReady(function() {
         };
 
         /**
-         * Countinue tour if it is currently on the indicated step, useful for multi-page tours
+         * Continue tour if it is currently on the indicated step, useful for multi-page tours
          * Always loads hopscotch.js
          * @private
          */
@@ -396,9 +418,9 @@ LABKEY.Utils.onReady(function() {
             var config = _get(id);
             if (config)
             {
-                var testState = config.id + ":" + step;
+                var testState = _encodeId(config.id) + ":" + step;
                 // peek into hopscotch state w/o loading hopscotch.js
-                if (testState == sessionStorage.getItem(_hopscotchSessionProperty))
+                if (testState === sessionStorage.getItem(_hopscotchSessionProperty))
                 {
                     _display(config, step);
                 }
