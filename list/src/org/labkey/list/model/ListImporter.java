@@ -466,7 +466,7 @@ public class ListImporter
                 else if (!currentColumns.containsKey(loaderCol.name))
                 {
                     PropertyType type = PropertyType.getFromJdbcType(jdbcType);
-                    PropertyDescriptor pd = new PropertyDescriptor(type.getTypeUri(), type, loaderCol.name, c);
+                    PropertyDescriptor pd = new PropertyDescriptor(domain.getTypeURI() + "." + loaderCol.name, type, loaderCol.name, c);
                     domain.addPropertyOfPropertyDescriptor(pd);
 
                     log.info("\tAdded column " + loaderCol.name + " of type \"" + type.getXarName() + "\" to " + listDef.getName());
@@ -493,7 +493,7 @@ public class ListImporter
             {
                 domain.save(user);
             }
-            catch (ChangePropertyDescriptorException e)
+            catch (Exception e)
             {
                 errors.add(e.getMessage());
                 return false;
