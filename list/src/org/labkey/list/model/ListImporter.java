@@ -100,6 +100,7 @@ public class ListImporter
         }
 
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        int failedLists = 0;
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
@@ -117,9 +118,12 @@ public class ListImporter
                         BatchValidationException batchErrors = new BatchValidationException();
                         DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
 
-                        boolean domainResolveSuccess = true;
-                        if (listXml == null)
-                            domainResolveSuccess = resolveDomainChanges(c, user, loader, def, log, errors);
+                        if (listXml == null && !resolveDomainChanges(c, user, loader, def, log, errors))
+                        {
+                            log.warn("Skipping filed-based import of '" + listName + "' due to domain resolution errors.");
+                            failedLists++;
+                            continue;
+                        }
 
                         boolean supportAI = false;
 
@@ -167,8 +171,7 @@ public class ListImporter
                                     }
                                 }
 
-                                if (domainResolveSuccess) // attempting to insert items with a failed domain resolution gets ugly
-                                    def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false, _useMerge);
+                                def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false, _useMerge);
 
                                 for (ValidationException v : batchErrors.getRowErrors())
                                     errors.add(v.getMessage());
@@ -234,7 +237,9 @@ public class ListImporter
             }
         }
 
-        log.info(lists.size() + " list" + (1 == lists.size() ? "" : "s") + " imported");
+        int size = lists.size() - failedLists;
+        log.info(size + " list" + (1 == size ? "" : "s") + " imported");
+        log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
         if (fileTypeMap.size() > 0)
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
@@ -453,7 +458,7 @@ public class ListImporter
                 if (currentColumns.containsKey(loaderCol.name)
                         && !currentColumns.get(loaderCol.name).getPropertyDescriptor().getJdbcType().equals(jdbcType))
                 {
-                    errors.add("Failed to import data for '" + listDef.getName() + "'. Column '" + loaderCol.name + "' in the incoming data has type " + jdbcType.name()
+                    log.warn("Failed to import data for '" + listDef.getName() + "'. Column '" + loaderCol.name + "' in the incoming data has type " + jdbcType.name()
                             + " which does not match existing type: " + currentColumns.get(loaderCol.name).getPropertyDescriptor().getJdbcType());
                     return false;
                 }
@@ -472,7 +477,12 @@ public class ListImporter
             // Remove properties in the original domain that aren't found in the incoming file
             for (String columnName : currentColumns.keySet())
             {
-                if (!currentColumns.get(columnName).isRequired() && !listDef.getKeyName().equals(columnName))
+                if (listDef.getKeyName().equals(columnName) && !listDef.getKeyType().getLabel().equals("Auto-Increment Integer"))
+                {
+                    log.warn("Failed to import data for '" + listDef.getName() + "'. Primary Key '" + columnName + "' not present in file.");
+                    return false;
+                }
+                else if (!listDef.getKeyName().equals(columnName) && !currentColumns.get(columnName).isRequired())
                 {
                     currentColumns.get(columnName).delete();
                     log.info("\tDeleted column " + columnName);
