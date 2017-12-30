@@ -1,8 +1,6 @@
 package org.labkey.study.pipeline;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -12,9 +10,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +74,11 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
     {
         if (_datasetInfoMap.isEmpty() && _importMap.isEmpty())
         {
-            List<Integer> datasetIds = _study.getDatasets().stream().
-                    map(DatasetDefinition::getDatasetId).
-                    collect(Collectors.toList());
-            datasetIds.sort(Comparator.comparingInt(o -> o));
+            List<Integer> datasetIds = _study.getDatasets().stream()
+                .map(DatasetDefinition::getDatasetId)
+                .sorted(Comparator.comparingInt(o -> o))
+                .collect(Collectors.toList());
+
             // next available dataset ID
             int nextId = datasetIds.isEmpty() ? 1000 : datasetIds.get(datasetIds.size()-1) + 1;
 
