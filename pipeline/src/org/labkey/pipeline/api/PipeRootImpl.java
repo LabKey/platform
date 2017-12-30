@@ -58,6 +58,8 @@ public class PipeRootImpl implements PipeRoot
     private static final String SYSTEM_DIRECTORY_NAME = ".labkey";
     private static final String SYSTEM_DIRECTORY_LEGACY = "system";
 
+    private static final String CLOUD_ROOT_PREFIX = "/@cloud";
+
     private String _containerId;
     private final List<URI> _uris = new ArrayList<>();
     private List<File> _rootPaths = new ArrayList<>();
@@ -112,8 +114,8 @@ public class PipeRootImpl implements PipeRoot
 
     public PipeRootImpl(PipelineRoot root)
     {
-        String rootPath = root.getPath().startsWith("/@cloud") ? root.getPath().replace("/@cloud", "") : root.getPath();
-        _defaultRoot = root.getPath().startsWith("/@cloud") ? ROOT_BASE.cloud : ROOT_BASE.pipeline;
+        String rootPath = root.getPath().startsWith(CLOUD_ROOT_PREFIX) ? root.getPath().replace(CLOUD_ROOT_PREFIX, "") : root.getPath();
+        _defaultRoot = root.getPath().startsWith(CLOUD_ROOT_PREFIX) ? ROOT_BASE.cloud : ROOT_BASE.pipeline;
 
         _containerId = root.getContainerId();
 
@@ -210,7 +212,7 @@ public class PipeRootImpl implements PipeRoot
 
     public synchronized List<File> getRootPaths()
     {
-        if (_rootPaths.size() == 0)
+        if (_rootPaths.size() == 0 && !isCloudRoot())
         {
             for (URI uri : _uris)
             {
@@ -566,7 +568,7 @@ public class PipeRootImpl implements PipeRoot
             String uriPath = _uris.get(0).getPath();
             if (ROOT_BASE.cloud.equals(_defaultRoot))
             {
-                form.setPath("/@cloud/" + _cloudStoreName + (StringUtils.isNotBlank(uriPath) ? "/" + uriPath : ""));
+                form.setPath(getCloudDirName() + (StringUtils.isNotBlank(uriPath) ? "/" + uriPath : ""));
             }
             else
             {
@@ -594,6 +596,9 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public String toString()
     {
+        if (isCloudRoot())
+            return getCloudDirName();
+
         StringBuilder result = new StringBuilder();
         String separator = "";
         for (URI rootUri : getRootURIs())
@@ -601,10 +606,15 @@ public class PipeRootImpl implements PipeRoot
             result.append(separator);
             separator = " and supplemental location ";
             result.append("'");
-            result.append(rootUri.getPath());
+            result.append(FileUtil.hasCloudScheme(rootUri) ? rootUri.getPath() : new File(rootUri).getAbsolutePath());
             result.append("'");
         }
         return result.toString();
+    }
+
+    private String getCloudDirName()
+    {
+        return CLOUD_ROOT_PREFIX + "/" + _cloudStoreName;
     }
 
     private boolean isCloudStoreEnabled()
