@@ -62,6 +62,15 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     * */
     private static final File secondReloadTestFile = TestFileUtils.getSampleData("studyreload/editedMixedFileTypes.zip");
 
+    /*Study archive:
+    -datasets
+        -Demographics.xlsx (with added int, number, string boolean columns)
+    -lists
+        -Languages.xlsx (with added int, number, string boolean columns)
+    -study.xml
+    * */
+    private static final File thirdReloadTestFile = TestFileUtils.getSampleData("studyreload/editedMixedFieldTypes.zip");
+
     private static final String LIST_LANGUAGES = "Languages";
     private static final String COL_LANGUAGEID = "Language Id";
     private static final String COL_LANGUAGENAME = "Language Name";
@@ -188,6 +197,36 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
         // TODO: use case not yet supported as of Dec 2017, uncomment after supporting list creation from excel/tsv without lists.xml file
 //        log("Verify that after second study reload with new list file creates the new list");
 //        verifyDataset(true, INSTRUMENTS);
+
+        clickFolder(getFolderName());
+        log("Reload study again with added datasets and lists columns of various field types");
+        reloadStudyFromZip(thirdReloadTestFile, false, 4);
+        new PipelineStatusTable(this).clickStatusLink(0);
+
+        log("Verify correct types are inferred from file for list");
+        gotoList(LIST_LANGUAGES);
+        clickButton("Design");
+        verifyColumnTypes(true);
+
+        log("Verify correct types are inferred from file for dataset");
+        gotoDataset(DATASET_DEMOGRAPHICS);
+        clickButton("Manage");
+        verifyColumnTypes(false);
+    }
+
+    private void verifyColumnTypes(boolean isList)
+    {
+        waitForElement(getLoc("booleancol", isList ? "Boolean" : "True/False (Boolean)", isList), WAIT_FOR_JAVASCRIPT);
+        assertElementPresent(getLoc("intcol", "Integer", isList));
+        assertElementPresent(getLoc("numcol", "Number (Double)", isList));
+        assertElementPresent(getLoc("stringcol", "Text (String)", isList));
+    }
+
+    private Locator.XPathLocator getLoc(String fieldName, String fieldType, boolean isList)
+    {
+        String divPath = (isList ? "/div" : "");
+        String path = "//tr[./td" + divPath + "[text()='" + fieldName + "'] and ./td" + divPath + "[text()='" + fieldType + "']]";
+        return Locator.xpath(path);
     }
 
     private DataRegionTable gotoList(String listName)
