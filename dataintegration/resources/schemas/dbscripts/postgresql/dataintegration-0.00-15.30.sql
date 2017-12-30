@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* dataintegration-0.00-14.10.sql */
-
 /* dataintegration-0.00-13.10.sql */
 
 CREATE SCHEMA dataintegration;
@@ -37,11 +35,11 @@ CREATE SCHEMA dataintegration;
 
 CREATE TABLE dataintegration.TransformRun
 (
-    RowId SERIAL NOT NULL,
+    TransformRunId SERIAL NOT NULL,
     Container ENTITYID NOT NULL,
     RecordCount INT,
     JobId INT NOT NULL,
-    TransformId VARCHAR(50) NOT NULL,
+    TransformId VARCHAR(100) NOT NULL,
     TransformVersion INT NOT NULL,
     Status VARCHAR(500),
     StartTime TIMESTAMP NULL,
@@ -50,19 +48,21 @@ CREATE TABLE dataintegration.TransformRun
     CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
+    TransformRunLog TEXT,
 
+    CONSTRAINT PK_TransformRun PRIMARY KEY (TransformRunId),
     CONSTRAINT FK_TransformRun_JobId FOREIGN KEY (JobId) REFERENCES pipeline.StatusFiles (RowId),
     CONSTRAINT FK_TransformRun_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
 );
 
-CREATE INDEX IDX_TransformRun_JobId ON dataintegration.TransformRun(JobId);
 CREATE INDEX IDX_TransformRun_Container ON dataintegration.TransformRun(Container);
+CREATE INDEX IDX_TransformRun_JobId ON dataintegration.TransformRun(JobId);
 
 CREATE TABLE dataintegration.TransformConfiguration
 (
     RowId SERIAL NOT NULL,
     Container ENTITYID NOT NULL,
-    TransformId VARCHAR(50) NOT NULL,
+    TransformId VARCHAR(100) NOT NULL,
     Enabled BOOLEAN,
     VerboseLogging BOOLEAN,
     LastChecked TIMESTAMP NULL,
@@ -70,63 +70,10 @@ CREATE TABLE dataintegration.TransformConfiguration
     CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
+    TransformState TEXT,
 
-    CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (TransformId),
+    CONSTRAINT PK_TransformConfiguration PRIMARY KEY (RowId),
+    CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (Container, TransformId),
     CONSTRAINT FK_TransformConfiguration_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
 );
 
-CREATE INDEX IDX_TransformConfiguration_Container ON dataintegration.TransformRun(Container);
-
-ALTER TABLE dataintegration.TransformConfiguration
-   ADD CONSTRAINT PK_TransformConfiguration PRIMARY KEY (RowId);
-
-ALTER TABLE dataintegration.TransformRun ADD CONSTRAINT PK_TransformRun PRIMARY KEY (RowId);
-
-DROP INDEX dataintegration.IDX_TransformConfiguration_Container;
-ALTER TABLE dataintegration.TransformConfiguration DROP CONSTRAINT UQ_TransformConfiguration_TransformId;
-ALTER TABLE dataintegration.TransformConfiguration ADD CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (Container, TransformId);
-
-/* dataintegration-13.10-13.20.sql */
-
-ALTER TABLE dataintegration.TransformRun
-  ADD COLUMN ExpRunId INT;
-
-ALTER TABLE dataintegration.TransformRun
-  ADD CONSTRAINT FK_TransformRun_ExpRunId FOREIGN KEY (ExpRunId) REFERENCES exp.ExperimentRun (RowId);
-
-ALTER TABLE dataintegration.TransformRun RENAME RowId to TransformRunId;
-
-ALTER TABLE dataintegration.TransformConfiguration ADD COLUMN TransformState TEXT;
-
-/* dataintegration-13.20-13.30.sql */
-
-SELECT core.fn_dropifexists('transformrun', 'dataintegration', 'CONSTRAINT', 'FK_TransformRun_JobId');
-SELECT core.fn_dropifexists('transformrun', 'dataintegration', 'INDEX', 'IDX_TransformRun_JobId');
-ALTER TABLE dataintegration.TransformRun DROP COLUMN JobId;
-
-
-ALTER TABLE dataintegration.TransformRun ADD COLUMN JobId INT NULL;
-
-
-ALTER TABLE dataintegration.TransformRun ADD CONSTRAINT FK_TransformRun_JobId FOREIGN KEY (JobId) REFERENCES pipeline.StatusFiles (RowId);
-CREATE INDEX IDX_TransformRun_JobId ON dataintegration.TransformRun(JobId);
-
-
-ALTER TABLE dataintegration.TransformRun ADD COLUMN TransformRunLog TEXT;
-
-/* dataintegration-13.30-14.10.sql */
-
-ALTER TABLE dataintegration.TransformRun ALTER COLUMN TransformId TYPE varchar(100);
-
-/* dataintegration-15.20-15.30.sql */
-
-/* dataintegration-15.20-15.21.sql */
-
-ALTER TABLE dataintegration.TransformConfiguration DROP CONSTRAINT UQ_TransformConfiguration_TransformId;
-ALTER TABLE dataintegration.TransformConfiguration ALTER COLUMN TransformId TYPE varchar(100);
-ALTER TABLE dataintegration.TransformConfiguration ADD CONSTRAINT UQ_TransformConfiguration_TransformId UNIQUE (Container, TransformId);
-
-/* dataintegration-15.21-15.22.sql */
-
-ALTER TABLE dataintegration.TransformRun DROP CONSTRAINT FK_TransformRun_ExpRunId;
-ALTER TABLE dataintegration.TransformRun DROP COLUMN ExpRunId;

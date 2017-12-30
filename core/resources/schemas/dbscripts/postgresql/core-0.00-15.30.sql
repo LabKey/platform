@@ -510,8 +510,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* core-15.20-15.30.sql */
-
 /* core-15.20-15.21.sql */
 
 CREATE TABLE core.Notifications
@@ -520,23 +518,16 @@ CREATE TABLE core.Notifications
   Container ENTITYID NOT NULL,
   CreatedBy USERID,
   Created TIMESTAMP,
-  ModifiedBy USERID,
-  Modified TIMESTAMP,
 
   UserId USERID NOT NULL,
   ObjectId VARCHAR(64) NOT NULL,
   Type VARCHAR(200) NOT NULL,
+  Description TEXT,
+  ReadOn TIMESTAMP,
+  ActionLinkText VARCHAR(2000),
+  ActionLinkURL VARCHAR(4000),
 
   CONSTRAINT PK_Notifications PRIMARY KEY (RowId),
   CONSTRAINT FK_Notifications_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
   CONSTRAINT UQ_Notifications_ContainerUserObjectType UNIQUE (Container, UserId, ObjectId, Type)
 );
-
-/* core-15.21-15.22.sql */
-
-ALTER TABLE core.Notifications ADD Description TEXT;
-ALTER TABLE core.Notifications ADD ReadOn TIMESTAMP;
-ALTER TABLE core.Notifications ADD ActionLinkText VARCHAR(2000);
-ALTER TABLE core.Notifications ADD ActionLinkURL VARCHAR(4000);
-ALTER TABLE core.Notifications DROP COLUMN ModifiedBy;
-ALTER TABLE core.Notifications DROP COLUMN Modified;
