@@ -23,10 +23,9 @@ GO
 
 CREATE TABLE dataintegration.TransformRun
 (
-    RowId INT IDENTITY (1, 1) NOT NULL,
+    TransformRunId INT IDENTITY (1, 1) NOT NULL,
     Container ENTITYID NOT NULL,
     RecordCount INT,
-    JobId INT NOT NULL,
     TransformId NVARCHAR(100) NOT NULL,
     TransformVersion INT NOT NULL,
     Status NVARCHAR(500),
@@ -36,9 +35,10 @@ CREATE TABLE dataintegration.TransformRun
     CreatedBy INT NULL,
     Modified DATETIME NULL,
     ModifiedBy INT NULL,
+    JobId INT NULL,
     TransformRunLog NTEXT,
 
-    CONSTRAINT PK_TransformRun PRIMARY KEY (RowId),
+    CONSTRAINT PK_TransformRun PRIMARY KEY (TransformRunId),
     CONSTRAINT FK_TransformRun_JobId FOREIGN KEY (JobId) REFERENCES pipeline.StatusFiles (RowId),
     CONSTRAINT FK_TransformRun_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId)
 );

@@ -38,7 +38,6 @@ CREATE TABLE dataintegration.TransformRun
     TransformRunId SERIAL NOT NULL,
     Container ENTITYID NOT NULL,
     RecordCount INT,
-    JobId INT NOT NULL,
     TransformId VARCHAR(100) NOT NULL,
     TransformVersion INT NOT NULL,
     Status VARCHAR(500),
@@ -48,6 +47,7 @@ CREATE TABLE dataintegration.TransformRun
     CreatedBy INT NULL,
     Modified TIMESTAMP NULL,
     ModifiedBy INT NULL,
+    JobId INT NULL,
     TransformRunLog TEXT,
 
     CONSTRAINT PK_TransformRun PRIMARY KEY (TransformRunId),
