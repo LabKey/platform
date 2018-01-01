@@ -16,7 +16,6 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -28,7 +27,6 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -41,8 +39,6 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.gwt.client.DefaultScaleType;
-import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
@@ -56,22 +52,17 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.data.xml.StringExpressionType;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -84,7 +75,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.google.common.base.Objects.firstNonNull;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
@@ -2434,86 +2424,6 @@ public class OntologyManager
         }
     }
 
-
-    /**
-     * Turns a list of maps into a list of PropertyDescriptors. Does not save anything.
-     * <p>
-     * Look for duplicates with in imported list, but does not verify against any existing PropertyDescriptors/Domains
-     */
-    public static ImportPropertyDescriptorsList createPropertyDescriptors(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container defaultContainer, boolean ignoreDuplicates)
-    {
-        ImportPropertyDescriptorsList ret = new ImportPropertyDescriptorsList();
-        CaseInsensitiveHashSet all = new CaseInsensitiveHashSet();
-        CaseInsensitiveHashSet mvColumns = new CaseInsensitiveHashSet();
-
-        for (Map<String, Object> m : maps)
-        {
-            String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
-            Pair<String, Container> p = uriFactory.getDomainURI(domainName);
-            String domainURI = p.first;
-            Container container = null != p.second ? p.second : defaultContainer;
-
-            String name = StringUtils.trimToEmpty(((String) m.get("property")));
-            String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
-            if (propertyURI.length() == 0)
-                propertyURI = domainURI + "." + Lsid.encodePart(name);
-            if (name.length() == 0)
-            {
-                String e = "'property' field is required";
-                if (!errors.contains(e))
-                    errors.add(e);
-                continue;
-            }
-
-            if (StringUtils.endsWithIgnoreCase(name, MV_INDICATOR_SUFFIX))
-            {
-                mvColumns.add(name);
-                continue;
-            }
-
-            PropertyDescriptor pd = _propertyDescriptorFromRowMap(container, domainURI, propertyURI, name, m, errors);
-
-            if (pd != null)
-            {
-                if (!all.add(pd.getPropertyURI()) && !ignoreDuplicates)
-                {
-                    if (null != domainName)
-                        errors.add("'" + domainName + "' has multiple fields named '" + name + "'");
-                    else
-                        errors.add("field '" + name + "' is specified more than once.");
-                }
-
-                // Note: These will be null in the SchemaTsv case
-                @Nullable List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
-                @Nullable List<? extends IPropertyValidator> validators = (List<? extends IPropertyValidator>) m.get("Validators");
-
-                ret.add(domainName, domainURI, pd, validators, conditionalFormats);
-            }
-        }
-
-        if (!mvColumns.isEmpty())
-        {
-            // There really shouldn't be mvindicator columns in the map, so this is just being defensive
-            // they should be implied by isMvEnabled() in the parent column
-            CaseInsensitiveHashMap<PropertyDescriptor> nameMap = new CaseInsensitiveHashMap<>();
-            for (ImportPropertyDescriptor ipd : ret.properties)
-                nameMap.put(ipd.pd.getName(), ipd.pd);
-            for (String mv : mvColumns)
-            {
-                String data = mv.substring(0, mv.length() - MV_INDICATOR_SUFFIX.length());
-                if (data.endsWith("_"))
-                    data = data.substring(0, data.length() - 1);
-                PropertyDescriptor pd = nameMap.get(data);
-                if (null == pd)
-                    errors.add("Missing value field does not have corresponding data field: " + mv);
-                else
-                    pd.setMvEnabled(true);
-            }
-        }
-
-        return ret;
-    }
-
     /**
      * Updates an existing domain property with an import property descriptor generated
      * by _propertyDescriptorFromRowMap below. Properties we don't set are explicitly
@@ -2561,195 +2471,6 @@ public class OntologyManager
         p.setRedactedText(pd.getRedactedText());
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
     }
-
-    private static PropertyDescriptor _propertyDescriptorFromRowMap(Container container, String domainURI, String propertyURI, String name,
-                                                                    Map<String, Object> m, Collection<String> errors)
-    {
-        // try use existing SystemProperty PropertyDescriptor from Shared container.
-        PropertyDescriptor pd = null;
-        if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
-            pd = getPropertyDescriptor(propertyURI, _sharedContainer);
-
-        if (pd == null)
-        {
-            String label = StringUtils.trimToNull((String) m.get("label"));
-            if (null == label)
-                label = name;
-            String conceptURI = (String) m.get("conceptURI");
-            String rangeURI = (String) m.get("rangeURI");
-
-            BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
-
-            boolean nullable = ((Boolean) booleanConverter.convert(Boolean.class, m.get("Nullable"))).booleanValue();
-            boolean required = ((Boolean) booleanConverter.convert(Boolean.class, m.get("Required"))).booleanValue();
-            boolean hidden = ((Boolean) booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
-            boolean mvEnabled = ((Boolean) booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
-
-            String description = (String) m.get("description");
-            String format = StringUtils.trimToNull((String) m.get("format"));
-
-            StringExpression url = null;
-            if (m.get("url") instanceof String)
-            {
-                url = StringExpressionFactory.createURL((String) m.get("url"));
-            }
-            else if (m.get("url") instanceof StringExpressionType)
-            {
-                url = StringExpressionFactory.fromXML((StringExpressionType) m.get("url"), true);
-            }
-
-            String importAliases = (String) m.get("importAliases");
-
-            // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
-            String lookupContainerId = null;
-            String lookupFolderPath = (String) m.get("LookupFolderPath");
-            if (null != lookupFolderPath)
-            {
-                Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
-                lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
-            }
-            String lookupSchema = (String) m.get("LookupSchema");
-            String lookupQuery = (String) m.get("LookupQuery");
-
-            boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean) m.get("ShownInInsertView")).booleanValue();
-            boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean) m.get("ShownInUpdateView")).booleanValue();
-            boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean) m.get("ShownInDetailsView")).booleanValue();
-
-            boolean dimension = m.get("Dimension") != null && ((Boolean) m.get("Dimension")).booleanValue();
-            boolean measure = m.get("Measure") != null && ((Boolean) m.get("Measure")).booleanValue();
-
-            boolean recommendedVariable = m.get("RecommendedVariable") != null && ((Boolean) m.get("RecommendedVariable")).booleanValue();
-            DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
-            if (m.get("DefaultScale") != null)
-            {
-                DefaultScaleType type = DefaultScaleType.valueOf(m.get("DefaultScale").toString());
-                if (type != null)
-                    defaultScale = type;
-            }
-
-            FacetingBehaviorType facetingBehavior = FacetingBehaviorType.AUTOMATIC;
-            if (m.get("FacetingBehaviorType") != null)
-            {
-                FacetingBehaviorType type = FacetingBehaviorType.valueOf(m.get("FacetingBehaviorType").toString());
-                if (type != null)
-                    facetingBehavior = type;
-            }
-
-            PHI phi = PHI.NotPHI;
-            if (m.get("Phi") != null)
-            {
-                PHI phiParsed = PHI.valueOf(m.get("Phi").toString());
-                if (phiParsed != null)
-                    phi = phiParsed;
-            }
-            String redactedText = (String) m.get("RedactedText");
-            boolean isExcludeFromShifting = m.get("ExcludeFromShifting") != null && ((Boolean) m.get("ExcludeFromShifting")).booleanValue();
-
-            PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
-            if (null == pt)
-            {
-                String e = "Unrecognized type URI : " + ((null == conceptURI) ? rangeURI : conceptURI);
-                if (!errors.contains(e))
-                    errors.add(e);
-                return null;
-            }
-            if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
-            {
-                pt = PropertyType.MULTI_LINE;
-            }
-            rangeURI = pt.getTypeUri();
-            int scale = m.get("Scale") != null ?
-                    (Integer) m.get("Scale") :
-                    (JdbcType.VARCHAR == pt.getJdbcType() || JdbcType.LONGVARCHAR == pt.getJdbcType()) ?
-                            PropertyStorageSpec.DEFAULT_SIZE :              // text types
-                            pt.getScale();                                  // types with fixed scales
-
-            if (format != null)
-            {
-                try
-                {
-                    switch (pt)
-                    {
-                        case INTEGER:
-                        case DOUBLE:
-                            format = convertNumberFormatChars(format);
-                            (new DecimalFormat(format)).format(1.0);
-                            break;
-                        case DATE_TIME:
-                            format = convertDateFormatChars(format);
-                            (new SimpleDateFormat(format)).format(new Date());
-                            // UNDONE: don't import date format until we have default format for study
-                            // UNDONE: it looks bad to have mixed formats
-                            break;
-                        case STRING:
-                        case MULTI_LINE:
-                        default:
-                            format = null;
-                    }
-                }
-                catch (Exception x)
-                {
-                    format = null;
-                }
-            }
-
-            pd = new PropertyDescriptor();
-            pd.setPropertyURI(propertyURI);
-            pd.setName(name);
-            pd.setLabel(label);
-            pd.setConceptURI(conceptURI);
-            pd.setRangeURI(rangeURI);
-            pd.setContainer(container);
-            pd.setDescription(description);
-            pd.setURL(url);
-            pd.setImportAliases(importAliases);
-            pd.setNullable(nullable);
-            pd.setRequired(required);
-            pd.setHidden(hidden);
-            pd.setShownInInsertView(shownInInsertView);
-            pd.setShownInUpdateView(shownInUpdateView);
-            pd.setShownInDetailsView(shownInDetailsView);
-            pd.setDimension(dimension);
-            pd.setMeasure(measure);
-            pd.setScale(scale);
-            pd.setRecommendedVariable(recommendedVariable);
-            pd.setDefaultScale(defaultScale);
-            pd.setFormat(format);
-            pd.setMvEnabled(mvEnabled);
-            pd.setLookupContainer(lookupContainerId);
-            pd.setLookupSchema(lookupSchema);
-            pd.setLookupQuery(lookupQuery);
-            pd.setFacetingBehaviorType(facetingBehavior);
-            pd.setPHI(phi);
-            pd.setRedactedText(redactedText);
-            pd.setExcludeFromShifting(isExcludeFromShifting);
-        }
-        return pd;
-    }
-
-    private static String convertNumberFormatChars(String format)
-    {
-        int length = format.length();
-        int decimal = format.indexOf('.');
-        if (-1 == decimal)
-            decimal = length;
-        StringBuilder s = new StringBuilder(format);
-        for (int i = 0; i < s.length(); i++)
-        {
-            if ('n' == s.charAt(i))
-                s.setCharAt(i, i < decimal - 1 ? '#' : '0');
-        }
-        return s.toString();
-    }
-
-
-    private static String convertDateFormatChars(String format)
-    {
-        if (format.toUpperCase().equals(format))
-            return format.replace('Y', 'y').replace('D', 'd');
-        return format;
-    }
-
 
     @TestWhen(TestWhen.When.BVT)
     @TestTimeout(120)

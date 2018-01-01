@@ -15,24 +15,42 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorKind;
+import org.labkey.api.gwt.client.DefaultScaleType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.DefaultScaleType;
-import org.labkey.data.xml.FacetingBehaviorType;
-import org.labkey.data.xml.PHIType;
+import org.labkey.data.xml.StringExpressionType;
 import org.labkey.data.xml.TableType;
 
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.exp.OntologyManager.MV_INDICATOR_SUFFIX;
 
 /**
  * Created by klum on 2/7/14.
@@ -42,45 +60,6 @@ public class ImportTypesHelper
     protected TableType _tableXml;
     protected String _typeColumnName;
     protected Object _typeColumnValue;
-    protected static List<String> _standardKeys = new ArrayList<>();
-
-    static
-    {
-        _standardKeys.add("Property");
-        _standardKeys.add("PropertyURI");
-        _standardKeys.add("Label");
-        _standardKeys.add("Description");
-
-        _standardKeys.add("RangeURI");
-        _standardKeys.add("Nullable");
-        _standardKeys.add("Required");
-        _standardKeys.add("ConceptURI");
-        _standardKeys.add("Format");
-        _standardKeys.add("InputType");
-        _standardKeys.add("HiddenColumn");
-        _standardKeys.add("MvEnabled");
-        _standardKeys.add("LookupFolderPath");
-
-        _standardKeys.add("LookupSchema");
-        _standardKeys.add("LookupQuery");
-        _standardKeys.add("URL");
-        _standardKeys.add("ImportAliases");
-        _standardKeys.add("ShownInInsertView");
-        _standardKeys.add("ShownInUpdateView");
-
-        _standardKeys.add("ShownInDetailsView");
-        _standardKeys.add("Measure");
-        _standardKeys.add("Dimension");
-        _standardKeys.add("RecommendedVariable");
-        _standardKeys.add("DefaultScale");
-        _standardKeys.add("ConditionalFormats");
-        _standardKeys.add("Validators");
-        _standardKeys.add("FacetingBehaviorType");
-        _standardKeys.add("Phi");
-        _standardKeys.add("ExcludeFromShifting");
-        _standardKeys.add("Scale");
-
-    }
 
     public ImportTypesHelper(TableType tableXml, String typeColumnName, Object typeColumnValue)
     {
@@ -89,36 +68,20 @@ public class ImportTypesHelper
         _typeColumnValue = typeColumnValue;
     }
 
-    protected RowMapFactory<Object> getRowMapFactory()
-    {
-        List<String> keys = new ArrayList<>();
-
-        keys.add(_typeColumnName);
-        keys.addAll(_standardKeys);
-
-        return new RowMapFactory<>(keys);
-    }
-
     protected boolean acceptColumn(String columnName, ColumnType columnXml) throws Exception
     {
         return true;
     }
 
-    /**
-     * Create the row maps that OntologyManager.importTypes can consume
-     * @return
-     */
-    public List<Map<String, Object>> createImportMaps() throws Exception
+    public List<Builder> createPropertyDescriptorBuilders(Container defaultContainer) throws Exception
     {
-        List<Map<String, Object>> importMaps = new LinkedList<>();
-        RowMapFactory<Object> mapFactory = getRowMapFactory();
+        List<Builder> builders = new ArrayList<>();
 
         if (_tableXml.getColumns() != null)
         {
             for (ColumnType columnXml : _tableXml.getColumns().getColumnArray())
             {
                 String columnName = columnXml.getColumnName();
-
                 if (!acceptColumn(columnName, columnXml))
                     continue;
 
@@ -141,100 +104,549 @@ public class ImportTypesHelper
                 if (pt == null)
                     throw new ImportException("Unknown property type \"" + dataType + "\" for property \"" + columnXml.getColumnName() + "\".");
 
-                // Assume nullable if not specified
-                boolean nullable = !(columnXml.isSetNullable() && !columnXml.getNullable());
-                boolean required = columnXml.isSetRequired() && columnXml.getRequired();
+                Builder builder = new Builder(defaultContainer, pt);
+                builder.setName(columnName);
+                builder.setDomainName((String)_typeColumnValue);
+                builder.setConceptURI(columnXml.getConceptURI());
+                builder.setPropertyURI(columnXml.getPropertyURI());
 
-                boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
+                // Assume nullable if not specified
+                builder.setNullable(!(columnXml.isSetNullable() && !columnXml.getNullable()));
+                builder.setRequired(columnXml.isSetRequired() && columnXml.getRequired());
+
+                builder.setMvEnabled(columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName());
 
                 // These default to being visible if nothing's specified in the XML
-                boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
-                boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
-                boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
+                builder.setShowInInsertView(!columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView());
+                builder.setShowInUpdateView(!columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView());
+                builder.setShowInDetailView(!columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView());
 
-                boolean measure;
                 if (columnXml.isSetMeasure())
-                    measure = columnXml.getMeasure();
+                    builder.setMeasure(columnXml.getMeasure());
                 else
-                    measure = ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+                    builder.setMeasure(ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden()));
 
-                boolean dimension;
                 if (columnXml.isSetDimension())
-                    dimension = columnXml.getDimension();
+                    builder.setDimension(columnXml.getDimension());
                 else
-                    dimension = ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden());
+                    builder.setDimension(ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden()));
 
-                boolean recommendedVariable = false;
                 if (columnXml.isSetRecommendedVariable())
-                    recommendedVariable = columnXml.getRecommendedVariable();
+                    builder.setRecommendedVariable(columnXml.getRecommendedVariable());
                 else if (columnXml.isSetKeyVariable())
-                    recommendedVariable = columnXml.getKeyVariable();
+                    builder.setRecommendedVariable(columnXml.getKeyVariable());
 
-                DefaultScaleType.Enum scaleType = columnXml.getDefaultScale();
-                String defaultScale = scaleType != null ? scaleType.toString() : DefaultScaleType.LINEAR.toString();
+                org.labkey.data.xml.DefaultScaleType.Enum scaleType = columnXml.getDefaultScale();
+                builder.setDefaultScale(scaleType != null ? scaleType.toString() : DefaultScaleType.LINEAR.toString());
 
-                FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
-                String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
-                if (type != null)
-                    facetingBehaviorType = type.toString();
+                org.labkey.data.xml.FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
+                builder.setFacetingBehavior(type != null ? type.toString() : FacetingBehaviorType.AUTOMATIC.toString());
 
                 Set<String> importAliases = new LinkedHashSet<>();
                 if (columnXml.isSetImportAliases())
                 {
                     importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
+                    builder.setImportAliases(ColumnRenderProperties.convertToString(importAliases));
                 }
 
-                PHIType.Enum phi = PHIType.NOT_PHI;
+                org.labkey.data.xml.PHIType.Enum phi = org.labkey.data.xml.PHIType.NOT_PHI;
                 if (columnXml.isSetProtected())  // column is removed from LabKey but need to support old archives, see spec #28920
                 {
                     if (columnXml.getProtected())
-                        phi = PHIType.LIMITED;  // always convert protected to limited PHI; may be overridden by getPhi(), though
+                        phi = org.labkey.data.xml.PHIType.LIMITED;  // always convert protected to limited PHI; may be overridden by getPhi(), though
                 }
                 if (columnXml.isSetPhi())
                     phi = columnXml.getPhi();
 
-                boolean isExcludeFromShifting = columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting();
+                builder.setPHI(phi.toString());
+                builder.setExcludeFromShifting(columnXml.isSetExcludeFromShifting() && columnXml.getExcludeFromShifting());
 
                 ColumnType.Fk fk = columnXml.getFk();
+                if (fk != null)
+                {
+                    builder.setLookupContainer(fk.getFkFolderPath());
+                    builder.setLookupSchema(fk.getFkDbSchema());
+                    builder.setLookupQuery(fk.getFkTable());
+                }
 
-                Map<String, Object> map = mapFactory.getRowMap(
-                        _typeColumnValue,
-                        columnName,
-                        columnXml.getPropertyURI(),
-                        columnXml.getColumnTitle(),
-                        columnXml.getDescription(),
-                        pt.getTypeUri(),
-                        nullable,
-                        required,
-                        columnXml.getConceptURI(),
-                        columnXml.getFormatString(),
-                        columnXml.isSetInputType() ? columnXml.getInputType() : null,
-                        columnXml.getIsHidden(),
-                        mvEnabled,
-                        null != fk ? fk.getFkFolderPath() : null,
-                        null != fk ? fk.getFkDbSchema() : null,
-                        null != fk ? fk.getFkTable() : null,
-                        columnXml.getUrl(),
-                        ColumnRenderProperties.convertToString(importAliases),
-                        shownInInsertView,
-                        shownInUpdateView,
-                        shownInDetailsView,
-                        measure,
-                        dimension,
-                        recommendedVariable,
-                        defaultScale,
-                        ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
-                        ValidatorKind.convertFromXML(columnXml.getValidators()),
-                        facetingBehaviorType,
-                        phi,
-                        isExcludeFromShifting,
-                        columnXml.isSetScale() ? columnXml.getScale() : null
-                );
+                if (columnXml.isSetScale())
+                    builder.setScale(columnXml.getScale());
+                builder.setLabel(columnXml.getColumnTitle());
+                builder.setDescription(columnXml.getDescription());
+                builder.setFormat(columnXml.getFormatString());
+                builder.setInputType(columnXml.isSetInputType() ? columnXml.getInputType() : null);
+                builder.setHidden(columnXml.getIsHidden());
+                builder.setUrl(columnXml.getUrl());
 
-                importMaps.add(map);
+                builder.setValidators(ValidatorKind.convertFromXML(columnXml.getValidators()));
+                builder.setConditionalFormats(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
+
+                builders.add(builder);
             }
         }
+        return builders;
+    }
 
-        return importMaps;
+    public ImportPropertyDescriptorsList getImportPropertyDescriptors(DomainURIFactory factory,
+                                                                      Collection<String> errors,
+                                                                      Container defaultContainer) throws Exception
+    {
+        return getImportPropertyDescriptors(createPropertyDescriptorBuilders(defaultContainer), factory, errors, defaultContainer);
+    }
+
+    public static ImportPropertyDescriptorsList getImportPropertyDescriptors(Collection<Builder> propertyDescriptorBuilders,
+                                                                             DomainURIFactory factory,
+                                                                             Collection<String> errors,
+                                                                             Container defaultContainer)
+    {
+        OntologyManager.ImportPropertyDescriptorsList ret = new OntologyManager.ImportPropertyDescriptorsList();
+        CaseInsensitiveHashSet mvColumns = new CaseInsensitiveHashSet();
+
+        for (Builder builder : propertyDescriptorBuilders)
+        {
+            PropertyDescriptor pd = builder.build();
+
+            String columnName = pd.getName();
+
+            if (columnName.length() == 0)
+            {
+                String e = "'property' field is required";
+                if (!errors.contains(e))
+                    errors.add(e);
+                continue;
+            }
+
+            if (StringUtils.endsWithIgnoreCase(columnName, MV_INDICATOR_SUFFIX))
+            {
+                mvColumns.add(columnName);
+                continue;
+            }
+
+            String domainName = builder.getDomainName();
+            Pair<String, Container> p = factory.getDomainURI(domainName);
+            String domainURI = p.first;
+            Container container = null != p.second ? p.second : defaultContainer;
+            pd.setContainer(container);
+
+            String propertyURI = StringUtils.trimToEmpty(pd.getPropertyURI());
+            if (propertyURI.length() == 0)
+            {
+                pd.setPropertyURI(domainURI + "." + Lsid.encodePart(columnName));
+            }
+
+            // try use existing SystemProperty PropertyDescriptor from Shared container.
+            if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+            {
+                PropertyDescriptor shared = OntologyManager.getPropertyDescriptor(propertyURI, ContainerManager.getSharedContainer());
+                if (shared != null)
+                    pd = shared;
+            }
+
+            ret.add(domainName,
+                    domainURI,
+                    pd,
+                    builder.getValidators(),
+                    builder.getConditionalFormats());
+        }
+
+        if (!mvColumns.isEmpty())
+        {
+            // There really shouldn't be mvindicator columns in the map, so this is just being defensive
+            // they should be implied by isMvEnabled() in the parent column
+            CaseInsensitiveHashMap<PropertyDescriptor> nameMap = new CaseInsensitiveHashMap<>();
+            for (OntologyManager.ImportPropertyDescriptor ipd : ret.properties)
+                nameMap.put(ipd.pd.getName(), ipd.pd);
+            for (String mv : mvColumns)
+            {
+                String data = mv.substring(0, mv.length() - MV_INDICATOR_SUFFIX.length());
+                if (data.endsWith("_"))
+                    data = data.substring(0, data.length() - 1);
+                PropertyDescriptor pd = nameMap.get(data);
+                if (null == pd)
+                    errors.add("Missing value field does not have corresponding data field: " + mv);
+                else
+                    pd.setMvEnabled(true);
+            }
+        }
+        return ret;
+    }
+
+    public static class Builder implements org.labkey.api.data.Builder<PropertyDescriptor>
+    {
+        private PropertyType _type;
+        private Container _container;
+        private String _propertyURI;
+        private String _name;
+        private String _label;
+        private String _conceptURI;
+        private String _rangeURI;
+        private boolean _nullable;
+        private boolean _required;
+        private boolean _hidden;
+        private boolean _mvEnabled;
+        private String _description;
+        private String _format;
+        private StringExpression _url;
+        private String _importAliases;
+        private String _lookupContainer;
+        private String _lookupSchema;
+        private String _lookupQuery;
+        private boolean _showInInsertView;
+        private boolean _showInUpdateView;
+        private boolean _showInDetailView;
+        private boolean _dimension;
+        private boolean _measure;
+        private boolean _recommendedVariable;
+        private DefaultScaleType _defaultScale = DefaultScaleType.LINEAR;
+        private FacetingBehaviorType _facetingBehavior = FacetingBehaviorType.AUTOMATIC;
+        private PHI _phi = PHI.NotPHI;
+        private String _redactedText;
+        private boolean _excludeFromShifting;
+        private int _scale;
+
+        // not part of PropertyDescriptors, this class could eventually become a builder for DomainProperty
+        private String _domainName;
+        private List<? extends IPropertyValidator> _validators;
+        private List<ConditionalFormat> _formats;
+
+        public Builder(Container container, PropertyType type)
+        {
+            _container = container;
+            _type = type;
+            _rangeURI = type.getTypeUri();
+            init();
+        }
+
+        public Builder(Container container, String conceptURI, String rangeURI) throws ValidationException
+        {
+            _container = container;
+            _type = PropertyType.getFromURI(conceptURI, rangeURI, null);
+            if (_type == null)
+            {
+                throw new ValidationException("Unrecognized type URI : " + ((null == conceptURI) ? rangeURI : conceptURI));
+            }
+            init();
+        }
+
+        private void init()
+        {
+            _scale = (_type.getJdbcType() == JdbcType.VARCHAR || _type.getJdbcType() == JdbcType.LONGVARCHAR)
+                    ? PropertyStorageSpec.DEFAULT_SIZE
+                    : _type.getScale();
+        }
+
+        @Override
+        public PropertyDescriptor build()
+        {
+            PropertyDescriptor pd = new PropertyDescriptor();
+            pd.setContainer(_container);
+            pd.setPropertyURI(_propertyURI);
+            pd.setName(_name);
+            pd.setLabel(_label != null ? _label : _name);
+            pd.setConceptURI(_conceptURI);
+            pd.setRangeURI(_rangeURI);
+            pd.setNullable(_nullable);
+            pd.setRequired(_required);
+            pd.setHidden(_hidden);
+            pd.setMvEnabled(_mvEnabled);
+            pd.setDescription(_description);
+            pd.setFormat(_format);
+            pd.setURL(_url);
+            pd.setImportAliases(_importAliases);
+            pd.setLookupContainer(_lookupContainer);
+            pd.setLookupSchema(_lookupSchema);
+            pd.setLookupQuery(_lookupQuery);
+            pd.setShownInInsertView(_showInInsertView);
+            pd.setShownInUpdateView(_showInUpdateView);
+            pd.setShownInDetailsView(_showInDetailView);
+            pd.setDimension(_dimension);
+            pd.setMeasure(_measure);
+            pd.setRecommendedVariable(_recommendedVariable);
+            pd.setDefaultScale(_defaultScale);
+            pd.setFacetingBehaviorType(_facetingBehavior);
+            pd.setPHI(_phi);
+            pd.setRedactedText(_redactedText);
+            pd.setExcludeFromShifting(_excludeFromShifting);
+            pd.setScale(_scale);
+
+            return pd;
+        }
+
+        public Builder setPropertyURI(String propertyURI)
+        {
+            _propertyURI = propertyURI;
+            return this;
+        }
+
+        public Builder setName(String name)
+        {
+            _name = name;
+            return this;
+        }
+
+        public Builder setLabel(String label)
+        {
+            _label = label;
+            return this;
+        }
+
+        public Builder setConceptURI(String conceptURI)
+        {
+            _conceptURI = conceptURI;
+            return this;
+        }
+
+        public Builder setNullable(boolean nullable)
+        {
+            _nullable = nullable;
+            return this;
+        }
+
+        public Builder setRequired(boolean required)
+        {
+            _required = required;
+            return this;
+        }
+
+        public Builder setHidden(boolean hidden)
+        {
+            _hidden = hidden;
+            return this;
+        }
+
+        public Builder setMvEnabled(boolean mvEnabled)
+        {
+            _mvEnabled = mvEnabled;
+            return this;
+        }
+
+        public Builder setDescription(String description)
+        {
+            _description = description;
+            return this;
+        }
+
+        public Builder setInputType(String inputType)
+        {
+            if ("textarea".equals(inputType) && _type == PropertyType.STRING)
+                _type = PropertyType.MULTI_LINE;
+
+            return this;
+        }
+
+        public Builder setFormat(String format)
+        {
+            format = StringUtils.trimToNull(format);
+            if (format != null)
+            {
+                try
+                {
+                    switch (_type)
+                    {
+                        case INTEGER:
+                        case DOUBLE:
+                            _format = convertNumberFormatChars(format);
+                            (new DecimalFormat(_format)).format(1.0);
+                            break;
+                        case DATE_TIME:
+                            _format = convertDateFormatChars(format);
+                            (new SimpleDateFormat(_format)).format(new Date());
+                            // UNDONE: don't import date format until we have default format for study
+                            // UNDONE: it looks bad to have mixed formats
+                            break;
+                        case STRING:
+                        case MULTI_LINE:
+                        default:
+                            _format = null;
+                    }
+                }
+                catch (Exception x)
+                {
+                    _format = null;
+                }
+            }
+            return this;
+        }
+
+        public Builder setUrl(String url)
+        {
+            if (url != null)
+                _url = StringExpressionFactory.createURL(url);
+            return this;
+        }
+
+        public Builder setUrl(StringExpressionType url)
+        {
+            if (url != null)
+                _url = StringExpressionFactory.fromXML(url, true);
+            return this;
+        }
+
+        public Builder setImportAliases(String importAliases)
+        {
+            _importAliases = importAliases;
+            return this;
+        }
+
+        public Builder setLookupContainer(String lookupContainer)
+        {
+            if (lookupContainer != null)
+            {
+                Container c = ContainerManager.getForPath(lookupContainer);
+                _lookupContainer = c != null ? c.getId() : null;
+            }
+            return this;
+        }
+
+        public Builder setLookupSchema(String lookupSchema)
+        {
+            _lookupSchema = lookupSchema;
+            return this;
+        }
+
+        public Builder setLookupQuery(String lookupQuery)
+        {
+            _lookupQuery = lookupQuery;
+            return this;
+        }
+
+        public Builder setShowInInsertView(boolean showInInsertView)
+        {
+            _showInInsertView = showInInsertView;
+            return this;
+        }
+
+        public Builder setShowInUpdateView(boolean showInUpdateView)
+        {
+            _showInUpdateView = showInUpdateView;
+            return this;
+        }
+
+        public Builder setShowInDetailView(boolean showInDetailView)
+        {
+            _showInDetailView = showInDetailView;
+            return this;
+        }
+
+        public Builder setDimension(boolean dimension)
+        {
+            _dimension = dimension;
+            return this;
+        }
+
+        public Builder setMeasure(boolean measure)
+        {
+            _measure = measure;
+            return this;
+        }
+
+        public Builder setRecommendedVariable(boolean recommendedVariable)
+        {
+            _recommendedVariable = recommendedVariable;
+            return this;
+        }
+
+        public Builder setDefaultScale(String defaultScale)
+        {
+            if (defaultScale != null)
+            {
+                DefaultScaleType type = DefaultScaleType.valueOf(defaultScale);
+                if (type != null)
+                    _defaultScale = type;
+            }
+            return this;
+        }
+
+        public Builder setFacetingBehavior(String facetingBehavior)
+        {
+            if (facetingBehavior != null)
+            {
+                FacetingBehaviorType type = FacetingBehaviorType.valueOf(facetingBehavior);
+                if (type != null)
+                    _facetingBehavior = type;
+            }
+            return this;
+        }
+
+        public Builder setPHI(String phi)
+        {
+            if (phi != null)
+            {
+                PHI type = PHI.valueOf(phi);
+                if (type != null)
+                    _phi = type;
+            }
+            return this;
+        }
+
+        public Builder setRedactedText(String redactedText)
+        {
+            _redactedText = redactedText;
+            return this;
+        }
+
+        public Builder setExcludeFromShifting(boolean excludeFromShifting)
+        {
+            _excludeFromShifting = excludeFromShifting;
+            return this;
+        }
+
+        public Builder setScale(int scale)
+        {
+            _scale = scale;
+            return this;
+        }
+
+        public String getDomainName()
+        {
+            return _domainName;
+        }
+
+        public void setDomainName(String domainName)
+        {
+            _domainName = domainName;
+        }
+
+        public List<? extends IPropertyValidator> getValidators()
+        {
+            return _validators;
+        }
+
+        public void setValidators(List<? extends IPropertyValidator> validators)
+        {
+            _validators = validators;
+        }
+
+        public List<ConditionalFormat> getConditionalFormats()
+        {
+            return _formats;
+        }
+
+        public void setConditionalFormats(List<ConditionalFormat> formats)
+        {
+            _formats = formats;
+        }
+
+        private String convertNumberFormatChars(String format)
+        {
+            int length = format.length();
+            int decimal = format.indexOf('.');
+            if (-1 == decimal)
+                decimal = length;
+            StringBuilder s = new StringBuilder(format);
+            for (int i = 0; i < s.length(); i++)
+            {
+                if ('n' == s.charAt(i))
+                    s.setCharAt(i, i < decimal - 1 ? '#' : '0');
+            }
+            return s.toString();
+        }
+
+        private String convertDateFormatChars(String format)
+        {
+            if (format.toUpperCase().equals(format))
+                return format.replace('Y', 'y').replace('D', 'd');
+            return format;
+        }
     }
 }
