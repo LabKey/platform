@@ -33,7 +33,6 @@
 
 <labkey:form action="<%=h(buildURL(AdminController.GetSchemaXmlDocAction.class))%>" method="get">
     <table>
-        <tr class="labkey-wp-header"><th colspan=2 align=center>Database Tools</th></tr>
         <tr><td>Check table consistency:&nbsp;</td>
         <td> <%= button("Do Database Check").href(new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot())) %>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
@@ -56,9 +55,9 @@
                     %>
                 </select><br>
             </td></tr>
-        <tr><td></td><td><%= button("Get Schema Xml").submit(true) %>
-        <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>  </td></tr>
-        <tr><td></td><td></td></tr>
+        <tr><td></td><td><%= button("Get Schema Xml").submit(true) %></td></tr>
     </table>
+    <br/>
+    <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
 </labkey:form><br/><br/>
 
