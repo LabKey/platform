@@ -124,7 +124,6 @@ public class DefaultStudyDesignImporter
                     final Container container = domain.getContainer();
 
                     ImportTypesHelper importHelper = new ImportTypesHelper(tableXml, "TableName", tableName);
-                    List<Map<String, Object>> importMaps = importHelper.createImportMaps();
                     List<String> propErrors = new ArrayList<>();
 
                     // Create a map of existing properties
@@ -139,7 +138,7 @@ public class DefaultStudyDesignImporter
 
                     DomainURIFactory factory = name -> new Pair<>(domain.getTypeURI(), container);
 
-                    ImportPropertyDescriptorsList pds = OntologyManager.createPropertyDescriptors(factory, "TableName", importMaps, propErrors, container, true);
+                    ImportPropertyDescriptorsList pds = importHelper.getImportPropertyDescriptors(factory, propErrors, container);
                     if (!propErrors.isEmpty())
                         throw new ImportException("Unable to get an instance of TablesDocument from " + schemaFileName);
 

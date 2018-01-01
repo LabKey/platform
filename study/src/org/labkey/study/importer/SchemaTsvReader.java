@@ -18,7 +18,13 @@ package org.labkey.study.importer;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.DomainURIFactory;
+import org.labkey.api.exp.ImportTypesHelper;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.Dataset;
@@ -30,6 +36,7 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +48,9 @@ import java.util.Map;
  */
 public class SchemaTsvReader implements SchemaReader
 {
-    private final List<Map<String, Object>> _importMaps;
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
     private final String _typeNameColumn;
+    private List<ImportTypesHelper.Builder> _propertyBuilders = new ArrayList<>();
 
 
     private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetDefinitionImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
@@ -51,7 +58,6 @@ public class SchemaTsvReader implements SchemaReader
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
 
-        _importMaps = new ArrayList<>(mapsLoad.size());
         _datasetInfoMap = new HashMap<>();
         _typeNameColumn = typeNameColumn;
 
@@ -210,8 +216,17 @@ public class SchemaTsvReader implements SchemaReader
                 PropertyList tags = null != extraProps ? extraProps.getTags() : null;
                 if (tags != null)
                     info.tags = tags;
-                
-                _importMaps.add(props);
+
+                PropertyType pt = PropertyType.getFromURI(conceptURI, (String)props.get("RangeURI"), null);
+                ImportTypesHelper.Builder pdb = new ImportTypesHelper.Builder(study.getContainer(), pt);
+                pdb.setName(propName);
+                pdb.setDomainName(typeName);
+                pdb.setConceptURI(conceptURI);
+                pdb.setMvEnabled(BooleanUtils.toBoolean((String)props.get("MvEnabled")));
+                pdb.setLabel((String)props.get("Label"));
+                pdb.setRequired(BooleanUtils.toBoolean((String)props.get("Required")));
+
+                _propertyBuilders.add(pdb);
             }
 
             if (missingTypeNames > 0)
@@ -244,9 +259,10 @@ public class SchemaTsvReader implements SchemaReader
         this(study, new TabLoader(Readers.getReader(root.getInputStream(tsvFileName)), true), labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
 
-    public List<Map<String, Object>> getImportMaps()
+    @Override
+    public OntologyManager.ImportPropertyDescriptorsList getImportPropertyDescriptors(DomainURIFactory factory, Collection<String> errors, Container defaultContainer)
     {
-        return _importMaps;
+        return ImportTypesHelper.getImportPropertyDescriptors(_propertyBuilders, factory, errors, defaultContainer);
     }
 
     public Map<Integer, DatasetImportInfo> getDatasetInfo()

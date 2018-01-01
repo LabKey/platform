@@ -107,20 +107,14 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         {
             QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
             DatasetFileReader reader;
-            if (ctx.getXml().getDatasets() != null && ctx.getXml().getDatasets().getFile() != null)
+            if (datasetsDirectory.list().contains(datasetsFileName))
             {
                 // dataset metadata provided
-
-                // If a directory and dataset file have been specified then make sure the file exists, #17208
-                if (!datasetsDirectory.list().contains(datasetsFileName))
-                {
-                    ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
-                    return Collections.emptyList();
-                }
                 reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, ctx);
             }
             else
             {
+                ctx.getLogger().info("Dataset file \"" + datasetsFileName + "\" not found, inferring columns from the dataset files.");
                 reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
             }
             List<String> errors = new ArrayList<>();

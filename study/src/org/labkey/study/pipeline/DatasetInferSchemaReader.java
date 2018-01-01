@@ -1,6 +1,10 @@
 package org.labkey.study.pipeline;
 
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.DomainURIFactory;
+import org.labkey.api.exp.ImportTypesHelper;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -10,6 +14,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +30,7 @@ import java.util.stream.Collectors;
 public class DatasetInferSchemaReader extends DatasetFileReader implements SchemaReader
 {
     private Map<Integer, DatasetImportInfo> _datasetInfoMap = new LinkedHashMap<>();
-    private List<Map<String, Object>> _importMap = new ArrayList<>();
+    private List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
     private static final Pattern DEFAULT_PATTERN = Pattern.compile("(^\\D*).(?:tsv|txt|xls|xlsx)$");
 
     public DatasetInferSchemaReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, StudyImportContext studyImportContext)
@@ -34,11 +39,10 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
     }
 
     @Override
-    public List<Map<String, Object>> getImportMaps()
+    public OntologyManager.ImportPropertyDescriptorsList getImportPropertyDescriptors(DomainURIFactory factory, Collection<String> errors, Container defaultContainer)
     {
-        // todo : use a list of DomainDescriptors
         initialize();
-        return _importMap;
+        return ImportTypesHelper.getImportPropertyDescriptors(_builders, factory, errors, defaultContainer);
     }
 
     @Override
@@ -72,7 +76,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
 
     private void initialize()
     {
-        if (_datasetInfoMap.isEmpty() && _importMap.isEmpty())
+        if (_datasetInfoMap.isEmpty() && _builders.isEmpty())
         {
             List<Integer> datasetIds = _study.getDatasets().stream()
                 .map(DatasetDefinition::getDatasetId)
@@ -108,16 +112,16 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
 
                     for (ColumnDescriptor col : columns)
                     {
-                        Map<String, Object> prop = new CaseInsensitiveHashMap<>();
+                        PropertyType pt = PropertyType.getFromURI(null, col.getRangeURI(), null);
+                        ImportTypesHelper.Builder pdb = new ImportTypesHelper.Builder(_study.getContainer(), pt);
 
-                        prop.put("PlateName", datasetInfo.name);
-                        prop.put("Property", col.getColumnName());
-                        prop.put("PropertyURI", col.propertyURI);
-                        prop.put("RangeURI", col.getRangeURI());
-                        prop.put("Nullable", true);
-                        prop.put("MvEnabled", col.isMvEnabled());
+                        pdb.setDomainName(datasetInfo.name);
+                        pdb.setName(col.getColumnName());
+                        pdb.setPropertyURI(col.propertyURI);
+                        pdb.setNullable(true);
+                        pdb.setMvEnabled(col.isMvEnabled());
 
-                        _importMap.add(prop);
+                        _builders.add(pdb);
                     }
                 }
             }

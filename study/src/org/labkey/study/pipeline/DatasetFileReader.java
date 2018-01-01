@@ -333,9 +333,9 @@ public class DatasetFileReader
     {
         DatasetImportRunnable runnable;
         if (ds.getDatasetId() == -1 && "Participant".equals(ds.getName()))
-            runnable = new ParticipantImportRunnable(_studyImportContext.getLogger(), _study, ds, root, fileName, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new ParticipantImportRunnable(_studyImportContext != null ? _studyImportContext.getLogger() : null, _study, ds, root, fileName, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
-            runnable = new DatasetImportRunnable(_studyImportContext.getLogger(), _study, ds, root, fileName, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap, _studyImportContext);
+            runnable = new DatasetImportRunnable(_studyImportContext != null ? _studyImportContext.getLogger() : null, _study, ds, root, fileName, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap, _studyImportContext);
         return runnable;
     }
 

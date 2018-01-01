@@ -309,9 +309,7 @@ public class ListImporter
                 return true;
             }
         };
-        List<Map<String, Object>> importMaps = importHelper.createImportMaps();
-
-        return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importMaps, user, errors);
+        return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importHelper, user, errors);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException

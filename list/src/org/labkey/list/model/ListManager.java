@@ -39,7 +39,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.DomainURIFactory;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyType;
@@ -1072,7 +1072,7 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    boolean importListSchema(ListDefinition unsavedList, String typeColumn, List<Map<String, Object>> importMaps, User user, List<String> errors) throws Exception
+    boolean importListSchema(ListDefinition unsavedList, String typeColumn, ImportTypesHelper importHelper, User user, List<String> errors) throws Exception
     {
         if (!errors.isEmpty())
             return false;
@@ -1082,7 +1082,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         DomainURIFactory factory = name -> new Pair<>(typeURI,container);
 
-        ImportPropertyDescriptorsList pds = OntologyManager.createPropertyDescriptors(factory, typeColumn, importMaps, errors, container, true);
+        ImportPropertyDescriptorsList pds = importHelper.getImportPropertyDescriptors(factory, errors, container);
 
         if (!errors.isEmpty())
             return false;

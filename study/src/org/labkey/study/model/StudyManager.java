@@ -3854,8 +3854,6 @@ public class StudyManager
         if (null == createDatasetStudy)
             createDatasetStudy = study;
 
-        List<Map<String, Object>> mapsImport = reader.getImportMaps();
-
         List<String> importErrors = new LinkedList<>();
         final Map<String, DatasetDefinitionEntry> datasetDefEntryMap = new HashMap<>();
 
@@ -3874,8 +3872,7 @@ public class StudyManager
         if (errors.hasErrors())
             return false;
 
-        ImportPropertyDescriptorsList list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, study.getContainer(), true);
-
+        ImportPropertyDescriptorsList list = reader.getImportPropertyDescriptors(factory, importErrors, study.getContainer());
         if (!importErrors.isEmpty())
         {
             for (String error : importErrors)

@@ -145,7 +145,6 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
             if (domain != null)
             {
                 ImportTypesHelper importHelper = new ImportTypesHelper(tableXml, "TableName", tableName);
-                List<Map<String, Object>> importMaps = importHelper.createImportMaps();
                 List<String> propErrors = new ArrayList<>();
 
                 // Create a map of existing properties
@@ -158,7 +157,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
 
                 DomainURIFactory factory = name -> new Pair<>(domain.getTypeURI(), container);
 
-                ImportPropertyDescriptorsList pds = OntologyManager.createPropertyDescriptors(factory, "TableName", importMaps, propErrors, container, true);
+                ImportPropertyDescriptorsList pds = importHelper.getImportPropertyDescriptors(factory, propErrors, container);
                 if (!propErrors.isEmpty())
                     throw new ImportException("Unable to get an instance of TablesDocument from " + SpecimenArchiveWriter.SCHEMA_FILENAME);
 

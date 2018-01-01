@@ -19,8 +19,11 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -39,8 +42,8 @@ import org.labkey.study.model.StudyImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -53,8 +56,8 @@ public class SchemaXmlReader implements SchemaReader
 {
     private static final String NAME_KEY = "PlateName";
 
-    private final List<Map<String, Object>> _importMaps = new LinkedList<>();
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
+    List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
 
     public SchemaXmlReader(final StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
     {
@@ -116,7 +119,7 @@ public class SchemaXmlReader implements SchemaReader
 
             applySharedColumns(tableXml, tablesDoc);
 
-            ImportTypesHelper importHelper = new ImportTypesHelper(tableXml, NAME_KEY, datasetName)
+            ImportTypesHelper helper = new ImportTypesHelper(tableXml, NAME_KEY, datasetName)
             {
                 @Override
                 protected boolean acceptColumn(String columnName, ColumnType columnXml) throws Exception
@@ -154,7 +157,7 @@ public class SchemaXmlReader implements SchemaReader
 
             try
             {
-                _importMaps.addAll(importHelper.createImportMaps());
+                _builders.addAll(helper.createPropertyDescriptorBuilders(study.getContainer()));
             }
             catch (Exception e)
             {
@@ -283,9 +286,10 @@ public class SchemaXmlReader implements SchemaReader
         }
     }
 
-    public List<Map<String, Object>> getImportMaps()
+    @Override
+    public OntologyManager.ImportPropertyDescriptorsList getImportPropertyDescriptors(DomainURIFactory factory, Collection<String> errors, Container defaultContainer)
     {
-        return _importMaps;
+        return ImportTypesHelper.getImportPropertyDescriptors(_builders, factory, errors, defaultContainer);
     }
 
     public Map<Integer, DatasetImportInfo> getDatasetInfo()

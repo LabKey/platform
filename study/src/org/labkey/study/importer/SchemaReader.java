@@ -15,11 +15,15 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.DomainURIFactory;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetDefinition;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +38,9 @@ import java.util.Set;
 // This is an ugly but relatively quick way to add support for the new dataset_metadata.xml format while still
 // maintaining compatibility with schema.tsv.
 //
-// TODO: Rework OntologyManager.importTypes() and StudyManager.importDatasetSchemas() to take typed data structures
-// instead of List<Map<String, Object>>, etc.
 public interface SchemaReader
 {
-    List<Map<String, Object>> getImportMaps();
+    OntologyManager.ImportPropertyDescriptorsList getImportPropertyDescriptors(DomainURIFactory factory, Collection<String> errors, Container defaultContainer);
 
     Map<Integer, DatasetImportInfo> getDatasetInfo();
     String getTypeNameColumn();
