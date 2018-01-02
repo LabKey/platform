@@ -45,12 +45,6 @@ public interface WikiService
 
     String getHtml(Container c, String name);
 
-    @Deprecated // Use getView(Container c, String name, boolean renderContentOnly) instead (forceRefresh parameter is ignored)
-    WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly);
-
-    @Deprecated // Use getHtml(Container c, String name) instead (forceRefresh parameter is ignored)
-    String getHtml(Container c, String name, boolean forceRefresh);
-
     void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
 
     /**
@@ -63,14 +57,9 @@ public interface WikiService
     String getFormattedHtml(WikiRendererType rendererType, String source);
     String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
 
-    @Deprecated // use getFormattedHtml() -- service users shouldn't be exposed to WikiRenderer and FormattedHtml
-    WikiRenderer getRenderer(WikiRendererType rendererType);
-    @Deprecated // use getFormattedHtml() -- service users shouldn't be exposed to WikiRenderer and FormattedHtml
-    WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments);
-
     WikiRendererType getDefaultWikiRendererType();
     WikiRendererType getDefaultMessageRendererType();
-    java.util.List<String> getNames(Container c);
+    List<String> getNames(Container c);
 
     void addWikiListener(WikiChangeListener listener);
     void removeWikiListener(WikiChangeListener listener);
