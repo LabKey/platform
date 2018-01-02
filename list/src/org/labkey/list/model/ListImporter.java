@@ -62,6 +62,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -94,8 +95,7 @@ public class ListImporter
         {
             if (f.endsWith(".tsv") || f.endsWith(".xlsx") || f.endsWith(".xls"))
             {
-                final int idx = f.lastIndexOf(".");
-                fileTypeMap.put(FileUtil.makeLegalName(f.substring(0, idx)), f.substring(idx));
+                fileTypeMap.put(FileUtil.makeLegalName(FileUtil.getBaseName(f)), FileUtil.getExtension(f));
             }
         }
 
@@ -434,18 +434,11 @@ public class ListImporter
     private boolean resolveDomainChanges(Container c, User user, DataLoader loader, ListDefinition listDef, Logger log, List<String> errors) throws IOException
     {
         Domain domain = listDef.getDomain();
-
+        boolean isDirty = false;
         if (domain != null)
         {
             log.info("resolving domain of list: " + listDef.getName());
-            List<? extends DomainProperty> props = listDef.getDomain().getProperties();
-            HashMap<String, DomainProperty> currentColumns = new HashMap<>();
-
-            // Place into map for faster access
-            for (DomainProperty prop : props)
-            {
-                currentColumns.put(prop.getPropertyDescriptor().getName(), prop);
-            }
+            Map<String, DomainProperty> currentColumns = listDef.getDomain().getProperties().stream().collect(Collectors.toMap(DomainProperty::getName, e -> e));
 
             // Do a pass over the loader's columns
             for (ColumnDescriptor loaderCol : loader.getColumns())
@@ -466,7 +459,7 @@ public class ListImporter
                     PropertyType type = PropertyType.getFromJdbcType(jdbcType);
                     PropertyDescriptor pd = new PropertyDescriptor(domain.getTypeURI() + "." + loaderCol.name, type, loaderCol.name, c);
                     domain.addPropertyOfPropertyDescriptor(pd);
-
+                    isDirty = true;
                     log.info("\tAdded column " + loaderCol.name + " of type \"" + type.getXarName() + "\" to " + listDef.getName());
                 }
                 currentColumns.remove(loaderCol.name);
@@ -483,13 +476,15 @@ public class ListImporter
                 else if (!listDef.getKeyName().equals(columnName) && !currentColumns.get(columnName).isRequired())
                 {
                     currentColumns.get(columnName).delete();
+                    isDirty = true;
                     log.info("\tDeleted column " + columnName);
                 }
             }
 
             try
             {
-                domain.save(user);
+                if (isDirty)
+                    domain.save(user);
             }
             catch (Exception e)
             {
