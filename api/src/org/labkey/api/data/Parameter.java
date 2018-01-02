@@ -24,7 +24,6 @@ import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExperimentService;
@@ -62,7 +61,7 @@ import java.util.concurrent.Callable;
  *
  * TypedValue is useful for dragging along a sqlType with a raw value, usually this is not necessary as
  * type can be inferred.  However, this can be useful for NULL parameters and
- * for distiguishing unicode, non-unicode types
+ * for distinguishing unicode, non-unicode types
  *
  * NOTE: jdbc does not have separate Type values for varchar nvarchar
  * NOTE: does not do implicit conversion, just sets the parameter type
@@ -138,7 +137,7 @@ public class Parameter implements AutoCloseable
     private AutoCloseable _autoCloseable;
     private int[] _indexes;
 
-    // used to to optimize calls to Statment.set*()
+    // used to to optimize calls to Statement.set*()
     private boolean _isSet = false;
     private boolean _isNull = false;
 

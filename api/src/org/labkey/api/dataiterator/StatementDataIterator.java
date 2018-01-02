@@ -453,7 +453,7 @@ public class StatementDataIterator extends AbstractDataIterator
         {
             try
             {
-                executeStatmentsInBackground();
+                executeStatementsInBackground();
             }
             catch (Exception x)
             {
@@ -462,7 +462,7 @@ public class StatementDataIterator extends AbstractDataIterator
             }
         }
 
-        void executeStatmentsInBackground() throws BatchValidationException, InterruptedException
+        void executeStatementsInBackground() throws BatchValidationException, InterruptedException
         {
             Parameter.ParameterMap m = _firstEmpty;
 
