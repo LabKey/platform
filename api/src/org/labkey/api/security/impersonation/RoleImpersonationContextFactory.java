@@ -49,7 +49,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
     private final Set<String> _roleNames;
-    private final Set<String> _previuosRoleNames;
+    private final Set<String> _previousRoleNames;
     private final ActionURL _returnURL;
     private final String _cacheKey;
 
@@ -74,7 +74,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         Set<String> oldRoleNames = new HashSet<>();
         currentImpersonationRoles.forEach(oldRole -> oldRoleNames.add(oldRole.getUniqueName()));
-        _previuosRoleNames = oldRoleNames;
+        _previousRoleNames = oldRoleNames;
 
         _roleNames = Collections.unmodifiableSet(roleNames);
 
@@ -103,10 +103,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         User adminUser = getAdminUser();
 
-        if (!_previuosRoleNames.isEmpty())
+        if (!_previousRoleNames.isEmpty())
         {
             UserManager.UserAuditEvent stopEvent = new UserManager.UserAuditEvent(context.getContainer().getId(),
-                    adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_previuosRoleNames), adminUser);
+                    adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_previousRoleNames), adminUser);
             AuditLogService.get().addEvent(adminUser, stopEvent);
         }
 
@@ -121,8 +121,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         for (String name : roleNames)
             roleDisplayNames.add(RoleManager.getRole(name).getName());
 
+        if (roleDisplayNames.isEmpty())
+            return "";
+
         StringBuilder builder = new StringBuilder();
-        if (roleNames.size() > 1)
+        if (roleDisplayNames.size() > 1)
             builder.append("s");
         builder.append(": ");
         builder.append(StringUtils.collectionToCommaDelimitedString(roleDisplayNames));
