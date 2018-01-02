@@ -183,7 +183,7 @@ Ext4.define('File.panel.Admin', {
             jsonData: postData,
             success: function(response) {
                 this.fireEvent('success', this, {
-                    gridChanged: gridChanged,
+                    gridChanged: true, // 32612: File config changes may have modified the set of default columns
                     toolbarChanged: toolbarChanged,
                     expandUploadChanged: postData.expandFileUpload !== this.pipelineFileProperties.expandFileUpload
                 });
