@@ -133,7 +133,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public @Nullable File getFileRoot(@NotNull Container c, ContentType type)
+    public @Nullable File getFileRoot(@NotNull Container c, @NotNull ContentType type)
     {
         switch (type)
         {

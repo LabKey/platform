@@ -442,9 +442,7 @@ public class WikiManager implements WikiService
             destName = srcName.concat("" + i++);
 
         //new wiki page
-        Wiki newWikiPage = null;
-
-        newWikiPage = new Wiki(cDest, destName);
+        Wiki newWikiPage = new Wiki(cDest, destName);
         newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
         newWikiPage.setShowAttachments(srcPage.isShowAttachments());
         newWikiPage.setShouldIndex(srcPage.isShouldIndex());
@@ -466,7 +464,7 @@ public class WikiManager implements WikiService
         List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki.getAttachmentParent(), attachments);
 
 
-        WikiVersion[] wikiVersions = null;
+        final WikiVersion[] wikiVersions;
 
         if(!isCopyingHistory)
         {
@@ -518,7 +516,6 @@ public class WikiManager implements WikiService
 
 
     public String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
-            throws IOException
     {
         AttachmentService attsvc = getAttachmentService();
         boolean changes = false;
@@ -785,20 +782,6 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    @Deprecated
-    public WebPartView getView(Container c, String name, boolean forceRefresh, boolean renderContentOnly)
-    {
-        return getView(c, name, renderContentOnly);
-    }
-
-    @Override
-    @Deprecated
-    public String getHtml(Container c, String name, boolean forceRefresh)
-    {
-        return getHtml(c, name);
-    }
-
-    @Override
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
         Wiki wiki = new Wiki(c, name);
@@ -819,10 +802,6 @@ public class WikiManager implements WikiService
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        catch (AttachmentService.DuplicateFilenameException e)
-        {
-            throw new RuntimeException(e);
         }
         catch (IOException e)
         {
@@ -897,19 +876,7 @@ public class WikiManager implements WikiService
     @Override
     public String getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String attachPrefix, @Nullable Collection<? extends Attachment> attachments)
     {
-        return WIKI_PREFIX + getRenderer(rendererType, attachPrefix, attachments).format(source).getHtml() + WIKI_SUFFIX;
-    }
-
-    @Override
-    public WikiRenderer getRenderer(WikiRendererType rendererType)
-    {
-        return getRenderer(rendererType, null, null, null, null);
-    }
-
-    @Override
-    public WikiRenderer getRenderer(WikiRendererType rendererType, String attachPrefix, Collection<? extends Attachment> attachments)
-    {
-        return getRenderer(rendererType, null, attachPrefix, null, attachments);
+        return WIKI_PREFIX + getRenderer(rendererType, null, attachPrefix, null, attachments).format(source).getHtml() + WIKI_SUFFIX;
     }
 
     public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
