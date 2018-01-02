@@ -18,10 +18,11 @@
 
     function authenticateUser() {
         if (document.getElementById('remember').checked === true) {
-            LABKEY.Utils.setCookie('email', encodeURIComponent(document.getElementById('email').value), true, 360);
+            LABKEY.Utils.setCookie('email', encodeURIComponent(document.getElementById('email').value), false, 360);
         }
         else {
             LABKEY.Utils.deleteCookie('email', true);
+            LABKEY.Utils.deleteCookie('email', false);
         }
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('login', 'loginApi.api', this.containerPath),
