@@ -22,31 +22,29 @@ package org.labkey.api.query;
 */
 
 /**
- * Represents a validation error for a given property name. Use
- * this when a property of a bean or form is not valid, as the
- * client will be able to display the error message next to the
- * relevant user interface control.
+ * Represents a validation error for a given property name. Use this when a property of a bean or form is not valid, as
+ * the client will be able to display the error message next to the relevant user interface control.
  */
 public class PropertyValidationError extends SimpleValidationError
 {
-    private String _propety;
+    private final String _property;
 
     public PropertyValidationError(String message, String property)
     {
         super(message);
-        _propety = property;
+        _property = property;
     }
 
     public String getProperty()
     {
-        return _propety;
+        return _property;
     }
 
     @Override
     public String toString()
     {
-        if (_propety != null)
-            return _propety + ": " + getMessage();
+        if (_property != null)
+            return _property + ": " + getMessage();
         return getMessage();
     }
 }

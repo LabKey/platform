@@ -47,7 +47,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
     public static final String CURVE_FIT_METHOD_TABLE_NAME = "CurveFitMethod";
     public static final String RUN_ID_COLUMN_NAME = "RunId";
 
-    private String _schemaName;
+    private final String _schemaName;
 
     public DilutionProviderSchema(User user, Container container, AssayProvider provider, String schemaName, @Nullable Container targetStudy, boolean hidden)
     {
@@ -100,6 +100,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
     private static final String[] _curveFitSuffixes = {"", DilutionDataHandler.PL4_SUFFIX, DilutionDataHandler.PL5_SUFFIX, DilutionDataHandler.POLY_SUFFIX};
     private static final String[] _aucPrefixes = {DilutionDataHandler.AUC_PREFIX, DilutionDataHandler.pAUC_PREFIX};
     private static final String[] _oorSuffixes = {"", DilutionDataHandler.OOR_SUFFIX};
+
     public static List<PropertyDescriptor> getExistingDataProperties(ExpProtocol protocol, Set<Double> cutoffValues)
     {
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);

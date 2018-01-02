@@ -397,7 +397,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 
 
     /**
-     * ConceptType is a wrapper for a PropetyDescriptor with a matches and apply method
+     * ConceptType is a wrapper for a PropertyDescriptor with a matches and apply method
      */
 
     public abstract static class ConceptType

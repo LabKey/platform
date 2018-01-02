@@ -18,9 +18,9 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     private final QcMetadata _metadata;
 
     
-    public QcAwarePropertyForeignKey(PropertyDescriptor[] pds, TableInfo baseTable, QuerySchema schema)
+    public QcAwarePropertyForeignKey(Collection<PropertyDescriptor> pds, TableInfo baseTable, QuerySchema schema)
     {
         super(getDisplayPds(pds).getDisplayProperties(), schema);
         _baseTable = baseTable;
@@ -45,20 +45,20 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         _metadata = getDisplayPds(pds);
     }
 
-    public QcAwarePropertyForeignKey(List<? extends DomainProperty> dps, TableInfo baseTable, QuerySchema schema)
-    {
-        this(getPropertyDescriptors(dps), baseTable, schema);
-    }
+//    public QcAwarePropertyForeignKey(List<? extends DomainProperty> dps, TableInfo baseTable, QuerySchema schema)
+//    {
+//        this(getPropertyDescriptors(dps), baseTable, schema);
+//    }
+//
+//    private static PropertyDescriptor[] getPropertyDescriptors(List<? extends DomainProperty> domainProperties)
+//    {
+//        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.size()];
+//        for (int i = 0; i < domainProperties.size(); i++)
+//            propertyDescriptors[i] = domainProperties.get(i).getPropertyDescriptor();
+//        return propertyDescriptors;
+//    }
 
-    private static PropertyDescriptor[] getPropertyDescriptors(List<? extends DomainProperty> domainProperties)
-    {
-        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.size()];
-        for (int i = 0; i < domainProperties.size(); i++)
-            propertyDescriptors[i] = domainProperties.get(i).getPropertyDescriptor();
-        return propertyDescriptors;
-    }
-
-    private static QcMetadata getDisplayPds(PropertyDescriptor[] pds)
+    private static QcMetadata getDisplayPds(Collection<PropertyDescriptor> pds)
     {
         final Map<String, PropertyDescriptor> nameToPropertyMap = new HashMap<>();
         for (PropertyDescriptor pd : pds)
@@ -75,7 +75,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             else if (!(displayPd.getName().toLowerCase().endsWith(OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX.toLowerCase()) &&
                     nameToPropertyMap.containsKey(displayPd.getName().substring(0, displayPd.getName().length() - OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX.length()))))
             {
-                metadata.addNonOORPropetyDescriptor(displayPd);
+                metadata.addNonOORPropertyDescriptor(displayPd);
             }
         }
         return metadata;
@@ -128,7 +128,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         return super.constructColumnInfo(parent, name, pd);
     }
 
-    public PropertyDescriptor[] getDefaultHiddenProperties()
+    public Collection<PropertyDescriptor> getDefaultHiddenProperties()
     {
         return _metadata.getDefaultHiddenProperties();
     }
@@ -165,11 +165,11 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         }
     }
 
-    public static class InRangeExprColumn extends ExprColumn
+    private static class InRangeExprColumn extends ExprColumn
     {
         private final String _baseName;
 
-        public InRangeExprColumn(TableInfo parent, FieldKey name, String baseName)
+        private InRangeExprColumn(TableInfo parent, FieldKey name, String baseName)
         {
             super(parent, name, null, JdbcType.INTEGER);
             _baseName = baseName;
@@ -219,7 +219,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         private final PropertyDescriptor _numberPd;
         private final PropertyDescriptor _inRangePd;
 
-        public OORColumnGroup(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd,
+        private OORColumnGroup(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd,
                               PropertyDescriptor numberPd, PropertyDescriptor inRangePd)
         {
             _baseName = displayPd.getName();
@@ -229,27 +229,27 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             _inRangePd = inRangePd;
         }
 
-        public PropertyDescriptor getDisplayPd()
+        private PropertyDescriptor getDisplayPd()
         {
             return _displayPd;
         }
 
-        public PropertyDescriptor getIndicatorPd()
+        private PropertyDescriptor getIndicatorPd()
         {
             return _indicatorPd;
         }
 
-        public PropertyDescriptor getNumberPd()
+        private PropertyDescriptor getNumberPd()
         {
             return _numberPd;
         }
 
-        public PropertyDescriptor getInRangePd()
+        private PropertyDescriptor getInRangePd()
         {
             return _inRangePd;
         }
 
-        public String getBaseName()
+        private String getBaseName()
         {
             return _baseName;
         }
@@ -262,8 +262,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         private final PropertyDescriptor _indicatorPd;
         private final PropertyDescriptor _rawValuePd;
 
-        public QcColumnGroup(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd,
-                             PropertyDescriptor rawValuePd)
+        private QcColumnGroup(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd, PropertyDescriptor rawValuePd)
         {
             _baseName = displayPd.getName();
             _displayPd = displayPd;
@@ -271,22 +270,22 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             _rawValuePd = rawValuePd;
         }
 
-        public PropertyDescriptor getDisplayPd()
+        private PropertyDescriptor getDisplayPd()
         {
             return _displayPd;
         }
 
-        public PropertyDescriptor getIndicatorPd()
+        private PropertyDescriptor getIndicatorPd()
         {
             return _indicatorPd;
         }
 
-        public PropertyDescriptor getRawValuePd()
+        private PropertyDescriptor getRawValuePd()
         {
             return _rawValuePd;
         }
 
-        public String getBaseName()
+        private String getBaseName()
         {
             return _baseName;
         }
@@ -298,7 +297,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         private final List<QcColumnGroup> _qcGroups = new ArrayList<>();
         private final List<PropertyDescriptor> _additionalDisplayPds = new ArrayList<>();
 
-        public void addOORPropertyDescriptor(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd)
+        private void addOORPropertyDescriptor(PropertyDescriptor displayPd, PropertyDescriptor indicatorPd)
         {
             PropertyDescriptor numberPd = displayPd.clone();
             numberPd.setName(displayPd.getName() + OORDisplayColumnFactory.NUMBER_COLUMN_SUFFIX);
@@ -310,7 +309,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             _oorGroups.add(new OORColumnGroup(displayPd, indicatorPd, numberPd, inRangePd));
         }
 
-        public void addNonOORPropetyDescriptor(PropertyDescriptor pd)
+        private void addNonOORPropertyDescriptor(PropertyDescriptor pd)
         {
             // May be a MV PD, but not OOR specifically
             if (pd.isMvEnabled())
@@ -334,10 +333,9 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             }
         }
 
-        public List<PropertyDescriptor> getDisplayProperties()
+        private List<PropertyDescriptor> getDisplayProperties()
         {
-            List<PropertyDescriptor> pds = new ArrayList<>();
-            pds.addAll(_additionalDisplayPds);
+            List<PropertyDescriptor> pds = new ArrayList<>(_additionalDisplayPds);
             for (OORColumnGroup group : _oorGroups)
             {
                 pds.add(group.getDisplayPd());
@@ -354,7 +352,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return pds;
         }
 
-        public PropertyDescriptor[] getDefaultHiddenProperties()
+        private Collection<PropertyDescriptor> getDefaultHiddenProperties()
         {
             List<PropertyDescriptor> pds = new ArrayList<>();
             for (OORColumnGroup group : _oorGroups)
@@ -368,10 +366,10 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
                 pds.add(group.getIndicatorPd());
                 pds.add(group.getRawValuePd());
             }
-            return pds.toArray(new PropertyDescriptor[pds.size()]);
+            return pds;
         }
 
-        public OORColumnGroup getOORGroupByDisplayColumn(PropertyDescriptor pd)
+        private OORColumnGroup getOORGroupByDisplayColumn(PropertyDescriptor pd)
         {
             for (OORColumnGroup group : _oorGroups)
             {
@@ -381,7 +379,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return null;
         }
 
-        public OORColumnGroup getOORGroupByInRangeColumn(PropertyDescriptor pd)
+        private OORColumnGroup getOORGroupByInRangeColumn(PropertyDescriptor pd)
         {
             for (OORColumnGroup group : _oorGroups)
             {
@@ -391,7 +389,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return null;
         }
 
-        public QcColumnGroup getQcColumnGroup(PropertyDescriptor pd)
+        private QcColumnGroup getQcColumnGroup(PropertyDescriptor pd)
         {
             for (QcColumnGroup group : _qcGroups)
             {
@@ -401,7 +399,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return null;
         }
 
-        public QcColumnGroup getQcColumnGroupByIndicator(PropertyDescriptor pd)
+        private QcColumnGroup getQcColumnGroupByIndicator(PropertyDescriptor pd)
         {
             for (QcColumnGroup group : _qcGroups)
             {
@@ -411,5 +409,4 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return null;
         }
     }
-
 }
