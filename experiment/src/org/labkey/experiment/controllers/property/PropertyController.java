@@ -445,7 +445,7 @@ public class PropertyController extends SpringActionController
 
                     writer.write("Success:");
                     data = data.replaceAll("\r|\n", "<br>");
-                    data = data.replaceAll("\t", "<tab>");
+                    data = data.replaceAll("\t", "<hr>");
                     writer.write(data);
                     writer.flush();
                 }
