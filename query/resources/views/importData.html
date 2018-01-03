@@ -7,7 +7,8 @@
         renderTo: webpart.wrapperDivId,
         schemaName: LABKEY.ActionURL.getParameter('schemaName'),
         queryName: LABKEY.ActionURL.getParameter('query.queryName') || LABKEY.ActionURL.getParameter('queryName'),
-        viewName: LABKEY.ActionURL.getParameter('query.viewName') || LABKEY.ActionURL.getParameter('viewName')
+        viewName: LABKEY.ActionURL.getParameter('query.viewName') || LABKEY.ActionURL.getParameter('viewName'),
+        activeTab: LABKEY.ActionURL.getParameter('bulkImport') && JSON.parse(LABKEY.ActionURL.getParameter('bulkImport')) ? 1 : 0,
     });
 });
 
