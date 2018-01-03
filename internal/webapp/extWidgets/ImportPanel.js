@@ -26,7 +26,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
         });
 
         Ext4.apply(this, {
-            activeTab: 0,
+            activeTab: this.activeTab || 0,
             defaults: {
                 style: 'padding: 10px;'
             },

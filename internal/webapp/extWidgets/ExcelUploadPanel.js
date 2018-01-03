@@ -46,12 +46,13 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     alias: 'widget.labkey-exceluploadpanel',
     showAlertOnSuccess: true,
     showAlertOnFailure: true,
+    importLookupByAlternateKey: false,
     initComponent: function(){
         Ext4.QuickTips.init();
 
         Ext4.apply(this, {
             autoHeight: true
-            ,url: LABKEY.ActionURL.buildURL("query", "import", null, {schemaName: this.schemaName, 'query.queryName': this.queryName})
+            ,url: LABKEY.ActionURL.buildURL('query', 'import', null, {schemaName: this.schemaName, 'query.queryName': this.queryName, importLookupByAlternateKey: !!this.importLookupByAlternateKey})
             ,bodyBorder: false
             ,border: true
             ,bodyStyle:'padding:5px'
@@ -200,10 +201,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         }
     },
 
-    createTextArea: function ()
-    {
+    createTextArea: function() {
         return {
-            itemId: "fileContent",
+            itemId: 'fileContent',
             name: 'text',
             xtype: 'textarea',
             enableKeyEvents: true,
@@ -310,7 +310,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     formSubmit: function(btn){
         btn.setDisabled(true);
 
-        var value = this.down('textarea') ? this.down('textarea').getValue() : this.down('fileuploadfield').getValue();
+        var value = this.down('#fileContent') ? this.down('#fileContent').getValue() : this.down('fileuploadfield').getValue();
         if (!value){
             Ext4.Msg.alert('Error', 'Must paste text or upload a file');
             btn.setDisabled(false);
@@ -320,7 +320,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         //hold a reference to re-enable it later; the reason we do this is b/c the Window version of this component makes it slightly tricky to query and find the right btn
         this.btnToEnableOnComplete = btn;
 
-        Ext4.Msg.wait("Uploading...");
+        Ext4.Msg.wait('Uploading...');
 
         this.down('#errorArea').removeAll();
 
@@ -441,7 +441,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadWin', {
                 ,width: 50
                 ,scope: this
                 ,handler: function(btn){
-                    this.hide();
+                    this.close();
                 }
             }]
         });
