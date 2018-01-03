@@ -102,7 +102,7 @@ public class BuiltInButtonConfig implements ButtonConfig
     {
         for (DisplayElement de : originalButtons)
         {
-            if (de instanceof ActionButton && _originalCaption.equalsIgnoreCase(de.getCaption()))
+            if (de instanceof ActionButton && (_originalCaption.equalsIgnoreCase(de.getCaption()) || _originalCaption.equalsIgnoreCase(((ActionButton) de).getActionName(ctx))))
             {
                 de.setVisible(!_hidden);
                 if (getPermission() != null)
