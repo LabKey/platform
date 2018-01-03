@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -84,7 +85,7 @@
         </labkey:panel>
 
 <%
-    if (!bean.isPrintView() && writer)
+    if (!bean.isPrintView() && writer && LookAndFeelProperties.getInstance(me.getViewContext().getContainer()).isDiscussionEnabled())
     {
 %>
         <labkey:panel title="Discussions">
