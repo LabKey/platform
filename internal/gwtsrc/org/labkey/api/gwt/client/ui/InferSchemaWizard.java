@@ -156,7 +156,7 @@ public class InferSchemaWizard extends DialogBox
             {
                 result = result.substring("Success:".length()); // trim the "Success:" prefix
                 result = result.replaceAll("<br>|<BR>", "\n");
-                result = result.replaceAll("<tab>|<TAB>", "\t");
+                result = result.replaceAll("<hr>|<HR>", "\t");
                 GWTTabLoader loader = new GWTTabLoader(result);
                 if (loader.processTsv(propertiesEditor))
                 {
