@@ -18,6 +18,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -343,11 +344,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure API Keys (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Configure API Keys (<%=text(new HelpTopic("configAdmin#apiKey").getSimpleLinkHtml("more info..."))%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Allow API keys</td>
+    <td class="labkey-form-label">Let users create API keys</td>
     <td><labkey:checkbox id="allowApiKeys" name="allowApiKeys" checked="<%=AppProps.getInstance().isAllowApiKeys()%>" value="true"/></td>
 </tr>
 <tr>
@@ -369,7 +370,7 @@ Click the Save button at any time to accept the current settings and continue.</
     </select></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Allow session keys</td>
+    <td class="labkey-form-label">Let users create session keys</td>
     <td><labkey:checkbox id="allowSessionKeys" name="allowSessionKeys" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
 

@@ -1954,9 +1954,15 @@ public class SecurityController extends SpringActionController
             switch (form.getType())
             {
                 case "apikey":
+                    if (!AppProps.getInstance().isAllowApiKeys())
+                        throw new NotFoundException("Creation of API keys is disabled");
+
                     apiKey = ApiKeyManager.get().createKey(getUser());
                     break;
                 case "session":
+                    if (!AppProps.getInstance().isAllowSessionKeys())
+                        throw new NotFoundException("Creation of session keys is disabled");
+
                     ViewContext ctx = getViewContext();
                     apiKey = SessionApiKeyManager.get().createKey(ctx.getRequest(), ctx.getSession());
                     break;

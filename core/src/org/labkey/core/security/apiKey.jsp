@@ -21,15 +21,15 @@
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -199,7 +199,9 @@ compliance requirements where interactions require specifying current role &amp;
                 document.getElementById(type + "-rkey").innerHTML = apikey;
                 document.getElementById(type + "-rusage").style.display = 'block';
             },
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.displayAjaxErrorResponse, this, true)
+            failure: function(response, opts) {
+                LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+            }
         });
     }
 </script>
