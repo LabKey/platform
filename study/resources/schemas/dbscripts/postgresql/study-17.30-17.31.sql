@@ -1,0 +1,2 @@
+
+SELECT core.executeJavaUpgradeCode('updateSpecimenHash');

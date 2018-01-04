@@ -909,7 +909,7 @@ public class SpecimenImporter
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
     private static final SpecimenColumn VISIT_VALUE;
 
-    public static final Collection<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
+    public static final List<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
@@ -3490,23 +3490,7 @@ public class SpecimenImporter
         conflictResolvingSubselect.append("\nFROM ").append(tempTableName).append("\nGROUP BY GlobalUniqueId");
 
         SQLFragment updateHashSql = new SQLFragment("SELECT (");
-
-        ArrayList<String> hash = new ArrayList<>(loadedColumns.size());
-        hash.add("?");
-        updateHashSql.add("Fld-" + _container.getRowId());
-        String strType = schema.getSqlDialect().sqlCastTypeNameFromJdbcType(JdbcType.VARCHAR);                //here
-
-        for (SpecimenColumn col : loadedColumns)
-        {
-            if (col.getTargetTable().isSpecimens())
-            {
-                String columnName = "InnerTable." + col.getLegalDbColumnName(_dialect);
-                hash.add("'~'");
-                hash.add(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END");
-            }
-        }
-        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new String[hash.size()])));
-
+        makeUpdateSpecimenHashSql(schema, _container, loadedColumns, "InnerTable.", updateHashSql);
         updateHashSql.append(") AS SpecimenHash, ")
                 .append("InnerTable.GlobalUniqueId");
         updateHashSql.append("\n\tINTO ").append(selectInsertTempTableName)
@@ -3532,6 +3516,34 @@ public class SpecimenImporter
         info("Temp table populated.");
     }
 
+
+    public static void makeUpdateSpecimenHashSql(DbSchema schema, Container container, List<SpecimenColumn> loadedColumns, String innerTable, SQLFragment updateHashSql)
+    {
+        ArrayList<String> hash = new ArrayList<>();
+        hash.add("?");
+        updateHashSql.add("Fld-" + container.getRowId());
+        String strType = schema.getSqlDialect().sqlCastTypeNameFromJdbcType(JdbcType.VARCHAR);
+
+        Map<String, SpecimenColumn> loadedColumnMap = new HashMap<>();
+        loadedColumns.forEach(col -> loadedColumnMap.put(col.getTsvColumnName(), col));
+        BASE_SPECIMEN_COLUMNS.forEach(col -> {
+            if (col.getTargetTable().isSpecimens())
+            {
+                if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getTsvColumnName()))
+                {
+                    String columnName = innerTable + col.getLegalDbColumnName(schema.getSqlDialect());
+                    hash.add("'~'");
+                    hash.add(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END");
+                }
+                else
+                {
+                    hash.add("'~'");
+                }
+            }
+        });
+
+        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new String[hash.size()])));
+    }
 
     private Object getValue(ImportableColumn col, Map tsvRow)
     {

@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DoseAndRoute;
@@ -50,6 +51,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -391,5 +393,38 @@ public class StudyUpgradeCode implements UpgradeCode
         sql = "DROP TABLE study.QCState";
         sqlFrag = new SQLFragment(sql);
         new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
+    }
+
+    // Invoked by study-17.30-17.31.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void updateSpecimenHash(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                List<String> updated = new ArrayList<>();
+                Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                for (Container c : allContainers)
+                {
+                    Study study = StudyManager.getInstance().getStudy(c);
+                    if (null != study)
+                    {
+                        _log.info("Updating Specimen.SpecimenHash in container: " + c.getName());
+                        TableInfo specimenTable = StudySchema.getInstance().getTableInfoSpecimen(c);
+                        SQLFragment sql = new SQLFragment("UPDATE ");
+                        sql.append(specimenTable.getSelectName()).append(" SET SpecimenHash = (SELECT \n");
+                        SpecimenImporter.makeUpdateSpecimenHashSql(StudySchema.getInstance().getSchema(), c, Collections.emptyList(), "", sql);
+                        sql.append(")");
+                        new SqlExecutor(StudySchema.getInstance().getSchema().getScope()).execute(sql);
+                    }
+                }
+                transaction.commit();
+            }
+            catch (Exception e)
+            {
+                _log.error("Error updating SpecimenHash: " + e.getMessage());
+            }
+        }
     }
 }
