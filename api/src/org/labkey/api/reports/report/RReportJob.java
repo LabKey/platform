@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -56,6 +57,7 @@ public class RReportJob extends PipelineJob implements Serializable
 
     public static final String PROCESSING_STATUS = "Processing";
     public static final String LOG_FILE_NAME = "report.log";
+    public static final String LOG_FILE_PREFIX = "report";
 
     private ReportIdentifier _reportId;
     private RReportBean _form;
@@ -229,7 +231,7 @@ public class RReportJob extends PipelineJob implements Serializable
                 // clean up the destination folder
                 for (File file : parentDir.listFiles())
                 {
-                    if (!file.isDirectory())
+                    if (!file.isDirectory() && !FileUtil.getExtension(file).equalsIgnoreCase("log"))
                         file.delete();
                 }
 
@@ -255,7 +257,15 @@ public class RReportJob extends PipelineJob implements Serializable
                 for (File file : reportDir.listFiles())
                 {
                     File newFile = new File(parentDir, file.getName());
-                    FileUtils.moveFile(file, newFile);
+                    // special handling for log file
+                    if (LOG_FILE_NAME.equalsIgnoreCase(file.getName()))
+                    {
+                        newFile = File.createTempFile(LOG_FILE_PREFIX, ".log", parentDir);
+                        setLogFile(newFile);
+                        FileUtils.copyFile(file, newFile);
+                    }
+                    else
+                        FileUtils.moveFile(file, newFile);
                 }
                 FileUtils.deleteDirectory(reportDir);
                 substitutionMap = new File(reportDir.getParent(), RReport.SUBSTITUTION_MAP);
