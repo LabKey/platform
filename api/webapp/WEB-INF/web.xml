@@ -9,6 +9,20 @@
         <listener-class>org.labkey.api.util.ContextListener</listener-class>
     </listener>
 
+    <!-- Example filter to set character encoding on each request -->
+    <filter>
+        <filter-name>Set Character Encoding</filter-name>
+        <filter-class>org.labkey.core.filters.SetCharacterEncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+        <init-param>
+            <param-name>ignore</param-name>
+            <param-value>false</param-value>
+        </init-param>
+    </filter>
+
     <filter>
         <filter-name>Form Authentication Filter</filter-name>
         <filter-class>org.labkey.api.security.AuthFilter</filter-class>
@@ -24,20 +38,6 @@
         <filter-class>org.labkey.api.util.PollingUtil$PollingFilter</filter-class>
     </filter>
     
-    <!-- Example filter to set character encoding on each request -->
-    <filter>
-        <filter-name>Set Character Encoding</filter-name>
-        <filter-class>org.labkey.core.filters.SetCharacterEncodingFilter</filter-class>
-        <init-param>
-            <param-name>encoding</param-name>
-            <param-value>UTF-8</param-value>
-        </init-param>
-        <init-param>
-            <param-name>ignore</param-name>
-            <param-value>false</param-value>
-        </init-param>
-    </filter>
-
     <filter-mapping>
         <filter-name>PollingFilter</filter-name>
         <url-pattern>*.poll</url-pattern>
@@ -59,17 +59,17 @@
     </filter>
 
     <filter-mapping>
+        <filter-name>Set Character Encoding</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
         <filter-name>Form Authentication Filter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
         <filter-name>Module Loader</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>Set Character Encoding</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
