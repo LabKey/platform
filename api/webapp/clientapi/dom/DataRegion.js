@@ -4198,7 +4198,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} [config.suppressRenderErrors] If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
      * @param {Object} [config.buttonBar] Button bar configuration. This object may contain any of the following properties:
      * <ul>
-     *  <li><b>position</b>: Configures where the button bar will appear with respect to the data grid: legal values are 'top', 'bottom', 'none', or 'both'. Default is 'both'.</li>
+     *  <li><b>position</b>: Configures where the button bar will appear with respect to the data grid: legal values are 'top', or 'none'. Default is 'top'.</li>
      *  <li><b>includeStandardButtons</b>: If true, all standard buttons not specifically mentioned in the items array will be included at the end of the button bar. Default is false.</li>
      *  <li><b>items</b>: An array of button bar items. Each item may be either a reference to a standard button, or a new button configuration.
      *                  to reference standard buttons, use one of the properties on {@link #standardButtons}, or simply include a string

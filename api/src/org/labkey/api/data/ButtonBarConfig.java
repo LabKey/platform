@@ -351,7 +351,7 @@ public class ButtonBarConfig
         }
         catch (Exception e)
         {
-            throw new RuntimeException("'" + position + "' is not a valid button bar position (top, bottom, both, none).");
+            throw new RuntimeException("'" + position + "' is not a valid button bar position (top, none).");
         }
     }
 
