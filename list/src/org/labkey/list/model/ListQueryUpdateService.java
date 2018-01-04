@@ -190,7 +190,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
-        context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.INSERT);    // this method is used by ListImporter and BackgroundListImporter
+        context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
         context.setAllowImportLookupByAlternateKey(importLookupsByAlternateKey);
         setAttachmentDirectory(attachmentDir);
