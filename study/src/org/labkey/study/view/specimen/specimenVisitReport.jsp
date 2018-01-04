@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.specimen.report.SpecimenReportTitle" %>
@@ -30,13 +29,6 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext4");
-    }
-%>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
@@ -64,7 +56,7 @@ The request has produced no records.
         List<VisitImpl> visits = report.getVisits();
         int colCount = visits.size() + report.getLabelDepth();
 %>
-<div id="<%=tableContainerId%>" style="overflow-x:auto; min-width: 740px">
+<div id="<%=tableContainerId%>" style="overflow-x:auto;">
 <table class="labkey-data-region-legacy labkey-show-borders"><colgroup>
     <%
     for (int i = 0; i < colCount; i++)
@@ -75,7 +67,6 @@ The request has produced no records.
     <tr>
         <th style="text-align:left; border-bottom:solid 1px #AAAAAA;" class="labkey-data-region-title" colspan="<%= colCount %>"><%= h(report.getTitle())%></th>
     </tr>
-
     <tr class="labkey-alternate-row">
         <%
         if (report.getLabelDepth() > 0)
@@ -156,37 +147,6 @@ The request has produced no records.
 %>
         </table><br><br>
 </div>
-<%
-    if(me.isWebPart())
-    {
-
-%>
-    <script type="text/javascript">
-        function resizeSpecimenTable(){
-            if(Ext4.query('labkey-wp-header')){
-                var listDiv = Ext4.get('<%=tableContainerId%>');
-                if (!listDiv) return;
-                var rightAreaWidth = 15;
-                try {rightAreaWidth = Ext4.fly(Ext4.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
-                var padding = 60;
-                var viewWidth = Ext4.getBody().getViewSize().width;
-                var right = viewWidth - padding - rightAreaWidth;
-                var x = listDiv.getXY()[0];
-                var width = Math.max(740, (right-x));
-                listDiv.setWidth(width);
-            }
-        }
-        Ext4.onReady(function(){
-           resizeSpecimenTable();
-        });
-
-        Ext4.EventManager.onWindowResize(function(){
-            resizeSpecimenTable();
-        });
-    </script>
-<%
-    }
-%>
 <%
     }
     }
