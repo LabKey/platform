@@ -2,7 +2,7 @@ import org.labkey.gradle.util.ModuleFinder
 
 subprojects {
   Project p ->
-    if (ModuleFinder.isPotentialModule(p))
+    if (p.projectDir.exists() && ModuleFinder.isPotentialModule(p))
     {
       apply plugin: 'java'
       apply plugin: 'org.labkey.module'
