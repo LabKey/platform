@@ -202,7 +202,7 @@ public class StringUtilsLabKey
 
     // Domain names can contain only ASCII alphanumeric characters and dashes and may not start or end with a dash.
     // Each domain name can be at most 63 characters.
-    public static Pattern domainNamePattern = Pattern.compile("(?!-)[A-za-z0-9-]{0,62}[A-za-z0-9]$");
+    public static Pattern domainNamePattern = Pattern.compile("(?!-)[A-Za-z0-9-]{0,62}[A-Za-z0-9]$");
 
     public static boolean isValidDomainName(String name)
     {
