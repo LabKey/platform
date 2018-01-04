@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
@@ -465,14 +466,14 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     @Override
     public String getSource()
     {
-        if (null != _urlSource)
+        if (null != _urlSource || this == AbstractTableInfo.LINK_DISABLER)
             return _urlSource;
         String controller = _url.getController();
         String action = _url.getAction();
         if (!action.endsWith(".view"))
             action = action + ".view";
         String to = "/" + encode(controller) + "/" + encode(action) + "?" + _url.getQueryString(true);
-        assert null == DetailsURL.validateURL(to);
+        assert null == DetailsURL.validateURL(to) : DetailsURL.validateURL(to);
         return to;
     }
 
