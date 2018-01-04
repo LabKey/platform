@@ -109,7 +109,7 @@ public class ListImporter
             {
                 //TODO: Will the file sans-lists.xml necessarily have a fileName that we generated via makeLegalName?
                 String legalName = FileUtil.makeLegalName(listName);
-                String fileName = legalName + fileTypeMap.remove(legalName);
+                String fileName = legalName + "." + fileTypeMap.remove(legalName);
 
                 try (InputStream stream = listsDir.getInputStream(fileName))
                 {
