@@ -588,7 +588,8 @@ public class SecurityManager
                 apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
                 if (null == apiKey)
                 {
-                    // Support as a GET or POST parameter as well, not just as a cookie
+                    // Support as a GET or POST parameter as well, not just as a cookie to support authentication
+                    // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers
                     apiKey = request.getParameter(TRANSFORM_SESSION_ID);
                 }
             }
