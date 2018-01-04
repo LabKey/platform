@@ -192,9 +192,7 @@
                     xtype : 'store',
                     fields : ['value', 'answer'],
                     data : [
-                        {"value" : "BOTH", "answer" : "Both"},
                         {"value" : "TOP", "answer" : "Top"},
-                        {"value" : "BOTTOM", "answer" : "Bottom"},
                         {"value" : "NONE", "answer" : "None"}
                     ]
                 },
@@ -211,7 +209,7 @@
                         }
                         else
                         {
-                            cb.select(cb.findRecord('answer', 'Both'));
+                            cb.select(cb.findRecord('answer', 'Top'));
                         }
                     }
                 }
