@@ -49,6 +49,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
 import java.lang.reflect.Constructor;
@@ -1125,7 +1126,7 @@ public class ColumnInfo extends ColumnRenderProperties
             {
                 props = new ArrayListValuedHashMap<>();
 
-                for (ColumnType.DisplayColumnFactory.Properties.Property prop : xmlFactory.getProperties().getPropertyArray())
+                for (PropertiesType.Property prop : xmlFactory.getProperties().getPropertyArray())
                     props.put(prop.getName(), prop.getStringValue());
             }
 

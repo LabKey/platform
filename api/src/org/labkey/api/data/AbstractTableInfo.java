@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
@@ -67,11 +69,14 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.CustomizerType;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.PositionTypeEnum;
+import org.labkey.data.xml.PropertiesType;
+import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1034,7 +1039,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
-    protected void configureViaTableCustomizer(Collection<QueryException> errors, CustomizerType xmlCustomizer)
+    protected void configureViaTableCustomizer(Collection<QueryException> errors, TableCustomizerType xmlCustomizer)
     {
         String className = xmlCustomizer.getClass1();
         if (className == null)
@@ -1045,7 +1050,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 XmlCursor.TokenType tok = cur.toFirstContentToken();
                 if (tok == XmlCursor.TokenType.TEXT)
+                {
                     className = cur.getTextValue();
+                    LOG.warn("Query XML for " + getPublicSchemaName() + "." + getPublicName() + " uses deprecated <javaCustomizer>className</javaCustomizer> format.  Please convert this to <javaCustomizer class=\"className\"/>.");
+                }
             }
             finally
             {
@@ -1070,12 +1078,46 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             else
             {
                 Class<TableCustomizer> customizerClass = (Class<TableCustomizer>)c;
+
+                MultiValuedMap<String, String> props = null;
                 try
                 {
-                    TableCustomizer customizer = customizerClass.newInstance();
+                    if (xmlCustomizer.isSetProperties())
+                    {
+                        props = new ArrayListValuedHashMap<>();
+
+                        for (PropertiesType.Property prop : xmlCustomizer.getProperties().getPropertyArray())
+                        {
+                            props.put(prop.getName(), prop.getStringValue());
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    addAndLogError(errors, "Unable to parse <properties> for javaCustomizer to configure table " + this, e);
+                }
+
+                try
+                {
+                    TableCustomizer customizer;
+                    try
+                    {
+                        Constructor<TableCustomizer> cs = customizerClass.getConstructor(MultiValuedMap.class);
+                        customizer = cs.newInstance(props == null ? new ArrayListValuedHashMap<>() : props);
+                    }
+                    catch (NoSuchMethodException e)
+                    {
+                        if (props != null)
+                        {
+                            addAndLogError(errors, "Table uses java customizer of class " + className + " and supplies properties in XML, but this class does not have a constructor that accepts a MultiValuedMap: " + this, e);
+                        }
+
+                        customizer = customizerClass.newInstance();
+                    }
+
                     customizer.customize(this);
                 }
-                catch (InstantiationException | IllegalAccessException e)
+                catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
                 {
                     addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
                 }

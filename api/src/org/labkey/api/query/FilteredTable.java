@@ -41,7 +41,7 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.data.xml.CustomizerType;
+import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
 
 import java.util.ArrayList;
@@ -123,7 +123,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         if (_rootTable instanceof SchemaTableInfo)
         {
-            CustomizerType parentJavaCustomizer = ((SchemaTableInfo)_rootTable).getJavaCustomizer();
+            TableCustomizerType parentJavaCustomizer = ((SchemaTableInfo)_rootTable).getJavaCustomizer();
             if (parentJavaCustomizer != null)
             {
                 // Before we do our own customization, apply customization from the SchemaTableInfo

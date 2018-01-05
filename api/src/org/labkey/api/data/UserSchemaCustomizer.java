@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.MinorConfigurationException;
-import org.labkey.data.xml.CustomizerType;
+import org.labkey.data.xml.SchemaCustomizerType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +32,7 @@ import java.util.Collections;
  */
 public interface UserSchemaCustomizer
 {
-    public void configure(CustomizerType schemaCustomizer);
+    public void configure(SchemaCustomizerType schemaCustomizer);
 
     public void afterConstruct(UserSchema schema);
 
@@ -42,13 +42,13 @@ public interface UserSchemaCustomizer
 
     public static class Factory
     {
-        public static Collection<UserSchemaCustomizer> create(CustomizerType[] xmlSchemaCustomizers)
+        public static Collection<UserSchemaCustomizer> create(SchemaCustomizerType[] xmlSchemaCustomizers)
         {
             if (xmlSchemaCustomizers == null || xmlSchemaCustomizers.length == 0)
                 return Collections.emptyList();
 
             ArrayList<UserSchemaCustomizer> customizers = new ArrayList<>(xmlSchemaCustomizers.length);
-            for (CustomizerType xmlSchemaCustomizer : xmlSchemaCustomizers)
+            for (SchemaCustomizerType xmlSchemaCustomizer : xmlSchemaCustomizers)
             {
                 UserSchemaCustomizer customizer = UserSchemaCustomizer.Factory.create(xmlSchemaCustomizer);
                 if (customizer != null)
@@ -57,7 +57,7 @@ public interface UserSchemaCustomizer
             return customizers;
         }
 
-        public static UserSchemaCustomizer create(CustomizerType xmlSchemaCustomizer)
+        public static UserSchemaCustomizer create(SchemaCustomizerType xmlSchemaCustomizer)
         {
             if (xmlSchemaCustomizer == null)
                 return null;

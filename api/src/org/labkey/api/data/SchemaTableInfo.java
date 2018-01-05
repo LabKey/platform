@@ -55,8 +55,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
-import org.labkey.data.xml.CustomizerType;
 import org.labkey.data.xml.ImportTemplateType;
+import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
 
 import java.sql.Connection;
@@ -443,7 +443,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
 
-    public CustomizerType getJavaCustomizer()
+    public TableCustomizerType getJavaCustomizer()
      {
          if (_xmlTable == null || !_xmlTable.isSetJavaCustomizer())
          {
