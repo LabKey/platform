@@ -74,7 +74,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         return "Manually Created Study";
     }
 
-    @Test @Ignore
+    @Override @Ignore
     public void testSteps(){}
 
     @Override

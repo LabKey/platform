@@ -405,7 +405,7 @@ public abstract class SearchTest extends StudyTest
         _searchHelper.enqueueSearchItem("Audience", true, Locator.linkWithText(docFile.getName()));
     }
 
-    @Override @Test @Ignore
+    @Override @Ignore
     public void testSteps() throws Exception
     {
         // Mask parent test
