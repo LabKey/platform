@@ -1377,12 +1377,14 @@ public class SimpleFilter implements Filter
         return frag.getSQL();
     }
 
+    @NotNull
     public String getFilterText()
     {
         return getFilterText(new ColumnNameFormatter());
     }
 
     // Display pseudo English version of filter
+    @NotNull
     public String getFilterText(ColumnNameFormatter formatter)
     {
         StringBuilder sb = new StringBuilder();
