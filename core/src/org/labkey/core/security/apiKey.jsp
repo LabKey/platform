@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -100,8 +101,8 @@ configured to expire, and they can be revoked), but a valid API key provides com
         }
         else
         {
-            String duration = DateUtil.formatDuration(expiration * 1000);
-            duration = duration.replace("s", " seconds").replace("d", " days");
+            String duration = DateUtil.formatDuration(expiration * 1000L);
+            duration = StringUtils.replaceEach(duration, new String[]{"s", "d"}, new String[]{" seconds", " days"});
             expirationMessage = "expire after " + duration + "; administrators can also revoke API keys before they expire.";
         }
 %>
