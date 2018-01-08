@@ -1635,7 +1635,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return "Choose a password you'll use to access this server.";
+            return "Your email address has been verified! Create an account password below.";
         }
 
         @Override

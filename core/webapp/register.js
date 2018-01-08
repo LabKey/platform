@@ -25,7 +25,11 @@
                 if (response.email)
                 {
                     document.getElementById('errors').innerHTML = "";
-                    document.getElementById('registration-content').innerHTML = "We have sent a registration email to " + LABKEY.Utils.encodeHtml(response.email) + ".  Please follow the link in the email to continue the registration process.";
+                    document.getElementById('registration-header').innerHTML = "Confirm email address";
+                    document.getElementById('registration-content').innerHTML =
+                            "Thank you for signing up! A verification email has been sent to " +
+                            "<b>" + LABKEY.Utils.encodeHtml(response.email) + "</b>" +
+                            ".  Please check your inbox to confirm your email address and complete your account setup.";
                 }
                 else
                 {
