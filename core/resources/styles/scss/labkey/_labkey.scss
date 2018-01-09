@@ -229,6 +229,7 @@ pre.labkey-log-file
   background-color: $lk-form-label-bg-color;
   white-space: nowrap;
   padding: 1px 4px;
+  text-align: $lk-form-control-text-align;
 }
 
 /* Used in some cases where there are tables with cells that have borders or colored backgrounds that
