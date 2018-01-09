@@ -111,7 +111,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         super.initializeFolder();
 
         clickProject(getProjectName());
-        goToFolderManagement().goToFolderTypePane();
+        goToFolderManagement().goToFolderTypeTab();
         checkCheckbox(Locator.radioButtonByNameAndValue("folderType", "Study"));
         clickButton("Update Folder");
 
