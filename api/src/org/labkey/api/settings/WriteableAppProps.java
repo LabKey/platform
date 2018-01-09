@@ -109,6 +109,9 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setBaseServerUrl(String baseServerUrl) throws URISyntaxException
     {
+        // Strip trailing slashes to avoid double slashes in generated links
+        if(baseServerUrl.endsWith("/"))
+            baseServerUrl = baseServerUrl.substring(0, baseServerUrl.length() - 1);
         validateBaseServerUrl(baseServerUrl);
 
         storeStringValue(BASE_SERVER_URL_PROP, baseServerUrl);

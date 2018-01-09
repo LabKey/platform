@@ -165,6 +165,9 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             try
             {
                 String initialRequestBaseServerUrl = URLHelper.getBaseServer(request.getScheme(), request.getServerName(), request.getServerPort()).toString();
+                // Strip trailing slashes to avoid double slashes in generated links
+                if(initialRequestBaseServerUrl.endsWith("/"))
+                    initialRequestBaseServerUrl = initialRequestBaseServerUrl.substring(0, initialRequestBaseServerUrl.length() - 1);
                 BaseServerProperties.validate(initialRequestBaseServerUrl);
 
                 WriteableAppProps writeable = AppProps.getWriteableInstance();
