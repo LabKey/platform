@@ -114,25 +114,25 @@
         <td style="vertical-align:top;width:99%">
             <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label-nowrap">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>name">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></label></td>
                     <td width="99%">
                         <input type="text" name="name" id="<%=h(ID_PREFIX)%>name" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label">Title</td>
+                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>title">Title</label></td>
                     <td width="99%">
                         <input type="text" name="title" id="<%=h(ID_PREFIX)%>title" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label-nowrap">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>shouldIndex">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></label></td>
                     <td width="99%">
                         <input type="checkbox" name="shouldIndex" id="<%=h(ID_PREFIX)%>shouldIndex"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label">Parent</td>
+                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>parent">Parent</label></td>
                     <td width="99%">
                         <select name="parent" id="<%=text(ID_PREFIX)%>parent">
                             <option<%=selected(model.getParent() == -1)%> value="-1">[none]</option>
@@ -151,7 +151,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label">Body
+                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>body">Body</label>
                         <br/><span id="wiki-current-format"></span>
                     </td>
                     <td width="99%">
@@ -176,7 +176,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label">Files</td>
+                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>showAttachments">Files</label></td>
                     <td width="99%">
                         <table>
                             <tr>
