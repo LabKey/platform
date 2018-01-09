@@ -143,7 +143,7 @@ public final class TableSorter
         //   core.Containers has a self join to parent Container
         //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
         if (visiting.contains(table))
-            throw new IllegalStateException("Loop detected trying to delete table '" + table.getTitle() + "' in schema '" + table.getSchema().getName() + "'.");
+            throw new IllegalStateException("Loop detected in table '" + table.getTitle() + "' in schema '" + table.getSchema().getName() + "'.");
 
         if (visited.contains(table))
             return;
