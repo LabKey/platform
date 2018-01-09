@@ -247,17 +247,24 @@ LABKEY.Utils = new function()
             var error;
             var prefix = config.msgPrefix || 'An error occurred trying to load:\n';
 
-            if (responseObj &&
-                responseObj.responseText &&
-                responseObj.getResponseHeader('Content-Type') &&
-                responseObj.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
+            if (responseObj && responseObj.responseText && responseObj.getResponseHeader('Content-Type'))
             {
-                var jsonResponse = LABKEY.Utils.decode(responseObj.responseText);
-                if (jsonResponse && jsonResponse.exception)
+                var contentType = responseObj.getResponseHeader('Content-Type');
+                if (contentType.indexOf('application/json') >= 0)
                 {
-                    error = prefix + jsonResponse.exception;
-                    if (config.showExceptionClass)
-                        error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
+                    var jsonResponse = LABKEY.Utils.decode(responseObj.responseText);
+                    if (jsonResponse && jsonResponse.exception) {
+                        error = prefix + jsonResponse.exception;
+                        if (config.showExceptionClass)
+                            error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
+                    }
+                }
+                else if (contentType.indexOf('text/html') >= 0 && jQuery)
+                {
+                    var html = jQuery(responseObj.responseText);
+                    var el = html.find('.exception-message');
+                    if (el && el.length === 1)
+                        error = prefix + el.text().trim();
                 }
             }
             if (!error)

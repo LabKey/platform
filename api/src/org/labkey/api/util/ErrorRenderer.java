@@ -104,7 +104,7 @@ public class ErrorRenderer
 
                 if (null != exceptionMessage)
                 {
-                    out.println("<b style=\"color:red;\">");
+                    out.println("<b style=\"color:red;\" class=\"exception-message\">");
                     out.println(PageFlowUtil.filter(exceptionMessage));
                     out.println("</b><br><br>");
                 }

@@ -148,7 +148,7 @@ public class ExceptionUtil
         String s = PageFlowUtil.filter(sw.toString());
         s = s.replaceAll(" ", "&nbsp;");
         s = s.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-        return "<pre>\n" + s + "</pre>\n";
+        return "<pre class='exception-stacktrace'>\n" + s + "</pre>\n";
     }
 
 
