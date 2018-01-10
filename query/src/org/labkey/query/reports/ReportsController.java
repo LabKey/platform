@@ -347,9 +347,9 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public Pair<ActionURL, String> urlAjaxExternalEditScriptReport(Container c, Report r)
+        public Pair<ActionURL, Map<String, Object>> urlAjaxExternalEditScriptReport(Container c, Report r)
         {
-            String externalEditor = r.getExternalEditorName();
+            Map<String, Object> externalEditor = r.getExternalEditorConfig();
             if (null != externalEditor)
                 return new Pair<>(new ActionURL(AjaxExternalEditScriptReportAction.class, c), externalEditor);
             else
