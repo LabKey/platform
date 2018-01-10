@@ -674,8 +674,66 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     openExternalEditor : function (o) {
         this.readOnly = true;
         this.codeMirror.readOnly = true;
-        window.open(o.externalUrl, o.externalWindowTitle);
-        // TODO: Disable the external editor button? What about the "Save" button? Could just not have it submit the script content?
-        // Or just redirect to new landing page with returnUrl?
+        if (!this.openWindowOnce(o.externalUrl, o.externalWindowTitle))
+            return;
+
+        var externalName = this.externalEditSettings.name;
+        var me = this;
+        new Ext4.Window({
+            autoShow: true,
+            modal: false,
+            width: 380,
+            height: 150,
+            cls: 'external-editor-popup',
+            border: false,
+            closable: false,
+            resizable: false,
+            title: 'Editing report in ' + externalName,
+            draggable: false,
+            items:[{
+                xtype: 'box',
+                html: '<div style="margin: 10px;">Report is being edited in' + externalName +
+                '<br>' + externalName + ' may be in hidden window or tab. <br>' +
+                'Editing in LabKey is NOT recommended.</div>'
+            }],
+            buttonAlign: 'center',
+            buttons: [{
+                text: 'Edit in LabKey',
+                onClick : function () {
+                    window.location = o.redirectUrl;
+                }
+            },{
+                text: 'Go to ' + externalName,
+                cls: 'external-editor-popup-btn',
+                onClick : function () {
+                    me.openWindowOnce(o.externalUrl, o.externalWindowTitle);
+                }
+            }]
+        });
+
+        this.formPanel.getEl().mask();
+    },
+
+    openWindowOnce: function(url, windowName) {
+        // open a blank windowName window
+        // or get the reference to the existing windowName window
+        var externalEditWindow = window.open('', windowName);
+
+        if (externalEditWindow) {
+            // if the windowName window was just opened, change its url to actual needed window
+            if(externalEditWindow.location.href.indexOf(url) === -1){
+                externalEditWindow.location.href = url;
+            }
+            externalEditWindow.focus(); // this seems to only work in some versions of IE
+        }
+        else {
+            Ext4.Msg.show({
+                title:'Error',
+                msg: 'Unable to open window, please check your browser settings for allowing pop-up windows.',
+                buttons: Ext4.Msg.OK,
+                icon: Ext4.Msg.ERROR
+            });
+        }
+        return externalEditWindow;
     }
 });
