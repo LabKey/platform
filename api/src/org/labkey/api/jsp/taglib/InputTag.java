@@ -162,7 +162,7 @@ public class InputTag extends SimpleTagBase
             .disabled(isDisabled)
             .required(isRequired)
             .readOnly(isReadOnly)
-            .value(value)
+            .unsafeValue(value) // 32433: mimic a normal <input/> where user is responsible for the encoding
             .checked(checked)
             .size(size)
             .state(Input.State.get(state));

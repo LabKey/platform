@@ -555,6 +555,12 @@ public class QuerySettings
         _maxRows = maxRows;
     }
 
+    /** @return Boolean indicating if the maxRows param has been set, default false. */
+    public boolean isMaxRowsSet()
+    {
+        return _maxRowsSet;
+    }
+
     /** @return The offset parameter when {@link ShowRows#PAGINATED}, otherwise 0. */
     public long getOffset()
     {

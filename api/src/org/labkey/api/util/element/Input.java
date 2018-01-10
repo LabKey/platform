@@ -94,6 +94,7 @@ public class Input extends DisplayElement
     private final String _stateMessage;
     private final boolean _showLabel;
     private final String _type;
+    private final boolean _unsafeValue;
     private final Object _value;
     private final boolean _needsWrapping;
 
@@ -120,6 +121,7 @@ public class Input extends DisplayElement
         _size = builder._size;
         _state = builder._state;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
+        _unsafeValue = builder._unsafeValue == null ? false : builder._unsafeValue;
         _value = builder._value;
         _needsWrapping = builder._needsWrapping == null ? true : builder._needsWrapping;
     }
@@ -242,6 +244,11 @@ public class Input extends DisplayElement
     public Object getValue()
     {
         return _value;
+    }
+
+    protected boolean isUnsafeValue()
+    {
+        return _unsafeValue;
     }
 
     public boolean needsWrapping()
@@ -457,22 +464,22 @@ public class Input extends DisplayElement
             // 4934: Don't render form input values with formatter since we don't parse formatted inputs on post.
             // For now, we can at least render disabled inputs with formatting since a
             // hidden input with the actual value is emitted for disabled items.
-            String safeValue;
+            String stringValue;
             if (null != getFormat() && isDisabled())
             {
                 try
                 {
-                    safeValue = getFormat().format(getValue());
+                    stringValue = getFormat().format(getValue());
                 }
                 catch (IllegalArgumentException x)
                 {
-                    safeValue = ConvertUtils.convert(getValue());
+                    stringValue = ConvertUtils.convert(getValue());
                 }
             }
             else
-                safeValue = ConvertUtils.convert(getValue());
+                stringValue = ConvertUtils.convert(getValue());
 
-            sb.append(" value=\"").append(safeValue).append("\"");
+            sb.append(" value=\"").append(isUnsafeValue() ? stringValue : PageFlowUtil.filter(stringValue)).append("\"");
         }
     }
 
@@ -500,6 +507,7 @@ public class Input extends DisplayElement
         private State _state;
         private String _stateMessage;
         private String _type = "text";
+        private Boolean _unsafeValue;
         private Object _value;
         private Boolean _needsWrapping;
 
@@ -635,8 +643,16 @@ public class Input extends DisplayElement
             return (T)this;
         }
 
+        public T unsafeValue(Object unsafeValue)
+        {
+            _unsafeValue = true;
+            _value = unsafeValue;
+            return (T)this;
+        }
+
         public T value(Object value)
         {
+            _unsafeValue = false;
             _value = value;
             return (T)this;
         }

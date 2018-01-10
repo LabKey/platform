@@ -38,7 +38,7 @@ public class DisplayField extends Input
     {
         if (getValue() != null && !"".equals(getValue()))
         {
-            sb.append(PageFlowUtil.filter(getValue()));
+            sb.append(isUnsafeValue() ? getValue() : PageFlowUtil.filter(getValue()));
         }
     }
 

@@ -215,7 +215,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         if (el)
             el.replaceCls('labkey-completion-nohighlight', 'labkey-completion-highlight');
 
-        // scroll the hilighted element into view if necessary
+        // scroll the highlighted element into view if necessary
         var delta = el.dom.offsetTop - this.completionDiv.getScroll().top;
         if (delta < 0)
             this.completionDiv.scroll('up', Math.abs(delta));
@@ -331,7 +331,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     hideCompletionDiv : function()
     {
         this.completionDiv.hide();
-        // this.completionBody.update('');
+        this.completionBody.update('');
     }
 });
 

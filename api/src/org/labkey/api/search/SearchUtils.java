@@ -15,6 +15,8 @@
  */
 package org.labkey.api.search;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -193,5 +195,11 @@ public class SearchUtils
         {
             return _includesBooleanOperator;
         }
+    }
+
+    public static String getPlaceholder(Container c)
+    {
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+        return "Search " + laf.getShortName();
     }
 }

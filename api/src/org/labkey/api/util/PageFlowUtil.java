@@ -1714,13 +1714,13 @@ public class PageFlowUtil
                     if (!ext3Included && paths.startsWith("ext-3.4.1/ext-all"))
                     {
                         ext3Included = true;
-                        extCSS.add("/core/css/ext3_" + themeName + ".css");
+                        extCSS.add("core/css/ext3_" + themeName + ".css");
                     }
 
                     if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
                     {
                         ext4Included = true;
-                        extCSS.add("/core/css/ext4_" + themeName + ".css");
+                        extCSS.add("core/css/ext4_" + themeName + ".css");
                     }
 
                     if (ext3Included && ext4Included)

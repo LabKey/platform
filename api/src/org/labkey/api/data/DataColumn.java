@@ -721,7 +721,7 @@ public class DataColumn extends DisplayColumn
                         .name(getInputPrefix() + formFieldName)
                         .disabled(disabledInput)
                         .size(_inputLength)
-                        .value(PageFlowUtil.filter(strVal))
+                        .value(strVal)
                         .needsWrapping(false);
 
                 out.write(input.build().toString());
