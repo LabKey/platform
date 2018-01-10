@@ -70,7 +70,7 @@
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
-    Pair<ActionURL, String> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(c, report);
+    Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(c, report);
     List<Pair<String, String>> params = getActionURL().getParameters();
 
     // Initial view URL uses all parameters
@@ -163,7 +163,18 @@
             <% if (null != externalEditorSettings) { %>
                 externalEditSettings = {};
                 externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
-                externalEditSettings.name = <%=q(externalEditorSettings.getValue())%>;
+                externalEditSettings.name = <%=q((String) externalEditorSettings.getValue().get("name"))%>;
+                var externalEditWarning = '';
+
+                <% if (externalEditorSettings.getValue().containsKey("warningMsg")) { %>
+                    externalEditWarning = <%=q((String) externalEditorSettings.getValue().get("warningMsg"))%>;
+                <% } %>
+
+                if (externalEditWarning)
+                {
+                    document.getElementById('script-report-editor-msg').innerHTML = externalEditWarning;
+                }
+
             <% } %>
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
                 renderTo        : <%=q(renderId)%>,
@@ -199,6 +210,7 @@
 </script>
 
 <labkey:scriptDependency callback="createScriptReportPanel" scope="this"/>
+<div id="script-report-editor-msg" style="margin: 10px" class="text-warning"></div>
 <div id="<%= h(renderId)%>" class="script-report-editor"></div>
 
 

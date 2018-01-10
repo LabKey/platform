@@ -45,6 +45,7 @@ import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -70,6 +71,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,9 +141,27 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    public String getExternalEditorName()
+    public Map<String, Object> getExternalEditorConfig()
     {
-        return null != getRStudioService() ? "RStudio" : null;
+        if (getRStudioService() != null)
+        {
+            Map<String, Object> dockerRConfig = new HashMap<>();
+            dockerRConfig.put("name", "RStudio");
+            boolean isRDockerConfigured = false;
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
+            {
+                ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
+                if (mgr != null)
+                {
+                    ScriptEngine dockerREngine = mgr.getEngineByName(RStudioService.R_DOCKER_ENGINE);
+                    isRDockerConfigured = dockerREngine != null;
+                }
+            }
+            if (!isRDockerConfigured)
+                dockerRConfig.put("warningMsg", "'R Docker Scripting Engine' is the preferred method of running R reports created from RStudio in LabKey. Please contact admin to enabled it.");
+            return dockerRConfig;
+        }
+        return null;
     }
 
     @Override

@@ -33,6 +33,7 @@ import java.util.List;
 public interface RStudioService
 {
     String R_DOCKER_SANDBOX = "rDockerSandbox";
+    String R_DOCKER_ENGINE ="R Docker Scripting Engine";
     String NO_RSTUDIO = "RStudio module is not present.";
 
     default boolean isConfigured()
