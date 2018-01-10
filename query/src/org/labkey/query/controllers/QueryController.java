@@ -2619,9 +2619,9 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
 
             // Issue 12233: add implicit maxRows=100k when using client API
-            if (null == form.getLimit()
-                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.maxRows)
-                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.showRows))
+            HttpServletRequest request = getViewContext().getRequest();
+            boolean missingShowRows = null == request.getParameter(form.getDataRegionName() + "." + QueryParam.showRows);
+            if (null == form.getLimit() && !form.getQuerySettings().isMaxRowsSet() && missingShowRows)
             {
                 form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
                 form.getQuerySettings().setMaxRows(DEFAULT_API_MAX_ROWS);

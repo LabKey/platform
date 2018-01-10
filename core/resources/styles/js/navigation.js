@@ -498,8 +498,9 @@
 
 +function($) {
     'use strict';
-    var toggleTimeout = false,
-            openMenu = undefined;
+    var LOCK_CLS = 'menu-locked',
+        toggleTimeout = false,
+        openMenu = undefined;
 
     var toggle = $.fn.dropdown.Constructor.prototype.toggle;
     var toggleSelector = '.navbar-header [data-toggle="dropdown"]';
@@ -544,27 +545,52 @@
         toggle.call(elm);
     }
 
+    // Issue 32133: prevent openMenu toggle functions above from closing a locked menu
+    function isLocked() {
+        return $(openMenu).hasClass(LOCK_CLS);
+    }
+
+    function unlock() {
+        return $(openMenu).removeClass(LOCK_CLS);
+    }
+
     $(document)
+            .on('hide.bs.dropdown', function(e) {
+                // Issue 32133: prevent the default bootstrap dropdown clearMenus function from closing a locked menu
+                if (e.relatedTarget && $(e.relatedTarget).hasClass(LOCK_CLS)) {
+                    e.preventDefault();
+                }
+            })
             .on('click.bs.dropdown.data-api', function() {
                 // This click handler respects clicking anywhere on the page.
-                openMenu = undefined;
-                cancelToggle();
+                if (!isLocked()) {
+                    openMenu = undefined;
+                    cancelToggle();
+                }
             })
             .on('click.bs.dropdown.data-api', toggleSelector, function() {
+                unlock();
                 openMenu = openMenu ? undefined : this;
                 cancelToggle();
             })
             .on('mouseenter.bs.dropdown.data-api', toggleSelector, function() {
+                unlock();
                 delayShowPopup(this);
             })
             .on('mouseleave.bs.dropdown.data-api', toggleSelector, function() {
-                delayHidePopup(this);
+                if (!isLocked()) {
+                    delayHidePopup(this);
+                }
             })
             .on('mouseenter', popupSelector, function() {
-                cancelToggle();
+                if (!isLocked()) {
+                    cancelToggle();
+                }
             })
             .on('mouseleave', popupSelector, function() {
-                delayHidePopup(openMenu);
+                if (!isLocked()) {
+                    delayHidePopup(openMenu);
+                }
             })
             .on('click', popupSelector, function(e) {
                 e.stopPropagation();

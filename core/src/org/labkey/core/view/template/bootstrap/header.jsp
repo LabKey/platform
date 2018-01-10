@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -93,7 +94,7 @@
                 <a class="fa fa-search" id="global-search-trigger"></a>
                 <div id="global-search" class="global-search">
                     <labkey:form id="global-search-form" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
-                        <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="">
+                        <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                         <input type="submit" hidden>
                         <a href="#" onclick="document.getElementById('global-search-form').submit(); return false;" class="btn-search fa fa-search"></a>
                     </labkey:form>
@@ -107,7 +108,7 @@
                     <li>
                         <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
                             <div class="input-group">
-                                <input type="text" class="search-box" name="q" placeholder="Search LabKey Server" value="">
+                                <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                                 <input type="submit" hidden>
                             </div>
                         </labkey:form>

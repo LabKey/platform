@@ -281,6 +281,8 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                 + '<tr><td class="spacer"></td><td>Options are "card" (wizard like layout with section titles listed in side bar) or "auto" (vertical display of sections). Defaults to "auto".</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">mainPanelWidth</span></td></tr>'
                 + '<tr><td class="spacer"></td><td>In card layout, the width of the main section panel. Defaults to 800.</td></tr>'
+                + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">navigateOnSave</span></td></tr>'
+                + '<tr><td class="spacer"></td><td>True to navigate away from the survey form after the save action. Navigation will take the user to the returnURL, if provided, or to the project begin action. Defaults to false.</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{Array}</span> <span class="varname">sections</span></td></tr>'
                 + '<tr><td class="spacer"></td><td>An array of survey section panel config objects.</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">sections.border</span></td></tr>'

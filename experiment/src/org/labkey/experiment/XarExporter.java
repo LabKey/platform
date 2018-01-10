@@ -483,11 +483,11 @@ public class XarExporter
         }
         for (DomainProperty keyCol : sampleSet.getIdCols())
         {
-            xSampleSet.addKeyField(keyCol.getName());
+            xSampleSet.addKeyField(getPropertyName(keyCol));
         }
         if (sampleSet.getParentCol() != null)
         {
-            xSampleSet.setParentField(sampleSet.getParentCol().getName());
+            xSampleSet.setParentField(getPropertyName(sampleSet.getParentCol()));
         }
         if (sampleSet.hasNameExpression())
         {
@@ -496,6 +496,18 @@ public class XarExporter
 
         Domain domain = sampleSet.getType();
         queueDomain(domain);
+    }
+
+    // Return the "name" portion of the propertyURI after the hash
+    private String getPropertyName(DomainProperty dp)
+    {
+        String name = dp.getName();
+        String propertyURI = dp.getPropertyURI();
+        int i = propertyURI.indexOf('#');
+        if (i != -1)
+            name = propertyURI.substring(i+1);
+
+        return name;
     }
 
     private void queueDomain(Domain domain) throws ExperimentException

@@ -810,6 +810,12 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             this.surveyLayout = surveyConfig.survey.layout;
     },
 
+    setNavigateOnSave : function(surveyConfig) {
+        this.navigateOnSave = false;
+        if (surveyConfig.survey && surveyConfig.survey.navigateOnSave)
+            this.navigateOnSave = surveyConfig.survey.navigateOnSave;
+    },
+
     configureFieldListeners : function() {
 
         Ext4.each(this.getForm().getFields().items, function(field){

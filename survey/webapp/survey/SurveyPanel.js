@@ -248,6 +248,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                             this.setStartOptions(metadata);
                             this.setShowCounts(metadata);
                             this.setSurveyLayout(metadata);
+                            this.setNavigateOnSave(metadata);
                             this.generateSurveySections(metadata);
                         };
 
@@ -370,27 +371,23 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         bodyStyle: 'padding: 20px;'
                     });
 
-                    if (toSubmit || navigateOnSave)
+                    if (btn != null)
                     {
-                        // since the user clicked the submit button, navigate back to the srcUrl
-                        msgBox.show();
-                        this.closeMsgBox = new Ext4.util.DelayedTask(function(){
-                            msgBox.hide();
-                            this.leavePage();
-                        }, this);
-                        this.closeMsgBox.delay(2500);
-
                         this.autosaveInfo.update("");
-                    }
-                    else if (btn != null)
-                    {
-                        // since the user clicked the save button, give them an indication that the save was successful
+
+                        // since the user clicked the save/submit button, give them an indication that the save was successful
                         msgBox.show();
                         this.closeMsgBox = new Ext4.util.DelayedTask(function(){ msgBox.hide(); }, this);
-                        this.closeMsgBox.delay(2000);
+                        this.closeMsgBox.delay(2500);
 
-                        this.autosaveInfo.update("");
-                        this.updateSubmitInfo();
+                        // if this is a submit or the navigateOnSave is set (Issue 32539), leave the page after the delay timer as well
+                        if (toSubmit || navigateOnSave || this.navigateOnSave)
+                        {
+                            this.updateSubmitInfo();
+
+                            var navigateTask = new Ext4.util.DelayedTask(function(){ this.leavePage(); }, this);
+                            navigateTask.delay(2500);
+                        }
                     }
                     else
                     {

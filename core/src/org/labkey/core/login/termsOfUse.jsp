@@ -23,7 +23,15 @@
 <%@ page import="org.labkey.api.view.RedirectException" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.AgreeToTermsBean" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("login.css");
+    }
+%>
 <%
     HttpView<AgreeToTermsBean> me = (HttpView<AgreeToTermsBean>) HttpView.currentView();
     AgreeToTermsBean bean = me.getModelBean();
