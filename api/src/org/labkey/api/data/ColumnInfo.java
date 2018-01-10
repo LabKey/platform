@@ -2139,7 +2139,7 @@ public class ColumnInfo extends ColumnRenderProperties
     }
 
 
-    // If true, you can't use this column when auto-generationg LabKey SQL, it is not selected in the underlying query
+    // If true, you can't use this column when auto-generating LabKey SQL, it is not selected in the underlying query
     // only query can set this true
     public boolean isAdditionalQueryColumn()
     {
