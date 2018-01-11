@@ -2402,14 +2402,16 @@ public class OntologyManager
         public final PropertyDescriptor pd;
         public final List<? extends IPropertyValidator> validators;
         public final List<ConditionalFormat> formats;
+        public final String defaultValue;
 
-        ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats)
+        private ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
         {
             this.domainName = domainName;
             this.domainURI = domainURI;
             this.pd = pd;
             this.validators = null != validators ? validators : Collections.emptyList();
             this.formats = null != formats ? formats : Collections.emptyList();
+            this.defaultValue = defaultValue;
         }
     }
 
@@ -2418,9 +2420,9 @@ public class OntologyManager
     {
         public final ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
 
-        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats)
+        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
         {
-            properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd, validators, formats));
+            properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd, validators, formats, defaultValue));
         }
     }
 
@@ -2470,6 +2472,7 @@ public class OntologyManager
         p.setPhi(pd.getPHI());
         p.setRedactedText(pd.getRedactedText());
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
+        p.setDefaultValueTypeEnum(pd.getDefaultValueTypeEnum());
     }
 
     @TestWhen(TestWhen.When.BVT)

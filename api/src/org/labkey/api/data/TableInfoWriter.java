@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
+import org.labkey.data.xml.DefaultValueEnumType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
@@ -184,7 +185,23 @@ public class TableInfoWriter
             }
         }
 
-        // TODO: Default values / Default value types
+        // GWT PropertyEditor always saves Attachment columns with DefaultValueType set to FIXED_EDITABLE. That's a bug we should fix,
+        // but we'll workaround it here for now. Also, consider Type.allowsDefaultValue() to generalize this concept.
+        if (t != Type.AttachmentType)
+        {
+            DefaultValueType defaultValueType = column.getDefaultValueType();
+
+            if (null != defaultValueType)
+            {
+                DefaultValueEnumType.Enum defaultValueTypeXmlBeanEnum = DefaultValueEnumType.Enum.forString(defaultValueType.name());
+                columnXml.setDefaultValueType(defaultValueTypeXmlBeanEnum);
+            }
+
+            if (defaultValueType != DefaultValueType.LAST_ENTERED && null != column.getDefaultValue())
+            {
+                columnXml.setDefaultValue(column.getDefaultValue());
+            }
+        }
 
         ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml);
 
@@ -192,9 +209,9 @@ public class TableInfoWriter
 
         if (!validators.isEmpty())
         {
+            // Add the "validators" element and ask each validator to serialize itself to XML.
             ValidatorsType validatorsXml = columnXml.addNewValidators();
-
-            validators.forEach(v-> v.getType().convertToXml(v, validatorsXml));
+            validators.forEach(v->v.getType().convertToXml(v, validatorsXml));
 
             // Remove the "validators" element if no validators wrote XML. For example, the collection might have just a "text length"
             // validator, which isn't included in the "validators" element (these are serialized as the "scale" property).

@@ -20,5 +20,5 @@ package org.labkey.api.data;
  */
 public interface Builder<K>
 {
-    public K build();
+    K build();
 }

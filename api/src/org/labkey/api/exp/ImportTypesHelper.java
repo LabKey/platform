@@ -31,6 +31,7 @@ import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
@@ -181,6 +182,12 @@ public class ImportTypesHelper
                 builder.setValidators(ValidatorKind.convertFromXML(columnXml.getValidators()));
                 builder.setConditionalFormats(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
 
+                if (columnXml.isSetDefaultValueType())
+                    builder.setDefaultValueType(DefaultValueType.valueOf(columnXml.getDefaultValueType().toString()));
+
+                if (columnXml.isSetDefaultValue())
+                    builder.setDefaultValue(columnXml.getDefaultValue());
+
                 builders.add(builder);
             }
         }
@@ -246,7 +253,8 @@ public class ImportTypesHelper
                     domainURI,
                     pd,
                     builder.getValidators(),
-                    builder.getConditionalFormats());
+                    builder.getConditionalFormats(),
+                    builder.getDefaultValue());
         }
 
         if (!mvColumns.isEmpty())
@@ -303,11 +311,13 @@ public class ImportTypesHelper
         private String _redactedText;
         private boolean _excludeFromShifting;
         private int _scale;
+        private DefaultValueType _defaultValueType = null;
 
         // not part of PropertyDescriptors, this class could eventually become a builder for DomainProperty
         private String _domainName;
         private List<? extends IPropertyValidator> _validators;
         private List<ConditionalFormat> _formats;
+        private String _defaultValue;
 
         public Builder(Container container, PropertyType type)
         {
@@ -368,6 +378,7 @@ public class ImportTypesHelper
             pd.setRedactedText(_redactedText);
             pd.setExcludeFromShifting(_excludeFromShifting);
             pd.setScale(_scale);
+            pd.setDefaultValueTypeEnum(_defaultValueType);
 
             return pd;
         }
@@ -597,6 +608,12 @@ public class ImportTypesHelper
             return this;
         }
 
+        public Builder setDefaultValueType(DefaultValueType defaultValueType)
+        {
+            _defaultValueType = defaultValueType;
+            return this;
+        }
+
         public String getDomainName()
         {
             return _domainName;
@@ -627,6 +644,16 @@ public class ImportTypesHelper
             _formats = formats;
         }
 
+        public String getDefaultValue()
+        {
+            return _defaultValue;
+        }
+
+        public void setDefaultValue(String defaultValue)
+        {
+            _defaultValue = defaultValue;
+        }
+
         private String convertNumberFormatChars(String format)
         {
             int length = format.length();
@@ -647,6 +674,12 @@ public class ImportTypesHelper
             if (format.toUpperCase().equals(format))
                 return format.replace('Y', 'y').replace('D', 'd');
             return format;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Builder for " + _domainName + "." + _name;
         }
     }
 }

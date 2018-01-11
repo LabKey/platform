@@ -23,6 +23,8 @@ import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
@@ -71,6 +73,17 @@ public class PropertyColumn extends LookupColumn
         copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey());
     }
 
+    // We must have a DomainProperty in order to retrieve the default values. TODO: Transition more callers to pass in DomainProperty
+    public static void copyAttributes(User user, ColumnInfo to, DomainProperty dp, Container container, FieldKey lsidColumnFieldKey)
+    {
+        copyAttributes(user, to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey);
+        Map<DomainProperty, Object> map = DefaultValueService.get().getDefaultValues(container, dp.getDomain(), user);
+
+        Object value = map.get(dp);
+
+        if (null != value)
+            to.setDefaultValue(value.toString());
+    }
 
     public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)
     {

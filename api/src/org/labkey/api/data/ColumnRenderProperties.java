@@ -121,6 +121,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.conceptURI = conceptURI;
         to.rangeURI = rangeURI;
         to.propertyType = propertyType;
+        to._defaultValueType = _defaultValueType;
     }
 
     public Sort.SortDirection getSortDirection()
