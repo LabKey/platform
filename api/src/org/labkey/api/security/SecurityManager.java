@@ -463,7 +463,7 @@ public class SecurityManager
     }
 
 
-    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request)
+    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
     {
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
         @Nullable String apiKey = getApiKey(basicCredentials, request);
@@ -568,7 +568,7 @@ public class SecurityManager
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable String getApiKey(@Nullable Pair<String, String> basicCredentials, HttpServletRequest request)
+    private static @Nullable String getApiKey(@Nullable Pair<String, String> basicCredentials, HttpServletRequest request) throws UnsupportedEncodingException
     {
         String apiKey;
 
@@ -588,9 +588,18 @@ public class SecurityManager
                 apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
                 if (null == apiKey)
                 {
-                    // Support as a GET or POST parameter as well, not just as a cookie to support authentication
-                    // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers
-                    apiKey = request.getParameter(TRANSFORM_SESSION_ID);
+                    // Support as a GET parameter as well, not just as a cookie, to support authentication
+                    // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
+                    // Do not use request.getParameter() since that will consume the POST body, #32711.
+                    try
+                    {
+                        Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
+                        apiKey = params.get(TRANSFORM_SESSION_ID);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        throw new UnsupportedEncodingException(e.getMessage());
+                    }
                 }
             }
         }

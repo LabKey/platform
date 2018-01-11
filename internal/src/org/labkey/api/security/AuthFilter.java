@@ -39,6 +39,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
 
@@ -177,6 +178,11 @@ public class AuthFilter implements Filter
             ImpersonationContextFactory factory = uie.getFactory();
             user = factory.getAdminUser();
             e = uie;
+        }
+        catch (UnsupportedEncodingException uee)
+        {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, uee.getMessage());
+            return;
         }
 
         if (null == user)
