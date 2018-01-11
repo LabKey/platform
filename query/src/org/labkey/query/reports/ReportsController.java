@@ -347,11 +347,11 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public Pair<ActionURL, Map<String, Object>> urlAjaxExternalEditScriptReport(Container c, Report r)
+        public Pair<ActionURL, Map<String, Object>> urlAjaxExternalEditScriptReport(ViewContext viewContext, Report r)
         {
-            Map<String, Object> externalEditor = r.getExternalEditorConfig();
+            Map<String, Object> externalEditor = r.getExternalEditorConfig(viewContext);
             if (null != externalEditor)
-                return new Pair<>(new ActionURL(AjaxExternalEditScriptReportAction.class, c), externalEditor);
+                return new Pair<>(new ActionURL(AjaxExternalEditScriptReportAction.class, viewContext.getContainer()), externalEditor);
             else
                 return null;
         }
@@ -1655,7 +1655,9 @@ public class ReportsController extends SpringActionController
                 response.put("success", true);
                 response.put("externalUrl", externalEditor.getKey());
                 response.put("externalWindowTitle", externalEditor.getValue());
-                response.put("redirectUrl", ReportUtil.getRunReportURL(getViewContext(), report, false).addParameter("tabId", "Source"));
+                response.put("redirectUrl", ReportUtil.getRunReportURL(getViewContext(), report, false)
+                        .addParameter("tabId", "Source")
+                        .addParameter("skipExternalEditingCheck", true));
             }
             return response;
         }

@@ -570,7 +570,14 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             },
             items   : items,
             listeners : {
-                dirtychange : {fn : function(cmp, dirty){this.markDirty(dirty);}, scope : this}
+                dirtychange : {fn : function(cmp, dirty){this.markDirty(dirty);}, scope : this},
+                render: {
+                    fn : function(cmp) {
+                        if (this.externalEditSettings && this.externalEditSettings.isEditing === true)
+                            this.showExternalEditingDialog((this.externalEditSettings));
+                    },
+                    scope : this
+                }
             }
         });
 
@@ -677,41 +684,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         if (!this.openWindowOnce(o.externalUrl, o.externalWindowTitle))
             return;
 
-        var externalName = this.externalEditSettings.name;
-        var me = this;
-        new Ext4.Window({
-            autoShow: true,
-            modal: false,
-            width: 380,
-            height: 150,
-            cls: 'external-editor-popup',
-            border: false,
-            closable: false,
-            resizable: false,
-            title: 'Editing report in ' + externalName,
-            draggable: false,
-            items:[{
-                xtype: 'box',
-                html: '<div style="margin: 10px;">Report is being edited in' + externalName +
-                '<br>' + externalName + ' may be in hidden window or tab. <br>' +
-                'Editing in LabKey is NOT recommended.</div>'
-            }],
-            buttonAlign: 'center',
-            buttons: [{
-                text: 'Edit in LabKey',
-                onClick : function () {
-                    window.location = o.redirectUrl;
-                }
-            },{
-                text: 'Go to ' + externalName,
-                cls: 'external-editor-popup-btn',
-                onClick : function () {
-                    me.openWindowOnce(o.externalUrl, o.externalWindowTitle);
-                }
-            }]
-        });
-
-        this.formPanel.getEl().mask();
+        this.showExternalEditingDialog(o);
     },
 
     openWindowOnce: function(url, windowName) {
@@ -735,5 +708,44 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             });
         }
         return externalEditWindow;
+    },
+
+    showExternalEditingDialog: function(config)
+    {
+        var externalName = this.externalEditSettings.name;
+        var me = this;
+        new Ext4.Window({
+            autoShow: true,
+            modal: false,
+            width: 380,
+            height: 150,
+            cls: 'external-editor-popup',
+            border: false,
+            closable: false,
+            resizable: false,
+            title: 'Editing report in ' + externalName,
+            draggable: true,
+            items:[{
+                xtype: 'box',
+                html: '<div style="margin: 10px;">Report is being edited in' + externalName +
+                '<br>' + externalName + ' may be in hidden window or tab. <br>' +
+                'Editing in LabKey is NOT recommended.</div>'
+            }],
+            buttonAlign: 'center',
+            buttons: [{
+                text: 'Edit in LabKey',
+                onClick : function () {
+                    window.location = config.redirectUrl;
+                }
+            },{
+                text: 'Go to ' + externalName,
+                cls: 'external-editor-popup-btn',
+                onClick : function () {
+                    me.openWindowOnce(config.externalUrl, config.externalWindowTitle);
+                }
+            }]
+        });
+
+        this.formPanel.getEl().mask();
     }
 });

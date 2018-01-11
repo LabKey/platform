@@ -21,6 +21,17 @@
     &.center { order: 2; flex: 10 0; }
     &.east   { order: 3; flex: 1 auto; }
     &.south  { order: 4; }
+
+    .script-report-editor-msg {
+      padding: 5px 15px;
+      background-color: $lk-grid-bar-bg-color;
+      border-top: none;
+      border-left: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
+      border-right: $lk-grid-outer-border-width solid $lk-grid-outer-border-color;
+      border-bottom: none;
+
+      display: block;
+    }
   }
 }
 
