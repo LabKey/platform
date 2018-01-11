@@ -26,6 +26,7 @@ LABKEY.Utils = new function(impl, $) {
         var formId = LABKEY.Utils.generateUUID();
         var formHTML = '<form method="POST" id="' + formId + '" action="' + url + '">' +
                 '<input type="hidden" name="json" value="' + LABKEY.Utils.encodeHtml(LABKEY.Utils.encode(value)) + '" />' +
+                '<input type="hidden" name="X-LABKEY-CSRF" value="' + LABKEY.CSRF + '" />' +
                 '</form>';
         $('body').append(formHTML);
         $('#'+formId).submit();
