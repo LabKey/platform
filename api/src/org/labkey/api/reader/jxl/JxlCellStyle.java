@@ -31,9 +31,10 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
  */
 public class JxlCellStyle implements CellStyle
 {
-    private jxl.Cell _cell;
-    private jxl.format.CellFormat _format;
     private static final String DEFAULT_FORMAT = "General";
+
+    private final jxl.Cell _cell;
+    private final jxl.format.CellFormat _format;
 
     public JxlCellStyle(jxl.Cell cell)
     {
@@ -105,12 +106,6 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public void setAlignment(short align)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public short getAlignment()
     {
         if (_format != null)
@@ -128,12 +123,6 @@ public class JxlCellStyle implements CellStyle
     public boolean getWrapText()
     {
         return _format != null && _format.getWrap();
-    }
-
-    @Override
-    public void setVerticalAlignment(short align)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
@@ -171,19 +160,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public void setBorderLeft(short border)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public short getBorderLeft()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public void setBorderRight(short border)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -195,19 +172,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public void setBorderTop(short border)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public short getBorderTop()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public void setBorderBottom(short border)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -272,12 +237,6 @@ public class JxlCellStyle implements CellStyle
         if (_format != null)
             return (short)_format.getBorderColour(jxl.format.Border.BOTTOM).getValue();
         return 0;
-    }
-
-    @Override
-    public void setFillPattern(short fp)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
@@ -422,6 +381,18 @@ public class JxlCellStyle implements CellStyle
 
     @Override
     public boolean getShrinkToFit()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setQuotePrefixed(boolean quotePrefix)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public boolean getQuotePrefixed()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.ExcelWriter;
@@ -60,7 +61,7 @@ public class CrosstabExcelWriter extends ExcelWriter
         if (_includeDimensionHeader)
         {
             Row dimensionRow = sheet.createRow(getCurrentRow());
-            Cell dimensionCell = dimensionRow.getCell(column, Row.CREATE_NULL_AS_BLANK);
+            Cell dimensionCell = dimensionRow.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
             dimensionCell.setCellStyle(getBoldFormat());
             dimensionCell.setCellValue(_table.getSettings().getColumnAxis().getCaption());
 
@@ -83,7 +84,7 @@ public class CrosstabExcelWriter extends ExcelWriter
 
             if (currentMember != null)
             {
-                Cell cell = row.getCell(column, Row.CREATE_NULL_AS_BLANK);
+                Cell cell = row.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 cell.setCellStyle(getBoldFormat());
                 cell.setCellValue(currentMember.getCaption());
                 column += memberColumns.size();

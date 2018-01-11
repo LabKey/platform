@@ -47,8 +47,8 @@ import java.util.Map;
  */
 public class JxlSheet implements Sheet
 {
-    private Workbook _workbook;
-    private jxl.Sheet _sheet;
+    private final Workbook _workbook;
+    private final jxl.Sheet _sheet;
 
     public JxlSheet(jxl.Sheet sheet, Workbook workbook)
     {
@@ -385,12 +385,6 @@ public class JxlSheet implements Sheet
     }
 
     @Override
-    public void setZoom(int numerator, int denominator)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public short getTopRow()
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -572,12 +566,6 @@ public class JxlSheet implements Sheet
 
     @Override
     public void autoSizeColumn(int column, boolean useMergedCells)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public Comment getCellComment(int row, int column)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

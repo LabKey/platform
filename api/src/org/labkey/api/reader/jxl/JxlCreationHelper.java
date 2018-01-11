@@ -23,6 +23,8 @@ import org.apache.poi.ss.usermodel.ExtendedColor;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.RichTextString;
+import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellReference;
 
 /**
  * User: klum
@@ -39,12 +41,6 @@ public class JxlCreationHelper implements CreationHelper
 
     @Override
     public DataFormat createDataFormat()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public Hyperlink createHyperlink(int type)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -69,6 +65,18 @@ public class JxlCreationHelper implements CreationHelper
 
     @Override
     public ExtendedColor createExtendedColor()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public AreaReference createAreaReference(String reference)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public AreaReference createAreaReference(CellReference topLeft, CellReference bottomRight)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

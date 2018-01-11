@@ -46,9 +46,9 @@ import java.util.TimeZone;
  */
 public class JxlCell implements Cell
 {
-    private jxl.Cell _cell;
-    private int _idx;
-    private Row _row;
+    private final jxl.Cell _cell;
+    private final int _idx;
+    private final Row _row;
 
     public JxlCell(jxl.Cell cell, int idx, Row row)
     {

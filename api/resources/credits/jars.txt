@@ -25,11 +25,11 @@ gwt-servlet-2.5.1.jar|Server Support for Google Web Toolkit|2.5.1|{link:Google|h
 gxt-2.2.5.jar||2.2.5|||jeckels|Support for rich web apps
 httpclient-4.5.3.jar|Apache HTTP Client|4.5.3|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers
 httpcore-4.4.6.jar|Apache HTTP Core|4.4.6|{link:Apache|http://hc.apache.org/httpcomponents-core-ga/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP core library, HttpClient dependency
-jama-1.0.2.jar|Java Matrix Package|1.0.2|{link:MathWorks & NIST|http://math.nist.gov/javanumerics/jama/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain}|adam|Linear regressions for hydrophobicity
 jackson-annotations-2.8.4.jar|Jackson Annotations Library|2.8.4|{link:Jackson|http://wiki.fasterxml.com/JacksonDownload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tgaluhn|JSON de/serialization, reporting API dependency
 jackson-core-2.8.8.jar|Jackson Core Library|2.8.8|{link:Jackson|http://wiki.fasterxml.com/JacksonDownload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tgaluhn|JSON de/serialization, reporting API dependency
 jackson-databind-2.8.8.jar|Jackson Databind Library|2.8.8|{link:Jackson|http://wiki.fasterxml.com/JacksonDownload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tgaluhn|JSON de/serialization, reporting API dependency
 jackson-datatype-json-org-2.8.8.jar|Jackson support for org.json|2.8.8|{link:Jackson|https://github.com/FasterXML/jackson-datatype-json-org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Jackson support for org.json data types, to ease migration out of code that uses them
+jama-1.0.2.jar|Java Matrix Package|1.0.2|{link:MathWorks & NIST|http://math.nist.gov/javanumerics/jama/}|Public Domain|adam|Linear regressions for hydrophobicity
 jaxrpc-api-1.1.jar|Java API for XML-Based RPC|1.1|{link:JAX-RPC|http://java.sun.com/webservices/jaxrpc/}|{link:Sun - JCP|http://java.sun.com/webservices/docs/2.0/LICENSE}|jeckels|Java API for XML RPC, pipeline dependency
 jfreechart-1.0.14.jar|JFreeChart|1.0.14|{link:JFreeChart|http://www.jfree.org/jfreechart/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|mbellew|Charting
 jmock-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
@@ -42,9 +42,9 @@ log4j-1.2.17.jar|Log4j|1.2.17|{link:Apache|http://logging.apache.org/log4j/1.2/}
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV Files
 objenesis-1.0.jar|Objenesis|1.0|{link:Objenesis|http://code.google.com/p/objenesis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library for instantiating Java objects, dependency of jMock
 patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.com/p/patricia-trie/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|PATRICIA Trie data structure implementation
-pdfbox-2.0.4.jar|Apache PDFBox®|2.0.4|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
-poi-3.15.jar|Apache POI|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
-poi-ooxml-3.15.jar|Apache POI OOXML|3.15|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
+pdfbox-2.0.8.jar|Apache PDFBox®|2.0.8|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
+poi-3.17.jar|Apache POI|3.17|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
+poi-ooxml-3.17.jar|Apache POI OOXML|3.17|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
 pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|jimp|Provide polling file watcher for cifs file systems
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes

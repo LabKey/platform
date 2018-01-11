@@ -30,9 +30,9 @@ import java.util.Iterator;
  */
 public class JxlRow implements Row
 {
-    private jxl.Cell[] _cells;
-    private int _idx;
-    private Sheet _sheet;
+    private final jxl.Cell[] _cells;
+    private final int _idx;
+    private final Sheet _sheet;
 
     public JxlRow(jxl.Cell[] cells, int idx, Sheet sheet)
     {

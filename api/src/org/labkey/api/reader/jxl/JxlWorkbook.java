@@ -28,6 +28,7 @@ import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.PictureData;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.SheetVisibility;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.File;
@@ -44,7 +45,7 @@ import java.util.List;
  */
 public class JxlWorkbook implements Workbook
 {
-    private jxl.Workbook _workbook;
+    private final jxl.Workbook _workbook;
 
     public JxlWorkbook(File dataFile) throws IOException, InvalidFormatException
     {
@@ -65,7 +66,8 @@ public class JxlWorkbook implements Workbook
         WorkbookSettings settings = new WorkbookSettings();
         settings.setGCDisabled(true);
 
-        try {
+        try
+        {
             _workbook = jxl.Workbook.getWorkbook(data, settings);
         }
         catch (BiffException e)
@@ -198,12 +200,6 @@ public class JxlWorkbook implements Workbook
 
     @Override
     public Font createFont()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public Font findFont(short boldWeight, short color, short fontHeight, String name, boolean italic, boolean strikeout, short typeOffset, byte underline)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -454,6 +450,24 @@ public class JxlWorkbook implements Workbook
 
     @Override
     public Iterator<Sheet> iterator()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public SheetVisibility getSheetVisibility(int sheetIx)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setSheetVisibility(int sheetIx, SheetVisibility visibility)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int addOlePackage(byte[] oleData, String label, String fileName, String command) throws IOException
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

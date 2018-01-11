@@ -18,7 +18,9 @@ package org.labkey.api.study.reports;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -364,8 +366,8 @@ public class Crosstab
         {
             CellStyle format = _workbook.createCellStyle();
             format.setWrapText(true);
-            format.setVerticalAlignment(CellStyle.VERTICAL_TOP);
-            format.setAlignment(CellStyle.ALIGN_CENTER);
+            format.setVerticalAlignment(VerticalAlignment.TOP);
+            format.setAlignment(HorizontalAlignment.CENTER);
 
             return format;
         }

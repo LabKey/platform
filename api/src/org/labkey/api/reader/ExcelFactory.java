@@ -29,6 +29,7 @@ import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -416,7 +417,7 @@ public class ExcelFactory
                     {
                         Object value;
                         JSONObject metadataMap = new JSONObject();
-                        Cell cell = row.getCell(cellIndex, Row.CREATE_NULL_AS_BLANK);
+                        Cell cell = row.getCell(cellIndex, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                         String formatString = cell.getCellStyle().getDataFormatString();
                         String formattedValue;
                         try

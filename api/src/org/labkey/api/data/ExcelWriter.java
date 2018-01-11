@@ -29,7 +29,9 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Footer;
 import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -110,7 +112,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     if (null == propsTemp)
                         propsTemp = new CustomProperties();
                     CustomProperties props = propsTemp;
-                    metadata.forEach((name, value) -> props.put(name, value));
+                    metadata.forEach(props::put);
                     hssfWorkbook.getDocumentSummaryInformation().setCustomProperties(props);
                 }
             }
@@ -151,7 +153,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 {
                     SXSSFWorkbook sxssfWorkbook = (SXSSFWorkbook) workbook;
                     POIXMLProperties.CustomProperties props = sxssfWorkbook.getXSSFWorkbook().getProperties().getCustomProperties();
-                    metadata.forEach((name, value) -> props.addProperty(name, value));
+                    metadata.forEach(props::addProperty);
                 }
             }
         };
@@ -757,7 +759,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             _wrappingTextFormat = _workbook.createCellStyle();
             _wrappingTextFormat.setWrapText(true);
-            _wrappingTextFormat.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+            _wrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
         }
 
         return _wrappingTextFormat;
@@ -770,7 +772,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         if (null == _boldFormat)
         {
             Font boldFont = _workbook.createFont();
-            boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+            boldFont.setBold(true);
             _boldFormat = _workbook.createCellStyle();
             _boldFormat.setFont(boldFont);
         }
@@ -786,7 +788,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             _nonWrappingTextFormat = _workbook.createCellStyle();
             _nonWrappingTextFormat.setWrapText(false);
-            _nonWrappingTextFormat.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+            _nonWrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
         }
 
         return _nonWrappingTextFormat;
@@ -804,7 +806,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     row = sheet.createRow(getCurrentRow());
                 }
 
-                Cell cell = row.getCell(0, Row.CREATE_NULL_AS_BLANK);
+                Cell cell = row.getCell(0, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 cell.setCellValue("#" + line);
 
                 incrementRow();
@@ -835,7 +837,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                         row = sheet.createRow(getCurrentRow());
                     }
 
-                    Cell cell = row.getCell(j * columnWidth, Row.CREATE_NULL_AS_BLANK);
+                    Cell cell = row.getCell(j * columnWidth, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                     cell.setCellValue(headerColumns[j]);
 
                     // Wrap text in the case of full-size headers; don't wrap text in column mode.

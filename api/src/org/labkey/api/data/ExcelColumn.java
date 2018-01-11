@@ -25,12 +25,15 @@ import org.apache.poi.hssf.usermodel.HSSFPicture;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.ClientAnchor.AnchorType;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.Picture;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFAnchor;
@@ -287,13 +290,13 @@ public class ExcelColumn extends RenderColumn
             if (cellFormat != null)
             {
                 // Set the format but there's no value to set
-                Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK);
+                Cell cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 cell.setCellStyle(cellFormat);
             }
             return;
         }
 
-        Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK);
+        Cell cell = rowObject.getCell(column, MissingCellPolicy.CREATE_NULL_AS_BLANK);
 
         try
         {
@@ -468,7 +471,7 @@ public class ExcelColumn extends RenderColumn
     private ClientAnchor createAnchor(int row, int column, double rowRatio, double colRatio, CreationHelper helper)
     {
         ClientAnchor anchor = helper.createClientAnchor();
-        anchor.setAnchorType(ClientAnchor.MOVE_AND_RESIZE);
+        anchor.setAnchorType(AnchorType.MOVE_AND_RESIZE);
         anchor.setCol1(column);
         anchor.setRow1(row);
         anchor.setCol2(column);
@@ -520,7 +523,7 @@ public class ExcelColumn extends RenderColumn
                     }
                     if (format.isBold())
                     {
-                        font.setBoldweight(Font.BOLDWEIGHT_BOLD);
+                        font.setBold(true);
                     }
                     java.awt.Color textColor = format.getParsedTextColor();
                     if (textColor != null)
@@ -542,7 +545,7 @@ public class ExcelColumn extends RenderColumn
                     if (backgroundColor != null)
                     {
                         excelFormat.setFillForegroundColor(findBestColour(backgroundColor));
-                        excelFormat.setFillPattern(CellStyle.SOLID_FOREGROUND);
+                        excelFormat.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                     }
                     _formats.put(format, excelFormat);
                 }
