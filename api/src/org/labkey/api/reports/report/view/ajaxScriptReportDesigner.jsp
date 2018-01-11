@@ -70,7 +70,7 @@
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
-    Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(c, report);
+    Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(getViewContext(), report);
     List<Pair<String, String>> params = getActionURL().getParameters();
 
     // Initial view URL uses all parameters
@@ -160,19 +160,32 @@
         Ext4.onReady(function(){
 
             var externalEditSettings;
-            <% if (null != externalEditorSettings) { %>
+            <% if (null != externalEditorSettings) {
+                Map<String, Object> externalConfig = externalEditorSettings.getValue();
+            %>
                 externalEditSettings = {};
                 externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
-                externalEditSettings.name = <%=q((String) externalEditorSettings.getValue().get("name"))%>;
+                externalEditSettings.name = <%=q((String) externalConfig.get("name"))%>;
+
+                <% if (externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")) { %>
+                    if ("true" != LABKEY.ActionURL.getParameter('skipExternalEditingCheck'))
+                    {
+                        externalEditSettings.isEditing = true;
+                        externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
+                        externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
+                        externalEditSettings.externalWindowTitle = <%=q(externalConfig.containsKey("externalWindowTitle") ? (String) externalConfig.get("externalWindowTitle"): "")%>;
+                    }
+                <% } %>
+
                 var externalEditWarning = '';
 
-                <% if (externalEditorSettings.getValue().containsKey("warningMsg")) { %>
-                    externalEditWarning = <%=q((String) externalEditorSettings.getValue().get("warningMsg"))%>;
+                <% if (externalConfig.containsKey("warningMsg")) { %>
+                    externalEditWarning = <%=q((String) externalConfig.get("warningMsg"))%>;
                 <% } %>
 
                 if (externalEditWarning)
                 {
-                    document.getElementById('script-report-editor-msg').innerHTML = externalEditWarning;
+                    document.getElementById('script-report-editor-msg').innerHTML = '<span class="script-report-editor-msg">' + externalEditWarning + '</span>';
                 }
 
             <% } %>
@@ -210,7 +223,7 @@
 </script>
 
 <labkey:scriptDependency callback="createScriptReportPanel" scope="this"/>
-<div id="script-report-editor-msg" style="margin: 10px" class="text-warning"></div>
+<div id="script-report-editor-msg" class="text-warning"></div>
 <div id="<%= h(renderId)%>" class="script-report-editor"></div>
 
 

@@ -178,7 +178,7 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      */
     Map<String, Object> serialize(Container container, User user);
 
-    default Map<String, Object> getExternalEditorConfig()
+    default Map<String, Object> getExternalEditorConfig(ViewContext viewContext)
     {
         return null;
     }

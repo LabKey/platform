@@ -23,6 +23,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Map;
 
@@ -55,5 +56,5 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlQueryReport(Container c, Report r);
     ActionURL urlManageNotifications(Container c);
     ActionURL urlModuleThumbnail(Container c);
-    Pair<ActionURL, Map<String, Object>> urlAjaxExternalEditScriptReport(Container c, Report r);
+    Pair<ActionURL, Map<String, Object>> urlAjaxExternalEditScriptReport(ViewContext viewContext, Report r);
 }

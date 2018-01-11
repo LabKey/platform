@@ -67,4 +67,14 @@ public interface RStudioService
     default void addRequiredLibrary(String library) {};
 
     default List<String> getRequiredLibraries() {return Collections.emptyList();};
+
+    default boolean isUserEditingReportInRStudio(User user, String entityId)
+    {
+        return false;
+    }
+
+    default Pair<String, String> getReportRStudioUrl(ViewContext viewContext, String entityId)
+    {
+        return null;
+    }
 }
