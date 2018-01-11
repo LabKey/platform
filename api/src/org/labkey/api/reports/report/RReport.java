@@ -174,7 +174,7 @@ public class RReport extends ExternalScriptEngineReport
                 }
             }
             if (!isRDockerConfigured)
-                dockerRConfig.put("warningMsg", "'R Docker Scripting Engine' is the preferred method of running R reports created from RStudio in LabKey. Please contact admin to enabled it.");
+                dockerRConfig.put("warningMsg", "'R Docker Scripting Engine' is the preferred method of running R reports created from RStudio in LabKey. Please contact admin to enable it.");
             return dockerRConfig;
         }
         return null;
