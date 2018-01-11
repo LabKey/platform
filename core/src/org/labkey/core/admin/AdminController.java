@@ -162,7 +162,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -308,7 +307,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     public class BeginAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             return getShowAdminURL();
         }
@@ -886,7 +885,7 @@ public class AdminController extends SpringActionController
             }
         }
 
-        private Map<String, Boolean> dbConnectionHealth(Map<String, Boolean> overallStatus) throws Exception
+        private Map<String, Boolean> dbConnectionHealth(Map<String, Boolean> overallStatus)
         {
             Map<String, Boolean> healthValues = new HashMap<>();
             Boolean allConnected = true;
@@ -1036,7 +1035,7 @@ public class AdminController extends SpringActionController
         private final String WIKI_LINE_SEP = "\r\n\r\n";
         private String _html;
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @Nullable Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
+        CreditsView(String creditsFilename, @Nullable String wikiSource, @Nullable Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern)
         {
             super(fileType + " Files Distributed with " + (null == component ? "LabKey" : component));
 
@@ -1090,7 +1089,7 @@ public class AdminController extends SpringActionController
 
 
         @Override
-        public void renderView(Object model, PrintWriter out) throws IOException, ServletException
+        public void renderView(Object model, PrintWriter out)
         {
             out.print(_html);
         }
@@ -1209,7 +1208,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    static void deleteExistingLogo(Container c, User user) throws SQLException
+    static void deleteExistingLogo(Container c, User user)
     {
         LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
@@ -1227,7 +1226,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetFaviconAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws SQLException
+        public ActionURL getRedirectURL(Object o)
         {
             deleteExistingFavicon(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
@@ -1237,7 +1236,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    static void deleteExistingFavicon(Container c, User user) throws SQLException
+    static void deleteExistingFavicon(Container c, User user)
     {
         LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME, user);
@@ -1248,7 +1247,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeleteCustomStylesheetAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws SQLException
+        public ActionURL getRedirectURL(Object o)
         {
             deleteExistingCustomStylesheet(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
@@ -1257,7 +1256,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    static void deleteExistingCustomStylesheet(Container c, User user) throws SQLException
+    static void deleteExistingCustomStylesheet(Container c, User user)
     {
         LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
         AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME, user);
@@ -1437,7 +1436,7 @@ public class AdminController extends SpringActionController
         public final boolean testInPage;
         public final boolean showSelfReportExceptions;
 
-        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage) throws SQLException
+        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage)
         {
             this.upgradeInProgress = upgradeInProgress;
             this.testInPage = testInPage;
@@ -2300,7 +2299,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetErrorMarkAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             File errorLogFile = getErrorLogFile();
             _errorMark = errorLogFile.length();
@@ -2379,7 +2378,7 @@ public class AdminController extends SpringActionController
             return tabs;
         }
 
-        public HttpView getTabView(String tabId) throws Exception
+        public HttpView getTabView(String tabId)
         {
             return new ActionsView("summary".equals(tabId));
         }
@@ -2541,7 +2540,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetQueryStatisticsAction extends SimpleRedirectAction<QueriesForm>
     {
-        public ActionURL getRedirectURL(QueriesForm form) throws Exception
+        public ActionURL getRedirectURL(QueriesForm form)
         {
             QueryProfiler.getInstance().resetAllStatistics();
             return getQueriesURL(form.getStat());
@@ -3336,7 +3335,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SetAdminModeAction extends SimpleRedirectAction<UserPrefsForm>
     {
-        public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
+        public ActionURL getRedirectURL(UserPrefsForm form)
         {
             getViewContext().getSession().setAttribute("adminMode", form.isAdminMode());
             NavTreeManager.uncacheAll();
@@ -3466,7 +3465,7 @@ public class AdminController extends SpringActionController
 
     private static class DefineWebThemesView extends JspView<WebThemesBean>
     {
-        public DefineWebThemesView(WebThemeForm form, BindException errors) throws SQLException
+        public DefineWebThemesView(WebThemeForm form, BindException errors)
         {
             super("/org/labkey/core/admin/webTheme.jsp", new WebThemesBean(form), errors);
         }
@@ -4080,7 +4079,7 @@ public class AdminController extends SpringActionController
     public class FolderInformationAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView() throws Exception
+        protected HttpView getTabView()
         {
             return getContainerInfoView(getContainer(), getUser());
         }
@@ -4129,7 +4128,7 @@ public class AdminController extends SpringActionController
     public class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
     {
         @Override
-        protected HttpView getTabView(MissingValuesForm form, BindException errors) throws Exception
+        protected HttpView getTabView(MissingValuesForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", form, errors);
         }
@@ -4289,7 +4288,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        protected HttpView getTabView(ExportFolderForm form, BindException errors) throws Exception
+        protected HttpView getTabView(ExportFolderForm form, BindException errors)
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
             return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
@@ -4468,7 +4467,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL;
 
         @Override
-        protected HttpView getTabView(ImportFolderForm form, BindException errors) throws Exception
+        protected HttpView getTabView(ImportFolderForm form, BindException errors)
         {
             // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
             if (!errors.hasErrors())
@@ -4752,7 +4751,7 @@ public class AdminController extends SpringActionController
     public class FolderSettingsAction extends FolderManagementViewPostAction<FolderSettingsForm>
     {
         @Override
-        protected HttpView getTabView(FolderSettingsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(FolderSettingsForm form, BindException errors)
         {
             return new LookAndFeelView(getContainer(), null, errors);
         }
@@ -4777,7 +4776,7 @@ public class AdminController extends SpringActionController
     public class ModulePropertiesAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView() throws Exception
+        protected HttpView getTabView()
         {
             return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp");
         }
@@ -4840,7 +4839,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL = null;
 
         @Override
-        protected HttpView getTabView(FolderTypeForm form, BindException errors) throws Exception
+        protected HttpView getTabView(FolderTypeForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/folderType.jsp", form, errors);
         }
@@ -4980,7 +4979,7 @@ public class AdminController extends SpringActionController
     public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
     {
         @Override
-        protected HttpView getTabView(FileRootsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(FileRootsForm form, BindException errors)
         {
             HttpView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
 
@@ -5127,7 +5126,7 @@ public class AdminController extends SpringActionController
     public class ManageFoldersAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView() throws Exception
+        protected HttpView getTabView()
         {
             return new JspView<>("/org/labkey/core/admin/manageFolders.jsp");
         }
@@ -5387,7 +5386,7 @@ public class AdminController extends SpringActionController
     public class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
     {
         @Override
-        protected HttpView getTabView(ConceptsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(ConceptsForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", form, errors);
         }
@@ -5577,7 +5576,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeleteCustomEmailAction extends SimpleRedirectAction<CustomEmailForm>
     {
-        public ActionURL getRedirectURL(CustomEmailForm form) throws Exception
+        public ActionURL getRedirectURL(CustomEmailForm form)
         {
             if (form.getTemplateClass() != null)
             {
@@ -6494,7 +6493,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     public class ModifyFolderAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             if ("create".equalsIgnoreCase(getViewContext().getActionURL().getParameter("action")))
                 return new ActionURL(CreateFolderAction.class, getContainer());
@@ -6879,7 +6878,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class RecreateViewsAction extends ConfirmAction
     {
-        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        public ModelAndView getConfirmView(Object o, BindException errors)
         {
             getPageConfig().setShowHeader(false);
             getPageConfig().setTitle("Recreate Views?");
@@ -7362,7 +7361,7 @@ public class AdminController extends SpringActionController
             }
 
             @Override
-            protected void renderView(Object model, PrintWriter out) throws Exception
+            protected void renderView(Object model, PrintWriter out)
             {
                 boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
@@ -7490,7 +7489,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getConfirmView(ModuleForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(ModuleForm form, BindException errors)
         {
             ModuleContext ctx = form.getModuleContext();
             List<String> schemas = ctx.getSchemaList();

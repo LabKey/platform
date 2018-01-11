@@ -56,8 +56,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -1055,13 +1053,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-
-    private static final AutoDetectParser _parser = new AutoDetectParser();
-
-    private Parser getParser()
-    {
-        return _parser;
-    }
 
     private String getNameToLog(WebdavResource r)
     {
