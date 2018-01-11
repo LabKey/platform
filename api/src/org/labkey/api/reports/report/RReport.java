@@ -143,7 +143,8 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public Map<String, Object> getExternalEditorConfig(ViewContext viewContext)
     {
-        if (getRStudioService() != null)
+        RStudioService rs = getRStudioService();
+        if (rs != null)
         {
             Map<String, Object> dockerRConfig = new HashMap<>();
             dockerRConfig.put("name", "RStudio");
@@ -151,13 +152,9 @@ public class RReport extends ExternalScriptEngineReport
             dockerRConfig.put("editing", isEditing);
             if (isEditing)
             {
-                RStudioService rs = getRStudioService();
-                if (null != rs)
-                {
-                    Pair<String, String> externalEditor = rs.getReportRStudioUrl(viewContext, getEntityId());
-                    dockerRConfig.put("externalUrl", externalEditor.getKey());
-                    dockerRConfig.put("externalWindowTitle", externalEditor.getValue());
-                }
+                Pair<String, String> externalEditor = rs.getReportRStudioUrl(viewContext, getEntityId());
+                dockerRConfig.put("externalUrl", externalEditor.getKey());
+                dockerRConfig.put("externalWindowTitle", externalEditor.getValue());
                 dockerRConfig.put("redirectUrl", ReportUtil.getRunReportURL(viewContext, this, false)
                         .addParameter("tabId", "Source")
                         .addParameter("skipExternalEditingCheck", true));
@@ -212,7 +209,7 @@ public class RReport extends ExternalScriptEngineReport
         bindings.put(RScriptEngine.KNITR_FORMAT, getKnitrFormat());
         bindings.put(RScriptEngine.PANDOC_USE_DEFAULT_OUTPUT_FORMAT, isUseDefaultOutputOptions());
         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
-        String script = createScript(engine, context, new ArrayList<>(), inputDataFile, null);
+        String script = createScript(engine, context, new ArrayList<>(), inputDataFile, null, true);
         return engine.prepareScript(script);
     }
 
@@ -341,7 +338,13 @@ public class RReport extends ExternalScriptEngineReport
         return "";
     }
 
+    @Override
     protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
+    {
+        return getScriptProlog(engine, context, inputFile, inputParameters, false);
+    }
+
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters, boolean isRStudio)
     {
         StringBuilder labkey = new StringBuilder();
 
@@ -383,40 +386,43 @@ public class RReport extends ExternalScriptEngineReport
             labkey.append("labkey.url.params <- NULL\n");
         }
 
-        // Root path to resolve system files in reports
-        File root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.files);
-        if (root != null)
+        if (!isRStudio)
         {
-            labkey.append("labkey.file.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
-        }
-        else
-        {
-            labkey.append("labkey.file.root <- NULL\n");
-        }
+            // Root path to resolve system files in reports
+            File root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.files);
+            if (root != null)
+            {
+                labkey.append("labkey.file.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
+            }
+            else
+            {
+                labkey.append("labkey.file.root <- NULL\n");
+            }
 
-        // Root path to resolve pipeline files in reports
-        root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline);
-        if (root != null)
-        {
-            labkey.append("labkey.pipeline.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
-        }
-        else
-        {
-            labkey.append("labkey.pipeline.root <- NULL\n");
-        }
+            // Root path to resolve pipeline files in reports
+            root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline);
+            if (root != null)
+            {
+                labkey.append("labkey.pipeline.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
+            }
+            else
+            {
+                labkey.append("labkey.pipeline.root <- NULL\n");
+            }
 
-        // pipeline path to resolve data files in reports if we are using a remote engine
-        if (engine instanceof RserveScriptEngine)
-        {
-            RserveScriptEngine rengine = (RserveScriptEngine) engine;
+            // pipeline path to resolve data files in reports if we are using a remote engine
+            if (engine instanceof RserveScriptEngine)
+            {
+                RserveScriptEngine rengine = (RserveScriptEngine) engine;
 
-            File pipelineRoot = getPipelineRoot(context);
-            String localPath = getLocalPath(pipelineRoot);
-            labkey.append("labkey.pipeline.root <- \"").append(localPath).append("\"\n");
+                File pipelineRoot = getPipelineRoot(context);
+                String localPath = getLocalPath(pipelineRoot);
+                labkey.append("labkey.pipeline.root <- \"").append(localPath).append("\"\n");
 
-            // include remote paths so that the client can fixup any file references
-            String remotePath = rengine.getRemotePath(pipelineRoot);
-            labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
+                // include remote paths so that the client can fixup any file references
+                String remotePath = rengine.getRemotePath(pipelineRoot);
+                labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
+            }
         }
 
         // session information
@@ -450,7 +456,7 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters)
+    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters, boolean isRStudio)
     {
         String yamlScript = "";
         String yamlSyntaxPrefix = "---\n";
@@ -475,7 +481,7 @@ public class RReport extends ExternalScriptEngineReport
             yamlScript +
             commentLineStart + "8< - - - do not edit this line - - - - - - - - - - - - - - - - - - - -" + commentLineEnd +
             commentLineStart + "This code is not part of your R report, changes will not be saved     " + commentLineEnd +
-            StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) +
+            StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters, isRStudio)) +
             commentLineStart + "Your report code goes below the next line                             " + commentLineEnd +
             commentLineStart + " - - - - do not edit this line - - - - - - - - - - - - - - - - - -  >8" + commentLineEnd +
             script;
@@ -580,7 +586,12 @@ public class RReport extends ExternalScriptEngineReport
 
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
-        String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters);
+        return createScript(engine, context, outputSubst, inputDataTsv, inputParameters, false);
+    }
+
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
+    {
+        String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters, isRStudio);
         File inputData = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
         /*
