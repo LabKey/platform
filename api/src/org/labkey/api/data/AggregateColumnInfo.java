@@ -38,8 +38,8 @@ public class AggregateColumnInfo extends ColumnInfo
     public static final String NAME_PREFIX = "CTAGG_";
     public static final String PIVOTED_NAME_PREFIX = "PCTAGG_";
 
-    private @Nullable CrosstabMember _member = null;
-    private @NotNull CrosstabMeasure _measure = null;
+    private @Nullable final CrosstabMember _member;
+    private @NotNull final CrosstabMeasure _measure;
 
     public AggregateColumnInfo(TableInfo table, @Nullable CrosstabMember member, @NotNull CrosstabMeasure measure)
     {

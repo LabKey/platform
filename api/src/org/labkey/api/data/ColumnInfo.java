@@ -1842,14 +1842,14 @@ public class ColumnInfo extends ColumnRenderProperties
             {
                 jdbcType = propertyType.getJdbcType();
             }
-            else if (sqlTypeName != null)
+            else // we're here because sqlTypeName != null
             {
                 SqlDialect d;
                 if (getParentTable() == null)
                     d = CoreSchema.getInstance().getSqlDialect();
                 else
                     d = getParentTable().getSqlDialect();
-                int type = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
+                int type = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
                 jdbcType = JdbcType.valueOf(type);
             }
         }

@@ -32,15 +32,15 @@ import java.util.Collections;
  */
 public interface UserSchemaCustomizer
 {
-    public void configure(SchemaCustomizerType schemaCustomizer);
+    void configure(SchemaCustomizerType schemaCustomizer);
 
-    public void afterConstruct(UserSchema schema);
+    void afterConstruct(UserSchema schema);
 
-    public void afterConstruct(UserSchema schema, TableInfo table);
+    void afterConstruct(UserSchema schema, TableInfo table);
 
-    public void afterConstruct(UserSchema schema, QueryDefinition def);
+    void afterConstruct(UserSchema schema, QueryDefinition def);
 
-    public static class Factory
+    class Factory
     {
         public static Collection<UserSchemaCustomizer> create(SchemaCustomizerType[] xmlSchemaCustomizers)
         {

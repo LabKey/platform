@@ -151,10 +151,9 @@ public class DataRegionSelection
      */
     public static @NotNull Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
     {
-        Set<String> result = new LinkedHashSet<>();
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
-        List<String> parameterSelected = values == null ? new ArrayList<String>() : Arrays.asList(values);
-        result.addAll(parameterSelected);
+        List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
+        Set<String> result = new LinkedHashSet<>(parameterSelected);
 
         if (mergeSession || clearSession)
         {
@@ -235,7 +234,7 @@ public class DataRegionSelection
     }
 
 
-    public static int selectAll(QueryForm form) throws SQLException, IOException
+    public static int selectAll(QueryForm form) throws IOException
     {
         UserSchema schema = form.getSchema();
         if (schema == null)
@@ -309,7 +308,7 @@ public class DataRegionSelection
 
     public interface DataSelectionKeyForm
     {
-        public String getDataRegionSelectionKey();
-        public void setDataRegionSelectionKey(String key);
+        String getDataRegionSelectionKey();
+        void setDataRegionSelectionKey(String key);
     }
 }

@@ -38,7 +38,7 @@ import java.util.Set;
  */
 public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
 {
-    final JSONObject _json;
+    private final JSONObject _json;
 
     public ApiSimpleResponse()
     {
