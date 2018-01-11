@@ -1101,6 +1101,7 @@ public class ListManager implements SearchService.DocumentProvider
             DomainProperty domainProperty = unsavedList.getDomain().addPropertyOfPropertyDescriptor(ipd.pd);
             ipd.validators.forEach(domainProperty::addValidator);
             domainProperty.setConditionalFormats(ipd.formats);
+            domainProperty.setDefaultValue(ipd.defaultValue);
         }
 
         unsavedList.save(user);

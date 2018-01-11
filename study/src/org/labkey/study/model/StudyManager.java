@@ -3984,12 +3984,13 @@ public class StudyManager
                 p = d.addProperty();
                 ipd.pd.copyTo(p.getPropertyDescriptor());
                 p.setName(ipd.pd.getName());
-                p.setRequired(ipd.pd.isRequired());
+                p.setRequired(ipd.pd.isRequired());  // TODO: Redundant? copyTo() already copied required (without involving nullable)
                 p.setDescription(ipd.pd.getDescription());
             }
 
             ipd.validators.forEach(p::addValidator);
             p.setConditionalFormats(ipd.formats);
+            p.setDefaultValue(ipd.defaultValue);
         }
 
         //Ensure that each dataset has an entry in the domain map

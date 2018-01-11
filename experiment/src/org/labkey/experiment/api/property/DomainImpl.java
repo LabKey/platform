@@ -17,6 +17,7 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -41,6 +42,7 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -423,6 +425,7 @@ public class DomainImpl implements Domain
 
             // Keep track of the intended final name for each updated property, and its sort order
             Map<DomainPropertyImpl, Pair<String, Integer>> finalNames = new HashMap<>();
+            Map<DomainProperty, Object> defaultValueMap = new HashMap<>();
 
             // Now add and update #8978
             for (DomainPropertyImpl impl : _properties)
@@ -489,6 +492,10 @@ public class DomainImpl implements Domain
                     String oldFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
+                    String defaultValue = impl.getDefaultValue();
+                    Object converted = null != defaultValue ? ConvertUtils.convert(defaultValue, impl.getPropertyDescriptor().getJavaClass()) : null;
+                    defaultValueMap.put(impl, converted);
+
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
                     else if (null != pdOld)
@@ -505,6 +512,15 @@ public class DomainImpl implements Domain
                 domainProperty.setName(name);
                 generateStorageColumnName(domainProperty._pd);
                 domainProperty.save(user, _dd, order);
+            }
+
+            try
+            {
+                DefaultValueService.get().setDefaultValues(getContainer(), defaultValueMap);
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
             }
 
             _new = false;

@@ -852,7 +852,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             String legalName = property.getLegalSelectName(dialect);
             sql.append(".").append(legalName);
             ColumnInfo column = new ExprColumn(this, legalName, sql, property.getJdbcType());
-            PropertyColumn.copyAttributes(getUserSchema().getUser(), column, property, getContainer(), null);
+            PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null);
             if (editable)
             {
                 // Make editable, but some should be read only

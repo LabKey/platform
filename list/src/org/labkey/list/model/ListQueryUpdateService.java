@@ -27,7 +27,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
@@ -35,7 +34,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -51,7 +49,6 @@ import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -107,7 +104,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> listRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> listRow) throws InvalidKeyException
     {
         Map<String, Object> ret = null;
 
@@ -143,7 +140,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         throw new IllegalStateException("Method not used by ListQueryUpdateService");
     }
@@ -462,7 +458,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
 
             @Override
-            public void exec(List<String> entityIds) throws SQLException
+            public void exec(List<String> entityIds)
             {
                 // delete the related list data for this block
                 deleteRelatedListData(user, container, entityIds);
