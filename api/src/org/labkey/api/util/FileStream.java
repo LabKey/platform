@@ -28,32 +28,35 @@ import java.io.*;
  */
 public interface FileStream
 {
-    public long getSize() throws IOException;
-    public InputStream openInputStream() throws IOException;
-    public void closeInputStream() throws IOException;
+    long getSize() throws IOException;
+    InputStream openInputStream() throws IOException;
+    void closeInputStream() throws IOException;
 
 
-    public static FileStream EMPTY = new FileStream()
+    FileStream EMPTY = new FileStream()
     {
-        public long getSize() throws IOException
+        @Override
+        public long getSize()
         {
             return 0;
         }
 
-        public InputStream openInputStream() throws IOException
+        @Override
+        public InputStream openInputStream()
         {
             return new ByteArrayInputStream(new byte[0]);
         }
 
-        public void closeInputStream() throws IOException
+        @Override
+        public void closeInputStream()
         {
         }
     };
 
 
-    public static class ByteArrayFileStream implements FileStream
+    class ByteArrayFileStream implements FileStream
     {
-        ByteArrayInputStream in;
+        private ByteArrayInputStream in;
 
         public ByteArrayFileStream(ByteArrayInputStream b)
         {
@@ -69,21 +72,24 @@ public interface FileStream
 
         public ByteArrayFileStream(ByteArrayOutputStream out)
         {
-            in = new ByteArrayInputStream(out.toByteArray());
+            this(new ByteArrayInputStream(out.toByteArray()));
             MemTracker.getInstance().put(in);
         }
 
+        @Override
         public long getSize()
         {
             return in.available();
         }
 
-        public InputStream openInputStream() throws IOException
+        @Override
+        public InputStream openInputStream()
         {
             return in;
         }
 
-        public void closeInputStream() throws IOException
+        @Override
+        public void closeInputStream()
         {
             IOUtils.closeQuietly(in);
             MemTracker.getInstance().remove(in);
@@ -98,9 +104,9 @@ public interface FileStream
     }
 
 
-    public static class StringFileStream extends ByteArrayFileStream
+    class StringFileStream extends ByteArrayFileStream
     {
-        public StringFileStream(String s) throws UnsupportedEncodingException
+        public StringFileStream(String s)
         {
             super(toBytes(s));
         }
@@ -112,33 +118,35 @@ public interface FileStream
     }
 
 
-    public static class FileFileStream implements FileStream
+    class FileFileStream implements FileStream
     {
-        FileInputStream in;
+        private FileInputStream in;
 
         public FileFileStream(File f) throws IOException
         {
-            in = new FileInputStream(f);
-            MemTracker.getInstance().put(in);
+            this(new FileInputStream(f));
         }
 
-        public FileFileStream(FileInputStream fin) throws IOException
+        public FileFileStream(FileInputStream fin)
         {
             in = fin;
             MemTracker.getInstance().put(in);
         }
 
+        @Override
         public long getSize() throws IOException
         {
             return in.getChannel().size();
         }
 
-        public InputStream openInputStream() throws IOException
+        @Override
+        public InputStream openInputStream()
         {
             return in;
         }
 
-        public void closeInputStream() throws IOException
+        @Override
+        public void closeInputStream()
         {
             IOUtils.closeQuietly(in);
             MemTracker.getInstance().remove(in);
