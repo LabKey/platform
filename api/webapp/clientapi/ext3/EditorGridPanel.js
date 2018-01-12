@@ -181,7 +181,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             this.store.on("commitexception", this.onStoreCommitException, this);
             this.store.load({ params : {
                     start: 0,
-                    limit: this.pageSize
+                    limit: this.pageSize,
+                    'X-LABKEY-CSRF': LABKEY.CSRF
                 }});
         }
     },
