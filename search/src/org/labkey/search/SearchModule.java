@@ -50,7 +50,6 @@ import org.labkey.search.view.SearchWebPartFactory;
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -219,11 +218,11 @@ public class SearchModule extends DefaultModule
     @Override
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                // TODO: 30631: Add unit test to verify search module document parsing
-//                LuceneSearchServiceImpl.TikaTestCase.class,
-                LuceneSearchServiceImpl.TestCase.class
-                ));
+        return PageFlowUtil.set
+        (
+            LuceneSearchServiceImpl.TikaTestCase.class,
+            LuceneSearchServiceImpl.TestCase.class
+        );
     }
 
     // Special loading for search resources: gradle build pushes Tika JARs into deploy directory only, so need to

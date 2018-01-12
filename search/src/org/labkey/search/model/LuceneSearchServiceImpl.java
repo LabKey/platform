@@ -59,7 +59,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
@@ -1510,7 +1509,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (hit.url.contains("/%40files?renderAs=DEFAULT/"))
             {
                 int in = hit.url.indexOf("?renderAs=DEFAULT/");
-                hit.url = hit.url.substring(0,in) + hit.url.substring(in+"?renderAs=DEFAULT".length()) + "?renderAs=DEFAULT";
+                hit.url = hit.url.substring(0, in) + hit.url.substring(in + "?renderAs=DEFAULT".length()) + "?renderAs=DEFAULT";
             }
             if (null != hit.docid)
             {
@@ -1627,8 +1626,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         private Container container;
         private File fileRoot;
 
-        @Before
-        public void preTest() throws Exception
+        /**
+         * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
+         * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
+         */
+        //@Test
+        public void testTika() throws IOException
         {
             container = ContainerManager.ensureContainer(JunitUtil.getTestContainer(), FOLDER_NAME);
 
@@ -1637,15 +1640,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             FileUtils.cleanDirectory(fileRoot);
             File sampledata = JunitUtil.getSampleData(null, "fileTypes");
             FileUtils.copyDirectory(sampledata, fileRoot);
-        }
 
-        /**
-         * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
-         * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
-         */
-        //@Test
-        public void testTika()
-        {
             Predicate<WebdavResource> fileFilter = webdavResource -> true;
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(container);
@@ -1682,7 +1677,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return results;
         }
 
-//        @Test
+        private Map<String, Pair<Integer, String[]>> expectations = new HashMap<>();
+
+        @Test
         public void testTika2() throws IOException, TikaException, SAXException
         {
             File sampledata = JunitUtil.getSampleData(null, "fileTypes");
@@ -1691,21 +1688,79 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assertTrue(sampledata.isDirectory());
             SearchService ss = SearchService.get();
             LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
+            initializeExpectations();
 
             for (File file : sampledata.listFiles(File::isFile))
             {
-                String docId = "testtika";
-                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
-                ContentHandler handler = new BodyContentHandler(-1);
-                Metadata metadata = new Metadata();
-
-                try (InputStream is = new FileInputStream(file))
-                {
-                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
-                    String body = handler.toString();
-                    body = body;  // TODO: Test expectations for body and metadata for all (or at least key) document types
-                }
+                testFile(lssi, file);
             }
+        }
+
+        private void testFile(LuceneSearchServiceImpl lssi, File file) throws IOException, TikaException, SAXException
+        {
+            String docId = "testtika";
+            SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
+            ContentHandler handler = new BodyContentHandler(-1);
+            Metadata metadata = new Metadata();
+
+            try (InputStream is = new FileInputStream(file))
+            {
+                lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                String body = handler.toString();
+                Pair<Integer, String[]> expectation = expectations.get(file.getName());
+                
+                assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
+                assertEquals("Wrong size for \"" + file.getName() + "\"", (long)expectation.first, (long)body.length());
+                
+                for (String s : expectation.second)
+                    assertTrue("Text not found in \"" + file.getName() + "\": \"" + s + "\"", body.contains(s));
+
+                if (!body.isEmpty() && 0 == expectation.second.length)
+                    _log.info(file.getName() + ": " + StringUtils.left(body, 5000));
+            }
+        }
+
+        private void initializeExpectations()
+        {
+            add("cmd_sample.cmd", 844, "Delete SetupPolicies directory");
+            add("cpp_sample.cpp", 1508, "Rcpp::NumericVector");
+            add("css_sample.css", 8642, "math display", "fixes display issues");
+            add("csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
+            add("dll_sample.dll", 0);
+            add("doc_sample.doc", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add("docx_sample.docx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add("dot_sample.dot", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add("dotx_sample.dotx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add("exe_sample.exe", 0);
+            add("html_sample.html", 354182, "Align redeploy resource modification", "57855: Explicitly handle the case");
+            add("ico_sample.ico", 0);
+            add("jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
+            add("java_sample.java", 9251, "Jackson databinding bean for the controlInfo object", "private String errors");
+            add("jpg_sample.jpg", 0);
+            add("js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
+            add("mov_sample.mov", 0);
+            add("pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
+            add("png_sample.png", 0);
+            add("ppt_sample.ppt", 116, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add("pptx_sample.pptx", 109, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add("rtf_sample.rtf", 11, "One on One");
+            add("sample.txt", 48, "Sample text file", "1", "2", "9");
+            add("sql_sample.sql", 15272, "for JDBC Login support", "Container of parent, if parent has no ACLs");
+            add("svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
+            add("tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
+            add("tif_sample.tif", 0);
+            add("tsv_sample.tsv", 488328, "1264.5", "10JAN07_plate_1.xls");
+            add("BFlowcht.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");
+            add("xls_sample.xls", 250, "Column 03 attachment", "Bird", "help.jpg");
+            add("xlsx_sample.xlsx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
+            add("xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
+            add("xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
+            add("zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
+        }
+
+        private void add(String filename, int expectedLength, String... expectedStrings)
+        {
+            expectations.put(filename, new Pair<>(expectedLength, expectedStrings));
         }
     }
 
@@ -1747,13 +1802,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         private void traverse(WebdavResource rootResource, Predicate<WebdavResource> fileFilter)
         {
-            rootResource.list().stream().filter(Resource::isFile).filter(fileFilter).forEach(resource -> {
-                ((AbstractSearchService)_ss).processAndIndex(resource.getPath().encode(), resource, new Throwable[]{null});
-            });
+            rootResource.list().stream()
+                .filter(Resource::isFile)
+                .filter(fileFilter)
+                .forEach(resource -> ((AbstractSearchService)_ss).processAndIndex(resource.getPath().encode(), resource, new Throwable[]{null}));
 
-            rootResource.list().stream().filter(Resource::isCollection).forEach(dir -> {
-                traverse(dir, fileFilter);
-            });
+            rootResource.list().stream()
+                .filter(Resource::isCollection)
+                .forEach(dir -> traverse(dir, fileFilter));
         }
 
         @Test
