@@ -222,9 +222,9 @@ public class SchemaTsvReader implements SchemaReader
                 pdb.setName(propName);
                 pdb.setDomainName(typeName);
                 pdb.setConceptURI(conceptURI);
-                pdb.setMvEnabled(BooleanUtils.toBoolean((String)props.get("MvEnabled")));
+                pdb.setMvEnabled(BooleanUtils.toBoolean(String.valueOf(props.get("MvEnabled"))));
                 pdb.setLabel((String)props.get("Label"));
-                pdb.setRequired(BooleanUtils.toBoolean((String)props.get("Required")));
+                pdb.setRequired(BooleanUtils.toBoolean(String.valueOf(props.get("Required"))));
 
                 _propertyBuilders.add(pdb);
             }
