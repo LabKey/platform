@@ -76,6 +76,17 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
 
     public static final User guest = new GuestUser("guest", "guest");
+
+    // 'nobody' is a guest user who cannot be assigned permissions
+    public static final User nobody = new LimitedUser(guest, new int[0], Collections.emptySet(), false)
+    {
+        @Override
+        public boolean isGuest()
+        {
+            return true;
+        }
+    };
+
     // Search user is guest plus Reader everywhere
     private static User search;
 
