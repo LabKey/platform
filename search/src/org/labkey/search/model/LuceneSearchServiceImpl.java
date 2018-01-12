@@ -656,29 +656,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String message;
 
             // Prefer using cause since ClassNotFoundException's message is consistent across JVMs, but NoClassDefFoundError's is not.
-            // However, the exception thrown in the Visio case has been inconsistent, so fall back on the message if cause is null.
+            // However, fall back on the message if cause is null.
             if (cause != null && cause instanceof ClassNotFoundException)
                 message = cause.getMessage();
             else
                 message = err.getMessage();
 
-            switch (message)
-            {
-                // Suppress stack trace, etc., if Bouncy Castle isn't present. Note: This shouldn't happen any more
-                // since Bouncy Castle ships with Tika as of 0.7.
-                case "org.bouncycastle.cms.CMSException":
-                    _log.warn("Can't read encrypted document \"" + id + "\". You must install the Bouncy Castle encryption libraries to index this document. Refer to the LabKey documentation for instructions.");
-                    break;
-                // #30288 repros with testtika.doc. Temporarily suppress and warn. Exception is supposedly fixed in Tika 1.15. @RefactorIn18_1
-                case "com.microsoft.schemas.office.visio.x2012.main.ConnectsType":
-                case "com/microsoft/schemas/office/visio/x2012/main/ConnectsType":
-                    logAsWarning(r, "Unable to extract embedded Visio document");
-                    break;
-                default:
-                    logAsWarning(r, "Unrecognized exception message \"" + message + "\"");
-                    logAsPreProcessingException(r, err);
-            }
+            // In previous versions of Tika, we inspected message here for specific text to avoid logging stack traces for
+            // known common cases. See #30288 as an example. The previous known issues have been addressed, so there's no
+            // need to do this currently.
 
+            logAsWarning(r, "Unrecognized exception message \"" + message + "\"");
+            logAsPreProcessingException(r, err);
             handledException[0] = err;
         }
         catch (TikaException e)
