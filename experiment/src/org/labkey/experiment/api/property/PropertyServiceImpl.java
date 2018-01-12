@@ -63,11 +63,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class PropertyServiceImpl implements PropertyService
 {
-    List<DomainKind> _domainTypes = new ArrayList<>();
-    Map<String, ValidatorKind> _validatorTypes = new HashMap<>();
+    private final List<DomainKind> _domainTypes = new CopyOnWriteArrayList<>();
+    private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
 
 
     public IPropertyType getType(Container container, String typeURI)
