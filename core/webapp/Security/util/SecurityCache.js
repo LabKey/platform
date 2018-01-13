@@ -226,7 +226,7 @@ Ext4.define('Security.util.SecurityCache', {
     // recursive membership, return array of ids
     getEffectiveGroups : function(principal)
     {
-        if (principal == Security.util.SecurityCache.groupGuests || principal == 0) // guest
+        if (principal === Security.util.SecurityCache.groupGuests || principal === 0) // guest
             return [0, Security.util.SecurityCache.groupGuests];
         var set = {};
         set[Security.util.SecurityCache.groupGuests] = true;
@@ -565,6 +565,12 @@ Ext4.define('Security.util.SecurityCache', {
         var users = this.principalsStore.getById(Security.util.SecurityCache.groupUsers);
         if (users)
             users.data.Name = 'All Site Users';
+        var guests = this.principalsStore.getById(Security.util.SecurityCache.groupGuests);
+        if (guests)
+        {
+            if (LABKEY.experimental.disableGuestAccount)
+                guests.data.Name = 'Guests (disabled)';
+        }
         // add a sortOrder field to each principal
         this.principalsStore.data.each(this._applyPrincipalsSortOrder);
         this.principalsStore.sort('sortOrder');

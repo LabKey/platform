@@ -833,6 +833,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "User Folders",
                 "Enable personal folders for users.",
                 false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
+                "No Guest Account",
+                "Disable the guest account",
+                false);
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
         UsersDomainKind.ensureDomain(moduleContext);

@@ -292,7 +292,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                         cache  : this.cache,
                         itemId : ('$add$'+role.uniqueName),
                         roleId : role.uniqueName,
-                        excludedPrincipals: [-1].concat(role.excludedPrincipals),  // exclude SiteAdministrators who already has all permissions
+                        excludedPrincipals: [Security.util.SecurityCache.groupAdministrators].concat(role.excludedPrincipals),  // exclude SiteAdministrators who already has all permissions
                         listeners: {
                             select: this.onComboSelect,
                             scope: this
