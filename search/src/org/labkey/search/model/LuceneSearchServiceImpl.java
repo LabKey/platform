@@ -1619,8 +1619,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
          * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
          * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
          */
-        //@Test
-        public void testTika() throws IOException
+        //@Test  // TODO: Delete this
+        public void oldTestTika() throws IOException
         {
             container = ContainerManager.ensureContainer(JunitUtil.getTestContainer(), FOLDER_NAME);
 
@@ -1666,10 +1666,43 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return results;
         }
 
-        private Map<String, Pair<Integer, String[]>> expectations = new HashMap<>();
+        @Test
+        // Attempts to extract text from all the sample files in /sampledata/fileTypes, validating the content length and
+        // contents of each file against expectations. This is a very picky test (e.g., it will fail if new files are
+        // added to the fileTypes folder or if the extracted contents differs from expectations by a single byte) so it
+        // will need to be updated periodically.
+        public void testTikaParsing() throws IOException, TikaException, SAXException
+        {
+            Map<String, Pair<Integer, String[]>> expectations = getExpectations();
+
+            testFileTypesFiles(false, (file, body, metadata) -> {
+                Pair<Integer, String[]> expectation = expectations.get(file.getName());
+
+                assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
+                assertEquals("Wrong size for \"" + file.getName() + "\"", (long)expectation.first, (long)body.length());
+
+                for (String s : expectation.second)
+                    assertTrue("Text not found in \"" + file.getName() + "\": \"" + s + "\"", body.contains(s));
+
+                if (!body.isEmpty() && 0 == expectation.second.length)
+                    _log.info(file.getName() + ": " + StringUtils.left(body, 5000));
+            });
+        }
 
         @Test
-        public void testTika2() throws IOException, TikaException, SAXException
+        // Attempts to extract text from all the sample files in /sampledata/fileTypes, logging content length and any exceptions
+        // that occur. This isn't a true test (it will always succeed), but it can be helpful for debugging Tika problems.
+        public void logTikaParsing() throws IOException, TikaException, SAXException
+        {
+            testFileTypesFiles(true, (file, body, metadata) -> _log.info(file.getName() + ": size " + body.length()));
+        }
+
+        private interface FileTester
+        {
+            void test(File file, String body, Metadata metadata);
+        }
+
+        private void testFileTypesFiles(boolean logExceptions, FileTester tester) throws IOException, TikaException, SAXException
         {
             File sampledata = JunitUtil.getSampleData(null, "fileTypes");
 
@@ -1677,15 +1710,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assertTrue(sampledata.isDirectory());
             SearchService ss = SearchService.get();
             LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
-            initializeExpectations();
 
             for (File file : sampledata.listFiles(File::isFile))
             {
-                testFile(lssi, file);
+                testFile(lssi, file, logExceptions, tester);
             }
         }
 
-        private void testFile(LuceneSearchServiceImpl lssi, File file) throws IOException, TikaException, SAXException
+        private void testFile(LuceneSearchServiceImpl lssi, File file, boolean logExceptions, FileTester tester) throws IOException, TikaException, SAXException
         {
             String docId = "testtika";
             SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
@@ -1694,62 +1726,71 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             try (InputStream is = new FileInputStream(file))
             {
-                lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
-                String body = handler.toString();
-                Pair<Integer, String[]> expectation = expectations.get(file.getName());
-                
-                assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
-                assertEquals("Wrong size for \"" + file.getName() + "\"", (long)expectation.first, (long)body.length());
-                
-                for (String s : expectation.second)
-                    assertTrue("Text not found in \"" + file.getName() + "\": \"" + s + "\"", body.contains(s));
-
-                if (!body.isEmpty() && 0 == expectation.second.length)
-                    _log.info(file.getName() + ": " + StringUtils.left(body, 5000));
+                if (logExceptions)
+                {
+                    try
+                    {
+                        lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                    }
+                    catch (Throwable t)
+                    {
+                        _log.info(file.getName() + ": exception " + t.getMessage());
+                        return;
+                    }
+                }
+                else
+                {
+                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                }
+                tester.test(file, handler.toString(), metadata);
             }
         }
 
-        private void initializeExpectations()
+        private Map<String, Pair<Integer, String[]>> getExpectations()
         {
-            add("cmd_sample.cmd", 844, "Delete SetupPolicies directory");
-            add("cpp_sample.cpp", 1508, "Rcpp::NumericVector");
-            add("css_sample.css", 8642, "math display", "fixes display issues");
-            add("csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
-            add("dll_sample.dll", 0);
-            add("doc_sample.doc", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add("docx_sample.docx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add("dot_sample.dot", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add("dotx_sample.dotx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add("exe_sample.exe", 0);
-            add("html_sample.html", 354182, "Align redeploy resource modification", "57855: Explicitly handle the case");
-            add("ico_sample.ico", 0);
-            add("jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
-            add("java_sample.java", 9251, "Jackson databinding bean for the controlInfo object", "private String errors");
-            add("jpg_sample.jpg", 0);
-            add("js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
-            add("mov_sample.mov", 0);
-            add("pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
-            add("png_sample.png", 0);
-            add("ppt_sample.ppt", 116, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add("pptx_sample.pptx", 109, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add("rtf_sample.rtf", 11, "One on One");
-            add("sample.txt", 48, "Sample text file", "1", "2", "9");
-            add("sql_sample.sql", 15272, "for JDBC Login support", "Container of parent, if parent has no ACLs");
-            add("svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
-            add("tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
-            add("tif_sample.tif", 0);
-            add("tsv_sample.tsv", 488328, "1264.5", "10JAN07_plate_1.xls");
-            add("BFlowcht.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");
-            add("xls_sample.xls", 250, "Column 03 attachment", "Bird", "help.jpg");
-            add("xlsx_sample.xlsx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
-            add("xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
-            add("xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
-            add("zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
+            Map<String, Pair<Integer, String[]>> map = new HashMap<>();
+
+            add(map, "cmd_sample.cmd", 844, "Delete SetupPolicies directory");
+            add(map, "cpp_sample.cpp", 1508, "Rcpp::NumericVector");
+            add(map, "css_sample.css", 8642, "math display", "fixes display issues");
+            add(map, "csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
+            add(map, "dll_sample.dll", 0);
+            add(map, "doc_sample.doc", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "docx_sample.docx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "dot_sample.dot", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "dotx_sample.dotx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "exe_sample.exe", 0);
+            add(map, "html_sample.html", 354182, "Align redeploy resource modification", "57855: Explicitly handle the case");
+            add(map, "ico_sample.ico", 0);
+            add(map, "jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
+            add(map, "java_sample.java", 9251, "Jackson databinding bean for the controlInfo object", "private String errors");
+            add(map, "jpg_sample.jpg", 0);
+            add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
+            add(map, "mov_sample.mov", 0);
+            add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
+            add(map, "png_sample.png", 0);
+            add(map, "ppt_sample.ppt", 116, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 109, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "rtf_sample.rtf", 11, "One on One");
+            add(map, "sample.txt", 48, "Sample text file", "1", "2", "9");
+            add(map, "sql_sample.sql", 15272, "for JDBC Login support", "Container of parent, if parent has no ACLs");
+            add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
+            add(map, "tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
+            add(map, "tif_sample.tif", 0);
+            add(map, "tsv_sample.tsv", 488328, "1264.5", "10JAN07_plate_1.xls");
+            add(map, "vsd_sample.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");
+            add(map, "xls_sample.xls", 250, "Column 03 attachment", "Bird", "help.jpg");
+            add(map, "xlsx_sample.xlsx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
+            add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
+            add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
+            add(map, "zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
+
+            return map;
         }
 
-        private void add(String filename, int expectedLength, String... expectedStrings)
+        private void add(Map<String, Pair<Integer, String[]>> map, String filename, int expectedLength, String... expectedStrings)
         {
-            expectations.put(filename, new Pair<>(expectedLength, expectedStrings));
+            map.put(filename, new Pair<>(expectedLength, expectedStrings));
         }
     }
 
