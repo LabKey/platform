@@ -189,8 +189,8 @@ public class IssueListDef extends Entity
                         domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
 
                         ensureDomainProperties(domain, domainKind, domainKind.getRequiredProperties(), domainKind.getPropertyForeignKeys(domainContainer));
+                        AbstractIssuesListDefDomainKind.setDefaultValues(domain, domainKind.getRequiredProperties());
                         domain.save(user);
-                        setDefaultValues(domain, domainKind.getRequiredProperties());
 
                         setDefaultEntryTypeNames(domainContainer, domainKind.getDefaultSingularName(), domainKind.getDefaultPluralName());
                     }
@@ -296,27 +296,6 @@ public class IssueListDef extends Entity
                 prop.setLookup(lookup);
             }
         }
-    }
-
-    private void setDefaultValues(Domain domain, Collection<PropertyStorageSpec> requiredProps) throws ExperimentException
-    {
-        Map<DomainProperty, Object> defaultValues = new HashMap<>();
-        for (PropertyStorageSpec spec : requiredProps)
-        {
-            // kind of a hack, if there is a default value for now assume it is of type fixed_editable
-            if (spec.getDefaultValue() != null)
-            {
-                DomainProperty prop = domain.getPropertyByName(spec.getName());
-                if (prop != null)
-                {
-                    prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
-                    defaultValues.put(prop, spec.getDefaultValue());
-                }
-            }
-        }
-
-        if (!defaultValues.isEmpty())
-            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
     }
 
     private void setDefaultEntryTypeNames(Container domainContainer, String singular, String plural)
