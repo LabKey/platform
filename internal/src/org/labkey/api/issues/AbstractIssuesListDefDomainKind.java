@@ -38,9 +38,11 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -54,6 +56,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -304,14 +307,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                     propertyIndices.add(propIndex);
                 }
                 newDomain.setPropertyIndices(propertyIndices);
-                newDomain.save(user);
 
-                // Add additional default values to those previously added from the base property set
-                if (!defaultValues.isEmpty())
+                // set default values on the base properties
+                DomainKind domainKind = newDomain.getDomainKind();
+                if (domainKind instanceof AbstractIssuesListDefDomainKind)
                 {
-                    defaultValues.putAll(DefaultValueService.get().getDefaultValues(container, newDomain));
-                    DefaultValueService.get().setDefaultValues(container, defaultValues);
+                    setDefaultValues(newDomain, ((AbstractIssuesListDefDomainKind)domainKind).getRequiredProperties());
                 }
+                newDomain.save(user);
             }
             transaction.commit();
         }
@@ -321,5 +324,22 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         }
 
         return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+    }
+
+    public static void setDefaultValues(Domain domain, Collection<PropertyStorageSpec> requiredProps)
+    {
+        for (PropertyStorageSpec spec : requiredProps)
+        {
+            // kind of a hack, if there is a default value for now assume it is of type fixed_editable
+            if (spec.getDefaultValue() != null)
+            {
+                DomainProperty prop = domain.getPropertyByName(spec.getName());
+                if (prop != null)
+                {
+                    prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+                    prop.setDefaultValue(String.valueOf(spec.getDefaultValue()));
+                }
+            }
+        }
     }
 }
