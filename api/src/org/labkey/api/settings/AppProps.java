@@ -43,6 +43,7 @@ public interface AppProps
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_RSERVE_REPORTING = "rserveReports";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
+    String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     // For Customisable web colour theme
     String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
 

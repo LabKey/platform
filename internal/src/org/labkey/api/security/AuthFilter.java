@@ -186,7 +186,12 @@ public class AuthFilter implements Filter
         }
 
         if (null == user)
-            user = User.guest;
+        {
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
+                user = User.nobody;
+            else
+                user = User.guest;
+        }
         else
             UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
 

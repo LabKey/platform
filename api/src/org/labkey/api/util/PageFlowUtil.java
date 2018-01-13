@@ -1993,6 +1993,7 @@ public class PageFlowUtil
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
+        experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
