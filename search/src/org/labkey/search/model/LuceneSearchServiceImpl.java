@@ -16,7 +16,6 @@
 package org.labkey.search.model;
 
 import org.apache.commons.collections4.iterators.ArrayIterator;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -65,7 +64,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.ChildFirstClassLoader;
@@ -80,7 +78,6 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileStream.FileFileStream;
@@ -1610,62 +1607,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public static class TikaTestCase extends Assert
     {
-        private static final String FOLDER_NAME = "TikaTest Project";
-
-        private Container container;
-        private File fileRoot;
-
-        /**
-         * Traverses the specified directory and indexes only the files that meet the fileFilter. This "test" is not normally
-         * run, but it can be re-enabled locally to investigate and fix issues with specific file types.
-         */
-        //@Test  // TODO: Delete this
-        public void oldTestTika() throws IOException
-        {
-            container = ContainerManager.ensureContainer(JunitUtil.getTestContainer(), FOLDER_NAME);
-
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            fileRoot = svc.getFileRoot(container);
-            FileUtils.cleanDirectory(fileRoot);
-            File sampledata = JunitUtil.getSampleData(null, "fileTypes");
-            FileUtils.copyDirectory(sampledata, fileRoot);
-
-            Predicate<WebdavResource> fileFilter = webdavResource -> true;
-
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(container);
-            policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
-            FileSystemResource rootResource = new FileSystemResource(Path.parse(fileRoot.getAbsolutePath()), fileRoot, policy)
-            {
-                @Override
-                public String getContainerId()
-                {
-                    return container.getId();
-                }
-            };
-
-            final Map<String, Throwable> results = traverse((AbstractSearchService) SearchService.get(), rootResource, fileFilter);
-            assertTrue("Error(s) parsing file(s) " + results.keySet(), results.isEmpty());
-        }
-
-        private Map<String, Throwable> traverse(AbstractSearchService ss, WebdavResource rootResource, Predicate<WebdavResource> fileFilter)
-        {
-            Map<String, Throwable> results = new HashMap<>();
-            rootResource.list().stream().filter(Resource::isFile).filter(fileFilter).forEach(resource ->
-            {
-                Throwable[] out = new Throwable[] {null};
-                if (!(ss).processAndIndex(resource.getPath().encode(), resource, out))
-                {
-                    results.put(resource.getFile().getName(), out[0]);
-                }
-            });
-
-            rootResource.list().stream().filter(Resource::isCollection).forEach(dir -> {
-                results.putAll(traverse(ss, dir, fileFilter));
-            });
-
-            return results;
-        }
-
         @Test
         // Attempts to extract text from all the sample files in /sampledata/fileTypes, validating the content length and
         // contents of each file against expectations. This is a very picky test (e.g., it will fail if new files are
@@ -1689,7 +1630,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             });
         }
 
-        @Test
+//        @Test
         // Attempts to extract text from all the sample files in /sampledata/fileTypes, logging content length and any exceptions
         // that occur. This isn't a true test (it will always succeed), but it can be helpful for debugging Tika problems.
         public void logTikaParsing() throws IOException, TikaException, SAXException
