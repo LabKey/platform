@@ -119,6 +119,14 @@ public class BootstrapTemplate extends HomeTemplate
             DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(sqlWarnings);
             if (sqlWarnings.size() > 0)
                 page.addWarningMessages(sqlWarnings);
+
+            if (!ModuleLoader.getInstance().getTomcatVersion().isSupported())
+            {
+                String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+                HelpTopic topic = new HelpTopic("supported");
+                page.addWarningMessage("The deployed version of Tomcat, " + serverInfo + ", is not supported." +
+                        " See the " + topic.getSimpleLinkHtml("Supported Technologies page") + " for more information.");
+            }
         }
 
         if (AppProps.getInstance().isDevMode())
