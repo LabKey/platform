@@ -1320,6 +1320,11 @@ public class AuthenticationManager
             if (user.isFirstLogin() || PageFlowUtil.urlProvider(UserUrls.class).requiresProfileUpdate(user))
                 returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(current, returnURL, user.getUserId());
         }
+        // Else if we are told to skipProfile, reset the user cache since it may not think this user has logged in yet
+        else if (user.getLastLogin() == null)
+        {
+            UserManager.clearUserList();
+        }
 
         if (null != properties.getUrlhash())
         {

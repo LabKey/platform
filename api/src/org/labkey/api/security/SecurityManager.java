@@ -2801,12 +2801,12 @@ public class SecurityManager
         return message.toString();
     }
 
-    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters) throws Exception
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable Pair<String, String>[] extraParameters) throws Exception
     {
         sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
     }
 
-    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
     {
         Container c = context.getContainer();
         User currentUser = context.getUser();
@@ -2822,7 +2822,7 @@ public class SecurityManager
         }
     }
 
-    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email) throws Exception
+    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable Pair<String, String>[] extraParameters) throws Exception
     {
         User currentUser = context.getUser();
         SecurityManager.NewUserStatus newUserStatus = SecurityManager.addUser(email, currentUser);
@@ -2832,7 +2832,7 @@ public class SecurityManager
         {
             try
             {
-                SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, null);
+                SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, extraParameters);
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration.  Verification email was sent successfully.");
             }
             catch (ConfigurationException e)
