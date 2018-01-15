@@ -97,9 +97,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
@@ -447,7 +449,8 @@ public class LoginController extends SpringActionController
 
             try
             {
-                SecurityManager.addSelfRegisteredUser(getViewContext(), email);
+                List<Pair<String, String>> extraParameters = form.getExtraParametersList();
+                SecurityManager.addSelfRegisteredUser(getViewContext(), email, extraParameters.<Pair<String, String>>toArray(new Pair[extraParameters.size()]));
             }
             catch (ConfigurationException e)
             {
@@ -513,8 +516,9 @@ public class LoginController extends SpringActionController
             {
                 URLHelper returnURL = form.getReturnURLHelper();
 
-                // Create LoginReturnProperties if we have a returnURL
-                LoginReturnProperties properties = null != returnURL ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
+                // Create LoginReturnProperties if we have a returnURL or skipProfile param
+                LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
+                        ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
 
                 return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
             }
@@ -546,9 +550,10 @@ public class LoginController extends SpringActionController
         {
             HttpServletRequest request = getViewContext().getRequest();
 
-            // Store passed in returnURL at the start of the login so we can redirect to it after any password resets, secondary logins, profile updates, etc. have finished
+            // Store passed in returnURL and skipProfile param at the start of the login so we can redirect to it after
+            // any password resets, secondary logins, profile updates, etc. have finished
             URLHelper returnURL = form.getReturnURLHelper();
-            if (null != returnURL)
+            if (null != returnURL || form.getSkipProfile())
             {
                 LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
                 AuthenticationManager.setLoginReturnProperties(request, properties);
@@ -1272,6 +1277,18 @@ public class LoginController extends SpringActionController
         {
             _skipProfile = skipProfile;
         }
+
+        public List<Pair<String, String>> getExtraParametersList()
+        {
+            List<Pair<String, String>> extraParams = new ArrayList<>();
+            if (getSkipProfile())
+                extraParams.add(new Pair<>("skipProfile", "1"));
+
+            if (null != getReturnUrl())
+                extraParams.add(new Pair<>(ActionURL.Param.returnUrl.name(), getReturnUrl()));
+
+            return extraParams;
+        }
     }
 
 
@@ -1383,7 +1400,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class SsoRedirectForm extends ReturnUrlForm
+    public static class SsoRedirectForm extends AbstractLoginForm
     {
         private String _provider;
 
@@ -1417,12 +1434,11 @@ public class LoginController extends SpringActionController
             if (null == provider)
                 throw new NotFoundException("Authentication provider is not valid");
 
+            // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnURL = form.getReturnURLHelper();
-
-            // If we have a returnURL then create and stash LoginReturnProperties
-            if (null != returnURL)
+            if (null != returnURL || form.getSkipProfile())
             {
-                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), false);
+                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
                 AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
             }
 
@@ -1506,6 +1522,14 @@ public class LoginController extends SpringActionController
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle(getTitle());
             page.setIncludeLoginLink(false);
+
+            // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
+            URLHelper returnURL = form.getReturnURLHelper();
+            if (null != returnURL || form.getSkipProfile())
+            {
+                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
+            }
 
             // If we're going to display the form, then set focus on the first input.
             if (!_unrecoverableError)

@@ -19,6 +19,8 @@
             params: {
                 email: email,
                 emailConfirmation: document.getElementById('emailConfirmation').value,
+                returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                 'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
             },
             success: LABKEY.Utils.getCallbackWrapper(function (response) {

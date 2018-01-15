@@ -34,6 +34,7 @@
                 approvedTermsOfUse: document.getElementById('approvedTermsOfUse').checked,
                 termsOfUseType: document.getElementById('termsOfUseType').value,
                 returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                 urlHash: document.getElementById('urlhash')
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
@@ -60,6 +61,7 @@
                 approvedTermsOfUse: document.getElementById('approvedTermsOfUse').checked,
                 termsOfUseType: document.getElementById('termsOfUseType').value,
                 returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                 urlHash: document.getElementById('urlhash')
             },
             success: function () {
@@ -81,6 +83,7 @@
                 method: 'POST',
                 params: {
                     returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                    skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                     urlHash: document.getElementById('urlhash')
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
@@ -111,12 +114,12 @@
     function getOtherLoginMechanisms() {
         if (LABKEY.login.hasOtherLoginMechanisms)
         {
-            var returnURL = LABKEY.ActionURL.getParameter("returnUrl");
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('login', 'getLoginMechanismsApi.api', this.containerPath),
                 method: 'POST',
                 params: {
-                    returnUrl: returnURL,
+                    returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                    skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                     urlHash: document.getElementById('urlhash')
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
