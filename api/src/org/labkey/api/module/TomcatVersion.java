@@ -20,10 +20,22 @@ package org.labkey.api.module;
  */
 public enum TomcatVersion
 {
-    UNKNOWN,
-    TOMCAT_7,
-    TOMCAT_8,
-    TOMCAT_9;
+    UNKNOWN(false),
+    TOMCAT_7(true),
+    TOMCAT_8(true),
+    TOMCAT_9(false);
+
+    private final boolean _supported;
+
+    TomcatVersion(boolean supported)
+    {
+        _supported = supported;
+    }
+
+    public boolean isSupported()
+    {
+        return _supported;
+    }
 
     public static TomcatVersion get(int majorVersion)
     {
