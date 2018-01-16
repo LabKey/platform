@@ -272,7 +272,7 @@
 <div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
         <labkey:form id="<%=h(searchFormId)%>" className="lk-search-form" action="<%=h(searchConfig.getPostURL(c))%>">
-            <labkey:input type="text" name="q" placeholder="<%=text(form.isWebPart() ? \"\" : \"Search LabKey Server\")%>" formGroup="false" value="<%=text(value)%>"/>
+            <labkey:input type="text" name="q" placeholder="<%=h(form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c))%>" formGroup="false" value="<%=h(value)%>"/>
             <a class="search-overlay fa fa-search"></a>
             <% if (showAdvancedUI) { %>
             <small>
@@ -289,7 +289,7 @@
             <% if (null == template.getSearchScope()) { %>
             <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
             <% } %>
-            <% if (null != form.getTemplate()) { %>
+            <% if (null == form.getTemplate()) { %>
             <labkey:input type="hidden" name="template" value="<%=form.getTemplate()%>"/>
             <% } %>
             <input type="hidden" name="_dc" value="<%=Math.round(1000 * Math.random())%>">
