@@ -107,6 +107,10 @@
     <servlet>
         <servlet-name>Kaptcha</servlet-name>
         <servlet-class>com.google.code.kaptcha.servlet.KaptchaServlet</servlet-class>
+        <init-param>
+            <param-name>kaptcha.textproducer.char.length</param-name>
+            <param-value>6</param-value>
+        </init-param>
     </servlet>
     <servlet-mapping>
         <servlet-name>Kaptcha</servlet-name>
