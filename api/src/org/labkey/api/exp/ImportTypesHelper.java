@@ -299,9 +299,9 @@ public class ImportTypesHelper
         private String _lookupContainer;
         private String _lookupSchema;
         private String _lookupQuery;
-        private boolean _showInInsertView;
-        private boolean _showInUpdateView;
-        private boolean _showInDetailView;
+        private boolean _showInInsertView = true;
+        private boolean _showInUpdateView = true;
+        private boolean _showInDetailView = true;
         private boolean _dimension;
         private boolean _measure;
         private boolean _recommendedVariable;
