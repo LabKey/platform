@@ -169,6 +169,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
         homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
         supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
+        sharedContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
 
         String defaultPageName = "default";
         loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
