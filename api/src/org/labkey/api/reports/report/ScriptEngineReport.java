@@ -675,10 +675,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      */
     protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
     {
+        if (includeProlog && (!StringUtils.isEmpty(script) || isRStudio))
+            script = concatScriptProlog(engine, context, script == null ? "" : script, inputFile, inputParameters, isRStudio);
         if (!StringUtils.isEmpty(script))
         {
-            if (includeProlog)
-                script = concatScriptProlog(engine, context, script, inputFile, inputParameters, isRStudio);
             if (inputFile != null)
                 script = processInputReplacement(engine, script, inputFile);
             script = processOutputReplacements(engine, script, outputSubst, context);
