@@ -1537,6 +1537,7 @@ public abstract class CompareType
     abstract private static class LikeClause extends CompareClause
     {
         static final private char[] charsToBeEscaped = new char[] { '%', '_', '[' };
+        /** Note that we've intentionally chosen something other than the default of backslash */
         static final private char escapeChar = '!';
 
         private final String _unescapedValue;
@@ -1547,6 +1548,7 @@ public abstract class CompareType
             _unescapedValue = Objects.toString(value, "");
         }
 
+        /** Takes a string and replaces all special LIKE characters (such as %) with their escaped equivalents */
         public static String escapeLikePattern(String value)
         {
             String strEscape = new String(new char[] { escapeChar } );
@@ -1563,7 +1565,6 @@ public abstract class CompareType
 
         public static String sqlEscape()
         {
-            assert escapeChar != '\'';
             return " ESCAPE '" + escapeChar + "'";
         }
 
@@ -1628,7 +1629,7 @@ public abstract class CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return "(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'" + ")";
+            return "(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'" + sqlEscape() + ")";
         }
 
         @Override
@@ -1704,7 +1705,7 @@ public abstract class CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_fieldKey);
-            return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')";
+            return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%') " + sqlEscape();
         }
 
         @Override
@@ -1731,7 +1732,7 @@ public abstract class CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_fieldKey);
-            return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'))";
+            return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')" + sqlEscape() + ")";
         }
 
         @Override
