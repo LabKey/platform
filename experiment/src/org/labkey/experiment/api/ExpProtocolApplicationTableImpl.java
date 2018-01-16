@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -26,6 +27,7 @@ import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
@@ -33,6 +35,20 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     public ExpProtocolApplicationTableImpl(String name, UserSchema schema)
     {
         super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()));
+
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        // We don't have our own Container column, so filter based on the Container column of this ProtocolApplication's run
+        FieldKey containerFK = FieldKey.fromParts("Container");
+        clearConditions(containerFK);
+        SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM ");
+        sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
+        sqlFragment.append(" WHERE er.RowId = RunId)    ");
+
+        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), containerFK);
     }
 
     public ColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
