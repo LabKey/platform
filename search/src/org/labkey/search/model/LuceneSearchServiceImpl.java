@@ -55,6 +55,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -143,6 +144,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
+    private final AutoDetectParser AUTO_DETECT_PARSER = new AutoDetectParser();
+
+    // TODO: Remove separate class loader (and this flag), after we've updated the search build to bring in the parsers
+    // we care about and tested thoroughly
+    private static final boolean USE_SEPARATE_CLASS_LOADER_FOR_TIKA = true;
 
     // A Tika AutoDetectParser that lives in its own classloader to keep Tika jars isolated from the rest of LabKey.
     // We can't cast this to anything (AutoDetectParser, Parser), so we'll use reflection to invoke its parse() method.
@@ -861,39 +867,46 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return;
         }
 
-        try
+        if (USE_SEPARATE_CLASS_LOADER_FOR_TIKA)
         {
-            Object md = getCompatibleMetadata(metadata);
-            _parseMethod.invoke(_autoDetectParser, is, handler, md);
-            copyProperties(md, metadata);
-        }
-        catch (InvocationTargetException e)
-        {
-            Throwable cause = e.getCause();
-
-            if (null != cause)
+            try
             {
-                // Need to translate TikaException in Tika classloader to TikaException in this classloader
-                if ("org.apache.tika.exception.TikaException".equals(cause.getClass().getName()))
-                    throw new TikaException(cause.getMessage(), cause.getCause());
-                // Likewise, need to translate EncryptedDocumentException in Tika classloader to EncryptedDocumentException in this classloader, #30306
-                if ("org.apache.tika.exception.EncryptedDocumentException".equals(cause.getClass().getName()))
-                    throw new EncryptedDocumentException(cause.getMessage(), cause.getCause());
-
-                // Need to unwrap SAXException, IOException, and NoClassDefFoundError
-                if (cause instanceof SAXException)
-                    throw (SAXException) cause;
-                if (cause instanceof IOException)
-                    throw (IOException) cause;
-                if (cause instanceof NoClassDefFoundError)
-                    throw (NoClassDefFoundError)cause;
+                Object md = getCompatibleMetadata(metadata);
+                _parseMethod.invoke(_autoDetectParser, is, handler, md);
+                copyProperties(md, metadata);
             }
+            catch (InvocationTargetException e)
+            {
+                Throwable cause = e.getCause();
 
-            throw new RuntimeException(e);
+                if (null != cause)
+                {
+                    // Need to translate TikaException in Tika classloader to TikaException in this classloader
+                    if ("org.apache.tika.exception.TikaException".equals(cause.getClass().getName()))
+                        throw new TikaException(cause.getMessage(), cause.getCause());
+                    // Likewise, need to translate EncryptedDocumentException in Tika classloader to EncryptedDocumentException in this classloader, #30306
+                    if ("org.apache.tika.exception.EncryptedDocumentException".equals(cause.getClass().getName()))
+                        throw new EncryptedDocumentException(cause.getMessage(), cause.getCause());
+
+                    // Need to unwrap SAXException, IOException, and NoClassDefFoundError
+                    if (cause instanceof SAXException)
+                        throw (SAXException) cause;
+                    if (cause instanceof IOException)
+                        throw (IOException) cause;
+                    if (cause instanceof NoClassDefFoundError)
+                        throw (NoClassDefFoundError) cause;
+                }
+
+                throw new RuntimeException(e);
+            }
+            catch (IllegalAccessException | InstantiationException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
-        catch (IllegalAccessException | InstantiationException e)
+        else
         {
-            throw new RuntimeException(e);
+            AUTO_DETECT_PARSER.parse(is, handler, metadata);
         }
     }
 
@@ -1607,83 +1620,97 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public static class TikaTestCase extends Assert
     {
+        @SuppressWarnings("ConstantConditions")
         @Test
-        // Attempts to extract text from all the sample files in /sampledata/fileTypes, validating the content length and
-        // contents of each file against expectations. This is a very picky test (e.g., it will fail if new files are
-        // added to the fileTypes folder or if the extracted contents differs from expectations by a single byte) so it
-        // will need to be updated periodically.
+        // Attempts to extract text from all the sample files in /sampledata/fileTypes and compare the extracted text to
+        // expectations for that file. The "strict" boolean (see below) determines the behavior of this test:
+        //
+        // - strict == true: The test validates the content length and contents of each file against expectations. This
+        //   is very picky; it fails immediately if an exception is thrown, an expected string isn't found, or length of
+        //   extracted contents differs from expectations by a single byte.
+        // - string == false: The test attempts to extract from every file and simply logs all discrepancies. This mode
+        //   is useful for debugging parsing issues, etc.
+        //
+        // Regardless of the flag, the test will always fail if unknown files are found in the fileTypes folder OR if
+        // expectations are invalid (e.g., expecting body length > 0 but specifying no substrings to search for).
         public void testTikaParsing() throws IOException, TikaException, SAXException
         {
-            Map<String, Pair<Integer, String[]>> expectations = getExpectations();
+            boolean strict = true;
 
-            testFileTypesFiles(false, (file, body, metadata) -> {
-                Pair<Integer, String[]> expectation = expectations.get(file.getName());
-
-                assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
-                assertEquals("Wrong size for \"" + file.getName() + "\"", (long)expectation.first, (long)body.length());
-
-                for (String s : expectation.second)
-                    assertTrue("Text not found in \"" + file.getName() + "\": \"" + s + "\"", body.contains(s));
-
-                if (!body.isEmpty() && 0 == expectation.second.length)
-                    _log.info(file.getName() + ": " + StringUtils.left(body, 5000));
-            });
-        }
-
-//        @Test
-        // Attempts to extract text from all the sample files in /sampledata/fileTypes, logging content length and any exceptions
-        // that occur. This isn't a true test (it will always succeed), but it can be helpful for debugging Tika problems.
-        public void logTikaParsing() throws IOException, TikaException, SAXException
-        {
-            testFileTypesFiles(true, (file, body, metadata) -> _log.info(file.getName() + ": size " + body.length()));
-        }
-
-        private interface FileTester
-        {
-            void test(File file, String body, Metadata metadata);
-        }
-
-        private void testFileTypesFiles(boolean logExceptions, FileTester tester) throws IOException, TikaException, SAXException
-        {
             File sampledata = JunitUtil.getSampleData(null, "fileTypes");
-
             assertNotNull(sampledata);
             assertTrue(sampledata.isDirectory());
             SearchService ss = SearchService.get();
             LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
+            Map<String, Pair<Integer, String[]>> expectations = getExpectations();
 
             for (File file : sampledata.listFiles(File::isFile))
             {
-                testFile(lssi, file, logExceptions, tester);
-            }
-        }
+                String docId = "testtika";
+                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
+                ContentHandler handler = new BodyContentHandler(-1);
+                Metadata metadata = new Metadata();
 
-        private void testFile(LuceneSearchServiceImpl lssi, File file, boolean logExceptions, FileTester tester) throws IOException, TikaException, SAXException
-        {
-            String docId = "testtika";
-            SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
-            ContentHandler handler = new BodyContentHandler(-1);
-            Metadata metadata = new Metadata();
-
-            try (InputStream is = new FileInputStream(file))
-            {
-                if (logExceptions)
+                try (InputStream is = new FileInputStream(file))
                 {
-                    try
+                    String exceptionMessage = null;
+
+                    if (strict)
                     {
                         lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
                     }
-                    catch (Throwable t)
+                    else
                     {
-                        _log.info(file.getName() + ": exception " + t.getMessage());
-                        return;
+                        try
+                        {
+                            lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                        }
+                        catch (Throwable t)
+                        {
+                            exceptionMessage = "exception " + t.getMessage();
+                        }
+                    }
+
+                    String message = null;
+
+                    if (null != exceptionMessage)
+                    {
+                        message = exceptionMessage;
+                    }
+                    else
+                    {
+                        String body = handler.toString();
+
+                        Pair<Integer, String[]> expectation = expectations.get(file.getName());
+                        assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
+                        // If body length is 0 then we expect no strings; if body length > 0 then we expect at least one string
+                        assertTrue("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first) == (0 == expectation.second.length));
+
+                        if (expectation.first != body.length())
+                        {
+                            message = "wrong size " + body.length() + ", expected " + expectation.first;
+                        }
+                        else
+                        {
+                            for (String s : expectation.second)
+                            {
+                                if (!body.contains(s))
+                                {
+                                    message = "expected text not found \"" + s + "\"";
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (null != message)
+                    {
+                        if (strict)
+                            fail(message);
+                        else
+                            _log.info(file.getName() + ": " + message);
                     }
                 }
-                else
-                {
-                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
-                }
-                tester.test(file, handler.toString(), metadata);
             }
         }
 
