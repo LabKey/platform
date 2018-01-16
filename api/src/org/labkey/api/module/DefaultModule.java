@@ -422,14 +422,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         // Handle modules that have no controllers (e.g., BigIron)
         if (!map.isEmpty())
         {
-            Class<? extends Controller> controllerClass = map.values().iterator().next();
-            Controller controller = getController(null, controllerClass);
+            Map.Entry<String, Class<? extends Controller>> entry = map.entrySet().iterator().next();
+            Controller controller = getController(null, entry.getValue());
             if (controller instanceof SpringActionController)
             {
                 Controller action = ((SpringActionController) controller).getActionResolver().resolveActionName(controller, "begin");
                 if (action != null)
                 {
-                    return new ActionURL(action.getClass(), c);
+                    // Use the deprecated constructor, since passing in an action class like SimpleAction that is used
+                    // to back multiple URLs with different static HTML files can't be resolved to the right URL
+                    return new ActionURL(entry.getKey(), "begin", c);
                 }
             }
         }

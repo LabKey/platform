@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.SimpleAction;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -141,6 +142,10 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL(Class<? extends Controller> actionClass, Container container)
     {
         this(true);
+        if (SimpleAction.class.equals(actionClass))
+        {
+            throw new IllegalArgumentException("SimpleAction cannot be resolved correctly to a URL, as it backs a wide variety of HTML file-based actions");
+        }
         _controller = SpringActionController.getControllerName(actionClass);
         if (_controller == null)
         {
