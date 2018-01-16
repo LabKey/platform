@@ -21,7 +21,8 @@
                 emailConfirmation: document.getElementById('emailConfirmation').value,
                 returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
                 skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
-                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF')
+                'X-LABKEY-CSRF': document.getElementById('X-LABKEY-CSRF'),
+                kaptchaText: document.getElementById('kaptchaText').value
             },
             success: LABKEY.Utils.getCallbackWrapper(function (response) {
                 if (response.email)

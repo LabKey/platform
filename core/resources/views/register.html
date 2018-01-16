@@ -8,9 +8,13 @@
             Email (verify)
         </label>
         <input id="emailConfirmation" name="emailConfirmation" type="text" class="input-block" tabindex="2">
+
+        <div>To help protect against abuse by bots, please enter the six characters shown below (case-insensitive). <a href="javascript: window.location.reload()">Reload the page to get a new image.</a></div>
+        <img src="<%= contextPath %>/kaptcha.jpg" alt="Verification text" title="Verification text" height="50" width="200"  />
+        <input id="kaptchaText" name="kaptchaText" type="text" class="input-block" tabindex="3" autofocus>
+
         <div>
             <input type="submit" tab-index="-1" class="register-submit-button"/><a class="labkey-button primary register-btn"><span>Register</span></a>
         </div>
-        <input type=hidden name='X-LABKEY-CSRF'>
     </form>
 </div>

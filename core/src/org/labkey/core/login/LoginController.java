@@ -404,6 +404,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @CSRF
     public class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
 
@@ -430,7 +431,21 @@ public class LoginController extends SpringActionController
                 {
                     errors.reject(ERROR_MSG, "Your email address is not valid. Please verify your email address below.");
                 }
+            }
 
+            String expectedKatpcha = (String)getViewContext().getRequest().getSession(true).getAttribute("KAPTCHA_SESSION_KEY");
+            if (expectedKatpcha == null)
+            {
+                logger.error("Captcha not initialized for self-registration attempt");
+                errors.reject(ERROR_MSG,"Captcha not initialized, please retry");
+            }
+            else
+            {
+                if (!expectedKatpcha.equalsIgnoreCase(StringUtils.trimToNull(form.getKaptchaText())))
+                {
+                    logger.warn("Captcha text did not match for self-registration attempt for " + form.getEmail());
+                    errors.reject(ERROR_MSG,"Verification text does not match, please retry");
+                }
             }
         }
 
@@ -469,6 +484,7 @@ public class LoginController extends SpringActionController
         private String email;
         private String emailConfirmation;
         private boolean isConfirmation;
+        private String kaptchaText;
 
         public void setEmail(String email)
         {
@@ -498,6 +514,16 @@ public class LoginController extends SpringActionController
         public void setIsConfirmation(boolean isConfirmation)
         {
             this.isConfirmation = isConfirmation;
+        }
+
+        public String getKaptchaText()
+        {
+            return kaptchaText;
+        }
+
+        public void setKaptchaText(String kaptchaText)
+        {
+            this.kaptchaText = kaptchaText;
         }
     }
 
