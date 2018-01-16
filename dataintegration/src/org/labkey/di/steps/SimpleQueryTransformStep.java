@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
@@ -180,7 +181,8 @@ public class SimpleQueryTransformStep extends TransformTask
         return true;
     }
 
-
+    /** @return null if there is an error parsing the source query */
+    @Nullable
     protected DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
     {
         try
