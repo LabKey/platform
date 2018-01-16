@@ -101,7 +101,7 @@ public class RunListQueryView extends ExperimentRunListView
         {
             ActionURL reRunURL = new ActionURL(ReimportRedirectAction.class, getContainer());
             reRunURL.addParameter("rowId", _schema.getProtocol().getRowId());
-            ActionButton button = new ActionButton("Re-import run", reRunURL);
+            ActionButton button = new ActionButton("Re-import run", reRunURL).setTooltip("Import a revised version of this run, with updated metadata or data file.");
             button.setActionType(ActionButton.Action.POST);
             button.setRequiresSelection(true, 1, 1);
             bar.add(button);

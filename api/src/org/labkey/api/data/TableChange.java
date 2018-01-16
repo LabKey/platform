@@ -36,9 +36,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * Aggregated changes to be performed via SQL DDL statements against a target table by
+ * {@link org.labkey.api.exp.api.StorageProvisioner}
  * User: newton
  * Date: Aug 19, 2010
- * Time: 5:14:04 PM
  */
 public class TableChange
 {

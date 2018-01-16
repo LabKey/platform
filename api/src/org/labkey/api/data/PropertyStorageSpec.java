@@ -39,6 +39,7 @@ import java.util.Set;
  */
 public class PropertyStorageSpec
 {
+    /** Default length for string fields, and the storage used in the generic exp.ObjectProperty table */
     public static final int DEFAULT_SIZE = 4000;
 
     public String getDescription()
@@ -448,9 +449,6 @@ public class PropertyStorageSpec
         /**
          * Determines if two indices are the same modulo the isClustered setting.   This is useful for updating
          * indices when an audit domain type changes, for example.
-         * @param propertyIndex
-         * @param tableIndex
-         * @return
          */
         public static boolean isSameIndex(PropertyStorageSpec.Index propertyIndex, PropertyStorageSpec.Index tableIndex)
         {

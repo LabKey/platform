@@ -31,9 +31,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Responsible for asynchronously running SQL scripts as part of module install or upgrade at server startup-time.
  * User: arauch
  * Date: Jun 14, 2005
- * Time: 2:56:01 PM
  */
 public class SqlScriptRunner
 {

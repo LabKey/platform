@@ -313,6 +313,9 @@ public class JsonWriter
                 queryName = lookupTable.getName();
                 schemaName = lookupTable.getSchema().getName();
             }
+
+            queryName = queryName.toLowerCase();
+
             // Duplicate info with different property names for backwards compatibility
             lookupInfo.put("queryName", queryName);
             lookupInfo.put("table", queryName);

@@ -24,11 +24,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Stats
 {
-    public AtomicLong gets = new AtomicLong(0);
-    public AtomicLong misses = new AtomicLong(0);
-    public AtomicLong puts = new AtomicLong(0);
-    public AtomicLong expirations = new AtomicLong(0);
-    public AtomicLong removes = new AtomicLong(0);
-    public AtomicLong clears = new AtomicLong(0);
-    public AtomicLong max_size = new AtomicLong(0);
+    public final AtomicLong gets = new AtomicLong(0);
+    public final AtomicLong misses = new AtomicLong(0);
+    public final AtomicLong puts = new AtomicLong(0);
+    public final AtomicLong expirations = new AtomicLong(0);
+    public final AtomicLong removes = new AtomicLong(0);
+    public final AtomicLong clears = new AtomicLong(0);
+    public final AtomicLong max_size = new AtomicLong(0);
 }

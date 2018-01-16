@@ -22,10 +22,10 @@ package org.labkey.api.data;
  */
 public interface Ownable
 {
-    public int getModifiedBy();
-    public void setModifiedBy(int modifiedBy);
-    public int getCreatedBy();
-    public void setCreatedBy(int createdBy);
+    int getModifiedBy();
+    void setModifiedBy(int modifiedBy);
+    int getCreatedBy();
+    void setCreatedBy(int createdBy);
 
-    public String getContainerId();
+    String getContainerId();
 }

@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Manager to registering and tracking the various {@link FolderType} implementations provided by modules.
  * Created by adam on 5/8/2015.
  */
 public class FolderTypeManager

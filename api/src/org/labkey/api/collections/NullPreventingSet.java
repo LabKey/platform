@@ -15,11 +15,16 @@
  */
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Set;
 import java.util.Iterator;
 import java.util.Collection;
 
 /**
+ * Wrapper around another Set instance that disallows adding nulls by throwing an {@link IllegalArgumentException}
+ * if a caller tries to add one. Useful for preventing a {@link NullPointerException} from blowing up with a less
+ * useful, later stack trace.
  * User: jeckels
  * Date: Feb 16, 2009
  */
@@ -47,16 +52,19 @@ public class NullPreventingSet<T> implements Set<T>
         return _set.contains(o);
     }
 
+    @NotNull
     public Iterator<T> iterator()
     {
         return _set.iterator();
     }
 
+    @NotNull
     public Object[] toArray()
     {
         return _set.toArray();
     }
 
+    @NotNull
     public <T> T[] toArray(T[] a)
     {
         return _set.toArray(a);

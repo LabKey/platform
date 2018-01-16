@@ -53,18 +53,17 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * User: matthewb
- * Date: Feb 13, 2007
- * Time: 9:01:58 AM
- *
  * Parameter is bound to a particular parameter of a particular PreparedStatement
  *
  * TypedValue is useful for dragging along a sqlType with a raw value, usually this is not necessary as
  * type can be inferred.  However, this can be useful for NULL parameters and
  * for distinguishing unicode, non-unicode types
  *
- * NOTE: jdbc does not have separate Type values for varchar nvarchar
+ * NOTE: jdbc does not have separate Type values for varchar and nvarchar
  * NOTE: does not do implicit conversion, just sets the parameter type
+ *
+ * User: matthewb
+ * Date: Feb 13, 2007
  */
 
 public class Parameter implements AutoCloseable

@@ -35,7 +35,6 @@ import java.io.File;
 public class ObjectProperty extends OntologyManager.PropertyRow
 {
     private int hashCode = 0;
-    public static final int STRING_LENGTH = 4000;
 
     // Object fields
     private Container container;

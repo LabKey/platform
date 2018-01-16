@@ -108,11 +108,16 @@ public class SimpleFilter implements Filter
         return column;
     }
 
+    /**
+     * An expression used to filter a query. Used to generate WHERE clauses in the SQL.
+     * Could operate on a single column's value, or represent a compound statement.
+     */
     public static abstract class FilterClause
     {
         protected boolean _needsTypeConversion = false;
         protected Object[] _paramVals = new Object[0];   // TODO: _paramVals, getter, and callers should all be @NotNull. Consider List<?> as well
         protected boolean _includeNull = false;
+        /** Whether this is the "flip" version of a clause. For example, Does Not Contain, instead of Contains */
         protected boolean _negated = false;
         protected List<ColumnInfo> _selectColumns;
 

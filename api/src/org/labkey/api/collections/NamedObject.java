@@ -17,9 +17,9 @@ package org.labkey.api.collections;
 
 public interface NamedObject
 {
-    public String getName();
+    String getName();
 
-    public Object getObject();
+    Object getObject();
 
-    public String getDefaultValue();
+    String getDefaultValue();
 } 

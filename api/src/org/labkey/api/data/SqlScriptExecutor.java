@@ -52,9 +52,10 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 /**
+ * Executes a single module upgrade SQL script, including finding calls into Java code that are embedded using
+ * stored-procedure style syntax.
  * User: adam
  * Date: Nov 24, 2008
- * Time: 3:22:16 PM
  */
 public class SqlScriptExecutor
 {

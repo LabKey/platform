@@ -15,12 +15,6 @@
  */
 package org.labkey.api.collections;
 
-/**
- * User: adam
- * Date: 4/28/2014
- * Time: 12:58 PM
- */
-
 import com.google.common.base.Functions;
 import com.google.common.collect.Ordering;
 
@@ -28,10 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-// A TreeMap that compares by *value* instead of key. Adapted from a post on StackOverflow by "Stephen":
-// http://stackoverflow.com/questions/109383/how-to-sort-a-mapkey-value-on-the-values-in-java
-
-// Warning
+/**
+ * A TreeMap that compares by *value* instead of key. Adapted from a post on StackOverflow by "Stephen":
+ * http://stackoverflow.com/questions/109383/how-to-sort-a-mapkey-value-on-the-values-in-java
+ * User: adam
+ * Date: 4/28/2014
+ */
 public class ValueComparableMap<K extends Comparable<K>, V> extends TreeMap<K, V>
 {
     //A map for doing lookups on the keys for comparison so we don't get infinite loops
@@ -39,7 +35,7 @@ public class ValueComparableMap<K extends Comparable<K>, V> extends TreeMap<K, V
 
     public ValueComparableMap(final Ordering<? super V> partialValueOrdering)
     {
-        this(partialValueOrdering, new HashMap<K, V>());
+        this(partialValueOrdering, new HashMap<>());
     }
 
     private ValueComparableMap(Ordering<? super V> partialValueOrdering, HashMap<K, V> valueMap)

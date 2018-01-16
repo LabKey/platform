@@ -162,7 +162,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                     {
                         ActionURL reRunURL = _provider.getImportURL(getContainer(), _protocol);
                         reRunURL.addParameter("reRunId", runId);
-                        bar.add(new ActionButton("Re-import run", reRunURL));
+                        bar.add(new ActionButton("Re-import run", reRunURL).setTooltip("Import a revised version of this run, with updated metadata or data file."));
                     }
                 }
                 catch (NumberFormatException ignored) {}

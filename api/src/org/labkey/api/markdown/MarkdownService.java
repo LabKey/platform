@@ -16,7 +16,6 @@
 package org.labkey.api.markdown;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.test.TestWhen;
@@ -24,18 +23,14 @@ import org.labkey.api.test.TestWhen;
 import javax.script.ScriptException;
 
 /**
+ * Utility service to convert Markdown-formatted text to HTML
  * User: Jim Piper
  * Date: Jun 28, 2017
- * Time: 10:15:52 AM
  */
 public interface MarkdownService
 {
-
     /**
-     * @param mdText
      * @return the html string that will render the content described by the markdown text of the input string
-     * @throws NoSuchMethodException
-     * @throws ScriptException
      */
     String toHtml(String mdText) throws NoSuchMethodException, ScriptException;
 

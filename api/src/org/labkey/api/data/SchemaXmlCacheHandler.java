@@ -34,9 +34,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
+ * Manages caching for module XML-based schema-scoped metadata.
  * User: adam
  * Date: 5/10/2014
- * Time: 1:18 PM
  */
 public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<String, TablesDocument>>
 {

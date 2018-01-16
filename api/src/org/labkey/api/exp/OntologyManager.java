@@ -78,9 +78,13 @@ import java.util.Objects;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
+ * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
+ * classes like {@link PropertyDescriptor} and {@link DomainDescriptor}.
+ *
+ * When possible, it's usually preferable to use {@link PropertyService}, {@link Domain}, and {@link DomainProperty}
+ * instead as they tend to provide higher-level abstractions.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 3:23:15 PM
  */
 public class OntologyManager
 {
@@ -1816,7 +1820,7 @@ public class OntologyManager
             {
                 String string = property.getStringValue();
                 // UNDONE - handle truncation in some other way?
-                if (string.length() > ObjectProperty.STRING_LENGTH)
+                if (string.length() > PropertyStorageSpec.DEFAULT_SIZE)
                 {
                     throw new SQLException("String value too long in field " + getPropertyDescriptor(propertyId).getName() + ": " + (string.length() < 150 ? string : string.substring(0, 149) + "..."));
                 }

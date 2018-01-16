@@ -19,9 +19,9 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Something that knows how to fetch a value when it's not yet available from a cache.
  * User: matthewb
  * Date: Sep 16, 2010
- * Time: 4:40:24 PM
  */
 public interface CacheLoader<K, V>
 {

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -225,7 +226,7 @@ public class PropertyColumn extends LookupColumn
         else if (PropertyType.BOOLEAN == pt)
             return getParentTable().getSqlDialect().getBooleanDataType();
         else
-            return "VARCHAR(" + ObjectProperty.STRING_LENGTH + ")";
+            return "VARCHAR(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
     }
 
 

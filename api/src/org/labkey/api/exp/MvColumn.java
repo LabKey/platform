@@ -19,7 +19,8 @@ import org.labkey.api.data.*;
 
 
 /**
- * Missing Value Indicator column
+ * Missing Value (MV) indicator column. Used to annotate another column, which might otherwise want to disallow null
+ * values, as being legitimately unavailable for some reason.
  *
  * User: jgarms
  * Date: Jan 9, 2009
