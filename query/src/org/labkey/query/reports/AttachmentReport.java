@@ -391,8 +391,10 @@ public class AttachmentReport extends BaseRedirectReport
         return null;
     }
 
-    // Retrieve jpeg thumbnail from .pptx, .docx, .xlsx and possibly other Open Office XML documents.
-    // Document must be saved with thumbnail (preview) selected.
+    // Extract the thumbnail stored in .pptx, .docx, .xlsx and possibly other Open Office XML documents. Document must be
+    // saved with thumbnail (preview) selected. Currently only supports JPEG format (always used by PowerPoint, plus Word
+    // and Excel on Mac). Other formats (Excel and Word on Windows) use WMF and EMF, not currently supported but the code
+    // below is teed up for integration with libraries that handle these formats, e.g., Batik (WMF) or FreeHep (EMF).
     private @Nullable Thumbnail getOfficeXmlThumbnail(InputStream in) throws IOException
     {
         try (ZipInputStream zin = new ZipInputStream(in))
@@ -400,9 +402,14 @@ public class AttachmentReport extends BaseRedirectReport
             ZipEntry entry;
             while (null != (entry=zin.getNextEntry()))
             {
-                if ("docProps/thumbnail.jpeg".equals(entry.getName()))
+                switch (entry.getName())
                 {
-                    return ImageUtil.renderThumbnail(ImageIO.read(zin));
+                    case "docProps/thumbnail.jpeg":
+                        return ImageUtil.renderThumbnail(ImageIO.read(zin));
+                    case "docProps/thumbnail.wmf":
+                        break;
+                    case "docProps/thumbnail.emf":
+                        break;
                 }
             }
         }
