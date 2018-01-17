@@ -573,8 +573,10 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 dirtychange : {fn : function(cmp, dirty){this.markDirty(dirty);}, scope : this},
                 render: {
                     fn : function(cmp) {
-                        if (this.externalEditSettings && this.externalEditSettings.isEditing === true)
+                        if (this.externalEditSettings && this.externalEditSettings.isEditing === true) {
+                            LABKEY.Utils.signalWebDriverTest("external-edit-url", this.externalEditSettings.externalUrl);
                             this.showExternalEditingDialog((this.externalEditSettings));
+                        }
                     },
                     scope : this
                 }
@@ -707,6 +709,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 icon: Ext4.Msg.ERROR
             });
         }
+        LABKEY.Utils.signalWebDriverTest("external-edit-url", url);
         return externalEditWindow;
     },
 
