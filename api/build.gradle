@@ -91,7 +91,7 @@ List others = [
         "com.rometools:rome:${romeVersion}",
         "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
         "net.coobird:thumbnailator:${thumbnailatorVersion}",
-        "org.apache.xmlbeans:xbean:${xmlbeansVersion}",
+        "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
         "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}",
