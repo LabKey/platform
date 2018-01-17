@@ -1374,12 +1374,11 @@ public class SecurityController extends SpringActionController
                     errors.addError(new FormattedError("Failed to create user " + PageFlowUtil.filter(rawEmail.trim()) + ": Invalid email address"));
             }
 
-            List<Pair<String, String>> extraParams = new ArrayList<>(2);
+            List<Pair<String, String>> extraParams = new ArrayList<>();
             if (form.isSkipProfile())
                 extraParams.add(new Pair<>("skipProfile", "1"));
 
             URLHelper returnURL = null;
-
             if (null != form.getReturnUrl())
             {
                 extraParams.add(new Pair<>(ActionURL.Param.returnUrl.name(), form.getReturnUrl()));
@@ -1388,7 +1387,7 @@ public class SecurityController extends SpringActionController
 
             for (ValidEmail email : emails)
             {
-                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams.<Pair<String, String>>toArray(new Pair[extraParams.size()]), form.getProvider(), true);
+                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams, form.getProvider(), true);
                 User user = UserManager.getUser(email);
 
                 if (result == null && user != null)

@@ -162,7 +162,7 @@ public class LoginController extends SpringActionController
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
         }
 
-        public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters)
+        public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
         {
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
@@ -465,7 +465,7 @@ public class LoginController extends SpringActionController
             try
             {
                 List<Pair<String, String>> extraParameters = form.getExtraParametersList();
-                SecurityManager.addSelfRegisteredUser(getViewContext(), email, extraParameters.<Pair<String, String>>toArray(new Pair[extraParameters.size()]));
+                SecurityManager.addSelfRegisteredUser(getViewContext(), email, extraParameters);
             }
             catch (ConfigurationException e)
             {
