@@ -729,12 +729,12 @@ public class SecurityManager
     }
 
 
-    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters)
+    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
     }
 
-    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters, String provider, boolean isAddUser)
+    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser)
     {
         ActionURL defaultUrl = createVerificationURL(c, email, verification, extraParameters);
         if (provider == null)
@@ -2722,7 +2722,7 @@ public class SecurityManager
     /**
      * @return null if the user already exists, or a message indicating success/failure
      */
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
+    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser) throws Exception
     {
         if (UserManager.userExists(email))
         {
@@ -2801,12 +2801,12 @@ public class SecurityManager
         return message.toString();
     }
 
-    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable Pair<String, String>[] extraParameters) throws Exception
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
     {
         sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
     }
 
-    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable Pair<String, String>[] extraParameters, String provider, boolean isAddUser) throws Exception
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser) throws Exception
     {
         Container c = context.getContainer();
         User currentUser = context.getUser();
@@ -2822,7 +2822,7 @@ public class SecurityManager
         }
     }
 
-    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable Pair<String, String>[] extraParameters) throws Exception
+    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters) throws Exception
     {
         User currentUser = context.getUser();
         SecurityManager.NewUserStatus newUserStatus = SecurityManager.addUser(email, currentUser);

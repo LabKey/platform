@@ -23,6 +23,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.List;
+
 /**
  * User: adam
  * Date: May 15, 2008
@@ -32,7 +34,7 @@ public interface LoginUrls extends UrlProvider
 {
     ActionURL getConfigureURL();
     ActionURL getConfigureDbLoginURL();
-    ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable Pair<String, String>[] extraParameters);
+    ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters);
     ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
     ActionURL getInitialUserURL();
     ActionURL getLoginURL();
