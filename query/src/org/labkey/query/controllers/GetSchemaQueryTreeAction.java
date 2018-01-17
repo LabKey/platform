@@ -24,16 +24,24 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: dave
@@ -140,7 +148,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         }
 
                         String label = qname;
-                        if (null != tinfo && tinfo instanceof DatasetTable)
+                        if (null != tinfo)
                             label = tinfo.getTitle();           // Display title (label if different from name) for Datasets
 
                         // If there's an error, still include the table in the tree

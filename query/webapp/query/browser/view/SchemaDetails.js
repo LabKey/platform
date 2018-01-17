@@ -140,7 +140,7 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                     afterrender: {
                         fn: function(box) {
                             // bind links
-                            var nameLinks = Ext4.DomQuery.select('tbody tr td span', box.getEl().id);
+                            var nameLinks = Ext4.DomQuery.select('tbody tr td', box.getEl().id);
                             if (!Ext4.isEmpty(nameLinks)) {
                                 for (var i = 0; i < nameLinks.length; i++) {
                                     Ext4.get(nameLinks[i]).on('click', function(evt, t) {
@@ -287,10 +287,6 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                                 tag: 'span',
                                 cls: 'labkey-link',
                                 html: Ext4.htmlEncode(query.queryName)
-                            },
-                            {
-                                tag: 'span',
-                                html: Ext4.htmlEncode((query.queryName.toLowerCase() != query.queryLabel.toLowerCase() ? ' (' + query.queryLabel + ')' : ''))
                             }
                         ]
                     },
@@ -300,7 +296,16 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                     },
                     {
                         tag: 'td',
-                        html: Ext4.htmlEncode(query.description)
+                        children: [
+                            {
+                                tag: 'span',
+                                html: query.queryName.toLowerCase() != query.queryLabel.toLowerCase() ? ('<em>Query Label: ' + Ext4.htmlEncode(query.queryLabel) + '</em><br/>') : ''
+                            },
+                            {
+                                tag: 'span',
+                                html: Ext4.htmlEncode(query.description)
+                            }
+                        ]
                     }
                 ]
             });
