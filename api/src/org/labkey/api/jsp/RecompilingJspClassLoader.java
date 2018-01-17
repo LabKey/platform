@@ -124,13 +124,22 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     cp.addDirectory(getModulesApiLib());
 
                     // Compile the .jsp file
-                    JspC jasper = new JspC();
+                    JspC jasper = new JspC() {
+//                        This override eliminates the unnecessary TLD scanning during recompile. Commented out for now since it doesn't work with Tomcat 7.x.
+//                        @Override
+//                        protected TldScanner newTldScanner(JspCServletContext context, boolean namespaceAware, boolean validate, boolean blockExternal)
+//                        {
+//                            StandardJarScanner scanner = new StandardJarScanner();
+//                            scanner.setJarScanFilter((jarScanType, s) -> false);
+//                            context.setAttribute(JarScanner.class.getName(), scanner);
+//                            return super.newTldScanner(context, namespaceAware, validate, blockExternal);
+//                        }
+                    };
                     jasper.setUriroot(jspJavaFileBuildDirectory.getParent() + "/webapp");
                     jasper.setOutputDir(jspJavaFileBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
                     jasper.setCompilerTargetVM("1.8");
                     jasper.setCompilerSourceVM("1.8");
-                    jasper.setTrimSpaces(false);
                     jasper.setCompile(false);
                     jasper.setListErrors(true);
 
