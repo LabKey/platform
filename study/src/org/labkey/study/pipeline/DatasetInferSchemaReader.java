@@ -6,13 +6,14 @@ import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -29,13 +30,20 @@ import java.util.stream.Collectors;
  */
 public class DatasetInferSchemaReader extends DatasetFileReader implements SchemaReader
 {
+    protected Pattern _filePattern = Pattern.compile("(^\\D*).(?:tsv|txt|xls|xlsx)$");
     private Map<Integer, DatasetImportInfo> _datasetInfoMap = new LinkedHashMap<>();
     private List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
-    private static final Pattern DEFAULT_PATTERN = Pattern.compile("(^\\D*).(?:tsv|txt|xls|xlsx)$");
+    private Map<File, Pair<String, String>> _inputDataMap;
 
     public DatasetInferSchemaReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, StudyImportContext studyImportContext)
     {
         super(datasetsDirectory, datasetsFileName, study, studyImportContext);
+    }
+
+    public DatasetInferSchemaReader(VirtualFile datasetsDirectory, StudyImpl study, StudyImportContext studyImportContext, Map<File, Pair<String, String>> inputDataMap)
+    {
+        super(datasetsDirectory, null, study, studyImportContext);
+        _inputDataMap = inputDataMap;
     }
 
     @Override
@@ -56,19 +64,18 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
     protected Map<String, DatasetDefinition> getDatasetDefinitionMap()
     {
         Map<String, DatasetDefinition> dsMap = super.getDatasetDefinitionMap();
-        Pattern filePattern = getDefaultDatasetPattern();
 
         // inferred datasets that do not yet exist on the server
-        for (String name : _datasetsDirectory.list())
+        for (String name : getDatasetFileNames())
         {
-            Matcher m = filePattern.matcher(name);
-            if (!m.find())
-                continue;
-            String dsKey = getKeyFromDatasetName(m);
-            DatasetDefinition ds = dsMap.get(dsKey.toLowerCase());
-            if (ds == null)
+            String dsKey = getKeyFromDatasetName(name);
+            if (dsKey != null)
             {
-                dsMap.put(dsKey, new DatasetDefinition(_study, -1, dsKey, dsKey, null, null, null));
+                DatasetDefinition ds = dsMap.get(dsKey.toLowerCase());
+                if (ds == null)
+                {
+                    dsMap.put(dsKey, new DatasetDefinition(_study, -1, dsKey, dsKey, null, null, null));
+                }
             }
         }
         return dsMap;
@@ -91,9 +98,10 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
                 ColumnDescriptor[] columns = runnable.getColumns();
                 if (columns.length > 0)
                 {
-                    String name = FileUtil.getBaseName(runnable.getFileName());
+                    String name = runnable.getDatasetDefinition().getName();
                     DatasetDefinition def = _study.getDatasetByName(name);
                     DatasetImportInfo datasetInfo;
+
                     if (def != null)
                     {
                         datasetInfo = new DatasetImportInfo(name);
@@ -134,17 +142,46 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
         return "PlateName";
     }
 
-    protected Pattern getDefaultDatasetPattern()
+    @Override
+    protected String getKeyFromDatasetName(String name)
     {
-        return DEFAULT_PATTERN;
+        // if there is an explicit input data map as is the case for file analysis jobs, use this
+        // data instead of just the legacy regex method
+        if (_inputDataMap != null)
+        {
+            for (Map.Entry<File, Pair<String, String>> entry : _inputDataMap.entrySet())
+            {
+                if (entry.getKey().getName().equalsIgnoreCase(name))
+                {
+                    Pair<String, String> dataKey = entry.getValue();
+                    if (dataKey.first.equals(FileAnalysisDatasetTask.DATASET_ID_KEY) ||
+                        dataKey.first.equals(FileAnalysisDatasetTask.DATASET_NAME_KEY))
+                        return dataKey.second;
+                    else
+                    {
+                        File origFile = new File(dataKey.second);
+                        name = origFile.getName();
+                    }
+                }
+            }
+        }
+
+        Matcher m = _filePattern.matcher(name);
+        if (m.matches())
+        {
+            String key = m.group(1);
+            if (key != null)
+                return key;
+        }
+        return null;
     }
 
-    protected String getKeyFromDatasetName(Matcher matcher)
+    @Override
+    protected List<String> getDatasetFileNames()
     {
-        String key = matcher.group(1);
-        if (key != null)
-            return key;
+        if (_inputDataMap != null)
+            return _inputDataMap.keySet().stream().map(File::getName).collect(Collectors.toList());
         else
-            return null;
+            return super.getDatasetFileNames();
     }
 }

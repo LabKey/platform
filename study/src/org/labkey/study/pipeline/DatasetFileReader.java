@@ -17,6 +17,7 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.util.DateUtil;
@@ -53,6 +54,7 @@ public class DatasetFileReader
 {
     public static final Pattern DEFAULT_PATTERN = Pattern.compile("^\\D*(\\d*).(?:tsv|txt|xls|xlsx)$");
 
+    protected Pattern _filePattern = DEFAULT_PATTERN;
     protected final StudyImpl _study;
     protected final StudyManager _studyManager = StudyManager.getInstance();
     protected final StudyImportContext _studyImportContext;
@@ -90,18 +92,17 @@ public class DatasetFileReader
         return Collections.unmodifiableList(_runnables);
     }
 
-    protected Pattern getDefaultDatasetPattern()
+    @Nullable
+    protected String getKeyFromDatasetName(String name)
     {
-        return DEFAULT_PATTERN;
-    }
-
-    protected String getKeyFromDatasetName(Matcher matcher)
-    {
-        String key = matcher.group(1);
-        if (key != null)
-            return normalizeIntegerString(key);
-        else
-            return null;
+        Matcher m = _filePattern.matcher(name);
+        if (m.matches())
+        {
+            String key = m.group(1);
+            if (key != null)
+                return normalizeIntegerString(key);
+        }
+        return null;
     }
 
     protected Map<String, DatasetDefinition> getDatasetDefinitionMap()
@@ -138,10 +139,13 @@ public class DatasetFileReader
     {
         Properties props = new Properties();
 
-        try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
+        if (_datasetsFileName != null)
         {
-            if (is != null)
-                props.load(is);
+            try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
+            {
+                if (is != null)
+                    props.load(is);
+            }
         }
 
         if (null == _study)
@@ -158,7 +162,6 @@ public class DatasetFileReader
         //
 
         Action defaultAction = Action.REPLACE;
-        Pattern filePattern = getDefaultDatasetPattern();
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;
         Date defaultReplaceCutoff = null;
@@ -177,7 +180,7 @@ public class DatasetFileReader
             }
             else if (key.equals("default.filepattern"))
             {
-                filePattern = Pattern.compile("^" + value + "$");
+                _filePattern = Pattern.compile("^" + value + "$");
             }
             else if (key.equals("default.deleteafterimport"))
             {
@@ -265,14 +268,12 @@ public class DatasetFileReader
             }
         }
 
-        for (String name : _datasetsDirectory.list())
+        for (String name : getDatasetFileNames())
         {
-            if (name.startsWith("."))
+            String dsKey = getKeyFromDatasetName(name);
+            if (dsKey == null)
                 continue;
-            Matcher m = filePattern.matcher(name);
-            if (!m.find())
-                continue;
-            String dsKey = getKeyFromDatasetName(m);
+
             DatasetDefinition ds = dsMap.get(dsKey.toLowerCase());
             if (null == ds)
             {
@@ -307,6 +308,22 @@ public class DatasetFileReader
                 return name1 == null ? -1 : 1;
             return j1._datasetDefinition.getDatasetId() - j2._datasetDefinition.getDatasetId();
         });
+    }
+
+    protected List<String> getDatasetFileNames()
+    {
+        List<String> names = new ArrayList<>();
+        for (String name : _datasetsDirectory.list())
+        {
+            if (name.startsWith("."))
+                continue;
+            Matcher m = _filePattern.matcher(name);
+            if (!m.find())
+                continue;
+
+            names.add(name);
+        }
+        return names;
     }
 
     private Date parseDate(String value, List<String> errors)

@@ -78,7 +78,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         try
         {
             PipelineJob job = getJob();
-            doImport(getDatasetsDirectory(), getDatasetsFileName(), job, _ctx, getStudy());
+            doImport(getDatasetsDirectory(), getDatasetsFileName(), job, _ctx, getStudy(), true);
 
             return new RecordedActionSet();
         }
@@ -86,16 +86,10 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         {
             throw new PipelineJobException("Exception importing datasets", e);
         }
-
     }
 
-    public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study) throws PipelineJobException, ImportException
-    {
-        doImport(datasetsDirectory, datasetsFileName, job, ctx, study, true);
-    }
-
-    public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study,
-            boolean syncParticipantVisit) throws PipelineJobException, ImportException
+    public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job,
+                                                   StudyImportContext ctx, StudyImpl study, boolean syncParticipantVisit)
     {
         if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
             return Collections.emptyList();
@@ -103,20 +97,27 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         if (null == datasetsDirectory || null == datasetsFileName)
             return Collections.emptyList();
 
+        DatasetFileReader reader;
+        if (datasetsDirectory.list().contains(datasetsFileName))
+        {
+            // dataset metadata provided
+            reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, ctx);
+        }
+        else
+        {
+            ctx.getLogger().info("Dataset file \"" + datasetsFileName + "\" not found, inferring columns from the dataset files.");
+            reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
+        }
+
+        return doImport(datasetsDirectory, datasetsFileName, job, ctx, study, reader, syncParticipantVisit);
+    }
+
+    public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job,
+                                                   StudyImportContext ctx, StudyImpl study, DatasetFileReader reader, boolean syncParticipantVisit)
+    {
         try
         {
             QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
-            DatasetFileReader reader;
-            if (datasetsDirectory.list().contains(datasetsFileName))
-            {
-                // dataset metadata provided
-                reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, ctx);
-            }
-            else
-            {
-                ctx.getLogger().info("Dataset file \"" + datasetsFileName + "\" not found, inferring columns from the dataset files.");
-                reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
-            }
             List<String> errors = new ArrayList<>();
 
             try

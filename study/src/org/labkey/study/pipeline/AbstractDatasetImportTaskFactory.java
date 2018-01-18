@@ -31,6 +31,11 @@ public abstract class AbstractDatasetImportTaskFactory<FactoryType extends Abstr
         super(namespaceClass);
     }
 
+    AbstractDatasetImportTaskFactory(Class namspaceClass, String name)
+    {
+        super(namspaceClass, name);
+    }
+
     public List<FileType> getInputTypes()
     {
         return Collections.emptyList();

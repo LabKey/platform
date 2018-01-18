@@ -18,6 +18,7 @@
 
                 <bean class="org.labkey.study.pipeline.SpecimenReloadTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StudyReloadSourceTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
             </list>
         </property>
 
@@ -106,7 +107,43 @@
                         </list>
                     </property>
                 </bean>
+
+                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.DatasetBatch"/>
+                    <constructor-arg value="datasetImportTask"/>
+                    <property name="description" value="Import Study datasets"/>
+                    <property name="protocolObjectId" value="study.datasetImport"/>
+                    <property name="protocolName" value="Dataset Import"/>
+                    <property name="protocolFactoryName" value="datasetImport"/>
+                    <property name="defaultDisplayState" value="hidden"/>
+                    <property name="allowForTriggerConfiguration" value="true"/>
+                    <property name="initialInputExts">
+                        <list>
+                            <ref bean="xlsxFileType"/>
+                            <ref bean="tsvFileType"/>
+                            <ref bean="xlsFileType"/>
+                        </list>
+                    </property>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="fileAnalysisDatasetTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.FileAnalysisDatasetTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
             </list>
         </property>
     </bean>
+
+    <bean id="xlsxFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".xlsx"/>
+    </bean>
+    <bean id="tsvFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".tsv"/>
+    </bean>
+    <bean id="xlsFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".xls"/>
+    </bean>
+
 </beans>

@@ -492,7 +492,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(importContext, studyDir);
                 String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(importContext);
 
-                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, this, importContext, destStudy);
+                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, this, importContext, destStudy, true);
             }
             importParticipantGroups(vf, errors, importContext);
         }
