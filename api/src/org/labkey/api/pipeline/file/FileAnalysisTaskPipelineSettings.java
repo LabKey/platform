@@ -94,6 +94,11 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
         super(FileAnalysisTaskPipeline.class, name);
     }
 
+    public FileAnalysisTaskPipelineSettings(Class namespaceClass, String name)
+    {
+        super(namespaceClass, name);
+    }
+
     public TaskId getCloneId()
     {
         return new TaskId(FileAnalysisTaskPipeline.class, _cloneName);
