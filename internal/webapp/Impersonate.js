@@ -93,7 +93,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationUsers', LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
+                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationUsers', LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
                 reader: {
                     type: 'json',
                     root: 'users'
@@ -210,7 +210,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationGroups', LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
+                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationGroups', LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
                 reader: {
                     type: 'json',
                     root: 'groups'
@@ -365,7 +365,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationRoles', LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
+                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationRoles', LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
                 reader: {
                     type: 'json',
                     root: 'roles'
