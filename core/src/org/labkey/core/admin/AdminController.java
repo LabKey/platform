@@ -1061,7 +1061,6 @@ public class AdminController extends SpringActionController
         private String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
-            Set<String> documentedFilenamesCopy = new HashSet<>();
 
             if (null != wikiSource)
             {
@@ -1075,7 +1074,7 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            documentedFilenamesCopy.addAll(documentedFilenames);
+            Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
             documentedFilenames.removeAll(filenames);
             filenames.removeAll(documentedFilenamesCopy);
             for (String name : filenames.toArray(new String[filenames.size()]))
