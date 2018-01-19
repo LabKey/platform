@@ -40,6 +40,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -634,6 +635,11 @@ public class ExceptionUtil
             }
             else
                 message = responseStatus + ": API usage error - bad request";
+        }
+        else if (ex instanceof BadRequestException)
+        {
+            responseStatus = ((BadRequestException) ex).getStatus();
+            message = ex.getMessage();
         }
         else if (ex instanceof NotFoundException)
         {
