@@ -305,10 +305,10 @@
         <description>The material object that was used as an input</description>
       </column>
       <column columnName="TargetApplicationId">
-        <description>The protocol application that used the data as an input</description>
+        <description>The protocol application that used the material as an input</description>
       </column>
       <column columnName="Role">
-        <description>The purpose of the usage of the data object</description>
+        <description>The purpose of the usage of the material</description>
       </column>
     </columns>
     <description>Contains one row per material input in a protocol application for a run in this folder.</description>

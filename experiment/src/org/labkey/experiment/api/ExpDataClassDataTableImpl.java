@@ -103,7 +103,7 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/29/15
  */
-public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
+public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private static final Logger LOG = Logger.getLogger(ExpDataClassDataTableImpl.class);
 
@@ -219,10 +219,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 return aliasCol;
 
             case Inputs:
-                return ExpDataTableImpl.createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true);
 
             case Outputs:
-                return ExpDataTableImpl.createLineageColumn(this, alias, false);
+                return createLineageColumn(this, alias, false);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -549,6 +549,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             TableInfo expData = svc.getTinfoData();
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
+            // TODO: validate dataFileUrl column, it will be saved later
+
             // Generate LSID before inserting
             step0.addColumn(lsidCol, (Supplier) () -> svc.generateGuidLSID(c, ExpData.class));
 
@@ -629,6 +631,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
+
+            // TODO: save file path to exp.data.DataFileUrl
 
             // Insert into exp.data then the provisioned table
             DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), ExperimentService.get().getTinfoData(), c, context);

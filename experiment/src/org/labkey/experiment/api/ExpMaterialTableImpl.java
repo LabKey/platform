@@ -33,6 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -69,7 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
+public class ExpMaterialTableImpl extends ExpProtocolOutputTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
     ExpSampleSetImpl _ss;
 
@@ -133,22 +134,59 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 // NOTE: This column is incorrectly named "Protocol", but we are keeping it for backwards compatibility to avoid breaking queries in hvtnFlow module
                 ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
-                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR);//, getColumn("SourceProtocolApplication"));
+                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR);
                 columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                columnInfo.setLabel("Source Protocol");
                 columnInfo.setDescription("Contains a reference to the protocol for the protocol application that created this sample");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
+                columnInfo.setHidden(true);
                 return columnInfo;
             }
+
             case SourceProtocolApplication:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
                 columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
+                columnInfo.setHidden(true);
                 return columnInfo;
             }
+
+            case SourceApplicationInput:
+            {
+                ColumnInfo col = createEdgeColumn(alias, Column.SourceProtocolApplication, ExpSchema.TableType.MaterialInputs);
+                col.setDescription("Contains a reference to the MaterialInput row between this ExpMaterial and it's SourceProtocolApplication");
+                col.setHidden(true);
+                return col;
+            }
+
+            case RunApplication:
+            {
+                SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
+                        .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
+                        .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
+                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
+                        .append(")");
+
+                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
+                col.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this sample");
+                col.setUserEditable(false);
+                col.setReadOnly(true);
+                col.setHidden(true);
+                return col;
+            }
+
+            case RunApplicationOutput:
+            {
+                ColumnInfo col = createEdgeColumn(alias, Column.RunApplication, ExpSchema.TableType.MaterialInputs);
+                col.setDescription("Contains a reference to the MaterialInput row between this ExpMaterial and it's RunOutputApplication");
+                return col;
+            }
+
             case Run:
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RunId"));
@@ -202,10 +240,10 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return aliasCol;
 
             case Inputs:
-                return ExpDataTableImpl.createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true);
 
             case Outputs:
-                return ExpDataTableImpl.createLineageColumn(this, alias, false);
+                return createLineageColumn(this, alias, false);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -299,11 +337,15 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
         ColumnInfo rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
         
-        ColumnInfo appCol = addColumn(Column.SourceProtocolApplication);
-        appCol.setHidden(true);
+        addColumn(Column.SourceProtocolApplication);
+
+        addColumn(Column.SourceApplicationInput);
+
+        addColumn(Column.RunApplication);
+
+        addColumn(Column.RunApplicationOutput);
+
         ColumnInfo sourceProtocolCol = addColumn(Column.SourceProtocolLSID);
-        sourceProtocolCol.setHidden(true);
-        sourceProtocolCol.setLabel("Source Protocol");
 
         ColumnInfo nameCol = addColumn(ExpMaterialTable.Column.Name);
         if (ss != null && ss.hasNameAsIdCol())

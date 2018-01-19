@@ -30,8 +30,10 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -59,7 +61,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
+public class ExpDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
     protected ExpExperiment _experiment;
     protected boolean _runSpecified;
@@ -91,8 +93,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
         addColumn(Column.InlineThumbnail);
-        addColumn(Column.SourceProtocolApplication).setHidden(true);
-        addColumn(Column.Protocol).setHidden(true);
+        addColumn(Column.SourceProtocolApplication);
+        addColumn(Column.Protocol);
         addContainerColumn(Column.Folder, null);
         addColumn(Column.ViewOrDownload);
         addColumn(Column.Generated);
@@ -220,18 +222,54 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 return c;
             }
             case Protocol:
+            {
                 ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
                 col.setFk(getExpSchema().getProtocolForeignKey("LSID"));
                 col.setSqlTypeName("lsidtype");
+                col.setHidden(true);
                 return col;
+            }
             case SourceProtocolApplication:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
                 columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 columnInfo.setUserEditable(false);
+                columnInfo.setHidden(true);
                 return columnInfo;
+            }
+
+            case SourceApplicationInput:
+            {
+                ColumnInfo col = createEdgeColumn(alias, Column.SourceProtocolApplication, ExpSchema.TableType.DataInputs);
+                col.setDescription("Contains a reference to the DataInput row between this ExpData and it's SourceProtocolApplication");
+                col.setHidden(true);
+                return col;
+            }
+
+            case RunApplication:
+            {
+                SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
+                        .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
+                        .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
+                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
+                        .append(")");
+
+                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
+                col.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this data");
+                col.setUserEditable(false);
+                col.setReadOnly(true);
+                col.setHidden(true);
+                return col;
+            }
+
+            case RunApplicationOutput:
+            {
+                ColumnInfo col = createEdgeColumn(alias, Column.RunApplication, ExpSchema.TableType.DataInputs);
+                col.setDescription("Contains a reference to the DataInput row between this ExpData and it's RunOutputApplication");
+                return col;
             }
             case RowId:
             {
@@ -563,21 +601,6 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
         ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
-    }
-
-    public static ColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
-    {
-        ColumnInfo ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
-        ret.setFk(new LineageForeignKey(table, inputs));
-        ret.setCalculated(true);
-        ret.setUserEditable(false);
-        ret.setReadOnly(true);
-        ret.setShownInDetailsView(false);
-        ret.setShownInInsertView(false);
-        ret.setShownInUpdateView(false);
-        ret.setIsUnselectable(true);
-        ret.setHidden(true);
-        return ret;
     }
 
     private class ThumbnailDataLinkColumn extends ViewFileDataLinkColumn

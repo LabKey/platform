@@ -18,11 +18,15 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
@@ -32,6 +36,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -42,11 +47,14 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
@@ -89,6 +97,29 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 return columnInfo;
             }
         }
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        {
+            ColumnInfo lsidCol = getLSIDColumn();
+            if (lsidCol != null)
+            {
+                if ("Properties".equalsIgnoreCase(name))
+                {
+                    return createPropertiesColumn(name);
+                }
+
+                // The the column name is a property URI
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
+                if (pd != null)
+                {
+                    PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                    return pc;
+                }
+
+            }
+        }
+
+
         return result;
     }
 
@@ -138,6 +169,60 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public ColumnInfo createPropertyColumn(String name)
     {
         return wrapColumn(name, getLSIDColumn());
+    }
+
+    // Expensive render-time fetching of all ontology properties attached to the object row
+    // TODO: Can we pre-fetch all properties referenced by the rows in the outer select and only include those properties?
+    // TODO: How to handle lookup values?
+    protected ColumnInfo createPropertiesColumn(String name)
+    {
+        ColumnInfo col = new AliasedColumn(this, name, getLSIDColumn());
+        col.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
+        {
+            @Override
+            public Object getValue(RenderContext ctx)
+            {
+                String lsid = (String)super.getValue(ctx);
+                if (lsid == null)
+                    return null;
+
+                Map<String, Object> props = OntologyManager.getProperties(ctx.getContainer(), lsid);
+                if (!props.isEmpty())
+                    return props;
+
+                return null;
+            }
+
+            @Override
+            public Object getExcelCompatibleValue(RenderContext ctx)
+            {
+                return super.getTsvFormattedValue(ctx);
+            }
+
+            @Override
+            public String getTsvFormattedValue(RenderContext ctx)
+            {
+                Object props = getValue(ctx);
+                if (props == null)
+                    return null;
+
+                return new JSONObject(props).toString(2);
+            }
+
+            @Override
+            public @NotNull String getFormattedValue(RenderContext ctx)
+            {
+                Object props = getValue(ctx);
+                if (props == null)
+                    return "&nbsp;";
+
+                String html = PageFlowUtil.filter(new JSONObject(props).toString(2));
+                html = html.replaceAll("\\n", "<br>\n");
+                return html;
+            }
+
+        });
+        return col;
     }
 
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)

@@ -78,6 +78,12 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         }
     }
 
+    @Override
+    protected ColumnInfo getLSIDColumn()
+    {
+        return getColumn(Column.LSID);
+    }
+
     public void populate()
     {
         addColumn(Column.Material);
