@@ -302,15 +302,19 @@ public class TypesController extends SpringActionController
     public static class TypeDetailsAction extends SimpleViewAction<TypeForm>
     {
         public String typeName;
+        public DomainDescriptor dd;
         public List<PropertyDescriptor> properties = Collections.emptyList();
 
         public ModelAndView getView(TypeForm form, BindException errors) throws Exception
         {
             // UNDONE: verify container against Types table when we have a Types table
-            typeName = StringUtils.trimToEmpty(form.getType());             
+            typeName = StringUtils.trimToNull(form.getType());
 
             if (null != typeName)
+            {
+                dd = OntologyManager.getDomainDescriptor(typeName, getContainer());
                 properties = OntologyManager.getPropertiesForType(typeName, getContainer());
+            }
 
             return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
@@ -318,7 +322,7 @@ public class TypesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new TypesAction(getViewContext())).appendNavTrail(root);
-            root.addChild("Type -- " + StringUtils.defaultIfEmpty(typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getContainer()));
+            root.addChild("Type -- " + StringUtils.defaultIfEmpty(dd != null ? dd.getName() : typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getContainer()));
             return root;
         }
     }

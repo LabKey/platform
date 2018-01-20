@@ -1,3 +1,4 @@
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2006-2013 LabKey Corporation
@@ -18,17 +19,19 @@
 <%@ page import="org.labkey.api.exp.DomainDescriptor"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.experiment.types.TypesController.TypeBean" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TypeBean bean = (TypeBean)getModelBean();
 %><h3>global types</h3><%
 for (DomainDescriptor type : bean.globals.values())
 {
-    %><a href="typeDetails.view?type=<%=h(PageFlowUtil.encode(type.getDomainURI()))%>"><%=h(type.getName())%></a><br /><%
+    %><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getDomainURI()))%><br/><%
 }
 %><h3>local types</h3><%
 for (DomainDescriptor type : bean.locals.values())
 {
-    %><a href="typeDetails.view?type=<%=h(PageFlowUtil.encode(type.getDomainURI()))%>"><%=h(type.getName())%></a><br /><%
+    %><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getDomainURI()))%><br/><%
 }
 %>
