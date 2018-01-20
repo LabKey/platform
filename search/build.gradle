@@ -1,15 +1,30 @@
 configurations {
-   tika { transitive = false } // we don't want all of the jars that tika depends on to be copied, #30592
+    tika { transitive = false } // we don't want all of the jars that tika depends on to be copied, #30592
 }
 
 ext.luceneVersion="7.2.0"
 
 dependencies {
-   external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
-   external "org.apache.lucene:lucene-core:${luceneVersion}"
-   external "org.apache.lucene:lucene-queryparser:${luceneVersion}"
-   external "org.apache.lucene:lucene-backward-codecs:${luceneVersion}"
-   tika "org.apache.tika:tika-app:${tikaVersion}"
+    external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
+    external "org.apache.lucene:lucene-core:${luceneVersion}"
+    external "org.apache.lucene:lucene-queryparser:${luceneVersion}"
+    external "org.apache.lucene:lucene-backward-codecs:${luceneVersion}"
+
+    // tika-parsers.jar includes some simple text parsers plus adapters for many parsing libraries
+    external ("org.apache.tika:tika-parsers:${tikaVersion}") {
+        transitive = false
+    }
+    // Additional parsing libraries (beyond POI, PDFBox, commons-compress, etc., which are already included in API) that we
+    // care about. Adjust these dependencies and versions whenever we upgrade Tika. Or if we want to add or remove a parser.
+    external "org.ow2.asm:asm-debug-all:5.0.4"
+    external "org.apache.cxf:cxf-rt-rs-client:3.0.16"
+    external "org.apache.pdfbox:jempbox:1.8.13"
+    external "com.drewnoakes:metadata-extractor:2.8.1"
+    external "org.apache.poi:poi-scratchpad:${poiVersion}"
+    external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
+
+    // TODO: Delete this soon
+    tika "org.apache.tika:tika-app:${tikaVersion}"
 }
 
 project.task("copyTika",

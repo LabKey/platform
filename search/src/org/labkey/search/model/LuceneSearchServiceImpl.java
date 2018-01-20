@@ -148,7 +148,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     // TODO: Remove separate class loader (and this flag), after we've updated the search build to bring in the parsers
     // we care about and tested thoroughly
-    private static final boolean USE_SEPARATE_CLASS_LOADER_FOR_TIKA = true;
+    private static final boolean USE_SEPARATE_CLASS_LOADER_FOR_TIKA = false;
 
     // A Tika AutoDetectParser that lives in its own classloader to keep Tika jars isolated from the rest of LabKey.
     // We can't cast this to anything (AutoDetectParser, Parser), so we'll use reflection to invoke its parse() method.
