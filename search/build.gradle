@@ -1,7 +1,3 @@
-configurations {
-    tika { transitive = false } // we don't want all of the jars that tika depends on to be copied, #30592
-}
-
 ext.luceneVersion="7.2.0"
 
 dependencies {
@@ -22,19 +18,4 @@ dependencies {
     external "com.drewnoakes:metadata-extractor:2.8.1"
     external "org.apache.poi:poi-scratchpad:${poiVersion}"
     external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
-
-    // TODO: Delete this soon
-    tika "org.apache.tika:tika-app:${tikaVersion}"
 }
-
-project.task("copyTika",
-        type: Copy,
-        group: "Build",
-        description: "Copy Tika app into directory for use by special classloader",
-        { CopySpec copy ->
-           copy.from project.configurations.tika
-           copy.into new File(project.buildDir, "explodedModule/tika")
-        }
-)
-
-project.tasks.module.dependsOn(project.tasks.copyTika)

@@ -65,10 +65,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.resource.ChildFirstClassLoader;
-import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -109,11 +106,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.nio.file.FileSystemException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -144,56 +137,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
-    private final AutoDetectParser AUTO_DETECT_PARSER = new AutoDetectParser();
-
-    // TODO: Remove separate class loader (and this flag), after we've updated the search build to bring in the parsers
-    // we care about and tested thoroughly
-    private static final boolean USE_SEPARATE_CLASS_LOADER_FOR_TIKA = false;
-
-    // A Tika AutoDetectParser that lives in its own classloader to keep Tika jars isolated from the rest of LabKey.
-    // We can't cast this to anything (AutoDetectParser, Parser), so we'll use reflection to invoke its parse() method.
-    private static final Object _autoDetectParser;
-    private static final Method _parseMethod;
-    private static final Class _metadataClass;
-
-    static
-    {
-        Resource tikaDir = ModuleLoader.getInstance().getModule("search").getModuleResource("tika");
-        List<URL> urls = new ArrayList<>();
-
-        try
-        {
-            if (tikaDir.isCollection())
-            {
-                for (Resource tikaJar : tikaDir.list())
-                {
-                    if (tikaJar instanceof FileResource)
-                    {
-                        urls.add(((FileResource) tikaJar).getFile().toURI().toURL());
-                    }
-                }
-            }
-
-            ClassLoader tikaClassLoader = new ChildFirstClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader()) {
-                @Override
-                protected Class<?> findClass(String name) throws ClassNotFoundException
-                {
-                    // Ignore logging facades in search's copy of Tika; delegate to the main class loader to suppress warnings. #29030
-                    // At some point soon, we'll use gradle to create a white-list version of tika that includes just the jars we want.
-                    if (name.startsWith("org.apache.log4j") || name.startsWith("org.slf4j"))
-                        throw new ClassNotFoundException();
-                    return super.findClass(name);
-                }
-            };
-            _autoDetectParser = tikaClassLoader.loadClass("org.apache.tika.parser.AutoDetectParser").newInstance();
-            _metadataClass = tikaClassLoader.loadClass("org.apache.tika.metadata.Metadata");
-            _parseMethod = _autoDetectParser.getClass().getMethod("parse", InputStream.class, ContentHandler.class, _metadataClass);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
+    private final AutoDetectParser _autoDetectParser = new AutoDetectParser();
 
     enum FIELD_NAME
     {
@@ -867,101 +811,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return;
         }
 
-        if (USE_SEPARATE_CLASS_LOADER_FOR_TIKA)
-        {
-            try
-            {
-                Object md = getCompatibleMetadata(metadata);
-                _parseMethod.invoke(_autoDetectParser, is, handler, md);
-                copyProperties(md, metadata);
-            }
-            catch (InvocationTargetException e)
-            {
-                Throwable cause = e.getCause();
-
-                if (null != cause)
-                {
-                    // Need to translate TikaException in Tika classloader to TikaException in this classloader
-                    if ("org.apache.tika.exception.TikaException".equals(cause.getClass().getName()))
-                        throw new TikaException(cause.getMessage(), cause.getCause());
-                    // Likewise, need to translate EncryptedDocumentException in Tika classloader to EncryptedDocumentException in this classloader, #30306
-                    if ("org.apache.tika.exception.EncryptedDocumentException".equals(cause.getClass().getName()))
-                        throw new EncryptedDocumentException(cause.getMessage(), cause.getCause());
-
-                    // Need to unwrap SAXException, IOException, and NoClassDefFoundError
-                    if (cause instanceof SAXException)
-                        throw (SAXException) cause;
-                    if (cause instanceof IOException)
-                        throw (IOException) cause;
-                    if (cause instanceof NoClassDefFoundError)
-                        throw (NoClassDefFoundError) cause;
-                }
-
-                throw new RuntimeException(e);
-            }
-            catch (IllegalAccessException | InstantiationException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        else
-        {
-            AUTO_DETECT_PARSER.parse(is, handler, metadata);
-        }
-    }
-
-
-    // Our AutoDetectParser comes from the Tika-isolated class loader, so we must pass to its parse() method an instance
-    // of Metadata that comes from that universe. Create an instance and marshall the properties into it via reflection.
-    private Object getCompatibleMetadata(Metadata metadata) throws IllegalAccessException, InstantiationException
-    {
-        Object md = _metadataClass.newInstance();
-
-        try
-        {
-            Method addMethod = md.getClass().getMethod("add", String.class, String.class);
-
-            for (String name : metadata.names())
-            {
-                for (String value : metadata.getValues(name))
-                {
-                    addMethod.invoke(md, name, value);
-                }
-            }
-        }
-        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-
-        return md;
-    }
-
-
-    // Now marshall the properties back into the Metadata object
-    private void copyProperties(Object md, Metadata metadata)
-    {
-        try
-        {
-            Method namesMethod = md.getClass().getMethod("names");
-            Method getValuesMethod = md.getClass().getMethod("getValues", String.class);
-
-            String[] names = (String[])namesMethod.invoke(md);
-
-            for (String name : names)
-            {
-                // Just replace all the values associated with each name (don't bother trying to merge)
-                metadata.remove(name);
-                String[] values = (String[])getValuesMethod.invoke(md, name);
-
-                for (String value : values)
-                    metadata.add(name, value);
-            }
-        }
-        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
+        _autoDetectParser.parse(is, handler, metadata);
     }
 
 
