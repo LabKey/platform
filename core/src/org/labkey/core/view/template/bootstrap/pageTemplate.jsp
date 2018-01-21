@@ -21,13 +21,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    BootstrapTemplate me = (BootstrapTemplate) HttpView.currentView();
+    PageTemplate me = (PageTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
 
@@ -70,7 +70,7 @@
        }
     %>
 </head>
-<body onload="<%=h(onLoad)%>" class="<%=h(BootstrapTemplate.getTemplatePrefix(model) + "-template-body")%>">
+<body onload="<%=h(onLoad)%>" class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {

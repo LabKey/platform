@@ -126,8 +126,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.view.template.TemplateHeaderView;
+import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
@@ -1404,10 +1403,8 @@ public class UserController extends SpringActionController
                 _showNavTrail = true;
                 return view;
             }
-            else
-            {
-                return new PrintTemplate(view);
-            }
+
+            return new PrintTemplate(getViewContext(), view, getPageConfig());
         }
 
         @Override
@@ -2837,46 +2834,6 @@ public class UserController extends SpringActionController
             SecurityManager.impersonateRoles(getViewContext(), newImpersonationRoles, currentImpersonationRoles, returnURL);
 
             return null;
-        }
-    }
-
-
-    public static class ShowWarningMessagesForm
-    {
-        private String _action;
-        private boolean _showMessages = true;
-
-        public String getAction()
-        {
-            return _action;
-        }
-
-        public void setAction(String action)
-        {
-            _action = action;
-        }
-
-        public boolean isShowMessages()
-        {
-            return _showMessages;
-        }
-
-        public void setShowMessages(boolean showMessages)
-        {
-            _showMessages = showMessages;
-        }
-    }
-
-    @RequiresNoPermission
-    public class SetShowWarningMessagesAction extends ApiAction<ShowWarningMessagesForm>
-    {
-        public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception
-        {
-            if (form.getAction() != null && !form.getAction().equals("")) // Fix for 13926
-                getViewContext().getSession().setAttribute(form.getAction(), form.isShowMessages());
-            else
-                getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP, form.isShowMessages());
-            return new ApiSimpleResponse("success", true);
         }
     }
 

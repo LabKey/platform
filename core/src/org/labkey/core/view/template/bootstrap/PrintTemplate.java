@@ -15,7 +15,9 @@
  */
 package org.labkey.core.view.template.bootstrap;
 
-import org.labkey.api.data.Container;
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
@@ -25,38 +27,58 @@ import java.util.Collections;
 /**
  * Created by xingyang on 4/21/17.
  */
-public class PrintTemplate extends BootstrapTemplate
+public class PrintTemplate extends PageTemplate
 {
     public PrintTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
-        this(context, context.getContainer(), body, page);
-    }
-
-    protected PrintTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page)
-    {
-        super("/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp", page);
+        super("/org/labkey/core/view/template/bootstrap/pageTemplate.jsp", page);
 
         if (null == page.getNavTrail())
             page.setNavTrail(Collections.emptyList());
 
         setUserMetaTag(context, page);
 
-        page.setShowHeader(false);
-        setFrame(FrameType.NONE);
-
         setBody(body);
-        setView("bodyTemplate", getBodyTemplate(page));
+        setView("bodyTemplate", getBodyTemplate(page, body));
+    }
+
+    private String getDefaultTitle(ActionURL helper)
+    {
+        String title;
+        LookAndFeelProperties lafp = LookAndFeelProperties.getInstance(getContextContainer());
+        if (StringUtils.isNotEmpty(lafp.getShortName()))
+        {
+            title = lafp.getShortName();
+        }
+        else
+        {
+            title = helper.getHost();
+            if (title.startsWith("www."))
+                title = title.substring("www.".length());
+            int dotIndex = title.indexOf('.');
+            if (-1 != dotIndex)
+                title = title.substring(0, dotIndex);
+        }
+
+        String extraPath = helper.getExtraPath();
+        if (null != extraPath && !"".equals(extraPath))
+        {
+            int slashIndex = extraPath.lastIndexOf('/');
+            if (-1 != slashIndex)
+                extraPath = extraPath.substring(slashIndex + 1);
+
+            title = title + ": " + extraPath;
+        }
+
+        return title;
     }
 
     @Override
     public void prepareWebPart(PageConfig page)
     {
-        String title = page.getTitle();
-        if (null ==  title || 0 == title.length())
+        if (StringUtils.isEmpty(page.getTitle()))
         {
-            title = org.labkey.api.view.template.PrintTemplate.getDefaultTitle(getRootContext().getActionURL());
-            page.setTitle(title);
+            page.setTitle(getDefaultTitle(getRootContext().getActionURL()));
         }
     }
-
 }

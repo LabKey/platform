@@ -24,9 +24,9 @@ import org.labkey.api.view.template.PageConfig;
 /**
  * Created by Nick Arnold on 3/7/2017.
  */
-public class BootstrapHeader extends JspView<PageConfig>
+public class Header extends JspView<PageConfig>
 {
-    public BootstrapHeader(PageConfig page)
+    public Header(PageConfig page)
     {
         super("/org/labkey/core/view/template/bootstrap/header.jsp", page);
         setFrame(FrameType.NONE);

@@ -23,13 +23,21 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.FooterProperties;
+import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -38,11 +46,13 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.ArrayList;
@@ -50,22 +60,116 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
-public class BootstrapTemplate extends HomeTemplate
+public class PageTemplate extends JspView<PageConfig>
 {
     private boolean isAppTemplate = false;
 
-    protected BootstrapTemplate(String template, PageConfig page)
+    protected PageTemplate(String template, PageConfig page)
     {
         super(template, page);
+        page.setShowHeader(false);
+        setFrame(FrameType.NONE);
     }
 
-    public BootstrapTemplate(ViewContext context, ModelAndView body, PageConfig page)
+    public PageTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
-        super("/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp", context, context.getContainer(), body, page);
+        this("/org/labkey/core/view/template/bootstrap/pageTemplate.jsp", context, context.getContainer(), body, page);
+    }
+
+    protected PageTemplate(String template, ViewContext context, Container c, ModelAndView body, PageConfig page)
+    {
+        this(template, page);
         buildWarnings(context, page);
-        setView("bodyTemplate", getBodyTemplate(page));
+
+        setBody(body);
+        setView("bodyTemplate", getBodyTemplate(page, body));
+
+        if (null == page.getNavTrail())
+            page.setNavTrail(Collections.emptyList());
+
+        setUserMetaTag(context, page);
+        //show the header on the home template
+        page.setShowHeader(true);
+
+        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+
+        WebPartView header = null;
+        if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())
+        {
+            header = wikiService.getView(c.getProject(), "_header", false);
+            if (null != header)
+                header.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
+        }
+
+        if (null != header)
+            setView("header", header);
+        else
+            setView("header", new Header(page));
+
+        // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
+        setBody(body);
+
+        page.setAppBar(generateAppBarModel(context, page));
+
+        setView("navigation", getNavigationView(context, page));
+        setView("footer", getTemplateResource(new FooterProperties()));
+    }
+
+    private AppBar generateAppBarModel(ViewContext context, PageConfig page)
+    {
+        AppBar appBar;
+        if (context.getContainer().isWorkbookOrTab())
+        {
+            ViewContext parentContext = new ViewContext(context);
+            parentContext.setContainer(context.getContainer().getParent());
+            FolderType folderType =  parentContext.getContainer().getFolderType();
+            if (folderType instanceof MultiPortalFolderType)
+                appBar = ((MultiPortalFolderType)folderType).getAppBar(parentContext, page, context.getContainer());
+            else
+                appBar = folderType.getAppBar(parentContext, page);
+        }
+        else
+        {
+            appBar = context.getContainer().getFolderType().getAppBar(context, page);
+        }
+
+        //HACK to fix up navTrail to delete navBar items
+        List<NavTree> navTrail = page.getNavTrail();
+        if (context.getContainer().isWorkbook())
+        {
+            // Add the main page for the workbook to the nav trail
+            navTrail = new ArrayList<>(navTrail);
+            navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
+        }
+
+        List<NavTree> appNavTrail = appBar.setNavTrail(navTrail, context);
+        if (page.getTemplate() != PageConfig.Template.Wizard)
+            page.setNavTrail(appNavTrail);
+
+        //allow views to have flag to hide title
+        if (getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle())
+            appBar.setPageTitle(null);
+
+        return appBar;
+    }
+
+    protected void setUserMetaTag(ViewContext context, PageConfig page)
+    {
+        // for testing add meta tags
+        User user = context.getUser();
+        User authenticatedUser = user;
+        User impersonatedUser = null;
+        if (authenticatedUser.isImpersonated())
+        {
+            impersonatedUser = user;
+            authenticatedUser = user.getImpersonatingUser();
+        }
+        page.setMetaTag("authenticatedUser", null == authenticatedUser ? "-" : StringUtils.defaultString(authenticatedUser.getEmail(),user.getDisplayName(user)));
+        page.setMetaTag("impersonatedUser", null == impersonatedUser ? "-" : StringUtils.defaultString(impersonatedUser.getEmail(),user.getDisplayName(user)));
+
     }
 
     private void buildWarnings(ViewContext context, PageConfig page)
@@ -149,27 +253,14 @@ public class BootstrapTemplate extends HomeTemplate
         }
     }
 
-    @Override
-    protected HttpView getAppBarView(ViewContext context, PageConfig page)
+    protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
-        return null;
-    }
-
-    protected HttpView getBodyTemplate(PageConfig page)
-    {
-        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/bootstrap.jsp", page);
-        view.setBody(getBody());
+        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+        view.setBody(body);
         view.setFrame(FrameType.NONE);
         return view;
     }
 
-    @Override
-    protected HttpView getHeaderView(PageConfig page)
-    {
-        return new BootstrapHeader(page);
-    }
-
-    @Override
     protected HttpView getNavigationView(ViewContext context, PageConfig page)
     {
         NavigationModel model = new NavigationModel(context, page);
@@ -315,6 +406,42 @@ public class BootstrapTemplate extends HomeTemplate
         isAppTemplate = appTemplate;
     }
 
+    public ActionURL getPermaLink()
+    {
+        ActionURL url = getViewContext().cloneActionURL();
+        return url.setExtraPath("__r" + Integer.toString(getViewContext().getContainer().getRowId()));
+    }
+
+    public static HtmlView getTemplateResource(TemplateProperties prop)
+    {
+        HtmlView view = null;
+        if (prop.isDisplay())
+        {
+            Module coreModule = ModuleLoader.getInstance().getCoreModule();
+            List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+            if (null != ModuleLoader.getInstance().getModule(prop.getModule()))
+            {
+                modules.add(ModuleLoader.getInstance().getModule(prop.getModule()));
+            }
+            ListIterator<Module> i = modules.listIterator(modules.size());
+            while (i.hasPrevious())
+            {
+                view = ModuleHtmlView.get(i.previous(), prop.getFileName());
+                if (null != view)
+                    break;
+            }
+            if (null == view)
+            {
+                view = ModuleHtmlView.get(coreModule, prop.getFileName());
+            }
+            if (null != view)
+            {
+                view.setFrame(FrameType.NONE);
+            }
+        }
+        return view;
+    }
+
     public static String getTemplatePrefix(PageConfig page)
     {
         PageConfig.Template t = page.getTemplate();
@@ -358,5 +485,16 @@ public class BootstrapTemplate extends HomeTemplate
             }
         }
         return messages;
+    }
+
+    @Override
+    protected void prepareWebPart(PageConfig page)
+    {
+        if (page.shouldAppendPathToTitle())
+        {
+            String extraPath = getRootContext().getActionURL().getExtraPath();
+            if (extraPath.length() > 0)
+                page.setTitle(page.getTitle() + (page.getTitle() != null && !page.getTitle().isEmpty() ? ": " : "") + extraPath);
+        }
     }
 }

@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
@@ -28,7 +28,7 @@
 <div class="container">
     <div class="row content-row">
         <div class="content-left">
-            <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
+            <%= text(PageTemplate.renderSiteMessages(pageConfig)) %>
             <div class="well">
                 <% me.include(me.getBody(), out); %>
             </div>

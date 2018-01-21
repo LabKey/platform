@@ -21,7 +21,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
-public class DialogTemplate extends BootstrapTemplate
+public class DialogTemplate extends PageTemplate
 {
     public DialogTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
@@ -29,10 +29,10 @@ public class DialogTemplate extends BootstrapTemplate
     }
 
     @Override
-    protected HttpView getBodyTemplate(PageConfig page)
+    protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
         JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/dialog.jsp", page);
-        view.setBody(getBody());
+        view.setBody(body);
         view.setFrame(FrameType.NONE);
         return view;
     }

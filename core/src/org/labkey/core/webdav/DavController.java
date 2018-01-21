@@ -89,13 +89,13 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.DirectRequest;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.core.view.template.bootstrap.BootstrapBodyTemplate;
+import org.labkey.core.view.template.bootstrap.AppTemplate;
+import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -5729,7 +5729,7 @@ public class DavController extends SpringActionController
             {
                 JspView<ListPage> v = new JspView<>(DavController.class, "list.jsp", page);
                 v.setFrame(WebPartView.FrameType.NONE);
-                PrintTemplate print = new PrintTemplate(v, config);
+                PrintTemplate print = new PrintTemplate(getViewContext(), v, config);
                 print.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             else
@@ -5737,7 +5737,7 @@ public class DavController extends SpringActionController
                 JspView<ListPage> v = new JspView<>(DavController.class, "davListing.jsp", page);
                 config.addClientDependencies(v.getClientDependencies());
 
-                DefaultModelAndView template = new BootstrapBodyTemplate(getViewContext(), v, config);
+                DefaultModelAndView template = new AppTemplate(getViewContext(), v, config);
                 template.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             return WebdavStatus.SC_OK;

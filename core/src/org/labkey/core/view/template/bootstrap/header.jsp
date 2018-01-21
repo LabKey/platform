@@ -33,8 +33,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapHeader" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -46,7 +46,7 @@
     }
 %>
 <%
-    BootstrapHeader me = (BootstrapHeader) HttpView.currentView();
+    Header me = (Header) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = getContainer();
     User user = getUser();
@@ -55,7 +55,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     boolean showSearch = hasUrlProvider(SearchUrls.class);
 
-    HtmlView headerHtml = BootstrapTemplate.getHomeTemplateResource(new HeaderProperties());
+    HtmlView headerHtml = PageTemplate.getTemplateResource(new HeaderProperties());
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 %>
 <div class="labkey-page-header">

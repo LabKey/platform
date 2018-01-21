@@ -16,29 +16,27 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Collections;
 
-public class BootstrapBodyTemplate extends BootstrapTemplate
+public class AppTemplate extends PageTemplate
 {
-    public BootstrapBodyTemplate(ViewContext context, ModelAndView body, PageConfig page)
+    public AppTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
         this(context, context.getContainer(), body, page, false);
     }
 
-    public BootstrapBodyTemplate(ViewContext context, ModelAndView body, PageConfig page, boolean isApp)
+    public AppTemplate(ViewContext context, ModelAndView body, PageConfig page, boolean isApp)
     {
         this(context, context.getContainer(), body, page, isApp);
     }
 
-    protected BootstrapBodyTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, boolean isApp)
+    protected AppTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, boolean isApp)
     {
-        super("/org/labkey/core/view/template/bootstrap/BootstrapTemplate.jsp", page);
+        super("/org/labkey/core/view/template/bootstrap/pageTemplate.jsp", page);
         this.setAppTemplate(isApp);
 
         if (null == page.getNavTrail())
@@ -50,19 +48,12 @@ public class BootstrapBodyTemplate extends BootstrapTemplate
         page.setShowHeader(false);
 
         setBody(body);
-        setView("bodyTemplate", getBodyTemplate(page));
+        setView("bodyTemplate", getBodyTemplate(page, body));
     }
 
     @Override
-    protected HttpView getBodyTemplate(PageConfig page)
+    protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
-        HttpView view = new JspView<>("/org/labkey/core/view/template/bootstrap/bootstrapbody.jsp", page);
-        view.setBody(getBody());
-        return view;
-    }
-
-    @Override
-    public void prepareWebPart(PageConfig page)
-    {
+        return body;
     }
 }

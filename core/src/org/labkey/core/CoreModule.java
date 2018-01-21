@@ -145,8 +145,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
-import org.labkey.api.view.template.FrameFactoryClassic;
-import org.labkey.api.view.template.TemplateFactoryClassic;
 import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -214,8 +212,8 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
-import org.labkey.core.view.template.bootstrap.factory.FrameFactoryBootstrap;
-import org.labkey.core.view.template.bootstrap.factory.TemplateFactoryBootstrap;
+import org.labkey.core.view.template.bootstrap.factory.FrameFactory;
+import org.labkey.core.view.template.bootstrap.factory.TemplateFactory;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -1180,16 +1178,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     // Possible future work will expose a registration service to configure these UI factories.
     private static void configureTemplates()
     {
-        if (PageFlowUtil.useExperimentalCoreUI())
-        {
-            // Soon, will register different templates/frames
-            new TemplateFactoryBootstrap().registerTemplates();
-            new FrameFactoryBootstrap().registerFrames();
-        }
-        else
-        {
-            new TemplateFactoryClassic().registerTemplates();
-            new FrameFactoryClassic().registerFrames();
-        }
+        new TemplateFactory().registerTemplates();
+        new FrameFactory().registerFrames();
     }
 }

@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.BootstrapTemplate" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -61,7 +61,7 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <%= text(BootstrapTemplate.renderSiteMessages(pageConfig)) %>
+            <%= text(PageTemplate.renderSiteMessages(pageConfig)) %>
             <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
                {
                    String trail = renderTrail(pageConfig.getAppBar().getNavTrail());

@@ -89,7 +89,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRendererType;
@@ -155,7 +154,7 @@ public class WikiController extends SpringActionController
     {
         ModelAndView template = super.getTemplate(context, mv, action, page);
 
-        if (template instanceof HomeTemplate && !(action instanceof EditWikiAction) && !page.getTemplate().equals(PageConfig.Template.Print))
+        if (template instanceof HttpView && !(action instanceof EditWikiAction) && !PageConfig.Template.Print.equals(page.getTemplate()))
         {
             VBox vbox = new VBox();
 
@@ -174,7 +173,7 @@ public class WikiController extends SpringActionController
 
             vbox.addView(toc); //TODO: establish insertion order?
 
-            ((HomeTemplate)template).setView(WebPartFactory.LOCATION_RIGHT, vbox);
+            ((HttpView)template).setView(WebPartFactory.LOCATION_RIGHT, vbox);
         }
 
         return template;

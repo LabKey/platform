@@ -21,7 +21,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
-public class WizardTemplate extends BootstrapTemplate
+public class WizardTemplate extends PageTemplate
 {
     public WizardTemplate(ViewContext context, ModelAndView body, PageConfig page)
     {
@@ -29,10 +29,10 @@ public class WizardTemplate extends BootstrapTemplate
     }
 
     @Override
-    protected HttpView getBodyTemplate(PageConfig page)
+    protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
         JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/wizard.jsp", page);
-        view.setBody(getBody());
+        view.setBody(body);
         view.setFrame(FrameType.NONE);
         return view;
     }
@@ -41,11 +41,5 @@ public class WizardTemplate extends BootstrapTemplate
     protected HttpView getNavigationView(ViewContext context, PageConfig page)
     {
         return null;
-    }
-
-    @Override
-    public void prepareWebPart(PageConfig page)
-    {
-
     }
 }
