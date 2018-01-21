@@ -72,7 +72,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.template.TemplateHeaderView;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
@@ -831,7 +830,7 @@ public class ModuleLoader implements Filter
     /**
      * Checks Java version and throws if it's not supported.
      *
-     * Warnings for deprecated Java versions are specified here: {@link TemplateHeaderView#buildWarningMessageList}
+     * Warnings for deprecated Java versions are specified in BootstrapTemplate#buildWarnings
      *
      * @throws ConfigurationException if Java version is not supported
      */
@@ -845,7 +844,7 @@ public class ModuleLoader implements Filter
     /**
      * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, version is left UNKNOWN.
      *
-     * Warnings for deprecated Tomcat versions are specified here: {@link TemplateHeaderView#buildWarningMessageList}
+     * Warnings for deprecated Tomcat versions are specified in BootstrapTemplate#buildWarnings
      *
      * @throws ConfigurationException if Tomcat version is not supported
      */
