@@ -47,11 +47,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -130,10 +132,18 @@ public class PipelineStatusManager
      * @param path file path to for the associated file
      * @return the corresponding <code>PipelineStatusFileImpl</code>
      */
+    @Deprecated
     public static PipelineStatusFileImpl getStatusFile(File path)
     {
         return (path == null ? null :
                 getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"), PipelineJobService.statusPathOf(path.getAbsolutePath()))));
+    }
+
+    public static PipelineStatusFileImpl getStatusFile(Container container, Path path)
+    {
+        return (path == null ? null :
+                getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"),
+                        PipelineJobService.statusPathOf(FileUtil.getAbsolutePath(container, path.toUri())))));
     }
 
     /**
@@ -172,10 +182,10 @@ public class PipelineStatusManager
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
-        if (sfExist == null)
+        if (sfExist == null && null != job.getLogFile())
         {
             // Then try based on file path
-            sfExist = getStatusFile(job.getLogFile());
+            sfExist = getStatusFile(job.getContainer(), job.getLogFilePath());
         }
         PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
 
@@ -298,7 +308,7 @@ public class PipelineStatusManager
      * If there is an existing status entry for this file, make sure it has the
      * right job GUID, updating children as needed
      */
-    public static void resetJobId(File path, String jobId)
+    public static void resetJobId(Container container, Path path, String jobId)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
@@ -306,7 +316,7 @@ public class PipelineStatusManager
         {
             enforceLockOrder(jobId, active);
 
-            PipelineStatusFileImpl sfExist = getStatusFile(path);
+            PipelineStatusFileImpl sfExist = getStatusFile(container, path);
             if (!jobId.equals(sfExist.getJob()))
             {
                 List<PipelineStatusFileImpl> children = getSplitStatusFiles(sfExist.getJobId());

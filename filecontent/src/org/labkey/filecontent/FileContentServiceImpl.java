@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
+import org.labkey.api.files.FileRoot;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
@@ -68,6 +69,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -76,13 +78,13 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import java.beans.PropertyChangeEvent;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -139,28 +141,41 @@ public class FileContentServiceImpl implements FileContentService
         {
             case files:
                 String folderName = getFolderName(type);
-                File dir = _getFileRoot(c);
-                return dir != null ? new File(dir, folderName) : dir;
-            
+                java.nio.file.Path dir = _getFileRoot(c);
+                return dir != null ? new File(dir.toFile(), folderName) : null;
+
             case pipeline:
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                if (root != null)
-                    return root.getRootPath();
-                break;
+                return root != null ? root.getRootPath() : null;
         }
         return null;
     }
 
-    private @Nullable File _getFileRoot(Container c)
+    @Override
+    public @Nullable java.nio.file.Path getFileRootPath(@NotNull Container c, @NotNull ContentType type)
     {
-        File root = getFileRoot(c);
+        switch (type)
+        {
+            case files:
+                return _getFileRoot(c);             // Don't add @files when we're in the cloud
+
+            case pipeline:
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                return root != null ? root.getRootNioPath() : null;
+        }
+        return null;
+    }
+
+    private @Nullable java.nio.file.Path _getFileRoot(Container c)
+    {
+        java.nio.file.Path root = getFileRootPath(c);
         if (root != null)
         {
-            File dir;
+            java.nio.file.Path dir;
 
             //Don't want the Project part of the path.
             if (c.isRoot())
-                dir = getSiteDefaultRoot();
+                dir = getSiteDefaultRootPath();
             else
                 dir = root;
 
@@ -172,12 +187,20 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public @Nullable File getFileRoot(@NotNull Container c)
     {
+        java.nio.file.Path path = getFileRootPath(c);
+        throwIfPathNotFile(path);
+        return path.toFile();
+    }
+
+    @Override
+    public @Nullable java.nio.file.Path getFileRootPath(@NotNull Container c)
+    {
         if (c == null)
             return null;
 
         if (c.isRoot())
         {
-            return getSiteDefaultRoot();
+            return getSiteDefaultRootPath();
         }
 
         if (!isFileRootDisabled(c))
@@ -187,10 +210,10 @@ public class FileContentServiceImpl implements FileContentService
             // check if there is a site wide file root
             if (root.getPath() == null || isUseDefaultRoot(c))
             {
-                return getDefaultRoot(c, true);
+                return getDefaultRootPath(c, true);
             }
             else
-                return new File(root.getPath());
+                return getNioPath(c, root.getPath());
         }
         return null;
     }
@@ -198,28 +221,91 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public File getDefaultRoot(Container c, boolean createDir)
     {
+        return getDefaultRootPath(c, createDir).toFile();
+    }
+
+    @Override
+    public java.nio.file.Path getDefaultRootPath(Container c, boolean createDir)
+    {
         Container firstOverride = getFirstAncestorWithOverride(c);
 
-        File parentRoot;
+        java.nio.file.Path parentRoot;
         if (firstOverride == null)
         {
-            parentRoot = getSiteDefaultRoot();
+            parentRoot = getSiteDefaultRoot().toPath();
             firstOverride = ContainerManager.getRoot();
         }
         else
         {
-            parentRoot = getFileRoot(firstOverride);
+            parentRoot = getFileRootPath(firstOverride);
         }
 
-        if (parentRoot != null && c != null)
+        if (parentRoot != null && c != null && firstOverride != null)
         {
-            File fileRoot = new File(parentRoot, getRelativePath(c, firstOverride));
+            java.nio.file.Path fileRootPath;
+            if (FileUtil.hasCloudScheme(parentRoot))
+            {
+                fileRootPath = CloudStoreService.get().getPathForOtherContainer(firstOverride, c, FileUtil.pathToString(parentRoot), new Path(""));
+            }
+            else
+            {
+                fileRootPath = new File(parentRoot.toFile(), getRelativePath(c, firstOverride)).toPath();
+            }
 
-            if (!fileRoot.exists() && createDir)
-                fileRoot.mkdirs();
+            try
+            {
+                if (null != fileRootPath && !Files.exists(fileRootPath) && createDir)
+                    Files.createDirectories(fileRootPath);
+            }
+            catch (IOException e)
+            {
+                return null; //  throw new RuntimeException(e);    TODO: does returning null make certain tests, like TargetedMSQCGuideSetTest pass on Windows?
+            }
+            catch (Exception e)
+            {
+                // Amazon can throw // TODO probably need to include S3 jar in this module to be more specific
+                return null;
+            }
 
-            return fileRoot;
+            return fileRootPath;
         }
+        return null;
+    }
+
+    // Return pretty path string for defaultFileRoot and boolean true if defaultFileRoot is cloud
+    public Pair<String, Boolean> getDefaultRootInfo(Container container)
+    {
+        String defaultRoot = "";
+        boolean isDefaultRootCloud = false;
+        java.nio.file.Path defaultRootPath = getDefaultRootPath(container, false);
+        if (defaultRootPath != null)
+        {
+            isDefaultRootCloud = FileUtil.hasCloudScheme(defaultRootPath);
+            if (isDefaultRootCloud && !container.isProject())
+            {
+                FileRoot fileRoot = getDefaultFileRoot(container);
+                if (null != fileRoot)
+                    defaultRoot = fileRoot.getPath();
+            }
+            else
+            {
+                defaultRoot = FileUtil.getAbsolutePath(container, defaultRootPath.toUri());
+            }
+        }
+        return new Pair<>(defaultRoot, isDefaultRootCloud);
+    }
+
+    @Nullable
+    // Get FileRoot associated with path returned form getDefaultRootPath()
+    private FileRoot getDefaultFileRoot(Container c)
+    {
+        Container firstOverride = getFirstAncestorWithOverride(c);
+
+        if (firstOverride == null)
+            firstOverride = ContainerManager.getRoot();
+
+        if (null != firstOverride)
+            return FileRootManager.get().getFileRoot(firstOverride);
         return null;
     }
 
@@ -246,8 +332,87 @@ public class FileContentServiceImpl implements FileContentService
         return toTest;
     }
 
+    private java.nio.file.Path getNioPath(Container c, @NotNull String fileRootPath)
+    {
+        if (isCloudFileRoot(fileRootPath))
+            return CloudStoreService.get().getPath(c, getCloudRootName(fileRootPath), new org.labkey.api.util.Path(""));
+
+        return FileUtil.stringToPath(c, fileRootPath);
+    }
+
+    private boolean isCloudFileRoot(String fileRootPseudoPath)
+    {
+        return StringUtils.startsWith(fileRootPseudoPath, FileContentService.CLOUD_ROOT_PREFIX);
+    }
+
+    private String getCloudRootName(@NotNull String fileRootPseudoPath)
+    {
+        return fileRootPseudoPath.substring(fileRootPseudoPath.indexOf(FileContentService.CLOUD_ROOT_PREFIX) + FileContentService.CLOUD_ROOT_PREFIX.length() + 1);
+    }
+
+    @Override
+    public boolean isCloudRoot(Container c)
+    {
+        if (null != c)
+        {
+            java.nio.file.Path fileRootPath = getFileRootPath(c);
+            return null != fileRootPath && FileUtil.hasCloudScheme(fileRootPath);
+        }
+        return false;
+    }
+
+    @Override
+    @NotNull
+    public String getCloudRootName(Container c)
+    {
+        if (null != c)
+        {
+            if (isCloudRoot(c))
+            {
+                FileRoot root = FileRootManager.get().getFileRoot(c);
+                if (null == root.getPath() || isUseDefaultRoot(c))
+                {
+                    Container firstOverride = getFirstAncestorWithOverride(c);
+                    if (null == firstOverride)
+                        firstOverride = ContainerManager.getRoot();
+                    root = FileRootManager.get().getFileRoot(firstOverride);
+                    if (null == root.getPath())
+                        return "";
+                }
+                return getCloudRootName(root.getPath());
+            }
+        }
+        return "";
+    }
+
+    @Override
+    public void setCloudRoot(@NotNull Container c, String cloudRootName)
+    {
+        _setFileRoot(c, FileContentService.CLOUD_ROOT_PREFIX + "/" + cloudRootName);
+    }
+
     @Override
     public void setFileRoot(@NotNull Container c, @Nullable File path)
+    {
+        _setFileRoot(c, (null != path ? FileUtil.getAbsoluteCaseSensitiveFile(path).getAbsolutePath() : null));
+    }
+
+    @Override
+    public void setFileRootPath(@NotNull Container c, @Nullable String strPath)
+    {
+        String absolutePath = null;
+        if (strPath != null)
+        {
+            URI uri = FileUtil.createUri(strPath);
+            if (FileUtil.hasCloudScheme(uri))
+                absolutePath = FileUtil.getAbsolutePath(c, uri);
+            else
+                absolutePath = FileUtil.getAbsoluteCaseSensitiveFile(new File(uri)).getAbsolutePath();
+        }
+        _setFileRoot(c, absolutePath);
+    }
+
+    private void _setFileRoot(@NotNull Container c, @Nullable String absolutePath)
     {
         if (c.isWorkbookOrTab())
             throw new IllegalArgumentException("File roots cannot be set of workbooks or tabs");
@@ -259,11 +424,11 @@ public class FileContentServiceImpl implements FileContentService
         String newValue = null;
 
         // clear out the root
-        if (path == null)
+        if (absolutePath == null)
             root.setPath(null);
         else
         {
-            root.setPath(FileUtil.getAbsoluteCaseSensitiveFile(path).getAbsolutePath());
+            root.setPath(absolutePath);
             newValue = root.getPath();
         }
 
@@ -333,6 +498,8 @@ public class FileContentServiceImpl implements FileContentService
             String oldValue = root.getPath();
             root.setEnabled(true);
             root.setUseDefault(useDefaultRoot);
+            if (useDefaultRoot)
+                root.setPath(null);
             FileRootManager.get().saveFileRoot(null, root);
 
             ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
@@ -342,8 +509,15 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
+    public @NotNull java.nio.file.Path getSiteDefaultRootPath()
+    {
+        return getSiteDefaultRoot().toPath();
+    }
+
+    @Override
     public @NotNull File getSiteDefaultRoot()
     {
+        // Site default is always on file system
         File root = AppProps.getInstance().getFileSystemRoot();
 
         if (root == null || !root.exists())
@@ -355,8 +529,10 @@ public class FileContentServiceImpl implements FileContentService
         return root;
     }
 
+    @Override
     public @NotNull File getUserFilesRoot()
     {
+        // Always on the file system
         File root = AppProps.getInstance().getUserFilesRoot();
 
         if (root == null || !root.exists())
@@ -464,17 +640,24 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException
     {
-        if (createDir) //force create
-            getMappedDirectory(c, true);
-        else if (null == getMappedDirectory(c, false))
-            return null;
+        try
+        {
+            if (createDir) //force create
+                getMappedDirectory(c, true);
+            else if (null == getMappedDirectory(c, false))
+                return null;
 
-        return new FileSystemAttachmentParent(c, ContentType.files);
+            return new FileSystemAttachmentParent(c, ContentType.files);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e.getMessage());
+        }
     }
 
-    File getMappedDirectory(Container c, boolean create) throws UnsetRootDirectoryException, MissingRootDirectoryException
+    public java.nio.file.Path getMappedDirectory(Container c, boolean create) throws UnsetRootDirectoryException, IOException
     {
-        File root = getFileRoot(c);
+        java.nio.file.Path root = getFileRootPath(c);
         if (null == root)
         {
             if (create)
@@ -483,7 +666,7 @@ public class FileContentServiceImpl implements FileContentService
                 return null;
         }
 
-        if (!root.exists())
+        if (!Files.exists(root))
         {
             if (create)
                 throw new MissingRootDirectoryException(c.isRoot() ? c : c.getProject(), root);
@@ -491,12 +674,10 @@ public class FileContentServiceImpl implements FileContentService
                 return null;
         }
 
-        File dir = _getFileRoot(c);
-
-        if (!dir.exists() && create)
-            dir.mkdirs();
-
-        return dir;
+        java.nio.file.Path dirPath = _getFileRoot(c);
+        if (create && null != dirPath && !Files.exists(dirPath))
+            Files.createDirectories(dirPath);
+        return dirPath;
     }
 
     @Override
@@ -532,13 +713,13 @@ public class FileContentServiceImpl implements FileContentService
         {
             try
             {
-                File dir = getMappedDirectory(c, false);
+                java.nio.file.Path dir = getMappedDirectory(c, false);
                 //Don't try to create dir if root not configured.
                 //But if we should have a directory, create it
-                if (null != dir && !dir.exists())
+                if (null != dir && !Files.exists(dir))
                     getMappedDirectory(c, true);
             }
-            catch (MissingRootDirectoryException ex)
+            catch (IOException ex)
             {
             /* */
             }
@@ -547,21 +728,21 @@ public class FileContentServiceImpl implements FileContentService
         @Override
         public void containerDeleted(Container c, User user)
         {
-            File dir = null;
+            java.nio.file.Path dir = null;
             try
             {
                 // don't delete the file contents if they have a project override
                 if (isUseDefaultRoot(c))
                     dir = getMappedDirectory(c, false);
+
+                if (null != dir && Files.exists(dir))
+                {
+                    FileUtil.deleteDir(dir);
+                }
             }
             catch (Exception e)
             {
                 _log.error("containerDeleted", e);
-            }
-
-            if (null != dir && dir.exists())
-            {
-                FileUtil.deleteDir(dir);
             }
 
             ContainerUtil.purgeTable(CoreSchema.getInstance().getMappedDirectories(), c, null);
@@ -573,14 +754,16 @@ public class FileContentServiceImpl implements FileContentService
             // only attempt to move the root if this is a managed file system
             if (isUseDefaultRoot(c))
             {
-                File prevParent = _getFileRoot(oldParent);
-                if (prevParent != null)
+                java.nio.file.Path path = _getFileRoot(oldParent);
+                if (null != path && !FileUtil.hasCloudScheme(path))
                 {
-                    File src = new File(prevParent, c.getName());
-                    File dst = _getFileRoot(c);
-
-                    if (src.exists() && dst != null)
-                        moveFileRoot(src, dst, user, c);
+                    File src = new File(path.toFile(), c.getName());
+                    if (src.exists())
+                    {
+                        java.nio.file.Path dstPath = _getFileRoot(c);
+                        if (null != dstPath && !FileUtil.hasCloudScheme(dstPath))
+                            moveFileRoot(src, dstPath.toFile(), user, c);
+                    }
                 }
             }
         }
@@ -605,29 +788,31 @@ public class FileContentServiceImpl implements FileContentService
                     String oldValue = (String) propertyChangeEvent.getOldValue();
                     String newValue = (String) propertyChangeEvent.getNewValue();
 
-                    File location = null;
+                    java.nio.file.Path location = null;
                     try
                     {
                         location = getMappedDirectory(c, false);
                     }
-                    catch (MissingRootDirectoryException ex)
+                    catch (IOException ex)
                     {
                         _log.error(ex);
                     }
-                    if (location == null)
-                        return;
-                    //Don't rely on container object. Seems not to point to the
-                    //new location even AFTER rename. Just construct new file paths
-                    File parentDir = location.getParentFile();
-                    File oldLocation = new File(parentDir, oldValue);
-                    File newLocation = new File(parentDir, newValue);
-                    if (newLocation.exists())
-                        moveToDeleted(newLocation);
-
-                    if (oldLocation.exists())
+                    if (location != null && !FileUtil.hasCloudScheme(location))    // If cloud, folder name for container not dependent on Name
                     {
-                        oldLocation.renameTo(newLocation);
-                        fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
+                        //Don't rely on container object. Seems not to point to the
+                        //new location even AFTER rename. Just construct new file paths
+                        File locationFile = location.toFile();
+                        File parentDir = locationFile.getParentFile();
+                        File oldLocation = new File(parentDir, oldValue);
+                        File newLocation = new File(parentDir, newValue);
+                        if (newLocation.exists())
+                            moveToDeleted(newLocation);
+
+                        if (oldLocation.exists())
+                        {
+                            oldLocation.renameTo(newLocation);
+                            fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
+                        }
                     }
                     break;
                 }
@@ -668,9 +853,9 @@ public class FileContentServiceImpl implements FileContentService
         return fileToMove.renameTo(newLocation);
     }
 
-    static void logFileAction(File directory, String fileName, FileAction action, User user)
+    static void logFileAction(java.nio.file.Path directory, String fileName, FileAction action, User user) throws IOException
     {
-        try (FileWriter fw = new FileWriter(new File(directory, UPLOAD_LOG), true))
+        try (BufferedWriter fw = Files.newBufferedWriter(directory.resolve(UPLOAD_LOG), StandardOpenOption.APPEND))
         {
             fw.write(action.toString() + "\t" + fileName + "\t" + new Date() + "\t" + (user == null ? "(unknown)" : user.getEmail()) + "\n");
         }
@@ -738,6 +923,7 @@ public class FileContentServiceImpl implements FileContentService
 
     private static ExpData getDataObject(WebdavResource resource, Container c, User user, boolean create)
     {
+        // TODO: S3: seems to only be called from Search and currently we're not searching in cloud. SaveCustomPropsAction seems unused
         if (resource != null)
         {
             File file = resource.getFile();
@@ -917,7 +1103,7 @@ public class FileContentServiceImpl implements FileContentService
                 if (!isDefault || !isShowOverridesOnly)
                 {
                     ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-                    Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectory().toPath());
+                    Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectoryPath());
                     node.put("default", isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browseUrl);
@@ -930,7 +1116,7 @@ public class FileContentServiceImpl implements FileContentService
             for (AttachmentDirectory fileSet : getRegisteredDirectories(c))
             {
                 ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
-                Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectory().toPath());
+                Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectoryPath());
                 node.put("configureURL", config.getEncodedLocalURIString());
                 node.put("browseURL", browseUrl);
                 node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
@@ -957,7 +1143,10 @@ public class FileContentServiceImpl implements FileContentService
                 }
             }
         }
-        catch (MissingRootDirectoryException | UnsetRootDirectoryException e){}
+        catch (IOException | UnsetRootDirectoryException e)
+        {
+
+        }
         return children;
     }
 
@@ -975,19 +1164,7 @@ public class FileContentServiceImpl implements FileContentService
 
     public String getAbsolutePathFromDataFileUrl(String dataFileUrl, Container container)
     {
-        try
-        {
-            URI uri = new URI(dataFileUrl);
-            if (!FileUtil.hasCloudScheme(uri))
-                return new File(uri).getAbsolutePath();
-            else
-                return CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toString();
-        }
-        catch (URISyntaxException e)
-        {
-            _log.error("Unable to get file from uri: " + dataFileUrl);
-            return null;
-        }
+        return FileUtil.getAbsolutePath(container, FileUtil.createUri(dataFileUrl));
     }
 
     @Override
@@ -1153,6 +1330,11 @@ public class FileContentServiceImpl implements FileContentService
         return WebdavService.get().getResolver().lookup(path);
     }
 
+    public static void throwIfPathNotFile(java.nio.file.Path path)
+    {
+        if (null == path || FileUtil.hasCloudScheme(path))
+            throw new RuntimeException("Cannot get File object from Cloud File Root.");    // TODO: new exception?
+    }
     // Cache with short-lived entries so that exp.files can perform reasonably
     private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
 

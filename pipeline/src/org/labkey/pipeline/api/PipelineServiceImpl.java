@@ -36,7 +36,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.AnalyzeForm;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
@@ -88,6 +87,8 @@ import javax.naming.NamingException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -182,7 +183,7 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public PipeRootImpl findPipelineRoot(Container container)
     {
-        return findPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
+        return findPipelineRoot(container, PRIMARY_ROOT);
     }
 
     /**
@@ -197,36 +198,41 @@ public class PipelineServiceImpl implements PipelineService
     {
         try
         {
-            if (PipelineRoot.PRIMARY_ROOT.equals(type))
+            if (PRIMARY_ROOT.equals(type))
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                 if (svc != null && container != null)
                 {
-                    // check to see if the file root has been overridden and if so set the pipeline root to the same place
-                    if (!svc.isUseDefaultRoot(container.getProject()))
+                    if (svc.isCloudRoot(container.getProject()))
                     {
-                        File root = svc.getFileRoot(container);
+                        // File root is in the cloud
+                        return new PipeRootImpl(createPipelineRoot(container, FileContentService.CLOUD_ROOT_PREFIX + "/" + svc.getCloudRootName(container.getProject())));
+                    }
+                    else if (!svc.isUseDefaultRoot(container.getProject()))
+                    {
+                        // File root has been overridden, so set the pipeline root to the same place
+                        Path root = svc.getFileRootPath(container);
                         if (root != null)
                         {
                             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                            return createDefaultRoot(container, dir.getFileSystemDirectory(), false);
+                            return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir.getFileSystemDirectoryPath())), false);
                         }
                     }
                     else
                     {
-                        File root = svc.getDefaultRoot(container, true);
+                        Path root = svc.getDefaultRootPath(container, true);
                         if (root != null)
                         {
-                            File dir = new File(root, svc.getFolderName(FileContentService.ContentType.files));
-                            if (!dir.exists())
-                                dir.mkdirs();
-                            return createDefaultRoot(container, dir, true);
+                            Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
+                            if (!Files.exists(dir))
+                                Files.createDirectories(dir);
+                            return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir)), true);
                         }
                     }
                 }
             }
         }
-        catch (MissingRootDirectoryException e)
+        catch (IOException e)
         {
             return null;
         }
@@ -234,15 +240,13 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @NotNull
-    private PipeRootImpl createDefaultRoot(Container container, File dir, boolean isDefaultFileRoot)
+    private PipelineRoot createPipelineRoot(Container container, String dir)
     {
         PipelineRoot p = new PipelineRoot();
-
         p.setContainer(container.getId());
-        p.setPath(dir.toURI().toString());
-        p.setType(PipelineRoot.PRIMARY_ROOT);
-
-        return new PipeRootImpl(p, isDefaultFileRoot);
+        p.setPath(dir);
+        p.setType(PRIMARY_ROOT);
+        return p;
     }
 
     @Override
@@ -251,7 +255,7 @@ public class PipelineServiceImpl implements PipelineService
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
 
         if (pipelineRoot == null)
-            return getDefaultPipelineRoot(container, PipelineRoot.PRIMARY_ROOT) != null;
+            return getDefaultPipelineRoot(container, PRIMARY_ROOT) != null;
         return false;
     }
 
@@ -267,7 +271,7 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public Map<Container, PipeRoot> getAllPipelineRoots()
     {
-        PipelineRoot[] pipelines = PipelineManager.getPipelineRoots(PipelineRoot.PRIMARY_ROOT);
+        PipelineRoot[] pipelines = PipelineManager.getPipelineRoots(PRIMARY_ROOT);
 
         Map<Container, PipeRoot> result = new HashMap<>();
         for (PipelineRoot pipeline : pipelines)
@@ -284,7 +288,7 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public PipeRootImpl getPipelineRootSetting(Container container)
     {
-        return getPipelineRootSetting(container, PipelineRoot.PRIMARY_ROOT);
+        return getPipelineRootSetting(container, PRIMARY_ROOT);
     }
 
     @Override
@@ -395,7 +399,7 @@ public class PipelineServiceImpl implements PipelineService
         {
             try
             {
-                PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(job.getLogFile());
+                PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(job.getContainer(), job.getLogFilePath());
                 if (sf != null)
                 {
                     sf.setActiveHostName(null);  //indicates previous task was complete
@@ -546,6 +550,12 @@ public class PipelineServiceImpl implements PipelineService
     public PipelineStatusFile getStatusFile(File logFile)
     {
         return PipelineStatusManager.getStatusFile(logFile);
+    }
+
+    @Override
+    public PipelineStatusFile getStatusFile(Container container, Path logFile)
+    {
+        return PipelineStatusManager.getStatusFile(container, logFile);
     }
 
     @Override
@@ -957,7 +967,7 @@ public class PipelineServiceImpl implements PipelineService
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // customize the pipeline root to point to a new location off the site root
-            PipelineService.get().setPipelineRoot(_user, _project, PipelineRoot.PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
+            PipelineService.get().setPipelineRoot(_user, _project, PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
 
             // obtain the customized pipeline root
             PipeRoot pipelineRootSetting = PipelineService.get().getPipelineRootSetting(_project);
@@ -1039,7 +1049,7 @@ public class PipelineServiceImpl implements PipelineService
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // customize the project pipeline root to point to a new location off the site root
-            PipelineService.get().setPipelineRoot(_user, _project, PipelineRoot.PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
+            PipelineService.get().setPipelineRoot(_user, _project, PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
 
             // create a subfolder of this project
             _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);

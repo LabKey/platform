@@ -52,6 +52,8 @@ import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -335,23 +337,27 @@ public class StatusController extends SpringActionController
             _statusFile = getStatusFile(form.getRowId());
             if (_statusFile != null)
             {
-                File f = new File(_statusFile.getFilePath());
-                if (NetworkDrive.exists(f))
+                String strPath = _statusFile.getFilePath();
+                if (null != strPath)
                 {
-                    try
+                    Path path = FileUtil.stringToPath(c, strPath);
+                    if (Files.exists(path))
                     {
-                        ActionURL url = getViewContext().cloneActionURL();
-                        url.replaceParameter("showDetails", Boolean.toString(!form.isShowDetails()));
+                        try
+                        {
+                            ActionURL url = getViewContext().cloneActionURL();
+                            url.replaceParameter("showDetails", Boolean.toString(!form.isShowDetails()));
 
-                        String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url);
+                            String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url);
 
-                        WebPartView logFileView = new JobStatusLogView(new FileInputStream(f), form.isShowDetails(), prefix, "");
-                        logFileView.setTitle(f.getName());
-                        result.addView(logFileView);
-                    }
-                    catch (IOException e)
-                    {
-                        result.addView(new HtmlView("Unable to view file - " + (e.getMessage() == null ? e.toString() : e.getMessage())));
+                            WebPartView logFileView = new JobStatusLogView(Files.newInputStream(path), form.isShowDetails(), prefix, "");
+                            logFileView.setTitle(path.getFileName().toString());
+                            result.addView(logFileView);
+                        }
+                        catch (IOException e)
+                        {
+                            result.addView(new HtmlView("Unable to view file - " + (e.getMessage() == null ? e.toString() : e.getMessage())));
+                        }
                     }
                 }
             }

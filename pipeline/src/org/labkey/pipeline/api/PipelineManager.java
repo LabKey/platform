@@ -34,6 +34,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -90,7 +91,7 @@ public class PipelineManager
     @Nullable
     public static PipelineRoot findPipelineRoot(@NotNull Container container)
     {
-        return findPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
+        return findPipelineRoot(container, PipelineService.PRIMARY_ROOT);
     }
 
     @Nullable

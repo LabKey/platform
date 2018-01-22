@@ -22,8 +22,6 @@ import org.labkey.api.data.Entity;
  */
 public class PipelineRoot extends Entity
 {
-    public static final String PRIMARY_ROOT = "PRIMARY";
-
     int _pipelineRootId;
     String _path;
     String _supplementalPath;

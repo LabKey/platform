@@ -30,7 +30,6 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
@@ -39,12 +38,16 @@ import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class FileContentModule extends DefaultModule
@@ -86,24 +89,23 @@ public class FileContentModule extends DefaultModule
     {
         List<String> result = new ArrayList<>();
         FileContentService service = FileContentService.get();
-        File file = service.getFileRoot(c, FileContentService.ContentType.files);
-        if (file != null && NetworkDrive.exists(file) && file.isDirectory())
+        Path file = service.getFileRootPath(c, FileContentService.ContentType.files);
+        if (file != null && Files.exists(file) && Files.isDirectory(file))
         {
             int fileCount = 0;
             int directoryCount = 0;
-            File[] children = file.listFiles();
-            if (children != null)
+            try
             {
                 List<String> fileNames = new ArrayList<>();
                 List<String> directoryNames = new ArrayList<>();
-                for (File child : children)
+                for (Path child : Files.list(file).collect(Collectors.toSet()))
                 {
-                    if (child.isFile())
+                    if (!Files.isDirectory(child))
                     {
                         fileCount++;
                         if (fileNames.size() < 3)
                         {
-                            fileNames.add(child.getName());
+                            fileNames.add(child.getFileName().toString());
                         }
                     }
                     else
@@ -111,7 +113,7 @@ public class FileContentModule extends DefaultModule
                         directoryCount++;
                         if (directoryNames.size() < 3)
                         {
-                            directoryNames.add(child.getName());
+                            directoryNames.add(child.getFileName().toString());
                         }
                     }
                 }
@@ -131,6 +133,10 @@ public class FileContentModule extends DefaultModule
                 {
                     result.add(directoryCount + " directories in the file system, which may contain additional files, including: " + StringUtils.join(directoryNames, ", "));
                 }
+            }
+            catch (IOException e)
+            {
+
             }
         }
 

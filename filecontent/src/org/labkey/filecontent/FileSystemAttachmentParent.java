@@ -31,9 +31,10 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * User: klum
@@ -85,27 +86,47 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
 
     public File getFileSystemDirectory() throws MissingRootDirectoryException
     {
+        Path path = getFileSystemDirectoryPath();
+        FileContentServiceImpl.throwIfPathNotFile(path);
+        return path.toFile();
+    }
+
+    public Path getFileSystemDirectoryPath() throws MissingRootDirectoryException
+    {
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        File dir;
+        if (null == svc)
+            throw new IllegalStateException("FileContentService not found.");
 
-        if (null == path)
-            dir = ((FileContentServiceImpl) svc).getMappedDirectory(c, false);
-        else if (isRelative())
+        try
         {
-            File mappedDir = ((FileContentServiceImpl) svc).getMappedDirectory(c, false);
-            dir = new File(mappedDir, path);
-        }
-        else
-            dir = new File(path);
+            Path dir;
+            if (null == path)
+            {
+                dir = ((FileContentServiceImpl) svc).getMappedDirectory(c, false);
+            }
+            else if (isRelative())
+            {
+                Path mappedDir = ((FileContentServiceImpl) svc).getMappedDirectory(c, false);
+                dir = mappedDir.resolve(path);
+            }
+            else
+            {
+                dir = FileUtil.stringToPath(getContainer(), path);
+            }
 
-        if (_contentType != null)
-        {
-            File root = new File(dir, svc.getFolderName(_contentType));
-            if (!root.exists())
-                root.mkdirs();
-            return root;
+            if (_contentType != null && !svc.isCloudRoot(c))    // don't need @files in cloud
+            {
+                Path root = dir.resolve(svc.getFolderName(_contentType));
+                if (!Files.exists(root))
+                    Files.createDirectories(root);
+                return root;
+            }
+            return dir;
         }
-        return dir;
+        catch (IOException e)
+        {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public String getLabel()
@@ -150,12 +171,12 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
 
     public void addAttachment(User user, AttachmentFile file) throws IOException
     {
-        File fileLocation = getFileSystemDirectory();
+        Path fileLocation = getFileSystemDirectoryPath();
         InputStream is = file.openInputStream();
-        File saveFile = new File(fileLocation, file.getFilename());
-        try (FileOutputStream fos = new FileOutputStream(saveFile))
+        Path saveFile = fileLocation.resolve(file.getFilename());
+        try
         {
-            FileUtil.copyData(is, fos);
+            Files.copy(is, saveFile);
             FileContentServiceImpl.logFileAction(fileLocation, file.getFilename(), FileContentServiceImpl.FileAction.UPLOAD, user);
         }
         finally
@@ -168,41 +189,50 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     {
         try
         {
-            File parentDir = getFileSystemDirectory();
-            if (parentDir != null && parentDir.exists())
+            Path parentDir = getFileSystemDirectoryPath();
+            if (parentDir != null && Files.exists(parentDir))
             {
                 if (name != null)           // a named resource
                 {
-                    File attachmentFile = new File(parentDir, name);
-                    if (attachmentFile.exists())
+                    Path attachmentFile = parentDir.resolve(name);
+                    if (Files.exists(attachmentFile))
                     {
-                        if (attachmentFile.delete())
+                        try
                         {
-                            FileContentServiceImpl.logFileAction(parentDir, name, FileContentServiceImpl.FileAction.DELETE, user);
+                            if (Files.deleteIfExists(attachmentFile))
+                                FileContentServiceImpl.logFileAction(parentDir, name, FileContentServiceImpl.FileAction.DELETE, user);
+                        }
+                        catch (IOException e)
+                        {
+                            LOG.warn(e.getMessage());
                         }
                     }
                 }
                 else                        // delete the entire folder (and subfolders)
                 {
-                    File[] files = parentDir.listFiles();
-                    if (files != null)
-                    {
-                        for (File attachmentFile : files)
+                    Files.newDirectoryStream(parentDir).forEach(attachmentFile -> {
+                        String fileName = attachmentFile.getFileName().toString();
+                        if (!Files.isDirectory(attachmentFile) && !fileName.startsWith(".") && Files.exists(attachmentFile))
                         {
-                            if (!attachmentFile.isDirectory() && !attachmentFile.getName().startsWith(".") && attachmentFile.exists())
+                            try
                             {
-                                if (attachmentFile.delete())
+                                if (Files.deleteIfExists(attachmentFile))
                                 {
-                                    FileContentServiceImpl.logFileAction(parentDir, attachmentFile.getName(), FileContentServiceImpl.FileAction.DELETE, user);
-                                    AttachmentService.get().addAuditEvent(user, this, attachmentFile.getName(), "The attachment: " + attachmentFile.getName() + " was deleted");
+                                    FileContentServiceImpl.logFileAction(parentDir, fileName, FileContentServiceImpl.FileAction.DELETE, user);
+                                    AttachmentService.get().addAuditEvent(user, this, fileName, "The attachment: " + fileName + " was deleted");
                                 }
                             }
+                            catch (IOException e)
+                            {
+                                LOG.warn(e.getMessage());
+                            }
                         }
-                    }
+
+                    });
                 }
             }
         }
-        catch (MissingRootDirectoryException e)
+        catch (IOException e)
         {
             LOG.warn(e.getMessage());
         }

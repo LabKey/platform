@@ -2789,7 +2789,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpDataImpl getExpDataByURL(Path path, @Nullable Container c)
     {
-        if (!FileUtil.hasCloudScheme(path.toUri()))
+        if (!FileUtil.hasCloudScheme(path))
             return getExpDataByURL(path.toFile(), c);
 
         return getExpDataByURL(path.toUri().toString(), c);

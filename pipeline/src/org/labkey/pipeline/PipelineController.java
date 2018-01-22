@@ -257,7 +257,7 @@ public class PipelineController extends SpringActionController
     {
         if (form.shouldRevertOverride())
         {
-            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, false);
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineService.PRIMARY_ROOT, false);
             return true;
         }
 
@@ -276,11 +276,11 @@ public class PipelineController extends SpringActionController
 
         if (supplementalRoot == null)
         {
-            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, form.isSearchable(), root);
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineService.PRIMARY_ROOT, form.isSearchable(), root);
         }
         else
         {
-            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, form.isSearchable(), root, supplementalRoot);
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineService.PRIMARY_ROOT, form.isSearchable(), root, supplementalRoot);
         }
         return true;
     }

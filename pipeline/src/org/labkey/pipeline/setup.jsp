@@ -23,24 +23,25 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SetupForm> thisView = (JspView<SetupForm>) HttpView.currentView();
     SetupForm bean = thisView.getModelBean();
     Container c = getContainer();
+    FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+    if (null == service)
+        throw new IllegalStateException("FileContentService not found.");
+
+    Pair<String, Boolean> defaultRootAndIsDefaultRootCloud = service.getDefaultRootInfo(getContainer());
+    String defaultRoot = defaultRootAndIsDefaultRootCloud.first;
 
     // the default project pipeline root is based on the file root
-    String projectDefaultRoot = "";
+    String projectDefaultRoot = defaultRoot;
     String folderRadioBtnLabel = "Set a pipeline override";
     boolean hasInheritedOverride = SetupForm.hasInheritedOverride(c);
-
-    File fileRoot = ServiceRegistry.get().getService(FileContentService.class).getFileRoot(c);
-    if (fileRoot != null)
-    {
-        projectDefaultRoot = fileRoot.getAbsolutePath();
-    }
+    boolean isCloudFileRoot = defaultRootAndIsDefaultRootCloud.second || service.isCloudRoot(c);
 
     if (bean.getConfirmMessage() != null)
     { %>
@@ -50,7 +51,7 @@
 
 <labkey:errors />
 <labkey:form enctype="multipart/form-data" method="POST" action="">
-    <table>
+    <table id="pipelineOverrideTable" <%=h(isCloudFileRoot ? "hidden" : "")%>>
         <tr><td></td></tr>
         <tr><td colspan="10">
             The LabKey Data Processing Pipeline allows you to process and import data files with tools we supply, or
@@ -132,23 +133,47 @@
     </table>
     <input type="hidden" name="pipelineRootForm" value="true">
 </labkey:form>
+
+<div id="cloudFileRootMessageDiv" <%=h(!isCloudFileRoot ? "hidden" : "")%>>
+    The file root is set to cloud-based storage. Therefore the pipeline root is set to its default, which is the file root, and cannot be overridden. </div>
+<br>
+
 <script type="text/javascript">
 
     function updatePipelineSelection()
     {
-        if (document.getElementById('pipeOptionSiteDefault').checked)
-        {
+        var pipeOptionSiteDefault = document.getElementById('pipeOptionSiteDefault');
+        if (pipeOptionSiteDefault && pipeOptionSiteDefault.checked) {
             var permDiv = document.getElementById('pipelineFilesPermissions');
-            if (permDiv) permDiv.style.display = 'none';
+            if (permDiv)
+                permDiv.style.display = 'none';
 
-            document.getElementById('pipelineRootSettings').style.display = 'none';
+            var pipelineRootSettings = document.getElementById('pipelineRootSettings');
+            if (pipelineRootSettings)
+                pipelineRootSettings.style.display = 'none';
         }
-        if (document.getElementById('pipeOptionProjectSpecified').checked)
-        {
-            var permDiv = document.getElementById('pipelineFilesPermissions');
-            if (permDiv) permDiv.style.display = '';
 
-            document.getElementById('pipelineRootSettings').style.display = '';
+        var pipeOptionProjectSpecified = document.getElementById('pipeOptionProjectSpecified');
+        if (pipeOptionProjectSpecified && pipeOptionProjectSpecified.checked) {
+            var permDiv2 = document.getElementById('pipelineFilesPermissions');
+            if (permDiv2)
+                permDiv2.style.display = '';
+
+            var pipelineRootSettings2 = document.getElementById('pipelineRootSettings');
+            if (pipelineRootSettings2)
+                pipelineRootSettings2.style.display = '';
+        }
+    }
+
+    function showPipelineOverrideTable(show)
+    {
+        if (show) {
+            document.getElementById('pipelineOverrideTable').removeAttribute('hidden');
+            document.getElementById('cloudFileRootMessageDiv').setAttribute('hidden', 'true');
+        }
+        else {
+            document.getElementById('pipelineOverrideTable').setAttribute('hidden', 'true');
+            document.getElementById('cloudFileRootMessageDiv').removeAttribute('hidden');
         }
     }
 

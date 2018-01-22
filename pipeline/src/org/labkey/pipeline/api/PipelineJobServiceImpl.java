@@ -872,7 +872,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 }
                 assertEquals("Job was never submitted", 1, dummyEngine.getSubmitCount());
 
-                PipelineStatusFile file = PipelineStatusManager.getStatusFile(job.getLogFile());
+                PipelineStatusFile file = PipelineStatusManager.getStatusFile(job.getContainer(), job.getLogFilePath());
                 assertNotNull("No status file found!", file);
 
                 PipelineStatusManager.cancelStatus(job.getInfo(), Collections.singleton(file.getRowId()));

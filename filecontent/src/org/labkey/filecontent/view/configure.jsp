@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.nio.file.Path" %>
+<%@ page import="java.nio.file.Files" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -51,24 +53,24 @@
 
     if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
     {
-        File rootFile = service.getFileRoot(getContainer());
+        Path rootPath = service.getFileRootPath(getContainer());
         ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()).addParameter("tabId", "files");
-        if (null == rootFile)
+        if (null == rootPath)
         { %>
             There is no file root for this folder.
      <% }
         else
         { %>
-            The file root for this folder is <br><blockquote><%=h(org.labkey.api.util.FileUtil.getAbsoluteCaseSensitiveFile(rootFile).getAbsolutePath())%></blockquote>
+            The file root for this folder is <br><blockquote><%=h(org.labkey.api.util.FileUtil.getAbsolutePath(getContainer(), rootPath.toUri()))%></blockquote>
             The directory containing files for this folder is
         <%
             String path = "<unset>";
             AttachmentDirectory attachDir = service.getMappedAttachmentDirectory(getContainer(), false);
             if (attachDir != null)
             {
-                File fileSystemDir = attachDir.getFileSystemDirectory();
+                Path fileSystemDir = attachDir.getFileSystemDirectoryPath();
                 if (fileSystemDir != null)                {
-                    path = FileUtil.getAbsoluteCaseSensitiveFile(fileSystemDir).getAbsolutePath();
+                    path = FileUtil.getAbsolutePath(getContainer(), fileSystemDir.toUri());
                 }
             }
         %>
@@ -84,19 +86,22 @@
 Each file set is an additional directory that stores files accessible to users of this folder.<br/>
 <%
     for (AttachmentDirectory attDir : attachmentDirs)
-    {%>
+    {
+        String label = attDir.getLabel();
+        Path directoryPath = attDir.getFileSystemDirectoryPath();
+%>
     <labkey:form action="deleteAttachmentDirectory.post" method="POST">
      <table>
         <tr>
             <td class="labkey-form-label">Name</td>
-            <td><%=h(attDir.getLabel())%><input type="hidden" name="fileSetName" value="<%=h(attDir.getLabel())%>"></td>
+            <td><%=h(label)%><input type="hidden" name="fileSetName" value="<%=h(label)%>"></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Path</td>
-            <td><%=h(attDir.getFileSystemDirectory().getPath())%> <%=h(attDir.getFileSystemDirectory().exists() ? "" : "Directory does not exist. An administrator must create it.")%></td>
+            <td><%=h(directoryPath.toString())%> <%=h(Files.exists(directoryPath) ? "" : "Directory does not exist. An administrator must create it.")%></td>
         </tr>
         <tr>
-            <td colspan=2><%= button("Show Files").href(buildURL(FileContentController.BeginAction.class, "fileSetName=" + h(attDir.getLabel()))) %> <%= button("Remove").submit(true) %> (Files will not be deleted)</td>
+            <td colspan=2><%= button("Show Files").href(buildURL(FileContentController.BeginAction.class, "fileSetName=" + h(label))) %> <%= button("Remove").submit(true) %> (Files will not be deleted)</td>
         </tr>
     </table>
         </labkey:form>

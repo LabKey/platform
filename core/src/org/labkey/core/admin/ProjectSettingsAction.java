@@ -27,6 +27,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
@@ -62,7 +63,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
-import org.labkey.api.view.template.FrameFactoryClassic;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,7 +71,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,7 +91,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     {
         if (form.isFilesTab())
         {
-            if (!form.isPipelineRootForm() && !form.isDisableFileSharing() && !form.hasSiteDefaultRoot())
+            if (!form.isPipelineRootForm() && !form.isDisableFileSharing() && !form.hasSiteDefaultRoot() && !form.isCloudFileRoot())
             {
                 String root = StringUtils.trimToNull(form.getFolderRootPath());
                 if (root != null)
@@ -464,19 +463,16 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         }
                     }
                     VBox box = new VBox();
-                    box.addView(new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
+                    JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors);
+                    String title = "Configure File Root";
+                    if (CloudStoreService.get() != null)
+                        title += " And Enable Cloud Stores";
+                    view.setTitle(title);
+                    box.addView(view);
 
                     // only site admins (i.e. AdminOperationsPermission) can configure the pipeline root
                     if (c.hasPermission(getViewContext().getUser(), AdminOperationsPermission.class))
                     {
-                        box.addView(new HttpView()
-                        {
-                            protected void renderInternal(Object model, PrintWriter out) throws Exception
-                            {
-                                FrameFactoryClassic.startTitleFrame(out, "Configure Data Processing Pipeline");
-                            }
-                        });
-
                         SetupForm form = SetupForm.init(c);
                         form.setShowAdditionalOptionsLink(true);
                         form.setErrors(_errors);
@@ -487,14 +483,9 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                             for (String errorMessage : pipeRoot.validate())
                                 _errors.addError(new LabKeyError(errorMessage));
                         }
-                        box.addView(PipelineService.get().getSetupView(form));
-                        box.addView(new HttpView()
-                        {
-                            protected void renderInternal(Object model, PrintWriter out) throws Exception
-                            {
-                                FrameFactoryClassic.endTitleFrame(out);
-                            }
-                        });
+                        JspView pipelineView = (JspView) PipelineService.get().getSetupView(form);
+                        pipelineView.setTitle("Configure Data Processing Pipeline");
+                        box.addView(pipelineView);
                     }
 
                     return box;

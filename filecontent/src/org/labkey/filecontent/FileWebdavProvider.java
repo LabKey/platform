@@ -29,6 +29,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
@@ -68,10 +69,13 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
         // Check for the default file location
         Set<String> result = new HashSet<>();
-        File root = svc.getFileRoot(c);
-        if (root != null && NetworkDrive.exists(root))
+        java.nio.file.Path root = svc.getFileRootPath(c);
+        if (root != null)
         {
-            result.add(FileContentService.FILES_LINK);
+            if (!FileUtil.hasCloudScheme(root) && NetworkDrive.exists(root.toFile()))
+            {
+                result.add(FileContentService.FILES_LINK);
+            }
         }
 
         // Check if there are any named file sets
@@ -94,26 +98,28 @@ public class FileWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
 
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        if (null == service)
+            return null;
+        if (service.isCloudRoot(c))
+            return null;
+
         if (FileContentService.FILE_SETS_LINK.equalsIgnoreCase(name))
             return new _FilesetsFolder(c, parent.getPath());
 
         if (FileContentService.FILES_LINK.equalsIgnoreCase(name))
         {
-            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-            if (service != null)
+            try
             {
-                try
+                AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, false);
+                if (dir != null)
                 {
-                    AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, false);
-                    if (dir != null)
-                    {
-                        return new _FilesResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
-                    }
+                    return new _FilesResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
                 }
-                catch (MissingRootDirectoryException e)
-                {
-                    // Don't complain here, just hide the @files subfolder
-                }
+            }
+            catch (MissingRootDirectoryException e)
+            {
+                // Don't complain here, just hide the @files subfolder
             }
         }
 

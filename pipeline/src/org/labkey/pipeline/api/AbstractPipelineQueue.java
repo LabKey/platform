@@ -23,7 +23,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 
-import java.io.File;
+import java.nio.file.Path;
 
 /**
  * User: jeckels
@@ -59,16 +59,16 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
         LOG.debug("PENDING: " + job.toString());
 
         // Make sure status file path and Job ID are in sync.
-        File logFile = job.getLogFile();
+        Path logFile = job.getLogFilePath();
         if (logFile != null)
         {
-            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
+            PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(job.getContainer(), logFile);
             if (pipelineStatusFile == null)
             {
                 PipelineStatusManager.setStatusFile(job, user, PipelineJob.TaskStatus.waiting, null, true);
             }
 
-            PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
+            PipelineStatusManager.resetJobId(job.getContainer(), job.getLogFilePath(), job.getJobGUID());
         }
 
         if (job.setQueue(this, PipelineJob.TaskStatus.waiting))

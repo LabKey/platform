@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -98,14 +99,14 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public PipelineStatusFileImpl(PipelineJob job, String status, String info)
     {
-        assert(job.getLogFile() != null) : "Must have a status file to set status.";
+        assert(job.getLogFilePath() != null) : "Must have a status file to set status.";
 
         setJob(job.getJobGUID());
         setJobParent(job.getParentGUID());
         setProvider(job.getProvider());
         setEmail(job.getInfo().getUserEmail());
         setDescription(job.getDescription());
-        setFilePath(job.getLogFile().getAbsolutePath());
+        setFilePath(FileUtil.getAbsolutePath(job.getContainer(), job.getLogFilePath().toUri()));
         setStatus(status);
         setInfo(info);
 

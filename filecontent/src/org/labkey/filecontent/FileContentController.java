@@ -122,7 +122,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -200,7 +202,7 @@ public class FileContentController extends SpringActionController
             if (null == p)
                 throw new NotFoundException();
 
-            File dir = p.getFileSystemDirectory();
+            java.nio.file.Path dir = p.getFileSystemDirectoryPath();
             if (null == dir)
             {
                 if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
@@ -501,20 +503,27 @@ public class FileContentController extends SpringActionController
 
            if (service != null)
            {
-               File root = service.getFileRoot(getContainer());
-               if (null == form.getRootPath() && null != root)
+               if (null == form.getRootPath())
                {
-                   String path = root.getPath();
-                   try
+                   java.nio.file.Path root = service.getFileRootPath(getContainer());
+                   if (null != root)
                    {
-                       NetworkDrive.ensureDrive(path);
-                       path = FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath();
+                       URI uri = root.toUri();
+                       String strPath = FileUtil.getAbsolutePath(getContainer(), uri);
+                       if (!FileUtil.hasCloudScheme(uri))
+                       {
+                           try
+                           {
+                               NetworkDrive.ensureDrive(strPath);
+                               strPath = FileUtil.getAbsoluteCaseSensitiveFile(new File(uri)).getAbsolutePath();
+                           }
+                           catch (Exception e)
+                           {
+                               logger.error("Could not get canonical path for " + strPath + ", using path as entered.", e);
+                           }
+                       }
+                       form.setRootPath(strPath);
                    }
-                   catch (Exception e)
-                   {
-                       logger.error("Could not get canonical path for " + root.getPath() + ", using path as entered.", e);
-                   }
-                   form.setRootPath(path);
                }
            }
            return new JspView<>("/org/labkey/filecontent/view/configure.jsp", form, errors);
@@ -574,7 +583,7 @@ public class FileContentController extends SpringActionController
 		   String message = "";
            if (errors.getErrorCount() == 0)
            {
-               service.registerDirectory(getContainer(), name, path, false);
+               service.registerDirectory(getContainer(), name, path, false);             // TODO: S3
                message = "Directory successfully registered.";
                File dir = new File(path);
                if (!dir.exists())
@@ -582,11 +591,11 @@ public class FileContentController extends SpringActionController
                form.setPath(null);
                form.setFileSetName(null);
            }
-           File webRoot = null;
+           java.nio.file.Path webRoot = null;
 
            if (service != null)
-               webRoot = service.getFileRoot(getContainer());
-           form.setRootPath(webRoot == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(webRoot).getAbsolutePath());
+               webRoot = service.getFileRootPath(getContainer());
+           form.setRootPath(webRoot == null ? null : FileUtil.getAbsolutePath(getContainer(), webRoot.toUri()));
            form.setMessage(StringUtils.trimToNull(message));
            setReshow(true);
            return errors.getErrorCount() == 0;
@@ -620,8 +629,8 @@ public class FileContentController extends SpringActionController
                form.setPath(null);
                form.setFileSetName(null);
            }
-           File webRoot = service.getFileRoot(getContainer());
-           form.setRootPath(webRoot == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(webRoot).getAbsolutePath());
+           java.nio.file.Path webRoot = service.getFileRootPath(getContainer());
+           form.setRootPath(webRoot == null ? null : FileUtil.getAbsolutePath(getContainer(), webRoot.toUri()));
            setReshow(true);
 
 		   return true;
@@ -734,7 +743,7 @@ public class FileContentController extends SpringActionController
                 if (root != null)
                 {
 
-                    Map<String, Object> node = FileContentServiceImpl.getInstance().createFileSetNode(NODE_LABEL, root.getFileSystemDirectory().toPath());
+                    Map<String, Object> node = FileContentServiceImpl.getInstance().createFileSetNode(NODE_LABEL, root.getFileSystemDirectoryPath());
 
                     if (containsFileWebPart(c))
                     {
@@ -1515,7 +1524,7 @@ public class FileContentController extends SpringActionController
         boolean exists = false;
         try
         {
-            exists = attachmentParent.getFileSystemDirectory().exists();
+            exists = Files.exists(attachmentParent.getFileSystemDirectoryPath());
         }
         catch (MissingRootDirectoryException ex)
         {

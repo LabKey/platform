@@ -46,6 +46,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     {
         PipelineJob job = super.fromXML(xml);
         job.restoreQueue(PipelineService.get().getPipelineQueue());
+        job.restoreLocalDirectory();
         return job;
     }
 
