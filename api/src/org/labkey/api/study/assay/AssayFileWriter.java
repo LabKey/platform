@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +33,8 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,8 +70,16 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return subDir;
     }
 
-    /** Make sure there's a subdirectory of the specified name available for this container */
     public static File ensureUploadDirectory(Container container, String dirName) throws ExperimentException
+    {
+        Path path = ensureUploadDirectoryPath(container, dirName);
+        if (null != path && !FileUtil.hasCloudScheme(path))
+            return path.toFile();
+        return null;
+    }
+
+    /** Make sure there's a subdirectory of the specified name available for this container */
+    public static Path ensureUploadDirectoryPath(Container container, String dirName) throws ExperimentException
     {
         if (dirName == null)
         {
@@ -77,11 +88,17 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
         PipeRoot root = getPipelineRoot(container);
 
-        File dir = root.resolvePath(dirName);
-        if (!NetworkDrive.exists(dir))
+        Path dir = root.resolveToNioPath(dirName);
+        if (null != dir && !Files.exists(dir))
         {
-            boolean success = dir.mkdir();
-            if (!success) throw new ExperimentException("Could not create directory: " + dir);
+            try
+            {
+                dir = Files.createDirectory(dir);
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException("Could not create directory: " + dir);
+            }
         }
         return dir;
     }

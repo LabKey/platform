@@ -52,6 +52,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     String EXPORT_DIR = "export";
     String CACHE_DIR = "cache";
 
+    String PRIMARY_ROOT = "PRIMARY";
+    
     static PipelineService get()
     {
         return ServiceRegistry.get(PipelineService.class);

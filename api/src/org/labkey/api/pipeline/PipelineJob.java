@@ -49,6 +49,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
@@ -68,6 +69,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -252,7 +254,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private int _activeTaskRetries;
     @NotNull
     private PipeRoot _pipeRoot;
-    private File _logFile;
+    private String _logFilePathName;        // .nio.Path as String; Path does not serialize well.
     volatile private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
@@ -264,6 +266,8 @@ abstract public class PipelineJob extends Job implements Serializable
     protected transient Logger _logger;
     private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
+    private File _logFile;
+    private LocalDirectory _localDirectory;
 
     /** Although having a null provider is legal, it is recommended that one be used
      * so that it can respond to events as needed */ 
@@ -292,18 +296,19 @@ abstract public class PipelineJob extends Job implements Serializable
         _provider = job._provider;
         _parentGUID = job._jobGUID;
         _pipeRoot = job._pipeRoot;
-        _logFile = job._logFile;
+        _logFilePathName = job._logFilePathName;
         _interrupted = job._interrupted;
         _submitted = job._submitted;
         _errors = job._errors;
         _loggerLevel = job._loggerLevel;
         _logger = job._logger;
+        _logFile = job._logFile;
 
         _activeTaskId = job._activeTaskId;
         _activeTaskStatus = job._activeTaskStatus;
 
         _actionSet = new RecordedActionSet(job.getActionSet());
-
+        _localDirectory = job._localDirectory;
     }
 
     public String getProvider()
@@ -407,17 +412,42 @@ abstract public class PipelineJob extends Job implements Serializable
         return _pipeRoot;
     }
 
-    public void setLogFile(File fileLog)
+    public void setLogFilePath(Path logFile)
     {
-        _logFile = fileLog;
+        _logFilePathName = FileUtil.pathToString(logFile);
         _logger = null;
+        _logFile = null;
 
         // Intentionally leave any existing log output in the file
     }
 
+    public void setLogFile(File logFile)
+    {
+        setLogFilePath(logFile.toPath());
+        _logFile = logFile;
+    }
+
     public File getLogFile()
     {
-        return _logFile;
+        Path logFilePath =  getLogFilePath();
+        if (null != logFilePath && !FileUtil.hasCloudScheme(logFilePath))
+            return logFilePath.toFile();
+        return null;
+    }
+
+    public Path getLogFilePath()
+    {
+        return FileUtil.stringToPath(getContainer(), _logFilePathName);
+    }
+
+    public LocalDirectory getLocalDirectory()
+    {
+        return _localDirectory;
+    }
+
+    protected void setLocalDirectory(LocalDirectory localDirectory)
+    {
+        _localDirectory = localDirectory;
     }
 
     public static PipelineJob readFromFile(File file) throws IOException
@@ -557,6 +587,12 @@ abstract public class PipelineJob extends Job implements Serializable
         _queue = queue;
     }
 
+    public void restoreLocalDirectory()
+    {
+        if (null != _localDirectory)
+            setLogFile(_localDirectory.restore());
+    }
+
     public void validateParameters() throws PipelineValidationException
     {
         TaskPipeline taskPipeline = getTaskPipeline();
@@ -614,7 +650,7 @@ abstract public class PipelineJob extends Job implements Serializable
             return !isSplitWaiting();
         }
         // Initialize status for non-task pipeline jobs.
-        else if (_logFile != null)
+        else if (_logFilePathName != null)
         {
             setStatus(initialState);
             try
@@ -964,6 +1000,19 @@ abstract public class PipelineJob extends Job implements Serializable
             ExceptionUtil.logExceptionToMothership(null, e);
             // Rethrow to let the standard Mule exception handler fire and deal with the job state
             throw e;
+        }
+        finally
+        {
+            if (null != _localDirectory)
+            {
+                Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
+                if (null != remoteLogFilePath)
+                {
+                    setLogFilePath(remoteLogFilePath);
+                    setStatus(getActiveTaskStatus());       // Force writing to statusFiles
+                }
+            }
+
         }
     }
 
@@ -1480,10 +1529,14 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (_logger == null)
         {
+            if (null == _logFilePathName || FileUtil.hasCloudScheme(_logFilePathName))
+                throw new IllegalStateException("LogFile null or cloud.");
+
+            File logFile = null != _logFile ? _logFile : new File(_logFilePathName);
             // Create appending logger.
-            _logger = new OutputLogger(this, PipelineJob.class.getSimpleName() + ".Logger." + _logFile);
+            _logger = new OutputLogger(this, PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName);
             _logger.removeAllAppenders();
-            SafeFileAppender appender = new SafeFileAppender(_logFile);
+            SafeFileAppender appender = new SafeFileAppender(logFile);
             appender.setLayout(new PatternLayout("%d{DATE} %-5p: %m%n"));
             _logger.addAppender(appender);
             _logger.setLevel(Level.toLevel(_loggerLevel));

@@ -551,7 +551,7 @@ public class FileSystemResource extends AbstractWebdavResource
             String fileDirPath = file.getParent();
 
             // 23746: If file exists in parent with the same name it was deleted instead
-            if (dir != null && fileDirPath != null && dir.getFileSystemDirectory().getPath().equals(fileDirPath))
+            if (dir != null && fileDirPath != null && dir.getFileSystemDirectoryPath().toAbsolutePath().toString().equals(fileDirPath))
             {
                 // legacy support for files added through the narrow files web part but deleted through
                 // the newer file browser (issue: 11396). This is the difference between files stored through

@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
@@ -33,7 +34,9 @@ public interface PipelineStatusFile
 {
     public interface StatusReader
     {
+        @Deprecated
         PipelineStatusFile getStatusFile(File logFile);
+        PipelineStatusFile getStatusFile(Container container, Path logFile);
 
         PipelineStatusFile getStatusFile(int rowId);
 

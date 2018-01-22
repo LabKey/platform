@@ -18,7 +18,7 @@ package org.labkey.api.files;
 
 import org.labkey.api.data.Container;
 
-import java.io.File;
+import java.nio.file.Path;
 
 /**
 * User: klum
@@ -27,9 +27,9 @@ import java.io.File;
 public class MissingRootDirectoryException extends java.io.FileNotFoundException
 {
     private Container project;
-    private File expectedPath;
+    private Path expectedPath;
 
-    public MissingRootDirectoryException(Container project, File expectedPath)
+    public MissingRootDirectoryException(Container project, Path expectedPath)
     {
         super("The expected root directory for project: " + project.getName() + " did not exist on the server");
         this.project = project;
@@ -46,12 +46,12 @@ public class MissingRootDirectoryException extends java.io.FileNotFoundException
         this.project = project;
     }
 
-    public File getExpectedPath()
+    public Path getExpectedPath()
     {
         return expectedPath;
     }
 
-    public void setExpectedPath(File expectedPath)
+    public void setExpectedPath(Path expectedPath)
     {
         this.expectedPath = expectedPath;
     }

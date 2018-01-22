@@ -23,6 +23,9 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.Crypt;
 
 import java.io.BufferedInputStream;
@@ -36,9 +39,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -47,6 +52,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -114,6 +120,22 @@ public class FileUtil
 
         // The directory is now either a sym-link or empty, so delete it
         return dir.delete();
+    }
+
+    public static void deleteDir(@NotNull Path dir) throws IOException
+    {
+        if (hasCloudScheme(dir))
+        {
+            // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
+            for (Path path : Files.walk(dir).sorted(Comparator.reverseOrder()).collect(Collectors.toList()))
+            {
+                Files.deleteIfExists(path);
+            }
+        }
+        else
+        {
+            deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
+        }
     }
 
     /**
@@ -195,6 +217,11 @@ public class FileUtil
         return null;
     }
 
+    public static boolean hasCloudScheme(Path path)
+    {
+        return hasCloudScheme(path.toUri());
+    }
+
     public static boolean hasCloudScheme(URI uri)
     {
         return "s3".equalsIgnoreCase(uri.getScheme());
@@ -210,6 +237,59 @@ public class FileUtil
         {
             return false;
         }
+    }
+
+    public static String getAbsolutePath(Container container, URI uri)
+    {
+        if (!FileUtil.hasCloudScheme(uri))
+            return new File(uri).getAbsolutePath();
+        else
+            return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri().toString());
+    }
+
+    public static Path getPath(Container container, URI uri)
+    {
+        if (!FileUtil.hasCloudScheme(uri))
+            return new File(uri).toPath();
+        else
+            return CloudStoreService.get().getPathFromUrl(container, uri.toString());
+    }
+
+    public static URI createUri(String str)
+    {
+        // TODO: a pain dealing with spaces and WIndows drive. File.toUri seems to handle it but URI.create finnicky
+        if (str.matches("[A-z]:/.*"))
+            return new File(str).toURI();
+        
+        if (str.startsWith("/"))
+            str = "file://" + str;
+        str = str.replaceAll("\\s+", "%20"); // Spaces in paths make URI unhappy
+        return URI.create(str);
+    }
+
+    public static String pathToString(Path path)
+    {
+        return getPathStringWithoutAccessId(path.toUri().toString());
+    }
+
+    public static Path stringToPath(Container container, String str)
+    {
+        return getPath(container, createUri(str));
+    }
+
+    public static String getCloudRootPathString(String cloudName)
+    {
+        return FileContentService.CLOUD_ROOT_PREFIX + "/" + cloudName;
+    }
+
+    private static String getPathStringWithoutAccessId(String pathStr)
+    {
+        if (null != pathStr && hasCloudScheme(pathStr))
+        {
+            // Remove accessId portion if exits
+            pathStr = pathStr.replaceFirst("/\\w+@s3", "/s3");
+        }
+        return pathStr;
     }
 
     /**

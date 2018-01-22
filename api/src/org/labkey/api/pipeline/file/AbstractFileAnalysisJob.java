@@ -471,7 +471,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         rows.add(factory.getRowMap("containerId", getContainer().getEntityId(), "java.lang.String"));
         rows.add(factory.getRowMap("user", getUser().getEmail(), "java.lang.String"));
 
-        rows.add(factory.getRowMap("pipeRoot", getPipeRoot().getRootPath(), "java.lang.String"));
+        rows.add(factory.getRowMap("pipeRoot", getPipeRoot().getRootNioPath(), "java.lang.String"));
 
         // FileAnalysisJobSupport properties
         rows.add(factory.getRowMap("baseName", getBaseName(), "java.lang.String"));

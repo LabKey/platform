@@ -56,7 +56,10 @@ import org.labkey.api.webdav.WebdavService;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: Mark Igra
@@ -144,7 +147,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                     try
                     {
                         getModelBean().setRoot(dir);
-                        getModelBean().setRootDirectory(dir.getFileSystemDirectory().toPath());
+                        getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
                     }
                     catch (MissingRootDirectoryException e)
                     {
@@ -286,17 +289,28 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             form = new FilesForm();
             setModelBean(form);
         }
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
         form.setShowAddressBar(true);
         form.setShowDetails(false);
         form.setShowFolderTree(true);
         form.setFolderTreeCollapsed(true);
 
-        if (form.getRootPath() == null)
-            form.setRootPath(getRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK));
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        if (null == svc)
+            throw new IllegalStateException("FileContentService not found.");
+        if (null == getRootContext())
+            throw new IllegalStateException("Root content not found.");
 
-        form.setEnabled(!svc.isFileRootDisabled(getRootContext().getContainer()));
+        Container rootContextContainer = getRootContext().getContainer();
+        if (form.getRootPath() == null)
+        {
+            if (svc.isCloudRoot(rootContextContainer))
+                form.setRootPath(getRootPath(rootContextContainer, FileContentService.CLOUD_LINK, svc.getCloudRootName(rootContextContainer)));
+            else
+                form.setRootPath(getRootPath(rootContextContainer, FileContentService.FILES_LINK));
+        }
+
+        form.setEnabled(!svc.isFileRootDisabled(rootContextContainer));
         form.setContentId("fileContent" + System.identityHashCode(this));
 
         if (policy.hasPermission(user, InsertPermission.class))
@@ -317,6 +331,13 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         return form;
     }
 
+    private static final Set<String> _allowedDavNames = new HashSet<>(Arrays.asList(
+            FileContentService.CLOUD_LINK,
+            FileContentService.FILE_SETS_LINK,
+            FileContentService.FILES_LINK,
+            FileContentService.PIPELINE_LINK
+    ));
+
     public static String getRootPath(Container c, @Nullable String davName)
     {
         return getRootPath(c, davName, null);
@@ -329,15 +350,28 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     public static String getRootPath(Container c, @Nullable String davName, @Nullable String fileset, boolean skipDavPrefix)
     {
+        String relativePath = "";
+        if (davName != null)
+        {
+            if (!_allowedDavNames.contains(davName))              // TODO and I don't think we need to encode
+                throw new IllegalStateException("unrecognized DavName");
+            relativePath += URLEncoder.encode(davName);
+            if (fileset != null)
+                relativePath += "/" + fileset;
+        }
+
+        return _getRootPath(c, relativePath, skipDavPrefix);
+    }
+    private static String _getRootPath(Container c, @Nullable String relativePath, boolean skipDavPrefix)
+    {
         String webdavPrefix = skipDavPrefix ? "" : AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
         String rootPath = webdavPrefix + c.getEncodedPath();
 
-        if (davName != null)
-        {
-            rootPath += URLEncoder.encode(davName);
-            if (fileset != null)
-                rootPath += "/" + fileset;
-        }
+        if (!rootPath.endsWith("/"))
+            rootPath += "/";
+
+        if (null != relativePath)
+            rootPath += relativePath;
 
         if (!rootPath.endsWith("/"))
             rootPath += "/";
@@ -347,20 +381,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     public static String getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
     {
-        String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
-        String rootPath = webdavPrefix + c.getEncodedPath();
-
-        if (folderFileRoot != null)
-        {
-            if (!rootPath.endsWith("/"))
-                rootPath += "/";
-            rootPath += folderFileRoot;
-        }
-
-        if (!rootPath.endsWith("/"))
-            rootPath += "/";
-
-        return rootPath;
+        return _getRootPath(c, folderFileRoot, false);
     }
 
     protected boolean canDisplayPipelineActions()
@@ -376,10 +397,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             // reference the same location, then import and customize actions should be disabled
 
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            if (null == svc)
+                throw new IllegalStateException("FileContentService not found.");
             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
 
-            if (null != root && root.isValid() && null != dir && root.getUri().equals(dir.getFileSystemDirectory().toURI()))
+            if (null != root && root.isValid() && null != dir && root.getUri().equals(dir.getFileSystemDirectoryPath().toUri()))
             {
                 return true;
             }
@@ -415,6 +438,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     {
         this.fileSet = fileSet;
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        if (null == svc)
+            throw new IllegalStateException("FileContentService not found.");
+
         try {
             AttachmentDirectory dir;
             if (null == fileSet)
@@ -425,7 +451,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             if (dir != null)
             {
                 getModelBean().setRoot(dir);
-                getModelBean().setRootDirectory(dir.getFileSystemDirectory().toPath());
+                getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
             }
         }
         catch (MissingRootDirectoryException ex)
@@ -694,14 +720,21 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             this._isListing = listing;
         }
 
-        private static final String CLOUD_PATTERN = "%40cloud/";
+        private static final String CLOUD_PATTERN_ENCODED = "%40cloud/";
+        private static final String CLOUD_PATTERN = "@cloud/";
 
         private boolean isCloudStoreEnabled(Container container)
         {
             int cloudIndex = StringUtils.indexOf(_rootPath, CLOUD_PATTERN);
+            int cloudPatternLength = CLOUD_PATTERN.length();
+            if (-1 == cloudIndex)
+            {
+                cloudIndex = StringUtils.indexOf(_rootPath, CLOUD_PATTERN_ENCODED);
+                cloudPatternLength = CLOUD_PATTERN_ENCODED.length();
+            }
             if (-1 != cloudIndex)
             {
-                String config = StringUtils.substring(_rootPath, cloudIndex + CLOUD_PATTERN.length());
+                String config = StringUtils.substring(_rootPath, cloudIndex + cloudPatternLength);
                 int slashIndex = StringUtils.indexOf(config, "/");
                 if (-1 != slashIndex)
                     config = StringUtils.substring(config, 0, slashIndex);
@@ -723,7 +756,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public boolean isCloudRootPath()
         {
-            return -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN);
+            return -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN) ||
+                   -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN_ENCODED);
         }
     }
 }

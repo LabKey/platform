@@ -15,6 +15,7 @@
  */
 package org.labkey.api.cloud;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -91,5 +92,11 @@ public interface CloudStoreService
      * Return nio.Path matching url (which has bucket, etc.)
      */
     Path getPathFromUrl(Container container, String url);
+
+    /**
+     * Return nio.Path for otherContainer, given a cloud url/container
+     */
+    Path getPathForOtherContainer(@NotNull Container container, @NotNull Container otherContainer, @NotNull String url,
+                                  @NotNull org.labkey.api.util.Path path);
 
 }

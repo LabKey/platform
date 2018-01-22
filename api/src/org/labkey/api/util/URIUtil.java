@@ -27,7 +27,9 @@ public class URIUtil
 {
     static public boolean isDescendant(URI base, URI descendant)
     {
-        return descendant.toString().startsWith(base.toString());
+        if (!descendant.getScheme().equalsIgnoreCase(base.getScheme()))
+            return false;
+        return descendant.getPath().startsWith(base.getPath());
     }
 
     static public URI resolve(URI root, URI base, String path)
