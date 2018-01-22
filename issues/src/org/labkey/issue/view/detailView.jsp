@@ -298,11 +298,11 @@ for (int j = 0; j < commentLinkedList.size(); j++)
     Issue.Comment comment = commentLinkedList.get(j);
 if (!issue.getComments().contains(comment))
 {%>
-<div class="relatedIssue" style="display: none;"><%
+<div class="relatedIssue" style="display: none; word-break: break-all"><%
         }
         else
         {%>
-    <div class="currentIssue" style="display: inline;"><%
+    <div class="currentIssue" style="display: inline; word-break: break-all"><%
         }%>
 
         <table width="100%"><tr><td class="comment-created" align="left"><b>

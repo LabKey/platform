@@ -316,7 +316,7 @@
             <%
                 for (Issue.Comment comment : IssueManager.getCommentsForRelatedIssues(issue, user))
                 {
-                    String styleStr = !issue.getComments().contains(comment) ? "display: none" : "display: inline";
+                    String styleStr = !issue.getComments().contains(comment) ? "display: none; word-break: break-all" : "display: inline; word-break: break-all";
                     String classStr = !issue.getComments().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
             %>
             <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">

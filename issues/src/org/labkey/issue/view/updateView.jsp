@@ -356,8 +356,10 @@
         <%=h(comment.getCreatedByName(user))%>
     </b></td></tr>
     </table>
-    <%=text(comment.getComment())%>
-    <%=text(bean.renderAttachments(context, comment))%><%
+    <div style="word-break: break-all">
+        <%=text(comment.getComment())%>
+        <%=text(bean.renderAttachments(context, comment))%>
+    </div><%
     }%>
     </labkey:panel>
     <% }
