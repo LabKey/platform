@@ -15,7 +15,7 @@
  */
 package org.labkey.test.tests.search;
 
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.labkey.remoteapi.CommandException;
@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
@@ -94,10 +93,15 @@ public abstract class SearchTest extends StudyTest
 
     public abstract SearchAdminAPIHelper.DirectoryType directoryType();
 
-    @Before
-    public void preTest()
+    @BeforeClass
+    public static void setup()
     {
-        _containerHelper.deleteProject(getProjectName(), false);
+        SearchTest initTest = (SearchTest)getCurrentTest();
+        initTest.doSetup();
+    }
+
+    private void doSetup()
+    {
         SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         _searchHelper.initialize();
         enableEmailRecorder();
@@ -169,7 +173,8 @@ public abstract class SearchTest extends StudyTest
         }
         alterListsAndReSearch();
 
-        verifySyntaxErrorMessages();
+        _containerHelper.deleteProject(getProjectName());
+        _searchHelper.verifyNoSearchResults();
     }
 
     private void alterListsAndReSearch()
@@ -204,38 +209,11 @@ public abstract class SearchTest extends StudyTest
     {
         /* No API tests */
     }
-    
-    private void verifySyntaxErrorMessages()
-    {
-        _searchHelper.searchFor("age()", false);
-        checkSyntaxErrorMessage("Error: Can't parse 'age()': Problem character is highlighted", "These characters have special meaning within search queries:", "You can escape special characters using \\ before the character or you can enclose the query string in double quotes.", "For more information, visit the search syntax documentation.");
-        _searchHelper.searchFor("incomplete(", false);
-        checkSyntaxErrorMessage("Error: Can't parse 'incomplete(': Query string is incomplete", "These characters have special meaning within search queries:");
-        _searchHelper.searchFor("this AND OR", false);
-        checkSyntaxErrorMessage("Error: Can't parse 'this AND OR': Problem character is highlighted", "Boolean operators AND, OR, and NOT have special meaning within search queries");
-    }
-
-    private void checkSyntaxErrorMessage(String... expectedPhrases)
-    {
-        String errorText = getText(Locator.css("div.alert-warning table"));
-        // We want our nice, custom error messages to appear
-        for (String phrase : expectedPhrases)
-        {
-            assertTrue("Did not find expected error message: " + phrase, errorText.contains(phrase));
-        }
-
-        // Various phrases that appear in the standard Lucene system error message
-        assertTextNotPresent("Cannot parse", "encountered", "Was expecting", "<NOT>", "<OR>", "<AND>", "<EOF>");
-    }
 
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        _containerHelper.deleteProject(getProjectName(), afterTest);
-        if (afterTest)
-        {
-            _searchHelper.verifyNoSearchResults();
-        }
+        _containerHelper.deleteProject(getProjectName(), false);
     }
 
     @LogMethod
