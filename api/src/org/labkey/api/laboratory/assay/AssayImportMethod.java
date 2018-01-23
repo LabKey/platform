@@ -107,4 +107,6 @@ public interface AssayImportMethod
     abstract public void validateTemplate(User u, Container c, ExpProtocol protocol, @Nullable Integer templateId, String title, JSONObject json, BatchValidationException errors) throws BatchValidationException;
 
     abstract public List<String> getImportColumns(ViewContext ctx, ExpProtocol protocol);
+
+    abstract public JSONObject getSupplementalTemplateMetadata();
 }

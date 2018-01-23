@@ -164,6 +164,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _path.getName();
     }
 
+    /**
+     * Returns the folder title for normal folders, or the name (i.e. number) for workbooks
+     */
+    public String getDisplayTitle(){
+        return isWorkbook() ? getName() : getTitle();
+    }
+
     @NotNull
     public String getResourceName()
     {

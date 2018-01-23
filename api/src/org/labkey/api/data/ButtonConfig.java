@@ -33,6 +33,7 @@ public interface ButtonConfig
     public Integer getInsertPosition();
     public String getInsertBefore();
     public String getInsertAfter();
+    public String getIconCls();
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons);
     public ButtonConfig clone();
 }

@@ -36,6 +36,7 @@ import java.util.List;
 public class UserDefinedButtonConfig implements ButtonConfig
 {
     private String _text;
+    private String _iconCls;
     private String _url;
     private String _onClick;
     private ActionButton.Action _action;
@@ -56,6 +57,17 @@ public class UserDefinedButtonConfig implements ButtonConfig
     public void setText(String text)
     {
         _text = text;
+    }
+
+    @Override
+    public String getIconCls()
+    {
+        return _iconCls;
+    }
+
+    public void setIconCls(String iconCls)
+    {
+        _iconCls = iconCls;
     }
 
     public String getUrl()
@@ -209,6 +221,9 @@ public class UserDefinedButtonConfig implements ButtonConfig
         if (null != _menuItems)
         {
             MenuButton btn = new MenuButton(_text);
+            if (getIconCls() != null)
+                btn.setIconCls(getIconCls());
+
             for (NavTree item : _menuItems)
             {
                 NavTree toAdd = new NavTree(item);
@@ -226,6 +241,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
             // a button with only an onClick handler.
             String url = null==_url ? "#" : processURL(ctx,_url);
             ActionButton btn = new ActionButton(_text, StringExpressionFactory.create(url, true));
+            if (getIconCls() != null)
+                btn.setIconCls(getIconCls());
 
             btn.setDisplayPermission(_permission);
             if (null != _onClick)
@@ -253,6 +270,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         UserDefinedButtonConfig ret = new UserDefinedButtonConfig();
         ret.setText(_text);
         ret.setUrl(_url);
+        ret.setIconCls(_iconCls);
         ret.setOnClick(_onClick);
         ret.setAction(_action);
         ret.setRequiresSelection(_requiresSelection);

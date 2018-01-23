@@ -152,6 +152,11 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             }]
         })
 
+        if (this.isVisible()){
+            this.doCloseExtMsg = true;
+            Ext4.Msg.wait('Loading...');
+        }
+
         LABKEY.Query.getQueryDetails({
             containerPath: this.containerPath
             ,schemaName: this.schemaName
@@ -234,6 +239,12 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     },
 
     populateTemplates: function(meta){
+        //this allows for the possibility that some other component on the page opened a waiting dialog
+        if (this.doCloseExtMsg && Ext4.Msg.isVisible()) {
+            Ext4.Msg.hide();
+        }
+        this.doCloseExtMsg = false;
+
         var toAdd = [];
 
         if (meta.importMessage){

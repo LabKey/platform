@@ -192,6 +192,10 @@ public class ButtonBarConfig
                     _hiddenStandardButtons.add(item.getOriginalText());
                 }
             }
+            if (item.isSetIconCls())
+            {
+                buttonConfig.setIconCls(item.getIconCls());
+            }
             if (item.isSetSuppressWarning())
             {
                 buttonConfig.setSuppressWarning(item.getSuppressWarning());
@@ -218,7 +222,8 @@ public class ButtonBarConfig
         {
             UserDefinedButtonConfig buttonConfig = new UserDefinedButtonConfig();
             buttonConfig.setText(item.getText());
-
+            if (item.isSetIconCls())
+                buttonConfig.setIconCls(item.getIconCls());
             if (item.isSetInsertBefore())
                 buttonConfig.setInsertBefore(item.getInsertBefore());
             else if (item.isSetInsertAfter())

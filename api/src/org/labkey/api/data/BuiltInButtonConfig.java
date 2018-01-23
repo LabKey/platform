@@ -31,6 +31,7 @@ import java.util.List;
  */
 public class BuiltInButtonConfig implements ButtonConfig
 {
+    private String _iconCls;
     private String _caption;
     private String _originalCaption;
     private String _insertAfter, _insertBefore;
@@ -61,6 +62,17 @@ public class BuiltInButtonConfig implements ButtonConfig
     public void setCaption(String caption)
     {
         _caption = caption;
+    }
+
+    @Override
+    public String getIconCls()
+    {
+        return _iconCls;
+    }
+
+    public void setIconCls(String iconCls)
+    {
+        _iconCls = iconCls;
     }
 
     public String getOriginalCaption()
@@ -107,6 +119,9 @@ public class BuiltInButtonConfig implements ButtonConfig
                 de.setVisible(!_hidden);
                 if (getPermission() != null)
                     de.setDisplayPermission(_permission);
+                if (getIconCls() != null)
+                    ((ActionButton) de).setIconCls(getIconCls());
+
                 if (_caption != null && !_caption.equals(_originalCaption))
                 {
                     de.setCaption(_caption);
@@ -139,6 +154,7 @@ public class BuiltInButtonConfig implements ButtonConfig
     {
         BuiltInButtonConfig ret = new BuiltInButtonConfig(_originalCaption, _caption);
         ret.setInsertAfter(_insertAfter);
+        ret.setIconCls(_iconCls);
         ret.setInsertBefore(_insertBefore);
         ret.setInsertPosition(_insertPosition);
         ret.setHidden(_hidden);
