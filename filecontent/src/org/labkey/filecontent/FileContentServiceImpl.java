@@ -855,7 +855,7 @@ public class FileContentServiceImpl implements FileContentService
 
     static void logFileAction(java.nio.file.Path directory, String fileName, FileAction action, User user) throws IOException
     {
-        try (BufferedWriter fw = Files.newBufferedWriter(directory.resolve(UPLOAD_LOG), StandardOpenOption.APPEND))
+        try (BufferedWriter fw = Files.newBufferedWriter(directory.resolve(UPLOAD_LOG), StandardOpenOption.APPEND, StandardOpenOption.CREATE))
         {
             fw.write(action.toString() + "\t" + fileName + "\t" + new Date() + "\t" + (user == null ? "(unknown)" : user.getEmail()) + "\n");
         }
