@@ -196,11 +196,17 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             @Override
             public Object getExcelCompatibleValue(RenderContext ctx)
             {
-                return super.getTsvFormattedValue(ctx);
+                return toJSONObjectString(ctx);
             }
 
             @Override
             public String getTsvFormattedValue(RenderContext ctx)
+            {
+                return toJSONObjectString(ctx);
+            }
+
+            // return json string
+            private String toJSONObjectString(RenderContext ctx)
             {
                 Object props = getValue(ctx);
                 if (props == null)
@@ -209,6 +215,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 return new JSONObject(props).toString(2);
             }
 
+            // return html formatted value
             @Override
             public @NotNull String getFormattedValue(RenderContext ctx)
             {

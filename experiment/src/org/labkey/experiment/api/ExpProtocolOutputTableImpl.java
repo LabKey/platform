@@ -23,7 +23,7 @@ public abstract class ExpProtocolOutputTableImpl<C extends Enum> extends ExpTabl
     protected ColumnInfo createEdgeColumn(String alias, C protocolAppColumn, ExpSchema.TableType lookupTable)
     {
         ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("rowId"));
-        LookupForeignKey fk = new LookupForeignKey() //ExpMaterialInputTable.Column.Material.name())
+        LookupForeignKey fk = new LookupForeignKey()
         {
             @Override
             public @Nullable TableInfo getLookupTableInfo()
@@ -31,12 +31,6 @@ public abstract class ExpProtocolOutputTableImpl<C extends Enum> extends ExpTabl
                 UserSchema schema = getUserSchema();
                 ExpSchema expSchema = new ExpSchema(schema.getUser(), schema.getContainer());
                 return expSchema.getTable(lookupTable);
-            }
-
-            @Override
-            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
-            {
-                return super.createLookupColumn(parent, displayField);
             }
         };
         fk.addJoin(FieldKey.fromParts(protocolAppColumn.name()), ExpMaterialInputTable.Column.TargetProtocolApplication.name(), false);

@@ -4223,7 +4223,8 @@ public class ExperimentController extends SpringActionController
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
                     PageFlowUtil.button("Go").submit(true) + "</form>";
 
-            return new HtmlView("Enter LSID", html);        }
+            return new HtmlView("Enter LSID", html);
+        }
 
         public NavTree appendNavTrail(NavTree root)
         {

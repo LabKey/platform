@@ -345,7 +345,7 @@ public class ExpMaterialTableImpl extends ExpProtocolOutputTableImpl<ExpMaterial
 
         addColumn(Column.RunApplicationOutput);
 
-        ColumnInfo sourceProtocolCol = addColumn(Column.SourceProtocolLSID);
+        addColumn(Column.SourceProtocolLSID);
 
         ColumnInfo nameCol = addColumn(ExpMaterialTable.Column.Name);
         if (ss != null && ss.hasNameAsIdCol())

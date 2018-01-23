@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
@@ -41,8 +42,12 @@ public class ApplicationOutputGrid extends GridView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
-        ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c);
-        //getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}&type=" + ti.getName());
+
+        ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c)
+                .addParameter("type", ti.getName());
+        DetailsURL url = new DetailsURL(resolve, "lsid", FieldKey.fromParts("LSID"));
+        getDataRegion().getDisplayColumn(1).setURLExpression(url);
+
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("SourceApplicationId"), rowIdPA);
