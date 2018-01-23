@@ -118,7 +118,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
                 throw new IllegalArgumentException("Failed to read script file.");
             }
 
-            tokens = tokens(source);
+            tokens = ParamReplacementSvc.get().tokens(source);
             String ext = xscript.getInterpreter();
             if (ext == null)
                 ext = FileUtil.getExtension(file);
@@ -135,7 +135,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
             if (script == null)
                 throw new IllegalArgumentException("<script> element must have one of either 'file' attribute or 'interpreter' attribute with an inline script.");
 
-            tokens = tokens(script);
+            tokens = ParamReplacementSvc.get().tokens(script);
             factory._scriptInline = script;
             factory._scriptExtension = xscript.getInterpreter();
         }
@@ -191,23 +191,6 @@ public class ScriptTaskFactory extends SimpleTaskFactory
         if (engine == null)
             throw new IllegalArgumentException("Script engine not found: " + interpreter);
         return engine;
-    }
-
-    private static Set<String> tokens(String script)
-    {
-        // Preserving the order the tokens found is important -- ${input1.txt} must be found before ${input2.txt}
-        Set<String> tokens = new LinkedHashSet<>();
-        Pattern pattern = ParamReplacementSvc.defaultScriptPattern;
-        Matcher m = pattern.matcher(script);
-
-        while (m.find())
-        {
-            String token = m.group(1);
-            if (token != null && token.length() > 0)
-                tokens.add(token);
-        }
-
-        return tokens;
     }
 
     @Override
