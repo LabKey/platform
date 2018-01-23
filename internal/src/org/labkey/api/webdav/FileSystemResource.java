@@ -15,8 +15,6 @@
  */
 package org.labkey.api.webdav;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,7 +65,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -122,7 +119,7 @@ public class FileSystemResource extends AbstractWebdavResource
         super(path);
         setSearchCategory(SearchService.fileCategory);
         setSearchProperty(SearchService.PROPERTY.title, path.getName());
-        setSearchProperty(SearchService.PROPERTY.keywordsMed, FileUtil.getSearchTitle(path.getName()));
+        setSearchProperty(SearchService.PROPERTY.keywordsMed, FileUtil.getSearchKeywords(path.getName()));
     }
 
     protected FileSystemResource(Path folder, String name)

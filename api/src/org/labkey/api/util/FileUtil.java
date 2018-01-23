@@ -886,10 +886,10 @@ quickScan:
     }
 
 
-    // Returns a variant of the document name that's easier to index.  We want to retrieve a document named "labkey.txt"
-    // when the user searches for "labkey.txt", "labkey" or "txt".  Lucene analyzers tokenize on whitespace, so this
-    // method returns the original document name plus the document name with common symbols replaced with spaces.
-    public static String getSearchTitle(String documentName)
+    // Converts a document name into keywords appropriate for indexing. We want to retrieve a document named "labkey.txt"
+    // when the user searches for "labkey.txt", "labkey" or "txt". Lucene analyzers tokenize on whitespace, so this method
+    // returns the original document name plus the document name with common symbols replaced with spaces.
+    public static String getSearchKeywords(String documentName)
     {
         return documentName + " " + documentName.replaceAll("[._-]", " ");
     }
