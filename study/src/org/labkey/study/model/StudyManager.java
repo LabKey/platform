@@ -4571,10 +4571,11 @@ public class StudyManager
         String name = dsd.getName();
         String label = StringUtils.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
         String description = dsd.getDescription();
-        String searchTitle = StringUtilsLabKey.joinNonBlank(" ", name, label, description);
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
+        String tag = dsd.getTag();
+        String keywords = StringUtilsLabKey.joinNonBlank(" ", name, label, description, tag);
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
 
-        body.append(searchTitle).append("\n");
+        body.append(keywords).append("\n");
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), false);
         TableInfo tableInfo = schema.createDatasetTableInternal(dsd);
