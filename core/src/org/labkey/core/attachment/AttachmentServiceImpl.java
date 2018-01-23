@@ -1229,7 +1229,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         private void initSearchProperties(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
         {
-            setSearchProperty(SearchService.PROPERTY.keywordsMed, FileUtil.getSearchTitle(name));
+            setSearchProperty(SearchService.PROPERTY.keywordsMed, FileUtil.getSearchKeywords(name));
             setSearchProperty(SearchService.PROPERTY.title, null != displayTitle ? displayTitle : name);
 
             if (null == cat)

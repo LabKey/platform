@@ -47,7 +47,6 @@ import org.labkey.api.webdav.WebdavService;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -354,7 +353,7 @@ public class DavCrawler implements ShutdownListener
                         Map<String, Object> props = new HashMap<>();
                         props.put(SearchService.PROPERTY.categories.toString(), SearchService.fileCategory.toString());
                         props.put(SearchService.PROPERTY.title.toString(), wrap.getPath().getName());
-                        props.put(SearchService.PROPERTY.keywordsMed.toString(), FileUtil.getSearchTitle(wrap.getPath().getName()));
+                        props.put(SearchService.PROPERTY.keywordsMed.toString(), FileUtil.getSearchKeywords(wrap.getPath().getName()));
                         child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), "text/plain", (String)null, url, props) {
                             @Override
                             public void setLastIndexed(long ms, long modified)

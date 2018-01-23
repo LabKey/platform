@@ -670,11 +670,11 @@ public class WikiManager implements WikiService
                 LOG.debug("Indexing wiki " + wikiName + ":" + entityId);
 
                 String wikiTitle = rs.getString("title");
-                String searchTitle;
+                String keywords;
                 if (null == wikiTitle)
-                    searchTitle = wikiTitle = wikiName;
+                    keywords = wikiTitle = wikiName;
                 else
-                    searchTitle = wikiTitle + " " + wikiName;   // Always search on wiki title or name
+                    keywords = wikiTitle + " " + wikiName;   // Always search on wiki title or name
                 String body = rs.getString("body");
                 if (null == body)
                     body = "";
@@ -682,7 +682,7 @@ public class WikiManager implements WikiService
 
                 Map<String, Object> props = new HashMap<>();
                 props.put(SearchService.PROPERTY.title.toString(), wikiTitle);
-                props.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
+                props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
 
                 try
                 {

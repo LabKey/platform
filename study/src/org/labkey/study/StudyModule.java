@@ -752,7 +752,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
     
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
     }
 

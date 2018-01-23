@@ -77,6 +77,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -708,11 +709,11 @@ public class AssayManager implements AssayService
 
             ActionURL assayRunsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
 
-            String searchTitle = StringUtils.trimToEmpty(name) + " " + StringUtils.trimToEmpty(instrument) + " " + StringUtils.trimToEmpty(provider.getName());
-            String body = StringUtils.trimToEmpty(provider.getName()) + " " + StringUtils.trimToEmpty(description) + " " + StringUtils.trimToEmpty(comment) + runKeywords.toString();
+            String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
+            String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment) + runKeywords.toString();
             Map<String, Object> m = new HashMap<>();
             m.put(SearchService.PROPERTY.title.toString(), name);
-            m.put(SearchService.PROPERTY.keywordsMed.toString(), searchTitle);
+            m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
             m.put(SearchService.PROPERTY.categories.toString(), StudyManager.assayCategory.getName());
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
