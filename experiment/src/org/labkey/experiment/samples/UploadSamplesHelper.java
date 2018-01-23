@@ -26,8 +26,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -47,6 +49,10 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -163,8 +169,6 @@ public class UploadSamplesHelper
 
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
-            ColumnDescriptor[] columns = loader.getColumns();
-
             Domain domain = PropertyService.get().getDomain(getContainer(), materialSourceLsid);
             if (domain == null)
             {
@@ -177,6 +181,9 @@ public class UploadSamplesHelper
             boolean hasCommentHeader = false;
             boolean addedProperty = false;
             Set<String> inputOutputColumns = new HashSet<>();
+            Set<DomainProperty> alternateKeyCandidates = new HashSet<>();
+            ColumnDescriptor[] columns = loader.getColumns();
+
             for (ColumnDescriptor cd : columns)
             {
                 if (isReservedHeader(cd.name))
@@ -210,25 +217,35 @@ public class UploadSamplesHelper
                 }
                 else
                 {
-                    DomainProperty pd = descriptorsByName.get(cd.name);
-                    if ((pd == null && _form.isCreateNewColumnsOnExistingSampleSet()) || _materialSource == null)
+                    DomainProperty dp = descriptorsByName.get(cd.name);
+                    if ((dp == null && _form.isCreateNewColumnsOnExistingSampleSet()) || _materialSource == null)
                     {
-                        pd = domain.addProperty();
+                        dp = domain.addProperty();
                         //todo :  name for domain?
-                        pd.setName(cd.name);
+                        dp.setName(cd.name);
                         String legalName = ColumnInfo.legalNameFromName(cd.name);
                         String propertyURI = materialSourceLsid + "#" + legalName;
-                        pd.setPropertyURI(propertyURI);
-                        pd.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
+                        dp.setPropertyURI(propertyURI);
+                        dp.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
                         //Change name to be fully qualified string for property
-                        descriptorsByName.put(pd.getName(), pd);
+                        descriptorsByName.put(dp.getName(), dp);
                         addedProperty = true;
                     }
 
-                    if (pd != null)
+                    if (dp != null)
                     {
-                        cd.name = pd.getPropertyURI();
-                        cd.clazz = pd.getPropertyDescriptor().getPropertyType().getJavaType();
+                        PropertyDescriptor pd = dp.getPropertyDescriptor();
+
+                        if (pd != null)
+                        {
+                            cd.name = dp.getPropertyURI();
+                            cd.clazz = pd.getPropertyType().getJavaType();
+
+                            if (pd.isLookup() && pd.getPropertyType() == PropertyType.INTEGER)
+                                alternateKeyCandidates.add(dp);
+                        }
+                        else
+                            cd.load = false;
                     }
                     else
                         cd.load = false;
@@ -303,9 +320,9 @@ public class UploadSamplesHelper
                 parentColPropertyURI = null;
             }
 
-            List<Map<String, Object>> maps = loader.load();
-
             boolean createdSampleSet = ensureSampleSet(nameExpression, usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI);
+
+            List<Map<String, Object>> maps = loadRows(loader, alternateKeyCandidates);
 
             Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, maps);
 
@@ -336,6 +353,73 @@ public class UploadSamplesHelper
         return new Pair<>(_materialSource, materials);
     }
 
+    private List<Map<String, Object>> loadRows(DataLoader loader, final Set<DomainProperty> alternateKeyCandidates) throws ExperimentException, IOException
+    {
+        if (alternateKeyCandidates.isEmpty())
+            return loader.load();
+
+        // once the Sample Set is guaranteed to exist we can look for the ForeignKey information for alternateKeyCandidates
+        UserSchema ssSchema = QueryService.get().getUserSchema(_form.getUser(), _form.getContainer(), SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME));
+        TableInfo ssTable = ssSchema.getTable(_sampleSet.getName());
+
+        if (ssTable == null)
+            throw new ExperimentException("Unable to resolve table for Sample Set: " + _sampleSet.getName());
+
+        ColumnDescriptor[] columns = loader.getColumns();
+        Map<DomainProperty, TableInfo> alternateKeys = new HashMap<>();
+
+        // PRE-CONDITION: Type ("clazz") of ColumnDescriptor must be set prior to asking the loader to load()
+        for (DomainProperty dp : alternateKeyCandidates)
+        {
+            ColumnInfo column = ssTable.getColumn(dp.getName());
+            ForeignKey fk = column != null ? column.getFk() : null;
+            if (fk != null && fk.allowImportByAlternateKey())
+            {
+                for (ColumnDescriptor cd : columns)
+                {
+                    if (cd.name.equals(dp.getPropertyURI()))
+                    {
+                        cd.clazz = String.class;
+                        alternateKeys.put(dp, fk.getLookupTableInfo());
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<Map<String, Object>> maps = loader.load();
+
+        for (Map.Entry<DomainProperty, TableInfo> entry : alternateKeys.entrySet())
+        {
+            DomainProperty dp = entry.getKey();
+            SimpleTranslator.RemapPostConvert remap = new SimpleTranslator.RemapPostConvert(
+                    entry.getValue(), true, SimpleTranslator.RemapMissingBehavior.Error);
+
+            for (Map<String, Object> map : maps)
+            {
+                Object value = map.get(dp.getPropertyURI());
+
+                if (value instanceof String)
+                {
+                    Object remapped;
+
+                    try
+                    {
+                        remapped = remap.mappedValue(value);
+                    }
+                    catch (ConversionException ex)
+                    {
+                        throw new ExperimentException("Failed to convert '" + dp.getName() + "': " + ex.getMessage(), ex);
+                    }
+
+                    if (value != remapped)
+                        map.put(dp.getPropertyURI(), remapped);
+                }
+            }
+        }
+
+        return maps;
+    }
 
     // Remember the actual set of properties that we received, so we don't end up deleting unspecified values.
     @NotNull
