@@ -49,7 +49,7 @@ public class SearchSyntaxTest extends BaseWebDriverTest
     @Override
     protected String getProjectName()
     {
-        return "SearchSyntaxTest Project";
+        return null;
     }
 
     @Override
