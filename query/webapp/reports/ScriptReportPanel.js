@@ -521,9 +521,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         scope : this,
                         handler : function() {
                             if (this.reportConfig.reportId)
-                                this.save(this.externalEditSettings.url);
+                                this.save(this.externalEditSettings.url, null, false, true);
                             else {
-                                this.showSaveReportPrompt(this.externalEditSettings.url, 'Create New Report', false);
+                                this.showSaveReportPrompt(this.externalEditSettings.url, 'Create New Report', false, true);
                             }
                         }
                     }
@@ -586,14 +586,14 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return this.formPanel;
     },
 
-    showSaveReportPrompt : function(saveUrl, title, isSaveAs) {
+    showSaveReportPrompt : function(saveUrl, title, isSaveAs, initExternalWindow) {
         Ext4.MessageBox.show({
             title   : title,
             msg     : 'Please enter a report name:',
             buttons : Ext4.MessageBox.OKCANCEL,
             fn      : function(btnId, name) {
                 if (btnId == 'ok')
-                    this.save(saveUrl, name, isSaveAs);
+                    this.save(saveUrl, name, isSaveAs, initExternalWindow);
             },
             prompt  : true,
             scope   : this
@@ -638,7 +638,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return url;
     },
 
-    save : function(url, name, isSaveAs) {
+    save : function(url, name, isSaveAs, initExternalWindow) {
 
         var form = this.formPanel.getForm();
 
@@ -656,6 +656,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
             data.script = this.codeMirror.getValue();
 
+            if (initExternalWindow)
+                this.initExternalWindow();
+
             Ext4.Ajax.request({
                 url : url,
                 method  : 'POST',
@@ -670,14 +673,40 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             window.location = o.redirect;
                     }
                     else {
+                        if (initExternalWindow)
+                            this.closeExternalEditor();
                         LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
                     }
                 },
-                failure : LABKEY.Utils.displayAjaxErrorResponse,
+                failure : function(resp, opt) {
+                    if (initExternalWindow)
+                        this.closeExternalEditor();
+                    LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+                },
                 jsonData: data,
                 scope   : this
             });
         }
+    },
+
+    initExternalWindow: function() {
+        // browsers will block window.open not from direct user action.
+        // as a work-around, open a blank window prior to ajax actions
+        if (!this.externalEditWindow || !this.externalEditWindow.window || this.externalEditWindow.window.closed) {
+            var winName = this.externalEditSettings && this.externalEditSettings.externalWindowTitle ? this.externalEditSettings.externalWindowTitle : "";
+            this.externalEditWindow = window.open('', winName);
+            this.formPanel.getEl().mask();
+        }
+    },
+
+    closeExternalEditor: function() {
+        if (this.externalEditWindow && this.externalEditWindow.window && !this.externalEditWindow.window.closed) {
+            if (this.externalEditWindow.opener) {
+                this.externalEditWindow.opener.focus();
+            }
+            this.externalEditWindow.close();
+        }
+        this.formPanel.getEl().unmask();
     },
 
     openExternalEditor : function (o) {
@@ -692,14 +721,20 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     openWindowOnce: function(url, windowName) {
         // open a blank windowName window
         // or get the reference to the existing windowName window
-        var externalEditWindow = window.open('', windowName);
+        if (this.externalEditWindow && this.externalEditWindow.window && !this.externalEditWindow.window.closed) {
+            this.externalEditWindow.name = windowName; // rstudio window for newly created report was opened with blank name
+        }
+        else {
+            // if user closed new window before action complete, open again...
+            this.externalEditWindow = window.open('', windowName);
+        }
 
-        if (externalEditWindow) {
+        if (this.externalEditWindow) {
             // if the windowName window was just opened, change its url to actual needed window
-            if(externalEditWindow.location.href.indexOf(url) === -1){
-                externalEditWindow.location.href = url;
+            if(this.externalEditWindow.location.href.indexOf(url) === -1){
+                this.externalEditWindow.location.href = url;
             }
-            externalEditWindow.focus(); // this seems to only work in some versions of IE
+            this.externalEditWindow.focus(); // this seems to only work in some versions of IE
         }
         else {
             Ext4.Msg.show({
@@ -710,7 +745,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             });
         }
         LABKEY.Utils.signalWebDriverTest("external-edit-url", url);
-        return externalEditWindow;
+        return this.externalEditWindow;
     },
 
     showExternalEditingDialog: function(config)
