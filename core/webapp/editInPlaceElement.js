@@ -11,9 +11,8 @@
     on the base class. http://www.extjs.com/deploy/dev/docs/?class=Ext.Editor
 */
 
-Ext.namespace('LABKEY', 'LABKEY.ext');
-
-LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
+Ext4.define('LABKEY.ext.EditInPlaceElement', {
+    extend: 'Ext.util.Observable',
 
     editor: null,
     editWidth : null,
@@ -32,10 +31,9 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     constructor: function(config){
 
         this.addEvents("beforecomplete", "complete", "canceledit", "editstarted", "updatefail", "validitychange");
-        Ext.apply(this, config);
-        if (this.updateConfig)
-        {
-            this.updateConfig = Ext.applyIf(this.updateConfig, {
+        Ext4.apply(this, config);
+        if (this.updateConfig){
+            this.updateConfig = Ext4.applyIf(this.updateConfig, {
                 method: 'POST',
                 headers : {
                     'Content-Type' : 'application/json'
@@ -44,12 +42,12 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         }
 
 
-        LABKEY.ext.EditInPlaceElement.superclass.constructor.apply(this, arguments);
+        this.callParent(arguments);
 
         if (!this.applyTo)
             throw "You must specify an applyTo property in your config!";
 
-        this.el = Ext.get(this.applyTo);
+        this.el = Ext4.get(this.applyTo);
         if (!this.el)
             throw "Could not find element '" + this.applyTo + "'!";
 
@@ -59,29 +57,29 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
         this.checkForEmpty();
 
-        this.el.addClass("labkey-edit-in-place");
+        this.el.addCls("labkey-edit-in-place");
         this.el.on("mouseover", this.onMouseOver, this);
         this.el.on("mouseout", this.onMouseOut, this);
         this.el.on("click", this.startEdit, this);
 
-        this.editIcon = Ext.getBody().createChild({
+        this.editIcon = Ext4.getBody().createChild({
             tag: 'div',
             cls: 'labkey-edit-in-place-icon',
             title: 'Click to Edit'
         });
         this.editIcon.anchorTo(this.el, 'tr-tr');
         this.editIcon.on("mouseover", function(){
-            this.editIcon.addClass("labkey-edit-in-place-icon-hover");
+            this.editIcon.addCls("labkey-edit-in-place-icon-hover");
         }, this);
         this.editIcon.on("mouseout", function(){
-            this.editIcon.removeClass("labkey-edit-in-place-icon-hover");
-            this.editIcon.removeClass("labkey-edit-in-place-icon-mouse-down");
+            this.editIcon.removeCls("labkey-edit-in-place-icon-hover");
+            this.editIcon.removeCls("labkey-edit-in-place-icon-mouse-down");
         }, this);
         this.editIcon.on("mousedown", function(){
-            this.editIcon.addClass("labkey-edit-in-place-icon-mouse-down");
+            this.editIcon.addCls("labkey-edit-in-place-icon-mouse-down");
         }, this);
         this.editIcon.on("mouseup", function(){
-            this.editIcon.removeClass("labkey-edit-in-place-icon-mouse-down");
+            this.editIcon.removeCls("labkey-edit-in-place-icon-mouse-down");
         }, this);
         this.editIcon.on("click", this.startEdit, this);
     },
@@ -90,20 +88,20 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (this.emptyText && (this.el.dom.innerHTML.length == 0 || this.el.dom.innerHTML == "&nbsp;"))
         {
             this.el.update(this.emptyText);
-            this.el.addClass("labkey-edit-in-place-empty");
+            this.el.addCls("labkey-edit-in-place-empty");
         }
     },
 
     onMouseOver: function(){
-        this.editIcon.addClass("labkey-edit-in-place-icon-hover");
+        this.editIcon.addCls("labkey-edit-in-place-icon-hover");
     },
 
     onMouseOut: function(){
-        this.editIcon.removeClass("labkey-edit-in-place-icon-hover");
+        this.editIcon.removeCls("labkey-edit-in-place-icon-hover");
     },
 
     startEdit: function(){
-        if (this.editor || this.el.hasClass("labkey-edit-in-place-updating"))
+        if (this.editor || this.el.hasCls("labkey-edit-in-place-updating"))
             return;
 
         this.fireEvent("editstarted", this.oldText);
@@ -124,16 +122,16 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         this.editor = this.el.parent().createChild(config, this.el.next());
 
         //create the offscreen sizing div
-        this.sizingDiv = Ext.getBody().createChild({
+        this.sizingDiv = Ext4.getBody().createChild({
             tag: 'div',
             style: 'position:absolute;left:-10000px;top:-10000px'
         });
 
 
         //make the editor's text styles match the element
-        if (this.el.hasClass("labkey-edit-in-place-empty"))
+        if (this.el.hasCls("labkey-edit-in-place-empty"))
         {
-            this.el.removeClass("labkey-edit-in-place-empty");
+            this.el.removeCls("labkey-edit-in-place-empty");
             this.el.update("");
         }
 
@@ -141,7 +139,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
               'padding-right', 'line-height', 'font-size',
               'font-family', 'font-weight', 'font-style');
 
-        styles.width = this.el.getWidth() - this.widthBuffer + "px";
+        styles.width = (this.el.getWidth() - this.widthBuffer) + "px";
         this.editor.setStyle(styles);
         this.sizingDiv.setStyle(styles);
 
@@ -150,7 +148,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         this.growFactor = this.sizingDiv.getHeight() * 1.5;
 
         //set the start text
-        var startText = this.el.dom.innerHTML;
+        var startText = Ext4.String.trim(this.el.dom.innerHTML);
         this.oldText = startText;
         if (this.multiLine)
             this.editor.update(startText);
@@ -160,7 +158,8 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (this.multiLine)
             this.autoSize();
 
-        this.editor.setDisplayed(true);
+        this.orginalDisplayVal = this.el.getStyle('display');
+        this.editor.setDisplayed(this.orginalDisplayVal || true);
         this.el.setDisplayed(false);
         this.editIcon.setDisplayed(false);
 
@@ -171,28 +170,26 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (this.multiLine)
             this.editor.on("keyup", this.autoSize, this);
 
-        var keyMap = [
-        {
-            key: Ext.EventObject.ESC,
+        var keyMap = [{
+            key: Ext4.EventObject.ESC,
             fn: this.cancelEdit,
             scope: this
         }];
 
-        if (this.enterCompletesEdit)
-        {
+        if (this.enterCompletesEdit){
             keyMap.push({
-                key: Ext.EventObject.ENTER,
+                key: Ext4.EventObject.ENTER,
                 fn: this.completeEdit,
                 scope: this
             });
         }
 
-        this.editor.addKeyMap(keyMap);
+        this.editor.addKeyMap({binding: keyMap});
     },
 
     autoSize: function(){
         var value = this.editor.getValue();
-        value = Ext.util.Format.htmlEncode(value);
+        value = Ext4.util.Format.htmlEncode(value);
         value = value.replace(/\n/g, "<br/>");
 
         this.sizingDiv.update(value);
@@ -200,13 +197,14 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         var bw = this.editor.getBorderWidth("tb") || 2;
         var height = this.sizingDiv.getHeight() + bw + this.growFactor;
         this.editor.setHeight(height);
-        if(this.editWidth)
+        if(this.editWidth) {
             this.editor.setWidth(this.editWidth);
+        }
     },
 
     getValue : function () {
         if (this.editor) {
-            this.currentValue = Ext.util.Format.htmlEncode(this.editor.getValue());
+            this.currentValue = Ext4.util.Format.htmlEncode(this.editor.getValue());
         }
         return this.currentValue;
     },
@@ -230,7 +228,11 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     endEdit: function(){
         this.editor.un("blur", this.completeEdit, this);
 
-        this.el.setDisplayed(true);
+        this.el.setDisplayed(this.orginalDisplayVal || true);
+        if (this.orginalDisplayVal){
+            delete this.orginalDisplayVal;
+        }
+
         this.editor.setDisplayed(false);
         this.editIcon.setDisplayed(true);
 
@@ -244,11 +246,11 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     processChange: function(value, oldValue){
         if (this.updateConfig)
         {
-            var reqConfig = Ext.apply({}, this.updateConfig);
+            var reqConfig = Ext4.apply({}, this.updateConfig);
 
             //set jsonData and handlers
             reqConfig.jsonData = {};
-            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = Ext.util.Format.htmlDecode(value);
+            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = Ext4.util.Format.htmlDecode(value);
             reqConfig.success = function(){
                 this.onUpdateComplete(value);
             };
@@ -258,11 +260,11 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
             reqConfig.scope = this;
 
             //update the el and add the updating class
-            this.el.addClass("labkey-edit-in-place-updating");
+            this.el.addCls("labkey-edit-in-place-updating");
             this.el.update(value);
 
             //do the Ajax request
-            Ext.Ajax.request(reqConfig);
+            Ext4.Ajax.request(reqConfig);
         }
         else
             this.onUpdateComplete(value);
@@ -279,7 +281,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
      */
     isValid : function () {
         var me = this;
-        return me.disabled || Ext.isEmpty(me.getErrors());
+        return me.disabled || Ext4.isEmpty(me.getErrors());
     },
 
     /**
@@ -294,7 +296,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         var errors = [];
         var msg;
 
-        if (Ext.isFunction(this.validator)) {
+        if (Ext4.isFunction(this.validator)) {
             msg = this.validator.call(this, value);
             if (msg !== true) {
                 errors.push(msg);
@@ -332,7 +334,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     onUpdateCancel: function (value) {
-        this.el.removeClass("labkey-edit-in-place-updating");
+        this.el.removeCls("labkey-edit-in-place-updating");
         this.el.update(value);
         this.checkForEmpty();
         this.editIcon.alignTo(this.el, 'tr-tr');
@@ -340,7 +342,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     onUpdateComplete: function(value){
-        this.el.removeClass("labkey-edit-in-place-updating");
+        this.el.removeCls("labkey-edit-in-place-updating");
         this.el.update(value);
         this.checkForEmpty();
         this.editIcon.alignTo(this.el, 'tr-tr');
@@ -349,7 +351,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
     onUpdateFailure: function(value, oldValue) {
         alert("There was an error while updating the value!");
-        this.el.removeClass("labkey-edit-in-place-updating");
+        this.el.removeCls("labkey-edit-in-place-updating");
         this.el.update(oldValue);
         this.checkForEmpty();
         this.fireEvent("updatefail");

@@ -64,6 +64,7 @@ public class WorkbookQueryView extends QueryView
 
                 btn = new ActionButton(new ActionURL(CoreController.MoveWorkbooksAction.class, getContainer()), "Move");
                 btn.setActionType(ActionButton.Action.POST);
+                btn.setIconCls("share");
                 btn.setRequiresSelection(true);
                 btn.setDisplayPermission(AdminPermission.class);
                 bar.add(btn);
@@ -77,6 +78,7 @@ public class WorkbookQueryView extends QueryView
     {
         final ActionButton insertButton = super.createInsertButton();
         insertButton.setCaption("Create Workbook");
+        insertButton.setIconCls("plus");
         return insertButton;
     }
 }

@@ -23,6 +23,7 @@
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable
@@ -71,14 +72,16 @@
                    {
                        pageTitle = pageConfig.getAppBar().getFolderTitle();
 
+                       //the intent of this is to suppress pageTitle for the project, so we dont double-show this on the page.
                        if (pageTitle != null)
                        {
-                           String folder = null;
+                           Container targetFolder = null;
                            if (getContainer().isProject())
-                               folder = getContainer().getName();
+                               targetFolder = getContainer();
                            else if (getContainer().getProject() != null)
-                               folder = getContainer().getProject().getName();
-                           if (folder != null && pageTitle.equalsIgnoreCase(folder))
+                               targetFolder = getContainer().getProject();
+
+                           if (targetFolder != null && (pageTitle.equalsIgnoreCase(targetFolder.getName()) || pageTitle.equalsIgnoreCase(targetFolder.getTitle())))
                                pageTitle = null;
                        }
                    }
@@ -96,10 +99,20 @@
                 <h3 style="display: inline-block;">
                     <%= h(pageTitle) %>
                 </h3>
-                <% if (!getActionURL().equals(getContainer().getStartURL(getUser()))) { %>
-                    <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>">
-                        <i class="fa fa-folder-o"></i><%= h(getContainer().getName()) %>
-                    </a>
+                <%--For a normal folder, just show the title, unless this is the start page--%>
+                <%--For a workbook, always show ParentTitle / Workbook, making it easier for the user to return to the parent --%>
+                <% if (getContainer().isWorkbook() || !getActionURL().equals(getContainer().getStartURL(getUser()))) { %>
+                    <span class="lk-body-title-folder-outer">
+                        <i class="fa fa-folder-o"></i>
+                        <% if (getContainer().isWorkbook()) { %>
+                            <a class="lk-body-title-folder" href="<%= h(getContainer().getParent().getStartURL(getUser())) %>">
+                                <%= h(getContainer().getParent().getTitle()) %>
+                            </a> /
+                        <% } %>
+                        <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>">
+                            <%= h(getContainer().getDisplayTitle()) %>
+                        </a>
+                    </span>
                 <% } %>
             <% } %>
             <% if (hasContainerTabs) {%>

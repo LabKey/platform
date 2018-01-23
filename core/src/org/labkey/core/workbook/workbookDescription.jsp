@@ -23,7 +23,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext3");
+        dependencies.add("Ext4");
         dependencies.add("editInPlaceElement.css");
         dependencies.add("editInPlaceElement.js");
     }
