@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A variant of {@link DataRegion} that separates columns into those that belong to a parent grid, and those that
@@ -90,9 +91,11 @@ public class NestableDataRegion extends AbstractNestableDataRegion
         // Validate that the inner and outer result sets are sorted the same
         while (nestedRS.next())
         {
-            if (!ctx.getRow().get(_uniqueColumnName).equals(nestedRS.getInt(_uniqueColumnName)))
+            Object outerValue = ctx.getRow().get(_uniqueColumnName);
+            Object innerValue = nestedRS.getInt(_uniqueColumnName);
+            if (!Objects.equals(outerValue, innerValue))
             {
-                throw new IllegalArgumentException("Ids do not match for the outer and inner result sets");
+                throw new IllegalArgumentException("Ids do not match for the outer and inner result sets for column " + _uniqueColumnName + " - " + outerValue + " vs " + innerValue);
             }
         }
         nestedRS.beforeFirst();
