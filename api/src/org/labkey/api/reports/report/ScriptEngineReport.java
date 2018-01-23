@@ -51,9 +51,11 @@ import org.labkey.api.reports.report.r.view.FileOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.reports.report.r.view.HtmlOutput;
 import org.labkey.api.reports.report.r.view.ImageOutput;
+import org.labkey.api.reports.report.r.view.JpgOutput;
 import org.labkey.api.reports.report.r.view.JsonOutput;
 import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.r.view.PdfOutput;
+import org.labkey.api.reports.report.r.view.PngOutput;
 import org.labkey.api.reports.report.r.view.PostscriptOutput;
 import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.SvgOutput;
@@ -119,6 +121,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ParamReplacementSvc.get().registerHandler(new SvgOutput());
         ParamReplacementSvc.get().registerHandler(new TsvOutput());
         ParamReplacementSvc.get().registerHandler(new ImageOutput());
+        ParamReplacementSvc.get().registerHandler(new JpgOutput());
+        ParamReplacementSvc.get().registerHandler(new PngOutput());
         ParamReplacementSvc.get().registerHandler(new PdfOutput());
         ParamReplacementSvc.get().registerHandler(new FileOutput());
         ParamReplacementSvc.get().registerHandler(new PostscriptOutput());
@@ -211,27 +215,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             return false;
         }
 
-        Matcher m = scriptPattern.matcher(text);
-
-        while (m.find())
-        {
-            String value = m.group(1);
-
-            if (!isValidReplacement(value))
-            {
-                errors.add("Invalid template, the replacement parameter: " + value + " is unknown.");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    protected boolean isValidReplacement(String value)
-    {
-        if (INPUT_FILE_TSV.equals(value)) return true;
-
-        return ParamReplacementSvc.get().getHandler(value) != null;
+        return ParamReplacementSvc.get().isScriptWithValidReplacements(text, errors);
     }
 
     /*
@@ -681,7 +665,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         {
             if (inputFile != null)
                 script = processInputReplacement(engine, script, inputFile);
-            script = processOutputReplacements(engine, script, outputSubst, context);
+            script = processOutputReplacements(engine, script, outputSubst, context, isRStudio);
         }
         return script;
     }
@@ -706,9 +690,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"));
     }
 
-    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context) throws Exception
+    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
-        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(context.getContainer().getId()), null, replacements);
+        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(context.getContainer().getId()), null, replacements, isRStudio);
     }
 
     @Override

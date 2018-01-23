@@ -29,12 +29,15 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
 
 /**
  * User: Karl Lum
@@ -46,16 +49,108 @@ public class ParamReplacementSvc
     private static final ParamReplacementSvc _instance = new ParamReplacementSvc();
     private static final Map<String, String> _outputSubstitutions = new HashMap<>();
 
-    // the default param replacement pattern : ${}
-    public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
-    public static final Pattern REGEX_PARAM_PATTERN = Pattern.compile("(regex\\()(.*)(\\))");
-
+    /* Inline substitution parameters "${}" are deprecated, use comment substitution "#${}" instead. */
+    // the default inline param replacement pattern : ${}
+    private static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}"; /* Deprecated */
+    private static final Pattern DEFAULT_INLINE_SCRIPT_PATTERN = Pattern.compile(REPLACEMENT_PARAM); /* Deprecated */
     // Enable ${} or equivalent escape sequences for {}.  Note that this
     // makes the match group 2 for the token name instead of 1
-    public static final String REPLACEMENT_PARAM_ESC = "\\$(\\{|%7[bB])(.*?)(\\}|%7[dD])";
-    public static final Pattern defaultScriptPattern = Pattern.compile(REPLACEMENT_PARAM);
+    private static final String REPLACEMENT_PARAM_ESC = "\\$(\\{|%7[bB])(.*?)(\\}|%7[dD])"; /* Deprecated */
+    private static final Pattern ESC_INLINE_SCRIPT_PATTERN = Pattern.compile(REPLACEMENT_PARAM_ESC); /* Deprecated */
+
+    private static final String REGEX_PARAM_REGEX = "(regex\\()(.*)(\\))"; /* Deprecated */
+    private static final Pattern REGEX_PARAM_PATTERN = Pattern.compile(REGEX_PARAM_REGEX); /* Deprecated */
+
+    // the default comment param replacement pattern : #${:} \n
+    public static final String COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM + "\\p{Space}+";
+    public static final Pattern COMMENT_LINE_PATTERN = Pattern.compile(COMMENT_LINE_REGEX);
+    public static final String COMMENT_BLOCK_PARAM = COMMENT_LINE_REGEX + "((\\p{Graph}+)|(\"\\p{Print}\"))\\p{Space}*";
+    public static final Pattern DEFAULT_COMMENT_PATTERN = Pattern.compile(COMMENT_BLOCK_PARAM);
+    // Enable #${} or equivalent escape sequences for {}.  Note that this
+    // makes the match group 2 for the token name instead of 1
+    public static final String ESC_COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM_ESC + "\\p{Space}+";
+    public static final Pattern ESC_COMMENT_LINE_PATTERN = Pattern.compile(ESC_COMMENT_LINE_REGEX);
+    public static final String ESC_COMMENT_BLOCK_PARAM = ESC_COMMENT_LINE_REGEX + "((\\p{Graph}+)|(\"\\p{Print}\"))\\p{Space}*";
+    public static final Pattern ESC_COMMENT_PATTERN = Pattern.compile(ESC_COMMENT_BLOCK_PARAM);
 
     private ParamReplacementSvc(){}
+
+    public enum SubstitutionPattern
+    {
+        COMMENT(DEFAULT_COMMENT_PATTERN, ESC_COMMENT_PATTERN)
+                {
+                    public String getReplacementStr(String replacementStr, String fullMatchedString, String paramName, boolean useEscaped)
+                    {
+                        if (fullMatchedString == null)
+                            return null;
+
+                        Pattern pattern = useEscaped ? ESC_COMMENT_LINE_PATTERN : COMMENT_LINE_PATTERN;
+                        Matcher matcher = pattern.matcher(fullMatchedString);
+                        if (matcher.find())
+                        {
+                            String commentLine = matcher.group(0);
+                            if (!StringUtils.isEmpty(commentLine))
+                                return fullMatchedString.replace(commentLine, "").replace(paramName, replacementStr);
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public String getReplacementStr(String replacementStr, String fullMatchedString, String paramName)
+                    {
+                        return getReplacementStr(replacementStr, fullMatchedString, paramName, false);
+                    }
+
+                    @Override
+                    public String getEscapedReplacementStr(String replacementStr, String fullMatchedString, String paramName)
+                    {
+                        return getReplacementStr(replacementStr, fullMatchedString, paramName, true);
+                    }
+                },
+        /**
+         * Deprecated
+         */
+        INLINE(DEFAULT_INLINE_SCRIPT_PATTERN, ESC_INLINE_SCRIPT_PATTERN);
+
+        private final Pattern _matchPattern;
+        private final Pattern _escapedMatchPattern;
+
+        SubstitutionPattern(Pattern matchPattern, Pattern escapedMatchPattern)
+        {
+            this._matchPattern = matchPattern;
+            this._escapedMatchPattern = escapedMatchPattern;
+        }
+
+        String getReplacementStr(String replacementStr, String fullMatchedString, String paramName)
+        {
+            return replacementStr;
+        }
+
+        String getEscapedReplacementStr(String replacementStr, String fullMatchedString, String paramName)
+        {
+            return replacementStr;
+        }
+
+        public Pattern getMatchPattern()
+        {
+            return _matchPattern;
+        }
+
+        public int getTokenGroupIndex()
+        {
+            return 1;
+        }
+
+        public Pattern getEscapedMatchPattern()
+        {
+            return _escapedMatchPattern;
+        }
+
+        public int getEscapedTokenGroupIndex()
+        {
+            return 2;
+        }
+    }
 
     public static ParamReplacementSvc get()
     {
@@ -71,6 +166,35 @@ public class ParamReplacementSvc
             throw new IllegalArgumentException("The ID of a replacement parameter must end with a ':'");
 
         _outputSubstitutions.put(rout.getId(), rout.getClass().getName());
+    }
+
+    public boolean isScriptWithValidReplacements(String text, List<String> errors)
+    {
+        return isScriptWithValidReplacements(text, errors, SubstitutionPattern.COMMENT) && isScriptWithValidReplacements(text, errors, SubstitutionPattern.INLINE);
+    }
+
+    public boolean isScriptWithValidReplacements(String text, List<String> errors, SubstitutionPattern pattern)
+    {
+        Matcher m = pattern.getMatchPattern().matcher(text);
+
+        while (m.find())
+        {
+            String value = m.group(pattern.getTokenGroupIndex());
+
+            if (!isValidReplacement(value, pattern))
+            {
+                errors.add("Invalid template, the replacement parameter: " + value + " is unknown.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean isValidReplacement(String value, SubstitutionPattern pattern)
+    {
+        if (INPUT_FILE_TSV.equals(value)) return true;
+
+        return fromToken(value) != null;
     }
 
     /**
@@ -93,19 +217,42 @@ public class ParamReplacementSvc
     }
 
     /**
-     * Returns a ParamReplacement from a replacement parameter of the form: <id><name>
-     */
-    public ParamReplacement getHandler(String token)
-    {
-        return fromToken(token);
-    }
-
-    /**
      * Finds all the replacement parameters for a given script block
      */
     public List<ParamReplacement> getParamReplacements(String script)
     {
-        return getParamReplacements(script, defaultScriptPattern);
+        List<ParamReplacement> params = getParamReplacements(script, SubstitutionPattern.COMMENT);
+        params.addAll(getParamReplacements(script, SubstitutionPattern.INLINE));
+        return params;
+    }
+
+    /**
+     * Finds all tokens for a given script block
+     */
+    public Set<String> tokens(String script)
+    {
+        // Preserving the order the tokens found is important
+        // TODO for script with both inline and comment params, ordering of tokens aren't guaranteed..
+        Set<String> tokens = getTokens(script, SubstitutionPattern.COMMENT);
+        tokens.addAll(getTokens(script, SubstitutionPattern.INLINE));
+
+        return tokens;
+    }
+
+    public Set<String> getTokens(String script, SubstitutionPattern pattern)
+    {
+        // Preserving the order the tokens found is important -- ${input1.txt} must be found before ${input2.txt}
+        Set<String> tokens = new LinkedHashSet<>();
+        Matcher m = pattern.getMatchPattern().matcher(script);
+
+        while (m.find())
+        {
+            String token = m.group(pattern.getTokenGroupIndex());
+            if (token != null && token.length() > 0)
+                tokens.add(token);
+        }
+
+        return tokens;
     }
 
     /**
@@ -113,16 +260,16 @@ public class ParamReplacementSvc
      *
      * @param pattern - the regular expression pattern for the replacements
      */
-    public List<ParamReplacement> getParamReplacements(String script, Pattern pattern)
+    public List<ParamReplacement> getParamReplacements(String script, SubstitutionPattern pattern)
     {
         List<ParamReplacement> params = new ArrayList<>();
         if (script != null)
         {
-            Matcher m = pattern.matcher(script);
+            Matcher m = pattern.getMatchPattern().matcher(script);
 
             while (m.find())
             {
-                ParamReplacement param = fromToken(m.group(1));
+                ParamReplacement param = fromToken(m.group(pattern.getTokenGroupIndex()));
                 if (param != null)
                     params.add(param);
             }
@@ -172,7 +319,8 @@ public class ParamReplacementSvc
      */
     public String processInputReplacement(String script, String replacementParam, String value) throws Exception
     {
-        return processInputReplacement(script, replacementParam, value, defaultScriptPattern);
+        String commentProcessedScript = processInputReplacement(script, replacementParam, value, SubstitutionPattern.COMMENT);
+        return processInputReplacement(commentProcessedScript, replacementParam, value, SubstitutionPattern.INLINE);
     }
 
     /**
@@ -180,14 +328,14 @@ public class ParamReplacementSvc
      *
      * @param pattern - the regular expression pattern for the replacements
      */
-    public String processInputReplacement(String script, String replacementParam, String replacementValue, Pattern pattern) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionPattern pattern) throws Exception
     {
-        Matcher m = pattern.matcher(script);
+        Matcher m = pattern.getMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
 
         while (m.find())
         {
-            String value = m.group(1);
+            String value = m.group(pattern.getTokenGroupIndex());
             if (replacementParam.equals(value))
             {
                 m.appendReplacement(sb, replacementValue);
@@ -203,9 +351,9 @@ public class ParamReplacementSvc
      */
     public String clearUnusedReplacements(String script) throws Exception
     {
-        return script.replaceAll(REPLACEMENT_PARAM, "");
+        return script.replaceAll(SubstitutionPattern.INLINE.getMatchPattern().pattern(), "");
     }
-            
+
     /**
      * Finds and processes all replacement parameters for a given script block. The
      * returned string will have all valid replacement references converted.
@@ -213,9 +361,14 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements) throws Exception
+    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, boolean isRStudio) throws Exception
     {
-        return processParamReplacement(script, parentDirectory, remoteParentDirectoryPath, outputReplacements, defaultScriptPattern);
+        if (isRStudio)
+        {
+            return script; //TODO transform inline to comment
+        }
+        String commentProcessedScript = processParamReplacement(script, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionPattern.COMMENT);
+        return processParamReplacement(commentProcessedScript, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionPattern.INLINE);
     }
 
     /**
@@ -226,14 +379,14 @@ public class ParamReplacementSvc
      * @param remoteParentDirectoryPath - the remote reference to this path if specified; may be null
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, Pattern pattern) throws Exception
+    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, SubstitutionPattern pattern) throws Exception
     {
-        Matcher m = pattern.matcher(script);
+        Matcher m = pattern.getMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
 
         while (m.find())
         {
-            ParamReplacement param = fromToken(m.group(1));
+            ParamReplacement param = fromToken(m.group(pattern.getTokenGroupIndex()));
             if (param != null)
             {
                 File resultFile = param.convertSubstitution(parentDirectory);
@@ -257,13 +410,21 @@ public class ParamReplacementSvc
                     }
                     _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile.getAbsolutePath() + "' to '" + resultFileName + "'");
                 }
+                String replacementStr = pattern.getReplacementStr(resultFileName, m.group(0), param.getName());
                 outputReplacements.add(param);
-                m.appendReplacement(sb, resultFileName);
+                m.appendReplacement(sb, replacementStr);
             }
         }
         m.appendTail(sb);
 
         return sb.toString();
+    }
+
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory) throws Exception
+    {
+        String commentProcessedScript = processHrefParamReplacement(report, script, parentDirectory, SubstitutionPattern.COMMENT);
+        return processHrefParamReplacement(report, commentProcessedScript, parentDirectory, SubstitutionPattern.INLINE);
+
     }
 
     /**
@@ -275,14 +436,14 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param pattern - the remote reference to this path if specified; may be null
      */
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory, Pattern pattern, int captureGroup) throws Exception
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionPattern pattern) throws Exception
     {
-        Matcher m = pattern.matcher(script);
+        Matcher m = pattern.getEscapedMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
 
         while (m.find())
         {
-            ParamReplacement param = fromToken(m.group(captureGroup));
+            ParamReplacement param = fromToken(m.group(pattern.getEscapedTokenGroupIndex()));
             if (param != null && HrefOutput.class.isInstance(param))
             {
                 HrefOutput href = (HrefOutput) param;
@@ -293,7 +454,12 @@ public class ParamReplacementSvc
                     href.addFile(file);
                     ScriptOutput o = href.renderAsScriptOutput(file);
                     if (null != o)
-                        m.appendReplacement(sb, o.getValue());
+                    {
+                        String outputValue = o.getValue();
+                        String replacementStr = pattern.getEscapedReplacementStr(outputValue, m.group(0), param.getName());
+                        m.appendReplacement(sb, replacementStr);
+                    }
+
                 }
             }
         }

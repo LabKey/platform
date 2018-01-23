@@ -56,14 +56,19 @@ public class ImageOutput extends AbstractParamReplacement
         super(id);
     }
 
+    protected String getExtension()
+    {
+        return "jpg";
+    }
+
     @Override
     protected File getSubstitution(File directory) throws Exception
     {
         File file;
         if (directory != null)
-            file = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg", directory);
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension(), directory);
         else
-            file = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg");
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result." + getExtension());
 
         addFile(file);
         return file;

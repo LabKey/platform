@@ -107,11 +107,7 @@ public class KnitrOutput extends HtmlOutput
             {
                 // replace all ${hrefout:<filename>} with the appropriate url
                 File reportDir = _report.getReportDir(this.getViewContext().getContainer().getId());
-                String htmlOut = ParamReplacementSvc.get().processHrefParamReplacement(
-                        _report,
-                        htmlIn,
-                        reportDir,
-                        Pattern.compile(ParamReplacementSvc.REPLACEMENT_PARAM_ESC), 2);
+                String htmlOut = ParamReplacementSvc.get().processHrefParamReplacement(_report, htmlIn, reportDir);
                 htmlOut = ParamReplacementSvc.get().processRelativeHrefReplacement(
                         _report,
                         htmlOut,

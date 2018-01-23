@@ -575,13 +575,13 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context) throws Exception
+    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
         File reportDir = getReportDir(context.getContainer().getId());
         RScriptEngine rengine = (RScriptEngine)engine;
         String localPath = getLocalPath(reportDir);
         String remoteRoot = rengine.getRemotePath(localPath);
-        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements);
+        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements, isRStudio);
     }
 
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
@@ -613,7 +613,7 @@ public class RReport extends ExternalScriptEngineReport
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     final File rScriptFile = new File(getReportDir(context.getContainer().getId()), rName + ".R");
 
-                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters, false);
+                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters, false, isRStudio);
 
                     try (PrintWriter pw = PrintWriters.getPrintWriter(rScriptFile))
                     {
