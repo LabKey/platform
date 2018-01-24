@@ -90,6 +90,7 @@ public class DataColumn extends DisplayColumn
         setFormatString(_displayColumn.getFormat());
         setTsvFormatString(_displayColumn.getTsvFormatString());
         setExcelFormatString(_displayColumn.getExcelFormatString());
+        setTextExpression(_displayColumn.getTextExpression());
         setDescription(_boundColumn.getDescription());
         _inputType = _boundColumn.getInputType();
         try
@@ -502,23 +503,10 @@ public class DataColumn extends DisplayColumn
         }
         else
         {
-            String formatted;
-            if (null != _format)
-            {
-                try
-                {
-                    formatted = PageFlowUtil.filter(_format.format(value));
-                }
-                catch (IllegalArgumentException e)
-                {
-                    LOG.warn("Unable to apply format, likely a SQL type mismatch between XML metadata and actual ResultSet");
-                    formatted = ConvertUtils.convert(value);
-                }
-            }
-            else if (getRequiresHtmlFiltering())
-                formatted = PageFlowUtil.filter(ConvertUtils.convert(value));
-            else
-                formatted = ConvertUtils.convert(value);
+            String formatted = formatValue(ctx, value, getTextExpressionCompiled(ctx), getFormat());
+
+            if (getRequiresHtmlFiltering())
+                formatted = PageFlowUtil.filter(formatted);
 
             if (formatted.length() == 0)
                 formatted = "&nbsp;";

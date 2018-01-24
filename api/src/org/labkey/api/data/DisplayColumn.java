@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -30,11 +31,9 @@ import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
@@ -59,6 +58,8 @@ import java.util.Set;
  */
 public abstract class DisplayColumn extends RenderColumn
 {
+    private static final Logger LOG = Logger.getLogger(DisplayColumn.class);
+
     protected String _textAlign = null;
     protected boolean _nowrap = false;
     protected String _width = "60";
@@ -67,6 +68,8 @@ public abstract class DisplayColumn extends RenderColumn
     protected String _excelFormatString = null;
     protected Format _format = null;
     protected Format _tsvFormat = null;
+    private StringExpression _textExpression = null;
+    private StringExpression _textExpressionCompiled = null;
     protected String _gridHeaderClass = "labkey-col-header-filter";
     private String _inputPrefix = "";
     private String _description = null;
@@ -236,6 +239,12 @@ public abstract class DisplayColumn extends RenderColumn
             Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _urlTitle).getFieldKeys();
             keys.addAll(fields);
         }
+
+        if (_textExpression instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _textExpression).getFieldKeys();
+            keys.addAll(fields);
+        }
     }
 
 
@@ -369,6 +378,30 @@ public abstract class DisplayColumn extends RenderColumn
         return _tsvFormat;
     }
 
+    public StringExpression getTextExpression()
+    {
+        return _textExpression;
+    }
+
+    public void setTextExpression(StringExpression expr)
+    {
+        _textExpression = expr;
+        _textExpressionCompiled = null;
+    }
+
+    public StringExpression getTextExpressionCompiled(RenderContext ctx)
+    {
+        if (_textExpressionCompiled == null)
+        {
+            if (_textExpression != null)
+            {
+                _textExpressionCompiled = _textExpression.copy();
+                if (_textExpressionCompiled instanceof HasViewContext)
+                    ((HasViewContext)_textExpressionCompiled).setViewContext(ctx.getViewContext());
+            }
+        }
+        return _textExpressionCompiled;
+    }
 
     /**
      * Format the display value as html for rendering within the DataRegion grid,
@@ -382,7 +415,7 @@ public abstract class DisplayColumn extends RenderColumn
     public String getFormattedValue(RenderContext ctx)
     {
         Format format = getFormat();
-        return formatValue(ctx, format);
+        return formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format);
     }
 
     /**
@@ -398,7 +431,7 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     /**
-     * Format the display value as text <i>only</i> if there is a format configured for
+     * Format the display value as text <i>only</i> if there is a text expression or format configured for
      * the display column (which includes any project date and number format settings),
      * otherwise return null.
      *
@@ -412,6 +445,10 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == value)
             return null;
 
+        StringExpression expr = getTextExpressionCompiled(ctx);
+        if (expr != null && expr.canRender(ctx.getFieldMap().keySet()))
+            return expr.eval(ctx);
+
         Format format = getFormat();
         if (null != format)
             return format.format(value);
@@ -420,18 +457,35 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
 
+    /**
+     * Render the value as text using the <code>expr</code> or <code>format</code> if provided without
+     * any html encoding.
+     */
     @NotNull
-    private String formatValue(RenderContext ctx, Format format)
+    protected final String formatValue(RenderContext ctx, Object value, StringExpression expr, Format format)
     {
-        Object value = getDisplayValue(ctx);
-
         if (null == value)
             return "";
 
-        if (null != format)
-            return format.format(value);
+        if (null != expr && expr.canRender(ctx.getFieldMap().keySet()))
+        {
+            return expr.eval(ctx);
+        }
+        else if (null != format)
+        {
+            try
+            {
+                return format.format(value);
+            }
+            catch (IllegalArgumentException e)
+            {
+                LOG.warn("Unable to apply format, likely a SQL type mismatch between XML metadata and actual ResultSet");
+                return ConvertUtils.convert(value);
+            }
+        }
         else if (value instanceof String)
             return (String)value;
+
         return ConvertUtils.convert(value);
     }
 
@@ -444,7 +498,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             format = getFormat();
         }
-        return formatValue(ctx, format);
+        return formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format);
     }
 
     public Object getExcelCompatibleValue(RenderContext ctx)

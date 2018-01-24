@@ -272,6 +272,24 @@ public class DisplayColumnDecorator extends DisplayColumn
         return _column.getTsvFormat();
     }
 
+    @Override
+    public StringExpression getTextExpression()
+    {
+        return _column.getTextExpression();
+    }
+
+    @Override
+    public void setTextExpression(StringExpression expr)
+    {
+        _column.setTextExpression(expr);
+    }
+
+    @Override
+    public StringExpression getTextExpressionCompiled(RenderContext ctx)
+    {
+        return _column.getTextExpressionCompiled(ctx);
+    }
+
     @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {

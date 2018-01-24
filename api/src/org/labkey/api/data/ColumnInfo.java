@@ -356,6 +356,7 @@ public class ColumnInfo extends ColumnRenderProperties
             setExcelFormatString(col.getExcelFormatString());
         if (col.getTsvFormatString() != null)
             setTsvFormatString(col.getTsvFormatString());
+        setTextExpression(col.getTextExpression());
         // Don't call the getter, because if it hasn't been explicitly set we want to
         // fetch the value lazily so we don't have to traverse FKs to get the display
         // field at this point.
@@ -1054,6 +1055,8 @@ public class ColumnInfo extends ColumnRenderProperties
             tsvFormatString = xmlCol.getTsvFormatString();
         if (xmlCol.isSetExcelFormatString())
             excelFormatString = xmlCol.getExcelFormatString();
+        if (xmlCol.isSetTextExpression())
+            textExpression = new FieldKeyStringExpression(xmlCol.getTextExpression().getStringValue(), false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.fromXML(xmlCol.getTextExpression().getReplaceMissing()));
         if (xmlCol.isSetTextAlign())
             textAlign = xmlCol.getTextAlign();
         if (xmlCol.isSetPropertyURI())
@@ -2054,6 +2057,7 @@ public class ColumnInfo extends ColumnRenderProperties
         }
 
         remapUrlFieldKeys(parent, remap);
+        remapTextExpressionFieldKeys(parent, remap);
         remapForeignKeyFieldKeys(parent, remap);
         remapSortFieldKeys(parent, remap);
         DisplayColumnFactory factory = getDisplayColumnFactory();
@@ -2062,13 +2066,23 @@ public class ColumnInfo extends ColumnRenderProperties
     }
 
 
-    protected void remapUrlFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
+    protected void remapUrlFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
     {
         StringExpression se = getURL();
         if (se instanceof FieldKeyStringExpression && se != AbstractTableInfo.LINK_DISABLER)
         {
             FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
             setURL(remapped);
+        }
+    }
+
+    protected void remapTextExpressionFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        StringExpression se = getTextExpression();
+        if (se instanceof FieldKeyStringExpression)
+        {
+            FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
+            setTextExpression(remapped);
         }
     }
 

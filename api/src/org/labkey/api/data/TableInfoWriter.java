@@ -141,6 +141,9 @@ public class TableInfoWriter
         if (null != column.getURL())
             columnXml.setUrl(column.getURL().toXML());
 
+        if (null != column.getTextExpression())
+            columnXml.setTextExpression(column.getTextExpression().toXML());
+
         if (!column.getImportAliasSet().isEmpty())
         {
             ColumnType.ImportAliases importAliasesXml = columnXml.addNewImportAliases();

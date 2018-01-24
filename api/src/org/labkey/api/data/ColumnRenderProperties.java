@@ -50,6 +50,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected String format;
     protected String excelFormatString;
     protected String tsvFormatString;
+    protected StringExpression textExpression;
     protected int scale = 0;
 
     protected String propertyURI;
@@ -98,6 +99,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.format = format;
         to.excelFormatString = excelFormatString;
         to.tsvFormatString = tsvFormatString;
+        to.textExpression = textExpression;
         to.label = label;
         to.shortLabel = shortLabel;
         to.description = description;
@@ -202,6 +204,16 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setTsvFormatString(String tsvFormatString)
     {
         this.tsvFormatString = tsvFormatString;
+    }
+
+    public StringExpression getTextExpression()
+    {
+        return textExpression;
+    }
+
+    public void setTextExpression(StringExpression expr)
+    {
+        this.textExpression = expr;
     }
 
     public String getLabel()
