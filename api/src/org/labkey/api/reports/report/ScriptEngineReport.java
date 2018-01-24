@@ -659,12 +659,13 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      */
     protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
     {
+        //TODO transform inline to comment syntax for RStudio
         if (includeProlog && (!StringUtils.isEmpty(script) || isRStudio))
             script = concatScriptProlog(engine, context, script == null ? "" : script, inputFile, inputParameters, isRStudio);
         if (!StringUtils.isEmpty(script))
         {
             if (inputFile != null)
-                script = processInputReplacement(engine, script, inputFile);
+                script = processInputReplacement(engine, script, inputFile, isRStudio);
             script = processOutputReplacements(engine, script, outputSubst, context, isRStudio);
         }
         return script;
@@ -685,9 +686,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
     }
 
-    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile) throws Exception
+    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio) throws Exception
     {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"));
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio);
     }
 
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception

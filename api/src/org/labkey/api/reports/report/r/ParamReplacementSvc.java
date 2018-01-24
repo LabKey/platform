@@ -62,15 +62,18 @@ public class ParamReplacementSvc
     private static final Pattern REGEX_PARAM_PATTERN = Pattern.compile(REGEX_PARAM_REGEX); /* Deprecated */
 
     // the default comment param replacement pattern : #${:} \n
-    public static final String COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM + "\\p{Space}+";
+    public static final String COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM + "[;]*\\p{Space}+";
     public static final Pattern COMMENT_LINE_PATTERN = Pattern.compile(COMMENT_LINE_REGEX);
-    public static final String COMMENT_BLOCK_PARAM = COMMENT_LINE_REGEX + "((\\p{Graph}+)|(\"\\p{Print}\"))\\p{Space}*";
-    public static final Pattern DEFAULT_COMMENT_PATTERN = Pattern.compile(COMMENT_BLOCK_PARAM);
+    public static final String COMMENT_REGEX_REGEX = "#\\p{Space}*\\$\\{(\\p{Print}*" + REGEX_PARAM_REGEX + ")\\p{Print}*\\}";
+    public static final String COMMENT_BLOCK_REGEX = COMMENT_LINE_REGEX + "(\\p{Print}+\"\\p{Print}+\")";
+    public static final String COMMENT_PARAM_REGEX = "(" + COMMENT_BLOCK_REGEX + ")|(" + COMMENT_REGEX_REGEX + ")";
+    public static final Pattern DEFAULT_COMMENT_PATTERN = Pattern.compile(COMMENT_PARAM_REGEX);
+
     // Enable #${} or equivalent escape sequences for {}.  Note that this
     // makes the match group 2 for the token name instead of 1
     public static final String ESC_COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM_ESC + "\\p{Space}+";
     public static final Pattern ESC_COMMENT_LINE_PATTERN = Pattern.compile(ESC_COMMENT_LINE_REGEX);
-    public static final String ESC_COMMENT_BLOCK_PARAM = ESC_COMMENT_LINE_REGEX + "((\\p{Graph}+)|(\"\\p{Print}\"))\\p{Space}*";
+    public static final String ESC_COMMENT_BLOCK_PARAM = ESC_COMMENT_LINE_REGEX + "(\\p{Print}+\"\\p{Print}+\")";
     public static final Pattern ESC_COMMENT_PATTERN = Pattern.compile(ESC_COMMENT_BLOCK_PARAM);
 
     private ParamReplacementSvc(){}
@@ -81,8 +84,8 @@ public class ParamReplacementSvc
                 {
                     public String getReplacementStr(String replacementStr, String fullMatchedString, String paramName, boolean useEscaped)
                     {
-                        if (fullMatchedString == null)
-                            return null;
+                        if (fullMatchedString == null || StringUtils.isEmpty(paramName)) // regex param don't have param name
+                            return "";
 
                         Pattern pattern = useEscaped ? ESC_COMMENT_LINE_PATTERN : COMMENT_LINE_PATTERN;
                         Matcher matcher = pattern.matcher(fullMatchedString);
@@ -90,9 +93,14 @@ public class ParamReplacementSvc
                         {
                             String commentLine = matcher.group(0);
                             if (!StringUtils.isEmpty(commentLine))
-                                return fullMatchedString.replace(commentLine, "").replace(paramName, replacementStr);
+                            {
+                                String replaced = fullMatchedString.replace(commentLine, "");
+                                commentLine = commentLine.replace(paramName, replacementStr).replace("$", "\\$");
+                                replaced = replaced.replace(paramName, replacementStr).replace("\\","\\\\"); // need to double escape for regex appendReplacement
+                                return commentLine + replaced;
+                            }
                         }
-                        return null;
+                        return "";
                     }
 
                     @Override
@@ -105,6 +113,15 @@ public class ParamReplacementSvc
                     public String getEscapedReplacementStr(String replacementStr, String fullMatchedString, String paramName)
                     {
                         return getReplacementStr(replacementStr, fullMatchedString, paramName, true);
+                    }
+
+                    @Override
+                    public String getTokenString(Matcher matcher)
+                    {
+                        String token = matcher.group(2); // regular param with comment and script lines
+                        if (StringUtils.isEmpty(token))
+                            token = matcher.group(5); // regex param
+                        return token;
                     }
                 },
         /**
@@ -136,9 +153,9 @@ public class ParamReplacementSvc
             return _matchPattern;
         }
 
-        public int getTokenGroupIndex()
+        public String getTokenString(Matcher matcher)
         {
-            return 1;
+            return matcher.group(1);
         }
 
         public Pattern getEscapedMatchPattern()
@@ -179,9 +196,9 @@ public class ParamReplacementSvc
 
         while (m.find())
         {
-            String value = m.group(pattern.getTokenGroupIndex());
+            String value = pattern.getTokenString(m);
 
-            if (!isValidReplacement(value, pattern))
+            if (!isValidReplacement(value))
             {
                 errors.add("Invalid template, the replacement parameter: " + value + " is unknown.");
                 return false;
@@ -190,9 +207,10 @@ public class ParamReplacementSvc
         return true;
     }
 
-    protected boolean isValidReplacement(String value, SubstitutionPattern pattern)
+    protected boolean isValidReplacement(String value)
     {
-        if (INPUT_FILE_TSV.equals(value)) return true;
+        if (INPUT_FILE_TSV.equals(value) || value.startsWith(INPUT_FILE_TSV + ":"))
+            return true;
 
         return fromToken(value) != null;
     }
@@ -247,7 +265,7 @@ public class ParamReplacementSvc
 
         while (m.find())
         {
-            String token = m.group(pattern.getTokenGroupIndex());
+            String token = pattern.getTokenString(m);
             if (token != null && token.length() > 0)
                 tokens.add(token);
         }
@@ -269,7 +287,7 @@ public class ParamReplacementSvc
 
             while (m.find())
             {
-                ParamReplacement param = fromToken(m.group(pattern.getTokenGroupIndex()));
+                ParamReplacement param = fromToken(pattern.getTokenString(m));
                 if (param != null)
                     params.add(param);
             }
@@ -314,19 +332,23 @@ public class ParamReplacementSvc
         return null;
     }
 
+    public String processInputReplacement(String script, String replacementParam, String value) throws Exception
+    {
+        return processInputReplacement(script, replacementParam, value, false);
+    }
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
      */
-    public String processInputReplacement(String script, String replacementParam, String value) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio) throws Exception
     {
-        String commentProcessedScript = processInputReplacement(script, replacementParam, value, SubstitutionPattern.COMMENT);
-        return processInputReplacement(commentProcessedScript, replacementParam, value, SubstitutionPattern.INLINE);
+        String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionPattern.COMMENT);
+        if (isRStudio)
+            return commentProcessedScript;
+        return processInputReplacement(commentProcessedScript, replacementParam, replacementValue, SubstitutionPattern.INLINE);
     }
 
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
-     *
-     * @param pattern - the regular expression pattern for the replacements
      */
     public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionPattern pattern) throws Exception
     {
@@ -335,10 +357,24 @@ public class ParamReplacementSvc
 
         while (m.find())
         {
-            String value = m.group(pattern.getTokenGroupIndex());
-            if (replacementParam.equals(value))
+            String matchedStr = pattern.getTokenString(m);
+            if (replacementParam.equals(matchedStr))
             {
                 m.appendReplacement(sb, replacementValue);
+            }
+            else
+            {
+                int idx = matchedStr.indexOf(':');
+                if (idx != -1)
+                {
+                    String id = matchedStr.substring(0, idx);
+                    String name = matchedStr.substring(idx + 1);
+                    if (replacementParam.equals(id))
+                    {
+                        String replacementStr = pattern.getReplacementStr(replacementValue, m.group(0), name);
+                        m.appendReplacement(sb, replacementStr);
+                    }
+                }
             }
         }
         m.appendTail(sb);
@@ -365,7 +401,7 @@ public class ParamReplacementSvc
     {
         if (isRStudio)
         {
-            return script; //TODO transform inline to comment
+            return script; // no output file param needs to be processed for RStudio report
         }
         String commentProcessedScript = processParamReplacement(script, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionPattern.COMMENT);
         return processParamReplacement(commentProcessedScript, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionPattern.INLINE);
@@ -386,7 +422,7 @@ public class ParamReplacementSvc
 
         while (m.find())
         {
-            ParamReplacement param = fromToken(m.group(pattern.getTokenGroupIndex()));
+            ParamReplacement param = fromToken(pattern.getTokenString(m));
             if (param != null)
             {
                 File resultFile = param.convertSubstitution(parentDirectory);

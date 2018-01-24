@@ -353,7 +353,15 @@ public class RReport extends ExternalScriptEngineReport
         if (inputFile != null && inputFile.exists())
         {
             labkey.append("labkey.debug.startReadLabkeyData <- Sys.time();\n");
-            labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
+            if (isRStudio) //TODO use new syntax for all r reports
+            {
+                labkey.append("# ${input_data:rStudioInputFileTsv};\n");
+                labkey.append("labkey.data <- read.table(\"rStudioInputFileTsv\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
+            }
+            else
+            {
+                labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
+            }
             labkey.append("labkey.debug.endReadLabkeyData <- Sys.time();\n");
         }
 
@@ -567,11 +575,11 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile) throws Exception
+    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio) throws Exception
     {
         RScriptEngine rengine = (RScriptEngine) engine;
         String remotePath = rengine.getRemotePath(inputFile);
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath, isRStudio);
     }
 
     @Override
