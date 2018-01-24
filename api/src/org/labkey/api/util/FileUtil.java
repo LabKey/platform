@@ -257,7 +257,7 @@ public class FileUtil
 
     public static URI createUri(String str)
     {
-        // TODO: a pain dealing with spaces and WIndows drive. File.toUri seems to handle it but URI.create finnicky
+        str = str.replaceAll("\\\\", "/");
         if (str.matches("[A-z]:/.*"))
             return new File(str).toURI();
         
