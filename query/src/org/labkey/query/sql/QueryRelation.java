@@ -223,7 +223,7 @@ public abstract class QueryRelation
 
     /**
      * Why RelationColumn??
-     * yes, it is similiar to ColumnInfo and I might have been able to make that work.  However,
+     * yes, it is similar to ColumnInfo and I might have been able to make that work.  However,
      * ColumnInfo's belong to TableInfo (not QueryRelation) and TableInfo's are not mutable,
      * I suppose I could have created a mutable TableInfo subclass, and wrapped schema tableinfos
      * with QueryTableInfo's etc... But I didn't. I have a light-weight class that wraps

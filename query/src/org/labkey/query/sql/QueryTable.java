@@ -621,13 +621,8 @@ public class QueryTable extends QueryRelation
             if (null != col.getMvColumnName())
                 addSuggestedColumn(suggested, col.getMvColumnName(), selectedColumnMap);
 
-            StringExpression se = col.getURL();
-            if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
-            {
-                Set<FieldKey> keys = ((StringExpressionFactory.FieldKeyStringExpression) se).getFieldKeys();
-                for (FieldKey key : keys)
-                    addSuggestedColumn(suggested, key, selectedColumnMap);
-            }
+            addSuggestedColumns(col.getURL(), suggested, selectedColumnMap);
+            addSuggestedColumns(col.getTextExpression(), suggested, selectedColumnMap);
 
             if (col.getFk() != null)
                 addSuggestedColumns(suggested, col.getFk().getSuggestedColumns(), selectedColumnMap);
@@ -661,6 +656,16 @@ public class QueryTable extends QueryRelation
         }
         suggested.removeAll(selected);
         return suggested;
+    }
+
+    private void addSuggestedColumns(StringExpression se, Set<RelationColumn> suggested, Map<FieldKey, RelationColumn> selectedColumnMap)
+    {
+        if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            Set<FieldKey> keys = ((StringExpressionFactory.FieldKeyStringExpression) se).getFieldKeys();
+            for (FieldKey key : keys)
+                addSuggestedColumn(suggested, key, selectedColumnMap);
+        }
     }
 
     private void addSelectedColumn(FieldKey key, TableColumn column)
