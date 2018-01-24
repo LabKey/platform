@@ -166,16 +166,14 @@
                 externalEditSettings = {};
                 externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
                 externalEditSettings.name = <%=q((String) externalConfig.get("name"))%>;
+                externalEditSettings.finishUrl = <%=q(externalConfig.get("finishUrl").toString())%>;
                 externalEditSettings.externalWindowTitle = <%=q(externalConfig.containsKey("externalWindowTitle") ? (String) externalConfig.get("externalWindowTitle"): "")%>;
 
-                <% if (externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")) { %>
-                    if ("true" != LABKEY.ActionURL.getParameter('skipExternalEditingCheck'))
-                    {
-                        externalEditSettings.isEditing = true;
-                        externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
-                        externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
-                    }
-                <% } %>
+            <% if (externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")) { %>
+                externalEditSettings.isEditing = true;
+                externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
+                externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
+           <% } %>
 
                 var externalEditWarning = '';
 

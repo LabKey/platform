@@ -15,6 +15,7 @@
  */
 package org.labkey.api.rstudio;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -74,6 +75,11 @@ public interface RStudioService
     }
 
     default Pair<String, String> getReportRStudioUrl(ViewContext viewContext, String entityId)
+    {
+        return null;
+    }
+
+    default ActionURL getFinishReportUrl(Container container, String entityId)
     {
         return null;
     }

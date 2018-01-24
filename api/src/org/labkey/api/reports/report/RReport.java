@@ -148,6 +148,7 @@ public class RReport extends ExternalScriptEngineReport
         {
             Map<String, Object> dockerRConfig = new HashMap<>();
             dockerRConfig.put("name", "RStudio");
+            dockerRConfig.put("finishUrl", rs.getFinishReportUrl(viewContext.getContainer(), getEntityId()));
             boolean isEditing = rs.isUserEditingReportInRStudio(viewContext.getUser(), getEntityId());
             dockerRConfig.put("editing", isEditing);
             Pair<String, String> externalEditor = rs.getReportRStudioUrl(viewContext, getEntityId());
@@ -156,8 +157,7 @@ public class RReport extends ExternalScriptEngineReport
             {
                 dockerRConfig.put("externalUrl", externalEditor.getKey());
                 dockerRConfig.put("redirectUrl", ReportUtil.getRunReportURL(viewContext, this, false)
-                        .addParameter("tabId", "Source")
-                        .addParameter("skipExternalEditingCheck", true));
+                        .addParameter("tabId", "Source"));
             }
 
             boolean isRDockerConfigured = false;
