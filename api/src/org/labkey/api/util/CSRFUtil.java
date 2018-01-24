@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
@@ -57,6 +58,11 @@ public class CSRFUtil
                 try
                 {
                     Cookie c = new Cookie(csrfName, csrf);
+                    // Issue 32938 - Make CSRF cookie secure (only sent by browser over HTTPS) when possible
+                    if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                    {
+                        c.setSecure(true);
+                    }
                     c.setPath(StringUtils.defaultIfEmpty(request.getContextPath(),"/"));
                     response.addCookie(c);
                 }
