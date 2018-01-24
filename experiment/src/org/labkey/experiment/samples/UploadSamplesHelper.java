@@ -399,7 +399,7 @@ public class UploadSamplesHelper
             {
                 Object value = map.get(dp.getPropertyURI());
 
-                if (value instanceof String)
+                if (value instanceof String && !StringUtils.isNumeric((String) value))
                 {
                     Object remapped;
 
