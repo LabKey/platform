@@ -712,9 +712,11 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     openExternalEditor : function (o) {
         this.readOnly = true;
         this.codeMirror.readOnly = true;
-        if (!this.openWindowOnce(o.externalUrl, o.externalWindowTitle))
+        var externalEditWindow = this.openWindowOnce(o.externalUrl, o.externalWindowTitle);
+        if (!externalEditWindow)
             return;
 
+        this.externalEditWindow = externalEditWindow;
         this.showExternalEditingDialog(o);
     },
 
@@ -765,21 +767,44 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             draggable: true,
             items:[{
                 xtype: 'box',
-                html: '<div style="margin: 10px;">Report is being edited in' + externalName +
+                html: '<div style="margin: 10px;">Report is being edited in ' + externalName +
                 '<br>' + externalName + ' may be in hidden window or tab. <br>' +
-                'Editing in LabKey is NOT recommended.</div>'
+                'When finished in ' + externalName + ' click "Edit in LabKey" below.' +
+                '<br>NOTE this will end your ' + externalName + ' session.</div>'
             }],
             buttonAlign: 'center',
             buttons: [{
                 text: 'Edit in LabKey',
                 onClick : function () {
-                    window.location = config.redirectUrl;
+                    if (me.externalEditWindow && me.externalEditWindow.location.href === config.externalUrl) {
+                        me.externalEditWindow.close();
+                    }
+                    Ext4.Ajax.request(
+                            {
+                                method: "POST",
+                                url: me.externalEditSettings.finishUrl,
+                                params: {
+                                    returnUrl: config.redirectUrl
+                                },
+                                success : function(resp, opt) {
+                                    var o = Ext4.decode(resp.responseText);
+
+                                    if (o.success) {
+                                        window.location = o.redirectUrl;
+                                    }
+                                    else {
+                                        LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+                                    }
+                                },
+                                failure : LABKEY.Utils.displayAjaxErrorResponse
+                            }
+                    )
                 }
             },{
                 text: 'Go to ' + externalName,
                 cls: 'external-editor-popup-btn',
                 onClick : function () {
-                    me.openWindowOnce(config.externalUrl, config.externalWindowTitle);
+                    me.externalEditWindow = me.openWindowOnce(config.externalUrl, config.externalWindowTitle);
                 }
             }]
         });
