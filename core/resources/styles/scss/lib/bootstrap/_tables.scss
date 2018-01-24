@@ -227,3 +227,12 @@ table {
     }
   }
 }
+
+
+.pk-table {
+  > thead {
+    td {
+      padding: 0 2px !important;
+    }
+  }
+}
