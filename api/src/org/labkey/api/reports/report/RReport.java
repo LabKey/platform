@@ -353,15 +353,8 @@ public class RReport extends ExternalScriptEngineReport
         if (inputFile != null && inputFile.exists())
         {
             labkey.append("labkey.debug.startReadLabkeyData <- Sys.time();\n");
-            if (isRStudio) //TODO use new syntax for all r reports
-            {
-                labkey.append("# ${input_data:rStudioInputFileTsv}\n");
-                labkey.append("labkey.data <- read.table(\"rStudioInputFileTsv\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
-            }
-            else
-            {
-                labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
-            }
+            labkey.append("# ${input_data:inputFileTsv}\n"); // labkey R comment syntax, not actual comment, don't drop
+            labkey.append("labkey.data <- read.table(\"inputFileTsv\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
             labkey.append("labkey.debug.endReadLabkeyData <- Sys.time();\n");
         }
 
@@ -816,8 +809,9 @@ public class RReport extends ExternalScriptEngineReport
         return getDescriptor().getProperty("dataRegionName") == null
             ? ""
             : "# This sample code returns the query data in tab-separated values format, which LabKey then\n" +
-                "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n" +
-                "write.table(labkey.data, file = \"${tsvout:tsvfile}\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
+                "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n\n" +
+                "# ${tsvout:tsvfile}\n" +
+                "write.table(labkey.data, file = \"tsvfile\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
     }
 
     @Override
