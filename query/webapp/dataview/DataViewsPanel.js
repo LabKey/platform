@@ -1440,6 +1440,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         url : LABKEY.ActionURL.buildURL('reports', 'editView.api'),
                         method : 'POST',
                         submitEmptyText : false,
+                        params  :  { 'X-LABKEY-CSRF': LABKEY.CSRF },
                         success : function() {
                             this.onEditSave();
                             editWindow.getEl().unmask();
