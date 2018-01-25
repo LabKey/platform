@@ -180,6 +180,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container);
 
+    TableInfo getTriggersTable(User user, Container container);
+
     boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     Integer getJobId(User u, Container c, String jobGUID);

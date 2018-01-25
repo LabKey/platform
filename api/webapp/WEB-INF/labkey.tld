@@ -245,8 +245,17 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>className</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>contextContent</name>
             <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>forceSmallContext</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
         </attribute>
         <attribute>
             <name>formGroup</name>

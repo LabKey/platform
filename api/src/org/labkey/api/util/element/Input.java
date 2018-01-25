@@ -77,6 +77,7 @@ public class Input extends DisplayElement
     private final String _className;
     private final String _contextContent;
     private final boolean _disabled;
+    private final boolean _forceSmallContext;
     private final Format _format;
     private final boolean _formGroup;
     private final String _id;
@@ -102,8 +103,9 @@ public class Input extends DisplayElement
     {
         _contextContent = builder._contextContent;
         _checked = builder._checked;
-        _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check" : builder._className;
+        _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check " + builder._className : builder._className;
         _disabled = builder._disabled == null ? false : builder._disabled;
+        _forceSmallContext = builder._forceSmallContext == null ? false : builder._forceSmallContext;
         _format = builder._format;
         _formGroup = builder._formGroup == null ? false : builder._formGroup;
         _id = builder._id;
@@ -149,6 +151,11 @@ public class Input extends DisplayElement
     public boolean isDisabled()
     {
         return _disabled;
+    }
+
+    public boolean isForceSmallContext()
+    {
+        return _forceSmallContext;
     }
 
     public Format getFormat()
@@ -306,7 +313,7 @@ public class Input extends DisplayElement
 
             doStateIcon(sb);
 
-            if (isHorizontal && StringUtils.isNotEmpty(getContextContent()))
+            if (isHorizontal && !isForceSmallContext() && StringUtils.isNotEmpty(getContextContent()))
                 doContextField(sb);
 
             // end wrapper for input group
@@ -392,7 +399,7 @@ public class Input extends DisplayElement
         if (getLabel() != null)
             sb.append(PageFlowUtil.filter(getLabel()));
 
-        if (Layout.INLINE.equals(getLayout()) && StringUtils.isNotEmpty(getContextContent()))
+        if ((Layout.INLINE.equals(getLayout()) || isForceSmallContext()) && StringUtils.isNotEmpty(getContextContent()))
             doContextField(sb);
 
         sb.append("</label> ");
@@ -433,7 +440,7 @@ public class Input extends DisplayElement
 
     protected void doContextField(StringBuilder sb)
     {
-        if (Layout.INLINE.equals(getLayout()))
+        if (Layout.INLINE.equals(getLayout()) || isForceSmallContext())
         {
             //not enough room when inline; context content hidden under '?' icon, tooltip shown on mouseover
             sb.append("<i class=\"fa fa-question-circle context-icon\" data-container=\"body\" data-tt=\"tooltip\" data-placement=\"top\" title=\"");
@@ -490,6 +497,7 @@ public class Input extends DisplayElement
         private String _className = "form-control";
         private String _contextContent;
         private Boolean _disabled;
+        private Boolean _forceSmallContext;
         private Format _format;
         private Boolean _formGroup;
         private String _id;
@@ -536,6 +544,12 @@ public class Input extends DisplayElement
         public T disabled(boolean disabled)
         {
             _disabled = disabled;
+            return (T)this;
+        }
+
+        public T forceSmallContext(boolean forceSmallContext)
+        {
+            _forceSmallContext = forceSmallContext;
             return (T)this;
         }
 

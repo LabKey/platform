@@ -26,6 +26,8 @@ public class InputTag extends SimpleTagBase
 {
     private Boolean checked;
     private String contextContent;
+    private String className;
+    private Boolean forceSmallContext;
     private Boolean formGroup;
     private String id;
     private Boolean isDisabled;
@@ -45,6 +47,11 @@ public class InputTag extends SimpleTagBase
     public void setChecked(Boolean checked)
     {
         this.checked = checked;
+    }
+
+    public void setClassName(String className)
+    {
+        this.className = className;
     }
 
     public void setIsDisabled(Boolean disabled)
@@ -70,6 +77,11 @@ public class InputTag extends SimpleTagBase
     public void setContextContent(String contextContent)
     {
         this.contextContent = contextContent;
+    }
+
+    public void setForceSmallContext(Boolean forceSmallContext)
+    {
+        this.forceSmallContext = forceSmallContext;
     }
 
     public void setFormGroup(Boolean formGroup)
@@ -138,6 +150,9 @@ public class InputTag extends SimpleTagBase
         else
             input = new Input.InputBuilder().type(type);
 
+        if (null == forceSmallContext)
+            forceSmallContext = false;
+
         if (null == checked)
             setChecked(false);
 
@@ -151,6 +166,8 @@ public class InputTag extends SimpleTagBase
             setIsReadOnly(false);
 
         input.contextContent(contextContent)
+            .className(className)
+            .forceSmallContext(forceSmallContext)
             .formGroup(formGroup)
             .id(id)
             .label(label)
