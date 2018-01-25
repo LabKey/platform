@@ -355,7 +355,7 @@ public class RReport extends ExternalScriptEngineReport
             labkey.append("labkey.debug.startReadLabkeyData <- Sys.time();\n");
             if (isRStudio) //TODO use new syntax for all r reports
             {
-                labkey.append("# ${input_data:rStudioInputFileTsv};\n");
+                labkey.append("# ${input_data:rStudioInputFileTsv}\n");
                 labkey.append("labkey.data <- read.table(\"rStudioInputFileTsv\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
             }
             else

@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.r;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ScriptOutput;
@@ -62,7 +63,7 @@ public class ParamReplacementSvc
     private static final Pattern REGEX_PARAM_PATTERN = Pattern.compile(REGEX_PARAM_REGEX); /* Deprecated */
 
     // the default comment param replacement pattern : #${:} \n
-    public static final String COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM + "[;]*\\p{Space}+";
+    public static final String COMMENT_LINE_REGEX = "#\\p{Space}*" + REPLACEMENT_PARAM + "\\p{Space}+";
     public static final Pattern COMMENT_LINE_PATTERN = Pattern.compile(COMMENT_LINE_REGEX);
     public static final String COMMENT_REGEX_REGEX = "#\\p{Space}*\\$\\{(\\p{Print}*" + REGEX_PARAM_REGEX + ")\\p{Print}*\\}";
     public static final String COMMENT_BLOCK_REGEX = COMMENT_LINE_REGEX + "(\\p{Print}+\"\\p{Print}+\")";
@@ -78,7 +79,7 @@ public class ParamReplacementSvc
 
     private ParamReplacementSvc(){}
 
-    public enum SubstitutionPattern
+    public enum SubstitutionSyntax
     {
         COMMENT(DEFAULT_COMMENT_PATTERN, ESC_COMMENT_PATTERN)
                 {
@@ -132,7 +133,7 @@ public class ParamReplacementSvc
         private final Pattern _matchPattern;
         private final Pattern _escapedMatchPattern;
 
-        SubstitutionPattern(Pattern matchPattern, Pattern escapedMatchPattern)
+        SubstitutionSyntax(Pattern matchPattern, Pattern escapedMatchPattern)
         {
             this._matchPattern = matchPattern;
             this._escapedMatchPattern = escapedMatchPattern;
@@ -187,10 +188,10 @@ public class ParamReplacementSvc
 
     public boolean isScriptWithValidReplacements(String text, List<String> errors)
     {
-        return isScriptWithValidReplacements(text, errors, SubstitutionPattern.COMMENT) && isScriptWithValidReplacements(text, errors, SubstitutionPattern.INLINE);
+        return isScriptWithValidReplacements(text, errors, SubstitutionSyntax.COMMENT) && isScriptWithValidReplacements(text, errors, SubstitutionSyntax.INLINE);
     }
 
-    public boolean isScriptWithValidReplacements(String text, List<String> errors, SubstitutionPattern pattern)
+    public boolean isScriptWithValidReplacements(String text, List<String> errors, SubstitutionSyntax pattern)
     {
         Matcher m = pattern.getMatchPattern().matcher(text);
 
@@ -239,8 +240,8 @@ public class ParamReplacementSvc
      */
     public List<ParamReplacement> getParamReplacements(String script)
     {
-        List<ParamReplacement> params = getParamReplacements(script, SubstitutionPattern.COMMENT);
-        params.addAll(getParamReplacements(script, SubstitutionPattern.INLINE));
+        List<ParamReplacement> params = getParamReplacements(script, SubstitutionSyntax.COMMENT);
+        params.addAll(getParamReplacements(script, SubstitutionSyntax.INLINE));
         return params;
     }
 
@@ -250,14 +251,14 @@ public class ParamReplacementSvc
     public Set<String> tokens(String script)
     {
         // Preserving the order the tokens found is important
-        // TODO for script with both inline and comment params, ordering of tokens aren't guaranteed..
-        Set<String> tokens = getTokens(script, SubstitutionPattern.COMMENT);
-        tokens.addAll(getTokens(script, SubstitutionPattern.INLINE));
+        // For script with both inline and deprecated comment params, ordering of tokens aren't guaranteed.
+        Set<String> tokens = getTokens(script, SubstitutionSyntax.COMMENT);
+        tokens.addAll(getTokens(script, SubstitutionSyntax.INLINE));
 
         return tokens;
     }
 
-    public Set<String> getTokens(String script, SubstitutionPattern pattern)
+    public Set<String> getTokens(String script, SubstitutionSyntax pattern)
     {
         // Preserving the order the tokens found is important -- ${input1.txt} must be found before ${input2.txt}
         Set<String> tokens = new LinkedHashSet<>();
@@ -278,7 +279,7 @@ public class ParamReplacementSvc
      *
      * @param pattern - the regular expression pattern for the replacements
      */
-    public List<ParamReplacement> getParamReplacements(String script, SubstitutionPattern pattern)
+    public List<ParamReplacement> getParamReplacements(String script, SubstitutionSyntax pattern)
     {
         List<ParamReplacement> params = new ArrayList<>();
         if (script != null)
@@ -341,16 +342,16 @@ public class ParamReplacementSvc
      */
     public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio) throws Exception
     {
-        String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionPattern.COMMENT);
+        String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionSyntax.COMMENT);
         if (isRStudio)
-            return commentProcessedScript;
-        return processInputReplacement(commentProcessedScript, replacementParam, replacementValue, SubstitutionPattern.INLINE);
+            return commentProcessedScript; // script has already been transformed from inline to comment, if any
+        return processInputReplacement(commentProcessedScript, replacementParam, replacementValue, SubstitutionSyntax.INLINE);
     }
 
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
      */
-    public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionPattern pattern) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionSyntax pattern) throws Exception
     {
         Matcher m = pattern.getMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
@@ -387,7 +388,7 @@ public class ParamReplacementSvc
      */
     public String clearUnusedReplacements(String script) throws Exception
     {
-        return script.replaceAll(SubstitutionPattern.INLINE.getMatchPattern().pattern(), "");
+        return script.replaceAll(SubstitutionSyntax.INLINE.getMatchPattern().pattern(), "");
     }
 
     /**
@@ -403,8 +404,8 @@ public class ParamReplacementSvc
         {
             return script; // no output file param needs to be processed for RStudio report
         }
-        String commentProcessedScript = processParamReplacement(script, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionPattern.COMMENT);
-        return processParamReplacement(commentProcessedScript, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionPattern.INLINE);
+        String commentProcessedScript = processParamReplacement(script, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionSyntax.COMMENT);
+        return processParamReplacement(commentProcessedScript, parentDirectory, remoteParentDirectoryPath, outputReplacements, SubstitutionSyntax.INLINE);
     }
 
     /**
@@ -415,7 +416,7 @@ public class ParamReplacementSvc
      * @param remoteParentDirectoryPath - the remote reference to this path if specified; may be null
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, SubstitutionPattern pattern) throws Exception
+    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, SubstitutionSyntax pattern) throws Exception
     {
         Matcher m = pattern.getMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
@@ -458,8 +459,8 @@ public class ParamReplacementSvc
 
     public String processHrefParamReplacement(Report report, String script, File parentDirectory) throws Exception
     {
-        String commentProcessedScript = processHrefParamReplacement(report, script, parentDirectory, SubstitutionPattern.COMMENT);
-        return processHrefParamReplacement(report, commentProcessedScript, parentDirectory, SubstitutionPattern.INLINE);
+        String commentProcessedScript = processHrefParamReplacement(report, script, parentDirectory, SubstitutionSyntax.COMMENT);
+        return processHrefParamReplacement(report, commentProcessedScript, parentDirectory, SubstitutionSyntax.INLINE);
 
     }
 
@@ -472,7 +473,7 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param pattern - the remote reference to this path if specified; may be null
      */
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionPattern pattern) throws Exception
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionSyntax pattern) throws Exception
     {
         Matcher m = pattern.getEscapedMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
@@ -595,4 +596,134 @@ public class ParamReplacementSvc
          }
          return outputSubstMap.values();
      }
+
+    public String transformInlineReplacements(String script)
+    {
+        // order of processing is important due to regex sensitivity differences
+        script = transformInlineReplacements(script, InlineTransformation.INPUT);
+        script = transformInlineReplacements(script, InlineTransformation.REGEX_OUTPUT);
+        return transformInlineReplacements(script, InlineTransformation.OUTPUT);
+    }
+
+    public String transformInlineReplacements(@NotNull String script, InlineTransformation transformation)
+    {
+        StringBuffer sb = new StringBuffer();
+        Matcher m = transformation.getMatchPattern().matcher(script);
+
+        int inputIndex = 0;
+        while (m.find())
+        {
+            String replacementStr;
+            if (transformation == InlineTransformation.INPUT)
+            {
+                replacementStr = transformation.getInputDataCommentSyntaxString(m, TRANSFORMED_INPUT_FILE_NAME_PREFIX + (++inputIndex));
+            }
+            else
+            {
+                replacementStr = transformation.getCommentSyntaxString(m);
+            }
+
+            if (!StringUtils.isEmpty(replacementStr)) // skip invalid param
+                m.appendReplacement(sb, replacementStr);
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    private static final String TRANSFORMED_INPUT_FILE_NAME_PREFIX = "rStudioInputFileName";
+    private static final String INLINE_INPUT_DATA_REGEX = "(?m)^[^#\\r\\n]*(\\$\\{input_data\\}).*$";
+    private static final String INLINE_REGEX_REGEX = "(?m)^[^#\\r\\n]*\\$\\{.*regex.*\\}.*$";
+    private static final String INLINE_OUTPUT_REGEX = "(?m)^[^#\\r\\n]*(" + REPLACEMENT_PARAM + ").*$";
+
+    private static final Pattern INLINE_INPUT_DATA_PATTERN = Pattern.compile(INLINE_INPUT_DATA_REGEX);
+    private static final Pattern INLINE_REGEX_PATTERN = Pattern.compile(INLINE_REGEX_REGEX);
+    private static final Pattern INLINE_OUTPUT_PATTERN = Pattern.compile(INLINE_OUTPUT_REGEX);
+
+    public enum InlineTransformation
+    {
+        INPUT(INLINE_INPUT_DATA_PATTERN)
+                {
+                    @Override
+                    String getCommentSyntaxString(Matcher matcher)
+                    {
+                        return getInputDataCommentSyntaxString(matcher, "inputFileTsv");
+                    }
+
+                    @Override
+                    String getInputDataCommentSyntaxString(Matcher matcher, String inputName)
+                    {
+                        String sourceLine = matcher.group(0);
+                        String inlineParam = matcher.group(1);
+                        String commentLine = "#${input_data:" + inputName + "}\n";
+                        commentLine = commentLine.replace("$", "\\$");
+                        sourceLine = sourceLine.replace(inlineParam, inputName).replace("\\","\\\\");
+                        return commentLine + sourceLine;
+                    }
+                },
+        REGEX_OUTPUT(INLINE_REGEX_PATTERN)
+                {
+                    @Override
+                    String getCommentSyntaxString(Matcher matcher)
+                    {
+                        String sourceLine = matcher.group(0);
+                        return ("#" + sourceLine).replace("$", "\\$");
+                    }
+                },
+        OUTPUT(INLINE_OUTPUT_PATTERN)
+                {
+                    @Override
+                    String getCommentSyntaxString(Matcher matcher)
+                    {
+                        String sourceLine = matcher.group(0);
+                        String inlineParam = matcher.group(1);
+                        String token = matcher.group(2);
+
+                        int idx = token.indexOf(':');
+                        if (idx != -1)
+                        {
+                            String id = token.substring(0, idx+1);
+                            String name = token.substring(idx+1);
+
+                            ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(id);
+                            if (param != null)
+                            {
+                                String tokenValue = name;
+                                if (name.indexOf('?') != -1)
+                                {
+                                    String[] parts = name.split("\\?");
+                                    if (parts.length == 2)
+                                    {
+                                        tokenValue = parts[0];
+                                    }
+                                }
+                                String commentLine = ("#" + inlineParam + "\n").replace("$", "\\$");
+                                sourceLine = sourceLine.replace(inlineParam, tokenValue).replace("\\","\\\\");
+                                return commentLine + sourceLine;
+                            }
+                        }
+
+                        return null;
+                    }
+                };
+
+        private final Pattern _matchPattern;
+
+        InlineTransformation(Pattern matchPattern)
+        {
+            this._matchPattern = matchPattern;
+        }
+
+        abstract String getCommentSyntaxString(Matcher matcher);
+
+        String getInputDataCommentSyntaxString(Matcher matcher, String inputName)
+        {
+            return null;
+        }
+
+        public Pattern getMatchPattern()
+        {
+            return _matchPattern;
+        }
+    }
+
 }
