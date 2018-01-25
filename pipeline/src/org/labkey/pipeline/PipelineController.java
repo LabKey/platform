@@ -108,7 +108,7 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
-import org.labkey.pipeline.api.PipelineRoot;
+import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
@@ -120,6 +120,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.Files;
 import java.text.ParseException;
@@ -1606,6 +1607,191 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class CreatePipelineTriggerAction extends FormViewAction<PipelineTriggerForm>
+    {
+        @Override
+        public URLHelper getSuccessURL(PipelineTriggerForm form)
+        {
+            if (form.getReturnUrl() != null)
+            {
+                try
+                {
+                    return new URLHelper(form.getReturnUrl());
+                }
+                catch (URISyntaxException e)
+                {
+                    return getContainer().getStartURL(getUser());
+                }
+            }
+
+            return getContainer().getStartURL(getUser());
+        }
+
+        @Override
+        public void validateCommand(PipelineTriggerForm form, Errors errors)
+        {
+
+            Map<String, Object> row = new HashMap<>();
+            row.put("RowId", form.getRowId());
+            row.put("Name", form.getName());
+            row.put("Description", form.getDescription());
+            row.put("Type", form.getType());
+            row.put("PipelineId", form.getPipelineTask());
+            row.put("Enabled", form.isEnabled());
+            row.put("Configuration", form.getConfigJson());
+            row.put("CustomConfiguration", form.getCustomConfigJson());
+
+            PipelineManager.validateTriggerConfiguration(row, getContainer(), errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+
+        @Override
+        public ModelAndView getView(PipelineTriggerForm form, boolean reshow, BindException errors)
+        {
+            if (form.getReturnUrl() == null)
+                form.setReturnUrl(getContainer().getStartURL(getUser()).toString());
+
+            return new JspView<>("/org/labkey/pipeline/createPipelineTrigger.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(PipelineTriggerForm form, BindException errors)
+        {
+            Map<String, Object> row = new HashMap<>();
+            row.put("RowId", form.getRowId());
+            row.put("Name", form.getName());
+            row.put("Description", form.getDescription());
+            row.put("Type", form.getType());
+            row.put("PipelineId", form.getPipelineTask());
+            row.put("Enabled", form.isEnabled());
+            row.put("Configuration", form.getConfigJson());
+            row.put("CustomConfiguration", form.getCustomConfigJson());
+
+            if (!errors.hasErrors())
+            {
+                try
+                {
+                    return PipelineManager.insertOrUpdateTriggerConfiguration(getUser(), getContainer(), row);
+                }
+                catch (Exception e)
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+    }
+
+    public static class PipelineTriggerForm
+    {
+        private Integer rowId;
+        private String returnUrl;
+
+        private String name;
+        private String description;
+        private String type;
+        private boolean enabled;
+        private String pipelineTask;
+        private String configJson;
+        private String customConfigJson;
+
+        public Integer getRowId()
+        {
+            return rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            this.rowId = rowId;
+        }
+
+        public String getReturnUrl()
+        {
+            return returnUrl;
+        }
+
+        public void setReturnUrl(String returnUrl)
+        {
+            this.returnUrl = returnUrl;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
+        }
+
+        public String getType()
+        {
+            return type;
+        }
+
+        public void setType(String triggerType)
+        {
+            this.type = triggerType;
+        }
+
+        public boolean isEnabled()
+        {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            this.enabled = enabled;
+        }
+
+        public String getPipelineTask()
+        {
+            return pipelineTask;
+        }
+
+        public void setPipelineTask(String pipelineTask)
+        {
+            this.pipelineTask = pipelineTask;
+        }
+
+        public String getConfigJson()
+        {
+            return configJson;
+        }
+
+        public void setConfigJson(String configJson)
+        {
+            this.configJson = configJson;
+        }
+
+        public String getCustomConfigJson()
+        {
+            return customConfigJson;
+        }
+
+        public void setCustomConfigJson(String customConfigJson)
+        {
+            this.customConfigJson = customConfigJson;
+        }
+    }
+
 /////////////////////////////////////////////////////////////////////////////
 //  Public URL interface to this controller
 
@@ -1662,6 +1848,19 @@ public class PipelineController extends SpringActionController
                 url.addParameter("asStudy", true);
 
             return addStartImportParameters(url, archiveFile, options, fromTemplateSourceFolder);
+        }
+
+        public ActionURL urlCreatePipelineTrigger(Container container, String pipelineId, @Nullable ActionURL returnUrl)
+        {
+            ActionURL url = new ActionURL(CreatePipelineTriggerAction.class, container);
+
+            if (pipelineId != null && !pipelineId.isEmpty())
+                url.addParameter("pipelineTask", pipelineId);
+
+            if (returnUrl != null)
+                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+
+            return url;
         }
 
         private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)

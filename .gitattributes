@@ -1252,6 +1252,7 @@ list/src/org/labkey/list/model/ListDef.java -text
 list/src/org/labkey/list/model/ListDefinitionImpl.java -text
 list/src/org/labkey/list/model/ListDomainKind.java -text
 list/src/org/labkey/list/model/ListEditorServiceImpl.java -text
+list/src/org/labkey/list/model/ListImportContext.java -text
 list/src/org/labkey/list/model/ListImporter.java -text
 list/src/org/labkey/list/model/ListItemImpl.java -text
 list/src/org/labkey/list/model/ListItm.java -text
@@ -1265,6 +1266,8 @@ list/src/org/labkey/list/model/ListServiceImpl.java -text
 list/src/org/labkey/list/model/ListTable.java -text
 list/src/org/labkey/list/model/ListWriter.java -text
 list/src/org/labkey/list/model/VarcharListDomainKind.java -text
+list/src/org/labkey/list/pipeline/ListReloadJob.java -text
+list/src/org/labkey/list/pipeline/ListReloadTask.java -text
 list/src/org/labkey/list/view/ListDefinitionForm.java -text
 list/src/org/labkey/list/view/ListImportServiceImpl.java -text
 list/src/org/labkey/list/view/ListItemAttachmentParent.java -text
@@ -1358,6 +1361,7 @@ pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-17.20-17.21.sq
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-0.00-14.20.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-15.30-16.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.20-17.30.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.30-17.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-10.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-10.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-14.10-14.11.sql -text
@@ -1368,6 +1372,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-17.20-17.21.sql
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-14.20.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-15.30-16.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.20-17.30.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.30-17.31.sql -text
 pipeline/schemas/pipelineTasks.xsd -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
@@ -1422,6 +1427,7 @@ pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
+pipeline/src/org/labkey/pipeline/createPipelineTrigger.jsp -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportJob.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportProvider.java -text

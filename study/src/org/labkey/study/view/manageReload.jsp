@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -30,60 +33,94 @@
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
 
     User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
+    boolean isPremiumModulePresent = ModuleLoader.getInstance().getModule("premium") != null;
 %>
-<labkey:form action="" method="post">
-    <table width="80%">
-        <%=formatMissedErrorsInTable("form", 2)%>
-        <tr>
-            <td colspan=2>A study can be configured to reload its data from the pipeline root, either manually or automatically at preset intervals:
-                <ul>
-                    <li><strong>Manual Reload:</strong> Check the "Allow Study Reload" box and set the "Reload Interval" to &lt;Never&gt; to
-                        configure the study for manual reload. A reload attempt can be initiated by an administrator
-                        clicking the "Attempt Reload Now" button below or by an external script invoking that same URL.</li>
-                    <li><strong>Automatic Reload:</strong> Check the "Allow Study Reload" box and set the "Reload Interval" to a time interval
-                        to configure the study for automatic reload. In this case, a reload is attempted automatically each
-                        time the specified interval elapses.</li>
-                </ul>
-                In either case, a reload attempt causes the server to locate a file named <strong>studyload.txt</strong> in the
-                pipeline root. If this file has changed (i.e., the file's modification time has changed) since the last
-                reload then the server will reload the study data from the pipeline.  For more information about the file
-                formats used see the <%=helpLink("importExportStudy", "Import/Export/Reload a Study documentation page")%>.
-            </td>
-        </tr>
-        <tr>
-            <td colspan=2>&nbsp;</td>
-        </tr>
-        <tr>
-            <th align="left" width=200>Allow Study Reload</th>
-            <td><input id="allowReload" name="allowReload" type="checkbox"<%=checked(allowReload)%> onchange="updateDisplay();"></td>
-        </tr>
-        <tr>
-            <th align="left" width=200>Reload Interval</th>
-            <td align="left"><select name="interval" id="interval"><%
-                for (ReloadInterval interval : ReloadInterval.values())
-                    if (interval.shouldDisplay())
-                        out.println("<option value=\"" + interval.getSeconds() + "\"" + (interval == currentInterval ? " selected>" : ">") + h(interval.getDropDownLabel()) + "</option>");
-            %>
-            </select></td>
-        </tr>
-        <tr>
-            <th align="left" width=200>Reload User</th>
-            <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getUser()))) : ""%></td>
-        </tr>
-        <tr>
-            <th align="left" width=200>Validate All Queries After Import</th>
-            <td><input id="queryValidation" type="checkbox" name="queryValidation" <%=checked(queryValidation)%>></td>
-        </tr>
-        <tr>
-            <td width=200>&nbsp;</td>
-            <td><%=allowReload ? PageFlowUtil.button("Attempt Reload Now").href(buildURL(StudyController.CheckForReload.class, "ui=1")).attributes("id=\"reloadNow\"") :
-                                 PageFlowUtil.button("Attempt Reload Now").href("javascript:void(0);").attributes("id=\"reloadNow\"") %></td>
-        </tr>
-        <tr>
-            <td><%= button("Update").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %></td>
-        </tr>
-    </table>
-</labkey:form>
+<labkey:panel>
+    <labkey:form action="" method="post">
+        <table width="65%">
+            <%=formatMissedErrorsInTable("form", 2)%>
+            <tr>
+                <td colspan=2>A study can be configured to reload its data from the pipeline root, either manually or automatically at preset intervals:
+                    <ul>
+                        <li><strong>Manual Reload:</strong> Check the "Allow Study Reload" box and set the "Reload Interval" to &lt;Never&gt; to
+                            configure the study for manual reload. A reload attempt can be initiated by an administrator
+                            clicking the "Attempt Reload Now" button below or by an external script invoking that same URL.</li>
+                        <li><strong>Automatic Reload:</strong> Check the "Allow Study Reload" box and set the "Reload Interval" to a time interval
+                            to configure the study for automatic reload. In this case, a reload is attempted automatically each
+                            time the specified interval elapses.</li>
+                    </ul>
+                    In either case, a reload attempt causes the server to locate a file named <strong>studyload.txt</strong> in the
+                    pipeline root. If this file has changed (i.e., the file's modification time has changed) since the last
+                    reload then the server will reload the study data from the pipeline.  For more information about the file
+                    formats used see the <%=helpLink("importExportStudy", "Import/Export/Reload a Study documentation page")%>.
+                </td>
+            </tr>
+            <tr>
+                <td colspan=2>&nbsp;</td>
+            </tr>
+            <tr>
+                <th align="left" width=200>Allow Study Reload</th>
+                <td><input id="allowReload" name="allowReload" type="checkbox"<%=checked(allowReload)%> onchange="updateDisplay();"></td>
+            </tr>
+            <tr>
+                <th align="left" width=200>Reload Interval</th>
+                <td align="left"><select name="interval" id="interval"><%
+                    for (ReloadInterval interval : ReloadInterval.values())
+                        if (interval.shouldDisplay())
+                            out.println("<option value=\"" + interval.getSeconds() + "\"" + (interval == currentInterval ? " selected>" : ">") + h(interval.getDropDownLabel()) + "</option>");
+                %>
+                </select></td>
+            </tr>
+            <tr>
+                <th align="left" width=200>Reload User</th>
+                <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getUser()))) : ""%></td>
+            </tr>
+            <tr>
+                <th align="left" width=200>Validate All Queries After Import</th>
+                <td><input id="queryValidation" type="checkbox" name="queryValidation" <%=checked(queryValidation)%>></td>
+            </tr>
+            <tr>
+                <td width=200>&nbsp;</td>
+                <td><%=allowReload ? PageFlowUtil.button("Attempt Reload Now").href(buildURL(StudyController.CheckForReload.class, "ui=1")).attributes("id=\"reloadNow\"") :
+                                     PageFlowUtil.button("Attempt Reload Now").href("javascript:void(0);").attributes("id=\"reloadNow\"") %></td>
+            </tr>
+            <tr>
+                <td><%= button("Update").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %></td>
+            </tr>
+        </table>
+    </labkey:form>
+</labkey:panel>
+<%
+    if (isPremiumModulePresent)
+    {
+%>
+    <labkey:panel>
+        <table width="65%">
+            <tr>
+                <td>
+                    <p>Additionally, a study can be configured to reload datasets and lists automatically when specific files are updated.</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "listReloadTask", getActionURL())%>">Create List Reload Trigger</a></p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "datasetReloadPipeline", getActionURL())%>">Create Dataset Reload Trigger</a></p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><a href="<%=PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")%>">Manage Reload Triggers</a></p>
+                </td>
+            </tr>
+        </table>
+    </labkey:panel>
+<%
+    }
+%>
 <script type="text/javascript">
     function updateDisplay()
     {

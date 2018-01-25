@@ -25,8 +25,8 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.AdminLinkManager;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.SpringModule;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -62,7 +62,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ListModule extends DefaultModule
+public class ListModule extends SpringModule
 {
     public String getName()
     {
@@ -105,7 +105,8 @@ public class ListModule extends DefaultModule
         AttachmentService.get().registerAttachmentType(ListItemType.get());
     }
 
-    public void doStartup(ModuleContext moduleContext)
+    @Override
+    public void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         AuditLogService.get().registerAuditType(new ListAuditProvider());
 

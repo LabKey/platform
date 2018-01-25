@@ -121,7 +121,7 @@ public class ListServiceImpl implements ListService
 
         try
         {
-            li.process(new FileSystemFile(dir), c, user, errorList, Logger.getLogger(ListController.class));
+            li.processMany(new FileSystemFile(dir), c, user, errorList, Logger.getLogger(ListController.class));
 
             for (String error : errorList)
                 errors.reject(ERROR_MSG, error);

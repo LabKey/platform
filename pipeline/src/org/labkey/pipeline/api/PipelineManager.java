@@ -15,10 +15,12 @@
  */
 package org.labkey.pipeline.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -31,11 +33,18 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
+import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
+import org.labkey.api.pipeline.trigger.PipelineTriggerType;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -44,23 +53,29 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.PipelineWebdavProvider;
 import org.labkey.pipeline.status.StatusController;
+import org.springframework.validation.Errors;
 
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
+import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -603,4 +618,115 @@ public class PipelineManager
             setPriority(21);
         }
     }
+
+    public static boolean insertOrUpdateTriggerConfiguration(User user, Container container, Map<String, Object> row) throws Exception
+    {
+        TableInfo ti = PipelineService.get().getTriggersTable(user, container);
+        QueryUpdateService qus = ti.getUpdateService();
+        List<Map<String, Object>> rowList = new LinkedList<>();
+        rowList.add(row);
+
+        if (qus != null)
+        {
+            if (row.get("RowId") != null)
+            {
+                rowList = qus.updateRows(user, container, rowList, null, null, null);
+            }
+            else
+            {
+                rowList = qus.insertRows(user, container, rowList, new BatchValidationException(), null, null);
+            }
+        }
+
+        return rowList.size() > 0;
+    }
+
+    public static void validateTriggerConfiguration(Map<String, Object> row, Container container, Errors errors)
+    {
+        Integer rowId = row.get("RowId") != null ? (Integer) row.get("RowId") : null;
+        String name = getStringFromRow(row, "Name");
+        String type = getStringFromRow(row, "Type");
+        String pipelineId = getStringFromRow(row, "PipelineId");
+        boolean isEnabled = Boolean.parseBoolean(row.get("Enabled").toString());
+
+        // validate that the config name is unique for this container
+        if (name != null)
+        {
+            Collection<PipelineTriggerConfig> existingConfigs = PipelineTriggerRegistry.get().getConfigs(container, null, name, false);
+            if (!existingConfigs.isEmpty())
+            {
+                for (PipelineTriggerConfig existingConfig : existingConfigs)
+                {
+                    if (rowId == null || !rowId.equals(existingConfig.getRowId()))
+                    {
+                        errors.rejectValue("Name", null, "\"A pipeline trigger configuration already exists in this container for the given name: \" + name");
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            errors.rejectValue("Name", null,  "A name is required for trigger configurations.");
+        }
+
+        // validate that the type is a valid registered PipelineTriggerType
+        PipelineTriggerType triggerType = PipelineTriggerRegistry.get().getTypeByName(type);
+        if (triggerType == null)
+            errors.rejectValue("Type", null, "Invalid pipeline trigger type:" + type);
+
+        // validate that the pipelineId is a valid TaskPipeline
+        try
+        {
+            PipelineJobService.get().getTaskPipeline(pipelineId);
+        }
+        catch (NotFoundException e)
+        {
+            errors.rejectValue("PipelineId", null, "Invalid pipeline task id: " + pipelineId);
+        }
+
+        // validate that the configuration values parse as valid JSON
+        Object configuration = row.get("Configuration");
+        validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors);
+
+        Object customConfiguration = row.get("CustomConfiguration");
+        if (customConfiguration != null && !customConfiguration.toString().equals(""))
+            validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true);
+    }
+
+    private static String getStringFromRow(Map<String, Object> row, String key)
+    {
+        return row.get(key) != null ? row.get(key).toString() : null;
+    }
+
+    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors)
+    {
+        validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors, false);
+    }
+
+    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly)
+    {
+        JSONObject json = null;
+        if (configuration != null)
+        {
+            try
+            {
+                ObjectMapper mapper = new ObjectMapper();
+                json = mapper.readValue(configuration.toString(), JSONObject.class);
+            }
+            catch (IOException e)
+            {
+                errors.reject("Invalid JSON object for the configuration field: " + e.toString());
+            }
+        }
+
+        // give the PipelineTriggerType a chance to validate the configuration JSON object
+        if (triggerType != null && !jsonValidityOnly)
+        {
+            List<Pair<String, String>> configErrors = triggerType.validateConfiguration(pipelineId, isEnabled, json);
+            for (Pair<String, String> msg : configErrors)
+                errors.rejectValue(msg.first, null, msg.second);
+        }
+    }
+
 }

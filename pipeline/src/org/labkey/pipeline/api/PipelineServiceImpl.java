@@ -669,6 +669,12 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
+    public TableInfo getTriggersTable(User user, Container container)
+    {
+        return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME);
+    }
+
+    @Override
     public boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
     {
         try{

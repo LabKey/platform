@@ -29,7 +29,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -45,6 +44,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -52,6 +52,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.list.pipeline.ListReloadTask;
 import org.labkey.list.xml.ListsDocument;
 
 import java.io.IOException;
@@ -72,18 +73,185 @@ import java.util.stream.Collectors;
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
-    private boolean _useMerge = false; //TODO: convert to use planned study reload context
+    private ListImportContext _importContext;
 
     public ListImporter(){
-
+        _importContext = new ListImportContext(null, false);
     }
 
-    public ListImporter(boolean useMerge)
+    public ListImporter(ListImportContext importContext)
     {
-        _useMerge = useMerge;
+        _importContext = importContext;
     }
 
-    public void process(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
+    public boolean processSingle(VirtualFile sourceDir, String fileName, Container c, User user, List<String> errors, Logger log) throws Exception
+    {
+        //Since we don't have a definition here, try to get one from the fileName & context
+
+        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        ListDefinition def = lists.get(FileUtil.getBaseName(fileName));
+
+        if (_importContext.getInputDataMap() != null)
+        {
+            for (Map.Entry<String, Pair<String, String>> entry : _importContext.getInputDataMap().entrySet())
+            {
+                if (entry.getKey().equals(fileName))
+                {
+                    Pair<String, String> dataKey = entry.getValue();
+                    if (dataKey.first.equals(ListReloadTask.LIST_NAME_KEY))
+                    {
+                        def = lists.get(dataKey.second);
+                    }
+                    else if (dataKey.first.equals(ListReloadTask.LIST_ID_KEY))
+                    {
+                        try
+                        {
+                            ListService.get().getList(c, Integer.parseInt(dataKey.second));
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            errors.add("Failed to parse list id from context. " +  e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return processSingle(sourceDir, def, fileName, false, c, user,  errors, log);
+    }
+
+    public boolean processSingle(VirtualFile sourceDir, ListDefinition def, String fileName, boolean hasXmlMetadata, Container c, User user, List<String> errors, Logger log) throws Exception
+    {
+        if (null != def)
+        {
+            try (InputStream stream = sourceDir.getInputStream(fileName))
+            {
+                if (null != stream)
+                {
+                    BatchValidationException batchErrors = new BatchValidationException();
+                    DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
+
+                    if (!hasXmlMetadata && !resolveDomainChanges(c, user, loader, def, log, errors))
+                    {
+                        log.warn("Skipping filed-based import of '" + def.getName() + "' due to domain resolution errors.");
+                        return false;
+                    }
+
+                    boolean supportAI = false;
+
+                    // Support for importing auto-incremented keys
+                    if (def.getKeyType().equals(KeyType.AutoIncrementInteger))
+                    {
+                        // Check that the key column is being provided, otherwise we'll generate the IDs for them
+                        ColumnDescriptor[] columns = loader.getColumns();
+                        for (ColumnDescriptor cd : columns)
+                        {
+                            if (cd.getColumnName().equalsIgnoreCase(def.getKeyName()))
+                            {
+                                supportAI = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    TableInfo ti = def.getTable(user);
+                    String tableName =  ListManager.get().getListTableName(ti);
+
+                    if (null != ti && null != tableName)
+                    {
+                        try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
+                        {
+                            if (!hasXmlMetadata)
+                            {
+                                QueryUpdateService qus = ti.getUpdateService();
+                                if (qus != null)
+                                {
+                                    int deletedRows = ti.getUpdateService().truncateRows(user, c, null, null);
+                                    log.info("Deleted " + deletedRows + " row(s) from list: " + def.getName() + " for reload preparation");
+                                }
+                            }
+
+                            // pre-process
+                            if (supportAI)
+                            {
+                                SqlDialect dialect = ti.getSqlDialect();
+
+                                if (dialect.isSqlServer())
+                                {
+                                    SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" ON\n");
+                                    new SqlExecutor(ti.getSchema()).execute(check);
+                                }
+                            }
+
+                            def.insertListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, false, _importContext.useMerge());
+
+                            for (ValidationException v : batchErrors.getRowErrors())
+                                errors.add(v.getMessage());
+
+                            if (supportAI)
+                            {
+                                SqlDialect dialect = ti.getSqlDialect();
+
+                                // If auto-increment based need to reset the sequence counter on the DB
+                                if (dialect.isPostgreSQL())
+                                {
+                                    String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
+                                    if (null != src)
+                                    {
+                                        String sequence = "";
+
+                                        int start = src.indexOf('\'');
+                                        int end = src.lastIndexOf('\'');
+
+                                        if (end > start)
+                                        {
+                                            sequence = src.substring(start + 1, end);
+                                            if (!sequence.toLowerCase().startsWith("list."))
+                                                sequence = "list." + sequence;
+                                        }
+
+                                        SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
+                                        keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
+                                        keyupdate.append("), 1), false);");
+                                        new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                    }
+                                }
+                                else if (dialect.isSqlServer())
+                                {
+                                    SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
+                                    new SqlExecutor(ti.getSchema()).execute(check);
+                                }
+                            }
+
+                            if (errors.isEmpty())
+                                transaction.commit();
+                        }
+                        finally
+                        {
+                            if (supportAI)
+                            {
+                                SqlDialect dialect = ti.getSqlDialect();
+
+                                if (dialect.isSqlServer())
+                                {
+                                    SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
+                                    new SqlExecutor(ti.getSchema()).execute(check);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new IllegalStateException("Table information not available for list: " + def.getName());
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void processMany(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
 
@@ -104,136 +272,12 @@ public class ListImporter
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
+            String legalName = FileUtil.makeLegalName(listName);
+            String fileName = legalName + "." + fileTypeMap.remove(legalName);
 
-            if (null != def)
+            if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
             {
-                //TODO: Will the file sans-lists.xml necessarily have a fileName that we generated via makeLegalName?
-                String legalName = FileUtil.makeLegalName(listName);
-                String fileName = legalName + "." + fileTypeMap.remove(legalName);
-
-                try (InputStream stream = listsDir.getInputStream(fileName))
-                {
-                    if (null != stream)
-                    {
-                        BatchValidationException batchErrors = new BatchValidationException();
-                        DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
-
-                        if (listXml == null && !resolveDomainChanges(c, user, loader, def, log, errors))
-                        {
-                            log.warn("Skipping filed-based import of '" + listName + "' due to domain resolution errors.");
-                            failedLists++;
-                            continue;
-                        }
-
-                        boolean supportAI = false;
-
-                        // Support for importing auto-incremented keys
-                        if (def.getKeyType().equals(KeyType.AutoIncrementInteger))
-                        {
-                            // Check that the key column is being provided, otherwise we'll generate the IDs for them
-                            ColumnDescriptor[] columns = loader.getColumns();
-                            for (ColumnDescriptor cd : columns)
-                            {
-                                if (cd.getColumnName().equalsIgnoreCase(def.getKeyName()))
-                                {
-                                    supportAI = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        TableInfo ti = def.getTable(user);
-                        String tableName =  ListManager.get().getListTableName(ti);
-
-                        if (null != ti && null != tableName)
-                        {
-                            try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
-                            {
-                                if (listXml == null)
-                                {
-                                    QueryUpdateService qus = ti.getUpdateService();
-                                    if (qus != null)
-                                    {
-                                        int deletedRows = ti.getUpdateService().truncateRows(user, c, null, null);
-                                        log.info("Deleted " + deletedRows + " row(s) from list: " + listName + " for reload preparation");
-                                    }
-                                }
-
-                                // pre-process
-                                if (supportAI)
-                                {
-                                    SqlDialect dialect = ti.getSqlDialect();
-
-                                    if (dialect.isSqlServer())
-                                    {
-                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" ON\n");
-                                        new SqlExecutor(ti.getSchema()).execute(check);
-                                    }
-                                }
-
-                                def.insertListItems(user, c, loader, batchErrors, listsDir.getDir(legalName), null, supportAI, false, _useMerge);
-
-                                for (ValidationException v : batchErrors.getRowErrors())
-                                    errors.add(v.getMessage());
-
-                                if (supportAI)
-                                {
-                                    SqlDialect dialect = ti.getSqlDialect();
-
-                                    // If auto-increment based need to reset the sequence counter on the DB
-                                    if (dialect.isPostgreSQL())
-                                    {
-                                        String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
-                                        if (null != src)
-                                        {
-                                            String sequence = "";
-
-                                            int start = src.indexOf('\'');
-                                            int end = src.lastIndexOf('\'');
-
-                                            if (end > start)
-                                            {
-                                                sequence = src.substring(start + 1, end);
-                                                if (!sequence.toLowerCase().startsWith("list."))
-                                                    sequence = "list." + sequence;
-                                            }
-
-                                            SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
-                                            keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
-                                            keyupdate.append("), 1), false);");
-                                            new SqlExecutor(ti.getSchema()).execute(keyupdate);
-                                        }
-                                    }
-                                    else if (dialect.isSqlServer())
-                                    {
-                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                                        new SqlExecutor(ti.getSchema()).execute(check);
-                                    }
-                                }
-
-                                if (errors.isEmpty())
-                                    transaction.commit();
-                            }
-                            finally
-                            {
-                                if (supportAI)
-                                {
-                                    SqlDialect dialect = ti.getSqlDialect();
-
-                                    if (dialect.isSqlServer())
-                                    {
-                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                                        new SqlExecutor(ti.getSchema()).execute(check);
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw new IllegalStateException("Table information not available for list: " + listName);
-                        }
-                    }
-                }
+                failedLists++;
             }
         }
 
@@ -398,7 +442,7 @@ public class ListImporter
 
             if (null != def)
             {
-                if (!_useMerge)
+                if (!_importContext.useMerge())
                 {
                     preferredListIds.add(def.getListId());
 

@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.trigger;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.util.Pair;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,7 +54,7 @@ public interface PipelineTriggerType<C extends PipelineTriggerConfig>
      * @return Error messages why the configuration is invalid for the given trigger type. Default empty list.
      */
     @NotNull
-    default List<String> validateConfiguration(String pipelineId, boolean isEnabled, JSONObject json)
+    default List<Pair<String, String>> validateConfiguration(String pipelineId, boolean isEnabled, JSONObject json)
     {
         return Collections.emptyList();
     }

@@ -144,6 +144,11 @@
           <className>org.labkey.api.data.JsonPrettyPrintDisplayColumnFactory</className>
         </displayColumnFactory>
       </column>
+      <column columnName="CustomConfiguration">
+        <displayColumnFactory>
+          <className>org.labkey.api.data.JsonPrettyPrintDisplayColumnFactory</className>
+        </displayColumnFactory>
+      </column>
       <column columnName="PipelineId">
           <isHidden>true</isHidden>
       </column>

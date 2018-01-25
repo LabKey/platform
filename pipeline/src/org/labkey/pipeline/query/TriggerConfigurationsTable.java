@@ -15,9 +15,8 @@
  */
 package org.labkey.pipeline.query;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AbstractTableInfo;
@@ -33,15 +32,15 @@ import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -49,16 +48,19 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.labkey.pipeline.api.PipelineSchema;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<PipelineQuerySchema>
 {
@@ -118,6 +120,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         cols.add(FieldKey.fromParts("Type"));
         cols.add(FieldKey.fromParts("PipelineTask"));
         cols.add(FieldKey.fromParts("Configuration"));
+        cols.add(FieldKey.fromParts("CustomConfiguration"));
         return cols;
     }
 
@@ -187,6 +190,9 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
     }
 
+    /**
+     * Note: context.xml files that set this property must reside in a module that extends {@link org.labkey.api.module.SpringModule}
+     */
     private class TaskPipelineForeignKey extends AbstractSelectListForeignKey
     {
         TaskPipelineForeignKey()
@@ -211,9 +217,47 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         }
 
         @Override
+        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+        {
+            List<Map<String, Object>> ret = new LinkedList<>();
+            for (Map<String, Object> row : rows)
+            {
+                try
+                {
+                    insertRow(user, container, row);
+                    ret.add(row);
+                }
+                catch (ValidationException e)
+                {
+                    errors.addRowError(e);
+                    ret.remove(row);
+                }
+            }
+            return ret;
+        }
+
+        @Override
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            List<Map<String, Object>> ret = new LinkedList<>();
+            for (Map<String, Object> row : rows)
+            {
+                try
+                {
+                    updateRow(user, container, row, row, false, true);
+                    ret.add(row);
+                }
+                catch (ValidationException e)
+                {
+                    ret.remove(row);
+                }
+            }
+            return ret;
+        }
+
+        @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            validateRow(row);
             Map<String, Object> newRow = super.insertRow(user, container, row);
             String name = getStringFromRow(newRow, "Name");
             startIfEnabled(container, name, newRow);
@@ -223,8 +267,6 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            validateRow(row);
-
             String name = getStringFromRow(oldRow, "Name");
             PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
 
@@ -268,80 +310,38 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             }
         }
 
-        private void validateRow(Map<String, Object> row) throws ValidationException
-        {
-            Integer rowId = row.get("RowId") != null ? (Integer) row.get("RowId") : null;
-            String name = getStringFromRow(row, "Name");
-            String type = getStringFromRow(row, "Type");
-            String pipelineId = getStringFromRow(row, "PipelineId");
-            boolean isEnabled = Boolean.parseBoolean(row.get("Enabled").toString());
-
-            List<ValidationError> validationErrors = new ArrayList<>();
-
-            // validate that the config name is unique for this container
-            if (name != null)
-            {
-                Collection<PipelineTriggerConfig> existingConfigs = PipelineTriggerRegistry.get().getConfigs(getContainer(), null, name, false);
-                if (!existingConfigs.isEmpty())
-                {
-                    for (PipelineTriggerConfig existingConfig : existingConfigs)
-                    {
-                        if (rowId == null || !rowId.equals(existingConfig.getRowId()))
-                        {
-                            validationErrors.add(new PropertyValidationError("A pipeline trigger configuration already exists in this container for the given name: " + name, "name"));
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // validate that the type is a valid registered PipelineTriggerType
-            PipelineTriggerType triggerType = PipelineTriggerRegistry.get().getTypeByName(type);
-            if (triggerType == null)
-                validationErrors.add(new PropertyValidationError("Invalid pipeline trigger type: " + type, "type"));
-
-            // validate that the pipelineId is a valid TaskPipeline
-            try
-            {
-                PipelineJobService.get().getTaskPipeline(pipelineId);
-            }
-            catch (NotFoundException e)
-            {
-                validationErrors.add(new PropertyValidationError("Invalid pipeline task id: " + pipelineId, "pipelineId"));
-            }
-
-            // validate that the configuration value parses as valid JSON
-            Object configuration = row.get("Configuration");
-            JSONObject json = null;
-            if (configuration != null)
-            {
-                try
-                {
-                    ObjectMapper mapper = new ObjectMapper();
-                    json = mapper.readValue(configuration.toString(), JSONObject.class);
-                }
-                catch (IOException e)
-                {
-                    validationErrors.add(new PropertyValidationError("Invalid JSON object for the configuration field: " + e.toString(), "configuration"));
-                }
-            }
-
-            // Finally, give the PipelineTriggerType a chance to validate the configuration JSON object
-            if (triggerType != null)
-            {
-                List<String> configErrors = triggerType.validateConfiguration(pipelineId, isEnabled, json);
-                for (String msg : configErrors)
-                    validationErrors.add(new PropertyValidationError(msg, "configuration"));
-            }
-
-            if (!validationErrors.isEmpty())
-                throw new ValidationException(validationErrors);
-        }
-
         private String getStringFromRow(Map<String, Object> row, String key)
         {
             return row.get(key) != null ? row.get(key).toString() : null;
         }
+    }
+
+
+    @Override
+    public boolean hasDetailsURL()
+    {
+        return false;
+    }
+
+    @Override
+    public StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container)
+    {
+        return DetailsURL.fromString(
+                "pipeline/createPipelineTrigger.view?rowId=${rowId}",
+                null,
+                StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
+    }
+
+    @Override
+    public ActionURL getInsertURL(Container container)
+    {
+        return new ActionURL(PipelineController.CreatePipelineTriggerAction.class, container);
+    }
+
+    @Override
+    public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
+    {
+        return getDetailsURL(columns, container);
     }
 
     private abstract class AbstractSelectListForeignKey extends AbstractForeignKey
