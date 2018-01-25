@@ -289,7 +289,7 @@
             <% if (null == template.getSearchScope()) { %>
             <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
             <% } %>
-            <% if (null == form.getTemplate()) { %>
+            <% if (null != form.getTemplate()) { %>
             <labkey:input type="hidden" name="template" value="<%=form.getTemplate()%>"/>
             <% } %>
             <input type="hidden" name="_dc" value="<%=Math.round(1000 * Math.random())%>">
