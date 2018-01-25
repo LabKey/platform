@@ -20,6 +20,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserPrincipal;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,6 +33,15 @@ import java.util.Set;
  */
 public class AdminPermission extends AbstractPermission
 {
+    final static Set<UserPrincipal> excludedPrincipals;
+    static
+    {
+        Set<UserPrincipal> principals = new HashSet<>();
+        principals.add(SecurityManager.getGroup(Group.groupGuests));
+        principals.add(SecurityManager.getGroup(Group.groupUsers));
+        excludedPrincipals = Collections.unmodifiableSet(principals);
+    }
+
     public AdminPermission()
     {
         this("Administrate", "Users may perform general administration");
@@ -46,9 +56,6 @@ public class AdminPermission extends AbstractPermission
     @Override
     public Set<UserPrincipal> getExcludedPrincipals()
     {
-        Set<UserPrincipal> principals = new HashSet<>();
-        principals.add(SecurityManager.getGroup(Group.groupGuests));
-        principals.add(SecurityManager.getGroup(Group.groupUsers));
-        return principals;
+        return excludedPrincipals;
     }
 }
