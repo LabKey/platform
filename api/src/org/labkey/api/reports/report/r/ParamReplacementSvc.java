@@ -96,8 +96,8 @@ public class ParamReplacementSvc
                             if (!StringUtils.isEmpty(commentLine))
                             {
                                 String replaced = fullMatchedString.replace(commentLine, "");
-                                commentLine = commentLine.replace(paramName, replacementStr).replace("$", "\\$");
-                                replaced = replaced.replace(paramName, replacementStr).replace("\\","\\\\"); // need to double escape for regex appendReplacement
+                                commentLine = commentLine.replaceFirst(":" + paramName, ":" + replacementStr).replace("$", "\\$");
+                                replaced = replaced.replaceFirst("\"" + paramName + "\"", "\"" + replacementStr + "\"").replace("\\","\\\\"); // need to double escape for regex appendReplacement
                                 return commentLine + replaced;
                             }
                         }
