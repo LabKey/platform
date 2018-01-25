@@ -16,6 +16,39 @@ if (!Ext4.Ajax.defaultHeaders) {
 Ext4.apply(Ext4.Ajax.defaultHeaders, LABKEY.defaultHeaders);
 
 /**
+ * Override basic submit function to add CSRF (and other LabKey default headers) to Ext4 standardsubmit submits.
+ * This is needed because the AJAX default headers are ignored in these submits.
+ * Issue 32481: Insert/update of attachment report doesn't work with "All POST requests" CSRF setting
+ */
+Ext4.override(Ext4.form.Basic, {
+    submit: function(options) {
+        options = options || {};
+        var me = this,
+            action;
+
+        if (options.standardSubmit || me.standardSubmit) {
+            action = 'standardsubmit';
+            // Begin patch
+            var params = {};
+            for (var headerName in LABKEY.defaultHeaders) {
+                if (LABKEY.defaultHeaders.hasOwnProperty(headerName)) {
+                    params[headerName] = LABKEY.defaultHeaders[headerName];
+                }
+            }
+            if(options.params)
+                Ext4.merge(options.params, params);
+            else
+                options.params = params;
+            // End patch
+        } else {
+            action = me.api ? 'directsubmit' : 'submit';
+        }
+
+        return me.doAction(action, options);
+    }
+});
+
+/**
  * @Override
  * Issue 22272: Fix IE 11 detection in ExtJS 4.2.1
  * http://stackoverflow.com/questions/21881671/ext-isie-return-false-in-ie-11
