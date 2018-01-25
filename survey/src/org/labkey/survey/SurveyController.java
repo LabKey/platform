@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiQueryResponse;
@@ -523,7 +524,14 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     DbSchema dbschema = table.getSchema();
                     try (DbScope.Transaction transaction = dbschema.getScope().ensureTransaction())
                     {
-                        TableViewForm tvf = new TableViewForm(table);
+                        TableViewForm tvf = new TableViewForm(table)
+                        {
+                            @Override
+                            public String getFormFieldName(@NotNull ColumnInfo column)
+                            {
+                                return column.getName();
+                            }
+                        };
                         Survey survey = getSurvey(form);
 
                         tvf.setViewContext(getViewContext());
@@ -850,7 +858,14 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 // if the column is an attachment type, it only allows a single file per question (this is the basic case)
                                 if (col != null && col.getJavaClass() == File.class)
                                 {
-                                    TableViewForm tvf = new TableViewForm(table);
+                                    TableViewForm tvf = new TableViewForm(table)
+                                    {
+                                        @Override
+                                        public String getFormFieldName(@NotNull ColumnInfo column)
+                                        {
+                                            return column.getName();
+                                        }
+                                    };
 
                                     tvf.setViewContext(getViewContext());
 
@@ -867,34 +882,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                     response.put("success", !row.isEmpty());
                                     response.put("value", row.get(form.getQuestionName()));
                                 }
-
-/*
-                                if (form.getEntityId() == null)
-                                {
-                                    // create an entity id so we can associate attachments with this question
-                                    form.setEntityId(GUID.makeGUID());
-
-                                    TableViewForm tvf = new TableViewForm(table);
-
-                                    tvf.setViewContext(getViewContext());
-//                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)form.getEntityId()), false);
-
-                                    AttachmentFile af = files.get(0);
-                                    tvf.setTypedValues(Collections.singletonMap(form.getQuestionName(), (Object)af), false);
-
-                                    // add the survey answer row pk
-                                    Map<String, Object> keys = new HashMap<String, Object>();
-                                    keys.put(pk.toString(), survey.getResponsesPk());
-                                    tvf.setOldValues(keys);
-
-                                    Map<String, Object> row = doInsertUpdate(tvf, errors, survey.isNew());
-                                    response.put("success", row.isEmpty());
-                                }
-
-                                // and save the attachments
-                                SurveyQuestion question = new SurveyQuestion(getContainer().getId(), form.getEntityId());
-                                AttachmentService.get().addAttachments(question, files, getUser());
-*/
                                 transaction.commit();
                             }
                        }
