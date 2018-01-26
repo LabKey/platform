@@ -239,6 +239,12 @@ public class CoreController extends SpringActionController
         {
             return new ActionURL(ProjectsAction.class, c);
         }
+
+        @Override
+        public ActionURL getPermissionsURL(@NotNull Container c)
+        {
+            return new ActionURL(SecurityController.PermissionsAction.class, c);
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction
