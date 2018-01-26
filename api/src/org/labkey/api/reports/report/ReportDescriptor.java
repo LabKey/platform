@@ -691,6 +691,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             descriptor.setReportName(d.getReportName());
             descriptor.setReportKey(d.getReportKey());
             descriptor.setHidden(d.getHidden());
+            descriptor.setDisplayOrder(d.getDisplayOrder());
 
             if (d.isSetAttachmentDir())
                 descriptor.setProperty(Prop.serializedReportName, d.getAttachmentDir());
