@@ -715,8 +715,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     @NotNull
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.addAll(_clientDependencies);
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>(_clientDependencies);
 
         //include resources of nested views
         if (_views != null)

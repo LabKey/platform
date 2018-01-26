@@ -103,7 +103,6 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
 
     @Override
     public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
         throw new UnsupportedOperationException("truncate is not supported for all tables");
     }
@@ -113,5 +112,4 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     {
         return super.createImportDIB(user, container, data, context);
     }
-
 }

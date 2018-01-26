@@ -1360,7 +1360,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      * Returns the non-unique title for this Container, or the Container's name if a title is not set
      * @return the title
      */
-    public String getTitle()
+    public @NotNull String getTitle()
     {
         return null != _title ? _title : getName();
     }
