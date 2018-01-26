@@ -168,11 +168,16 @@
         if (!menus) {
             menus = {};
         }
+        var menuCache = {};
         $('[data-webpart]').on('show.bs.dropdown show.bs.mobiledrop', function() {
             var partName = $(this).data('name');
-            var safeName = $(this).data('webpart');
+            if (menuCache[partName]) {
+                return;
+            }
 
+            var safeName = $(this).data('webpart');
             var target = $(this).find('.dropdown-menu');
+
             if (target.length === 0) {
                 target = $(this).parent().next('.dropdown-menu')
             }
@@ -190,7 +195,7 @@
                     frame: 'none',
                     failure  : function(response) {
                         // Show a better error to the user than just a generic Unauthorized dialog
-                        if (response.status == 401) {
+                        if (response.status === 401) {
                             document.getElementById(id).innerHTML = '<div style="padding: 5px">You do not have permission to view this data. You have likely been logged out.'
                                     + (this.loginUrl != null ? ' Please <a href="' + this.loginUrl + '">log in</a> again.' : ' Please <a href="#" onclick="location.reload();">reload</a> the page.') + "</div>";
                         }
@@ -199,7 +204,7 @@
                                 window.console.log(response);
                             }
                         }
-                    },
+                    }
                 };
 
                 if (menus[safeName]) {
@@ -230,6 +235,7 @@
                 }
 
                 var wp = new LABKEY.WebPart(config);
+                menuCache[partName] = wp;
                 wp.render();
                 $(this).unbind('click');
             }
