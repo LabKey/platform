@@ -395,11 +395,6 @@ public class ListDefinitionImpl implements ListDefinition
 
             transaction.commit();
         }
-        catch (SQLException e) //issue 12162
-        {
-            processSqlException(e);
-            throw e;
-        }
         catch (RuntimeSQLException e)
         {
             processSqlException(e.getSQLException());

@@ -52,7 +52,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.ArrayList;
@@ -82,7 +81,7 @@ public class PageTemplate extends JspView<PageConfig>
     protected PageTemplate(String template, ViewContext context, Container c, ModelAndView body, PageConfig page)
     {
         this(template, page);
-        buildWarnings(context, page);
+        buildWarnings(page);
 
         setBody(body);
         setView("bodyTemplate", getBodyTemplate(page, body));
@@ -172,7 +171,7 @@ public class PageTemplate extends JspView<PageConfig>
 
     }
 
-    private void buildWarnings(ViewContext context, PageConfig page)
+    private void buildWarnings(PageConfig page)
     {
         User user = getViewContext().getUser();
         Container container = getViewContext().getContainer();
@@ -297,21 +296,18 @@ public class PageTemplate extends JspView<PageConfig>
 
     public static class NavigationModel
     {
-        public PageConfig page;
-
-        private LinkedHashSet<ClientDependency> _clientDependencies;
-        private ViewContext _context;
-        private List<Portal.WebPart> _menus;
+        private final PageConfig _page;
+        private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+        private final ViewContext _context;
+        private final List<Portal.WebPart> _menus;
 
         private static final Logger LOG = Logger.getLogger(NavigationModel.class);
 
         private NavigationModel(ViewContext context, PageConfig page)
         {
-            this._context = context;
-            this.page = page;
-
-            this._clientDependencies = new LinkedHashSet<>();
-            this._menus = initMenus();
+            _context = context;
+            _page = page;
+            _menus = initMenus();
         }
 
         private void addClientDependencies(LinkedHashSet<ClientDependency> dependencies)
@@ -338,7 +334,7 @@ public class PageTemplate extends JspView<PageConfig>
             if (null != p)
             {
                 projectTitle = p.getTitle();
-                if (null != projectTitle && projectTitle.equalsIgnoreCase("home"))
+                if (projectTitle.equalsIgnoreCase("home"))
                     projectTitle = "Home";
             }
 
@@ -348,10 +344,10 @@ public class PageTemplate extends JspView<PageConfig>
         @NotNull
         public List<NavTree> getTabs()
         {
-            if (null == page.getAppBar())
+            if (null == _page.getAppBar())
                 return Collections.emptyList();
 
-            return page.getAppBar().getButtons();
+            return _page.getAppBar().getButtons();
         }
 
         @NotNull
@@ -468,23 +464,23 @@ public class PageTemplate extends JspView<PageConfig>
     // For now, gives a central place to render messaging
     public static String renderSiteMessages(PageConfig page)
     {
-        String messages = "";
+        StringBuilder messages = new StringBuilder();
         int size = page.getWarningMessages().size();
         if (size > 0)
         {
-            messages += "<div class=\"alert alert-warning\" role=\"alert\">";
+            messages.append("<div class=\"alert alert-warning\" role=\"alert\">");
 
             if (size == 1)
-                messages += page.getWarningMessages().get(0) + "</div>";
+                messages.append(page.getWarningMessages().get(0)).append("</div>");
             else
             {
-                messages += "<ul>";
+                messages.append("<ul>");
                 for (String msg : page.getWarningMessages())
-                    messages += "<li>" + msg + "</li>";
-                messages += "</ul></div>";
+                    messages.append("<li>").append(msg).append("</li>");
+                messages.append("</ul></div>");
             }
         }
-        return messages;
+        return messages.toString();
     }
 
     @Override

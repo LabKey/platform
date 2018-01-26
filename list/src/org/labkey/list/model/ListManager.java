@@ -74,7 +74,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,7 +181,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
-    public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds) throws SQLException
+    public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds)
     {
         Container c = def.lookupContainer();
         if (null == c)
@@ -712,7 +711,7 @@ public class ListManager implements SearchService.DocumentProvider
                 new TableSelector(ti).setForDisplay(true).forEachResults(new ForEachBlock<Results>()
                 {
                     @Override
-                    public void exec(Results results) throws SQLException, StopIteratingException
+                    public void exec(Results results) throws StopIteratingException
                     {
                         data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
                         if (data.length() > SearchService.FILE_SIZE_LIMIT)
@@ -935,7 +934,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
         TableInfo listTable = getListMetadataTable();
         DbScope scope = listTable.getSchema().getScope();
@@ -1169,7 +1168,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         @Test
-        public void testListServiceInOwnFolder() throws Exception
+        public void testListServiceInOwnFolder()
         {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
             assertTrue("Test List not found in own container", lists.containsKey(LIST_NAME));
