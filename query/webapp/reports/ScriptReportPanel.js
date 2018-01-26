@@ -784,7 +784,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 method: "POST",
                                 url: me.externalEditSettings.finishUrl,
                                 params: {
-                                    returnUrl: config.redirectUrl
+                                    returnUrl: config.redirectUrl,
+                                    entityId: config.entityId
                                 },
                                 success : function(resp, opt) {
                                     var o = Ext4.decode(resp.responseText);

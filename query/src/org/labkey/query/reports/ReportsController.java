@@ -1657,6 +1657,7 @@ public class ReportsController extends SpringActionController
                 response.put("externalWindowTitle", externalEditor.getValue());
                 response.put("redirectUrl", ReportUtil.getRunReportURL(getViewContext(), report, false)
                         .addParameter("tabId", "Source"));
+                response.put("entityId", report.getEntityId());
             }
             return response;
         }
