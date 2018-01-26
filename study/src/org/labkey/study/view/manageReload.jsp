@@ -103,17 +103,17 @@
             </tr>
             <tr>
                 <td>
-                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "listReloadTask", getActionURL())%>">Create List Reload Trigger</a></p>
+                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "listReloadTask", getActionURL())%>">Create list reload trigger</a></p>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "datasetReloadPipeline", getActionURL())%>">Create Dataset Reload Trigger</a></p>
+                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "datasetReloadPipeline", getActionURL())%>">Create dataset reload trigger</a></p>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <p><a href="<%=PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")%>">Manage Reload Triggers</a></p>
+                    <p><a href="<%=PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")%>">Manage reload triggers</a></p>
                 </td>
             </tr>
         </table>

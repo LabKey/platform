@@ -65,7 +65,7 @@
                         var paramObject = configObj[k];
                         for (var key in paramObject) {
                             if (paramObject.hasOwnProperty(key)) {
-                                var keyName = key.startsWith("pipeline,") ? key.slice(9).trim() : key;
+                                var keyName = key.indexOf("pipeline,") === 0 ? key.slice(9).trim() : key;
                                 jQuery("input[name='" + keyName + "']").val(paramObject[key]);
                             }
                         }
@@ -255,7 +255,7 @@
                               type="number"
                               value="1"
                               forceSmallContext="true"
-                              contextContent="number of seconds to wait after file activity before executing a job (minimum is 1)."/>
+                              contextContent="Number of seconds to wait after file activity before executing a job (minimum is 1)."/>
 
                 <labkey:input name ="move"
                               className="form-control lk-pipeline-input"
@@ -297,7 +297,8 @@
                 <div style="margin-bottom: 20px">
                     <h4><a href="#details"><i class="fa fa-arrow-left" aria-hidden="true"></i> Edit details</a></h4>
                 </div>
-                <labkey:button text="Save" submit="true" id="btnSubmit"/>
+                <%--<labkey:button text="Save" id="btnSubmit"/>--%>
+                <%= button("Save").id("btnSubmit") %>
                 <%= button("Cancel").href(bean.getReturnUrl()).id("btnCancel") %>
             </div>
         </div>
