@@ -112,9 +112,6 @@ public class AuthFilter implements Filter
             }
         }
 
-        // allow CSRFUtil early access to req/resp if it wants to write cookies
-        CSRFUtil.getExpectedToken(req, resp);
-
         // No startup failure, so check for SSL redirection
         if (!req.getScheme().equalsIgnoreCase("https") && AppProps.getInstance().isSSLRequired())
         {
@@ -151,6 +148,9 @@ public class AuthFilter implements Filter
             resp.sendRedirect(url.toString());
             return;
         }
+
+        // allow CSRFUtil early access to req/resp if it wants to write cookies
+        CSRFUtil.getExpectedToken(req, resp);
 
         // Must be done early so init exceptions get logged to mothership, authentication gets initialized before
         // basic auth is attempted in this filter, etc.
