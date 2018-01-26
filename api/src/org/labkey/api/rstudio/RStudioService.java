@@ -79,7 +79,7 @@ public interface RStudioService
         return null;
     }
 
-    default ActionURL getFinishReportUrl(Container container, String entityId)
+    default ActionURL getFinishReportUrl(Container container)
     {
         return null;
     }
