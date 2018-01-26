@@ -40,4 +40,6 @@ public interface CoreUrls extends UrlProvider
     ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd);
 
     @NotNull String getFeedbackURL();
+
+    ActionURL getPermissionsURL(@NotNull Container c);
 }
