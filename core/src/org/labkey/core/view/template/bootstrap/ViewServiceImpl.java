@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2015-2017 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.view.template.bootstrap.factory;
+package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.PopupMenuView;
@@ -29,8 +29,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartFrame;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebPartView.FrameType;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PageConfig.Template;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
 import java.util.Collections;
@@ -40,23 +42,65 @@ import java.util.List;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
-public class FrameFactory implements ViewService.FrameFactory
+/**
+ * This service/impl pair allows templates and frame types to be implemented in the core module rather than API, where
+ * the corresponding enums live.
+ *
+ * Created by matthew on 12/14/15.
+ */
+public class ViewServiceImpl implements ViewService
 {
-    public void registerFrames()
+    private static final ViewService INSTANCE = new ViewServiceImpl();
+
+    public static ViewService getInstance()
     {
-        for (FrameType f : FrameType.values())
-        {
-            ServiceRegistry.get(ViewService.class).registerFrameFactory(f,this);
-        }
+        return INSTANCE;
+    }
+
+    private ViewServiceImpl()
+    {
     }
 
     @Override
-    public WebPartFrame createFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config)
+    public HttpView<PageConfig> getTemplate(Template t, ViewContext context, ModelAndView body, PageConfig page)
     {
-        if (!(e instanceof WebPartView.FrameType))
-            throw new IllegalStateException();
+        switch (t)
+        {
+            case None:
+            {
+                return null;
+            }
+            case Framed:
+            case Print:
+            {
+                return new PrintTemplate(context, body, page);
+            }
+            case Dialog:
+            {
+                return new DialogTemplate(context, body, page);
+            }
+            case Wizard:
+            {
+                return new WizardTemplate(context, body, page);
+            }
+            case Body:
+            case App:
+            {
+                return new AppTemplate(context, body, page, t.equals(Template.App));
+            }
+            case Home:
+            {
+                return new PageTemplate(context, body, page);
+            }
+        }
 
-        switch ((WebPartView.FrameType) e)
+        throw new IllegalStateException("Unknown Template");
+    }
+
+    @Override
+    public WebPartFrame getFrame(FrameType frameType, ViewContext context, WebPartFrame.FrameConfig config)
+    {
+        switch (frameType)
         {
             case DIV:
                 return new FrameDiv(context, config);
@@ -76,14 +120,14 @@ public class FrameFactory implements ViewService.FrameFactory
                 return new FrameDialog(context, config);
         }
 
-        throw new IllegalStateException();
+        throw new IllegalStateException("Unknown FrameType");
     }
 
     private abstract class AbstractFrame implements WebPartFrame
     {
         protected final boolean _devMode = AppProps.getInstance().isDevMode();
-        final ViewContext context;
-        final FrameConfig config;
+        protected final ViewContext context;
+        protected final FrameConfig config;
 
         AbstractFrame(ViewContext context, FrameConfig config)
         {
@@ -158,7 +202,7 @@ public class FrameFactory implements ViewService.FrameFactory
                     if (rootId == null)
                         isCollapsible = false;
                     else
-                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(context.getContainer(), "", rootId);
+                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(context.getContainer(), "", rootId);
                 }
 
                 out.print("<td class=\"labkey-expand-collapse-area\"><div>");

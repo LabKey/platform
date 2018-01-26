@@ -140,7 +140,6 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
-import org.labkey.api.view.ViewServiceImpl;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
@@ -212,8 +211,7 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
-import org.labkey.core.view.template.bootstrap.factory.FrameFactory;
-import org.labkey.core.view.template.bootstrap.factory.TemplateFactory;
+import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -284,7 +282,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
         ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
-        ServiceRegistry.get().registerService(ViewService.class, ViewServiceImpl.getInstance());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();
@@ -318,6 +315,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.register(NotificationServiceImpl.getInstance());
+        ViewService.setInstance(ViewServiceImpl.getInstance());
 
         ServiceRegistry.get().registerService(ExperimentalFeatureService.class, new ExperimentalFeatureService.ExperimentalFeatureServiceImpl());
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
@@ -372,7 +370,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
-        configureTemplates();
     }
 
     private void sendSystemReadyEmail(List<User> users)
@@ -1171,14 +1168,5 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void indexDeleted()
     {
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
-    }
-
-
-    // This is here for now to allow templates to be defined in core module rather than API.
-    // Possible future work will expose a registration service to configure these UI factories.
-    private static void configureTemplates()
-    {
-        new TemplateFactory().registerTemplates();
-        new FrameFactory().registerFrames();
     }
 }

@@ -55,7 +55,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
@@ -77,10 +76,10 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
@@ -329,8 +328,8 @@ public class ProjectController extends SpringActionController
             page.setHelpTopic(folderType.getHelpTopic());
             page.setNavTrail(Collections.emptyList());
 
-            PageConfig.Template t = isPrint() ? PageConfig.Template.Print : PageConfig.Template.Home;
-            HttpView template = ServiceRegistry.get(ViewService.class).getTemplate(t, getViewContext(), new VBox(), page);
+            Template t = isPrint() ? Template.Print : Template.Home;
+            HttpView template = t.getTemplate(getViewContext(), new VBox(), page);
 
             String pageId = form.getPageId();
             if (pageId == null)
@@ -376,7 +375,7 @@ public class ProjectController extends SpringActionController
             if (title != null)
                 page.setTitle(title, appendPath);
 
-            getPageConfig().setTemplate(PageConfig.Template.None);
+            getPageConfig().setTemplate(Template.None);
             return template;
         }
 
@@ -1619,7 +1618,7 @@ public class ProjectController extends SpringActionController
             getViewContext().getResponse().setHeader("Cache-Control", "private");
 
             RequestDispatcher d = getViewContext().getRequest().getRequestDispatcher(path);
-            getPageConfig().setTemplate(PageConfig.Template.None);
+            getPageConfig().setTemplate(Template.None);
             d.forward(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }
