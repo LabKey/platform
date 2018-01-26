@@ -183,7 +183,7 @@ public class CustomViewXmlReader
     {
         String sort = getSortParamValue();
 
-        if (null == getFilters() && null == sort && null == getAnalyticsProviders())
+        if (null == getFilters() && null == sort && null == getAnalyticsProviders() && null == getContainerFilter())
             return null;
 
         StringBuilder ret = new StringBuilder("?");
@@ -220,9 +220,8 @@ public class CustomViewXmlReader
 
         if (null != getContainerFilter())
         {
-            ret.append(sep);
-            ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".").append(CustomViewInfo.CONTAINER_FILTER_NAME);
-            ret.append(getContainerFilter());
+            String paramName = CustomViewInfo.FILTER_PARAM_PREFIX + "." + CustomViewInfo.CONTAINER_FILTER_NAME;
+            ret.append(sep).append(getFilterAndSortParam(paramName, getContainerFilter().name()));
         }
 
         return ret.toString();
