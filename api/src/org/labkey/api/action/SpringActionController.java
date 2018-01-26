@@ -36,7 +36,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -51,7 +50,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.BeansException;
@@ -567,10 +565,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 page.setTitle(children.get(children.size() - 1).getText());
         }
 
-        ViewService service = ServiceRegistry.get(ViewService.class);
-        HttpView template;
-        template = service.getTemplate(page.getTemplate(), context, mv, page);
-        return template;
+        return page.getTemplate().getTemplate(context, mv, page);
     }
 
 

@@ -15,7 +15,12 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.WebPartFrame.FrameConfig;
+import org.labkey.api.view.WebPartView.FrameType;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PageConfig.Template;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -23,25 +28,16 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public interface ViewService
 {
-    /** TEMPLATES see PageConfig.Template for primary enum */
-
-    interface TemplateFactory
+    static @NotNull ViewService get()
     {
-        HttpView<PageConfig> createTemplate(Enum e, ViewContext context, ModelAndView body, PageConfig page);
+        return ServiceRegistry.get(ViewService.class);
     }
 
-    void registerTemplateFactory(Enum template, TemplateFactory f);
-
-    HttpView<PageConfig> getTemplate(Enum e, ViewContext context, ModelAndView body, PageConfig page);
-
-    /** FRAMES see WebPartView.FrameType for primary enum **/
-
-    interface FrameFactory
+    static void setInstance(ViewService impl)
     {
-        WebPartFrame createFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config);
+        ServiceRegistry.get().registerService(ViewService.class, impl);
     }
 
-    void registerFrameFactory(Enum template, FrameFactory f);
-
-    WebPartFrame getFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config);
+    HttpView<PageConfig> getTemplate(Template t, ViewContext context, ModelAndView body, PageConfig page);
+    WebPartFrame getFrame(FrameType frameType, ViewContext context, FrameConfig config);
 }

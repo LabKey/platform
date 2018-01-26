@@ -27,7 +27,11 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +50,9 @@ import java.util.Set;
  */
 public class PageConfig
 {
+    /**
+     * Warning: Any changes to this enum require corresponding changes in ViewServiceImpl
+     */
     public enum Template
     {
         None,
@@ -56,7 +63,12 @@ public class PageConfig
         Wizard,
         Body,
         Custom,  // must be handled by module
-        App
+        App;
+
+        public HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView body, PageConfig page)
+        {
+            return ViewService.get().getTemplate(this, context, body, page);
+        }
     }
 
 	public enum TrueFalse

@@ -29,8 +29,11 @@ import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +52,9 @@ import java.util.Set;
  */
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 {
+    /**
+     * Warning: Any changes to this enum require corresponding changes in ViewServiceImpl
+     */
     public enum FrameType
     {
         /** with portal widgets */
@@ -61,13 +67,18 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         LEFT_NAVIGATION,
         /** clean */
         NONE,
-        NOT_HTML    // same as NONE, just a marker
+        NOT_HTML;    // same as NONE, just a marker
+
+        public WebPartFrame getFrame(ViewContext context, FrameConfig config)
+        {
+            return ViewService.get().getFrame(this, context, config);
+        }
     }
 
 
     public static final int DEFAULT_WEB_PART_ID = -1;
 
-    protected final WebPartFrame.FrameConfig _frameConfig = new WebPartFrame.FrameConfig();
+    protected final FrameConfig _frameConfig = new FrameConfig();
 
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;
@@ -87,7 +98,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         _frameConfig._isEmpty = empty;
     }
 
-    public ApiResponse renderToApiResponse() throws Exception
+    public ApiResponse renderToApiResponse()
     {
         Container container = getViewContext().getContainer();
         final HttpServletRequest request = getViewContext().getRequest();
@@ -332,7 +343,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     protected WebPartFrame getWebPartFrame()
     {
-        return ServiceRegistry.get(ViewService.class).getFrame(_frameConfig._frame, getViewContext(), _frameConfig);
+        return _frameConfig._frame.getFrame(getViewContext(), _frameConfig);
     }
     
     @Override
@@ -346,7 +357,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         String errorMessage = null;
 
         String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
-        try (Timing timing = MiniProfiler.step(name))
+        try (Timing ignored = MiniProfiler.step(name))
         {
             boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
             if (isDebugHtml)

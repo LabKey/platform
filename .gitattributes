@@ -1686,7 +1686,6 @@ api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
 api/src/org/labkey/api/view/ViewContext.java -text
 api/src/org/labkey/api/view/ViewForm.java -text
 api/src/org/labkey/api/view/ViewService.java -text
-api/src/org/labkey/api/view/ViewServiceImpl.java -text
 api/src/org/labkey/api/view/WebPartCache.java -text
 api/src/org/labkey/api/view/WebPartConfigurationException.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
