@@ -23,12 +23,17 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Tuple3;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -137,18 +142,17 @@ public final class TableSorter
         return sorted;
     }
 
-    private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<TableInfo> visiting, List<TableInfo> sorted)
+    private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted)
     {
         // NOTE: loops exist in current schemas
         //   core.Containers has a self join to parent Container
         //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
-        if (visiting.contains(table))
-            throw new IllegalStateException("Loop detected in table '" + table.getTitle() + "' in schema '" + table.getSchema().getName() + "'.");
+        if (hasLoop(visitingPath, table))
+            throw new IllegalStateException("Loop detected: " + formatPath(visitingPath));
 
         if (visited.contains(table))
             return;
 
-        visiting.addFirst(table);
         visited.add(table);
 
         for (ColumnInfo column : table.getColumns())
@@ -190,11 +194,38 @@ public final class TableSorter
             // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
             TableInfo lookupTable = tables.get(lookupTableName);
             if (lookupTable != null)
-                depthFirstWalk(schemaName, tables, lookupTable, visited, visiting, sorted);
+            {
+                visitingPath.addLast(Tuple3.of(table, column, lookupTable));
+                depthFirstWalk(schemaName, tables, lookupTable, visited, visitingPath, sorted);
+                visitingPath.removeLast();
+            }
         }
 
         sorted.add(table);
-        visiting.removeFirst();
+    }
+
+    // Check if the TableInfo is found along the currently visiting path
+    private static boolean hasLoop(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path, TableInfo table)
+    {
+        return path.stream().anyMatch(tuple -> table.equals(tuple.first));
+    }
+
+    private static String formatPath(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path)
+    {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Tuple3<TableInfo, ColumnInfo, TableInfo>> iter = path.listIterator();
+        while (iter.hasNext())
+        {
+            Tuple3<TableInfo, ColumnInfo, TableInfo> tuple = iter.next();
+            TableInfo table = tuple.first;
+            ColumnInfo col = tuple.second;
+            TableInfo lookupTable = tuple.third;
+            //sb.append(String.format("%s.%s.%s -> %s.%s", table.getPublicSchemaName(), table.getPublicName(), col.getName(), lookupTable.getPublicSchemaName(), lookupTable.getPublicName()));
+            sb.append(String.format("%s.%s -> %s", table.getPublicName(), col.getName(), lookupTable.getPublicName()));
+            if (iter.hasNext())
+                sb.append("\n");
+        }
+        return sb.toString();
     }
 
 }
