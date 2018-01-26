@@ -85,7 +85,7 @@ public class DataRegion extends DisplayElement
 
     private String _name = null;
     private QuerySettings _settings = null;
-    protected boolean _allowHeaderLock = true; // Set to 'true' to enable header locking.
+    private boolean _allowHeaderLock = true;
     private final String _domId = "lk-region-" + UniqueID.getServerSessionScopedUID(); // TODO: Consider using UniqueID.getRequestScopedUID(request) instead
 
     private List<DisplayColumn> _displayColumns = new ArrayList<>();

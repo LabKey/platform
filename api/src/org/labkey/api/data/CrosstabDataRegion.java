@@ -37,10 +37,10 @@ import java.util.List;
 public class CrosstabDataRegion extends DataRegion
 {
     private static final Logger _log = Logger.getLogger(CrosstabDataRegion.class);
-    private CrosstabSettings _settings = null;
-    private int _numRowAxisCols = 0;
-    private int _numMeasures = 0;
-    private int _numMemberMeasures = 0;
+    private CrosstabSettings _settings;
+    private int _numRowAxisCols;
+    private int _numMeasures;
+    private int _numMemberMeasures;
 
     public CrosstabDataRegion(CrosstabSettings settings, int numRowAxisCols, int numMeasures, int numMemberMeasures)
     {
@@ -48,7 +48,7 @@ public class CrosstabDataRegion extends DataRegion
         _numMeasures = numMeasures;
         _numMemberMeasures = numMemberMeasures;
         _numRowAxisCols = numRowAxisCols;
-        _allowHeaderLock = false;
+        setAllowHeaderLock(false);
     }
 
     @Override

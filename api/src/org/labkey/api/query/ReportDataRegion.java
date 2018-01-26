@@ -63,7 +63,9 @@ public class ReportDataRegion extends DataRegion
             report.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, settings.getQueryName());
             _report = report;
             _reportView = report.getRunReportView(context);
-            _allowHeaderLock = false;
+            setAllowHeaderLock(false);
+            setShowPagination(false);
+            setShowPaginationCount(false);
         }
         catch (Exception e)
         {
