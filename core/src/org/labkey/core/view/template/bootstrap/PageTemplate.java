@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -250,6 +251,10 @@ public class PageTemplate extends JspView<PageConfig>
             message = ModuleHtmlView.replaceTokens(message, getViewContext());
             page.addWarningMessage(message);
         }
+
+        String complianceWarning = ComplianceService.get().getPHIBanner(getViewContext());
+        if (!StringUtils.isEmpty(complianceWarning))
+            page.addDismissibleWarningMessage(complianceWarning);
     }
 
     protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
@@ -469,18 +474,32 @@ public class PageTemplate extends JspView<PageConfig>
         if (size > 0)
         {
             messages.append("<div class=\"alert alert-warning\" role=\"alert\">");
+            appendMessageContent(page.getWarningMessages(), messages);
+        }
 
-            if (size == 1)
-                messages.append(page.getWarningMessages().get(0)).append("</div>");
-            else
-            {
-                messages.append("<ul>");
-                for (String msg : page.getWarningMessages())
-                    messages.append("<li>").append(msg).append("</li>");
-                messages.append("</ul></div>");
-            }
+        int dismissibleSize = page.getDismissibleWarningMessages().size();
+        if (dismissibleSize > 0)
+        {
+            messages.append("<div class=\"alert alert-warning alert-dismissable lk-dismissable-warn\">");
+            messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
+
+           appendMessageContent(page.getDismissibleWarningMessages(), messages);
         }
         return messages.toString();
+    }
+
+    private static void appendMessageContent(List<String> messages, StringBuilder html)
+    {
+        int size = messages.size();
+        if (size == 1)
+            html.append(messages.get(0)).append("</div>");
+        else
+        {
+            html.append("<ul>");
+            for (String msg : messages)
+                html.append("<li>").append(msg).append("</li>");
+            html.append("</ul></div>");
+        }
     }
 
     @Override
