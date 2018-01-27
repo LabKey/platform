@@ -666,6 +666,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             for (DomainProperty pd : columns)
             {
                 Object o = map.get(pd.getName());
+                if (o instanceof String)
+                    o = ((String)o).trim();
 
                 // validate the data value
                 if (validatorMap.containsKey(pd))
