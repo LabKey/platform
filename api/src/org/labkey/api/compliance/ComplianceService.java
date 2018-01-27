@@ -22,6 +22,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 /**
  * Created by davebradlee on 7/27/17.
@@ -45,4 +46,8 @@ public interface ComplianceService
     ActionURL urlFor(Container container, QueryAction action, ActionURL queryBasedUrl);
     boolean hasElecSignPermission(@NotNull Container container, @NotNull User user);
     boolean hasViewSignedSnapshotsPermission(@NotNull Container container, @NotNull User user);
+    default String getPHIBanner(ViewContext viewContext)
+    {
+        return null;
+    }
 }

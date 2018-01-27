@@ -97,6 +97,7 @@ public class PageConfig
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
     private List<String> _warningMessages = null;
+    private List<String> _dismissibleWarningMessages = null;
 
     public PageConfig()
     {
@@ -403,6 +404,28 @@ public class PageConfig
     {
         if (_warningMessages != null)
             return _warningMessages;
+        return Collections.emptyList();
+    }
+
+    public void addDismissibleWarningMessage(String html)
+    {
+        if (_dismissibleWarningMessages == null)
+            _dismissibleWarningMessages = new ArrayList<>();
+        _dismissibleWarningMessages.add(html);
+    }
+
+    public void addDismissibleWarningMessages(Collection<String> messages)
+    {
+        if (_dismissibleWarningMessages == null)
+            _dismissibleWarningMessages = new ArrayList<>();
+        _dismissibleWarningMessages.addAll(messages);
+    }
+
+    @NotNull
+    public List<String> getDismissibleWarningMessages()
+    {
+        if (_dismissibleWarningMessages != null)
+            return _dismissibleWarningMessages;
         return Collections.emptyList();
     }
 }
