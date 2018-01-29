@@ -106,7 +106,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 
             for (ColumnInfo col : table.getColumns())
             {
-                if (!shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col) || !col.isKeyField())
+                if (!shouldRemovePhi(ctx.getPhiLevel(), col) || !col.isKeyField())
                     columns.add(col);
             }
 
@@ -116,9 +116,9 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
         specimensDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
     }
 
-    private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
+    private static boolean shouldRemovePhi(PHI exportPhiLevel, ColumnInfo column)
     {
-        return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
+        return !column.getPHI().isExportLevelAllowed(exportPhiLevel);
     }
 
     @Override
@@ -189,20 +189,20 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
             // should remove if it is at or above PHI export level
-            assertTrue(shouldRemovePhi(true, PHI.Restricted, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.PHI, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.PHI, ciPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciLimitedPhi));
+            assertTrue(shouldRemovePhi(PHI.Restricted, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.PHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.PHI, ciPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciLimitedPhi));
 
             // shouldn't remove if it is not at or above PHI export level
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciLimitedPhi));
-            assertFalse(shouldRemovePhi(true, PHI.PHI, ciLimitedPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciNotPhi));
-            assertFalse(shouldRemovePhi(true, PHI.PHI, ciNotPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Limited, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.Restricted, ciPhi));
+            assertFalse(shouldRemovePhi(PHI.Restricted, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(PHI.PHI, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(PHI.Restricted, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.PHI, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.Limited, ciNotPhi));
         }
     }
 }

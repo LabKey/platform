@@ -59,6 +59,7 @@ import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
@@ -4190,8 +4191,7 @@ public class AdminController extends SpringActionController
         private String _format = "new"; // As of 14.3, this is the only supported format. But leave in place for the future.
         private String _exportType;
         private boolean _includeSubfolders;
-        private boolean _removePhi;
-        private PHI _exportPhiLevel;
+        private PHI _exportPhiLevel;    // Input: max level when viewing form
         private boolean _shiftDates;
         private boolean _alternateIds;
         private boolean _maskClinic;
@@ -4249,19 +4249,9 @@ public class AdminController extends SpringActionController
             _includeSubfolders = includeSubfolders;
         }
 
-        public boolean isRemovePhi()
-        {
-            return _removePhi;
-        }
-
-        public void setRemovePhi(boolean removePhi)
-        {
-            _removePhi = removePhi;
-        }
-
         public PHI getExportPhiLevel()
         {
-            return _exportPhiLevel;
+            return null != _exportPhiLevel ? _exportPhiLevel : PHI.NotPHI;
         }
 
         public void setExportPhiLevel(PHI exportPhiLevel)
@@ -4318,6 +4308,9 @@ public class AdminController extends SpringActionController
         protected HttpView getTabView(ExportFolderForm form, BindException errors)
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
+
+            ComplianceService complianceService = ComplianceService.get();
+            form.setExportPhiLevel(null != complianceService ? complianceService.getMaxAllowedPhi(getContainer(), getUser()) : PHI.Restricted);
             return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
         }
 
@@ -4337,7 +4330,7 @@ public class AdminController extends SpringActionController
 
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
-                    form.getFormat(), form.isIncludeSubfolders(), form.isRemovePhi(), form.getExportPhiLevel(), form.isShiftDates(),
+                    form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
                     form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
 
             switch(form.getLocation())
@@ -4576,7 +4569,7 @@ public class AdminController extends SpringActionController
                 // the source template folder so that the zip file can be passed to the pipeline processes.
                 FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                         getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
-                        false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                        PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                 FolderWriterImpl writer = new FolderWriterImpl();
                 String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
                 try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
@@ -4659,6 +4652,10 @@ public class AdminController extends SpringActionController
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
             options.setAdvancedImportOptions(form.isAdvancedImportOptions());
+
+            ComplianceService complianceService = ComplianceService.get();
+            if (null != complianceService)
+                options.setActivity(complianceService.getCurrentActivity(getViewContext()));
 
             // if the option is selected to show the advanced import options, redirect to there
             if (form.isAdvancedImportOptions())
@@ -6258,7 +6255,7 @@ public class AdminController extends SpringActionController
                         // export objects from the source folder
                         FolderWriterImpl writer = new FolderWriterImpl();
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), false, PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                                form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // create the new target container

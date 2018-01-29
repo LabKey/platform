@@ -98,7 +98,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
                 _ctx.getLogger().error(error);
 
             BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "pipeline"));
-            if (StudyManager.getInstance().importDatasetSchemas(study, _ctx.getUser(), reader, errors, _ctx.isCreateSharedDatasets()))
+            if (StudyManager.getInstance().importDatasetSchemas(study, _ctx.getUser(), reader, errors, _ctx.isCreateSharedDatasets(), _ctx.getActivity()))
             {
                 doImport(getDatasetsDirectory(), getDatasetsFileName(), getJob(), _ctx, getStudy(), reader, true);
             }

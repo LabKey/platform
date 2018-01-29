@@ -43,6 +43,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
@@ -2534,7 +2535,10 @@ public class StudyController extends BaseStudyController
 
             _log.warn("DataFax schema definition format is deprecated and scheduled for removal. Contact LabKey immediately if your organization requires this support.");
             SchemaReader reader = new SchemaTsvReader(getStudyThrowIfNull(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
-            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false);
+
+            ComplianceService complianceService = ComplianceService.get();
+            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false,
+                                                                   null != complianceService ? complianceService.getCurrentActivity(getViewContext()) : null);
         }
 
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)

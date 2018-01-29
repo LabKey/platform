@@ -40,7 +40,6 @@ public class StudyExportContext extends AbstractContext
 {
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
-    private final boolean _removePhi;
     private final PHI _phiLevel;
     private final boolean _maskClinic;
     private final ParticipantMapper _participantMapper;
@@ -50,19 +49,18 @@ public class StudyExportContext extends AbstractContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, false, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
+        this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
     }
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, false, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
+        this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
         setDatasets(initDatasets);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removePhi, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), dataTypes, logger, null);
-        _removePhi = removePhi;
         _phiLevel = phiLevel;
         _participantMapper = participantMapper;
         _maskClinic = maskClinic;
@@ -71,16 +69,10 @@ public class StudyExportContext extends AbstractContext
             initializeDatasets(study);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removePhi, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
-        this(study, user, c, dataTypes, removePhi, phiLevel, participantMapper, maskClinic, logger);
+        this(study, user, c, dataTypes, phiLevel, participantMapper, maskClinic, logger);
         setDatasets(initDatasets);
-    }
-
-    @Override
-    public boolean isRemovePhi()
-    {
-        return _removePhi;
     }
 
     @Override

@@ -1233,6 +1233,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         TableInfo _storage;
         TableInfo _template;
+        private final PHI _maxContainedPhi;       // Max PHI of properites in dataset
 
 
         private ColumnInfo getStorageColumn(String name)
@@ -1261,6 +1262,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
+            PHI maxContainedPhi = PHI.NotPHI;
             
             // ParticipantId
 
@@ -1358,6 +1360,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             for (DomainProperty p : properties)
             {
+                if (maxContainedPhi.getRank() < p.getPHI().getRank())
+                    maxContainedPhi = p.getPHI();
+
                 if (null != getColumn(p.getName()))
                 {
                     ColumnInfo builtin = getColumn(p.getName());
@@ -1414,6 +1419,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     wrapped.setMvColumnName(mvColumn.getFieldKey());
                 }
             }
+
+            _maxContainedPhi = maxContainedPhi;
 
             // If we have an extra key, and it's server-managed, make it non-editable
             if (def.getKeyManagementType() != KeyManagementType.None)
@@ -1561,6 +1568,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         public CaseInsensitiveHashSet skipProperties()
         {
             return null;
+        }
+
+        public PHI getMaxContainedPhi()
+        {
+            return _maxContainedPhi;
         }
     }
 

@@ -88,7 +88,6 @@ public class ListWriter
     public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
-        boolean removePhi = ctx != null && ctx.isRemovePhi();
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
@@ -137,7 +136,7 @@ public class ListWriter
 
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
-                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, removePhi, exportPhiLevel));
+                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, exportPhiLevel));
                 xmlWriter.writeTable(tableXml);
 
                 // Write settings
@@ -145,7 +144,7 @@ public class ListWriter
                 writeSettings(settings, def);
 
                 // Write data
-                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removePhi, exportPhiLevel);
+                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
 
                 if (null != ctx && ctx.isAlternateIds())
                 {
@@ -170,7 +169,7 @@ public class ListWriter
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
 
-                    writeAttachments(ti, def, c, listsDir, removePhi, exportPhiLevel);
+                    writeAttachments(ti, def, c, listsDir, exportPhiLevel);
                 }
             }
 
@@ -228,7 +227,7 @@ public class ListWriter
         if (def.getFileAttachmentIndex()) settings.setFileAttachmentIndex(def.getFileAttachmentIndex());
     }
 
-    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, boolean removePhi, PHI exportPhiLevel) throws SQLException, IOException
+    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, PHI exportPhiLevel) throws SQLException, IOException
     {
         List<ColumnInfo> attachmentColumns = new ArrayList<>();
 
@@ -239,7 +238,7 @@ public class ListWriter
                 ColumnInfo column = ti.getColumn(prop.getName());
 
                 // Don't export columns at or above the export PHI level if PHI columns are being skipped
-                if (shouldRemovePhi(removePhi, exportPhiLevel, column))
+                if (shouldRemovePhi(exportPhiLevel, column))
                     continue;
 
                 attachmentColumns.add(column);
@@ -294,7 +293,7 @@ public class ListWriter
         }
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removePhi, PHI exportPhiLevel)
+    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, PHI exportPhiLevel)
     {
         Collection<ColumnInfo> columns = new LinkedHashSet<>();
         Set<ColumnInfo> pks = new HashSet<>(tinfo.getPkColumns());
@@ -312,8 +311,8 @@ public class ListWriter
              */
             if ((column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField())))
             {
-                // Exclude columns marked at or above the export PHI level, if removePhi is true (except key columns marked at or above the export PHI level, those must be exported)
-                if (shouldRemovePhi(removePhi, exportPhiLevel, column) && !pks.contains(column) && !column.isKeyField())
+                // Exclude columns marked above the export PHI level (except key columns marked at or above the export PHI level, those must be exported)
+                if (shouldRemovePhi(exportPhiLevel, column) && !pks.contains(column) && !column.isKeyField())
                     continue;
 
                 columns.add(column);
@@ -334,9 +333,9 @@ public class ListWriter
         return columns;
     }
 
-    private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
+    private static boolean shouldRemovePhi(PHI exportPhiLevel, ColumnInfo column)
     {
-        return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
+        return !column.getPHI().isExportLevelAllowed(exportPhiLevel);
     }
 
     public static class TestCase extends Assert
@@ -353,21 +352,21 @@ public class ListWriter
             ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
-            // should remove if it is at or above PHI export level
-            assertTrue(shouldRemovePhi(true, PHI.Restricted, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.PHI, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.PHI, ciPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciLimitedPhi));
+            // should not include if it is above PHI export level
+            assertTrue(shouldRemovePhi(PHI.PHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.NotPHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciPhi));
+            assertTrue(shouldRemovePhi(PHI.NotPHI, ciPhi));
+            assertTrue(shouldRemovePhi(PHI.NotPHI, ciLimitedPhi));
 
-            // shouldn't remove if it is not at or above PHI export level
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciLimitedPhi));
-            assertFalse(shouldRemovePhi(true, PHI.PHI, ciLimitedPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciNotPhi));
-            assertFalse(shouldRemovePhi(true, PHI.PHI, ciNotPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Limited, ciNotPhi));
+            // should include if it is at or above PHI export level
+            assertFalse(shouldRemovePhi(PHI.PHI, ciPhi));
+            assertFalse(shouldRemovePhi(PHI.PHI, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(PHI.Limited, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(PHI.Restricted, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.PHI, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.Limited, ciNotPhi));
         }
     }
 

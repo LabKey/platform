@@ -91,7 +91,7 @@ public class StudyWriterFactory implements FolderWriterFactory
             {
                 // If we enable new study formats then push ctx.getFormat() into StudyExportContext
                 StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, ctx.getDataTypes(),
-                        ctx.isRemovePhi(), ctx.getPhiLevel(), new ParticipantMapper(study, ctx.isShiftDates(), ctx.isAlternateIds()), ctx.isMaskClinic(), ctx.getLoggerGetter());
+                        ctx.getPhiLevel(), new ParticipantMapper(study, ctx.isShiftDates(), ctx.isAlternateIds()), ctx.isMaskClinic(), ctx.getLoggerGetter());
                 ctx.addContext(StudyExportContext.class, exportCtx);
             }
         }

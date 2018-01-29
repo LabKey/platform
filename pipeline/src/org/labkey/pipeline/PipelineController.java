@@ -37,6 +37,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -1366,6 +1367,10 @@ public class PipelineController extends SpringActionController
                     options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
                     options.setDataTypes(form.getDataTypes());
                     options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
+
+                    ComplianceService complianceService = ComplianceService.get();
+                    if (null != complianceService)
+                        options.setActivity(complianceService.getCurrentActivity(getViewContext()));
 
                     success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container), form.isAsStudy(), errors);
                 }

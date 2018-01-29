@@ -67,6 +67,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
         _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
         _ctx.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
         _ctx.setIncludeSubfolders(options.isIncludeSubfolders());
+        _ctx.setActivity(options.getActivity());
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);

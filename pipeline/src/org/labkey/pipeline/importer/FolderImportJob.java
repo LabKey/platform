@@ -59,6 +59,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
         _ctx.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
         _ctx.setIncludeSubfolders(options.isIncludeSubfolders());
+        _ctx.setActivity(options.getActivity());
 
         LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
     }

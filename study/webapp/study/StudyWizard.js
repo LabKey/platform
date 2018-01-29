@@ -15,7 +15,7 @@ Ext.GuidedTips.init();
 
 //NOTE: The margin-left 2px which are placed sporadically here fix some rendering on Mac but appears not to be an issue with any other browser...
 
-LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerName) {
+LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerName, maxAllowedPhi) {
     // get the rest of the study snapshot details/settings from the server
 
     var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings, ss.Type " +
@@ -35,7 +35,8 @@ LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerN
                 settings: settings,
                 previousStudy: row.PreviousStudy,
                 createdBy: row.CreatedBy,
-                created: row.Created
+                created: row.Created,
+                maxAllowedPhi: maxAllowedPhi
             };
 
             //issue 22070: specimen study republish needs to include requestId
@@ -65,7 +66,7 @@ LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerN
 };
 
 // NOTE: consider wrapping in Ext.onReady
-LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
+LABKEY.study.openCreateStudyWizard = function(mode, studyName, maxAllowedPhi) {
     LABKEY.Query.selectRows({
         schemaName: 'study',
         queryName: 'StudySnapshot',
@@ -75,7 +76,8 @@ LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
         {
             var config = {
                 mode: mode,
-                studyName : studyName
+                studyName: studyName,
+                maxAllowedPhi: maxAllowedPhi
             };
 
             if (data.rowCount > 0)
@@ -2022,9 +2024,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 'Shift date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days)',
                 'shiftDates']);
         }
-        availablePublishOptions.push(['Exclude Columns At This PHI Level And Higher',
-            'Exclude all dataset, list, and specimen columns that are tagged at a certain PHI level or higher (see below)',
-            'removePhiColumns']);
         availablePublishOptions.push(['Mask Clinic Names',
             'Replace clinic labels with a generic label ("Clinic")',
             'maskClinic']);
@@ -2061,35 +2060,42 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             bbarCfg: [{hidden:true}],
             tbarCfg: [{hidden:true}]
         });
-
-        this.publishPhiRadioGroup = new Ext.form.RadioGroup({
-            columns: 1,
-            cls: 'publish-radio-option',
-            items: [
-                {boxLabel: 'Limited PHI', inputValue: 'Limited', name: 'exportPhiLevel', checked: true},
-                {boxLabel: 'Full PHI', inputValue: 'PHI', name: 'exportPhiLevel'},
-                {boxLabel: 'Restricted', inputValue: 'Restricted', name: 'exportPhiLevel'}
-            ]
-        });
-
-        var phiPanel = new Ext.form.FormPanel({
-            border: false,
-            width: 100,
-            height: 150,
-            padding: '10px 0 0 0',
-            name : 'PHI Options',
-            layout: 'auto',
-            layoutConfig: {
-                align: 'left'
-            },
-            items: [
-                new Ext.form.Label({html: 'Exclude Columns At This PHI Level And Higher:'}),
-                this.publishPhiRadioGroup
-            ]
-        });
-
         items.push(grid);
-        items.push(phiPanel);
+
+        if ('NotPHI' !== this.maxAllowedPhi) {
+            var phiItems = [];
+            if (this.maxAllowedPhi === 'Restricted')
+                phiItems.push({boxLabel: 'Restricted, Full and Limited PHI', inputValue: 'Restricted', name: 'exportPhiLevel', checked: true});
+            if (this.maxAllowedPhi >= 'PHI')
+                phiItems.push({boxLabel: 'Full and Limited PHI', inputValue: 'PHI', name: 'exportPhiLevel', checked: this.maxAllowedPhi === 'PHI'});
+            if (this.maxAllowedPhi >= 'Limited')
+                phiItems.push({boxLabel: 'Limited PHI', inputValue: 'Limited', name: 'exportPhiLevel', checked: this.maxAllowedPhi === 'Limited'});
+            phiItems.push({boxLabel: 'Not PHI', inputValue: 'NotPHI', name: 'exportPhiLevel'});
+
+            this.publishPhiRadioGroup = new Ext.form.RadioGroup({
+                columns: 1,
+                cls: 'publish-radio-option',
+                items: phiItems
+            });
+
+            var phiPanel = new Ext.form.FormPanel({
+                border: false,
+                width: 100,
+                height: 150,
+                padding: '10px 0 0 0',
+                name: 'PHI Options',
+                layout: 'auto',
+                layoutConfig: {
+                    align: 'left'
+                },
+                items: [
+                    new Ext.form.Label({html: 'Include PHI Columns:'}),
+                    this.publishPhiRadioGroup
+                ]
+            });
+
+            items.push(phiPanel);
+        }
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
@@ -2097,17 +2103,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 var publishOptions = {};
                 publishOptions['maskClinic'] = this.settings.maskClinic;
-                publishOptions['removePhiColumns'] = this.settings.removePhiColumns;
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
-                if(this.settings.removeProtectedColumns)  // may be true for legacy studies, so convert to PHI
+                if(this.settings.removeProtectedColumns && this.publishPhiRadioGroup)  // may be true for legacy studies, so convert to PHI
                 {
-                    publishOptions['removePhiColumns'] = true;
                     this.publishPhiRadioGroup.setValue('exportPhiLevel', 'Limited');  // protected bit being set is equal to Limited PHI
                 }
-                if(this.settings.removePhiColumns && this.settings.phiLevel)
+                if(this.settings.phiLevel && this.publishPhiRadioGroup)
                     this.publishPhiRadioGroup.setValue('exportPhiLevel', this.settings.phiLevel);
-                if (this.settings.maskClinic && this.settings.removePhiColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
+                if (this.settings.maskClinic && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
                     this.gridSelectAll(grid);
                 else
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
@@ -2186,7 +2190,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     params[this.selectedPublishOptions[i].get('option')] = true;
             params.includeSpecimens = this.includeSpecimensCheckBox.getValue();
             params.specimenRefresh = eval(this.specimenRefreshRadioGroup.getValue().inputValue);
-            params.exportPhiLevel = this.publishPhiRadioGroup.getValue().inputValue;
+            params.exportPhiLevel = this.publishPhiRadioGroup ? this.publishPhiRadioGroup.getValue().inputValue : 'NotPHI';
         }
 
         var hiddenFields = [];

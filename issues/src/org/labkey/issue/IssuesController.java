@@ -1245,7 +1245,7 @@ public class IssuesController extends SpringActionController
                                     prop.getName().toLowerCase(),
                                     prop.getLabel() != null ? prop.getLabel() : ColumnInfo.labelFromName(prop.getName()),
                                     prop.getLookup() != null,
-                                    prop.getPHI().isExportLevelAllowed(PHI.Limited) ? ReadPermission.class : InsertPermission.class);
+                                    prop.getPHI().isExportLevelAllowed(PHI.NotPHI) ? ReadPermission.class : InsertPermission.class);
 
                             _columnMap.put(col.getName(), col);
                             _captionMap.put(col.getName(), col.getCaption());

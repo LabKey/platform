@@ -35,7 +35,6 @@ public class ChildStudyDefinition
     private String _description;
     private String _srcPath;
     private String _dstPath;
-    private boolean _removePhiColumns;
     private PHI _exportPhiLevel;
     private boolean _shiftDates;
     private boolean _useAlternateParticipantIds;
@@ -176,16 +175,8 @@ public class ChildStudyDefinition
         _copyParticipantGroups = copyParticipantGroups;
     }
 
-    public boolean isRemovePhiColumns(){
-        return _removePhiColumns;
-    }
-
-    public void setRemovePhiColumns(boolean removePhiColumns){
-        _removePhiColumns = removePhiColumns;
-    }
-
     public PHI getExportPhiLevel(){
-        return _exportPhiLevel;
+        return null != _exportPhiLevel ? _exportPhiLevel : PHI.NotPHI;
     }
 
     public void setExportPhiLevel(PHI exportPhiLevel){
@@ -385,8 +376,7 @@ public class ChildStudyDefinition
             publishOptions.add("Use Alternate Participant IDs");
         if (isShiftDates())
             publishOptions.add("Shift Participant Dates");
-        if (isRemovePhiColumns())
-            publishOptions.add("Exclude Columns At This PHI Level And Higher: " + getExportPhiLevel().name());
+        publishOptions.add("Include Columns At This PHI Level And Higher: " + getExportPhiLevel().name());
         if (isMaskClinic())
             publishOptions.add("Mask Clinic Names");
         return publishOptions.toArray(new String[publishOptions.size()]);

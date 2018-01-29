@@ -117,7 +117,7 @@ public abstract class DefaultStudyDesignWriter
                 continue;
             if (FieldKey.fromParts("ModifiedBy").equals(col.getFieldKey()))
                 continue;
-            if (ctx.isRemovePhi() && !(col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())) && !col.isKeyField())
+            if (!(col.getPHI().isExportLevelAllowed(ctx.getPhiLevel())) && !col.isKeyField())
                 continue;
 
             columns.add(col);
@@ -151,7 +151,7 @@ public abstract class DefaultStudyDesignWriter
                     if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
                     {
                         // NOTE: currently these study tables should never be allowed to have columns set at any level of PHI, so this check does nothing at the moment
-                        if (!(shouldRemovePhi(ctx.isRemovePhi(), ctx.getPhiLevel(), col)))
+                        if (!(shouldRemovePhi(ctx.getPhiLevel(), col)))
                             columns.add(col);
                     }
                 }
@@ -162,9 +162,9 @@ public abstract class DefaultStudyDesignWriter
         vf.saveXmlBean(schemaFileName, tablesDoc);
     }
 
-    private static boolean shouldRemovePhi(boolean isRemovePhi, PHI exportPhiLevel, ColumnInfo column)
+    private static boolean shouldRemovePhi(PHI exportPhiLevel, ColumnInfo column)
     {
-        return isRemovePhi && !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
+        return !(column.getPHI().isExportLevelAllowed(exportPhiLevel));
     }
 
     public static class TestCase extends Assert
@@ -181,21 +181,21 @@ public abstract class DefaultStudyDesignWriter
             ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
-            // should remove if it is at or above PHI export level
-            assertTrue(shouldRemovePhi(true, PHI.Restricted, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.PHI, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciRestrictedPhi));
-            assertTrue(shouldRemovePhi(true, PHI.PHI, ciPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciPhi));
-            assertTrue(shouldRemovePhi(true, PHI.Limited, ciLimitedPhi));
+            // should remove if it is above PHI export level
+            assertTrue(shouldRemovePhi(PHI.PHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.NotPHI, ciRestrictedPhi));
+            assertTrue(shouldRemovePhi(PHI.Limited, ciPhi));
+            assertTrue(shouldRemovePhi(PHI.NotPHI, ciPhi));
+            assertTrue(shouldRemovePhi(PHI.NotPHI, ciLimitedPhi));
 
-            // shouldn't remove if it is not at or above PHI export level
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciLimitedPhi));
-            assertFalse(shouldRemovePhi(true, PHI.PHI, ciLimitedPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Restricted, ciNotPhi));
-            assertFalse(shouldRemovePhi(true, PHI.PHI, ciNotPhi));
-            assertFalse(shouldRemovePhi(true, PHI.Limited, ciNotPhi));
+            // shouldn't remove if it is at or below PHI export level
+            assertFalse(shouldRemovePhi(PHI.PHI, ciPhi));
+            assertFalse(shouldRemovePhi(PHI.PHI, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(PHI.Limited, ciLimitedPhi));
+            assertFalse(shouldRemovePhi(PHI.PHI, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.Limited, ciNotPhi));
+            assertFalse(shouldRemovePhi(PHI.NotPHI, ciNotPhi));
         }
     }
 

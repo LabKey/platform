@@ -94,7 +94,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 continue;
 
             TableInfo ti = schema.getTable(def.getName());
-            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemovePhi(), ctx.getPhiLevel());
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.getPhiLevel());
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
@@ -211,13 +211,13 @@ public class DatasetDataWriter implements InternalStudyWriter
         return sql;
     }
 
-    private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removePhi, PHI exportPhiLevel, boolean isKeyProperty)
+    private static boolean shouldExport(ColumnInfo column, boolean metaData, PHI exportPhiLevel, boolean isKeyProperty)
     {
         return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DatasetDefinition.getQCStateURI()))) &&
-                !(column.getFk() instanceof ContainerForeignKey) && (!removePhi || (column.getPHI().isExportLevelAllowed(exportPhiLevel)) || isKeyProperty);
+                !(column.getFk() instanceof ContainerForeignKey) && (column.getPHI().isExportLevelAllowed(exportPhiLevel) || isKeyProperty);
     }
 
-    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, boolean removePhi, PHI exportPhiLevel)
+    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DatasetDefinition def, boolean metaData, PHI exportPhiLevel)
     {
         // tinfo can be null if the dataset is a Placeholder
         if (tinfo == null)
@@ -276,7 +276,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         for (ColumnInfo in : inColumns)
         {
             boolean isKeyProperty = in.getName().equals(def.getKeyPropertyName()) || (in.isUserEditable() && (in.equals(ptidColumn) || in.equals(sequenceColumn) || in.getName().toLowerCase().equals("date")));
-            if (shouldExport(in, metaData, removePhi, exportPhiLevel, isKeyProperty) || (metaData && isKeyProperty))
+            if (shouldExport(in, metaData, exportPhiLevel, isKeyProperty) || (metaData && isKeyProperty))
             {
                 if ("visit".equalsIgnoreCase(in.getName()) && !in.equals(sequenceColumn))
                     continue;
@@ -505,60 +505,50 @@ public class DatasetDataWriter implements InternalStudyWriter
         {
             // true cases
             ColumnInfo ci = new ColumnInfo("test");
-            assertTrue(shouldExport(ci, true, false, PHI.NotPHI, true));
-            assertTrue(shouldExport(ci, true, false, PHI.NotPHI, false));
-            assertTrue(shouldExport(ci, false, false, PHI.NotPHI, true));
-            assertTrue(shouldExport(ci, false, false, PHI.NotPHI, false));
+            assertTrue(shouldExport(ci, true, PHI.NotPHI, true));
+            assertTrue(shouldExport(ci, true, PHI.NotPHI, false));
+            assertTrue(shouldExport(ci, false, PHI.NotPHI, true));
+            assertTrue(shouldExport(ci, false, PHI.NotPHI, false));
 
             ci.setPHI(PHI.PHI);
-            assertTrue(shouldExport(ci, false, true, PHI.Restricted, false));
+            assertTrue(shouldExport(ci, false, PHI.PHI, false));
             ci.setPHI(PHI.Limited);
-            assertTrue(shouldExport(ci, false, true, PHI.Restricted, false));
-            assertTrue(shouldExport(ci, false, true, PHI.PHI, false));
+            assertTrue(shouldExport(ci, false, PHI.PHI, false));
+            assertTrue(shouldExport(ci, false, PHI.Limited, false));
             ci.setPHI(PHI.NotPHI);
-            assertTrue(shouldExport(ci, false, true, PHI.Restricted, false));
-            assertTrue(shouldExport(ci, false, true, PHI.PHI, false));
-            assertTrue(shouldExport(ci, false, true, PHI.Limited, false));
+            assertTrue(shouldExport(ci, false, PHI.PHI, false));
+            assertTrue(shouldExport(ci, false, PHI.Limited, false));
+            assertTrue(shouldExport(ci, false, PHI.NotPHI, false));
 
             ci.setPHI(PHI.Restricted);
-            assertTrue(shouldExport(ci, false, false, PHI.Restricted, false));
-            assertTrue(shouldExport(ci, false, false, PHI.PHI, false));
-            assertTrue(shouldExport(ci, false, false, PHI.Limited, false));
+            assertTrue(shouldExport(ci, false, PHI.Restricted, true));
             ci.setPHI(PHI.PHI);
-            assertTrue(shouldExport(ci, false, false, PHI.PHI, false));
-            assertTrue(shouldExport(ci, false, false, PHI.Limited, false));
+            assertTrue(shouldExport(ci, false, PHI.Restricted, true));
+            assertTrue(shouldExport(ci, false, PHI.PHI, true));
             ci.setPHI(PHI.Limited);
-            assertTrue(shouldExport(ci, false, false, PHI.Limited, false));
-
-            ci.setPHI(PHI.Restricted);
-            assertTrue(shouldExport(ci, false, true, PHI.Restricted, true));
-            assertTrue(shouldExport(ci, false, true, PHI.PHI, true));
-            assertTrue(shouldExport(ci, false, true, PHI.Limited, true));
-            ci.setPHI(PHI.PHI);
-            assertTrue(shouldExport(ci, false, true, PHI.PHI, true));
-            assertTrue(shouldExport(ci, false, true, PHI.Limited, true));
-            ci.setPHI(PHI.Limited);
-            assertTrue(shouldExport(ci, false, true, PHI.Limited, true));
+            assertTrue(shouldExport(ci, false, PHI.Restricted, true));
+            assertTrue(shouldExport(ci, false, PHI.PHI, true));
+            assertTrue(shouldExport(ci, false, PHI.Limited, true));
 
             // false cases
             ci = new ColumnInfo("test");
             ci.setUserEditable(false);
-            assertFalse(shouldExport(ci, true, false, PHI.NotPHI, false));
+            assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
             ci = new ColumnInfo("test");
             ci.setFk(new ContainerForeignKey(null, null));
-            assertFalse(shouldExport(ci, true, false, PHI.NotPHI, false));
+            assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
             ci = new ColumnInfo("test");
             ci.setPHI(PHI.Restricted);
-            assertFalse(shouldExport(ci, false, true, PHI.Restricted, false));
-            assertFalse(shouldExport(ci, false, true, PHI.PHI, false));
-            assertFalse(shouldExport(ci, false, true, PHI.Limited, false));
+            assertFalse(shouldExport(ci, false, PHI.PHI, false));
+            assertFalse(shouldExport(ci, false, PHI.Limited, false));
+            assertFalse(shouldExport(ci, false, PHI.NotPHI, false));
             ci.setPHI(PHI.PHI);
-            assertFalse(shouldExport(ci, false, true, PHI.PHI, false));
-            assertFalse(shouldExport(ci, false, true, PHI.Limited, false));
+            assertFalse(shouldExport(ci, false, PHI.Limited, false));
+            assertFalse(shouldExport(ci, false, PHI.NotPHI, false));
             ci.setPHI(PHI.Limited);
-            assertFalse(shouldExport(ci, false, true, PHI.Limited, false));
+            assertFalse(shouldExport(ci, false, PHI.NotPHI, false));
         }
     }
 }

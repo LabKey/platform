@@ -57,6 +57,8 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.compliance.ComplianceService" %>
+<%@ page import="org.labkey.api.data.PHI" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -120,6 +122,9 @@
 
     int numDatasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER).size();
     Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
+
+    ComplianceService complianceService = ComplianceService.get();
+    String maxAllowedPhi = (null != complianceService ? complianceService.getMaxAllowedPhi(c, getUser()).name() : PHI.NotPHI.name());
 
     if (study.hasSourceStudy() || study.isSnapshotStudy())
     {
@@ -439,6 +444,6 @@
 <script type="text/javascript">
     function showCreateStudyWizard(mode)
     {
-        LABKEY.study.openCreateStudyWizard(mode, <%=q(availableStudyName)%>);
+        LABKEY.study.openCreateStudyWizard(mode, <%=q(availableStudyName)%>, <%=q(maxAllowedPhi)%>);
     }
 </script>

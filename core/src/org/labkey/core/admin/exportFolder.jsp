@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExportFolderForm" %>
+<%@ page import="org.labkey.api.data.PHI" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -61,18 +62,14 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
 
 Ext4.onReady(function(){
 
-    LABKEY.Ajax.request({
-        url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
-        method: 'POST',
-        jsonData: {
-            exportType: <%=q(form.getExportType().toString())%>
-        },
-        scope: this,
-        success: function (response) {
-            var responseText = Ext4.decode(response.responseText);
-            initExportForm(responseText['writers']);
-        }
-    });
+    // Literals for PHI
+    var restrictedPhi = <%=PHI.Restricted.ordinal()%>;
+    var fullPhi = <%=PHI.PHI.ordinal()%>;
+    var limitedPhi = <%=PHI.Limited.ordinal()%>;
+    var notPhi = <%=PHI.NotPHI.ordinal()%>;
+
+    var maxAllowedPhiLevel = <%=form.getExportPhiLevel().ordinal()%>;
+    var isIncludePhiChecked = (maxAllowedPhiLevel > notPhi);
 
     var initExportForm = function(folderWriters) {
         var formItemsCol1 = [],
@@ -123,27 +120,59 @@ Ext4.onReady(function(){
             }
         });
 
+        var phiStore = Ext4.create('Ext.data.Store', {
+            fields: ['label', 'value']
+        });
+
+        if (maxAllowedPhiLevel === restrictedPhi)
+            phiStore.add({value: 'Restricted', label: 'Restricted, Full and Limited PHI'});
+        if (maxAllowedPhiLevel >= fullPhi)
+            phiStore.add({value: 'PHI',  label: 'Full and Limited PHI'});
+        if (maxAllowedPhiLevel >= limitedPhi)
+            phiStore.add({value: 'Limited', label: 'Limited PHI'});
+
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'container', layout: 'hbox', items:[
-            {xtype: 'checkbox', hideLabel: true, boxLabel: 'Exclude Columns At This PHI Level And Higher:<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Exclude all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or above.")%>&nbsp&nbsp', name: 'removePhi', objectType: 'otherOptions',
-                listeners : {
-                    change : function(cmp, checked){
-                        var radioGroup = cmp.ownerCt.getComponent('phi_level');
-                        if (radioGroup)
-                            radioGroup.setDisabled(!checked);
+
+        formItemsCol2.push({
+            xtype: 'container',
+            layout: 'hbox',
+            items:[{
+                xtype: 'checkbox',
+                hideLabel: true,
+                boxLabel: 'Include PHI Columns:<%=PageFlowUtil.helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.")%>&nbsp&nbsp',
+                itemId: 'includePhi',
+                name: 'includePhi',
+                objectType: 'otherOptions',
+                checked: isIncludePhiChecked,
+                listeners: {
+                    change: function(cmp, checked){
+                        var combo = cmp.ownerCt.getComponent('phi_level');
+                        if (combo) {
+                            combo.setValue(checked ? getPhiValue(maxAllowedPhiLevel) : 'NotPHI');
+                            combo.setDisabled(!checked);
+                        }
                     }
                 }
-            },
-            {xtype: 'radiogroup', hideLabel: true, columns : 1, disabled : true, itemId : 'phi_level',
-                items: [
-                    {boxLabel: 'Limited', fieldCls: 'export-phi-level', name: 'exportPhiLevel', inputValue: 'Limited', checked : true, style:'margin-left: 2px'},
-                    {boxLabel: 'Full', fieldCls: 'export-phi-level', name: 'exportPhiLevel', inputValue: 'PHI', style:'margin-left: 2px'},
-                    {boxLabel: 'Restricted', fieldCls: 'export-phi-level', name: 'exportPhiLevel', inputValue: 'Restricted', style:'margin-left: 2px'}
-                ]
+            }, {
+                xtype: 'combobox',
+                hideLabel: true,
+                disabled : !isIncludePhiChecked,
+                itemId : 'phi_level',
+                name: 'exportPhiLevel',
+                store: phiStore,
+                displayField: 'label',
+                valueField: 'value',
+                queryMode: 'local',
+                margin:'0 0 0 2',
+                matchFieldWidth: false,
+                width: 194,
+                valueNotFoundText: 'NotPHI',
+                value: getPhiValue(maxAllowedPhiLevel)
             }
         ]});
+
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', fieldCls: 'shift-dates', name: 'shiftDates', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', fieldCls: 'alternate-ids', name: 'alternateIds', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Mask Clinic Names<%=PageFlowUtil.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
@@ -207,7 +236,27 @@ Ext4.onReady(function(){
                 }
             }
         });
-    }
+    };
+
+    var getPhiValue = function(ordinal) {
+        return  (ordinal === restrictedPhi) ? 'Restricted' :
+                (ordinal === fullPhi) ? 'PHI' :
+                (ordinal === limitedPhi) ? 'Limited' :
+                'NotPHI';
+    };
+
+    LABKEY.Ajax.request({
+        url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
+        method: 'POST',
+        jsonData: {
+            exportType: <%=q(form.getExportType().toString())%>
+        },
+        scope: this,
+        success: function (response) {
+            var responseText = Ext4.decode(response.responseText);
+            initExportForm(responseText['writers']);
+        }
+    });
 });
 
 </script>

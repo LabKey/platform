@@ -38,6 +38,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
@@ -3843,7 +3844,7 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared)
+    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared, @Nullable Activity activity)
     {
         if (errors.hasErrors())
             return false;
@@ -3877,6 +3878,24 @@ public class StudyManager
         {
             for (String error : importErrors)
                 errors.reject("importDatasetSchemas", error);
+            return false;
+        }
+
+        // Check PHI levels
+        PHI maxAllowedPhi = PHI.determinePhiAllowed(createDatasetStudy.getContainer(), user);
+        if (null != activity && !maxAllowedPhi.isLevelAllowed(activity.getPHI()))
+            maxAllowedPhi = activity.getPHI();      // Reduce allowed level
+
+        PHI maxContainedPhi = PHI.NotPHI;
+        for (ImportPropertyDescriptor ipd : list.properties)
+        {
+            if (maxContainedPhi.getRank() < ipd.pd.getPHI().getRank())
+                maxContainedPhi = ipd.pd.getPHI();
+        }
+
+        if (!maxContainedPhi.isLevelAllowed(maxAllowedPhi))
+        {
+            errors.reject(ERROR_MSG, "User's max allowed PHI is '" + maxAllowedPhi.getLabel() + "', but imported datasets contain higher PHI '" + maxContainedPhi.getLabel() + "'.");
             return false;
         }
 

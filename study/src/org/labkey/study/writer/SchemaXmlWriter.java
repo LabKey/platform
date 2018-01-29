@@ -91,7 +91,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
             else
             {
                 TableInfo ti = schema.getTable(def.getName());
-                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, ctx.isRemovePhi(), ctx.getPhiLevel());
+                DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, ctx.getPhiLevel());
                 w.writeTable(tableXml);
             }
         }
@@ -124,9 +124,9 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
         private final DatasetDefinition _def;
         private final Collection<IndexInfo> _indices;
 
-        private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, boolean removePhi, PHI exportPhiLevel)
+        private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, PHI exportPhiLevel)
         {
-            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, removePhi, exportPhiLevel));
+            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, exportPhiLevel));
             _def = def;
             _indices = DatasetDataWriter.getIndicesToExport(ti);
         }

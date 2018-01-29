@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -27,6 +28,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JavaScriptDisplayColumn;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.AliasedColumn;
@@ -122,6 +124,9 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
             }
         });
 
+        ComplianceService complianceService = ComplianceService.get();
+        String maxAllowedPhi = (null != complianceService ? complianceService.getMaxAllowedPhi(getContainer(), schema.getUser()).name() : PHI.NotPHI.name());
+
         AliasedColumn republishCol = new AliasedColumn("Republish", wrapColumn(_rootTable.getColumn("RowId")));
         republishCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -135,7 +140,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 dependencies.add("study/StudyWizard.js");
 
                 String availableStudyName = ContainerManager.getAvailableChildContainerName(getContainer(), "New Study");
-                String javaScriptEvent = "onclick=\"LABKEY.study.openRepublishStudyWizard(${RowId:jsString}, '" + availableStudyName + "');\"";
+                String javaScriptEvent = "onclick=\"LABKEY.study.openRepublishStudyWizard(${RowId:jsString}, '" + availableStudyName + "', '" + maxAllowedPhi + "');\"";
 
                 return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
                 {

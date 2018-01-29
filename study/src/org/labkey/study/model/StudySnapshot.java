@@ -410,7 +410,6 @@ public class StudySnapshot
 
         private void loadPublishOptions(StudyExportContext ctx)
         {
-            removePhiColumns = ctx.isRemovePhi();
             phiLevel = ctx.getPhiLevel();
             shiftDates = ctx.isShiftDates();
             useAlternateParticipantIds = ctx.isAlternateIds();
@@ -436,7 +435,7 @@ public class StudySnapshot
 
         public boolean isRemovePhiColumns()
         {
-            return removePhiColumns;
+            return false;
         }
 
         public PHI getPhiLevel()
