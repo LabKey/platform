@@ -263,7 +263,7 @@
                               forceSmallContext="true"
                               contextContent="Where the file should be moved before analysis. This can be absolute or relative to the current project/folder."/>
 
-                <labkey:input name="copyTo"
+                <labkey:input name="copy"
                               className="form-control lk-pipeline-input"
                               label="Copy file to"
                               forceSmallContext="true"
