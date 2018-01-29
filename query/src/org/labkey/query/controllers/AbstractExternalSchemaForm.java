@@ -15,7 +15,7 @@
  */
 package org.labkey.query.controllers;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.action.SpringActionController;
