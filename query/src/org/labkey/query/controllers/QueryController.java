@@ -2608,6 +2608,7 @@ public class QueryController extends SpringActionController
 
     public static final int DEFAULT_API_MAX_ROWS = 100000;
 
+    @CSRF(CSRF.Method.NONE)//TODO remove this annotation when possible (see flow-reports-create, flow-reports-update)
     @ActionNames("selectRows, getQuery")
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
