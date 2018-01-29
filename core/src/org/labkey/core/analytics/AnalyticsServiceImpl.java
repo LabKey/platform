@@ -16,12 +16,15 @@
 package org.labkey.core.analytics;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -142,15 +145,6 @@ public class AnalyticsServiceImpl implements AnalyticsService
      * <p>For an explanation of what settings are available on the pageTracker object, see
      * <a href="http://code.google.com/apis/analytics/docs/gaJSApi.html">Google Analytics Tracking API</a>
      */
-    static final private String TRACKING_SCRIPT_TEMPLATE_OLD =
-        "<script type=\"text/javascript\" src=\"${GA_JS}\"></script>\n" +
-        "<script type=\"text/javascript\">\n" +
-        "var pageTracker = _gat._getTracker(${ACCOUNT_ID});\n" +
-        "pageTracker._initData();\n" +
-        "pageTracker._setDetectTitle(false);\n" +
-        "pageTracker._trackPageview(${PAGE_URL});\n" +
-        "</script>";
-
     // new style (async)
     static final private String TRACKING_SCRIPT_TEMPLATE_ASYNC =
         "<script type=\"text/javascript\">\n"+
@@ -196,5 +190,25 @@ public class AnalyticsServiceImpl implements AnalyticsService
         trackingScript = StringUtils.replace(trackingScript, "${PAGE_URL}", PageFlowUtil.jsString(getSanitizedUrl(context)));
         trackingScript = StringUtils.replace(trackingScript, "${GA_JS}", gaJS);
         return trackingScript;
+    }
+
+    static public void populateSettingsWithStartupProps()
+    {
+        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
+        PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
+        ModuleLoader.getInstance().getConfigProperties(PROP_CATEGORY)
+                .forEach(prop ->{
+                    try
+                    {
+                        AnalyticsProperty analyticsProperty = AnalyticsProperty.valueOf(prop.getName());
+                        if (isBootstrap || prop.getModifier() != ConfigProperty.modifier.bootstrap)
+                            properties.put(analyticsProperty.toString(), prop.getValue());
+                    }
+                    catch (IllegalArgumentException ex)
+                    {
+                        Logger.getLogger(AnalyticsServiceImpl.class).warn("error handling startup property", ex);
+                    }
+                });
+        properties.save();
     }
 }

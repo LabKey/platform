@@ -53,7 +53,7 @@
                     from LabKey, you should sign up for your own
                     <a href="http://www.google.com/analytics">Google Analytics</a> account and use the Account ID that they give you.
                 </p><p>Google Analytics Account ID:<br>
-                    <input type="text" name="ff_accountId" value="<%=h(settingsForm.ff_accountId)%>"/>
+                    <input <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> type="text" name="ff_accountId" value="<%=h(settingsForm.ff_accountId)%>"/>
                 </p>
             </td>
         </tr>
@@ -62,7 +62,7 @@
             <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;CUSTOM</td>
             <td><p style="margin-top:0">Add custom script to the head of every  page.  Include required &lt;script&gt; tags.</p>
                 <p><b>NOTE:</b> You can mess up your site if you make a mistake here.  You may want to take this opportunity to bookmark this page.  Just in case.</p>
-                <p><textarea  style="width:600px; height:400px;" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea></p></td>
+                <p><textarea <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> style="width:600px; height:400px;" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea></p></td>
         </tr>
     </table>
 

@@ -842,6 +842,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         PropertyService.get().registerDomainKind(new TestDomainKind());
 
         AuthenticationManager.populateSettingsWithStartupProps();
+        AnalyticsServiceImpl.populateSettingsWithStartupProps();
     }
 
     @Override
