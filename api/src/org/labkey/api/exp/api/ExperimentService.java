@@ -429,7 +429,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
                   Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
                   ViewBackgroundInfo info, Logger log)
         throws ExperimentException;
-    void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+    void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
     void registerExperimentDataHandler(ExperimentDataHandler handler);
     void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
