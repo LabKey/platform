@@ -4621,7 +4621,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public void deriveSamplesBulk(List<SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException
+    public void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException
     {
         final int MAX_RUNS_IN_BATCH = 1000;
         int count = 0;

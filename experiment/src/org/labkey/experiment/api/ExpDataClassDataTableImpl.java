@@ -80,6 +80,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
+import org.labkey.experiment.samples.UploadSamplesHelper.UploadSampleRunRecord;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -1012,7 +1013,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             {
                 try
                 {
-                    List<SimpleRunRecord> runRecords = new ArrayList<>();
+                    List<UploadSampleRunRecord> runRecords = new ArrayList<>();
                     for (Map.Entry<String, Set<Pair<String, String>>> entry : _parentNames.entrySet())
                     {
                         String lsid = entry.getKey();
@@ -1031,8 +1032,8 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
                             data = ExperimentService.get().getExpData(lsid);
                             if (data != null)
                             {
-                                runRecords.add(new UploadSamplesHelper.UploadSampleRunRecord(parentMaterialMap, Collections.emptyMap(),
-                                        parentDataMap, Collections.singletonMap(data, "Data")));
+                                UploadSamplesHelper.record(false, runRecords, parentMaterialMap, Collections.emptyMap(),
+                                        parentDataMap, new HashMap<>(Collections.singletonMap(data, "Data")));
                             }
                         }
 
@@ -1046,8 +1047,8 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
                                 data = ExperimentService.get().getExpData(lsid);
                             if (data != null)
                             {
-                                runRecords.add(new UploadSamplesHelper.UploadSampleRunRecord(Collections.emptyMap(), childMaterialMap,
-                                        Collections.singletonMap(data, "Data"), childDataMap));
+                                UploadSamplesHelper.record(false, runRecords, Collections.emptyMap(), childMaterialMap,
+                                        new HashMap<>(Collections.singletonMap(data, "Data")), childDataMap);
                             }
                         }
                     }

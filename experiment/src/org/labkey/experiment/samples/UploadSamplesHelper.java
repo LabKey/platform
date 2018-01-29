@@ -683,15 +683,12 @@ public class UploadSamplesHelper
 
         if (!skipDerivation && (source.getParentCol() != null || !inputOutputColumns.isEmpty()))
         {
-            Map<String, PropertyDescriptor> descriptorMap = new HashMap<>();
+            // TODO: replace with a cache
             Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
-
-            for (PropertyDescriptor descriptor : descriptors)
-                descriptorMap.put(descriptor.getPropertyURI(), descriptor);
 
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
 
-            List<SimpleRunRecord> runRecords = new ArrayList<>();
+            List<UploadSampleRunRecord> runRecords = new ArrayList<>();
             for (int i = 0; i < rows.size(); i++)
             {
                 Map<String, Object> row = rows.get(i);
@@ -700,11 +697,13 @@ public class UploadSamplesHelper
                 if (reusedMaterialLSIDs.contains(material.getLSID()))
                 {
                     // Since this entry was already in the database, we may need to delete old derivation info
+                    // TODO: Only delete sample derivation protocol -- not just any runs
+                    // TODO: Only delete the run if this sample is the only output of the run, otherwise just remove this sample as an output of the run
                     ExpProtocolApplication existingSourceApp = material.getSourceApplication();
                     if (existingSourceApp != null)
                     {
                         ExpRun existingDerivationRun = existingSourceApp.getRun();
-                        if (existingDerivationRun != null)
+                        if (existingDerivationRun != null /*&& existingDerivationRun.getProtocol() == sample derivation */)
                         {
                             material.setSourceApplication(null);
                             material.save(_form.getUser());
@@ -723,7 +722,7 @@ public class UploadSamplesHelper
                     // Add parent derivation run
                     Map<ExpMaterial, String> parentMaterialMap = inputsAndOutputs.first.getMaterials();
                     Map<ExpData, String> parentDataMap = inputsAndOutputs.first.getDatas();
-                    runRecords.add(new UploadSampleRunRecord(parentMaterialMap, Collections.singletonMap(material, "Sample"), parentDataMap, Collections.emptyMap()));
+                    record(_form.isMergeDerivations(), runRecords, parentMaterialMap, new HashMap<>(Collections.singletonMap(material, "Sample")), parentDataMap, new HashMap<>());
                 }
 
                 if (inputsAndOutputs.second != null)
@@ -731,7 +730,7 @@ public class UploadSamplesHelper
                     // Add child derivation run
                     Map<ExpMaterial, String> childMaterialMap = inputsAndOutputs.second.getMaterials();
                     Map<ExpData, String> childDataMap = inputsAndOutputs.second.getDatas();
-                    runRecords.add(new UploadSampleRunRecord(Collections.singletonMap(material, "Sample"), childMaterialMap, Collections.emptyMap(), childDataMap));
+                    record(_form.isMergeDerivations(), runRecords, Collections.singletonMap(material, "Sample"), childMaterialMap, Collections.emptyMap(), childDataMap);
                 }
             }
 
@@ -753,9 +752,49 @@ public class UploadSamplesHelper
         return helper._materials;
     }
 
+    /**
+     * Collect the output material or data into a run record.
+     * When merge is true, the outputs will be combined with
+     * an existing record with the same input parents, if possible.
+     */
+    public static void record(boolean merge,
+                              List<UploadSampleRunRecord> runRecords,
+                              Map<ExpMaterial, String> parentMaterialMap,
+                              Map<ExpMaterial, String> childMaterialMap,
+                              Map<ExpData, String> parentDataMap,
+                              Map<ExpData, String> childDataMap)
+    {
+        if (merge)
+        {
+            Set<ExpMaterial> parentMaterials = parentMaterialMap.keySet();
+            Set<ExpData> parentDatas = parentDataMap.keySet();
+
+            // find existing RunRecord with the same set of parents and add output children to it
+            for (UploadSampleRunRecord record : runRecords)
+            {
+                if (record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
+                {
+                    if (record._outputMaterial.isEmpty())
+                        record._outputMaterial = childMaterialMap;
+                    else
+                        record._outputMaterial.putAll(childMaterialMap);
+
+                    if (record._outputData.isEmpty())
+                        record._outputData = childDataMap;
+                    else
+                        record._outputData.putAll(childDataMap);
+                    return;
+                }
+            }
+        }
+
+        // otherwise, create new run record
+        runRecords.add(new UploadSampleRunRecord(parentMaterialMap, childMaterialMap, parentDataMap, childDataMap));
+    }
+
     public static class UploadSampleRunRecord implements SimpleRunRecord
     {
-        Map<ExpMaterial, String> _inputMaterial;
+        private Map<ExpMaterial, String> _inputMaterial;
         Map<ExpMaterial, String> _outputMaterial;
         Map<ExpData, String> _inputData;
         Map<ExpData, String> _outputData;

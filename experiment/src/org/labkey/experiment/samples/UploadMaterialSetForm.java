@@ -48,6 +48,7 @@ public class UploadMaterialSetForm extends ViewForm
     private Integer rowId;
     private boolean addUniqueSuffixForDuplicateNames = false;
     private boolean skipDerivation = false;
+    private boolean mergeDerivations = true;
 
     private DataLoader _loader;
 
@@ -160,6 +161,21 @@ public class UploadMaterialSetForm extends ViewForm
     public void setSkipDerivation(boolean skipDerivation)
     {
         this.skipDerivation = skipDerivation;
+    }
+
+    /**
+     * When true, sample derivations are combined together by input parents to reduce the number of
+     * derivations runs that will be created.
+     * When false, a sample derivation run will be created for each Sample row that has inputs or outputs.
+     */
+    public boolean isMergeDerivations()
+    {
+        return mergeDerivations;
+    }
+
+    public void setMergeDerivations(boolean mergeDerivations)
+    {
+        this.mergeDerivations = mergeDerivations;
     }
 
     public void setData(String data)
