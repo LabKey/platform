@@ -31,7 +31,7 @@ public enum PHI
     NotPHI(null, "Not PHI"),
     Limited(LimitedPHIPermission.class, "Limited PHI"),
     PHI(FullPHIPermission.class, "Full PHI"),
-    Restricted(RestrictedPHIPermission.class, "Restricted");
+    Restricted(RestrictedPHIPermission.class, "Restricted PHI");
 
     public static PHI fromString(@Nullable String value)
     {
@@ -56,14 +56,14 @@ public enum PHI
         return ordinal();
     }
 
-    public boolean isLevelAllowed(PHI level)
+    public boolean isLevelAllowed(PHI maxLevelAllowed)
     {
-        return ordinal() <= level.ordinal();
+        return ordinal() <= maxLevelAllowed.ordinal();
     }
 
     public boolean isExportLevelAllowed(PHI level)
     {
-        return ordinal() < level.ordinal();
+        return ordinal() <= level.ordinal();
     }
 
     @Nullable

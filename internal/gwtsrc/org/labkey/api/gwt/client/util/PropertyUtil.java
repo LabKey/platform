@@ -95,6 +95,12 @@ public class PropertyUtil
         return ret;
     }
 
+    // @Nullable
+    public static String getMaxAllowedPhi()
+    {
+        return getServerProperty("maxAllowedPhi");
+    }
+
     public static String getRelativeURL(String action)
     {
         return getRelativeURL(action, getController());

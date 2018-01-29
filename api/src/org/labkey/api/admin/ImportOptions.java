@@ -16,6 +16,7 @@
 package org.labkey.api.admin;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Activity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
@@ -39,6 +40,7 @@ public class ImportOptions
     private Integer _userId = null;
     private Collection<String> _messages = new LinkedList<>();
     private Set<String> _dataTypes;
+    private Activity _activity;
 
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
@@ -134,5 +136,15 @@ public class ImportOptions
     public void setDataTypes(Set<String> dataTypes)
     {
         _dataTypes = dataTypes;
+    }
+
+    public Activity getActivity()
+    {
+        return _activity;
+    }
+
+    public void setActivity(Activity activity)
+    {
+        _activity = activity;
     }
 }

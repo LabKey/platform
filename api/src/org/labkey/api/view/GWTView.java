@@ -17,6 +17,8 @@
 package org.labkey.api.view;
 
 import com.google.gwt.core.client.EntryPoint;
+import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.data.PHI;
 
 import java.util.*;
 
@@ -49,6 +51,9 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             _properties.put("contextPath", context.getContextPath());
             _properties.put("header1Size", ThemeFont.getThemeFont(context.getContainer()).getHeader_1Size());
             _properties.put("loadingStyle", "");
+
+            ComplianceService complianceService = ComplianceService.get();
+            _properties.put("maxAllowedPhi", (null != complianceService) ? complianceService.getMaxAllowedPhi(context.getContainer(), context.getUser()).name() : PHI.Restricted.name());
         }
 
         public String getModuleName()

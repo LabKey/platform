@@ -18,6 +18,7 @@ package org.labkey.api.admin;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
@@ -46,6 +47,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private boolean _createSharedDatasets;
     private boolean _failForUndefinedVisits;
     private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
+    private Activity _activity;
 
     private transient XmlDocument _xmlDocument;
 
@@ -158,12 +160,6 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     }
 
     @Override
-    public boolean isRemovePhi()
-    {
-        return false;
-    }
-
-    @Override
     public PHI getPhiLevel()
     {
         return PHI.NotPHI;
@@ -243,5 +239,15 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public boolean isDataTypeSelected(String dataType)
     {
         return _dataTypes == null || dataType == null || _dataTypes.contains(dataType);
+    }
+
+    public Activity getActivity()
+    {
+        return _activity;
+    }
+
+    public void setActivity(Activity activity)
+    {
+        _activity = activity;
     }
 }

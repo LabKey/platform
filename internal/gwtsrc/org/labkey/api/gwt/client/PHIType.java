@@ -20,7 +20,7 @@ public enum PHIType
     NotPHI("Not PHI"),
     Limited("Limited PHI"),
     PHI("Full PHI"),
-    Restricted("Restricted");
+    Restricted("Restricted PHI");
 
     private String _label;
 
@@ -32,5 +32,19 @@ public enum PHIType
     public String getLabel()
     {
         return _label;
+    }
+
+    public static PHIType fromString(String value)
+    {
+        for (PHIType phi : values())
+            if (phi.name().equals(value))
+                return phi;
+
+        return null;
+    }
+
+    public boolean isLevelAllowed(PHIType maxLevelAllowed)
+    {
+        return ordinal() <= maxLevelAllowed.ordinal();
     }
 }

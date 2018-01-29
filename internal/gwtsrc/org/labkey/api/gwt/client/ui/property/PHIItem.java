@@ -21,6 +21,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
@@ -38,13 +39,21 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
     private void updateState(FieldType field)
     {
+        PHIType maxPHI = PHIType.fromString(PropertyUtil.getMaxAllowedPhi());
+        if (null == maxPHI)
+            maxPHI = PHIType.Restricted;
+
+        String phi = field.getPHI();
+        PHIType currentPHI = PHIType.fromString(phi);
+        if (null != currentPHI && !currentPHI.isLevelAllowed(maxPHI))
+            setCanEnable(false);
+
         if (_phiTypes.getItemCount() == 0)
         {
             for (PHIType t : PHIType.values())
-                _phiTypes.addItem(t.getLabel(), t.name());
+                if (!getCanEnable() || t.isLevelAllowed(maxPHI))    // Show level if field cannot be enabled or if level allowed to be set
+                    _phiTypes.addItem(t.getLabel(), t.name());
         }
-
-        String phi = field.getPHI();
 
         for (int i = 0; i < _phiTypes.getItemCount(); i++)
         {
@@ -61,10 +70,21 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
     private void updateEnabledState(DomainType domain, FieldType currentField)
     {
-        if (!domain.allowsPhi(currentField))
+        boolean domainAllowsPhi = domain.allowsPhi(currentField);
+        if (!domainAllowsPhi)
             currentField.setPHI(PHIType.NotPHI.toString());
 
-        setCanEnable(domain.allowsPhi(currentField));
+        setCanEnable(domainAllowsPhi && isCurrentPHIAllowed(currentField));
+    }
+
+    private boolean isCurrentPHIAllowed(FieldType field)
+    {
+        PHIType maxPHI = PHIType.fromString(PropertyUtil.getMaxAllowedPhi());
+        if (null == maxPHI)
+            maxPHI = PHIType.Restricted;
+
+        PHIType currentPHI = PHIType.fromString(field.getPHI());
+        return (null == currentPHI || currentPHI.isLevelAllowed(maxPHI));
     }
 
     public int addToTable(FlexTable flexTable, int row)

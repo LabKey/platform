@@ -24,6 +24,6 @@ public class RestrictedPHIPermission extends AbstractPermission
 {
     public RestrictedPHIPermission()
     {
-        super("Limited PHI Permission", "Users may view limited PHI.");
+        super("Restricted PHI Permission", "Users may view Restricted PHI.");
     }
 }

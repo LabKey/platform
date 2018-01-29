@@ -17,7 +17,9 @@ package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PHI;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -43,6 +45,14 @@ public interface ComplianceService
     ActionURL urlFor(Container container, QueryAction action, ActionURL queryBasedUrl);
     boolean hasElecSignPermission(@NotNull Container container, @NotNull User user);
     boolean hasViewSignedSnapshotsPermission(@NotNull Container container, @NotNull User user);
+    default @NotNull PHI getMaxAllowedPhi(@NotNull Container container, @NotNull User user)
+    {
+        return PHI.Restricted;
+    }
+    default Activity getCurrentActivity(ViewContext viewContext)
+    {
+        return null;
+    }
     default String getPHIBanner(ViewContext viewContext)
     {
         return null;

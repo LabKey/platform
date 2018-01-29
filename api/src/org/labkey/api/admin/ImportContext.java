@@ -17,6 +17,7 @@ package org.labkey.api.admin;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.data.Activity;
 import org.labkey.api.data.PHI;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -37,7 +38,6 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     Set<String> getDataTypes();
     String getFormat();
     boolean isIncludeSubfolders();
-    boolean isRemovePhi();
     PHI getPhiLevel();
     boolean isShiftDates();
     boolean isAlternateIds();
@@ -47,6 +47,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     boolean isCreateSharedDatasets();
     boolean isFailForUndefinedVisits();
     boolean isDataTypeSelected(String dataType);
+    Activity getActivity();
 
     // These methods let writers add and get module-specific context information
     <K extends ImportContext> void addContext(Class<K> contextClass, K context);

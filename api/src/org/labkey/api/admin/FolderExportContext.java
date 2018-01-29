@@ -34,7 +34,6 @@ public class FolderExportContext extends AbstractFolderContext
 {
     private String _format = "new";
     private boolean _includeSubfolders = false;
-    private boolean _removePhi = false;
     private PHI _phiLevel = null;
     private boolean _shiftDates = false;
     private boolean _alternateIds = false;
@@ -45,10 +44,10 @@ public class FolderExportContext extends AbstractFolderContext
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
-        this(user, c, dataTypes, format, false, false, PHI.NotPHI,false, false, false, logger);
+        this(user, c, dataTypes, format, false, PHI.Restricted, false, false, false, logger);
     }
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removePhi, PHI phiLevel, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, PHI phiLevel, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
     {
         super(user, c, getFolderDocument(), dataTypes, logger, null);
 
@@ -63,7 +62,6 @@ public class FolderExportContext extends AbstractFolderContext
 
         _format = format;
         _includeSubfolders = includeSubfolders;
-        _removePhi = removePhi;
         _phiLevel = phiLevel;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
@@ -83,11 +81,6 @@ public class FolderExportContext extends AbstractFolderContext
     public boolean  isIncludeSubfolders()
     {
         return _includeSubfolders;
-    }
-
-    public boolean isRemovePhi()
-    {
-        return _removePhi;
     }
 
     public PHI getPhiLevel()
