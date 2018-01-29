@@ -105,11 +105,17 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             'Can Set Per Folder: ' + pd.canSetPerContainer
         ];
 
-        if(!Ext4.isEmpty(pd.defaultValue))
-            tooltip.push('Default Value: ' + pd.defaultValue);
-
-        if(!pd.showDescriptionInline && !Ext4.isEmpty(pd.description))
+        var descDisplay = '', descSep = '';
+        if(!Ext4.isEmpty(pd.description)) {
             tooltip.push('Description: ' + pd.description);
+            descDisplay = Ext4.String.htmlEncode(pd.description);
+            descSep = '<br/>';
+        }
+
+        if(!Ext4.isEmpty(pd.defaultValue)) {
+            tooltip.push('Default Value: ' + pd.defaultValue);
+            descDisplay += descSep + Ext4.String.htmlEncode('Default Value: ' + pd.defaultValue)
+        }
 
         tooltip = tooltip.join('<br>');
 
@@ -132,11 +138,11 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                     padding: 3
                 },
                 items: [{
-                    html: Ext4.String.htmlEncode(pd.description),
+                    html: descDisplay,
                     border: false,
                     width: '100%',
                     padding: '0 0 10px 2px',
-                    hidden: !pd.showDescriptionInline || Ext4.isEmpty(pd.description)
+                    hidden: !pd.showDescriptionInline || Ext4.isEmpty(descDisplay)
                 },{
                     xtype: 'displayfield',
                     fieldLabel: '<b>Folder</b>',
