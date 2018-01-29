@@ -23,12 +23,6 @@ $lk-theme-light-accent: $Mono-header;
 $lk-accent-color: $lk-theme-light-accent;
 $lk-text-color: $Mono-body-font;
 
-//== Forms / States
-//
-$lk-state-warning-text: $Mono-body-font;
-$lk-state-warning-bg: $Mono-gray-blue;
-$lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
-
 //== Body
 //
 $lk-body-bg-color: $Mono-page-bkgd;

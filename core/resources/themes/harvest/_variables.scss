@@ -24,12 +24,6 @@ $lk-theme-light-accent: $Harvest-header;
 $lk-accent-color: $lk-theme-light-accent;
 $lk-text-color: $Harvest-body-font;
 
-//== Forms / States
-//
-$lk-state-warning-text: $Harvest-body-font;
-$lk-state-warning-bg: $Harvest-gray-blue;
-$lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%);
-
 //== Body
 //
 $lk-body-bg-color: $Harvest-page-bkgd;
