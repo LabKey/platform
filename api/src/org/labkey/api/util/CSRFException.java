@@ -27,6 +27,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class CSRFException extends UnauthorizedException
 {
+    private final String referer;
+
     public CSRFException()
     {
         this(null);
@@ -35,5 +37,11 @@ public class CSRFException extends UnauthorizedException
     CSRFException(@Nullable HttpServletRequest request)
     {
         super("This request has an invalid security context.  You may have signed in or signed out of this session.  Try again by using the 'back' and 'refresh' button in your browser.");
+        referer = request.getHeader("referer");
+    }
+
+    public String getReferer()
+    {
+        return referer;
     }
 }

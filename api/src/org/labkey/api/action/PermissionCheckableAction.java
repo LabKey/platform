@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AdminConsoleAction;
@@ -39,6 +40,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NotFoundException;
@@ -202,6 +204,19 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             }
 
             csrfCheck.validate(context);
+
+            // if csrfCheck != POST, check to see if it would have failed with csrfCheck == POST, for auditing purposes
+            if (csrfCheck != CSRF.Method.POST)
+            {
+                try
+                {
+                    CSRF.Method.POST.validate(context);
+                }
+                catch (CSRFException ex)
+                {
+                    SpringActionController.getActionDescriptor(this.getClass()).addException(ex);
+                }
+            }
         }
 
         // User must have at least one permission in this set

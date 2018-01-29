@@ -127,7 +127,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     @NotNull
-    private static ActionDescriptor getActionDescriptor(Class<? extends Controller> actionClass)
+    static ActionDescriptor getActionDescriptor(Class<? extends Controller> actionClass)
     {
         ActionDescriptor ad = _classToDescriptor.get(actionClass);
 
@@ -170,6 +170,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Controller createController(Controller actionController);
 
         void addTime(long time);
+        void addException(Exception x);
         ActionStats getStats();
     }
 
@@ -179,6 +180,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
         long getCount();
         long getElapsedTime();
         long getMaxTime();
+        boolean hasExceptions();
+        List<Exception> getExceptions();
     }
 
     ApplicationContext _applicationContext = null;
@@ -619,6 +622,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private long _count = 0;
         private long _elapsedTime = 0;
         private long _maxTime = 0;
+        private List<Exception> _exceptions = null;
 
         synchronized public void addTime(long time)
         {
@@ -629,9 +633,18 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _maxTime = time;
         }
 
+        @Override
+        public void addException(Exception ex)
+        {
+            if (null == _exceptions)
+                _exceptions = new ArrayList<>();
+            if (_exceptions.size() < 20)
+                _exceptions.add(ex);
+        }
+
         synchronized public ActionStats getStats()
         {
-            return new BaseActionStats(_count, _elapsedTime, _maxTime);
+            return new BaseActionStats(_count, _elapsedTime, _maxTime, _exceptions);
         }
 
         // Immutable stats holder to eliminate external synchronization needs
@@ -640,12 +653,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
             private final long _count;
             private final long _elapsedTime;
             private final long _maxTime;
+            private final List<Exception> _exceptions;
 
-            private BaseActionStats(long count, long elapsedTime, long maxTime)
+            private BaseActionStats(long count, long elapsedTime, long maxTime, List<Exception> ex)
             {
                 _count = count;
                 _elapsedTime = elapsedTime;
                 _maxTime = maxTime;
+                _exceptions = ex;
             }
 
             @Override
@@ -676,7 +691,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 return  null != actionAnnotation ? actionAnnotation.value() : null;
             }
-       }
+
+            @Override
+            public boolean hasExceptions()
+            {
+                return null != _exceptions && !_exceptions.isEmpty();
+            }
+
+            @Override
+            public List<Exception> getExceptions()
+            {
+                return null == _exceptions ? Collections.emptyList() : _exceptions;
+            }
+        }
     }
 
     public static class HTMLFileActionResolver implements ActionResolver
