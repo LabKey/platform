@@ -770,7 +770,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 html: '<div style="margin: 10px;">Report is being edited in ' + externalName +
                 '<br>' + externalName + ' may be in hidden window or tab. <br>' +
                 'When finished in ' + externalName + ' click "Edit in LabKey" below.' +
-                '<br>NOTE this will end your ' + externalName + ' session.</div>'
+                '<br>NOTE this will end your ' + externalName + ' session and discard any unsaved changes.</div>'
             }],
             buttonAlign: 'center',
             buttons: [{
