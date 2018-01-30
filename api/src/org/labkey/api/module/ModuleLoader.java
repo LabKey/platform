@@ -1972,7 +1972,7 @@ public class ModuleLoader implements Filter
                 throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
         }
 
-        File[] propFiles = propsDir.listFiles((File dir, String name) -> FileUtil.getExtension(name).equalsIgnoreCase("properties"));
+        File[] propFiles = propsDir.listFiles((File dir, String name) -> StringUtils.equalsIgnoreCase(FileUtil.getExtension(name),("properties")));
 
         if (propFiles != null)
         {
