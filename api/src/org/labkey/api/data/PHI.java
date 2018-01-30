@@ -16,6 +16,8 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 
@@ -75,6 +77,10 @@ public enum PHI
     // Determine the maximum PHI permission this user has in this container
     public static PHI determinePhiAllowed(Container c, User user)
     {
+        Module complianceModule = ModuleLoader.getInstance().getModule("Compliance");
+        if (null == complianceModule || !c.getActiveModules(user).contains(complianceModule))
+            return Restricted;             // Compliance not active in this container, so no restrictions
+
         if (c.hasPermission(user, RestrictedPHIPermission.class))
             return Restricted;
 
