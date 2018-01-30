@@ -1372,9 +1372,12 @@ Ext4.define('File.panel.Browser', {
 
         if (relativePath && relativePath !== '/')
         {
-            if (relativePath.indexOf('/', relativePath.length - 1) !== -1 && this.rootOffset.indexOf('/') !== 0)
-                relativePath += '/';
-            return relativePath + this.rootOffset;
+            var rootOffset = this.rootOffset;
+            if (relativePath.endsWith('/'))
+                relativePath = relativePath.substring(0, relativePath.length - 1);  // strip trailing '/'
+            if (rootOffset.indexOf('/') === 0)
+                rootOffset = rootOffset.substring(1);                               // strip leading '/'
+            return relativePath + '/' + rootOffset;
 
         }
         return this.rootOffset;
