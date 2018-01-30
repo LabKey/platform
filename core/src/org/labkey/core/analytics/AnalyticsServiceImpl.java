@@ -26,6 +26,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -149,11 +151,11 @@ public class AnalyticsServiceImpl implements AnalyticsService
     static final private String TRACKING_SCRIPT_TEMPLATE_ASYNC =
         "<script type=\"text/javascript\">\n"+
         "var _gaq = _gaq || [];\n" +
-        "_gaq.push(['_setAccount', ${ACCOUNT_ID}]);\n" +
+        "_gaq.push(['_setAccount', ${ACCOUNT_ID:jsString}]);\n" +
         "_gaq.push(['_setDetectTitle', false]);\n" +
-        "_gaq.push(['_trackPageview', ${PAGE_URL}]);\n" +
+        "_gaq.push(['_trackPageview', ${PAGE_URL:jsString}]);\n" +
         "</script>\n"+
-        "<script async=\"async\" type=\"text/javascript\" src=\"${GA_JS}\"></script>\n";
+        "<script async=\"async\" type=\"text/javascript\" src=\"${GA_JS:htmlEncode}\"></script>\n";
 
 
     public String getSavedScript()
@@ -176,7 +178,6 @@ public class AnalyticsServiceImpl implements AnalyticsService
         }
     }
 
-
     public String getTrackingScript(ViewContext context)
     {
         if (!showTrackingScript(context))
@@ -185,10 +186,12 @@ public class AnalyticsServiceImpl implements AnalyticsService
         boolean isSecure = context.getActionURL().getScheme().startsWith("https");
         String gaJS = (isSecure ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
 
-        String trackingScript = getRawScript();
-        trackingScript = StringUtils.replace(trackingScript, "${ACCOUNT_ID}", PageFlowUtil.jsString(getAccountId()));
-        trackingScript = StringUtils.replace(trackingScript, "${PAGE_URL}", PageFlowUtil.jsString(getSanitizedUrl(context)));
-        trackingScript = StringUtils.replace(trackingScript, "${GA_JS}", gaJS);
+        StringExpression se = StringExpressionFactory.create(getRawScript());
+        String trackingScript = se.eval(PageFlowUtil.map(
+                "ACCOUNT_ID", getAccountId(),
+                "PAGE_URL", getSanitizedUrl(context),
+                "GA_JS", gaJS
+                ));
         return trackingScript;
     }
 
