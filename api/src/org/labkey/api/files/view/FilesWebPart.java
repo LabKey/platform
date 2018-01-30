@@ -101,6 +101,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         setTitleHref(titleHref);
         setBodyClass("labkey-wp-nopadding");
 
+        FileContentService svc = FileContentService.get();
+        if (null == svc)
+            throw new IllegalStateException("FileContentService not found.");
+
         if (fileRoot != null)
         {
             if (fileRoot.startsWith(FileContentService.PIPELINE_LINK))
@@ -108,7 +112,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 _isPipelineFiles = true;
             }
             else if (fileRoot.startsWith(FileContentService.FILE_SETS_LINK)
-                    || fileRoot.startsWith(CloudStoreService.CLOUD_NAME)
+                    || fileRoot.startsWith(CloudStoreService.CLOUD_NAME) && !svc.isCloudRoot(c)
                     || fileRoot.startsWith("@wiki"))
             {
                 _isRootNotFilesPipeline = true;
@@ -139,7 +143,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             }
             else
             {
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                 AttachmentDirectory dir = svc.getRegisteredDirectory(c, legacyFileRoot);
 
                 if (dir != null)
@@ -402,7 +405,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
 
-            if (null != root && root.isValid() && null != dir && root.getUri().equals(dir.getFileSystemDirectoryPath().toUri()))
+            if (null != root && root.isValid() && null != dir && root.getRootNioPath().equals(dir.getFileSystemDirectoryPath()))
             {
                 return true;
             }
