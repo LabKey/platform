@@ -38,6 +38,20 @@ legend {
   margin-top: 8px;
 }
 
+/* Expose the theme color for use with text and borders in labkey pages */
+.lk-text-theme-dark {
+  color: $lk-theme-dark-accent;
+}
+.lk-border-theme-dark {
+  border-color: $lk-theme-dark-accent;
+}
+.lk-text-theme-light {
+  color: $lk-theme-light-accent;
+}
+.lk-border-theme-light {
+  border-color: $lk-theme-light-accent
+}
+
 .bottom-spacing {
   padding-bottom: 10px;
 }
