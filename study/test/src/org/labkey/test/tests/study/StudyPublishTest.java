@@ -777,8 +777,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
         if (removePhi)
         {
-            _extHelper.selectExtGridItem("name", "Exclude Columns At This PHI Level And Higher", -1, "studyWizardPublishOptionsList", true);
-            checkCheckbox(Locator.radioButtonByNameAndValue("exportPhiLevel", "Limited"));
+            checkCheckbox(Locator.radioButtonByNameAndValue("exportPhiLevel", "NotPHI"));
         }
         if (shiftDates)
             _extHelper.selectExtGridItem("name", "Shift Mouse Dates", -1, "studyWizardPublishOptionsList", true);
@@ -871,7 +870,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates", "Exclude Columns At This PHI Level And Higher");
+        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates");
         //goToProjectHome();
     }
 

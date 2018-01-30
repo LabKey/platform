@@ -125,7 +125,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         });
 
         ComplianceService complianceService = ComplianceService.get();
-        String maxAllowedPhi = (null != complianceService ? complianceService.getMaxAllowedPhi(getContainer(), schema.getUser()).name() : PHI.NotPHI.name());
+        String maxAllowedPhi = (null != complianceService ? complianceService.getMaxAllowedPhi(getContainer(), schema.getUser()).name() : PHI.Restricted.name());
 
         AliasedColumn republishCol = new AliasedColumn("Republish", wrapColumn(_rootTable.getColumn("RowId")));
         republishCol.setDisplayColumnFactory(new DisplayColumnFactory()
