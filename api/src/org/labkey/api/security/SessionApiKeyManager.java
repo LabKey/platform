@@ -17,7 +17,9 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.SessionHelper;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -56,5 +58,19 @@ public class SessionApiKeyManager extends SessionKeyManager<HttpSession>
     protected HttpSession validateContext(HttpSession session, String apiKey)
     {
         return isKeyInSession(session, apiKey) ? session : null;
+    }
+
+    public String getApiKey(HttpServletRequest req, String controllerContext)
+    {
+        // if apiKey is cached, validate it
+        final String attr = controllerContext + "#apiKey";
+        String apiKey = SessionHelper.getAttribute(req, attr, null);
+
+        if (null != apiKey && null == get().getContext(apiKey))
+            SessionHelper.setAttribute(req, attr, null, true);
+
+        apiKey = SessionHelper.getAttribute(req, attr,
+                () -> get().createKey(req, req.getSession(true)));
+        return apiKey;
     }
 }
