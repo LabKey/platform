@@ -1048,12 +1048,12 @@ public class ExceptionUtil
             assertFalse(answer.response.headers.containsKey("WWW-Authenticate"));
 
             // Guest CSRF
-            answer = handleIt(guest, new CSRFException(), null);
+            answer = handleIt(guest, new CSRFException(TestContext.get().getRequest()), null);
             assertNull(answer.redirect);
             assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
 
             // Non-Guest CSRF
-            answer = handleIt(me, new CSRFException(), null);
+            answer = handleIt(me, new CSRFException(TestContext.get().getRequest()), null);
             assertNull(answer.redirect);
             assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
         }
