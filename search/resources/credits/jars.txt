@@ -1,6 +1,5 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-asm-debug-all-5.0.4.jar|ASM|5.04|{link:OW2 Consortium|http://asm.ow2.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for Java bytecodes
 cxf-rt-rs-client-3.0.16.jar|Apache CXF|3.0.16|{link:Apache|http://cxf.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|???
 jempbox-1.8.13.jar|jempbox|1.8.13|{link:Apache|https://pdfbox.apache.org/1.8/dependencies.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|PDFBox dependency
 lucene-core-7.2.0.jar|Lucene|7.2.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
