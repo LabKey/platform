@@ -174,6 +174,7 @@ public abstract class SearchTest extends StudyTest
         alterListsAndReSearch();
 
         _containerHelper.deleteProject(getProjectName());
+        goToHome(); // Need to leave deleted project
         _searchHelper.verifyNoSearchResults();
     }
 
