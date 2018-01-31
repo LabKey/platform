@@ -30,7 +30,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.InlineHTML;
@@ -234,15 +233,10 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
         FlexTable table = createAssayInfoTable(_assay);
         table.setStyleName("lk-fields-table");
         WebPartPanel infoPanel = new WebPartPanel("Assay Properties", table);
-        if (!PropertyUtil.useExperimentalCoreUI())
-            infoPanel.setWidth("100%");
         _rootPanel.add(infoPanel);
 
         for (int i = 0; i < _assay.getDomains().size(); i++)
         {
-            if (!PropertyUtil.useExperimentalCoreUI())
-                _rootPanel.add(new HTML("<br/>"));
-
             GWTDomain<GWTPropertyDescriptor> domain = _assay.getDomains().get(i);
 
             PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor =
@@ -270,8 +264,6 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
             _rootPanel.add(panel);
         }
 
-        if (!PropertyUtil.useExperimentalCoreUI())
-            _rootPanel.add(new HTML("<br/>"));
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
 

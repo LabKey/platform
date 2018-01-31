@@ -15,8 +15,6 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.settings.AppProps;
-
 import java.awt.*;
 
 /**
@@ -28,8 +26,6 @@ public class WebTheme
 {
     public static final WebTheme DEFAULT = new WebTheme("Seattle", "000000", "126495", "E7EFF4", "F8F8F8", "FFFFFF", "676767", "E0E6EA", false);
 
-    // Experimental feature flag implemented by the Bootstrap Module
-    public static final String EXPERIMENTAL_MIGRATE_BOOTSTRAP = "migrate-bootstrap";
     public static final String EXPERIMENTAL_DEFAULT_THEME_NAME = "overcast";
 
     private final String _friendlyName;
@@ -74,11 +70,6 @@ public class WebTheme
     {
         this(friendlyName, textColor, linkColor, gridColor, primaryBackgroundColor, secondaryBackgroundColor, borderTitleColor, webPartColor);
         _editable = editable;
-    }
-
-    public static boolean useBootstrap()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_MIGRATE_BOOTSTRAP);
     }
 
     public static Color parseColor(String s)

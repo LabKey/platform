@@ -20,7 +20,6 @@ import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Widget;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
  * User: jeckels
@@ -33,33 +32,16 @@ public class WebPartPanel extends Composite
         final HTMLPanel panel;
         final String bodyId = HTMLPanel.createUniqueId();
 
-        if (PropertyUtil.useExperimentalCoreUI())
-        {
-            panel = new HTMLPanel(
-                "<div class=\"panel panel-portal\">" +
+        panel = new HTMLPanel(
+            "<div class=\"panel panel-portal\">" +
                 "<div class=\"panel-heading\">" +
                     "<h3 class=\"panel-title pull-left\" title=\"" + SafeHtmlUtils.htmlEscape(title) + "\">" + SafeHtmlUtils.htmlEscape(title) + "</h3>" +
                     "<div class=\"clearfix\"></div>" +
                 "</div>" +
                 "<div id=\"" + bodyId + "\" class=\"panel-body\"></div>" +
-                "</div>"
-            );
-            panel.getElement().setAttribute("name", "webpart");
-        }
-        else
-        {
-            panel = new HTMLPanel("table",
-                "<tbody>" +
-                "<tr class=\"labkey-wp-header\">" +
-                    "<td class=\"labkey-wp-title-left\" title=\"" + SafeHtmlUtils.htmlEscape(title) + "\">" + SafeHtmlUtils.htmlEscape(title) + "</td>" +
-                "</tr>" +
-                "<tr>" +
-                    "<td id=\"" + bodyId + "\" class=\"labkey-wp-body\"></td>" +
-                "</tr>" +
-                "</tbody>"
-            );
-            panel.setStyleName("labkey-wp");
-        }
+            "</div>"
+        );
+        panel.getElement().setAttribute("name", "webpart");
 
         panel.add(contents, bodyId);
 

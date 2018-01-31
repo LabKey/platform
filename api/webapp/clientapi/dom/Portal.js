@@ -548,32 +548,6 @@
             },
 
             /**
-             * Toggle tab edit mode. Enables or disables tab edit mode. When in tab edit mode an administrator
-             * can manage tabs (i.e. change order, add, remove, etc.)
-             * TODO this can be removed when we switch to useExperimentalCoreUI()
-             */
-            toggleTabEditMode : function()
-            {
-                LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('admin', 'toggleTabEditMode.api', LABKEY.container.path),
-                    method: 'GET',
-                    success: LABKEY.Utils.getCallbackWrapper(function(response, options){
-                        var classToSearchFor = response.tabEditMode ? 'tab-edit-mode-disabled' : 'tab-edit-mode-enabled';
-                        var classToReplaceWith = response.tabEditMode ? 'tab-edit-mode-enabled' : 'tab-edit-mode-disabled';
-                        var tabDiv = document.getElementsByClassName(classToSearchFor)[0];
-
-                        if (tabDiv) {
-                            // Navigate to the start URL if the current active tab is also hidden.
-                            if (response.startURL && tabDiv.querySelector('li.tab-nav-active.tab-nav-hidden'))
-                                window.location = response.startURL;
-                            else
-                                tabDiv.setAttribute('class', tabDiv.getAttribute('class').replace(classToSearchFor, classToReplaceWith));
-                        }
-                    })
-                });
-            },
-
-            /**
              * Allows an administrator to add a new portal page tab.
              */
             addTab : function()

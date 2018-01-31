@@ -161,7 +161,6 @@ public class PageFlowUtil
     private static final String NONPRINTING_ALTCHAR = "~";
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
-    public static final String SESSION_TAB_EDIT_MODE = "tabEditMode";
 
     public static boolean useExperimentalCoreUI()
     {

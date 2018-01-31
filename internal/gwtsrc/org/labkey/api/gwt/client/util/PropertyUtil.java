@@ -134,9 +134,4 @@ public class PropertyUtil
 
         return o1 != null && o1.equals(o2);
     }
-
-    public static boolean useExperimentalCoreUI()
-    {
-        return true;
-    }
 }
