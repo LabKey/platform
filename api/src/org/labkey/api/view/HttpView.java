@@ -545,12 +545,15 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
+    public static HttpView redirect(URLHelper url, boolean allowAbsoluteUrl)
+    {
+        return new HttpRedirectView((!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString());
+    }
 
     public static HttpView redirect(URLHelper url)
     {
-        return new HttpRedirectView(url.isLocalUri(getRootContext()) ? url.getLocalURIString() : url.getURIString());
+        return new HttpRedirectView(url.getLocalURIString());
     }
-
 
     public static HttpView redirect(String url)
     {
