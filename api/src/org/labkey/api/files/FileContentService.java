@@ -26,7 +26,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
@@ -174,7 +173,43 @@ public interface FileContentService
     File getDefaultRoot(Container c, boolean createDir);
     Path getDefaultRootPath(Container c, boolean createDir);
 
-    Pair<String, Boolean> getDefaultRootInfo(Container container);
+    class DefaultRootInfo
+    {
+        private final java.nio.file.Path _path;
+        private final String _prettyStr;
+        private final boolean _isCloud;
+        private final String _cloudName;
+
+        public DefaultRootInfo(java.nio.file.Path path, String prettyStr, boolean isCloud, String cloudName)
+        {
+            _path = path;
+            _prettyStr = prettyStr;
+            _isCloud = isCloud;
+            _cloudName = cloudName;
+        }
+
+        public java.nio.file.Path getPath()
+        {
+            return _path;
+        }
+
+        public String getPrettyStr()
+        {
+            return _prettyStr;
+        }
+
+        public boolean isCloud()
+        {
+            return _isCloud;
+        }
+
+        public String getCloudName()
+        {
+            return _cloudName;
+        }
+    }
+
+    DefaultRootInfo getDefaultRootInfo(Container container);
 
     String getDomainURI(Container c);
 
