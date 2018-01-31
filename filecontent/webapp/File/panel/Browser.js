@@ -67,6 +67,8 @@ Ext4.define('File.panel.Browser', {
         return render;
     },
 
+    expandToOffset: true,          // Don't expand if offset is gone
+
     /**
      * Size renderer used in the grid file listing.
      * @cfg {Ext4.util.Format.fileSize} fileSize
@@ -1374,7 +1376,7 @@ Ext4.define('File.panel.Browser', {
         {
             var rootOffset = this.rootOffset;
             if (relativePath.endsWith('/'))
-                relativePath = relativePath.substring(0, relativePath.length - 1);  // strip trailing '/'
+                relativePath = relativePath.substring(0, relativePath.length - 1);     // strip trailing '/'
             if (rootOffset.indexOf('/') === 0)
                 rootOffset = rootOffset.substring(1);                               // strip leading '/'
             return relativePath + '/' + rootOffset;
@@ -1603,6 +1605,9 @@ Ext4.define('File.panel.Browser', {
      * @private
      */
     _ensureVisible : function(id, _recurse) {
+        if (!this.expandToOffset) {
+            return;
+        }
         if (_recurse !== true) {
             this.lockState();
         }
