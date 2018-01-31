@@ -548,7 +548,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public static HttpView redirect(URLHelper url)
     {
-        return new HttpRedirectView(url.getLocalURIString());
+        return new HttpRedirectView(url.isLocalUri(getRootContext()) ? url.getLocalURIString() : url.getURIString());
     }
 
 

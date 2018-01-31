@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -155,6 +156,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         return serverBuilder;
     }
 
+    public boolean isLocalUri(ViewContext currentContext)
+    {
+        return getHost() == null
+                || currentContext == null
+                || currentContext.getActionURL() == null
+                || getHost().equalsIgnoreCase(currentContext.getActionURL().getHost());
+    }
 
     public String getURIString()
     {
