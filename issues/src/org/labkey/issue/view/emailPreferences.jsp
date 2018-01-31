@@ -17,23 +17,20 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DataRegion"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<IssuesController.EmailPrefsBean> me = (JspView<IssuesController.EmailPrefsBean>)HttpView.currentView();
-    ViewContext context = getViewContext();
+    JspView<IssuesController.EmailPrefsForm> me = (JspView<IssuesController.EmailPrefsForm>)HttpView.currentView();
     Container c = getContainer();
-    IssuesController.EmailPrefsBean bean = me.getModelBean();
-    int emailPrefs = bean.getEmailPreference();
-    BindException errors = bean.getErrors();
+    IssuesController.EmailPrefsForm bean = me.getModelBean();
+    int emailPrefs = bean.getSavedPrefs();
     String message = bean.getMessage();
     int issueId = bean.getIssueId();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME);
@@ -43,16 +40,9 @@
     {
         %><b><%=h(message)%></b><p/><%
     }
-
-    if (null != errors && errors.getErrorCount() > 0)
-    {
-        for (ObjectError e : errors.getAllErrors())
-        {
-            %><span class=labkey-error><%=h(context.getMessage(e))%></span><br><%
-        }
-    }
 %>
-<labkey:form action="<%=h(buildURL(IssuesController.EmailPrefsAction.class))%>" method="post">
+<labkey:errors/>
+<labkey:form action="<%= new ActionURL(IssuesController.EmailPrefsAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, bean.getIssueDefName()) %>" method="post">
     <input type="checkbox" value="1" name="emailPreference"<%=checked((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)%>>
     Send me email when <%=h(indefArticle)%> <%=h(names.singularName)%> is opened and assigned to me<br>
     <input type="checkbox" value="2" name="emailPreference"<%=checked((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)%>>

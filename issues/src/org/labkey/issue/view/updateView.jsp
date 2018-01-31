@@ -110,8 +110,7 @@
 %>
 
 <script type="text/javascript">
-    function filterRe(e, input, re)
-    {
+    function filterRe(e, input, re){
         if (e.isSpecialKey())
             return true;
 
@@ -139,9 +138,15 @@
         return true;
     }
 
-    function filterCommaSepNumber(e, input)
-    {
+    function filterCommaSepNumber(e, input) {
         return filterRe(e, input, /^[\d,\s]+$/);
+    }
+
+    function onSubmit(){
+        (function($){
+            $("input[name='dirty']").val(LABKEY.isDirty());
+            LABKEY.setSubmit(true);
+        })(jQuery);
     }
 
     (function($){
@@ -163,28 +168,34 @@
         %>
 
         $(function() {
-            $("input[name='title']").attr("tabindex", "1");
-            $("select[name='assignedTo']").attr("tabindex", "2");
-            $("select[name='type']").attr("tabindex", "3");
-            $("select[name='area']").attr("tabindex", "4");
-            $("select[name='priority']").attr("tabindex", "5");
-            $("select[name='milestone']").attr("tabindex", "6");
-            $("textarea[name='comment']").attr("tabindex", "7");
-            $("select[name='resolution']").attr("tabindex", "8");
-            $("input[name='duplicate']").attr("tabindex", "9");
+            $("input[name='title']").attr("tabindex", "1").change(function(){LABKEY.setDirty(true);});
+            $("select[name='assignedTo']").attr("tabindex", "2").change(function(){LABKEY.setDirty(true);});
+            $("select[name='type']").attr("tabindex", "3").change(function(){LABKEY.setDirty(true);});
+            $("select[name='area']").attr("tabindex", "4").change(function(){LABKEY.setDirty(true);});
+            $("select[name='priority']").attr("tabindex", "5").change(function(){LABKEY.setDirty(true);});
+            $("select[name='milestone']").attr("tabindex", "6").change(function(){LABKEY.setDirty(true);});
+            $("textarea[name='comment']").attr("tabindex", "7").change(function(){LABKEY.setDirty(true);});
+            $("select[name='resolution']").attr("tabindex", "8").change(function(){LABKEY.setDirty(true);});
+            $("input[name='duplicate']").attr("tabindex", "9").change(function(){LABKEY.setDirty(true);});
             $("input[name='related']").attr("tabindex", "10");
 
             for (var i=0; i < column1.length; i++){
-                $("[name=" + column1[i] + "]").attr("tabindex", startColOneIdx++);
+                $("[name=" + column1[i] + "]").attr("tabindex", startColOneIdx++).change(function(){
+                    LABKEY.setDirty(true);
+                });
             }
 
             for (i=0; i < column2.length; i++){
-                $("[name=" + column2[i] + "]").attr("tabindex", startColTwoIdx++);
+                $("[name=" + column2[i] + "]").attr("tabindex", startColTwoIdx++).change(function(){
+                    LABKEY.setDirty(true);
+                });
             }
+
+            LABKEY.setDirty(<%=bean.isDirty()%>)
         });
     })(jQuery);
 </script>
-<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" layout="horizontal">
+<labkey:form method="POST" onsubmit="onSubmit();" enctype="multipart/form-data" layout="horizontal">
     <table><%
         if (null != errors && 0 != errors.getErrorCount())
         {
@@ -259,6 +270,7 @@
                                     duplicateInput.disabled = true;
                                     duplicateInput.value = duplicateOrig;
                                 }
+                                LABKEY.setDirty(true);
                             }
                             if (window.addEventListener)
                                 resolutionSelect.addEventListener('change', updateDuplicateInput, false);
@@ -329,7 +341,7 @@
         <tr>
             <%=text(bean.renderLabel(bean.getLabel("Comment", bean.isInsert())))%>
             <td colspan="3">
-                <textarea id="comment" name="comment" class="form-control" cols="150" rows="20" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
+                <textarea id="comment" name="comment" class="form-control" cols="150" rows="20"><%=h(bean.getBody())%></textarea>
             </td>
         </tr>
     </table>
@@ -377,24 +389,19 @@
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
     <input type="hidden" name="issueDefName" value="<%=h(StringUtils.trimToEmpty(issue.getIssueDefName()))%>">
+    <input type="hidden" name="dirty" value="false">
 </labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
 <script type="text/javascript">
 
-    var origComment = document.getElementById("comment") === null ?
-            document.getElementById("commentArea").value :
-            document.getElementById("comment").value;
     var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
 
     function isDirty()
     {
-        var comment = document.getElementById("comment");
-        if (comment && origComment != comment.value)
-            return true;
         var notify = document.getElementById("notifyList");
         if (notify && origNotify != notify.value)
             return true;
-        return false;
+        return LABKEY.isDirty();
     }
 
     window.onbeforeunload = LABKEY.beforeunload(isDirty);

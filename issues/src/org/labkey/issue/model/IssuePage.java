@@ -108,6 +108,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private RenderContext _renderContext;
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
+    private boolean _dirty;
 
     /**
      * A map of additional information to display on the issue's detail page. It will be displayed as a table row,
@@ -309,6 +310,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public void setMode(int mode)
     {
         _mode = mode;
+    }
+
+    public boolean isDirty()
+    {
+        return _dirty;
+    }
+
+    public void setDirty(boolean dirty)
+    {
+        _dirty = dirty;
     }
 
     private RenderContext getRenderContext(ViewContext context)

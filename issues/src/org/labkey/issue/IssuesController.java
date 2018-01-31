@@ -114,9 +114,9 @@ import org.labkey.issue.actions.IssueValidation;
 import org.labkey.issue.actions.RepairIssueLookupsAction;
 import org.labkey.issue.actions.UpgradeIssuesAction;
 import org.labkey.issue.actions.ValidateIssueDefNameAction;
+import org.labkey.issue.model.CommentAttachmentParent;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
-import org.labkey.issue.model.CommentAttachmentParent;
 import org.labkey.issue.model.Issue.Comment;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
@@ -605,6 +605,7 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
+            page.setDirty(form.isDirty());
 
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
@@ -875,6 +876,7 @@ public class IssuesController extends SpringActionController
             UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
             TableInfo table = userSchema.getTable(issueListDef.getName());
             form.setTable(table);
+            form.isValid();
             issue.setProperties(form.getTypedColumns());
 
             Issue prevIssue = (Issue)form.getOldValues();
@@ -1436,6 +1438,7 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
+            page.setDirty(form.isDirty());
 
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
@@ -1495,6 +1498,7 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
+            page.setDirty(form.isDirty());
 
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
@@ -1538,6 +1542,7 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
+            page.setDirty(form.isDirty());
 
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
@@ -1584,6 +1589,7 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
+            page.setDirty(form.isDirty());
 
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
@@ -1607,12 +1613,13 @@ public class IssuesController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            int emailPrefs = IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId());
-            int issueId = form.getIssueId() == null ? 0 : form.getIssueId().intValue();
-            return new JspView<>("/org/labkey/issue/view/emailPreferences.jsp", new EmailPrefsBean(emailPrefs, errors, _message, issueId));
+            form.setSavedPrefs(IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId()));
+            form.setIssueId(form.getIssueId() == null ? 0 : form.getIssueId().intValue());
+            form.setMessage(_message);
+            return new JspView<>("/org/labkey/issue/view/emailPreferences.jsp", form, errors);
         }
 
-        public boolean handlePost(EmailPrefsForm form, BindException errors) throws Exception
+        public boolean handlePost(EmailPrefsForm form, BindException errors)
         {
             int emailPref = 0;
             for (int pref : form.getEmailPreference())
@@ -2112,47 +2119,13 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class EmailPrefsBean
-    {
-        private int _emailPrefs;
-        private BindException _errors;
-        private String _message;
-        private Integer _issueId;
-
-        public EmailPrefsBean(int emailPreference, BindException errors, String message, Integer issueId)
-        {
-            _emailPrefs = emailPreference;
-            _errors = errors;
-            _message = message;
-            _issueId = issueId;
-        }
-
-        public int getEmailPreference()
-        {
-            return _emailPrefs;
-        }
-
-        public BindException getErrors()
-        {
-            return _errors;
-        }
-
-        public String getMessage()
-        {
-            return _message;
-        }
-
-        public int getIssueId()
-        {
-            return _issueId.intValue();
-        }
-    }
-
-
     public static class EmailPrefsForm
     {
         private Integer[] _emailPreference = new Integer[0];
         private Integer _issueId;
+        private String issueDefName;
+        private int _savedPrefs;
+        private String _message;
 
         public Integer[] getEmailPreference()
         {
@@ -2172,6 +2145,36 @@ public class IssuesController extends SpringActionController
         public void setIssueId(Integer issueId)
         {
             _issueId = issueId;
+        }
+
+        public String getIssueDefName()
+        {
+            return issueDefName;
+        }
+
+        public void setIssueDefName(String issueDefName)
+        {
+            this.issueDefName = issueDefName;
+        }
+
+        public int getSavedPrefs()
+        {
+            return _savedPrefs;
+        }
+
+        public void setSavedPrefs(int savedPrefs)
+        {
+            _savedPrefs = savedPrefs;
+        }
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
         }
     }
 
@@ -2314,6 +2317,11 @@ public class IssuesController extends SpringActionController
         public int getIssueId()
         {
             return NumberUtils.toInt(_stringValues.get("issueId"));
+        }
+
+        public boolean isDirty()
+        {
+            return BooleanUtils.toBoolean(_stringValues.get("dirty"));
         }
     }
 
