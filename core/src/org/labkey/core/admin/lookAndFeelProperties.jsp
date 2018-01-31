@@ -26,8 +26,6 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ThemeFont" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -76,7 +74,6 @@
     <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
     <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getShortName()) %>"></td>
 </tr>
-<% if (PageFlowUtil.useExperimentalCoreUI()) { %>
 <tr>
     <td class="labkey-form-label">Theme</td>
     <td>
@@ -91,49 +88,6 @@
         </select>
     </td>
 </tr>
-<% } else { %>
-<tr>
-    <td class="labkey-form-label">Web theme (color scheme)</td>
-    <td>
-        <select name="themeName">
-            <% for (WebTheme theme : bean.themes)
-                {
-                    boolean selected;
-
-                    //if a new theme has just been defined
-                    if (bean.newTheme != null)
-                        selected = theme == bean.newTheme;
-                    else
-                        selected = theme == bean.currentTheme;
-                    %>
-                    <option value="<%=h(theme.toString())%>"<%=selected(selected)%>><%=h(theme.getFriendlyName())%></option>
-                <%}
-            %>
-        </select>
-        <% if (c.isRoot()) { %>
-        <%=textLink("define web themes", AdminController.getDefineWebThemesURL(false))%>
-        <% } %>
-    </td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Font size</td>
-    <td>
-        <select name="themeFont">
-            <% for (ThemeFont themeFont : bean.themeFonts)
-            {
-            %><option value="<%=h(themeFont.toString())%>"<%=selected(themeFont == bean.currentThemeFont)%>><%=h(themeFont.getFriendlyName())%></option><%
-            }
-        %>
-        </select>
-        Font Size Samples:
-        <% for (ThemeFont themeFont : bean.themeFonts)
-        {
-        %><span style="font-size:<%=h(themeFont.getNormalSize())%>">&nbsp;&nbsp;<%=h(themeFont.toString())%></span><%
-        }
-    %>
-    </td>
-</tr>
-<% } %>
 <tr>
     <td class="labkey-form-label">Show Navigation</td>
     <td><%

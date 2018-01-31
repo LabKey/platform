@@ -8338,32 +8338,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class) // TODO this can be removed when we switch to PageFlowUtil.useExperimentalCoreUI()
-    public class ToggleTabEditModeAction extends ApiAction<Object>
-    {
-        @Override
-        public ApiResponse execute(Object bean, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            HttpSession session = getViewContext().getSession();
-            Container tabContainer = getTabContainer(getContainer());
-            String tabEditMode = (String) session.getAttribute(PageFlowUtil.SESSION_TAB_EDIT_MODE);
-
-            if (tabEditMode == null || tabEditMode != tabContainer.getId())
-                session.setAttribute(PageFlowUtil.SESSION_TAB_EDIT_MODE, tabContainer.getId());
-            else
-            {
-                session.setAttribute(PageFlowUtil.SESSION_TAB_EDIT_MODE, null);
-                // Used if the user is currently on a hidden page. We navigate to the start url when exiting tabEditMode.
-                response.put("startURL", tabContainer.getStartURL(getUser()));
-            }
-
-            response.put("success", true);
-            response.put(PageFlowUtil.SESSION_TAB_EDIT_MODE, session.getAttribute(PageFlowUtil.SESSION_TAB_EDIT_MODE));
-            return response;
-        }
-    }
-
     public static class ShortURLForm
     {
         private String _shortURL;
@@ -8902,8 +8876,7 @@ public class AdminController extends SpringActionController
                 controller.new AddTabAction(),
                 controller.new ShowTabAction(),
                 controller.new MoveTabAction(),
-                controller.new RenameTabAction(),
-                controller.new ToggleTabEditModeAction()
+                controller.new RenameTabAction()
             );
 
             //TODO @RequiresPermission(AdminReadPermission.class)
