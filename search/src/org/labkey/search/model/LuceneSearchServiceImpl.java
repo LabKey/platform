@@ -1494,7 +1494,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
             Map<String, Pair<Integer, String[]>> expectations = getExpectations();
 
-            for (File file : sampledata.listFiles(File::isFile))
+            for (File file : sampledata.listFiles(f -> f.isFile() && !f.getName().endsWith(".jar")))
             {
                 String docId = "testtika";
                 SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
