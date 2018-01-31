@@ -22,10 +22,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -186,36 +187,55 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         }
     }
 
-    public static String getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
+    private static String getDavTreeFileRoot(String fileRoot, String legacyFileRoot, Container c)
     {
-        if (fileRoot != null)
+        String treeFileRoot = null;
+        FileContentService service = FileContentService.get();
+        if (null != service)
         {
-            return c.getEncodedPath() + fileRoot;
-        }
-        else if (legacyFileRoot != null) // legacy file root
-        {
-            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
+            if (fileRoot != null)
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                return FilesWebPart.getRootPath(c, root != null && root.isDefault() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
+                if (fileRoot.startsWith(FileContentService.FILES_LINK))
+                {
+                    // @files disappears when root set to cloud, so make sure it exists before trying in expandPath there
+                    Path path = service.getFileRootPath(c);
+                    if (null != path)
+                    {
+                        if (Files.exists(path.resolve(fileRoot)))
+                            treeFileRoot = c.getEncodedPath() + fileRoot;
+                    }
+                }
+                else
+                {
+                    treeFileRoot = c.getEncodedPath() + fileRoot;
+                }
             }
-            else if (legacyFileRoot.startsWith(FileContentService.CLOUD_LINK))
+            else if (legacyFileRoot != null) // legacy file root
             {
-                // UNDONE: Configure filebrowser to not expand by default since even listing store contents costs money.
-                String storeName = legacyFileRoot.substring((FileContentService.CLOUD_LINK + "/").length());
-                return FilesWebPart.getRootPath(c, FileContentService.CLOUD_LINK, storeName, true);
+                if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
+                {
+                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                    treeFileRoot = FilesWebPart.getRootPath(c, root != null && root.isDefault() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
+                }
+                else if (legacyFileRoot.startsWith(FileContentService.CLOUD_LINK))
+                {
+                    String storeName = legacyFileRoot.substring((FileContentService.CLOUD_LINK + "/").length());
+                    treeFileRoot = FilesWebPart.getRootPath(c, FileContentService.CLOUD_LINK, storeName, true);
+                }
+                else
+                {
+                    treeFileRoot = FilesWebPart.getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot, true);
+                }
             }
             else
             {
-                return FilesWebPart.getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot, true);
+                if (service.isCloudRoot(c))
+                    treeFileRoot = FilesWebPart.getRootPath(c, FileContentService.CLOUD_LINK, service.getCloudRootName(c), true);
+                else
+                    treeFileRoot = FilesWebPart.getRootPath(c, FileContentService.FILES_LINK, null, true);
             }
         }
-
-        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-        if (null != service && service.isCloudRoot(c))
-            return FilesWebPart.getRootPath(c, FileContentService.CLOUD_LINK, service.getCloudRootName(c), true);
-        
-        return FilesWebPart.getRootPath(c, FileContentService.FILES_LINK, null, true);
+        return treeFileRoot;
     }
 
 }

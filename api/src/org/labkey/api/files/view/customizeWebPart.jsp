@@ -35,7 +35,6 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("File");
-        dependencies.add("Ext4ClientApi");
     }
 %>
 <%
@@ -163,6 +162,7 @@
                 collapsed: false,
                 width: 350
             },
+            expandToOffset: rootOffset !== null,
             useServerActions: false,
             listeners: {
                 resize: function(vp) {
