@@ -34,7 +34,7 @@
             from your chosen Dataset Grid. It then uses output substitution parameters to either directly place image/data
             files in your View or to include download links to these files in your View.
 
-            Substitutions consist of a comment line in the form of: <%="#${param:filename}"%> where 'param' is the substitution
+            Substitutions consist of a comment line in the form of: <%=h("#${param:filename}")%> where 'param' is the substitution
             and 'filename' is the input/output filename. 'filename' is then used in the script line right below the comment line to reference the input/output file.
 
         </labkey:panel>
@@ -45,10 +45,10 @@
                     <td class="labkey-form-label">input_data:&lt;name&gt;</td>
                     <td>The input dataset, a tab-delimited table. LabKey Server automatically reads your chosen dataset into
                         a data frame called: <code>labkey.data</code>. If you desire tighter control over the method of data upload, you
-                        can perform the data upload yourself. The 'input_data::' prefix indicates that the data file for the grid and the &lt;name&gt;
+                        can perform the data upload yourself. The 'input_data:' prefix indicates that the data file for the grid and the &lt;name&gt;
                         substitution can be set to any non empty value:<br/>
                         <pre>
-        <%="# ${input_data:inputTsv}"%>
+        <%=h("# ${input_data:inputTsv}")%>
         labkey.data <- read.table("inputTsv", header=TRUE, sep="\t")
         labkey.data
                     </pre>
@@ -61,7 +61,7 @@
                         substitution identifies the unique image produced after you call <code>dev.off()</code>.  The following script
                         displays a .png image in a View:<br/>
                         <pre>
-        <%="# ${imgout:labkeyl.png}"%>
+        <%=h("# ${imgout:labkeyl.png}")%>
         png(filename="labkeyl.png")
         plot(c(rep(25,100), 26:75), c(1:100, rep(1, 50)), ylab= "L", xlab="LabKey",
            xlim= c(0, 100), ylim=c(0, 100), main="LabKey in R")
@@ -74,7 +74,7 @@
                     <td>A TSV text file that is displayed on LabKey Server as a Section within a View.  No downloadable
                         file is created.  For example:<br/>
                         <pre>
-        <%="# ${tsvout:tsvfile}"%>
+        <%=h("# ${tsvout:tsvfile}")%>
         write.table(labkey.data, file = "tsvfile", sep = "\t",
             qmethod = "double", col.names=NA)
                     </pre>
@@ -85,7 +85,7 @@
                     <td>A text file that is displayed on LabKey Server as a Section within a View.
                         No downloadable file is created.   A CSV example:<br/>
                         <pre>
-        <%="# ${txtout:csvfile}"%>
+        <%=h("# ${txtout:csvfile}")%>
         write.csv(labkey.data, file = "csvfile")
                     </pre>
                     </td>
@@ -96,7 +96,7 @@
                         the expected output is a pdf file.  The &lt;name&gt; substitution identifies the unique file produced
                         after you call <code>dev.off()</code>.<br/>
                         <pre>
-        <%="# ${pdfout:labkeyl.pdf}"%>
+        <%=h("# ${pdfout:labkeyl.pdf}")%>
         pdf(file="labkeyl.pdf")
         plot(c(rep(25,100), 26:75), c(1:100, rep(1, 50)), ylab= "L", xlab="LabKey",
             xlim= c(0, 100), ylim=c(0, 100), main="LabKey in R")
@@ -110,7 +110,7 @@
                         that the expected output is a postscript file.  The &lt;name&gt; substitution identifies the unique
                         file produced after you call <code>dev.off()</code>.<br/>
                         <pre>
-        <%="# ${psout:labkeyl.eps}"%>
+        <%=h("# ${psout:labkeyl.eps}")%>
         postscript(file="labkeyl.eps", horizontal=FALSE, onefile=FALSE)
         plot(c(rep(25,100), 26:75), c(1:100, rep(1, 50)), ylab= "L", xlab="LabKey",
             xlim= c(0, 100), ylim=c(0, 100), main="LabKey in R")
@@ -123,7 +123,7 @@
                     <td>A file output that can be downloaded LabKey Server, and may be of any file type.  For example, use <code>fileout</code>
                         in the place of tsvout to allow users to download a TSV instead of seeing it within the page:<br/>
                         <pre>
-        <%="# ${fileout:tsvfile}"%>
+        <%=h("# ${fileout:tsvfile}")%>
         write.table(labkey.data, file = "tsvfile", sep = "\t",
             qmethod = "double", col.names=NA)
                     </pre>
@@ -137,7 +137,7 @@
                         <pre>
         txt <- paste("&lt;i&gt;Click on the link to visit LabKey:&lt;/i&gt;
             &lt;a target='blank' href='http://www.labkey.org'&gt;LabKey&lt;/a&gt;")
-        <%="# ${htmlout:output}"%>
+        <%=h("# ${htmlout:output}")%>
         write(txt, file="output")
                     </pre>
                     </td>
@@ -148,7 +148,7 @@
                         used to render svg outputs as well, however, using <code>svgout</code> will generate a more appropriate
                         thumbnail image for the report. No downloadable file is created:
                         <pre>
-        <%="# ${svgout:output.svg}"%>
+        <%=h("# ${svgout:output.svg}")%>
         svg("output.svg", width= 4, height=3)
         plot(x=1:10,y=(1:10)^2, type='b')
         dev.off()
@@ -169,7 +169,7 @@
                     <td>The data frame which the input dataset is automatically read into. The code to generate the
                         data frame is: <br/>
                         <pre>
-        <%="# ${input_data:inputFileTsv}"%>
+        <%=h("# ${input_data:inputFileTsv}")%>
         labkey.data <- read.table("inputFileTsv", header=TRUE, sep="\t",
             quote="", comment.char="")
                     </pre>
@@ -230,7 +230,7 @@
             Your R script uses input substitution parameters to generate the names of input files and to import data
             from your chosen Dataset Grid. It then uses output substitution parameters to either directly place image/data
             files in your View or to include download links to these files in your View. Substitutions take the form
-            of: <%="${param}"%> where 'param' is the substitution.
+            of: <%=h("${param}")%> where 'param' is the substitution.
         </labkey:panel>
 
         <labkey:panel title="Valid substitutions">
@@ -241,7 +241,7 @@
                         a data frame called: <code>labkey.data</code>. If you desire tighter control over the method of data upload, you
                         can perform the data upload yourself:<br/>
                         <pre>
-        labkey.data <- read.table("<%="${input_data}"%>", header=TRUE, sep="\t")
+        labkey.data <- read.table("<%=h("${input_data}")%>", header=TRUE, sep="\t")
         labkey.data
                     </pre>
                     </td>
@@ -253,7 +253,7 @@
                         substitution identifies the unique image produced after you call <code>dev.off()</code>.  The following script
                         displays a .png image in a View:<br/>
                         <pre>
-        png(filename="<%="${imgout:labkeyl_png}"%>")
+        png(filename="<%=h("${imgout:labkeyl_png}")%>")
         plot(c(rep(25,100), 26:75), c(1:100, rep(1, 50)), ylab= "L", xlab="LabKey",
            xlim= c(0, 100), ylim=c(0, 100), main="LabKey in R")
         dev.off()
@@ -265,7 +265,7 @@
                     <td>A TSV text file that is displayed on LabKey Server as a Section within a View.  No downloadable
                         file is created.  For example:<br/>
                         <pre>
-        write.table(labkey.data, file = "<%="${tsvout:tsvfile}"%>", sep = "\t",
+        write.table(labkey.data, file = "<%=h("${tsvout:tsvfile}")%>", sep = "\t",
             qmethod = "double", col.names=NA)
                     </pre>
                     </td>
@@ -275,7 +275,7 @@
                     <td>A text file that is displayed on LabKey Server as a Section within a View.
                         No downloadable file is created.   A CSV example:<br/>
                         <pre>
-        write.csv(labkey.data, file = "<%="${txtout:csvfile}"%>")
+        write.csv(labkey.data, file = "<%=h("${txtout:csvfile}")%>")
                     </pre>
                     </td>
                 </tr>
@@ -285,7 +285,7 @@
                         the expected output is a pdf file.  The &lt;name&gt; substitution identifies the unique file produced
                         after you call <code>dev.off()</code>.<br/>
                         <pre>
-        pdf(file="<%="${pdfout:labkeyl_pdf}"%>")
+        pdf(file="<%=h("${pdfout:labkeyl_pdf}")%>")
         plot(c(rep(25,100), 26:75), c(1:100, rep(1, 50)), ylab= "L", xlab="LabKey",
             xlim= c(0, 100), ylim=c(0, 100), main="LabKey in R")
         dev.off()
@@ -298,7 +298,7 @@
                         that the expected output is a postscript file.  The &lt;name&gt; substitution identifies the unique
                         file produced after you call <code>dev.off()</code>.<br/>
                         <pre>
-        postscript(file="<%="${psout:labkeyl_eps}"%>", horizontal=FALSE, onefile=FALSE)
+        postscript(file="<%=h("${psout:labkeyl_eps}")%>", horizontal=FALSE, onefile=FALSE)
         plot(c(rep(25,100), 26:75), c(1:100, rep(1, 50)), ylab= "L", xlab="LabKey",
             xlim= c(0, 100), ylim=c(0, 100), main="LabKey in R")
         dev.off()
@@ -310,7 +310,7 @@
                     <td>A file output that can be downloaded LabKey Server, and may be of any file type.  For example, use <code>fileout</code>
                         in the place of tsvout to allow users to download a TSV instead of seeing it within the page:<br/>
                         <pre>
-        write.table(labkey.data, file = "<%="${fileout:tsvfile}"%>", sep = "\t",
+        write.table(labkey.data, file = "<%=h("${fileout:tsvfile}")%>", sep = "\t",
             qmethod = "double", col.names=NA)
                     </pre>
                     </td>
@@ -323,7 +323,7 @@
                         <pre>
         txt <- paste("&lt;i&gt;Click on the link to visit LabKey:&lt;/i&gt;
             &lt;a target='blank' href='http://www.labkey.org'&gt;LabKey&lt;/a&gt;")
-        write(txt, file="<%="${htmlout:output}"%>")
+        write(txt, file="<%=h("${htmlout:output}")%>")
                     </pre>
                     </td>
                 </tr>
@@ -333,7 +333,7 @@
                         used to render svg outputs as well, however, using <code>svgout</code> will generate a more appropriate
                         thumbnail image for the report. No downloadable file is created:
                         <pre>
-        svg("<%="${svgout:svg}"%>", width= 4, height=3)
+        svg("<%=h("${svgout:svg}")%>", width= 4, height=3)
         plot(x=1:10,y=(1:10)^2, type='b')
         dev.off()
                     </pre>
@@ -353,7 +353,7 @@
                     <td>The data frame which the input dataset is automatically read into. The code to generate the
                         data frame is: <br/>
                         <pre>
-        labkey.data <- read.table("<%="${input_data}"%>", header=TRUE, sep="\t",
+        labkey.data <- read.table("<%=h("${input_data}")%>", header=TRUE, sep="\t",
             quote="", comment.char="")
                     </pre>
                     </td>
