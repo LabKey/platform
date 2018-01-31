@@ -546,7 +546,7 @@ public class LoginController extends SpringActionController
                 LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
                         ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
 
-                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
             }
 
             HttpServletRequest request = getViewContext().getRequest();
