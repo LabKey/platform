@@ -43,8 +43,8 @@
 
     // the default file root based on the root of the first ancestor with an override, or site root
     String currentCloudRootName = bean.getCloudRootName();
-    Pair<String, Boolean> defaultRootAndIsDefaultRootCloud = service.getDefaultRootInfo(getContainer());
-    String defaultRoot = defaultRootAndIsDefaultRootCloud.first;
+    FileContentService.DefaultRootInfo defaultRootInfo = service.getDefaultRootInfo(getContainer());
+    String defaultRoot = defaultRootInfo.getPrettyStr();
 
     //b/c setting a custom file root potentially allows access to any files, we only allow
     //site admins (i.e. AdminOperationsPermission) to do this.  however, folder admin can disable sharing on a folder
@@ -113,10 +113,13 @@
                                 onclick="updateSelection();">
                             Use cloud-based file storage
                             <select name="cloudRootName" id="cloudRootName">
-                                <% for (String cloudStoreName : storeNames) { %>
-                                    <option value=<%=h(cloudStoreName)%> <%=selected(cloudStoreName.equalsIgnoreCase(currentCloudRootName))%>>
-                                        <%=h(cloudStoreName)%></option>
-                                <% } %>
+                                <% for (String cloudStoreName : storeNames)
+                                    if (cloud.isEnabled(cloudStoreName, getContainer()))
+                                    { %>
+                                        <option value=<%=h(cloudStoreName)%> <%=selected(cloudStoreName.equalsIgnoreCase(currentCloudRootName))%>>
+                                            <%=h(cloudStoreName)%>
+                                        </option>
+                                <%  } %>
                             </select>
                         </td>
                     </tr>

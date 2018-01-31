@@ -105,6 +105,10 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 else
                     errors.reject(SpringActionController.ERROR_MSG, "A Project specified file root cannot be blank, to disable file sharing for this project, select the disable option.");
             }
+            else if (form.isCloudFileRoot())
+            {
+                AdminController.validateCloudFileRoot(form, getContainer(), errors);
+            }
         }
     }
 

@@ -34,14 +34,14 @@
     if (null == service)
         throw new IllegalStateException("FileContentService not found.");
 
-    Pair<String, Boolean> defaultRootAndIsDefaultRootCloud = service.getDefaultRootInfo(getContainer());
-    String defaultRoot = defaultRootAndIsDefaultRootCloud.first;
+    FileContentService.DefaultRootInfo defaultRootInfo = service.getDefaultRootInfo(getContainer());
+    String defaultRoot = defaultRootInfo.getPrettyStr();
 
     // the default project pipeline root is based on the file root
     String projectDefaultRoot = defaultRoot;
     String folderRadioBtnLabel = "Set a pipeline override";
     boolean hasInheritedOverride = SetupForm.hasInheritedOverride(c);
-    boolean isCloudFileRoot = defaultRootAndIsDefaultRootCloud.second || service.isCloudRoot(c);
+    boolean isCloudFileRoot = defaultRootInfo.isCloud() || service.isCloudRoot(c);
 
     if (bean.getConfirmMessage() != null)
     { %>

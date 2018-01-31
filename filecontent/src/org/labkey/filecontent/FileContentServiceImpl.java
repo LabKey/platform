@@ -273,11 +273,12 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     // Return pretty path string for defaultFileRoot and boolean true if defaultFileRoot is cloud
-    public Pair<String, Boolean> getDefaultRootInfo(Container container)
+    public DefaultRootInfo getDefaultRootInfo(Container container)
     {
         String defaultRoot = "";
         boolean isDefaultRootCloud = false;
         java.nio.file.Path defaultRootPath = getDefaultRootPath(container, false);
+        String cloudName = null;
         if (defaultRootPath != null)
         {
             isDefaultRootCloud = FileUtil.hasCloudScheme(defaultRootPath);
@@ -286,13 +287,15 @@ public class FileContentServiceImpl implements FileContentService
                 FileRoot fileRoot = getDefaultFileRoot(container);
                 if (null != fileRoot)
                     defaultRoot = fileRoot.getPath();
+                if (null != defaultRoot)
+                    cloudName = getCloudRootName(defaultRoot);
             }
             else
             {
                 defaultRoot = FileUtil.getAbsolutePath(container, defaultRootPath.toUri());
             }
         }
-        return new Pair<>(defaultRoot, isDefaultRootCloud);
+        return new DefaultRootInfo(defaultRootPath, defaultRoot, isDefaultRootCloud, cloudName);
     }
 
     @Nullable

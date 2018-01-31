@@ -5043,25 +5043,7 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(FileRootsForm form, Errors errors)
         {
-            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
-            if (service != null)
-            {
-                Path defaultRootPath = service.getDefaultRootPath(getContainer(), false);
-                if (!getContainer().isProject() && null != defaultRootPath && FileUtil.hasCloudScheme(defaultRootPath) && StringUtils.isNotBlank(form.getCloudRootName()))
-                {
-                    boolean currentRootDisabled = true;
-                    if (null != form.getEnabledCloudStore())
-                    {
-                        for (String storeName : form.getEnabledCloudStore())
-                        {
-                            if (form.getCloudRootName().equalsIgnoreCase(storeName))
-                                currentRootDisabled = false;
-                        }
-                    }
-                    if (currentRootDisabled)
-                        errors.reject(ERROR_MSG, "Cannot disable cloud store used as File Root.");
-                }
-            }
+            validateCloudFileRoot(form, getContainer(), errors);
         }
 
         @Override
@@ -5086,6 +5068,35 @@ public class AdminController extends SpringActionController
 
     }
 
+    public static void validateCloudFileRoot(FileManagementForm form, Container container, Errors errors)
+    {
+        FileContentService service = FileContentService.get();
+        if (null != service)
+        {
+            boolean isOrDefaultsToCloudRoot = form.isCloudFileRoot();
+            String cloudRootName = form.getCloudRootName();
+            if (!isOrDefaultsToCloudRoot && form.hasSiteDefaultRoot())
+            {
+                Path defaultRootPath = service.getDefaultRootPath(container, false);
+                cloudRootName = service.getDefaultRootInfo(container).getCloudName();
+                isOrDefaultsToCloudRoot = (null != defaultRootPath && FileUtil.hasCloudScheme(defaultRootPath));
+            }
+
+            if (isOrDefaultsToCloudRoot && null != cloudRootName)
+            {
+                if (null != form.getEnabledCloudStore())
+                {
+                    for (String storeName : form.getEnabledCloudStore())
+                    {
+                        if (StringUtils.equalsIgnoreCase(cloudRootName, storeName))
+                            return;
+                    }
+                }
+                // Didn't find cloud root in enabled list
+                errors.reject(ERROR_MSG, "Cannot disable cloud store used as File Root.");
+            }
+        }
+    }
 
     public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form)
     {
