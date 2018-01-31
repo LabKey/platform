@@ -5082,6 +5082,14 @@ public class ExperimentServiceImpl implements ExperimentService
         return protocol;
     }
 
+    public boolean isSampleDerivation(ExpProtocol protocol)
+    {
+        if (protocol == null)
+            return false;
+
+        return SAMPLE_DERIVATION_PROTOCOL_LSID.equals(protocol.getLSID());
+    }
+
     public void registerExperimentDataHandler(ExperimentDataHandler handler)
     {
         _dataHandlers.add(handler);

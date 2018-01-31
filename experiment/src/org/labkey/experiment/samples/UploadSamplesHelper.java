@@ -38,6 +38,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -697,19 +698,7 @@ public class UploadSamplesHelper
                 if (reusedMaterialLSIDs.contains(material.getLSID()))
                 {
                     // Since this entry was already in the database, we may need to delete old derivation info
-                    // TODO: Only delete sample derivation protocol -- not just any runs
-                    // TODO: Only delete the run if this sample is the only output of the run, otherwise just remove this sample as an output of the run
-                    ExpProtocolApplication existingSourceApp = material.getSourceApplication();
-                    if (existingSourceApp != null)
-                    {
-                        ExpRun existingDerivationRun = existingSourceApp.getRun();
-                        if (existingDerivationRun != null /*&& existingDerivationRun.getProtocol() == sample derivation */)
-                        {
-                            material.setSourceApplication(null);
-                            material.save(_form.getUser());
-                            existingDerivationRun.delete(_form.getUser());
-                        }
-                    }
+                    clearSampleSourceRun(_form.getUser(), material);
                 }
 
                 Pair<RunInputOutputBean, RunInputOutputBean> inputsAndOutputs = resolveInputsAndOutputs(
@@ -750,6 +739,54 @@ public class UploadSamplesHelper
         _log.info("finished inserting samples : time elapsed " + (System.currentTimeMillis() - start));
 
         return helper._materials;
+    }
+
+    /**
+     * Clear the source protocol application for this material.
+     * If the run that created this material is not a sample derivation run, throw an error -- we don't
+     * want to delete an assay run, for example.
+     * If the run has more than the sample as an output, the material is removed as an output of the run
+     * otherwise the run will be deleted.
+     */
+    private static void clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
+    {
+        ExpProtocolApplication existingSourceApp = material.getSourceApplication();
+        if (existingSourceApp == null)
+            return;
+
+        ExpRun existingDerivationRun = existingSourceApp.getRun();
+        if (existingDerivationRun == null)
+            return;
+
+        ExpProtocol protocol = existingDerivationRun.getProtocol();
+        if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
+        {
+            throw new ValidationException(
+                    "Can't remove source run '" + existingDerivationRun.getName() + "'" +
+                    " of protocol '" + protocol.getName() + "'" +
+                    " for sample '" + material.getName() + "' since it is not a sample derivation run");
+        }
+
+        List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
+        List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
+        if (dataOutputs.isEmpty() && materialOutputs.isEmpty())
+        {
+            // if run has no other outputs, delete the run completely
+            material.setSourceApplication(null);
+            material.save(user);
+            existingDerivationRun.delete(user);
+        }
+        else
+        {
+            // if the existing run has other outputs, remove the run as the source application for this sample
+            // and remove it as an output from the run
+            material.setSourceApplication(null);
+            material.save(user);
+            ExpProtocolApplication outputApp = existingDerivationRun.getOutputProtocolApplication();
+            if (outputApp != null)
+                outputApp.removeMaterialInput(user, material);
+            existingSourceApp.removeMaterialInput(user, material);
+        }
     }
 
     /**
