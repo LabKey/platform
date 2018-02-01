@@ -465,7 +465,7 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public String getResourceName()
     {
-        return getRootPath().getName();
+        return getRootNioPath().getFileName().toString();
     }
 
     @NotNull
