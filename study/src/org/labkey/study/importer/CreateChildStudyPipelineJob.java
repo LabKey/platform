@@ -251,6 +251,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 QueryService.get().setEnvironment(QueryService.Environment.USER, user);
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, sourceStudy.getContainer());
                 exportFromParentStudy(folderExportContext, vf);
+
+                // import folder items (reports, lists, etc)
+                importFolderItems(destStudy, vf);
+
                 StudyImportContext studyImportContext = importToDestinationStudy(_errors, destStudy, vf);
 
                 // copy participants
@@ -272,9 +276,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 // import TreatmentVisitMap, needs to happen after cohort info is loaded (issue 19947)
                 importTreatmentVisitMapData(_errors, vf, studyImportContext);
-
-                // import folder items (reports, lists, etc)
-                importFolderItems(destStudy, vf);
             }
 
             if (_errors.hasErrors())
