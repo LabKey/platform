@@ -166,7 +166,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.beans.Introspector;
 import java.io.File;
 import java.io.FileFilter;
@@ -2398,17 +2397,20 @@ public class AdminController extends SpringActionController
     {
         public List<NavTree> getTabList()
         {
-            List<NavTree> tabs = new ArrayList<>(2);
+            List<NavTree> tabs = new ArrayList<>(3);
 
             tabs.add(new TabInfo("Summary", "summary", getActionsURL()));
             tabs.add(new TabInfo("Details", "details", getActionsURL()));
+            tabs.add(new TabInfo("Exceptions", "exceptions", getActionsURL()));
 
             return tabs;
         }
 
         public HttpView getTabView(String tabId)
         {
-            return new ActionsView("summary".equals(tabId));
+            if ("exceptions".equals(tabId))
+                return new ActionsExceptionsView();
+            return new ActionsView(!"details".equals(tabId));
         }
     }
 
