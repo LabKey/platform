@@ -87,12 +87,13 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiTemplateView;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
@@ -162,15 +163,24 @@ public class WikiController extends SpringActionController
             if (null != ss)
                 vbox.addView(ss.getSearchView(false, 0, false, true));
 
-            WebPartView toc = new WikiTOC(context);
-            page.addClientDependencies(toc.getClientDependencies());
-
-            for (WikiTemplateView view : WikiManager.get().getAdditionalTemplateViews())
+            for (WikiPartFactory factory : WikiManager.get().getWikiPartFactories())
             {
-                if (WikiManager.shouldIncludeView(context, view))
-                    vbox.addView(view.getView());
+                if (factory.shouldInclude(context))
+                {
+                    try
+                    {
+                        WebPartFactory wbf = factory.getWebPartFactory();
+                        vbox.addView(wbf.getWebPartView(context, wbf.createWebPart()));
+                    }
+                    catch (WebPartConfigurationException e)
+                    {
+
+                    }
+                }
             }
 
+            WebPartView toc = new WikiTOC(context);
+            page.addClientDependencies(toc.getClientDependencies());
             vbox.addView(toc); //TODO: establish insertion order?
 
             ((HttpView)template).setView(WebPartFactory.LOCATION_RIGHT, vbox);

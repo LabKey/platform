@@ -57,6 +57,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewContext.StackResetter;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
@@ -65,7 +66,7 @@ import org.labkey.api.wiki.WikiChangeListener;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.wiki.WikiTemplateView;
+import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.wiki.model.RadeoxMacroProxy;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -114,11 +115,27 @@ public class WikiManager implements WikiService
     private CoreSchema core = CoreSchema.getInstance();
 
     private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
-    private static final List<WikiTemplateView> additionalViews = new CopyOnWriteArrayList<>();
+    private static List<WikiPartFactory> _wikiPartFactories;
 
     private WikiManager()
     {
         LOG.debug("WikiManager instantiated");
+    }
+
+    public void registerWikiPartFactory(WebPartFactory partFactory, WikiPartFactory.Privilege privilege, String activeModuleName)
+    {
+        if (null == _wikiPartFactories)
+            _wikiPartFactories = new ArrayList<>();
+
+        _wikiPartFactories.add(new WikiPartFactory(partFactory, privilege, activeModuleName));
+    }
+
+    @NotNull
+    public List<WikiPartFactory> getWikiPartFactories()
+    {
+        if (null == _wikiPartFactories)
+            return Collections.emptyList();
+        return _wikiPartFactories;
     }
 
     AttachmentService getAttachmentService()
@@ -941,33 +958,6 @@ public class WikiManager implements WikiService
     {
         for (WikiChangeListener l : listeners)
             l.wikiDeleted(user, c, name);
-    }
-
-    @Override
-    public void addAdditionalTemplateView(WikiTemplateView view)
-    {
-        if (null != view)
-            additionalViews.add(view);
-    }
-
-    @Override
-    public List<WikiTemplateView> getAdditionalTemplateViews()
-    {
-        return additionalViews;
-    }
-
-    public static boolean shouldIncludeView(ViewContext context, WikiTemplateView view)
-    {
-        if (view == null || view.getView() == null)
-            return false;
-        if (view.getVisibility().equals(WikiTemplateView.userView.ONLY_GUESTS) && !context.getUser().isGuest())
-            return false;
-        if (view.getVisibility().equals(WikiTemplateView.userView.ONLY_REGISTERED_USERS) && context.getUser().isGuest())
-            return false;
-        if (view.getRequiredActiveModuleName() != null)
-            return context.getContainer().hasActiveModuleByName(view.getRequiredActiveModuleName());
-
-        return true;
     }
 
     public static class TestCase extends Assert
