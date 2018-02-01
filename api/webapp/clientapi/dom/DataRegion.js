@@ -2235,7 +2235,7 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Looks for a column based on fieldKey, name, or caption (in that order)
+     * Looks for a column based on fieldKey, name, displayField, or caption (in that order)
      * @param columnIdentifier
      * @returns {*}
      */
@@ -2246,7 +2246,7 @@ if (!LABKEY.DataRegions) {
             cols = this.columns;
 
         if (isString(columnIdentifier) && $.isArray(cols)) {
-            $.each(['fieldKey', 'name', 'caption'], function(i, key) {
+            $.each(['fieldKey', 'name', 'displayField', 'caption'], function(i, key) {
                 $.each(cols, function(c, col) {
                     if (isString(col[key]) && col[key] == columnIdentifier) {
                         column = col;

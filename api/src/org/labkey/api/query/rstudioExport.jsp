@@ -29,14 +29,12 @@ QueryView.TextExportOptionsBean bean = (QueryView.TextExportOptionsBean)HttpView
 <table class="lk-fields-table">
 <tr><td colspan=2><button id="open_in_rstudio_button">Export to RStudio</button>&nbsp;<span id="rstudioStatus"></span></td></tr>
 </table>
-
-<script>
-
-(function($)
+<script type="text/javascript" >
+(function($, urlGenerateScript)
 {
     function startsWith(s,start)
     {
-        return s.lastIndexOf(start,0) != -1;
+        return s.lastIndexOf(start,0) !== -1;
     }
 
     function json_from_response(response)
@@ -61,7 +59,7 @@ QueryView.TextExportOptionsBean bean = (QueryView.TextExportOptionsBean)HttpView
     function fail(json)
     {
         var msg = json.exception || json.msg;
-        if (!msg && json.status == 500)
+        if (!msg && json.status === 500)
             msg = "Unexpected server error";
         if (!msg)
             msg = "status code " + json.status;
@@ -69,91 +67,177 @@ QueryView.TextExportOptionsBean bean = (QueryView.TextExportOptionsBean)HttpView
         console.log(JSON.stringify(json));
     }
 
-    // URL to get r script
-    var urlGenerateScript = <%= q(bean.getTsvURL().getLocalURIString()) %>;
+    var rscript = null;
     var rstudioWindow = null;
 
-    $('#open_in_rstudio_button').click(script);
+    function start_exporting()
+    {
+        // some browsers require window.open() only in response to user action (e.g. not in a callback). So do that first
+        immediate_open_window();
+        return false;
+    }
 
-    function script()
+    function immediate_open_window()
+    {
+        $('#rstudioStatus').html("Opening window...");
+        rstudioWindow = window.open("", "labkey_rstudio");
+        start_rsession();
+        return false;
+    }
+
+    function start_rsession()
+    {
+        $('#rstudioStatus').html("Starting RStudio...");
+        LABKEY.Ajax.request(
+        {
+            method: "POST",
+            url: LABKEY.ActionURL.buildURL("rstudio","startContainer.api","/"),
+            success: function(response)
+            {
+                var json = json_from_response(response);
+                if (json.success)
+                {
+                    wait_for_rstudio();
+                }
+                else
+                {
+                    fail(json);
+                }
+            },
+            failure : function(response)
+            {
+                fail(json_from_response(response));
+            }
+        });
+        return false;
+    }
+
+    /* this may not work depending on the browser, so don't make timeout too long */
+    function wait_for_rstudio()
+    {
+        // unfortunately onload seems problematic, so poll
+        var remainingWait = 5000;
+        function checkReady()
+        {
+            var ready =
+                    rstudioWindow.location.pathname === LABKEY.contextPath + "/_rstudio/" &&
+                    rstudioWindow.document.readyState === "complete" &&
+                    typeof rstudioWindow.sendRemoteServerRequest === "function";
+            if (ready || remainingWait < 0)
+            {
+                generate_rscript();
+            }
+            else
+            {
+                remainingWait -= 100;
+                window.setTimeout(checkReady, 100);
+            }
+        }
+
+        if (rstudioWindow)
+        {
+            rstudioWindow.location = LABKEY.contextPath + "/_rstudio/";
+            window.setTimeout(checkReady, 100);
+        }
+        else
+        {
+            // user will have to open window manually (or change pop-up blocker setting)
+            generate_rscript();
+        }
+    }
+
+    function generate_rscript()
     {
         var url = urlGenerateScript + "&r~clean=1&r~view=rstudio";
         var variableName = $("#rstudio_variable_name")[0].value;
         if (variableName)
             url += "&r~variable=" + encodeURIComponent(variableName);
-        $('#rstudioStatus').html("Generate script...");
+        $('#rstudioStatus').html("Generating script...");
         LABKEY.Ajax.request(
-                {
-                    method: "POST",
-                    url: url,
-                    success: function(response)
-                    {
-                        var rscript = response.responseText;
-                        start(rscript);
-                    },
-                    failure : function(response)
-                    {
-                        fail(json_from_response(response));
-                    }
-                });
+        {
+            method: "POST",
+            url: url,
+            success: function(response)
+            {
+                rscript = response.responseText;
+                runscript_console();
+            },
+            failure : function(response)
+            {
+                fail(json_from_response(response));
+            }
+        });
         return false;
     }
 
-    function start(withScript)
+    function runscript_console()
     {
-        $('#rstudioStatus').html("Starting...");
-        LABKEY.Ajax.request(
-                {
-                    method: "POST",
-                    url: LABKEY.ActionURL.buildURL("rstudio","startContainer.api","/"),
-                    params : {'runScript':withScript},
-                    success: function(response)
-                    {
-                        var json = json_from_response(response);
-                        if (json.success)
-                        {
-                            openwindow();
-                        }
-                        else
-                        {
-                            fail(json);
-                        }
-                    },
-                    failure : function(result)
-                    {
-                        fail(json_from_response(response));
-                    }
-                });
-        return false;
+        $('#rstudioStatus').html("Running script...");
+
+        if (!rstudioWindow || typeof rstudioWindow.sendRemoteServerRequest !== "function")
+            return runscript();
+
+        var commands = rscript.split("\n\n");
+
+        function send_console_input()
+        {
+            if (commands.length > 0)
+            {
+                var line = commands.shift().trim();
+                rstudioWindow.sendRemoteServerRequest(rstudioWindow, "rpc", "console_input", [line,""], false, null);
+                setTimeout(send_console_input,50);
+            }
+            else
+            {
+                finish();
+            }
+        }
+        send_console_input();
     }
 
-    function openwindow()
+    function runscript()
+    {
+        LABKEY.Ajax.request(
+        {
+            method: "POST",
+            url: LABKEY.ActionURL.buildURL("rstudio","startContainer.api","/"),
+            params : {'runScript': rscript},
+            success: function(response)
+            {
+                var json = json_from_response(response);
+                if (json.success)
+                {
+                    finish();
+                }
+                else
+                {
+                    fail(json);
+                }
+            },
+            failure : function(response)
+            {
+                fail(json_from_response(response));
+            }
+        });
+    }
+
+    function finish()
     {
         var status = $('#rstudioStatus');
-        status.html("Opening window...");
 
-        if (rstudioWindow && rstudioWindow.window)
-        {
-            if (rstudioWindow.location.pathname !== LABKEY.contextPath + "/_rstudio/")
-                rstudioWindow.location = LABKEY.contextPath + "/_rstudio/";
-        }
-        else
-        {
-            rstudioWindow = window.open(LABKEY.contextPath + "/_rstudio/", "labkey_rstudio");
-        }
         if (rstudioWindow)
         {
             rstudioWindow.focus();
-            status.html("Done. Rstudio may be in hidden window or tab.");
+            status.html('Done. <a id=openinnewwindow href="' + LABKEY.contextPath + "/_rstudio/" + '" target="labkey_rstudio">Go to RStudio window</a>.');
         }
         else
         {
-            // sometimes the open must be directly in response to a user click, so give the user something to click on
-            status.html(' <b><a id=openinnewwindow href="#" target="labkey_rstudio">Click here to open RStudio in new window/tab</a></b>');
-            $('#openinnewwindow').click(openwindow);
+            status.html('<b><a id=openinnewwindow href="' + LABKEY.contextPath + "/_rstudio/" + '" target="labkey_rstudio">Click here to open RStudio in new window/tab</a></b>');
         }
         return false;
     }
-})(jQuery);
 
+    $().ready( function(){$('#open_in_rstudio_button').click(start_exporting);} );
+
+})(jQuery, <%= q(bean.getTsvURL().getLocalURIString()) %>);
 </script>
