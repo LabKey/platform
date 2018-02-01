@@ -1518,7 +1518,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
             Map<String, Pair<Integer, String[]>> expectations = getExpectations();
 
-            for (File file : sampledata.listFiles(f -> f.isFile() && !f.getName().endsWith(".jar")))
+            for (File file : sampledata.listFiles(File::isFile))
             {
                 String docId = "testtika";
                 SimpleDocumentResource resource = new SimpleDocumentResource(new Path(docId), docId, null, "text/plain", null, null, null);
@@ -1604,7 +1604,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "exe_sample.exe", 0);
             add(map, "html_sample.html", 354182, "Align redeploy resource modification", "57855: Explicitly handle the case");
             add(map, "ico_sample.ico", 0);
-            add(map, "jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
+//            Our version of Tika can't extract text from .class and .jar files since we stopped including asm.jar. If we ever add it back then uncomment the line below to test decompilation.
+//            add(map, "jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
+            add(map, "jar_sample.jar", 49162, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator");
             add(map, "java_sample.java", 9251, "Jackson databinding bean for the controlInfo object", "private String errors");
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
