@@ -114,27 +114,10 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
         ParticipantVisitResolver childResolver = new StudyParticipantVisitResolver(runContainer, targetStudyContainer, user);
 
-        if (lsid.getNamespaceSuffix().startsWith(LIST_NAMESPACE_SUFFIX))
+        File file = thawListData.getFile();
+        if (file != null)
         {
-            String objectId = lsid.getObjectId();
-            int index = objectId.indexOf('.');
-            if (index == -1)
-            {
-                throw new ExperimentException("Could not determine schema and query for data with LSID " + lsid);
-            }
-            String schemaName = objectId.substring(0, index);
-            String queryName = objectId.substring(index + 1);
-            Container listContainer = ContainerManager.getForPath(lsid.getVersion());
-            if (listContainer == null)
-            {
-                throw new ExperimentException("Could not find container " + lsid.getVersion() + " for data with LSID " + lsid);
-            }
-            return new ThawListListResolver(runContainer, targetStudyContainer, listContainer, schemaName, queryName, user, childResolver);
-        }
-        else
-        {
-            File file = thawListData.getFile();
-            if (file == null || !NetworkDrive.exists(file))
+            if (!NetworkDrive.exists(file))
             {
                 throw new ExperimentException("Could not find a thaw list for run");
             }
@@ -201,6 +184,23 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             if (resolverErrors.length() > 0)
                 throw new ExperimentException(resolverErrors.toString());
             return new ThawListFileResolver(childResolver, values, runContainer);
+        }
+        else
+        {
+            String objectId = lsid.getObjectId();
+            int index = objectId.indexOf('.');
+            if (index == -1)
+            {
+                throw new ExperimentException("Could not determine schema and query for data with LSID " + lsid);
+            }
+            String schemaName = objectId.substring(0, index);
+            String queryName = objectId.substring(index + 1);
+            Container listContainer = ContainerManager.getForPath(lsid.getVersion());
+            if (listContainer == null)
+            {
+                throw new ExperimentException("Could not find container " + lsid.getVersion() + " for data with LSID " + lsid);
+            }
+            return new ThawListListResolver(runContainer, targetStudyContainer, listContainer, schemaName, queryName, user, childResolver);
         }
     }
 
