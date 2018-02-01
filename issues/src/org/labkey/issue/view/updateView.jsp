@@ -51,6 +51,42 @@
         dependencies.add("internal/jQuery");
         dependencies.add("Ext4");
     }
+
+    String getNotifyHelpPopup(int emailPrefs, int issueId, EntryTypeNames names)
+    {
+        String indefArticle = names.getIndefiniteSingularArticle();
+        String description = h(indefArticle) + " " + h(names.singularName);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Email notifications can be controlled via this notification list (one email address per line)");
+
+        if (!getUser().isGuest())
+        {
+            sb.append(" or your user <a href=\"").append(h(buildURL(IssuesController.EmailPrefsAction.class)));
+            if (issueId != 0)
+            {
+                sb.append("issueId=").append(issueId);
+            }
+            sb.append("\">email preferences</a>. ");
+        }
+        if (emailPrefs != 0)
+        {
+            sb.append("Your current preferences are to receive notification emails when:<br>");
+            sb.append("<ul>");
+            if ((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
+                sb.append("<li>").append(description).append(" is opened and assigned to you</li>");
+            if ((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                sb.append("<li>").append(description).append(" that's assigned to you is modified</li>");
+            if ((emailPrefs & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
+                sb.append("<li>").append(description).append(" you opened is modified</li>");
+            if ((emailPrefs & IssueManager.NOTIFY_SUBSCRIBE) != 0)
+                sb.append("<li>any ").append(h(names.singularName)).append(" is created or modified</li>");
+            if ((emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0)
+                sb.append("<li>you create or modify ").append(description).append("</li>");
+            sb.append("</ul>");
+        }
+        return PageFlowUtil.helpPopup("Email Notifications", sb.toString(), true);
+    }
 %>
 <%
     final JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -194,6 +230,18 @@
             LABKEY.setDirty(<%=bean.isDirty()%>)
         });
     })(jQuery);
+
+    var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
+
+    function isDirty(){
+        var notify = document.getElementById("notifyList");
+        if (notify && origNotify != notify.value)
+            return true;
+        return LABKEY.isDirty();
+    }
+
+    window.onbeforeunload = LABKEY.beforeunload(isDirty);
+
 </script>
 <labkey:form method="POST" onsubmit="onSubmit();" enctype="multipart/form-data" layout="horizontal">
     <table><%
@@ -212,7 +260,7 @@
     </table>
     <div class="labkey-button-bar-separate">
         <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
-        <%= button("Cancel").href(cancelURL) %>
+        <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <table class="lk-fields-table" style="margin-top:10px;">
         <tr><%
@@ -351,7 +399,7 @@
     </table>
     <div class="labkey-button-bar-separate" style="margin-bottom:10px">
         <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
-        <%= button("Cancel").href(cancelURL)%>
+        <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <% final Collection<Issue.Comment> comments = issue.getComments();
         if (comments.size() > 0) { boolean firstComment = true; %>
@@ -392,55 +440,3 @@
     <input type="hidden" name="dirty" value="false">
 </labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
-<script type="text/javascript">
-
-    var origNotify = <%=q(bean.getNotifyListString(false).toString())%>;
-
-    function isDirty()
-    {
-        var notify = document.getElementById("notifyList");
-        if (notify && origNotify != notify.value)
-            return true;
-        return LABKEY.isDirty();
-    }
-
-    window.onbeforeunload = LABKEY.beforeunload(isDirty);
-</script>
-
-<%!
-    String getNotifyHelpPopup(int emailPrefs, int issueId, EntryTypeNames names)
-    {
-        String indefArticle = names.getIndefiniteSingularArticle();
-        String description = h(indefArticle) + " " + h(names.singularName);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("Email notifications can be controlled via this notification list (one email address per line)");
-
-        if (!getUser().isGuest())
-        {
-            sb.append(" or your user <a href=\"").append(h(buildURL(IssuesController.EmailPrefsAction.class)));
-            if (issueId != 0)
-            {
-                sb.append("issueId=").append(issueId);
-            }
-            sb.append("\">email preferences</a>. ");
-        }
-        if (emailPrefs != 0)
-        {
-            sb.append("Your current preferences are to receive notification emails when:<br>");
-            sb.append("<ul>");
-            if ((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
-                sb.append("<li>").append(description).append(" is opened and assigned to you</li>");
-            if ((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
-                sb.append("<li>").append(description).append(" that's assigned to you is modified</li>");
-            if ((emailPrefs & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
-                sb.append("<li>").append(description).append(" you opened is modified</li>");
-            if ((emailPrefs & IssueManager.NOTIFY_SUBSCRIBE) != 0)
-                sb.append("<li>any ").append(h(names.singularName)).append(" is created or modified</li>");
-            if ((emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0)
-                sb.append("<li>you create or modify ").append(description).append("</li>");
-            sb.append("</ul>");
-        }
-        return PageFlowUtil.helpPopup("Email Notifications", sb.toString(), true);
-    }
-%>
