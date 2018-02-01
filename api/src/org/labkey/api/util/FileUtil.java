@@ -257,7 +257,7 @@ public class FileUtil
 
     public static URI createUri(String str)
     {
-        str = str.replaceAll("\\\\", "/");
+        str = str.replace("\\", "/");
         if (str.matches("[A-z]:/.*"))
             return new File(str).toURI();
         
