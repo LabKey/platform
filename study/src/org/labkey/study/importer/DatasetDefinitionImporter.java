@@ -152,11 +152,14 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
                 String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
 
-                reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
-                ((DatasetInferSchemaReader)reader).validate(readerErrors);
+                if (datasetsDirectory != null)
+                {
+                    reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
+                    ((DatasetInferSchemaReader)reader).validate(readerErrors);
 
-                for (String error : readerErrors)
-                    ctx.getLogger().error(error);
+                    for (String error : readerErrors)
+                        ctx.getLogger().error(error);
+                }
             }
 
             if (null != reader)
