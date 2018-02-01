@@ -70,8 +70,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
             StudyImpl study = ctx.getStudy();
             List<Integer> orderedIds = null;
 
-            // dataset metadata provided
-            if (ctx.getXml().getDatasets() != null && ctx.getXml().getDatasets().getFile() != null)
+            // dataset metadata provided or at least a definition file
+            if (hasDatasetDefinitionFile(ctx))
             {
                 StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
                 VirtualFile datasetDir = getDatasetDirectory(ctx, vf);
@@ -171,6 +171,21 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 reorderer.reorderDatasets(orderedIds);
             }
         }
+    }
+
+    /**
+     * Determines whether there is a .dataset file in the import archive
+     */
+    private boolean hasDatasetDefinitionFile(StudyImportContext ctx) throws ImportException
+    {
+        VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
+        String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
+
+        if (datasetsDirectory != null && datasetsFileName != null)
+        {
+            return datasetsDirectory.list().contains(datasetsFileName);
+        }
+        return false;
     }
 
     @Override
