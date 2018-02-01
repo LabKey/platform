@@ -49,6 +49,9 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
+import org.apache.tika.config.LoadErrorHandler;
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -100,6 +103,7 @@ import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -137,7 +141,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
-    private final AutoDetectParser _autoDetectParser = new AutoDetectParser();
+    private final AutoDetectParser _autoDetectParser;
 
     enum FIELD_NAME
     {
@@ -167,6 +171,26 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         uniqueId,
         navtrail
     }
+
+
+    public LuceneSearchServiceImpl()
+    {
+        TikaConfig config;
+
+        try
+        {
+            InputStream is = getClass().getResourceAsStream("tikaConfig.xml");
+            org.w3c.dom.Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+            config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(), true));
+        }
+        catch (Exception e)
+        {
+            config = TikaConfig.getDefaultConfig();
+        }
+
+        _autoDetectParser = new AutoDetectParser(config);
+    }
+
 
     private void initializeIndex()
     {

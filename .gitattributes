@@ -1918,6 +1918,7 @@ search/src/org/labkey/search/model/LuceneAnalyzer.java -text
 search/src/org/labkey/search/model/LuceneDirectoryType.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
 search/src/org/labkey/search/model/NoopWritableIndex.java -text
+search/src/org/labkey/search/model/ProblemHandler.java -text
 search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SearchPropertyManager.java -text
 search/src/org/labkey/search/model/SearchSchema.java -text
@@ -1925,6 +1926,7 @@ search/src/org/labkey/search/model/SecurityQuery.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/model/WritableIndexManager.java -text
 search/src/org/labkey/search/model/WritableIndexManagerImpl.java -text
+search/src/org/labkey/search/model/tikaConfig.xml -text
 search/src/org/labkey/search/synonyms.txt -text
 search/src/org/labkey/search/umls/ConceptName.java -text
 search/src/org/labkey/search/umls/Definition.java -text
