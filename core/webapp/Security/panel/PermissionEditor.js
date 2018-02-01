@@ -214,7 +214,8 @@ Ext4.define('Security.panel.PermissionEditor', {
             isProjectAdmin : this.isProjectAdmin,
             canInherit : this.canInherit,
             resourceId : LABKEY.container.id,
-            globalPolicy : true
+            globalPolicy : true,
+            doneURL: this.doneURL
         });
 
         return this.policyEditor;
