@@ -19,6 +19,7 @@ package org.labkey.api.wiki;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
 import java.util.Collection;
@@ -64,10 +65,5 @@ public interface WikiService
     void addWikiListener(WikiChangeListener listener);
     void removeWikiListener(WikiChangeListener listener);
 
-    /**
-     * Add a view to the standard wiki page template
-     * @param view View to include on page that includes various settings for display
-     */
-    void addAdditionalTemplateView(WikiTemplateView view);
-    List<WikiTemplateView> getAdditionalTemplateViews();
+    void registerWikiPartFactory(WebPartFactory partFactory, WikiPartFactory.Privilege privilege, String activeModuleName);
 }
