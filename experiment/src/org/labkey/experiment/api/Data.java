@@ -17,10 +17,12 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URI;
+import java.nio.file.Path;
 
 /**
  * Bean for rows in the exp.data table.
@@ -74,6 +76,14 @@ public class Data extends ProtocolOutput
         {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    @Nullable
+    public Path getFilePath()
+    {
+        if (null != getDataFileUrl())
+            return FileUtil.stringToPath(getContainer(), getDataFileUrl());
+        return null;
     }
 
     public boolean isGenerated()

@@ -191,6 +191,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1639,31 +1641,6 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getDataView(DataForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
-            String relativePath = null;
-            if (c.hasPermission(getUser(), InsertPermission.class))
-            {
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                if (root != null)
-                {
-                    File rootFile = root.getRootPath();
-                    File dataFile = _data.getFile();
-                    if (dataFile != null)
-                    {
-                        File dataParent = dataFile.getParentFile();
-                        while (dataParent != null)
-                        {
-                            if (dataParent.equals(rootFile))
-                            {
-                                relativePath = FileUtil.relativizeUnix(rootFile, dataFile.getParentFile(), true);
-                                break;
-                            }
-                            dataParent = dataParent.getParentFile();
-                        }
-                    }
-                }
-            }
-
             ExpRun run = _data.getRun();
             ExpProtocol sourceProtocol = _data.getSourceProtocol();
             ExpProtocolApplication sourceProtocolApplication = _data.getSourceApplication();
@@ -1705,13 +1682,34 @@ public class ExperimentController extends SpringActionController
                 bb.add(new ActionButton("View data", viewDataURL));
             }
 
-            if (_data.isFileOnDisk())
+            if (_data.isPathAccessible())
             {
                 bb.add(new ActionButton("View file", ExperimentUrlsImpl.get().getShowFileURL(_data, true)));
                 bb.add(new ActionButton("Download file", ExperimentUrlsImpl.get().getShowFileURL(_data, false)));
 
                 if (getContainer().hasPermission(getUser(), InsertPermission.class))
                 {
+                    String relativePath = null;
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root != null)
+                    {
+                        Path rootFile = root.getRootNioPath();
+                        Path dataFile = _data.getFilePath();
+                        if (dataFile != null)
+                        {
+                            Path pathRelative = null;
+                            try
+                            {
+                                pathRelative = rootFile.relativize(dataFile);
+                                if (null != pathRelative)
+                                    relativePath = pathRelative.toString();
+                            }
+                            catch (IllegalArgumentException e)
+                            {
+                                // dataFile not relative to root
+                            }
+                        }
+                    }
                     ActionURL browseURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL(), relativePath);
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
                 }
@@ -1719,7 +1717,7 @@ public class ExperimentController extends SpringActionController
             dr.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             dr.setButtonBar(bb);
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), c);
+            CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), getContainer());
             HBox hbox = new StandardAndCustomPropertiesView(detailsView, cpv);
 
             VBox vbox = new VBox(hbox);
@@ -1828,7 +1826,7 @@ public class ExperimentController extends SpringActionController
     {
         protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
         {
-            if (!_data.isFileOnDisk())
+            if (!_data.isPathAccessible())
             {
                 throw new NotFoundException("Data file " + _data.getDataFileUrl() + " does not exist on disk");
             }
@@ -1849,11 +1847,14 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                File realContent = _data.getFile();
+                Path realContent = _data.getFilePath();
+                if (null == realContent)
+                    throw new IllegalStateException("Path not found.");
+
                 boolean inline = _data.isInlineImage() || form.isInline() || "inlineImage".equalsIgnoreCase(form.getFormat());
-                if (_data.isInlineImage() && form.getMaxDimension() != null && realContent != null)
+                if (_data.isInlineImage() && form.getMaxDimension() != null)
                 {
-                    BufferedImage image = ImageIO.read(realContent);
+                    BufferedImage image = ImageIO.read(Files.newInputStream(realContent));
                     // If image, create a thumbnail, otherwise fall through as a regular download attempt
                     if (image != null)
                     {
@@ -1863,7 +1864,7 @@ public class ExperimentController extends SpringActionController
                             double scale = (double) form.getMaxDimension().intValue() / (double) imageMax;
                             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                             ImageUtil.resizeImage(image, bOut, scale, 1);
-                            PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName() + ".png", bOut.toByteArray(), !inline);
+                            PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getFileName().toString() + ".png", bOut.toByteArray(), !inline);
                             return null;
                         }
                     }
@@ -1873,11 +1874,12 @@ public class ExperimentController extends SpringActionController
                 boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(form.getFormat());
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
-                    streamToJSON(realContent, form.getFormat(), -1, null);
+                    if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
+                        streamToJSON(realContent.toFile(), form.getFormat(), -1, null);
                     return null;
                 }
 
-                PageFlowUtil.streamFile(getViewContext().getResponse(), new File(realContent.getAbsolutePath()), !inline);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), Collections.emptyMap(), realContent.getFileName().toString(), Files.newInputStream(realContent), !inline);
             }
             catch (IOException e)
             {

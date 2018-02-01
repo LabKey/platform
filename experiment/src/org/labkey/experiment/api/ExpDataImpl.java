@@ -71,6 +71,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -216,6 +217,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return _object.getFile();
     }
 
+    @Nullable
+    public java.nio.file.Path getFilePath()
+    {
+        return _object.getFilePath();
+    }
+
     public boolean isInlineImage()
     {
         return null != getFile() && MIME_MAP.isInlineImageFor(getFile());
@@ -270,6 +277,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     {
         File f = getFile();
         return f != null && NetworkDrive.exists(f) && f.isFile();
+    }
+
+    public boolean isPathAccessible()
+    {
+        java.nio.file.Path path = getFilePath();
+        return (null != path && Files.exists(path));
     }
 
     public String getCpasType()

@@ -203,10 +203,10 @@ public class PipelineServiceImpl implements PipelineService
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                 if (svc != null && container != null)
                 {
-                    if (svc.isCloudRoot(container.getProject()))
+                    if (svc.isCloudRoot(container))
                     {
                         // File root is in the cloud
-                        return new PipeRootImpl(createPipelineRoot(container, FileContentService.CLOUD_ROOT_PREFIX + "/" + svc.getCloudRootName(container.getProject())));
+                        return new PipeRootImpl(createPipelineRoot(container, FileContentService.CLOUD_ROOT_PREFIX + "/" + svc.getCloudRootName(container)));
                     }
                     else if (!svc.isUseDefaultRoot(container.getProject()))
                     {
