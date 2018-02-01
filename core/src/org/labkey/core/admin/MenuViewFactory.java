@@ -53,7 +53,7 @@ import java.util.List;
  */
 public class MenuViewFactory
 {
-    private static final int MAX_PER_COLUMN = 15;
+    private static final int MAX_PER_COLUMN = 20;
 
     public static WebPartView createMenuQueryView(ViewContext context, String title, final CustomizeMenuForm form)
     {
@@ -61,7 +61,7 @@ public class MenuViewFactory
         {
             Container container = ContainerManager.getForPath(form.getFolderName());
             context = new ViewContext(context);
-            context.setContainer(container);        // Need ViewComntext with proper container
+            context.setContainer(container);        // Need ViewContext with proper container
         }
 
         final ViewContext actualContext = context;
@@ -89,6 +89,7 @@ public class MenuViewFactory
                 protected void renderDataRegion(PrintWriter out) throws Exception
                 {
                     boolean seenAtLeastOne = false;
+                    out.write("<div style=\"max-width: 40vw; overflow-x: auto;\">");
                     out.write("<table>");
                     TableInfo tableInfo = getTable();
                     if (null != tableInfo)
@@ -141,7 +142,7 @@ public class MenuViewFactory
                     }
                     if (!seenAtLeastOne)
                         out.write("<tr><td>No query results.</td></tr>");
-                    out.write("</table>");
+                    out.write("</table></div>");
                 }
             };
             view.setTitle(title);
@@ -230,6 +231,7 @@ public class MenuViewFactory
                 }
 
                 boolean seenAtLeastOne = false;
+                out.write("<div style=\"max-width: 40vw; overflow-x: auto;\">");
                 out.write("<table>");
                 ArrayList<StringBuilder> cells = new ArrayList<>();
                 for (Container container : containers)
@@ -264,7 +266,7 @@ public class MenuViewFactory
 
                 if (!seenAtLeastOne)
                     out.write("<tr><td style='vertical-align:top;padding:4px;white-space:pre;'>No folders selected.</td></tr>");
-                out.write("</table>");
+                out.write("</table></div>");
             }
         };
 

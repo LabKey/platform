@@ -154,7 +154,7 @@
                     <ul class="dropdown-menu"></ul>
                 </li>
                 <% } for (Pair<String, Portal.WebPart> pair : menus) { %>
-                <li class="dropdown hidden-xs" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
+                <li class="dropdown" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
