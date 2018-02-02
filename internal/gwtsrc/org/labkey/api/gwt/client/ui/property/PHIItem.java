@@ -43,16 +43,41 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
         if (null == maxPHI)
             maxPHI = PHIType.Restricted;
 
+        boolean canEnable = true;
         String phi = field.getPHI();
         PHIType currentPHI = PHIType.fromString(phi);
         if (null != currentPHI && !currentPHI.isLevelAllowed(maxPHI))
+        {
+            canEnable = false;
             setCanEnable(false);
+        }
 
+        // There's only 1 instance of PhiItem for all fields, so may need to add or remove types
         if (_phiTypes.getItemCount() == 0)
         {
             for (PHIType t : PHIType.values())
-                if (!getCanEnable() || t.isLevelAllowed(maxPHI))    // Show level if field cannot be enabled or if level allowed to be set
+                if (!canEnable || t.isLevelAllowed(maxPHI))    // Show level if field cannot be enabled or if level allowed to be set
                     _phiTypes.addItem(t.getLabel(), t.name());
+        }
+        else
+        {
+            int maxItem = _phiTypes.getItemCount() - 1;
+            int maxAllowed = canEnable ? maxPHI.ordinal() : PHIType.Restricted.ordinal();       // add them all if !canEnable
+            if (maxItem < maxAllowed)
+            {
+                // add items
+                for (int i = maxItem; i < maxAllowed; i++)
+                {
+                    PHIType t = PHIType.fromOrdinal(i + 1);
+                    _phiTypes.addItem(t.getLabel(), t.name());
+                }
+            }
+            else if (maxItem > maxAllowed)
+            {
+                // remove items
+                for (int i = maxItem; i > maxAllowed; i--)
+                    _phiTypes.removeItem(i);
+            }
         }
 
         for (int i = 0; i < _phiTypes.getItemCount(); i++)

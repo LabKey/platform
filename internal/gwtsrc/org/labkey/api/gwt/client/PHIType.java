@@ -43,6 +43,18 @@ public enum PHIType
         return null;
     }
 
+    public static PHIType fromOrdinal(int value)
+    {
+        switch (value)
+        {
+            case 0: return NotPHI;
+            case 1: return Limited;
+            case 2: return PHI;
+            case 3: return Restricted;
+        }
+        return null;
+    }
+
     public boolean isLevelAllowed(PHIType maxLevelAllowed)
     {
         return ordinal() <= maxLevelAllowed.ordinal();
