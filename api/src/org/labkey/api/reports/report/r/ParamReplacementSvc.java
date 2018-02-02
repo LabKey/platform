@@ -361,7 +361,7 @@ public class ParamReplacementSvc
             String matchedStr = pattern.getTokenString(m);
             if (replacementParam.equals(matchedStr))
             {
-                m.appendReplacement(sb, replacementValue);
+                appendReplacement(m, sb, replacementValue, matchedStr);
             }
             else
             {
@@ -373,13 +373,32 @@ public class ParamReplacementSvc
                     if (replacementParam.equals(id))
                     {
                         String replacementStr = pattern.getReplacementStr(replacementValue, m.group(0), name);
-                        m.appendReplacement(sb, replacementStr);
+                        appendReplacement(m, sb, replacementStr, matchedStr);
                     }
                 }
             }
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    private void appendReplacement(Matcher m, StringBuffer sb, String replacementStr) throws IllegalArgumentException
+    {
+        appendReplacement(m, sb, replacementStr, null);
+    }
+
+    private void appendReplacement(Matcher m, StringBuffer sb, String replacementStr, String token) throws IllegalArgumentException
+    {
+        try
+        {
+            m.appendReplacement(sb, replacementStr);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalArgumentException("There was a syntax error with the substitution parameter in your script.\n"
+                    + (StringUtils.isEmpty(token) ? "" : "Substitution token \"" + token + "\" is used incorrectly.\n")
+                    + "Error message: " + e.getMessage());
+        }
     }
 
     /**
@@ -423,7 +442,8 @@ public class ParamReplacementSvc
 
         while (m.find())
         {
-            ParamReplacement param = fromToken(pattern.getTokenString(m));
+            String tokenString = pattern.getTokenString(m);
+            ParamReplacement param = fromToken(tokenString);
             if (param != null)
             {
                 File resultFile = param.convertSubstitution(parentDirectory);
@@ -449,7 +469,7 @@ public class ParamReplacementSvc
                 }
                 String replacementStr = pattern.getReplacementStr(resultFileName, m.group(0), param.getName());
                 outputReplacements.add(param);
-                m.appendReplacement(sb, replacementStr);
+                appendReplacement(m, sb, replacementStr, tokenString);
             }
         }
         m.appendTail(sb);
@@ -480,7 +500,8 @@ public class ParamReplacementSvc
 
         while (m.find())
         {
-            ParamReplacement param = fromToken(m.group(pattern.getEscapedTokenGroupIndex()));
+            String tokenString = m.group(pattern.getEscapedTokenGroupIndex());
+            ParamReplacement param = fromToken(tokenString);
             if (param != null && HrefOutput.class.isInstance(param))
             {
                 HrefOutput href = (HrefOutput) param;
@@ -494,7 +515,7 @@ public class ParamReplacementSvc
                     {
                         String outputValue = o.getValue();
                         String replacementStr = pattern.getEscapedReplacementStr(outputValue, m.group(0), param.getName());
-                        m.appendReplacement(sb, replacementStr);
+                        appendReplacement(m, sb, replacementStr, tokenString);
                     }
 
                 }
@@ -597,7 +618,7 @@ public class ParamReplacementSvc
          return outputSubstMap.values();
      }
 
-    public String transformInlineReplacements(String script)
+    public String transformInlineReplacements(String script) throws IllegalArgumentException
     {
         // order of processing is important due to regex sensitivity differences
         script = transformInlineReplacements(script, InlineTransformation.INPUT);
@@ -605,7 +626,7 @@ public class ParamReplacementSvc
         return transformInlineReplacements(script, InlineTransformation.OUTPUT);
     }
 
-    public String transformInlineReplacements(@NotNull String script, InlineTransformation transformation)
+    public String transformInlineReplacements(@NotNull String script, InlineTransformation transformation) throws IllegalArgumentException
     {
         StringBuffer sb = new StringBuffer();
         Matcher m = transformation.getMatchPattern().matcher(script);
@@ -624,7 +645,7 @@ public class ParamReplacementSvc
             }
 
             if (!StringUtils.isEmpty(replacementStr)) // skip invalid param
-                m.appendReplacement(sb, replacementStr);
+                appendReplacement(m, sb, replacementStr);
         }
         m.appendTail(sb);
         return sb.toString();
