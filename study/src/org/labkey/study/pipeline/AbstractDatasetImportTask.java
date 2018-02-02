@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.util.Path;
 import org.labkey.api.writer.VirtualFile;
@@ -117,6 +118,12 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     {
         try
         {
+            // Issue 33088: Reload study with phi column result in exception
+            // resumeUpdates() later will cause an error without next two lines, because ComplianceQueryLoggingProfilerListener.queryInvoked() (in compliance module) will get null user/container
+            // CONSIDER: removing these if ComplianceQueryLoggingProfilerListener can ignore passed in user/container and get them somewhere else (like QueryLogging)
+            QueryService.get().setEnvironment(QueryService.Environment.USER, ctx.getUser());
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, study.getContainer());
+
             QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
             List<String> errors = new ArrayList<>();
 
