@@ -105,11 +105,9 @@ public class PHIItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
     private boolean isCurrentPHIAllowed(FieldType field)
     {
         PHIType maxPHI = PHIType.fromString(PropertyUtil.getMaxAllowedPhi());
-        if (null == maxPHI)
-            maxPHI = PHIType.Restricted;
 
         PHIType currentPHI = PHIType.fromString(field.getPHI());
-        return (null == currentPHI || currentPHI.isLevelAllowed(maxPHI));
+        return currentPHI.isLevelAllowed(maxPHI);
     }
 
     public int addToTable(FlexTable flexTable, int row)

@@ -95,7 +95,7 @@ public class PropertyUtil
         return ret;
     }
 
-    // @Nullable
+    // @Nullable (commented because GWT doesn't recognize)
     public static String getMaxAllowedPhi()
     {
         return getServerProperty("maxAllowedPhi");

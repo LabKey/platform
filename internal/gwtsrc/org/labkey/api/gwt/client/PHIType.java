@@ -40,7 +40,7 @@ public enum PHIType
             if (phi.name().equals(value))
                 return phi;
 
-        return null;
+        return Restricted;   // default
     }
 
     public static PHIType fromOrdinal(int value)
