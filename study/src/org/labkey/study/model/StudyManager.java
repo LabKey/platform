@@ -527,11 +527,14 @@ public class StudyManager
 
             // UNDONE: There is a subtle bug in QueryHelper caching, cached objects shouldn't hold onto Container objects
             assert (study.getContainer().getId().equals(c.getId()));
-            if (study.getContainer() == c)
+            Container freshestContainer = ContainerManager.getForId(c.getId());
+            if (study.getContainer() == freshestContainer)
                 break;
 
             if (!retry) // we only get one retry
                 break;
+
+            _log.debug("Clearing cached study for " + c + " as its container reference didn't match the current object from ContainerManager " + freshestContainer);
 
             _studyHelper.clearCache(c);
             retry = false;
