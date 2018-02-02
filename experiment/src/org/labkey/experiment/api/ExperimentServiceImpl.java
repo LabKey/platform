@@ -31,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
@@ -45,7 +46,25 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidType;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -6089,6 +6108,8 @@ public class ExperimentServiceImpl implements ExperimentService
         @Test
         public void testRunInputProperties() throws Exception
         {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
             final User user = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
             final ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
