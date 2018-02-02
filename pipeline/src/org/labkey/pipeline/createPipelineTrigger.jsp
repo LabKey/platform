@@ -13,96 +13,11 @@
     HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
     PipelineController.PipelineTriggerForm bean = me.getModelBean();
 
-    String portalTitle = "Create Portal Trigger";
+    String portalTitle = "Create Pipeline Trigger";
     Integer rowId = bean.getRowId();
     //If we have a rowId, then we have to fill in input values from the table
     if (rowId != null)
-    {
-        portalTitle = "Update Portal Trigger";
-%>
-<script type="text/javascript">
-
-    function onSuccess(data) {
-        var row = data.rows[0];
-
-        //parse the incoming values and map the necessary fields
-        var name = row.Name;
-        if (name)
-            jQuery("input[name='name']").val(name);
-
-        var desc = row.Description;
-        if (desc)
-            jQuery("textarea[name='description']").val(desc);
-
-        var type = row.Type;
-        if (type) {
-            jQuery("select[name='type'] option").map(function() {
-                if (jQuery(this).text() === type) {
-                    return this;
-                }
-            }).attr('selected', true);
-        }
-
-        var task = row.PipelineTask;
-        if (task) {
-            jQuery("select[name='pipelineTask'] option").map(function() {
-                if (jQuery(this).text() === task) {
-                    return this;
-                }
-            }).attr('selected', true);
-        }
-
-        var enabled = row.Enabled;
-        if (enabled)
-            jQuery("input[name='enabled']").prop('checked', true);
-
-        //config objects must first be parsed as JSON
-        var configObj = JSON.parse(row.Configuration);
-        if (configObj) {
-            for (var k in configObj) {
-                if (configObj.hasOwnProperty(k) && configObj[k]) {
-                    if (k === "parameters") {
-                        var paramObject = configObj[k];
-                        for (var key in paramObject) {
-                            if (paramObject.hasOwnProperty(key)) {
-                                var keyName = key.indexOf("pipeline,") === 0 ? key.slice(9).trim() : key;
-                                jQuery("input[name='" + keyName + "']").val(paramObject[key]);
-                            }
-                        }
-                    } else {
-                        if (k.toLowerCase() === "quiet") {
-                            configObj[k] = configObj[k] / 1000;
-                        }
-                        jQuery("*[name='" + k + "']").val(configObj[k]);
-                    }
-                }
-            }
-        }
-
-        var customConfigObj = JSON.parse(row.CustomConfiguration);
-        if (customConfigObj) {
-            for (var j in customConfigObj) {
-                if (customConfigObj.hasOwnProperty(j) && customConfigObj[j]) {
-                    addParameterGroup(j, customConfigObj[j])
-                }
-            }
-        }
-    }
-
-    function onFailure(data) {
-        LABKEY.Utils.alert("Error", 'Error fetching row: ' + <%=q(Integer.toString(rowId))%>)
-    }
-
-    LABKEY.Query.selectRows({
-        schemaName: "pipeline",
-        queryName: "TriggerConfigurations",
-        success: onSuccess,
-        failure: onFailure,
-        filterArray: [LABKEY.Filter.create("RowId", <%=q(Integer.toString(rowId))%>)]
-    })
-</script>
-<%
-    }
+        portalTitle = "Update Pipeline Trigger";
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
@@ -117,7 +32,7 @@
                 <a href="#details" class="list-group-item">Details</a>
                 <a href="#configuration" class="list-group-item">Configuration</a>
             </div>
-            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher" onclick="allowNavigate">
+            <a class="list-group-item lk-pipeline-allowNavigate" style="margin-top: 2em" target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher">
                 Documentation &nbsp; &nbsp;<i class="fa fa-external-link" aria-hidden="true"></i>
             </a>
         </div>
@@ -225,14 +140,14 @@
                               label="Enable this trigger"
                               checked="" />
 
-                <h4 style="margin-top: 20px"><a href="#configuration">Configure parameters <i class="fa fa-arrow-right" aria-hidden="true"></i> </a></h4>
+                <h4 style="margin-top: 20px"><a href="#configuration">Configure parameters <i class="fa fa-arrow-circle-right" aria-hidden="true"></i> </a></h4>
             </div>
 
             <div id="configuration" class="lk-trigger-section">
                 <p>Fields marked with an asterisk * are required.</p>
                 <labkey:input name="location"
                               className="form-control lk-pipeline-input"
-                              label="Locations *"
+                              label="Location *"
                               isRequired="true"
                               forceSmallContext="true"
                               contextContent="This can be an absolute path on the server's file system or a relative path under the container's pipeline root."/>
@@ -284,7 +199,7 @@
                     </div>
                 </div>
                 <div id="extraParams"></div>
-                <div class="col-sm-3 col-lg-2" style="text-align: right; margin-top: 4px; cursor: pointer"><a onclick="addParameterGroup()">Add custom parameter</a></div>
+                <div class="col-sm-3 col-lg-2" style="text-align: right; margin-top: 4px; cursor: pointer"><a class="lk-pipeline-addParamGroup">Add custom parameter</a></div>
 
                 <div style="margin-top: 25px">
                     &nbsp;
@@ -295,11 +210,10 @@
                 <labkey:input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>"/>
                 <labkey:input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>"/>
                 <div style="margin-bottom: 20px">
-                    <h4><a href="#details"><i class="fa fa-arrow-left" aria-hidden="true"></i> Edit details</a></h4>
+                    <h4><a href="#details"><i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Edit details</a></h4>
                 </div>
-                <%--<labkey:button text="Save" id="btnSubmit"/>--%>
-                <%= button("Save").id("btnSubmit") %>
-                <%= button("Cancel").href(bean.getReturnUrl()).id("btnCancel") %>
+                <%= button("Save").id("btnSubmit").addClass("lk-pipeline-allowNavigate") %>
+                <%= button("Cancel").href(bean.getReturnUrl()).id("btnCancel").addClass("lk-pipeline-allowNavigate") %>
             </div>
         </div>
     </div>
@@ -307,6 +221,92 @@
 </labkey:form>
 <script type="text/javascript">
     +function($) {
+
+        <%
+        if (rowId != null) {
+        %>
+            function onSuccess(data) {
+                var row = data.rows[0];
+
+                //parse the incoming values and map the necessary fields
+                var name = row.Name;
+                if (name)
+                    $("input[name='name']").val(name);
+
+                var desc = row.Description;
+                if (desc)
+                    $("textarea[name='description']").val(desc);
+
+                var type = row.Type;
+                if (type) {
+                    $("select[name='type'] option").map(function () {
+                        if ($(this).text() === type) {
+                            return this;
+                        }
+                    }).attr('selected', true);
+                }
+
+                var task = row.PipelineTask;
+                if (task) {
+                    $("select[name='pipelineTask'] option").map(function () {
+                        if ($(this).text() === task) {
+                            return this;
+                        }
+                    }).attr('selected', true);
+                }
+
+                var enabled = row.Enabled;
+                if (enabled)
+                    $("input[name='enabled']").prop('checked', true);
+
+                //config objects must first be parsed as JSON
+                var configObj = JSON.parse(row.Configuration);
+                if (configObj) {
+                    for (var k in configObj) {
+                        if (configObj.hasOwnProperty(k) && configObj[k]) {
+                            if (k === "parameters") {
+                                var paramObject = configObj[k];
+                                for (var key in paramObject) {
+                                    if (paramObject.hasOwnProperty(key)) {
+                                        var keyName = key.indexOf("pipeline,") === 0 ? key.slice(9).trim() : key;
+                                        $("input[name='" + keyName + "']").val(paramObject[key]);
+                                    }
+                                }
+                            }
+                            else {
+                                if (k.toLowerCase() === "quiet") {
+                                    configObj[k] = configObj[k] / 1000;
+                                }
+                                $("*[name='" + k + "']").val(configObj[k]);
+                            }
+                        }
+                    }
+                }
+
+                var customConfigObj = JSON.parse(row.CustomConfiguration);
+                if (customConfigObj) {
+                    for (var j in customConfigObj) {
+                        if (customConfigObj.hasOwnProperty(j) && customConfigObj[j]) {
+                            addParameterGroup(j, customConfigObj[j])
+                        }
+                    }
+                }
+            }
+
+            function onFailure(data) {
+                LABKEY.Utils.alert("Error", 'Error fetching row: ' + <%=q(Integer.toString(rowId))%>)
+            }
+
+            $(document).ready(function () {
+                LABKEY.Query.selectRows({
+                    schemaName: "pipeline",
+                    queryName: "TriggerConfigurations",
+                    success: onSuccess,
+                    failure: onFailure,
+                    filterArray: [LABKEY.Filter.create("RowId", <%=q(Integer.toString(rowId))%>)]
+                })
+            });
+        <%}%>
 
         window.onbeforeunload = function (e) {
             // Force confirmation when leaving the page
@@ -338,12 +338,15 @@
             loadRoute(window.location.hash);
         });
 
-        $("#btnCancel").on('click', function() {
-           allowNavigate();
+        $(".lk-pipeline-addParamGroup").on('click', function () {
+            addParameterGroup();
+        });
+
+        $(".lk-pipeline-allowNavigate").on('click', function () {
+            allowNavigate();
         });
 
         $("#btnSubmit").on('click', (function() {
-            allowNavigate();
             var standardObj = {};
             var customObj = {};
 
@@ -373,9 +376,9 @@
 
             //build the custom configuration object
             $('.lk-pipeline-customParam-group').each(function(i, elem) {
-               var key = elem.getElementsByClassName("lk-pipeline-custom-key")[0].value;
-               var value = elem.getElementsByClassName("lk-pipeline-custom-value")[0].value;
-               if (value) {
+                var key = elem.getElementsByClassName("lk-pipeline-custom-key")[0].value;
+                var value = elem.getElementsByClassName("lk-pipeline-custom-value")[0].value;
+                if (value) {
                     customObj[key] = value;
                 }
             });
@@ -386,28 +389,27 @@
             $("#pipelineForm").submit();
         }));
 
-    }(jQuery);
-
-    function addParameterGroup(key, value) {
-        var elem = jQuery("<div class='form-group lk-pipeline-customParam-group'>" +
-                        "<div class='col-sm-3 col-lg-2'>" +
-                            "<input type='text' class='form-control lk-pipeline-custom-key' placeholder='Name' style='float: right;'>" +
-                        "</div>" +
-                        "<div class='col-sm-9 col-lg-10'>" +
-                            "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' style='display: inline-block;'>" +
-                            "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px;'></i></a>" +
-                        "</div>" +
+        function addParameterGroup(key, value) {
+            var elem = $("<div class='form-group lk-pipeline-customParam-group'>" +
+                    "<div class='col-sm-3 col-lg-2'>" +
+                    "<input type='text' class='form-control lk-pipeline-custom-key' placeholder='Name' style='float: right;'>" +
+                    "</div>" +
+                    "<div class='col-sm-9 col-lg-10'>" +
+                    "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' style='display: inline-block;'>" +
+                    "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px;'></i></a>" +
+                    "</div>" +
                     "</div>");
 
-        if (key && value) {
-            elem.find(".lk-pipeline-custom-key").val(key);
-            elem.find(".lk-pipeline-custom-value").val(value);
+            if (key && value) {
+                elem.find(".lk-pipeline-custom-key").val(key);
+                elem.find(".lk-pipeline-custom-value").val(value);
+            }
+
+            elem.appendTo($("#extraParams"));
         }
 
-        elem.appendTo(jQuery("#extraParams"));
-    }
-
-    function allowNavigate() {
-        window.onbeforeunload = undefined;
-    }
+        function allowNavigate() {
+            window.onbeforeunload = undefined;
+        }
+    }(jQuery);
 </script>

@@ -1636,18 +1636,7 @@ public class PipelineController extends SpringActionController
         @Override
         public void validateCommand(PipelineTriggerForm form, Errors errors)
         {
-
-            Map<String, Object> row = new HashMap<>();
-            row.put("RowId", form.getRowId());
-            row.put("Name", form.getName());
-            row.put("Description", form.getDescription());
-            row.put("Type", form.getType());
-            row.put("PipelineId", form.getPipelineTask());
-            row.put("Enabled", form.isEnabled());
-            row.put("Configuration", form.getConfigJson());
-            row.put("CustomConfiguration", form.getCustomConfigJson());
-
-            PipelineManager.validateTriggerConfiguration(row, getContainer(), errors);
+            PipelineManager.validateTriggerConfiguration(form.getRow(), getContainer(), errors);
         }
 
         @Override
@@ -1668,21 +1657,11 @@ public class PipelineController extends SpringActionController
         @Override
         public boolean handlePost(PipelineTriggerForm form, BindException errors)
         {
-            Map<String, Object> row = new HashMap<>();
-            row.put("RowId", form.getRowId());
-            row.put("Name", form.getName());
-            row.put("Description", form.getDescription());
-            row.put("Type", form.getType());
-            row.put("PipelineId", form.getPipelineTask());
-            row.put("Enabled", form.isEnabled());
-            row.put("Configuration", form.getConfigJson());
-            row.put("CustomConfiguration", form.getCustomConfigJson());
-
             if (!errors.hasErrors())
             {
                 try
                 {
-                    return PipelineManager.insertOrUpdateTriggerConfiguration(getUser(), getContainer(), row);
+                    return PipelineManager.insertOrUpdateTriggerConfiguration(getUser(), getContainer(), form.getRow());
                 }
                 catch (Exception e)
                 {
@@ -1794,6 +1773,21 @@ public class PipelineController extends SpringActionController
         public void setCustomConfigJson(String customConfigJson)
         {
             this.customConfigJson = customConfigJson;
+        }
+
+        public Map<String, Object> getRow()
+        {
+            Map<String, Object> row = new HashMap<>();
+            row.put("RowId", getRowId());
+            row.put("Name", getName());
+            row.put("Description", getDescription());
+            row.put("Type", getType());
+            row.put("PipelineId", getPipelineTask());
+            row.put("Enabled", isEnabled());
+            row.put("Configuration", getConfigJson());
+            row.put("CustomConfiguration", getCustomConfigJson());
+
+            return row;
         }
     }
 
