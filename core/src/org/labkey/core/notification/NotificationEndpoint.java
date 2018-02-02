@@ -50,6 +50,7 @@ public class NotificationEndpoint extends Endpoint
     private Session session;
     private int userId;
     private HttpSession httpSession;
+    private boolean errored;
 
     public NotificationEndpoint()
     {
@@ -97,6 +98,7 @@ public class NotificationEndpoint extends Endpoint
     @Override
     public void onError(Session session, Throwable throwable)
     {
+        this.errored = true;
         LOG.debug(this.toString() + " onError: " + throwable.getMessage());
         super.onError(session, throwable);
     }
@@ -140,6 +142,8 @@ public class NotificationEndpoint extends Endpoint
         synchronized (endpointsMap)
         {
             Collection<NotificationEndpoint> coll = endpointsMap.get(userId);
+            // prune errored or closed endpoints
+            coll.removeIf(e -> e.errored || !e.session.isOpen());
             arr = coll.toArray(new NotificationEndpoint[coll.size()]);
         }
         return Arrays.asList(arr);
@@ -159,11 +163,10 @@ public class NotificationEndpoint extends Endpoint
         catch (Exception x)
         {
             LOG.debug(toString() + ": " + x.getMessage());
-            synchronized (endpointsMap)
-            {
-                endpointsMap.removeMapping(this.userId, this);
-                try { this.session.close(); } catch (IOException ex){}
-            }
+            // NOTE: This NotificationEndpoint will be removed from the endpointsMap in onClose, called from WsSocket.close()
+            // but remember it is a bad endpoint if someone tries to use it before the onClose method runs.
+            this.errored = true;
+            try { this.session.close(); } catch (IOException ex){}
         }
         return false;
     }
