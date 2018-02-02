@@ -144,7 +144,7 @@ public class MothershipTest extends BaseWebDriverTest
                 "Created from crash report: " + stackDetailsUrl,
                 "java.lang.NullPointerException",
                 "TestController.java"};
-        assertTextPresentInThisOrder(new TextSearcher(() -> insertPage.comment().get()), expectedComments);
+        assertTextPresentInThisOrder(new TextSearcher(insertPage.comment().get()), expectedComments);
         assertEquals("New issue shouldn't be assigned by default", "", insertPage.assignedTo().get().trim());
         insertPage.assignedTo().set(_userHelper.getDisplayNameForEmail(ASSIGNEE));
         insertPage.save();
