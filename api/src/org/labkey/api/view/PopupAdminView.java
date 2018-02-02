@@ -136,7 +136,7 @@ public class PopupAdminView extends PopupMenuView
             if (isFolderAdmin(context) && !c.isWorkbook())
             {
                 NavTree folderAdmin = new NavTree("Folder");
-                folderAdmin.addChildren(FolderAdminMenu.getFolderElements(c));
+                folderAdmin.addChildren(FolderAdminMenu.getFolderElements(context, c));
                 folderAdmin.addSeparator();
                 folderAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
                 navTree.addChild(folderAdmin);

@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -28,16 +29,18 @@ import org.labkey.api.view.ActionURL;
 public interface SecurityUrls extends UrlProvider
 {
     ActionURL getBeginURL(Container container);
+    ActionURL getManageGroupURL(Container container, String groupName, URLHelper returnURL);
     ActionURL getManageGroupURL(Container container, String groupName);
+    ActionURL getGroupPermissionURL(Container container, int id, URLHelper returnURL);
     ActionURL getGroupPermissionURL(Container container, int id);
     ActionURL getPermissionsURL(Container container);
-    ActionURL getPermissionsURL(Container container, ActionURL returnURL);
-    ActionURL getSiteGroupsURL(Container container, ActionURL returnURL);
+    ActionURL getPermissionsURL(Container container, URLHelper returnURL);
+    ActionURL getSiteGroupsURL(Container container, URLHelper returnURL);
     ActionURL getContainerURL(Container container);
     ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix);
     ActionURL getAddUsersURL();
     ActionURL getFolderAccessURL(Container container);
-    ActionURL getApiKeyURL(ActionURL returnURL); // Always root
+    ActionURL getApiKeyURL(URLHelper returnURL); // Always root
     String getCompleteUserURLPrefix(Container container);
     String getCompleteUserReadURLPrefix(Container container);
 }

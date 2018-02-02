@@ -23,9 +23,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -55,17 +56,19 @@ public class SiteAdminMenu extends NavTreeMenu
         if (user.hasRootPermission(AdminReadPermission.class))
             items.add(getAdminConsole(context));
 
+        URLHelper returnURL = context.getActionURL().getReturnURL() == null ? context.getActionURL() : context.getActionURL().getReturnURL();
+
         if (user.isInSiteAdminGroup())
         {
-            items.add(new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators")));
-            items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers")));
+            items.add(new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators", returnURL)));
+            items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers", returnURL)));
         }
 
         if (user.hasRootPermission(UserManagementPermission.class))
         {
-            items.add(new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL()));
-            items.add(new NavTree("Site Groups", securityUrls.getSiteGroupsURL(root, context.getActionURL())));
-            items.add(new NavTree("Site Permissions", securityUrls.getPermissionsURL(root, context.getActionURL())));
+            items.add(new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL().addReturnURL(returnURL)));
+            items.add(new NavTree("Site Groups", securityUrls.getSiteGroupsURL(root, returnURL)));
+            items.add(new NavTree("Site Permissions", securityUrls.getPermissionsURL(root, returnURL)));
         }
 
         if (user.hasRootAdminPermission())

@@ -430,7 +430,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 if (ctx.hasPermission("MultiPortalFolderType", AdminPermission.class))
                 {
                     NavTree folderAdmin = new NavTree("Folder");
-                    folderAdmin.addChildren(FolderAdminMenu.getFolderElements(tabContainer));
+                    folderAdmin.addChildren(FolderAdminMenu.getFolderElements(ctx, tabContainer));
                     menu.addChild(folderAdmin);
                 }
                 if (user.isDeveloper())

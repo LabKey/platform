@@ -43,15 +43,15 @@ public class FolderAdminMenu extends NavTreeMenu
     public static NavTree[] getNavTree(ViewContext context)
     {
         List<NavTree> admin = new ArrayList<>();
-        admin.addAll(getFolderElements(context.getContainer()));
+        admin.addAll(getFolderElements(context, context.getContainer()));
         NavTree[] adminArr = new NavTree[admin.size()];
         return admin.toArray(adminArr);
     }
 
-    public static ArrayList<NavTree> getFolderElements(Container c)
+    public static ArrayList<NavTree> getFolderElements(ViewContext context, Container c)
     {
         ArrayList<NavTree> admin = new ArrayList<>();
-        NavTree permissions = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(c));
+        NavTree permissions = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(c, context.getActionURL()));
         admin.add(permissions);
         NavTree management = new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
         admin.add(management);
