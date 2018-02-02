@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.UserPrincipal"%>
 <%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -59,6 +60,7 @@
 
     DataRegion accessRegion = new DataRegion();
     accessRegion.setName("access");
+    URLHelper returnURL = getActionURL().clone().deleteParameter("returnUrl");
 
     int cellPadding = 3;
 %>
@@ -106,7 +108,7 @@
 <%
         if (!bean.showUserCol())
         {
-            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getPermissionsURL(row.getContainer());
+            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getPermissionsURL(row.getContainer(), returnURL);
             ActionURL folderAccessLink = urlProvider(SecurityUrls.class).getFolderAccessURL(row.getContainer());
 %>
             <td><%= textLink("permissions", containerPermissionsLink) %></td>
@@ -117,7 +119,7 @@
         }
         else
         {
-            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), getActionURL())) %></td>
+            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), returnURL)) %></td>
             <td style='padding-left:"<%=cellPadding%>px;'><%
             if (isUser)
             {

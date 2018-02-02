@@ -18,6 +18,8 @@ package org.labkey.core.security;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.ApiAction;
@@ -150,36 +152,53 @@ public class SecurityController extends SpringActionController
 
     public static class SecurityUrlsImpl implements SecurityUrls
     {
-        public ActionURL getManageGroupURL(Container container, String groupName)
+        public ActionURL getManageGroupURL(Container container, String groupName, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(GroupAction.class, container);
+            if (returnUrl != null)
+                url = url.addReturnURL(returnUrl);
             return url.addParameter("group", groupName);
+        }
+
+        public ActionURL getManageGroupURL(Container container, String groupName)
+        {
+            return getManageGroupURL(container, groupName, null);
+        }
+
+        public ActionURL getGroupPermissionURL(Container container, int id, @Nullable URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(GroupPermissionAction.class, container);
+            url.addParameter("id", id);
+            if (returnURL != null)
+                url.addReturnURL(returnURL);
+            return url;
         }
 
         public ActionURL getGroupPermissionURL(Container container, int id)
         {
-            ActionURL url = new ActionURL(GroupPermissionAction.class, container);
-            return url.addParameter("id", id);
+            return getGroupPermissionURL(container, id, null);
         }
 
         public ActionURL getPermissionsURL(Container container)
         {
-            return new ActionURL(PermissionsAction.class, container);
+            return getPermissionsURL(container, null);
         }
 
-        public ActionURL getPermissionsURL(Container container, ActionURL returnURL)
+        public ActionURL getPermissionsURL(Container container, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(PermissionsAction.class, container);
-            url.addReturnURL(returnURL);
+            if (returnURL != null)
+               url.addReturnURL(returnURL);
             return url;
         }
 
         @Override
-        public ActionURL getSiteGroupsURL(Container container, ActionURL returnURL)
+        public ActionURL getSiteGroupsURL(Container container, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(PermissionsAction.class, container);
             url.addParameter("t", "sitegroups");
-            url.addReturnURL(returnURL);
+            if (returnURL != null)
+                url.addReturnURL(returnURL);
             return url;
         }
 
@@ -228,7 +247,7 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getApiKeyURL(ActionURL returnURL)
+        public ActionURL getApiKeyURL(@NotNull URLHelper returnURL)
         {
             ActionURL url = new ActionURL(ApiKeyAction.class, ContainerManager.getRoot());
             url.addReturnURL(returnURL);

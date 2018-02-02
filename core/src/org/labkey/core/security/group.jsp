@@ -24,16 +24,15 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -50,6 +49,7 @@
 
     ActionURL completionUrl = new ActionURL(SecurityController.CompleteMemberAction.class, c);
     completionUrl.addParameter("groupId", bean.group.getUserId());
+    URLHelper returnURL = getActionURL().clone().deleteParameter("returnUrl");
 %>
 <style type="text/css">
     .lowlight {
@@ -224,11 +224,11 @@ else
             <td>
                 <% if (!isGroup)
                    {
-                    %><%= textLink("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId)) %><%
+                    %><%= textLink("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId).addReturnURL(returnURL)) %><%
                    }
                    else
                    {
-                    %><%= textLink("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId)) %><%
+                    %><%= textLink("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId).addReturnURL(returnURL)) %><%
                    }
                 %>
             </td>
