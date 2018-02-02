@@ -32,6 +32,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
@@ -946,6 +947,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         if (getStudy().isDataspaceStudy())
             return false;
+        if (user instanceof User && !canAccessPhi((User)user))
+            return false;
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;
         return getPermissions(user).contains(UpdatePermission.class);
@@ -967,6 +970,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return getContainer().hasPermission(user, AdminPermission.class) && getDefinitionContainer().getId().equals(getContainer().getId());
     }
 
+    public boolean canAccessPhi(User user)
+    {
+        ComplianceService complianceService = ComplianceService.get();
+        if (null != complianceService)
+        {
+            DatasetSchemaTableInfo table = getTableInfo(user);
+            if (null != table)
+                return table.getMaxContainedPhi().isLevelAllowed(complianceService.getMaxAllowedPhi(getContainer(), user));
+        }
+        return true;
+    }
 
     @Override
     public KeyType getKeyType()

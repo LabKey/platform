@@ -22,7 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -34,7 +33,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PHI;
-import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -141,9 +139,7 @@ public class DatasetQueryView extends StudyQueryView
         _showSourceLinks = settings.isShowSourceLinks();
 
         // Only show link to edit if permission allows it
-        ComplianceService complianceService = ComplianceService.get();
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()) &&
-                (null == complianceService || getMaxContainedPhi().isLevelAllowed(complianceService.getMaxAllowedPhi(getContainer(), getUser()))));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()));
 
         getSettings().setAllowChooseView(false);
 
@@ -524,10 +520,7 @@ public class DatasetQueryView extends StudyQueryView
 
     private boolean canWrite(DatasetDefinition def, User user)
     {
-        ComplianceService complianceService = ComplianceService.get();
-        return def.canWrite(user) &&
-                def.getContainer().hasPermission(user, UpdatePermission.class) &&
-                (null == complianceService || getMaxContainedPhi().isLevelAllowed(complianceService.getMaxAllowedPhi(getContainer(), getUser())));
+        return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
     }
 
     private boolean canManage(DatasetDefinition def, User user)
