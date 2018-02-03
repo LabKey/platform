@@ -541,7 +541,11 @@ public class RReport extends ExternalScriptEngineReport
         if (yamlstart == 0 && (yamlend > cutstart && yamlend < cutend))
             ret += "---\n";
         if (cutend < lines.length-1)
-            ret += StringUtils.join(list.subList(cutend+1, lines.length), "\n") + "\n";
+        {
+            String endPrologLine = list.get(cutend);
+            int sourceStartIndex = script.indexOf(endPrologLine) + endPrologLine.length();
+            ret += script.substring(sourceStartIndex + 1); // plus 1 for newline character
+        }
         return ret;
     }
 
@@ -871,7 +875,7 @@ public class RReport extends ExternalScriptEngineReport
             RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
             ViewContext context = HttpView.currentContext();
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
-            String pre = "print('hello world')\n";
+            String pre = "print('hello world')\n\nprint('line 3')\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
 
             assertTrue( post.contains("# 8<") );
