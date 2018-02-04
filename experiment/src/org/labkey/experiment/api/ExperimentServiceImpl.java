@@ -460,30 +460,16 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public ExpDataImpl createData(URI uri, XarSource source) throws XarFormatException
     {
-        ExpDataImpl data;
-        File f = null;
         // Check if it's in the database already
-        if (uri.toString().startsWith("file:"))
-        {
-            f = new File(uri);
-        }
-
-        data = getExpDataByURL(uri.toString(), source.getXarContext().getContainer());
+        ExpDataImpl data = getExpDataByURL(FileUtil.uriToString(uri), source.getXarContext().getContainer());
         if (data == null)
         {
             // Have to make a new one
-            String name;
-            if (f != null)
-            {
-                name = f.getName();
-            }
-            else
-            {
-                String[] parts = uri.toString().split("/");
-                name = parts[parts.length - 1];
-            }
-            String path;
-            if (f != null)
+            String path = FileUtil.uriToString(uri);
+            String[] parts = path.split("/");
+            String name = FileUtil.decodeSpaces(parts[parts.length - 1]);
+
+/*            if (f != null)
             {
                 try
                 {
@@ -497,8 +483,8 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             else
             {
-                path = uri.toString();
-            }
+                path = FileUtil.uriToString(uri);
+            }   */
 
             Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(path, source.getXarContext().getContainer(), source)));
             int version = 1;
@@ -2811,7 +2797,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!FileUtil.hasCloudScheme(path))
             return getExpDataByURL(path.toFile(), c);
 
-        return getExpDataByURL(path.toUri().toString(), c);
+        return getExpDataByURL(FileUtil.pathToString(path), c);
     }
 
     @Override

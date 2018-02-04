@@ -18,6 +18,7 @@ package org.labkey.pipeline;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipeRootImpl;
 
@@ -172,7 +173,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             List<Path> f = a.getFiles();
             if (null != f && f.size() > 1)
             {
-                f.sort((p1, p2) -> p1.getFileName().toString().compareToIgnoreCase(p2.getFileName().toString()));
+                f.sort((p1, p2) -> FileUtil.getFileName(p1).compareToIgnoreCase(FileUtil.getFileName(p2)));
             }
         }
 
@@ -193,7 +194,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             rc = files2.size() - files1.size();
             if (rc != 0)
                 return rc;
-            rc = files1.get(0).getFileName().toString().compareToIgnoreCase(files2.get(0).getFileName().toString());
+            rc = FileUtil.getFileName(files1.get(0)).compareToIgnoreCase(FileUtil.getFileName(files2.get(0)));
             if (rc != 0)
                 return rc;
             rc = action1.getLabel().compareToIgnoreCase(action2.getLabel());

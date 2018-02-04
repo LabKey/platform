@@ -337,7 +337,7 @@ public class PipeRootImpl implements PipeRoot
     {
         if (ROOT_BASE.cloud.equals(_defaultRoot))
         {
-            return resolveToNioPath(CloudStoreService.get().getRelativePath(getContainer(), _cloudStoreName, url));
+            return resolveToNioPath(FileUtil.decodeSpaces(CloudStoreService.get().getRelativePath(getContainer(), _cloudStoreName, url)));
         }
         else
         {
@@ -465,7 +465,7 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public String getResourceName()
     {
-        return getRootNioPath().getFileName().toString();
+        return FileUtil.getFileName(getRootNioPath());
     }
 
     @NotNull

@@ -30,6 +30,7 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
@@ -105,7 +106,7 @@ public class FileContentModule extends DefaultModule
                         fileCount++;
                         if (fileNames.size() < 3)
                         {
-                            fileNames.add(child.getFileName().toString());
+                            fileNames.add(FileUtil.getFileName(child));
                         }
                     }
                     else
@@ -113,7 +114,7 @@ public class FileContentModule extends DefaultModule
                         directoryCount++;
                         if (directoryNames.size() < 3)
                         {
-                            directoryNames.add(child.getFileName().toString());
+                            directoryNames.add(FileUtil.getFileName(child));
                         }
                     }
                 }

@@ -1864,7 +1864,7 @@ public class ExperimentController extends SpringActionController
                             double scale = (double) form.getMaxDimension().intValue() / (double) imageMax;
                             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                             ImageUtil.resizeImage(image, bOut, scale, 1);
-                            PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getFileName().toString() + ".png", bOut.toByteArray(), !inline);
+                            PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.getFileName(realContent) + ".png", bOut.toByteArray(), !inline);
                             return null;
                         }
                     }
@@ -1879,7 +1879,7 @@ public class ExperimentController extends SpringActionController
                     return null;
                 }
 
-                PageFlowUtil.streamFile(getViewContext().getResponse(), Collections.emptyMap(), realContent.getFileName().toString(), Files.newInputStream(realContent), !inline);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), Collections.emptyMap(), FileUtil.getFileName(realContent), Files.newInputStream(realContent), !inline);
             }
             catch (IOException e)
             {

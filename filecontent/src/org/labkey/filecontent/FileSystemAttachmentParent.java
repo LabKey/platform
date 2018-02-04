@@ -211,7 +211,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                 else                        // delete the entire folder (and subfolders)
                 {
                     Files.newDirectoryStream(parentDir).forEach(attachmentFile -> {
-                        String fileName = attachmentFile.getFileName().toString();
+                        String fileName = FileUtil.getFileName(attachmentFile);
                         if (!Files.isDirectory(attachmentFile) && !fileName.startsWith(".") && Files.exists(attachmentFile))
                         {
                             try

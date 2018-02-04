@@ -38,6 +38,7 @@ import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -96,7 +97,7 @@ public class ExpGeneratorHelper
         URI uri;
         try
         {
-            uri = new URI(source.getCanonicalDataFileURL(originalURI.toString()));
+            uri = new URI(source.getCanonicalDataFileURL(FileUtil.uriToString(originalURI)));
         }
         catch (XarFormatException | URISyntaxException e)
         {
@@ -128,7 +129,7 @@ public class ExpGeneratorHelper
 
         // todo: this code shouldn't know about the TransformDataType
         Lsid lsid = new Lsid(ExperimentService.get().generateGuidLSID(c, ExperimentService.get().getDataType("Transform")));
-        ExpData data = ExperimentService.get().createData(c,originalURI.toString(), lsid.toString());
+        ExpData data = ExperimentService.get().createData(c, FileUtil.uriToString(originalURI), lsid.toString());
 
         if (data != null)
         {
@@ -174,7 +175,7 @@ public class ExpGeneratorHelper
 
                         // consider: this shouldn't be part of the ExpGeneratorHelper code
                         if (null != source)
-                            source.getCanonicalDataFileURL(dataFile.getURI().toString());
+                            source.getCanonicalDataFileURL(FileUtil.uriToString(dataFile.getURI()));
                     }
                 }
                 for (RecordedAction.DataFile dataFile : action.getOutputs())
@@ -190,7 +191,7 @@ public class ExpGeneratorHelper
 
                     // consider: this shouldn't be part of the ExpGeneratorHelper code
                     if (null != source)
-                        source.getCanonicalDataFileURL(dataFile.getURI().toString());
+                        source.getCanonicalDataFileURL(FileUtil.uriToString(dataFile.getURI()));
                 }
             }
             job.debug("File check complete");

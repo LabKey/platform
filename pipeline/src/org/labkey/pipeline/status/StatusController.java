@@ -351,7 +351,7 @@ public class StatusController extends SpringActionController
                             String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url);
 
                             WebPartView logFileView = new JobStatusLogView(Files.newInputStream(path), form.isShowDetails(), prefix, "");
-                            logFileView.setTitle(path.getFileName().toString());
+                            logFileView.setTitle(FileUtil.getFileName(path));
                             result.addView(logFileView);
                         }
                         catch (IOException e)

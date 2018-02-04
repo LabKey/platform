@@ -916,7 +916,7 @@ public class PipelineServiceImpl implements PipelineService
             // verify pipeline root and file root are set to defaults and they they point to the same place
             assertEquals("The pipeline root isDefault flag was not set correctly.", true, pipelineRootSetting.isDefault());
             assertEquals("The default pipeline root was not set the same as the default file root.", pipelineRoot, fileRoot);
-            assertTrue("The pipeline root uri was: " + pipelineRootSetting.getUri().toString() + ", but expected: " + DEFAULT_ROOT_URI, pipelineRootSetting.getUri().toString().contains(DEFAULT_ROOT_URI));
+            assertTrue("The pipeline root uri was: " + FileUtil.uriToString(pipelineRootSetting.getUri()) + ", but expected: " + DEFAULT_ROOT_URI, FileUtil.uriToString(pipelineRootSetting.getUri()).contains(DEFAULT_ROOT_URI));
 
             // ensure everything back to the way it was before test ran
             ContainerManager.deleteAll(_project, _user);

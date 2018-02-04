@@ -150,7 +150,8 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         {
             throw new IllegalArgumentException("URI must be absolute.");
         }
-        String s = uri == null ? null : uri.toString();
+        String s = FileUtil.uriToString(uri);
+
         // Strip off any trailing "/"
         if (s != null && s.endsWith("/"))
         {
