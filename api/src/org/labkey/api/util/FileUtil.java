@@ -310,7 +310,7 @@ public class FileUtil
     public static Path stringToPath(Container container, String str)
     {
         if (!FileUtil.hasCloudScheme(str))
-            return new File(str).toPath();
+            return new File(createUri(str)).toPath();
         else
             return CloudStoreService.get().getPathFromUrl(container, decodeSpaces(str));
     }
