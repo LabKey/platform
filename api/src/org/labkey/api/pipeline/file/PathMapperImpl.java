@@ -330,7 +330,7 @@ public class PathMapperImpl implements PathMapper
             if (resolve)
                 f = FileUtil.getAbsoluteCaseSensitiveFile(f);
 
-            return f.toURI().toString();
+            return FileUtil.uriToString(f.toURI());
         }
 
         URI uri;
@@ -347,7 +347,7 @@ public class PathMapperImpl implements PathMapper
             if (resolve)
                 uri = FileUtil.getAbsoluteCaseSensitiveFile(new File(uri)).toURI();
 
-            return uri.toString();
+            return FileUtil.uriToString(uri);
         }
         catch (URISyntaxException | IllegalArgumentException e)
         {

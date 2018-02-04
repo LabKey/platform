@@ -41,7 +41,7 @@ public class LocalDirectory implements Serializable
         _basename = basename;
 
         URI uri = URIUtil.getParentURI(null, FileUtil.createUri(dataFileUrl));
-        _parentDataFileUrl = null != uri ? uri.toString() : null;
+        _parentDataFileUrl = null != uri ? FileUtil.uriToString(uri) : null;
 
         ensureLocalDirectory();
     }
@@ -101,7 +101,7 @@ public class LocalDirectory implements Serializable
             Path path = _pipeRoot.resolveToNioPathFromUrl(url);
             if (null != path)
             {
-                String filename = path.getFileName().toString();
+                String filename = FileUtil.getFileName(path);
                 try
                 {
                     File tempFile = new File(_localDirectoryFile, filename);

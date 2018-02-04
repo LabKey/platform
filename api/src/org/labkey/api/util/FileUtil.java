@@ -244,7 +244,7 @@ public class FileUtil
         if (!FileUtil.hasCloudScheme(uri))
             return new File(uri).getAbsolutePath();
         else
-            return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri().toString());
+            return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri());
     }
 
     public static Path getPath(Container container, URI uri)
@@ -263,18 +263,56 @@ public class FileUtil
         
         if (str.startsWith("/"))
             str = "file://" + str;
-        str = str.replaceAll("\\s+", "%20"); // Spaces in paths make URI unhappy
+        str = str.replace(" ", "%20"); // Spaces in paths make URI unhappy
         return URI.create(str);
+    }
+
+    public static String getFileName(Path fullPath)
+    {
+        // In s3fs, path.getFileName().toString() fails if fileName has spaces. (Looks like an s3fs bug to me.)
+        if (hasCloudScheme(fullPath))
+        {
+            String fullStr = fullPath.toString();
+            if (null != fullStr)
+            {
+                String[] names = fullStr.split("/");
+                String retStr = names.length > 2 ?
+                        (StringUtils.isNotBlank(names[names.length - 1]) ?
+                                names[names.length - 1] :
+                                names[names.length - 2]) :
+                        names.length == 1 ? names[0] : "";
+
+                return decodeSpaces(retStr);
+            }
+            return "";
+        }
+        else
+        {
+            return fullPath.getFileName().toString();
+        }
+    }
+
+    public static String decodeSpaces(@NotNull String str)
+    {
+        return str.replace("%20", " ");
     }
 
     public static String pathToString(Path path)
     {
-        return getPathStringWithoutAccessId(path.toUri().toString());
+        return getPathStringWithoutAccessId(path.toUri());
+    }
+
+    public static String uriToString(URI uri)
+    {
+        return getPathStringWithoutAccessId(uri);
     }
 
     public static Path stringToPath(Container container, String str)
     {
-        return getPath(container, createUri(str));
+        if (!FileUtil.hasCloudScheme(str))
+            return new File(str).toPath();
+        else
+            return CloudStoreService.get().getPathFromUrl(container, decodeSpaces(str));
     }
 
     public static String getCloudRootPathString(String cloudName)
@@ -282,14 +320,15 @@ public class FileUtil
         return FileContentService.CLOUD_ROOT_PREFIX + "/" + cloudName;
     }
 
-    private static String getPathStringWithoutAccessId(String pathStr)
+    private static String getPathStringWithoutAccessId(URI uri)
     {
-        if (null != pathStr && hasCloudScheme(pathStr))
-        {
-            // Remove accessId portion if exits
-            pathStr = pathStr.replaceFirst("/\\w+@s3", "/s3");
-        }
-        return pathStr;
+        if (null != uri)
+            if (hasCloudScheme(uri))
+                return uri.toString().replaceFirst("/\\w+@s3", "/s3");      // Remove accessId portion if exists
+            else
+                return uri.toString();
+        else
+            return null;
     }
 
     /**

@@ -97,7 +97,7 @@ public class ExpDataFileConverter implements Converter
             //check to see if this is already an ExpData
             File file = pipelineRoot.resolvePath(pipelinePath);
             URI uri = file.toURI();
-            ExpData data = expSvc.getExpDataByURL(uri.toString(), container);
+            ExpData data = expSvc.getExpDataByURL(FileUtil.uriToString(uri), container);
 
             if (null == data)
             {

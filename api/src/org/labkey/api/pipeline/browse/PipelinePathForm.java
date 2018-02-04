@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.util.NetworkDrive;
@@ -191,7 +192,7 @@ public class PipelinePathForm extends ViewForm
                 Path path = pr.resolveToNioPath(data.getDataFileURI().getPath());
                 if (!allowNonExistentFiles && (null == path || !Files.exists(path)))
                 {
-                    throw new NotFoundException("Could not find file '" + path.getFileName().toString() + "'");
+                    throw new NotFoundException("Could not find file '" + FileUtil.getFileName(path) + "'");
                 }
                 if (null != path)
                     result.add(path);

@@ -31,6 +31,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.util.Collection;
@@ -72,7 +73,7 @@ public class TableUpdaterFileListener implements FileListener
             @Override
             public String get(File f)
             {
-                return f.toURI().toString();
+                return FileUtil.uriToString(f.toURI());
             }
 
             @Override

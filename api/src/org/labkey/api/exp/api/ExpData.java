@@ -25,6 +25,7 @@ import org.labkey.api.security.User;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
 import java.sql.SQLException;
 
 /**
@@ -49,6 +50,9 @@ public interface ExpData extends ExpProtocolOutput
     /** @return the file if this data is backed by a 'file:'-style URI. */
     @Nullable
     File getFile();
+
+    @Nullable
+    Path getFilePath();
 
     /** @return if this represents an image that can be rendered directly by a web browser */
     boolean isInlineImage();

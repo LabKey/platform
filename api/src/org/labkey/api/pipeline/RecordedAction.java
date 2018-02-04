@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.net.URI;
@@ -100,7 +101,7 @@ public class RecordedAction
         }
         else if (throwIfExists)
         {
-            throw new IllegalArgumentException("Already has been added as an input for the action " + getName() + ":" + input.toString());
+            throw new IllegalArgumentException("Already has been added as an input for the action " + getName() + ":" + FileUtil.uriToString(input));
         }
     }
 
@@ -143,7 +144,7 @@ public class RecordedAction
         }
         else if (throwIfExists)
         {
-            throw new IllegalArgumentException("Already has been added as an output for the action " + getName() + ":" + output.toString());
+            throw new IllegalArgumentException("Already has been added as an output for the action " + getName() + ":" + FileUtil.uriToString(output));
         }
     }
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.util.URLHelper;
 import org.json.JSONObject;
@@ -113,7 +114,7 @@ public class PipelineAction
         JSONArray files = new JSONArray();
         if (null != _files)
             for (Path f : _files)
-                files.put(f.getFileName());
+                files.put(FileUtil.getFileName(f));
         o.put("files", files);
 
         return o;

@@ -238,7 +238,7 @@ public class ImageUtil
 
     private static BufferedImage _webImage(String xhtml, URI baseURI, int width, int height)
     {
-        String uri = baseURI.toString();
+        String uri = FileUtil.uriToString(baseURI);
         Java2DRenderer renderer = new Java2DRenderer(uri, width, height);
         renderer.getSharedContext().setUserAgentCallback(new TidyUserAgent(xhtml, uri));
         renderer.getSharedContext().getTextRenderer().setSmoothingThreshold(8);
@@ -317,7 +317,7 @@ public class ImageUtil
 
     private static BufferedImage webImage(ViewContext context, Document document, URI baseURI, int width, int height)
     {
-        String uri = baseURI.toString();
+        String uri = FileUtil.uriToString(baseURI);
         Java2DRenderer renderer = new Java2DRenderer(document, width, height);
 
         if (null == context)
