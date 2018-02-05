@@ -168,8 +168,7 @@ public class SimpleFilter implements Filter
 
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            int fromIndex = sb.length();
-            appendFilterValueText(sb, formatter);
+            int fromIndex = appendFilterValueText(sb, formatter);
             replaceParamValues(sb, fromIndex);
         }
 
@@ -215,13 +214,16 @@ public class SimpleFilter implements Filter
             return null;
         }
 
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        /** @return index into the StringBuilder at which the substitutions should begin to swap parameter values for the placeholder */
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
+            int result = sb.length();
             SQLFragment sqlf = toSQLFragment(Collections.emptyMap(), null);
             if (sqlf.isEmpty())
                 sb.append("1=1");
             else
                 sb.append(sqlf);
+            return result;
         }
 
         /**

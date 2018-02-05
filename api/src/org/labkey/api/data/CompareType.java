@@ -1045,10 +1045,12 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
+            int result = sb.length();
             sb.append(_comparison.getFilterValueText());
+            return result;
         }
 
         protected boolean isNull(Object value)
@@ -1569,10 +1571,12 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
+            int result = sb.length();
             sb.append(" LIKE ?");
+            return result;
         }
 
         @Override
@@ -1606,10 +1610,12 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
+            int result = sb.length();
             sb.append(" STARTS WITH ?");
+            return result;
         }
     }
 
@@ -1633,10 +1639,12 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
+            int result = sb.length();
             sb.append(" DOES NOT START WITH ?");
+            return result;
         }
     }
 
@@ -1709,10 +1717,12 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
+            int result = sb.length();
             sb.append(" CONTAINS ?");
+            return result;
         }
     }
 
@@ -1736,10 +1746,12 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
+        protected int appendFilterValueText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             appendColumnName(sb, formatter);
+            int result = sb.length();
             sb.append(" DOES NOT CONTAIN ?");
+            return result;
         }
     }
 
