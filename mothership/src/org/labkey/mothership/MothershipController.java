@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -100,9 +101,8 @@ import java.util.stream.Collectors;
  */
 public class MothershipController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
-
-    private static Logger _log = Logger.getLogger(MothershipController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
+    private static final Logger _log = Logger.getLogger(MothershipController.class);
 
     public MothershipController()
     {
@@ -112,7 +112,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL url = new ActionURL(ShowExceptionsAction.class, getContainer());
             url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
@@ -128,7 +128,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
     {
-        public ModelAndView getView(SoftwareReleaseForm form, BindException errors) throws Exception
+        public ModelAndView getView(SoftwareReleaseForm form, BindException errors)
         {
             return new UpdateView(form, errors);
         }
@@ -146,7 +146,7 @@ public class MothershipController extends SpringActionController
         {
         }
 
-        public boolean handlePost(SoftwareReleaseForm form, BindException errors) throws Exception
+        public boolean handlePost(SoftwareReleaseForm form, BindException errors)
         {
             SoftwareRelease release = form.getBean();
             MothershipManager.get().updateSoftwareRelease(getContainer(), getUser(), release);
@@ -162,7 +162,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowReleasesAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
@@ -298,7 +298,6 @@ public class MothershipController extends SpringActionController
 
     private JFreeChart createChart(final XYDataset dataset, String title, String label)
     {
-
         // create the chart...
         final JFreeChart chart = ChartFactory.createTimeSeriesChart(
                 title,      // chart title
@@ -345,7 +344,7 @@ public class MothershipController extends SpringActionController
         {
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             Set<Integer> releaseIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
             for (Integer releaseId : releaseIds)
@@ -362,7 +361,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowExceptionsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
@@ -385,7 +384,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ShowInsertAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             DataRegion region = new DataRegion();
             region.addColumns(MothershipManager.get().getTableInfoSoftwareRelease(), "SVNRevision,Description");
@@ -405,7 +404,7 @@ public class MothershipController extends SpringActionController
         {
         }
 
-        public boolean handlePost(SoftwareReleaseForm form, BindException errors) throws Exception
+        public boolean handlePost(SoftwareReleaseForm form, BindException errors)
         {
             MothershipManager.get().insertSoftwareRelease(getContainer(), getUser(), form.getBean());
             return true;
@@ -420,7 +419,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowInstallationsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
@@ -446,7 +445,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class CreateIssueFinishedAction extends SimpleViewAction<CreateIssueFinishedForm>
     {
-        public ModelAndView getView(CreateIssueFinishedForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateIssueFinishedForm form, BindException errors)
         {
             ExceptionStackTrace stackTrace = MothershipManager.get().getExceptionStackTrace(form.getExceptionStackTraceId(), getContainer());
             stackTrace.setBugNumber(form.getIssueId());
@@ -464,7 +463,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class EditUpgradeMessageAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             UpgradeMessageForm form = new UpgradeMessageForm();
 
@@ -490,7 +489,7 @@ public class MothershipController extends SpringActionController
         {
         }
 
-        public boolean handlePost(UpgradeMessageForm form, BindException errors) throws Exception
+        public boolean handlePost(UpgradeMessageForm form, BindException errors)
         {
             MothershipManager.get().setCurrentRevision(getContainer(), form.getCurrentRevision());
             MothershipManager.get().setUpgradeMessage(getContainer(), form.getMessage());
@@ -508,7 +507,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
     {
-        public ModelAndView getView(ServerSessionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ServerSessionForm form, BindException errors)
         {
             ServerSession session = form.getBean();
             if (session == null)
@@ -540,7 +539,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowInstallationDetailAction extends SimpleViewAction<ServerInstallationForm>
     {
-        public ModelAndView getView(ServerInstallationForm form, BindException errors) throws Exception
+        public ModelAndView getView(ServerInstallationForm form, BindException errors)
         {
             ServerInstallation installation;
             try
@@ -665,9 +664,8 @@ public class MothershipController extends SpringActionController
             cifModel.put("body", body.toString());
             cifModel.put("title", title.toString());
             cifModel.put("action", MothershipManager.get().getCreateIssueURL(getContainer()));
-            JspView createIssueForm = new JspView("/org/labkey/mothership/view/createIssue.jsp", cifModel);
 
-            return createIssueForm;
+            return new JspView<>("/org/labkey/mothership/view/createIssue.jsp", cifModel);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -717,7 +715,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class JumpToErrorCodeAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             String errorCode = StringUtils.trimToNull((String)getProperty("errorCode"));
             ActionURL url;
@@ -765,6 +763,7 @@ public class MothershipController extends SpringActionController
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @CSRF(CSRF.Method.NONE) // Shouldn't force other servers to get a CSRF token just to post an exception report
     public class ReportExceptionAction extends SimpleViewAction<ExceptionForm>
     {
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
@@ -1487,7 +1486,7 @@ public class MothershipController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(BulkUpdateForm form, BindException errors) throws Exception
+        public boolean handlePost(BulkUpdateForm form, BindException errors)
         {
             Set<String> keys = DataRegionSelection.getSelected(getViewContext(), true);
 
