@@ -187,34 +187,31 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             throw new UnauthorizedException();
 
 
-        csrfChecking:
+        CSRF.Method csrfCheck = CSRF.Method.POST;
+        if ("ADMINONLY".equals(AppProps.getInstance().getCSRFCheck()))
         {
-            CSRF.Method csrfCheck = CSRF.Method.POST;
-            if ("ADMINONLY".equals(AppProps.getInstance().getCSRFCheck()))
+            boolean requiresAdmin = requiresSiteAdmin || permissionsRequired.contains(AdminPermission.class) || permissionsRequired.contains(AdminOperationsPermission.class);
+            csrfCheck = requiresAdmin ? CSRF.Method.POST : CSRF.Method.NONE;
+        }
+
+        if (actionClass.isAnnotationPresent(CSRF.class))
+        {
+            CSRF csrfAnnotation = actionClass.getAnnotation(CSRF.class);
+            csrfCheck = csrfAnnotation.value();
+        }
+
+        csrfCheck.validate(context);
+
+        // if csrfCheck != POST, check to see if it would have failed with csrfCheck == POST, for auditing purposes
+        if (csrfCheck != CSRF.Method.POST && csrfCheck != CSRF.Method.NONE)
+        {
+            try
             {
-                boolean requiresAdmin = requiresSiteAdmin || permissionsRequired.contains(AdminPermission.class) || permissionsRequired.contains(AdminOperationsPermission.class);
-                csrfCheck = requiresAdmin ? CSRF.Method.POST : CSRF.Method.NONE;
+                CSRF.Method.POST.validate(context);
             }
-
-            if (actionClass.isAnnotationPresent(CSRF.class))
+            catch (CSRFException ex)
             {
-                CSRF csrfAnnotation = actionClass.getAnnotation(CSRF.class);
-                csrfCheck = csrfAnnotation.value();
-            }
-
-            csrfCheck.validate(context);
-
-            // if csrfCheck != POST, check to see if it would have failed with csrfCheck == POST, for auditing purposes
-            if (csrfCheck != CSRF.Method.POST)
-            {
-                try
-                {
-                    CSRF.Method.POST.validate(context);
-                }
-                catch (CSRFException ex)
-                {
-                    SpringActionController.getActionDescriptor(this.getClass()).addException(ex);
-                }
+                SpringActionController.getActionDescriptor(this.getClass()).addException(ex);
             }
         }
 
