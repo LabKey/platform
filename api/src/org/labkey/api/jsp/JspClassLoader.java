@@ -45,13 +45,17 @@ public class JspClassLoader
     {
         ServletContext context = ModuleLoader.getServletContext();
         Set<String> paths = context.getResourcePaths("/WEB-INF/jsp/");
+        if (paths == null)
+        {
+            throw new IllegalStateException("Could not find any resources in /WEB-INF/jsp. Module extraction likely failed earlier.");
+        }
         List<URL> urls = new ArrayList<>();
         for (String path : paths)
         {
             File file = new File(context.getRealPath(path));
             try
             {
-                urls.add(file.toURL());
+                urls.add(file.toURI().toURL());
             }
             catch (MalformedURLException mURLe)
             {
