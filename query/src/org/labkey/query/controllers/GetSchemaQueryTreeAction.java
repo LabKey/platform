@@ -149,7 +149,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                         String label = qname;
                         if (null != tinfo)
-                            label = tinfo.getTitle();           // Display title (label if different from name) for Datasets
+                            label = tinfo.getTitle();           // Display title defaults to name, but uses label if set
 
                         // If there's an error, still include the table in the tree
                         addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, builtIn);
