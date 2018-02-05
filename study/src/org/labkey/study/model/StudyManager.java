@@ -38,6 +38,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
@@ -3883,8 +3884,8 @@ public class StudyManager
             return false;
         }
 
-        // Check PHI levels
-        PHI maxAllowedPhi = PHI.determinePhiAllowed(createDatasetStudy.getContainer(), user);
+        // Check PHI levels; Must check activity level here, because we're in pipeline job, so Compliance can't get activity from HttpContext
+        PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(createDatasetStudy.getContainer(), user);
         if (null != activity && !maxAllowedPhi.isLevelAllowed(activity.getPHI()))
             maxAllowedPhi = activity.getPHI();      // Reduce allowed level
 

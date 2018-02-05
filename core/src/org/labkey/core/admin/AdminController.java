@@ -4311,8 +4311,7 @@ public class AdminController extends SpringActionController
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
 
-            ComplianceService complianceService = ComplianceService.get();
-            form.setExportPhiLevel(null != complianceService ? complianceService.getMaxAllowedPhi(getContainer(), getUser()) : PHI.Restricted);
+            form.setExportPhiLevel(ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()));
             return new JspView<>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
         }
 
@@ -4654,10 +4653,7 @@ public class AdminController extends SpringActionController
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
             options.setAdvancedImportOptions(form.isAdvancedImportOptions());
-
-            ComplianceService complianceService = ComplianceService.get();
-            if (null != complianceService)
-                options.setActivity(complianceService.getCurrentActivity(getViewContext()));
+            options.setActivity(ComplianceService.get().getCurrentActivity(getViewContext()));
 
             // if the option is selected to show the advanced import options, redirect to there
             if (form.isAdvancedImportOptions())
