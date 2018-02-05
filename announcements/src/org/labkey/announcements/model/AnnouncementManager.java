@@ -979,7 +979,7 @@ public class AnnouncementManager
                 sb.append(PageFlowUtil.filter(notificationBean.siteURL));
                 sb.append("</a>. If you no longer wish to receive these notifications you can <a href=\"");
                 sb.append(PageFlowUtil.filter(notificationBean.removeURL.getURIString()));
-                sb.append(")\">change your email preferences</a>.");
+                sb.append("\">change your email preferences</a>.");
             }
             else
             {

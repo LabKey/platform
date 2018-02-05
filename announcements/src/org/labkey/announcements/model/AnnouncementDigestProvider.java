@@ -219,7 +219,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             sb.append(PageFlowUtil.filter(dailyDigestBean.siteUrl));
             sb.append("</a>. If you no longer wish to receive these notifications, please <a href=\"");
             sb.append(PageFlowUtil.filter(dailyDigestBean.removeURL.getURIString()));
-            sb.append(")\">change your email preferences</a>.");
+            sb.append("\">change your email preferences</a>.");
 
             reasonForEmail = sb.toString();
         }
