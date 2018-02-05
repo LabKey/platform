@@ -15,7 +15,6 @@
  */
 package org.labkey.api.action;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AdminConsoleAction;

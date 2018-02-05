@@ -17,15 +17,12 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.util.Arrays;
-import java.util.Set;
 
 /**
  * Tags an action as implementing protection against cross-site request forgery attempts by including a hidden
@@ -39,7 +36,7 @@ import java.util.Set;
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface CSRF
 {
-    public enum Method
+    enum Method
     {
         NONE()
         {
