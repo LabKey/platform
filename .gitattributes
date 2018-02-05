@@ -1281,6 +1281,7 @@ list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
 list/src/org/labkey/list/view/listsWebPart.jsp -text
+list/webapp/WEB-INF/list/listContext.xml -text
 mothership/build.gradle -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-15.10.sql -text
