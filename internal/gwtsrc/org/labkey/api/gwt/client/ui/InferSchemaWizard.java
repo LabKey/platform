@@ -20,6 +20,7 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 /**
@@ -54,6 +55,9 @@ public class InferSchemaWizard extends DialogBox
         VerticalPanel panel = new VerticalPanel();
         panel.setSpacing(6);
         form.setWidget(panel);
+
+        Hidden csrfToken = new Hidden("X-LABKEY-CSRF", ServiceUtil.getCsrfToken());
+        panel.add(csrfToken);
 
         fileButton = new RadioButton("source", "file");
         fileButton.setText("Upload Excel or text file (.xls, .xlsx, .tsv, .txt, .csv):");
