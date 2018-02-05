@@ -131,7 +131,7 @@ public class IssueServiceAction extends GWTServiceAction
         {
             List<Map<String, String>> groups = new ArrayList<>();
 
-            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().isApplicationAdmin())).forEach(group -> {
+            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
                 String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
                 groups.add(PageFlowUtil.map("name", displayText, "value", String.valueOf(group.getUserId())));
             });
