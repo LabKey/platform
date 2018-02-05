@@ -673,16 +673,27 @@ public class PipelineManager
         // validate that the type is a valid registered PipelineTriggerType
         PipelineTriggerType triggerType = PipelineTriggerRegistry.get().getTypeByName(type);
         if (triggerType == null)
+        {
             errors.rejectValue("Type", null, "Invalid pipeline trigger type:" + type);
+            return;
+        }
 
         // validate that the pipelineId is a valid TaskPipeline
-        try
+        if (pipelineId != null)
         {
-            PipelineJobService.get().getTaskPipeline(pipelineId);
+            try
+            {
+                PipelineJobService.get().getTaskPipeline(pipelineId);
+            }
+            catch (NotFoundException e)
+            {
+                errors.rejectValue("PipelineId", null, "Invalid pipeline task id: " + pipelineId);
+            }
         }
-        catch (NotFoundException e)
+        else
         {
-            errors.rejectValue("PipelineId", null, "Invalid pipeline task id: " + pipelineId);
+            errors.reject(null, null, "Pipeline Task ID required.");
+            return;
         }
 
         // validate that the configuration values parse as valid JSON
