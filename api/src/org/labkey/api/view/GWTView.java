@@ -52,8 +52,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             _properties.put("header1Size", ThemeFont.getThemeFont(context.getContainer()).getHeader_1Size());
             _properties.put("loadingStyle", "");
 
-            ComplianceService complianceService = ComplianceService.get();
-            _properties.put("maxAllowedPhi", (null != complianceService) ? complianceService.getMaxAllowedPhi(context.getContainer(), context.getUser()).name() : PHI.Restricted.name());
+            _properties.put("maxAllowedPhi", ComplianceService.get().getMaxAllowedPhi(context.getContainer(), context.getUser()).name());
         }
 
         public String getModuleName()

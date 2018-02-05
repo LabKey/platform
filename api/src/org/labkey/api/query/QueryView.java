@@ -1235,9 +1235,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL signRowsXlsxURL = null;
         ActionURL signRowsTsvURL = null;
         ComplianceService complianceService = ComplianceService.get();
-        if (null != complianceService && getContainer().hasActiveModuleByName(complianceService.getModuleName()) &&
-                complianceService.hasElecSignPermission(getContainer(), getUser()) &&
-                !getUser().isImpersonated())
+        if (complianceService.hasElecSignPermission(getContainer(), getUser()) && !getUser().isImpersonated())
         {
             // We build a URL using Query's mechanism because it does a lot of work to get the properties right;
             // Then build our URL to the ComplianceController using those properties. If any fail, just bail on creating button.
