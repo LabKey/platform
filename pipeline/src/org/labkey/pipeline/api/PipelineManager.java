@@ -650,8 +650,11 @@ public class PipelineManager
         boolean isEnabled = Boolean.parseBoolean(row.get("Enabled").toString());
 
         // validate that the config name is unique for this container
-        if (name != null)
+        if (StringUtils.isNotEmpty(name))
         {
+            if (name.length() > 255)
+                errors.rejectValue("Name", null, "Name must be less than 256 characters");
+
             Collection<PipelineTriggerConfig> existingConfigs = PipelineTriggerRegistry.get().getConfigs(container, null, name, false);
             if (!existingConfigs.isEmpty())
             {
