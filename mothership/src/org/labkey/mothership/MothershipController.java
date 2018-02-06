@@ -858,6 +858,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
     public class CheckForUpdatesAction extends SimpleViewAction<UpdateCheckForm>

@@ -2796,6 +2796,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)//TODO remove this annotation when possible (see assay-assayResults.view various luminex reports)
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     @Action(ActionType.SelectData.class)

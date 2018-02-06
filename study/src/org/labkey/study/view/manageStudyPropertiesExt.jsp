@@ -537,6 +537,8 @@ function renderFormPanel(data, editable){
             items[i].value = value;
     }
 
+    items.push({xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF});
+
     studyPropertiesFormPanel = Ext4.create('Ext.form.Panel', {
         padding : 10,
         border : false,
