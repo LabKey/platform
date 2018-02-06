@@ -15,12 +15,10 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.springframework.web.servlet.View;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Map;
@@ -57,6 +55,7 @@ public class HttpPostRedirectView extends HttpView
         out.println("<html>");
         out.println("<body onload='document.forms[\"form\"].submit()'>");
         out.println("<form name='form' method='POST' action='" + PageFlowUtil.filter(_url) + "'>");
+        out.println("<input type=hidden name='X-LABKEY-CSRF' value='" + CSRFUtil.getExpectedToken(getViewContext()) + "'>");
         for (Map.Entry<String, String> pair : _hiddenInputs)
         {
             out.println("<input type='hidden' name='" + PageFlowUtil.filter(pair.getKey()) + "' value='" + PageFlowUtil.filter(pair.getValue()) + "'>");
