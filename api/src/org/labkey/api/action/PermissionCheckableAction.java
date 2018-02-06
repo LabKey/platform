@@ -196,16 +196,17 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             csrfCheck = requiresAdmin ? CSRF.Method.POST : CSRF.Method.NONE;
         }
 
+        CSRF csrfAnnotation = null;
         if (actionClass.isAnnotationPresent(CSRF.class))
         {
-            CSRF csrfAnnotation = actionClass.getAnnotation(CSRF.class);
+            csrfAnnotation = actionClass.getAnnotation(CSRF.class);
             csrfCheck = csrfAnnotation.value();
         }
 
         csrfCheck.validate(context);
 
         // if csrfCheck != POST, check to see if it would have failed with csrfCheck == POST, for auditing purposes
-        if (csrfCheck != CSRF.Method.POST && csrfCheck != CSRF.Method.NONE)
+        if (csrfCheck != CSRF.Method.POST && (csrfAnnotation==null || csrfAnnotation.value() != CSRF.Method.NONE))
         {
             try
             {
