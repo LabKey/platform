@@ -15,6 +15,8 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AdminConsoleAction;
@@ -211,6 +213,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             }
             catch (CSRFException ex)
             {
+                String referer = StringUtils.trimToNull(ex.getReferer());
+                Logger.getLogger(PermissionCheckableAction.class).warn("CSRF checking will fail for this request: " + getClass() + (null != referer ? " referer: " + referer : ""));
                 SpringActionController.getActionDescriptor(this.getClass()).addException(ex);
             }
         }
