@@ -6,6 +6,7 @@
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -44,6 +45,7 @@
                 <labkey:input name="name"
                               className="form-control lk-pipeline-input"
                               label="Name *"
+                              value="<%=h(bean.getName())%>"
                               isRequired="true"/>
 
                 <div class=" form-group">
@@ -54,6 +56,7 @@
                         <%= new TextArea.TextAreaBuilder()
                                 .className("form-control lk-pipeline-input")
                                 .name("description")
+                                .value(bean.getDescription())
                                 .columns(40)
                                 .rows(4)
                         %>
@@ -138,7 +141,7 @@
                               className="lk-pipeline-input"
                               type="checkbox"
                               label="Enable this trigger"
-                              checked="" />
+                              checked="<%=bean.isEnabled()%>" />
 
                 <h4 style="margin-top: 20px"><a href="#configuration">Configure parameters <i class="fa fa-arrow-circle-right" aria-hidden="true"></i> </a></h4>
             </div>
@@ -223,7 +226,16 @@
     +function($) {
 
         <%
-        if (rowId != null) {
+            if (StringUtils.isNotEmpty(bean.getConfigJson()) && !bean.getConfigJson().equalsIgnoreCase("{}"))
+            {%>
+                var configObj = JSON.parse(<%=q(bean.getConfigJson())%>);
+                processConfigJson(configObj);
+
+                var customConfigObj = JSON.parse(<%=q(bean.getCustomConfigJson())%>);
+                processCustomConfigJson(customConfigObj);
+        <%
+        }
+        else if (rowId != null) {
         %>
             function onSuccess(data) {
                 var row = data.rows[0];
@@ -261,36 +273,10 @@
 
                 //config objects must first be parsed as JSON
                 var configObj = JSON.parse(row.Configuration);
-                if (configObj) {
-                    for (var k in configObj) {
-                        if (configObj.hasOwnProperty(k) && configObj[k]) {
-                            if (k === "parameters") {
-                                var paramObject = configObj[k];
-                                for (var key in paramObject) {
-                                    if (paramObject.hasOwnProperty(key)) {
-                                        var keyName = key.indexOf("pipeline,") === 0 ? key.slice(9).trim() : key;
-                                        $("input[name='" + keyName + "']").val(paramObject[key]);
-                                    }
-                                }
-                            }
-                            else {
-                                if (k.toLowerCase() === "quiet") {
-                                    configObj[k] = configObj[k] / 1000;
-                                }
-                                $("*[name='" + k + "']").val(configObj[k]);
-                            }
-                        }
-                    }
-                }
+                processConfigJson(configObj);
 
                 var customConfigObj = JSON.parse(row.CustomConfiguration);
-                if (customConfigObj) {
-                    for (var j in customConfigObj) {
-                        if (customConfigObj.hasOwnProperty(j) && customConfigObj[j]) {
-                            addParameterGroup(j, customConfigObj[j])
-                        }
-                    }
-                }
+                processCustomConfigJson(customConfigObj);
             }
 
             function onFailure(data) {
@@ -308,6 +294,39 @@
             });
         <%}%>
 
+        function processConfigJson(configObj) {
+            if (configObj) {
+                for (var k in configObj) {
+                    if (configObj.hasOwnProperty(k) && configObj[k]) {
+                        if (k === "parameters") {
+                            var paramObject = configObj[k];
+                            for (var key in paramObject) {
+                                if (paramObject.hasOwnProperty(key)) {
+                                    var keyName = key.indexOf("pipeline,") === 0 ? key.slice(9).trim() : key;
+                                    $("input[name='" + keyName + "']").val(paramObject[key]);
+                                }
+                            }
+                        }
+                        else {
+                            if (k.toLowerCase() === "quiet") {
+                                configObj[k] = configObj[k] / 1000;
+                            }
+                            $("*[name='" + k + "']").val(configObj[k]);
+                        }
+                    }
+                }
+            }
+        }
+
+        function processCustomConfigJson(customConfigObj) {
+            if (customConfigObj) {
+                for (var j in customConfigObj) {
+                    if (customConfigObj.hasOwnProperty(j) && customConfigObj[j]) {
+                        addParameterGroup(j, customConfigObj[j])
+                    }
+                }
+            }
+        }
         window.onbeforeunload = function (e) {
             // Force confirmation when leaving the page
             return true;
@@ -352,7 +371,7 @@
 
             //build the configuration object
             $('.lk-pipeline-input').each(function(i, elem) {
-                if (elem.nodeName === "INPUT") {
+                if (elem.nodeName === "INPUT" || elem.nodeName === "TEXTAREA") {
                     if (elem.getAttribute("type") === "checkbox") {
                         standardObj[elem.getAttribute("name")] = elem.checked;
                     }
