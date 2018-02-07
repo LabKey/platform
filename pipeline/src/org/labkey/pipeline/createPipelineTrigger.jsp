@@ -411,10 +411,10 @@
         function addParameterGroup(key, value) {
             var elem = $("<div class='form-group lk-pipeline-customParam-group'>" +
                     "<div class='col-sm-3 col-lg-2'>" +
-                    "<input type='text' class='form-control lk-pipeline-custom-key' placeholder='Name' style='float: right;'>" +
+                    "<input type='text' class='form-control lk-pipeline-custom-key' placeholder='Name' name='customParamKey' style='float: right;'>" +
                     "</div>" +
                     "<div class='col-sm-9 col-lg-10'>" +
-                    "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' style='display: inline-block;'>" +
+                    "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' name='customParamValue' style='display: inline-block;'>" +
                     "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px;'></i></a>" +
                     "</div>" +
                     "</div>");
