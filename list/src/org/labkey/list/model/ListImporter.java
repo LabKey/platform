@@ -164,7 +164,7 @@ public class ListImporter
                             if (!hasXmlMetadata)
                             {
                                 QueryUpdateService qus = ti.getUpdateService();
-                                if (qus != null)
+                                if (qus != null && !_importContext.useMerge())
                                 {
                                     int deletedRows = ti.getUpdateService().truncateRows(user, c, null, null);
                                     log.info("Deleted " + deletedRows + " row(s) from list: " + def.getName() + " for reload preparation");
