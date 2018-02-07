@@ -106,7 +106,7 @@ public class ListImporter
                     {
                         try
                         {
-                            ListService.get().getList(c, Integer.parseInt(dataKey.second));
+                            def = ListService.get().getList(c, Integer.parseInt(dataKey.second));
                         }
                         catch (NumberFormatException e)
                         {

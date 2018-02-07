@@ -1,6 +1,7 @@
 package org.labkey.list.pipeline;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipeRoot;
@@ -14,7 +15,6 @@ import org.labkey.list.model.ListImportContext;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +53,7 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
         {
             try
             {
-                Map<String, Pair<String, String>> inputDataMap = new HashMap<>();
+                Map<String, Pair<String, String>> inputDataMap = new CaseInsensitiveHashMap<>();
                 ListImportContext context = new ListImportContext(null);
                 boolean useMerge = false;
 
