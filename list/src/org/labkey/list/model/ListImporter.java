@@ -101,12 +101,16 @@ public class ListImporter
                     if (dataKey.first.equals(ListReloadTask.LIST_NAME_KEY))
                     {
                         def = lists.get(dataKey.second);
+                        if (def == null)
+                            log.error("Could not locate a list with name:" + dataKey.second);
                     }
                     else if (dataKey.first.equals(ListReloadTask.LIST_ID_KEY))
                     {
                         try
                         {
                             def = ListService.get().getList(c, Integer.parseInt(dataKey.second));
+                            if (def == null)
+                                log.error("Could not locate a list with Id:" + dataKey.second);
                         }
                         catch (NumberFormatException e)
                         {
@@ -248,6 +252,7 @@ public class ListImporter
             }
             return true;
         }
+        errors.add("Could not locate a list on the server to associate with the file: " + fileName);
         return false;
     }
 
