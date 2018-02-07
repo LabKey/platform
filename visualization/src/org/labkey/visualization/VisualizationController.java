@@ -781,7 +781,6 @@ public class VisualizationController extends SpringActionController
      * Content-type of request must be text/xml, not any kind of multipart
      * Returns a PDF document containing the visualization as a scalable vector graphic
      */
-    @CSRF(CSRF.Method.NONE)  // TODO remove CSRF annotation when possible
     @RequiresPermission(ReadPermission.class)
     public class ExportPDFAction extends ExportSVGAction
     {
