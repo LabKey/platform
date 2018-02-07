@@ -128,7 +128,7 @@
                               className="form-control lk-pipeline-param-input"
                               label="Run as username"
                               forceSmallContext="true"
-                              value="<%=text(getUser().getDisplayName(getUser()))%>"
+                              value="<%=h(getUser().getDisplayName(getUser()))%>"
                               contextContent="The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions."/>
 
                 <labkey:input name="assay provider"
