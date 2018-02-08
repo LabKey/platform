@@ -25,7 +25,9 @@ LABKEY.discuss.validate = function(form)
         renderTypeEl = document.getElementById('rendererType'),
         isHTML = new RegExp(['<a', '<table', '<div', '<span'].join('|')),
         // Look for double-backslashes at the end of a line, double stars (bold) or tildes (italics) around anything,
-        isWiki = new RegExp(['\\\\\\\\[\\n\\r]', '\\*\\*.*\\*\\*', '\\~\\~.*\\~\\~'].join('|'));
+        isWiki = new RegExp(['\\\\\\\\[\\n\\r]', '\\*\\*.*\\*\\*', '\\~\\~.*\\~\\~'].join('|')),
+        // Look for underscores around anything or # at the start of a line or three slanted ticks before and after anything,
+        isMarkup = new RegExp(['_.*_', '^#', '\\`\\`\\`.*\\`\\`\\`'].join('|'));
 
     var msg = null;
     // Not all message board configurations include the rendererType option
@@ -37,6 +39,10 @@ LABKEY.discuss.validate = function(form)
     else if (renderTypeEl && renderTypeEl.value != 'RADEOX' && isWiki.test(text))
     {
         msg = 'The content of your message may contain Wiki markup. Are you sure that you want to submit it as ' + renderTypeEl.options[renderTypeEl.selectedIndex].text + '?';
+    }
+    else if (renderTypeEl && renderTypeEl.value != 'MARKDOWN' && isMarkup.test(text))
+    {
+        msg = 'The content of your message may contain Markdown markup. Are you sure that you want to submit it as ' + renderTypeEl.options[renderTypeEl.selectedIndex].text + '?';
     }
 
     if (msg)
@@ -85,3 +91,77 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
         }
     });
 };
+
+(function($) {
+
+    var _init = function() {
+        $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
+            var currentText = $("#body")[0].value;
+            if (e.target.hash === '#preview') {
+                _convertFormat('MARKDOWN', 'HTML', currentText, 'preview');
+            }
+        });
+
+        $('#rendererType').on('change', function(selectObject) {_rendererChange(this)
+        });
+
+        _rendererChange({value: $('#rendererType')[0].value});
+    };
+
+    var _hideAllHelperText = function() {
+        $('div[class="help-MARKDOWN"]').hide();
+        $('div[class="help-HTML"]').hide();
+        $('div[class="help-RADEOX"]').hide();
+        $('div[class="help-TEXT_WITH_LINKS"]').hide();
+    };
+
+    var _hideSourceAndPreviewTabs = function() {
+        $('#messageTabs').hide(); // hide the tabs
+        $('#messageTabs li:first-child a').tab('show') // force select of first tab panel
+    };
+
+    var _rendererChange =  function(selectObject) {
+        var value = selectObject.value;
+        _hideAllHelperText();
+        _hideSourceAndPreviewTabs();
+        if (value == 'MARKDOWN') {
+            $('#messageTabs').show(); // show source and preview tabs
+            $('div[class="help-MARKDOWN"]').show();
+        }
+        else if (value == 'HTML') {
+            $('div[class="help-HTML"]').show();
+        }
+        else if (value == 'RADEOX') {
+            $('div[class="help-RADEOX"]').show();
+        }
+        else if (value == 'TEXT_WITH_LINKS') {
+            $('div[class="help-TEXT_WITH_LINKS"]').show();
+        }
+    };
+
+    var _convertFormat = function(fromFormat, toFormat, body, elementToUpdate) {
+        LABKEY.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("wiki", "transformWiki"),
+            method : 'POST',
+            jsonData : {
+                body: body,
+                fromFormat: fromFormat,
+                toFormat: toFormat
+            },
+            success: function (response) {_onConvertSuccess(response, elementToUpdate)},
+            failure: LABKEY.Utils.getCallbackWrapper(function(exceptionInfo) {
+                Ext4.Msg.alert('Error', 'Unable to convert your page to the new format for the following reason:<br/>' + exceptionInfo.exception);
+            }, this, true)
+        });
+    };
+
+    var _onConvertSuccess = function(response, elementToUpdate) {
+        var respJson = LABKEY.Utils.decode(response.responseText);
+
+        if (respJson.toFormat == "HTML") {
+             document.getElementById(elementToUpdate).innerHTML = respJson.body;
+        }
+    };
+
+    LABKEY.Utils.onReady(_init);
+})(jQuery);

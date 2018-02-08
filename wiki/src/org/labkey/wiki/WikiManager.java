@@ -775,7 +775,7 @@ public class WikiManager implements WikiService
     //
 
     public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
-    public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.TEXT_WITH_LINKS;
+    public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.MARKDOWN;
 
     private Map<String, MacroProvider> providers = new HashMap<>();
 

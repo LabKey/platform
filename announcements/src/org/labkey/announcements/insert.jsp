@@ -82,7 +82,30 @@
     {
         %><tr><td class='labkey-form-label'>Expires</td><td><input type='text' size='23' name='expires' value='<%=h(form.get("expires"))%>' ></td><td width="100%"><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
     }
-    %><tr><td class='labkey-form-label'>Body</td><td colspan='2' style="width: 100%;"><textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea></td></tr><%
+    %>
+
+    <tr>
+        <td class='labkey-form-label'>Body</td>
+        <td colspan='2' style="width: 100%;">
+            <ul class="nav nav-tabs" id="messageTabs" role="tablist">
+                <li class="nav-item active">
+                    <a class="nav-link" id="source-tab" data-toggle="tab" href="#source" role="tab" aria-controls="source" aria-selected="true">Source</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="preview-tab" data-toggle="tab" href="#preview" role="tab" aria-controls="preview" aria-selected="false">Preview</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="messageTabsContent">
+                <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
+                </div>
+                <div class="tab-pane form-control" style="height: 290px;" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                </div>
+            </div>
+        </td>
+    </tr>
+
+    <%
     if (settings.hasFormatPicker())
     {
         %><tr><td class="labkey-form-label">Render As</td><td colspan="2">
@@ -128,5 +151,12 @@ else
 <input type=hidden name="discussionSrcIdentifier" value="<%=h(form.get("discussionSrcIdentifier"))%>"><input type=hidden name="discussionSrcURL" value="<%=h(form.get("discussionSrcURL"))%>">
 </labkey:form>
 <p/>
-<% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
-
+<%
+    for (WikiRendererType renderer : WikiRendererType.values()) {
+%>
+    <div class="help-<%=renderer.name()%>" style="display:none">
+        <% me.include(renderer.getSyntaxHelpView(), out); %>
+    </div>
+<%
+    }
+%>

@@ -91,19 +91,33 @@ if (settings.hasExpires())
 }
 
 %>
-  <tr>
-    <td class='labkey-form-label'>Body</td>
-    <td width="100%" colspan="2">
-        <textarea cols="120" rows ="15" id='body' name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
-    </td>
-  </tr>
+    <tr>
+        <td class='labkey-form-label'>Body</td>
+        <td colspan='2' style="width: 100%;">
+            <ul class="nav nav-tabs" id="messageTabs" role="tablist">
+                <li class="nav-item active">
+                    <a class="nav-link" id="source-tab" data-toggle="tab" href="#source" role="tab" aria-controls="source" aria-selected="true">Source</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="preview-tab" data-toggle="tab" href="#preview" role="tab" aria-controls="preview" aria-selected="false">Preview</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="messageTabsContent">
+                <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
+                </div>
+                <div class="tab-pane form-control" style="height: 290px;" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                </div>
+            </div>
+        </td>
+    </tr>
 <%
     if (settings.hasFormatPicker())
     { %>
   <tr>
     <td class="labkey-form-label">Render As</td>
     <td colspan="2">
-      <select name="rendererType"><%
+      <select name="rendererType" id="rendererType"><%
           for (WikiRendererType type : bean.renderers)
           {
               String value = type.name();
@@ -153,4 +167,12 @@ if (settings.hasExpires())
 </table>
 </labkey:form>
 <p/>
-<% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
+<%
+    for (WikiRendererType renderer : WikiRendererType.values()) {
+%>
+<div class="help-<%=renderer.name()%>" style="display:none">
+    <% me.include(renderer.getSyntaxHelpView(), out); %>
+</div>
+<%
+    }
+%>
