@@ -1436,6 +1436,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
 
+        // add registered AssayHeaderLinkProvider's manage assay links
+        for (AssayHeaderLinkProvider headerLinkProvider : AssayService.get().getAssayHeaderLinkProviders())
+        {
+            manageMenu.addChildren(headerLinkProvider.getManageAssayDesignLinks(protocol, context.getContainer(), context.getUser()));
+        }
+
         return manageMenu;
     }
 
