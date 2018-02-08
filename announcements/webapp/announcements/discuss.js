@@ -105,7 +105,7 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
         $('#rendererType').on('change', function(selectObject) {_rendererChange(this)
         });
 
-        _rendererChange({value: $('#rendererType')[0].value});
+        _rendererChange($('#rendererType')[0]);
     };
 
     var _hideAllHelperText = function() {
@@ -121,20 +121,21 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
     };
 
     var _rendererChange =  function(selectObject) {
-        var value = selectObject.value;
+        var selectedRenderer = selectObject ? selectObject.value : undefined;
+
         _hideAllHelperText();
         _hideSourceAndPreviewTabs();
-        if (value == 'MARKDOWN') {
+        if (selectedRenderer == 'MARKDOWN') {
             $('#messageTabs').show(); // show source and preview tabs
             $('div[class="help-MARKDOWN"]').show();
         }
-        else if (value == 'HTML') {
+        else if (selectedRenderer == 'HTML') {
             $('div[class="help-HTML"]').show();
         }
-        else if (value == 'RADEOX') {
+        else if (selectedRenderer == 'RADEOX') {
             $('div[class="help-RADEOX"]').show();
         }
-        else if (value == 'TEXT_WITH_LINKS') {
+        else if (selectedRenderer == 'TEXT_WITH_LINKS') {
             $('div[class="help-TEXT_WITH_LINKS"]').show();
         }
     };
