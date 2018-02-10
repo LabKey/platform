@@ -98,6 +98,7 @@ public class PageConfig
     private String _canonicalLink = null;
     private List<String> _warningMessages = null;
     private List<String> _dismissibleWarningMessages = null;
+    private boolean _skipPHIBanner = false;
 
     public PageConfig()
     {
@@ -428,4 +429,15 @@ public class PageConfig
             return _dismissibleWarningMessages;
         return Collections.emptyList();
     }
+
+    public boolean isSkipPHIBanner()
+    {
+        return _skipPHIBanner;
+    }
+
+    public void setSkipPHIBanner(boolean skipPHIBanner)
+    {
+        _skipPHIBanner = skipPHIBanner;
+    }
+
 }
