@@ -252,9 +252,12 @@ public class PageTemplate extends JspView<PageConfig>
             page.addWarningMessage(message);
         }
 
-        String complianceWarning = ComplianceService.get().getPHIBanner(getViewContext());
-        if (!StringUtils.isEmpty(complianceWarning))
-            page.addDismissibleWarningMessage(complianceWarning);
+        if (!page.isSkipPHIBanner())
+        {
+            String complianceWarning = ComplianceService.get().getPHIBanner(getViewContext());
+            if (!StringUtils.isEmpty(complianceWarning))
+                page.addDismissibleWarningMessage(complianceWarning);
+        }
     }
 
     protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
