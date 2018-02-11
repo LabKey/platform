@@ -428,7 +428,7 @@ public class ExcelColumn extends RenderColumn
             _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
             _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
             _log.error("DisplayColumn.getValueClass(): " + _dc.getValueClass());
-            _log.error("DisplayColumn.getColumnInfo().getSqlTypeInt(): " + columnInfo.getSqlTypeInt());
+            _log.error("DisplayColumn.getColumnInfo().getJdbcType(): " + columnInfo.getJdbcType());
             _log.error("DisplayColumn.getColumnInfo().getSqlTypeName(): " + columnInfo.getSqlTypeName());
 
             throw cce;

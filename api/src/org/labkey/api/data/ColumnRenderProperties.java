@@ -505,16 +505,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     @Deprecated
     public int getSqlTypeInt()
     {
-        // Issue 14367: NullPointerException from org.labkey.query.metadata.MetadataServiceImpl.saveMetadata()
-        // we could not repro this issue, so we will throw a more informative message if it occurs again
-        if (getJdbcType() == null)
-        {
-            String msg = "The column: " + getName() + " has a null JdbcType.  The propertyURI is: " + getPropertyURI();
-            if (this instanceof ColumnInfo)
-                msg += " typeName is " + ((ColumnInfo)this).getSqlTypeName();
-            throw new IllegalStateException(msg);
-        }
-
         return getJdbcType().sqlType;
     }
 
@@ -557,7 +547,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public boolean isStringType()
     {
         JdbcType type = getJdbcType();
-        return null==type || type.cls == String.class;
+        return type.cls == String.class;
     }
 
     public boolean isLongTextType()

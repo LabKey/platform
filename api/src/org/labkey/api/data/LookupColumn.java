@@ -176,7 +176,7 @@ public class LookupColumn extends ColumnInfo
         if (equalOrIsNull)
             condition.append("(");
 
-        boolean addCast = fk.getSqlTypeInt() != pk.getSqlTypeInt() && getSqlDialect().isPostgreSQL();
+        boolean addCast = fk.getJdbcType() != pk.getJdbcType() && getSqlDialect().isPostgreSQL();
         SQLFragment fkSql = fk.getValueSql(tableAliasName);
         if (addCast)
             condition.append("CAST((").append(fkSql).append(") AS VARCHAR)");

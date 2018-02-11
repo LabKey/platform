@@ -433,7 +433,14 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.append("(CASE WHEN ");
         sql.append(queryAlias + "." + colDimension.getSourceColumn().getAlias());
         sql.append("=");
-        sql.append(getSQLValue(colDimension.getSourceColumn().getSqlTypeInt(), member.getValue()));
+
+        // TODO: Remove this assert once we've tested the JdbcType-based method
+        String oldSqlValue = getSQLValue(colDimension.getSourceColumn().getSqlTypeInt(), member.getValue());
+        String newSqlValue = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
+
+        assert oldSqlValue.equals(newSqlValue);
+
+        sql.append(newSqlValue);
         sql.append(" THEN ");
         sql.append(ifSql);
         sql.append(" ELSE ");
@@ -559,7 +566,8 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      * @param memberValue The member value
      * @return A string representation of the member value suitable for appending into a SQL string as a literal value.
      */
-    protected String getSQLValue(int sqlType, Object memberValue)
+    @Deprecated // Remove this after testing
+    private String getSQLValue(int sqlType, Object memberValue)
     {
         //CONSIDER: there *must* be something in query or utils that
         //already does this. Maybe use param substitution instead?
@@ -586,6 +594,28 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
                 //if you get this, add support for the type you want.
                 throw new IllegalArgumentException("Crosstab table info supports numeric and character types for the column dimension.");
         }
+    } //getSQLValue()
+
+    /**
+     * Helper function to return the member value suitable for appending into a SQL statement.
+     *
+     * @param jdbcType The JdbcType
+     * @param memberValue The member value
+     * @return A string representation of the member value suitable for appending into a SQL string as a literal value.
+     */
+    private String getSQLValue(JdbcType jdbcType, Object memberValue)
+    {
+        //CONSIDER: there *must* be something in query or utils that
+        //already does this. Maybe use param substitution instead?
+        if (jdbcType.isNumeric())
+            return memberValue.toString();
+        else if (jdbcType.isText())
+            return "'" + memberValue.toString().replace("'", "''") + "'";
+        else if (jdbcType == JdbcType.BOOLEAN)
+            return "CAST('" + Boolean.valueOf(memberValue.toString()).toString() +"' AS " + getSqlDialect().getBooleanDataType() + ")";
+
+        //if you get this, add support for the type you want.
+        throw new IllegalArgumentException("Crosstab table info supports numeric and character types for the column dimension.");
     } //getSQLValue()
 
     @Override

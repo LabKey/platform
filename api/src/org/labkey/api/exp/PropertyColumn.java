@@ -23,7 +23,6 @@ import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -189,11 +188,6 @@ public class PropertyColumn extends LookupColumn
             super.declareJoins(baseAlias, map);
     }
 
-
-    private static String getPropertySqlType(PropertyDescriptor pd, SqlDialect dialect)
-    {
-        return dialect.sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType());
-    }
 
     static private String getPropertyCol(PropertyDescriptor pd)
     {

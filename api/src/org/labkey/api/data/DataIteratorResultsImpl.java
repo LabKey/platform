@@ -620,7 +620,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
 
             ResultSetMetaDataImpl.ColumnMetaData colMD = new ResultSetMetaDataImpl.ColumnMetaData();
             colMD.columnName = col.getName();
-            colMD.columnType = col.getSqlTypeInt();
+            colMD.columnType = col.getJdbcType().sqlType;
             colMD.columnLabel = col.getName();
             md.addColumn(colMD);
         }

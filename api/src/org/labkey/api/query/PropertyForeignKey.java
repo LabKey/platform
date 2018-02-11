@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
@@ -106,6 +107,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         assert null != (valueSql = parent.getValueSql("X").getSQL().toLowerCase());
         assert _parentIsObjectId || parentName.contains("uri") || parentName.contains("lsid") || valueSql.contains("lsid") || valueSql.contains("uri");
         assert _parentIsObjectId || parent.getSqlTypeInt() == Types.VARCHAR || parent.getSqlTypeInt() == -9; // NVARCHAR
+        assert _parentIsObjectId || parent.getJdbcType() == JdbcType.VARCHAR;
 
         if (displayField == null)
             return null;
