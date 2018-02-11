@@ -125,7 +125,7 @@
             Data Cut Date:
         </td>
         <td>
-            <%=refreshDate != null && refreshDate.getTime() > 0 ? formatDateTime(refreshDate) : ""%>
+            <%=refreshDate != null && refreshDate.getTime() > 0 ? formatDate(refreshDate) : ""%>
         </td>
     </tr>
 
