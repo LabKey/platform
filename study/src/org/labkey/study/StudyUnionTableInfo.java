@@ -332,7 +332,13 @@ public class StudyUnionTableInfo extends VirtualTable
         {
             ColumnInfo ci = new ColumnInfo(pd.getName(), this);
             PropertyColumn.copyAttributes(_user, ci, pd, _study.getContainer(), null);
-            ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()));
+
+            String oldName = StudySchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt());
+            String newName = StudySchema.getInstance().getSqlDialect().sqlTypeNameFromJdbcType(pd.getJdbcType());
+
+            assert oldName.equals(newName);
+
+            ci.setSqlTypeName(newName);
             safeAddColumn(ci);
         }
 
