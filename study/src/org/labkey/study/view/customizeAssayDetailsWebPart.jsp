@@ -54,7 +54,7 @@
 <p><%=bean.description%></p>
 
 <labkey:form action="<%=postUrl%>" method="post">
-    <table>
+    <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Assay</td>
             <td>
