@@ -457,6 +457,7 @@ public class PipeRootImpl implements PipeRoot
         return _cloudStoreName;
     }
 
+    @Override
     public boolean isCloudRoot()
     {
         return ROOT_BASE.cloud.equals(_defaultRoot);

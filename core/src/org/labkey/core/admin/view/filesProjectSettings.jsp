@@ -31,6 +31,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -64,6 +65,11 @@
     {
         storeNames = cloud.getCloudStores();
     }
+
+    String folderSetup = getActionURL().getParameter("folderSetup");
+    boolean isFolderSetup = null != folderSetup && "true".equalsIgnoreCase(folderSetup);
+    String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
+    String cancelButtonUrl = isFolderSetup ? getActionURL().getReturnURL().toString() : getContainer().getStartURL(getUser()).toString();
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -127,7 +133,7 @@
                 </table>
             </td>
         </tr>
-        <% if (hasAdminOpsPerm) { %>
+        <% if (hasAdminOpsPerm && !isFolderSetup) { %>
         <tr>
             <td>
                 <a id="manageAdditionalFileRoots" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
@@ -181,9 +187,19 @@
         %>
 
     </table>
-    <% } %>
+    <% }
+
+    if (isFolderSetup)
+    {
+    %>
+    <br/>
+    <em>You must <b>Save</b> any changes before clicking <b>Next</b></em>.
+    <br/>
+    <%
+    }
+    %>
     <labkey:button text="Save"/>
-    <labkey:button text="Cancel" href="<%= getContainer().getStartURL(getUser())%>"/>
+    <labkey:button text="<%=h(cancelButtonText)%>" href="<%=h(cancelButtonUrl)%>"/>
     <input type="hidden" value="true">
 </labkey:form>
 

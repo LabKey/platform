@@ -1106,7 +1106,7 @@ public class FileContentServiceImpl implements FileContentService
                 if (!isDefault || !isShowOverridesOnly)
                 {
                     ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-                    Map<String, Object> node = createFileSetNode(FILES_LINK, root.getFileSystemDirectoryPath());
+                    Map<String, Object> node = createFileSetNode(c, FILES_LINK, root.getFileSystemDirectoryPath());
                     node.put("default", isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browseUrl);
@@ -1119,7 +1119,7 @@ public class FileContentServiceImpl implements FileContentService
             for (AttachmentDirectory fileSet : getRegisteredDirectories(c))
             {
                 ActionURL config = new ActionURL(FileContentController.ShowAdminAction.class, c);
-                Map<String, Object> node =  createFileSetNode(fileSet.getName(), fileSet.getFileSystemDirectoryPath());
+                Map<String, Object> node =  createFileSetNode(c, fileSet.getName(), fileSet.getFileSystemDirectoryPath());
                 node.put("configureURL", config.getEncodedLocalURIString());
                 node.put("browseURL", browseUrl);
                 node.put("webdavURL", FilesWebPart.getRootPath(c, FILE_SETS_LINK, fileSet.getName()));
@@ -1136,7 +1136,7 @@ public class FileContentServiceImpl implements FileContentService
                 {
                     ActionURL config = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
                     ActionURL pipelineBrowse = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, null);
-                    Map<String, Object> node = createFileSetNode(PIPELINE_LINK, pipeRoot.getRootNioPath());
+                    Map<String, Object> node = createFileSetNode(c, PIPELINE_LINK, pipeRoot.getRootNioPath());
                     node.put("default", isDefault );
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", pipelineBrowse.getEncodedLocalURIString());
@@ -1153,13 +1153,13 @@ public class FileContentServiceImpl implements FileContentService
         return children;
     }
 
-    protected Map<String, Object> createFileSetNode(String name, java.nio.file.Path dir)
+    protected Map<String, Object> createFileSetNode(Container container, String name, java.nio.file.Path dir)
     {
         Map<String, Object> node = new HashMap<>();
         if (dir != null)
         {
             node.put("name", name);
-            node.put("path", dir.toAbsolutePath().toString());
+            node.put("path", FileUtil.getAbsolutePath(container, dir));
             node.put("leaf", true);
         }
         return node;

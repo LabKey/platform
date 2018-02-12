@@ -141,6 +141,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.template.EmptyView;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -1490,6 +1491,10 @@ public class AdminController extends SpringActionController
         String getCloudRootName();
 
         void setCloudRootName(String cloudRootName);
+
+        void setFileRootChanged(boolean changed);
+
+        void setEnabledCloudStoresChanged(boolean changed);
     }
 
     public interface SettingsForm
@@ -1542,6 +1547,8 @@ public class AdminController extends SpringActionController
         private String _customLogin;
         private String _customWelcome;
         private String _cloudRootName;
+        private boolean _fileRootChanged;
+        private boolean _enabledCloudStoresChanged;
 
         public enum FileRootProp
         {
@@ -1858,6 +1865,26 @@ public class AdminController extends SpringActionController
         public void setCloudRootName(String cloudRootName)
         {
             _cloudRootName = cloudRootName;
+        }
+
+        public boolean isFileRootChanged()
+        {
+            return _fileRootChanged;
+        }
+
+        public void setFileRootChanged(boolean changed)
+        {
+            _fileRootChanged = changed;
+        }
+
+        public boolean isEnabledCloudStoresChanged()
+        {
+            return _enabledCloudStoresChanged;
+        }
+
+        public void setEnabledCloudStoresChanged(boolean enabledCloudStoresChanged)
+        {
+            _enabledCloudStoresChanged = enabledCloudStoresChanged;
         }
     }
 
@@ -4950,6 +4977,9 @@ public class AdminController extends SpringActionController
         private String _folderRootPath;
         private String _fileRootOption;
         private String _cloudRootName;
+        private boolean _isFolderSetup;
+        private boolean _fileRootChanged;
+        private boolean _enabledCloudStoresChanged;
 
         // cloud settings
         private String[] _enabledCloudStore;
@@ -5011,30 +5041,50 @@ public class AdminController extends SpringActionController
         {
             _cloudRootName = cloudRootName;
         }
+
+        public boolean isFolderSetup()
+        {
+            return _isFolderSetup;
+        }
+
+        public void setFolderSetup(boolean folderSetup)
+        {
+            _isFolderSetup = folderSetup;
+        }
+
+        public boolean isFileRootChanged()
+        {
+            return _fileRootChanged;
+        }
+
+        public void setFileRootChanged(boolean changed)
+        {
+            _fileRootChanged = changed;
+        }
+
+        public boolean isEnabledCloudStoresChanged()
+        {
+            return _enabledCloudStoresChanged;
+        }
+
+        public void setEnabledCloudStoresChanged(boolean enabledCloudStoresChanged)
+        {
+            _enabledCloudStoresChanged = enabledCloudStoresChanged;
+        }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
+    public class FileRootsStandAloneAction extends FormViewAction<FileRootsForm>
     {
         @Override
-        protected HttpView getTabView(FileRootsForm form, BindException errors)
+        public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
         {
-            JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
-            String title = "Configure File Root";
-            if (CloudStoreService.get() != null)
-                title += " And Enable Cloud Stores";
-            view.setTitle(title);
+            JspView view = getFileRootsView(form, errors);
+            view.setFrame(WebPartView.FrameType.NONE);
 
-            try
-            {
-                setConfirmMessage(getViewContext(), form);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            }
-
+            getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(getContainer(), getContainer().getParent()));
+            getPageConfig().setTemplate(PageConfig.Template.Wizard);
+            getPageConfig().setTitle("Change File Root");
             return view;
         }
 
@@ -5047,23 +5097,94 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(FileRootsForm form, BindException errors) throws Exception
         {
-            if (form.isPipelineRootForm())
-            {
-                return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
-            }
-            else
-            {
-                setFileRootFromForm(getViewContext(), form);
-                setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore(), errors);
-                return true;
-            }
+            return handleFileRootsPost(form, errors);
         }
 
         public ActionURL getSuccessURL(FileRootsForm form)
         {
-            return new AdminController.AdminUrlsImpl().getFileRootsURL(getContainer()).addParameter("rootSet", true);
+            ActionURL url = new ActionURL(FileRootsStandAloneAction.class, getContainer())
+                    .addParameter("folderSetup", true)
+                    .addReturnURL(getViewContext().getActionURL().getReturnURL());
+
+            if (form.isFileRootChanged())
+                url.addParameter("rootSet", true);
+            if (form.isEnabledCloudStoresChanged())
+                url.addParameter("cloudChanged", true);
+            return url;
         }
 
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
+    {
+        @Override
+        protected HttpView getTabView(FileRootsForm form, BindException errors)
+        {
+            return getFileRootsView(form, errors);
+        }
+
+        @Override
+        public void validateCommand(FileRootsForm form, Errors errors)
+        {
+            validateCloudFileRoot(form, getContainer(), errors);
+        }
+
+        @Override
+        public boolean handlePost(FileRootsForm form, BindException errors) throws Exception
+        {
+            return handleFileRootsPost(form, errors);
+        }
+
+        public ActionURL getSuccessURL(FileRootsForm form)
+        {
+            ActionURL url = new AdminController.AdminUrlsImpl().getFileRootsURL(getContainer());
+
+            if (form.isFileRootChanged())
+                url.addParameter("rootSet", true);
+            if (form.isEnabledCloudStoresChanged())
+                url.addParameter("cloudChanged", true);
+            return url;
+        }
+    }
+
+    private JspView getFileRootsView(FileRootsForm form, BindException errors)
+    {
+        JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
+        String title = "Configure File Root";
+        if (CloudStoreService.get() != null)
+            title += " And Enable Cloud Stores";
+        view.setTitle(title);
+
+        try
+        {
+            setFormAndConfirmMessage(getViewContext(), form);
+        }
+        catch (IllegalArgumentException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+        }
+
+        return view;
+    }
+
+    private boolean handleFileRootsPost(FileRootsForm form, BindException errors) throws Exception
+    {
+        if (form.isPipelineRootForm())
+        {
+            return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
+        }
+        else
+        {
+            setFileRootFromForm(getViewContext(), form);
+            setEnabledCloudStores(getViewContext(), form, errors);
+            return true;
+        }
     }
 
     public static void validateCloudFileRoot(FileManagementForm form, Container container, Errors errors)
@@ -5098,26 +5219,45 @@ public class AdminController extends SpringActionController
 
     public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form)
     {
+        boolean changed = false;
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
         if (null != service)
         {
             if (form.isDisableFileSharing())
-                service.disableFileRoot(ctx.getContainer());
+            {
+                if (!service.isFileRootDisabled(ctx.getContainer()))
+                {
+                    service.disableFileRoot(ctx.getContainer());
+                    changed = true;
+                }
+            }
             else if (form.hasSiteDefaultRoot())
-                service.setIsUseDefaultRoot(ctx.getContainer(), true);
+            {
+                if (!service.isUseDefaultRoot(ctx.getContainer()))
+                {
+                    service.setIsUseDefaultRoot(ctx.getContainer(), true);
+                    changed = true;
+                }
+            }
             else if (form.isCloudFileRoot())
             {
                 throwIfUnauthorizedFileRootChange(ctx, service, form);
                 String cloudRootName = form.getCloudRootName();
-                service.setIsUseDefaultRoot(ctx.getContainer(), false);
-                service.setCloudRoot(ctx.getContainer(), cloudRootName);
-                try
+                if (null != cloudRootName &&
+                        (!service.isCloudRoot(ctx.getContainer()) ||
+                                !cloudRootName.equalsIgnoreCase(service.getCloudRootName(ctx.getContainer()))))
                 {
-                    PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
+                    service.setIsUseDefaultRoot(ctx.getContainer(), false);
+                    service.setCloudRoot(ctx.getContainer(), cloudRootName);
+                    try
+                    {
+                        PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                    changed = true;
                 }
             }
             else
@@ -5126,13 +5266,22 @@ public class AdminController extends SpringActionController
                 String root = StringUtils.trimToNull(form.getFolderRootPath());
                 if (root != null)
                 {
-                    service.setIsUseDefaultRoot(ctx.getContainer(), false);
-                    service.setFileRootPath(ctx.getContainer(), root);
+                    Path currentFileRootPath = service.getFileRootPath(ctx.getContainer());
+                    if (null == currentFileRootPath || !root.equalsIgnoreCase(currentFileRootPath.toAbsolutePath().toString()))
+                    {
+                        service.setIsUseDefaultRoot(ctx.getContainer(), false);
+                        service.setFileRootPath(ctx.getContainer(), root);
+                        changed = true;
+                    }
                 }
                 else
+                {
                     service.setFileRootPath(ctx.getContainer(), null);
+                    changed = true;
+                }
             }
         }
+        form.setFileRootChanged(changed);
     }
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
@@ -5143,7 +5292,7 @@ public class AdminController extends SpringActionController
         if (!service.isUseDefaultRoot(ctx.getContainer()))
         {
             Path fileRootPath = service.getFileRootPath(ctx.getContainer());
-            if (null != fileRootPath && !fileRootPath.toAbsolutePath().toString().equalsIgnoreCase(form.getFolderRootPath()))
+            if (null != fileRootPath && !FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath).equalsIgnoreCase(form.getFolderRootPath()))
             {
                 if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
                     throw new UnauthorizedException("Only site admins change change file roots");
@@ -5151,17 +5300,29 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static void setEnabledCloudStores(ViewContext ctx, String[] enabledCloudStores, BindException errors)
+    public static void setEnabledCloudStores(ViewContext ctx, FileManagementForm form, BindException errors)
     {
+        String[] enabledCloudStores = form.getEnabledCloudStore();
         CloudStoreService cloud = CloudStoreService.get();
         if (cloud != null)
         {
             Set<String> enabled = Collections.emptySet();
             if (enabledCloudStores != null)
                 enabled = new HashSet<>(Arrays.asList(enabledCloudStores));
+
             try
             {
-                cloud.setEnabledCloudStores(ctx.getContainer(), enabled);
+                // Check if anything changed
+                boolean changed = false;
+                Collection<String> storeNames = cloud.getEnabledCloudStores(ctx.getContainer());
+                if (enabled.size() != storeNames.size())
+                    changed = true;
+                else
+                    if (!enabled.containsAll(storeNames))
+                        changed = true;
+                if (changed)
+                    cloud.setEnabledCloudStores(ctx.getContainer(), enabled);
+                form.setEnabledCloudStoresChanged(changed);
             }
             catch (UncheckedExecutionException e)
             {
@@ -5176,24 +5337,29 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static void setConfirmMessage(ViewContext ctx, FileManagementForm form) throws IllegalArgumentException
+    public static void setFormAndConfirmMessage(ViewContext ctx, FileManagementForm form) throws IllegalArgumentException
     {
         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
         String confirmMessage = null;
+        String rootSetParam = ctx.getActionURL().getParameter("rootSet");
+        boolean fileRootChanged = null != rootSetParam && "true".equalsIgnoreCase(rootSetParam);
+        String cloudChangedParam = ctx.getActionURL().getParameter("cloudChanged");
+        boolean enabledCloudChanged = null != cloudChangedParam && "true".equalsIgnoreCase(cloudChangedParam);
 
         if (service != null)
         {
             if (service.isFileRootDisabled(ctx.getContainer()))
             {
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.disable.name());
-                confirmMessage = "File sharing has been disabled for this " + ctx.getContainer().getContainerNoun();
+                if (fileRootChanged)
+                    confirmMessage = "File sharing has been disabled for this " + ctx.getContainer().getContainerNoun();
             }
             else if (service.isUseDefaultRoot(ctx.getContainer()))
             {
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.siteDefault.name());
                 Path root = service.getFileRootPath(ctx.getContainer());
-                if (root != null && Files.exists(root))
-                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(ctx.getContainer(), root.toUri());
+                if (root != null && Files.exists(root) && fileRootChanged)
+                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(ctx.getContainer(), root);
             }
             else if (!service.isCloudRoot(ctx.getContainer()))
             {
@@ -5202,10 +5368,13 @@ public class AdminController extends SpringActionController
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.folderOverride.name());
                 if (root != null)
                 {
-                    String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), root.toUri());
+                    String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), root);
                     form.setFolderRootPath(absolutePath);
                     if (Files.exists(root))
-                        confirmMessage = "The file root is set to: " + absolutePath;
+                    {
+                        if (fileRootChanged)
+                            confirmMessage = "The file root is set to: " + absolutePath;
+                    }
                     else
                         throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + ctx.getRequest().getServerName() + ".");
                 }
@@ -5215,15 +5384,17 @@ public class AdminController extends SpringActionController
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.cloudRoot.name());
                 form.setCloudRootName(service.getCloudRootName(ctx.getContainer()));
                 Path root = service.getFileRootPath(ctx.getContainer());
-                if (root != null)
+                if (root != null && fileRootChanged)
                 {
                     confirmMessage = "The file root is set to: " + FileUtil.getCloudRootPathString(form.getCloudRootName());
                 }
             }
         }
 
-        if (ctx.getActionURL().getParameter("rootSet") != null && confirmMessage != null)
+        if (fileRootChanged && confirmMessage != null)
             form.setConfirmMessage(confirmMessage);
+        else if (enabledCloudChanged)
+            form.setConfirmMessage("The enabled cloud stores changed.");
     }
 
 

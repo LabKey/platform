@@ -310,7 +310,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         }
 
         // Cloud settings
-        AdminController.setEnabledCloudStores(getViewContext(), form.getEnabledCloudStore(), errors);
+        AdminController.setEnabledCloudStores(getViewContext(), form, errors);
 
         return true;
     }
@@ -459,7 +459,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     {
                         try
                         {
-                            AdminController.setConfirmMessage(getViewContext(), _form);
+                            AdminController.setFormAndConfirmMessage(getViewContext(), _form);
                         }
                         catch (IllegalArgumentException e)
                         {
