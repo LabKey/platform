@@ -115,4 +115,7 @@ public interface PipeRoot extends SecurableResource
 
     /** @return true if this root is based on the site level root */
     boolean isDefault();
+
+    /** @return true if this root is based on cloud storage */
+    boolean isCloudRoot();
 }

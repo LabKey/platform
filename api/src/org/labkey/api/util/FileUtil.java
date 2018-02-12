@@ -239,6 +239,11 @@ public class FileUtil
         }
     }
 
+    public static String getAbsolutePath(Container container, Path path)
+    {
+        return getAbsolutePath(container, path.toUri());
+    }
+    
     public static String getAbsolutePath(Container container, URI uri)
     {
         if (!FileUtil.hasCloudScheme(uri))

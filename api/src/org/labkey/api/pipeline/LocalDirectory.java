@@ -4,12 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -26,33 +24,52 @@ public class LocalDirectory implements Serializable
 {
     @NotNull private final File _localDirectoryFile;
     private final boolean _isTemporary;
-    private final String _parentDataFileUrl;
     private final PipeRoot _pipeRoot;
     private File _logFile;
-    private final String _basename;
+    private final String _baseLogFileName;
+    private final String _moduleName;
 
-    public LocalDirectory(Container container, PipeRoot pipeRoot, String dataFileUrl, String basename)
+    public static LocalDirectory create (@NotNull PipeRoot root, @NotNull String moduleName)
     {
-        File tempDirectory = FileUtil.getTempDirectory();   // tomcat/temp or similar
-        String workingDirectoryName = FileUtil.makeFileNameWithTimestamp("_temp_" + container.getId());
-        _localDirectoryFile = new File(tempDirectory, workingDirectoryName);
-        _isTemporary = true;
-        _pipeRoot = pipeRoot;
-        _basename = basename;
-
-        URI uri = URIUtil.getParentURI(null, FileUtil.createUri(dataFileUrl));
-        _parentDataFileUrl = null != uri ? FileUtil.uriToString(uri) : null;
-
-        ensureLocalDirectory();
+        return create(root, moduleName, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
     }
 
-    public LocalDirectory(@NotNull File localDirectory, String basename)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull String localDirPath)
+    {
+        return !root.isCloudRoot() ?
+                new LocalDirectory(new File(localDirPath), moduleName, baseLogFileName) :
+                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName);
+    }
+
+    // Constructor for runs and actions when pipeline root is cloud
+    public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename)
+    {
+        _isTemporary = true;
+        _pipeRoot = pipeRoot;
+        _baseLogFileName = basename;
+        _moduleName = moduleName;
+
+        try
+        {
+            File containerDir = ensureContainerDir(container);
+            _localDirectoryFile = new File(containerDir, FileUtil.makeFileNameWithTimestamp("_temp_"));
+
+            ensureLocalDirectory();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Constructor when pipeline root not in cloud
+    public LocalDirectory(@NotNull File localDirectory, String moduleName, String basename)
     {
         _localDirectoryFile = localDirectory;
         _isTemporary = false;
         _pipeRoot = null;
-        _basename = basename;
-        _parentDataFileUrl = null;
+        _baseLogFileName = basename;
+        _moduleName = moduleName;
     }
 
     @NotNull
@@ -64,8 +81,8 @@ public class LocalDirectory implements Serializable
     public File determineLogFile()
     {
         // If _isTemporary, look for existing file in the parent
-        _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _basename);
-        if (_isTemporary && null != _pipeRoot && null != _parentDataFileUrl)
+        _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _baseLogFileName);
+        if (_isTemporary && null != _pipeRoot)
         {
             try
             {
@@ -89,8 +106,15 @@ public class LocalDirectory implements Serializable
 
     public File restore()
     {
-        ensureLocalDirectory();
-        return determineLogFile();
+        try
+        {
+            ensureLocalDirectory();
+            return determineLogFile();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public File copyToLocalDirectory(String url, org.apache.log4j.Logger log)
@@ -118,18 +142,27 @@ public class LocalDirectory implements Serializable
         return null;
     }
 
-    private void ensureLocalDirectory()
+    private void ensureLocalDirectory() throws IOException
     {
-        if (_isTemporary)
-            try
-            {
-                if (!Files.exists(_localDirectoryFile.toPath()))
-                    Files.createDirectory(_localDirectoryFile.toPath());     // TODO Should we set file permissions?
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+        if (_isTemporary && !Files.exists(_localDirectoryFile.toPath()))
+            Files.createDirectory(_localDirectoryFile.toPath());     // TODO Should we set file permissions?
+    }
+
+    private File ensureContainerDir(Container container) throws IOException
+    {
+        File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
+        File moduleDir = new File(tempDir, FileUtil.makeLegalName(_moduleName + "_temp"));
+        if (!Files.exists(moduleDir.toPath()))
+        {
+            Files.createDirectory(moduleDir.toPath());
+        }
+
+        File containerDir = new File(moduleDir, FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
+        if (!Files.exists(containerDir.toPath()))
+        {
+            Files.createDirectory(containerDir.toPath());
+        }
+        return containerDir;
     }
 
     @Nullable
