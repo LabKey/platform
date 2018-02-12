@@ -1435,6 +1435,7 @@ public class SecurityController extends SpringActionController
             if (clone != null && user != null)
             {
                 Map<Container, Set<Role>> groupRoles = new HashMap<>();
+                Set<Group> siteGroups = new HashSet<>();
                 // clone group membership
                 for (int groupId : clone.getGroups())
                 {
@@ -1447,13 +1448,21 @@ public class SecurityController extends SpringActionController
                             try
                             {
                                 SecurityManager.addMember(group, user);
-                                // Keep track of roles associated with this group so we don't assign them individually below
-                                Container groupContainer = ContainerManager.getForId(group.getContainer());
-                                if (groupContainer != null)
+                                if (group.isProjectGroup())
                                 {
-                                    SecurityPolicy policy = groupContainer.getPolicy();
-                                    Set<Role> currentRoles = groupRoles.computeIfAbsent(groupContainer, k -> new HashSet<>());
-                                    currentRoles.addAll(policy.getEffectiveRoles(group));
+                                    // Keep track of roles associated with this group so we don't assign them individually below
+                                    Container groupContainer = ContainerManager.getForId(group.getContainer());
+                                    if (groupContainer != null)
+                                    {
+                                        SecurityPolicy policy = groupContainer.getPolicy();
+                                        Set<Role> currentRoles = groupRoles.computeIfAbsent(groupContainer, k -> new HashSet<>());
+                                        currentRoles.addAll(policy.getEffectiveRoles(group));
+                                    }
+                                }
+                                else
+                                {
+                                    // keep track of site groups.  Below, we will remove the roles assigned to these site groups so they aren't assigned individually
+                                    siteGroups.add(group);
                                 }
                             }
                             catch (InvalidGroupMembershipException e)
@@ -1474,6 +1483,8 @@ public class SecurityController extends SpringActionController
                     Collection<Role> roles = policy.getEffectiveRoles(clone);
                     roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                     modified = false;
+                    siteGroups.forEach(group -> roles.removeAll(policy.getEffectiveRoles(group)));
+
                     for (Role role : roles)
                     {
                         if (groupRoles.get(container) == null || !groupRoles.get(container).contains(role))
