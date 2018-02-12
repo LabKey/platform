@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -119,9 +120,11 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         _defaultColumns.add(FieldKey.fromParts("LastLogin"));
         _defaultColumns.add(FieldKey.fromParts("Created"));
 
-        Collection<FieldKey> domainDefaultCols = addDomainColumns();
-        _defaultColumns.addAll(domainDefaultCols);
-
+        if (null != PropertyService.get())
+        {
+            Collection<FieldKey> domainDefaultCols = addDomainColumns();
+            _defaultColumns.addAll(domainDefaultCols);
+        }
         setDefaultVisibleColumns(_defaultColumns);
 
         // expiration date will only show for admins under Site Users, if enabled

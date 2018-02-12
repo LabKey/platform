@@ -19,6 +19,7 @@ package org.labkey.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.DefaultAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
@@ -231,7 +232,8 @@ public class QueryModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-        PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
+        if (null != PipelineService.get())
+            PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
         ReportsController.registerAdminConsoleLinks();
         QueryController.registerAdminConsoleLinks();
 
@@ -262,10 +264,14 @@ public class QueryModule extends DefaultModule
             ss.addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
             ss.addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
         }
-        PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
+        if (null != PropertyService.get())
+            PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
 
-        AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
-        AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
+        if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
+        {
+            AuditLogService.get().registerAuditType(new QueryExportAuditProvider());
+            AuditLogService.get().registerAuditType(new QueryUpdateAuditProvider());
+        }
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
         DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());

@@ -263,7 +263,8 @@ public class UserController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()), AdminPermission.class);
+        if (null != PropertyService.get())
+            AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()), AdminPermission.class);
     }
 
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord, boolean canManageDetailsUser)
@@ -358,8 +359,12 @@ public class UserController extends SpringActionController
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
-            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
-            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+            Domain domain = null;
+            if (null != PropertyService.get())
+            {
+                String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
+                domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+            }
 
             if (domain != null)
             {

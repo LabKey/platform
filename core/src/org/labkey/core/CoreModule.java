@@ -29,6 +29,7 @@ import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
+import org.labkey.api.audit.DefaultAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -690,15 +691,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        AuditLogService.get().registerAuditType(new UserAuditProvider());
-        AuditLogService.get().registerAuditType(new GroupAuditProvider());
-        AuditLogService.get().registerAuditType(new AttachmentAuditProvider());
-        AuditLogService.get().registerAuditType(new ContainerAuditProvider());
-        AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
-        AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
-        AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
-        AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
-
+        if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
+        {
+            AuditLogService.get().registerAuditType(new UserAuditProvider());
+            AuditLogService.get().registerAuditType(new GroupAuditProvider());
+            AuditLogService.get().registerAuditType(new AttachmentAuditProvider());
+            AuditLogService.get().registerAuditType(new ContainerAuditProvider());
+            AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
+            AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
+            AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
+            AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
+        }
         TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -833,13 +836,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Disable the guest account",
                 false);
 
-        PropertyService.get().registerDomainKind(new UsersDomainKind());
-        UsersDomainKind.ensureDomain(moduleContext);
+        if (null != PropertyService.get())
+        {
+            PropertyService.get().registerDomainKind(new UsersDomainKind());
+            UsersDomainKind.ensureDomain(moduleContext);
+        }
 
         // Register the standard, wiki-based terms-of-use provider
         SecurityManager.addTermsOfUseProvider(new WikiTermsOfUseProvider());
 
-        PropertyService.get().registerDomainKind(new TestDomainKind());
+        if (null != PropertyService.get())
+            PropertyService.get().registerDomainKind(new TestDomainKind());
 
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();

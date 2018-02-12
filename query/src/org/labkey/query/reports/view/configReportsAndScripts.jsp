@@ -178,11 +178,13 @@
                             {
                                 localURI: <%=PageFlowUtil.jsString(ScriptEngineReport.getDefaultTempRoot().toURI().toString())%>,
                                 remoteURI: ''
-                            },
-                            {
+                            }
+                            <% if (null != FileContentService.get()) { %>
+                            ,{
                                 localURI: <%=PageFlowUtil.jsString(FileContentService.get().getSiteDefaultRoot().toURI().toString())%>,
                                 remoteURI: ''
                             }
+                            <% } %>
                         ]
                     };
 

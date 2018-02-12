@@ -20,8 +20,13 @@ import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartFactory;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: labkey
@@ -37,12 +42,8 @@ public class WorkbookFolderType extends DefaultFolderType
         super(NAME,
                 "A workbook containing files and experiment runs.",
                 null,
-                Arrays.asList(
-                        Portal.getPortalPart("Workbook Description").createWebPart(),
-                        Portal.getPortalPart("Experiment Runs").createWebPart(),
-                        createFileWebPart()
-                ),
-                getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), getModule("Experiment")),
+                null,
+                getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), ModuleLoader.getInstance().getModule("Experiment")),
                 ModuleLoader.getInstance().getCoreModule());
         setWorkbookType(true);
     }
@@ -53,9 +54,26 @@ public class WorkbookFolderType extends DefaultFolderType
         return "Default Workbook";
     }
 
+    @Override
+    public List<Portal.WebPart> getPreferredWebParts()
+    {
+        ArrayList<Portal.WebPart> parts = new ArrayList<>();
+        if (null != Portal.getPortalPart("Workbook Description"))
+            parts.add(Portal.getPortalPart("Workbook Description").createWebPart());
+        if (null != Portal.getPortalPart("Experiment Runs"))
+            parts.add(Portal.getPortalPart("Experiment Runs").createWebPart());
+        Portal.WebPart files = createFileWebPart();
+        if (null != files)
+            parts.add(files);
+        return parts;
+    }
+
     private static Portal.WebPart createFileWebPart()
     {
-        Portal.WebPart result = Portal.getPortalPart("Files").createWebPart(HttpView.BODY);
+        WebPartFactory wpf =  Portal.getPortalPart("Files");
+        if (null == wpf)
+            return null;
+        Portal.WebPart result = wpf.createWebPart(HttpView.BODY);
         result.setProperty("fileSet", FileContentService.PIPELINE_LINK);
         result.setProperty("webpart.title", "Files");
         return result;

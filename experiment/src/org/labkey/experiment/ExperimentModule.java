@@ -286,10 +286,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
 
-        FileContentService.get().addFileListener(new ExpDataFileListener());
-        FileContentService.get().addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
-        FileContentService.get().addFileListener(new FileLinkFileListener());
-
+        if (null != FileContentService.get())
+        {
+            FileContentService.get().addFileListener(new ExpDataFileListener());
+            FileContentService.get().addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
+            FileContentService.get().addFileListener(new FileLinkFileListener());
+        }
         ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
                                               {
                                                   public void containerDeleted(Container c, User user)
