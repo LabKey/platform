@@ -38,7 +38,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * User: Mark Igra
@@ -384,17 +386,21 @@ public class DefaultFolderType implements FolderType
         if (null == s_defaultModules)
         {
             Set<Module> defaultModules = new HashSet<>();
-            defaultModules.add(getModule("Announcements"));
-            defaultModules.add(getModule("FileContent"));
-            defaultModules.add(getModule("Wiki"));
-            defaultModules.add(getModule("Query"));
+            if (ModuleLoader.getInstance().hasModule("Announcements"))
+                defaultModules.add(getModule("Announcements"));
+            if (ModuleLoader.getInstance().hasModule("FileContent"))
+                defaultModules.add(getModule("FileContent"));
+            if (ModuleLoader.getInstance().hasModule("Wiki"))
+                defaultModules.add(getModule("Wiki"));
+            if (ModuleLoader.getInstance().hasModule("Query"))
+                defaultModules.add(getModule("Query"));
             if (ModuleLoader.getInstance().hasModule("Issues"))
                 defaultModules.add(getModule("Issues"));
             s_defaultModules = Collections.unmodifiableSet(defaultModules);
         }
 
         Set<Module> modules = new HashSet<>(s_defaultModules);
-        modules.addAll(Arrays.asList(additionalModules));
+        Stream.of(additionalModules).filter(Objects::nonNull).forEach(modules::add);
 
         return modules;
     }

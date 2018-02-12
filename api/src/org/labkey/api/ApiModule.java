@@ -25,6 +25,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
@@ -53,7 +54,9 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
-        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
+        // TODO: why is this here instead of in ExperimentModule?
+        if (ModuleLoader.getInstance().hasModule("Experiment"))
+            AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
     }
 
     @NotNull
