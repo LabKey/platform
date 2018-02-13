@@ -100,6 +100,10 @@ public class UserManager
         void userAccountDisabled(User user);
 
         void userAccountEnabled(User user);
+
+        default void userPropertiesUpdated(int userid)
+        {
+        }
     }
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
@@ -190,6 +194,28 @@ public class UserManager
         }
         return errors;
     }
+
+
+    public static List<Throwable> fireUserPropertiesChanged(int userid)
+    {
+        List<UserListener> list = getListeners();
+        List<Throwable> errors = new ArrayList<>();
+
+        for (UserListener userListener : list)
+        {
+            try
+            {
+                userListener.userPropertiesUpdated(userid);
+            }
+            catch (Throwable t)
+            {
+                LOG.error("fireUserUpdated", t);
+                errors.add(t);
+            }
+        }
+        return errors;
+    }
+
 
     public static @Nullable User getUser(int userId)
     {
