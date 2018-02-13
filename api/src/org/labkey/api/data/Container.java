@@ -1086,7 +1086,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 for (ExpProtocol p : activeProtocols)
                 {
                     AssayProvider ap = AssayService.get().getProvider(p);
-                    if (!ap.getRequiredModules().isEmpty())
+                    if (ap != null && !ap.getRequiredModules().isEmpty())
                     {
                         withDependencies.addAll(ap.getRequiredModules());
                     }
