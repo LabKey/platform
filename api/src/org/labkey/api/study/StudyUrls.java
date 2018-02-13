@@ -34,4 +34,5 @@ public interface StudyUrls extends UrlProvider
     ActionURL getManageReportPermissions(Container container);
     ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields);
     ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor);
+    ActionURL getManageFileWatchersURL(Container container);
 }

@@ -227,4 +227,8 @@ public interface StudyService
 
     // consider will set hide==true for empty datasets, and clear (inherit) for non-empty datasets
     void hideEmptyDatasets(Container c, User user);
+
+    List<StudyManagementOption> getManagementOptions();
+
+    void registerManagementOption(StudyManagementOption option);
 }
