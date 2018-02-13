@@ -66,6 +66,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyManagementOption;
 import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -133,6 +134,7 @@ public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
     private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
+    private static List<StudyManagementOption> _managementOptions;
 
     private StudyServiceImpl() {}
 
@@ -1153,5 +1155,24 @@ public class StudyServiceImpl implements StudyService
                 }
             }
         }
+    }
+
+    @Override
+    @NotNull
+    public List<StudyManagementOption> getManagementOptions()
+    {
+        if (null == _managementOptions)
+            return Collections.emptyList();
+
+        return _managementOptions;
+    }
+
+    @Override
+    public void registerManagementOption(StudyManagementOption option)
+    {
+        if (_managementOptions == null)
+            _managementOptions = new ArrayList<>();
+
+        _managementOptions.add(option);
     }
 }

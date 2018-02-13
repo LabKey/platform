@@ -59,6 +59,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.compliance.ComplianceService" %>
 <%@ page import="org.labkey.api.data.PHI" %>
+<%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -307,6 +308,19 @@
                         <td><%=textLink("Demo Mode",
                                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
                     </tr>
+                    <%
+                        for (StudyManagementOption option : StudyService.get().getManagementOptions())
+                        {
+                            option.setContainer(getContainer());
+                    %>
+                            <tr>
+                                <td class="lk-study-prop-label"><%=h(option.getTitle())%></td>
+                                <td class="lk-study-prop-desc"><%=h(option.getDescription())%></td>
+                                <td><%=textLink(option.getLinkText(), option.getLinkUrl())%></td>
+                            </tr>
+                    <%
+                        }
+                    %>
                 </table>
             </labkey:panel>
 

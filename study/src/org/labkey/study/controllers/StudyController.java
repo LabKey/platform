@@ -299,6 +299,12 @@ public class StudyController extends BaseStudyController
             url.addParameter("singleTable", useSingleTableEditor);
             return url;
         }
+
+        @Override
+        public ActionURL getManageFileWatchersURL(Container container)
+        {
+            return new ActionURL(StudyController.ManageFilewatchersAction.class, container);
+        }
     }
 
     public StudyController()
@@ -1636,6 +1642,24 @@ public class StudyController extends BaseStudyController
             setHelpTopic("manageDatasets");
             _appendManageStudy(root);
             return root.addChild("Manage Datasets");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ManageFilewatchersAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageFilewatchers.jsp", this, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("fileWatcher");
+            _appendManageStudy(root);
+            return root.addChild("Manage Filewatchers");
         }
     }
 
@@ -6625,7 +6649,7 @@ public class StudyController extends BaseStudyController
                 else
                     source = "a script invoking the \"Attempt Reload\" action while " + (user.isGuest() ? "not authenticated" : "authenticated as user \"" + user.getDisplayName(null) + "\"");
 
-                ReloadStatus status = task.attemptReload(options, source);
+                ReloadStatus status = task.attemptScheduledReload(options, source);
 
                 if (status.isReloadQueued() && form.isUi())
                     return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));

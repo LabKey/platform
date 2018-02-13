@@ -2305,6 +2305,7 @@ study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
+study/src/org/labkey/study/importer/StudyReloadTask.java -text
 study/src/org/labkey/study/importer/StudyViewsImporter.java -text
 study/src/org/labkey/study/importer/TopLevelStudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/TreatmentDataImporter.java -text
@@ -2693,6 +2694,7 @@ study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text
 study/src/org/labkey/study/view/manageExternalReload.jsp -text
+study/src/org/labkey/study/view/manageFilewatchers.jsp -text
 study/src/org/labkey/study/view/manageLocationTypes.jsp -text
 study/src/org/labkey/study/view/manageLocations.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text

@@ -281,7 +281,7 @@ public class StudyReload
             try
             {
                 ImportOptions options = new ImportOptions(studyContainerId, null);
-                attemptReload(options, "a configured automatic reload timer");    // Ignore success messages
+                attemptScheduledReload(options, "a configured automatic reload timer");    // Ignore success messages
             }
             catch (ImportException ie)
             {
@@ -297,7 +297,50 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptReload(ImportOptions options, String source) throws ImportException
+        public StudyImpl validateStudyForReload(ImportOptions options, Container c, boolean isScheduled) throws ImportException
+        {
+                StudyImpl study = StudyManager.getInstance().getStudy(c);
+
+                if (null == study)
+                {
+                    // Study must have been deleted
+                    if (isScheduled)
+                        cancelTimer(options.getContainerId());
+                    throw new ImportException("Study does not exist in folder " + c.getPath());
+                }
+                else
+                {
+                    assert study.isAllowReload() : "Can't reload a study set for no reload";
+                    return study;
+                }
+        }
+
+        public PipeRoot validatePipeRoot(Container c) throws ImportException
+        {
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
+
+            if (null == root)
+                throw new ImportException("Pipeline root is not set in folder " + c.getPath());
+
+            if (!root.isValid())
+                throw new ImportException("Pipeline root does not exist in folder " + c.getPath());
+
+            return root;
+        }
+
+        public ReloadStatus attemptTriggeredReload(ImportOptions options, String source) throws ImportException
+        {
+            Container c = ContainerManager.getForId(options.getContainerId());
+            if (null == c)
+                throw new ImportException("Container " + options.getContainerId() + " does not exist");
+            else
+            {
+                StudyImpl study = validateStudyForReload(options, c, false);
+                return reloadStudy(study, options, source, null, study.getLastReload());
+            }
+        }
+
+        public ReloadStatus attemptScheduledReload(ImportOptions options, String source) throws ImportException
         {
             Container c = ContainerManager.getForId(options.getContainerId());
 
@@ -309,95 +352,79 @@ public class StudyReload
             }
             else
             {
-                StudyImpl study = StudyManager.getInstance().getStudy(c);
+                StudyImpl study = validateStudyForReload(options, c, false);
+                PipeRoot root = validatePipeRoot(c);
+                File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
 
-                if (null == study)
+                if (studyload != null && studyload.isFile())
                 {
-                    // Study must have been deleted
-                    cancelTimer(options.getContainerId());
-                    throw new ImportException("Study does not exist in folder " + c.getPath());
-                }
-                else
-                {
-                    assert study.isAllowReload() : "Can't reload a study set for no reload";
+                    Long lastModified = studyload.lastModified();
+                    Date lastReload = study.getLastReload();
 
-                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
-
-                    if (null == root)
-                        throw new ImportException("Pipeline root is not set in folder " + c.getPath());
-
-                    if (!root.isValid())
-                        throw new ImportException("Pipeline root does not exist in folder " + c.getPath());
-
-                    File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
-
-                    if (studyload != null && studyload.isFile())
+                    if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                     {
-                        long lastModified = studyload.lastModified();
-                        Date lastReload = study.getLastReload();
-
-                        if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
-                        {
-                            options.addMessage("Study reload was initiated by " + source);
-                            options.setSkipQueryValidation(!study.isValidateQueriesAfterImport());
-
-                            // Check for valid reload user
-                            User reloadUser = options.getUser();
-
-                            if (null == reloadUser)
-                            {
-                                Integer reloadUserId = study.getReloadUser();
-
-                                if (null != reloadUserId)
-                                    reloadUser = UserManager.getUser(reloadUserId);
-
-                                if (null == reloadUser)
-                                    throw new ImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
-
-                                options.setUser(reloadUser);
-                                options.addMessage("User \"" + reloadUser.getDisplayName(null) + "\" is configured as the reload user for this study. This can be changed by visiting the \"Manage Reloading\" page.");
-                            }
-
-                            // TODO: Check for inactive user and not sufficient permissions
-
-                            // Try to add this study to the reload queue; if it's full, wait until next time
-                            // We could submit reload pipeline jobs directly, but:
-                            //  1) we need a way to throttle automatic reloads and
-                            //  2) the initial import steps happen synchronously; they aren't part of the pipeline job
-
-                            // TODO: Better throttling behavior (e.g., prioritize studies that check infrequently)
-
-                            // Careful: Naive approach would be to offer the container to the queue and set last reload
-                            // time on the study only if successful. This will introduce a race condition, since the
-                            // import job and the update are likely to be updating the study at roughly the same time.
-                            // Instead, we optimistically update the last reload time before offering the container and
-                            // back out that change if the queue is full.
-                            study = study.createMutable();
-                            study.setLastReload(new Date(lastModified));
-                            StudyManager.getInstance().updateStudy(null, study);
-
-                            if (QUEUE.offer(options))
-                            {
-                                return new ReloadStatus("Reloading " + getDescription(study), true);
-                            }
-                            else
-                            {
-                                // Restore last reload so we'll try this again later
-                                study.setLastReload(lastReload);
-                                StudyManager.getInstance().updateStudy(null, study);
-                                throw new ImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
-                            }
-                        }
-                        else
-                        {
-                            return new ReloadStatus("Skipping reload of " + getDescription(study) + ": this study is up-to-date", false);
-                        }
+                        return reloadStudy(study, options, source, lastModified, lastReload);
                     }
                     else
                     {
                         throw new ImportException("Could not find file " + STUDY_LOAD_FILENAME + " in the pipeline root for " + getDescription(study));
                     }
                 }
+            }
+
+            return new ReloadStatus("Reload failed", false);
+        }
+
+        public ReloadStatus reloadStudy(StudyImpl study, ImportOptions options, String source, Long lastModified, Date lastReload) throws ImportException
+        {
+            options.addMessage("Study reload was initiated by " + source);
+            options.setSkipQueryValidation(!study.isValidateQueriesAfterImport());
+
+            // Check for valid reload user
+            User reloadUser = options.getUser();
+
+            if (null == reloadUser)
+            {
+                Integer reloadUserId = study.getReloadUser();
+
+                if (null != reloadUserId)
+                    reloadUser = UserManager.getUser(reloadUserId);
+
+                if (null == reloadUser)
+                    throw new ImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
+
+                options.setUser(reloadUser);
+                options.addMessage("User \"" + reloadUser.getDisplayName(null) + "\" is configured as the reload user for this study. This can be changed by visiting the \"Manage Reloading\" page.");
+            }
+
+            // TODO: Check for inactive user and not sufficient permissions
+
+            // Try to add this study to the reload queue; if it's full, wait until next time
+            // We could submit reload pipeline jobs directly, but:
+            //  1) we need a way to throttle automatic reloads and
+            //  2) the initial import steps happen synchronously; they aren't part of the pipeline job
+
+            // TODO: Better throttling behavior (e.g., prioritize studies that check infrequently)
+
+            // Careful: Naive approach would be to offer the container to the queue and set last reload
+            // time on the study only if successful. This will introduce a race condition, since the
+            // import job and the update are likely to be updating the study at roughly the same time.
+            // Instead, we optimistically update the last reload time before offering the container and
+            // back out that change if the queue is full.
+            study = study.createMutable();
+            study.setLastReload(lastModified == null ? new Date() : new Date(lastModified));
+            StudyManager.getInstance().updateStudy(null, study);
+
+            if (QUEUE.offer(options))
+            {
+                return new ReloadStatus("Reloading " + getDescription(study), true);
+            }
+            else
+            {
+                // Restore last reload so we'll try this again later
+                study.setLastReload(lastReload);
+                StudyManager.getInstance().updateStudy(null, study);
+                throw new ImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
             }
         }
     }

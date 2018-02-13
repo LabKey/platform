@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -33,7 +30,6 @@
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
 
     User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
-    boolean isPremiumModulePresent = ModuleLoader.getInstance().getModule("premium") != null;
 %>
 <labkey:panel>
     <labkey:form action="" method="post">
@@ -90,37 +86,6 @@
         </table>
     </labkey:form>
 </labkey:panel>
-<%
-    if (isPremiumModulePresent)
-    {
-%>
-    <labkey:panel>
-        <table width="65%">
-            <tr>
-                <td>
-                    <p>Additionally, a study can be configured to reload datasets and lists automatically when specific files are updated.</p>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "listReloadTask", getActionURL())%>">Create list reload trigger</a></p>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), "datasetReloadPipeline", getActionURL())%>">Create dataset reload trigger</a></p>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <p><a href="<%=PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")%>">Manage reload triggers</a></p>
-                </td>
-            </tr>
-        </table>
-    </labkey:panel>
-<%
-    }
-%>
 <script type="text/javascript">
     function updateDisplay()
     {
