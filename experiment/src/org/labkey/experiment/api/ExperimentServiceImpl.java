@@ -6000,6 +6000,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd)
     {
         JSONObject json = new JSONObject();
+        json.put("propertyId", pd.getPropertyId());
         json.put("name", pd.getName());
         json.put("required", pd.isRequired());
         json.put("label", pd.getLabel());
