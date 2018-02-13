@@ -17,9 +17,9 @@ package org.labkey.core.query;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -42,6 +42,7 @@ import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -102,7 +103,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         wrapAllColumns();
 
-        if (SecurityManager.canSeeEmailAddresses(getContainer(), getUser()))
+        if (SecurityManager.canSeeEmailAddresses(getContainer(), getUser()) || getUser().isSearchUser())
         {
             addWrapColumn(getRealTable().getColumn("Email"));
         }
@@ -352,5 +353,15 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             });
         }
         return filter;
+    }
+
+
+    @Override
+    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext) throws ValidationException
+    {
+        super.fireRowTrigger(c, type, before, rowNumber, newRow, oldRow, extraContext);
+        Integer userId = null!=newRow ? (Integer)newRow.get("UserId") : null!=oldRow ? (Integer)oldRow.get("UserId") : null;
+        if (null != userId && !before)
+            UserManager.fireUserPropertiesChanged(userId);
     }
 }

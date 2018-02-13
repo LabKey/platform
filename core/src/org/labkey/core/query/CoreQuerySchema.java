@@ -216,7 +216,7 @@ public class CoreQuerySchema extends UserSchema
         // so the user can at least see and update their account info.
 
         User user = getUser();
-        if (!user.hasRootPermission(UserManagementPermission.class))
+        if (!user.hasRootPermission(UserManagementPermission.class) && !user.isSearchUser())
         {
             if (!user.isGuest())
             {
