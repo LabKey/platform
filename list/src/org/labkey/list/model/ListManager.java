@@ -948,7 +948,7 @@ public class ListManager implements SearchService.DocumentProvider
         new TableSelector(getListMetadataTable()).forEach(listDef -> {
             ListDefinition list = new ListDefinitionImpl(listDef);
             Domain domain = list.getDomain();
-            if (null != domain)
+            if (null != domain && null != domain.getStorageTableName())
                 clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
         }, ListDef.class);
     }
