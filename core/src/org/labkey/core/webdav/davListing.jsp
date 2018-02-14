@@ -84,6 +84,7 @@
                 border : false,
                 isWebDav  : true,
                 useHistory: true,
+                disableContextMenu: true,
                 fileSystem : fileSystem,
                 gridConfig : {
                     selModel: {
