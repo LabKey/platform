@@ -59,6 +59,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -524,6 +525,11 @@ public class ExceptionUtil
             }
             // Bug 15371
             if (ex.getClass().equals(IOException.class) && ex.getMessage() != null && ex.getMessage().contains("disconnected client"))
+            {
+                return true;
+            }
+            // Bug 32056
+            if (ex.getClass().equals(EOFException.class))
             {
                 return true;
             }

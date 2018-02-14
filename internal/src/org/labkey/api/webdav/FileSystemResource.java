@@ -64,6 +64,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -281,12 +282,14 @@ public class FileSystemResource extends AbstractWebdavResource
     public long copyFrom(User user, FileStream is) throws IOException
     {
         File file = getFile();
+        boolean created = false;
         if (!file.exists())
         {
             file.getParentFile().mkdirs();
             try
             {
                 file.createNewFile();
+                created = true;
             }
             catch (IOException x)
             {
@@ -301,6 +304,13 @@ public class FileSystemResource extends AbstractWebdavResource
             fos.getFD().sync();
             resetMetadata();
             return len;
+        }
+        catch (IOException x)
+        {
+            // if InputStream was unexpectedly closed, (e.g. browser closed) try to clean up if we created this file
+            if (created)
+                file.delete();
+            throw x;
         }
     }
 
