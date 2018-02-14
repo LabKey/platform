@@ -1659,7 +1659,7 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic("fileWatcher");
             _appendManageStudy(root);
-            return root.addChild("Manage Filewatchers");
+            return root.addChild("Manage File Watchers");
         }
     }
 
