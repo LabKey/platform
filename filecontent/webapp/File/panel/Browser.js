@@ -1024,6 +1024,7 @@ Ext4.define('File.panel.Browser', {
                     sortable: !this.bufferFiles,
                     hidden: false,
                     height : 20,
+                    showContextMenu: false,
                     renderer: this.usageRenderer
                 },
                 fileLink: {
@@ -1032,6 +1033,7 @@ Ext4.define('File.panel.Browser', {
                     dataIndex: 'fileLink',
                     sortable: !this.bufferFiles,
                     hidden: true,
+                    showContextMenu: false,
                     height : 20
                 },
                 fileExt: {
