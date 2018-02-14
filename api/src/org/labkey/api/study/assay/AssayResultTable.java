@@ -312,6 +312,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             if (foundTargetStudyCol)
             {
                 specimenIdCol.setFk(new SpecimenForeignKey(_userSchema, _provider, _protocol));
+                specimenIdCol.setURL(specimenIdCol.getFk().getURL(specimenIdCol));
                 specimenIdCol.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
             }
         }

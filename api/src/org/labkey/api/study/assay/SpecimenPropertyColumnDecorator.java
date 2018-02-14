@@ -51,6 +51,7 @@ public class SpecimenPropertyColumnDecorator implements PropertyColumnDecorator
             if (Boolean.TRUE.equals(_hasTargetStudy))
             {
                 columnInfo.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
+                columnInfo.setURL(columnInfo.getFk().getURL(columnInfo));
                 columnInfo.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
             }
         }

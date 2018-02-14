@@ -82,7 +82,9 @@ public class DataColumn extends DisplayColumn
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
-        StringExpression url = _boundColumn.getEffectiveURL();
+        StringExpression url = withLookups ?
+                _boundColumn.getEffectiveURL() :
+                _boundColumn.getURL();
         if (null != url)
             super.setURLExpression(url);
         setLinkTarget(_boundColumn.getURLTargetWindow());
