@@ -19,6 +19,7 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QuerySettings;
@@ -60,7 +61,7 @@ public class AuditController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()), AdminPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()), CanSeeAuditLogPermission.class);
     }
 
     @RequiresPermission(AdminPermission.class)
