@@ -164,7 +164,7 @@ public class PropertyManager
     {
         Container curContainer = c;
 
-        while (curContainer.isWorkbook())
+        while (curContainer != null && curContainer.isWorkbook())
             curContainer = curContainer.getParent();
 
         String value;
