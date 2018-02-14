@@ -27,7 +27,7 @@ QueryView.TextExportOptionsBean bean = (QueryView.TextExportOptionsBean)HttpView
     <tr><td>Variable&nbsp;Name:</td><td align="left"><input id="rstudio_variable_name" name=var value=""/></td></tr>
 </table>
 <table class="lk-fields-table">
-<tr><td colspan=2><button id="open_in_rstudio_button">Export to RStudio</button>&nbsp;<span id="rstudioStatus"></span></td></tr>
+<tr><td colspan=2><button class="labkey-button" id="open_in_rstudio_button">Export to RStudio</button>&nbsp;<span id="rstudioStatus"></span></td></tr>
 </table>
 <script type="text/javascript" >
 (function($, urlGenerateScript)
