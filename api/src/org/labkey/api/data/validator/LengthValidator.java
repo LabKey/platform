@@ -35,7 +35,7 @@ public class LengthValidator extends AbstractColumnValidator
         {
             String s = (String)value;
             if (s.length() > scale)
-                return "Value is too long for column '" + _columnName + "', a maximum length of " + scale + " is allowed.";
+                return "Value is too long for column '" + _columnName + "', a maximum length of " + scale + " is allowed. Supplied value was " + s.length() + " characters long.";
         }
 
         return null;
