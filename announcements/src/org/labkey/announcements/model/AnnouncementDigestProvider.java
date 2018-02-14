@@ -255,7 +255,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
                 int attachmentCount = ann.getAttachments().size();
                 sb.append("<tr><td>");
-                sb.append(ann.getCreatedByName(dailyDigestBean.includeGroups, dailyDigestBean.recipient, true));
+                sb.append(ann.getCreatedByName(dailyDigestBean.includeGroups, dailyDigestBean.recipient, true, true));
 
                 if (null == ann.getParent())
                 {

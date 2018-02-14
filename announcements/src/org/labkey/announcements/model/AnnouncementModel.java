@@ -180,12 +180,7 @@ public class AnnouncementModel extends Entity implements Serializable
         _parentId = parentId;
     }
 
-    public String getCreatedByName(User currentUser)
-    {
-        return getCreatedByName(false, currentUser, false);
-    }
-
-    public String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted)
+    public String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail)
     {
         String result = UserManager.getDisplayNameOrUserId(getCreatedBy(), currentUser);
 
@@ -198,7 +193,7 @@ public class AnnouncementModel extends Entity implements Serializable
                 Container container = ContainerManager.getForId(getContainerId());
                 String groupList = SecurityManager.getGroupList(container, user);
 
-                if (htmlFormatted)
+                if (htmlFormatted && !forEmail)
                 {
                     result = "<a class=\"announcement-title-link\" href=\"" +
                             PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, user.getUserId(), null)) +
