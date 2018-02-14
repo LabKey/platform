@@ -166,7 +166,6 @@ public class InputTag extends SimpleTagBase
             setIsReadOnly(false);
 
         input.contextContent(contextContent)
-            .className(className)
             .forceSmallContext(forceSmallContext)
             .formGroup(formGroup)
             .id(id)
@@ -185,6 +184,12 @@ public class InputTag extends SimpleTagBase
             .state(Input.State.get(state));
 
         FormTag form = (FormTag) findAncestorWithClass(this, FormTag.class);
+
+
+        if (className != null)
+            input.className(className);
+        else if (type != null && (type.equals("radio") || type.equals("checkbox")))
+            input.className(""); // prevent default className
 
         // special processing within a form
         if (form != null)
