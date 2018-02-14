@@ -93,6 +93,7 @@ announcements/src/org/labkey/announcements/update.jsp -text
 announcements/src/org/labkey/announcements/view/editTour.jsp -text
 announcements/webapp/announcements/EditTour.css -text
 announcements/webapp/announcements/EditTour.js -text
+announcements/webapp/announcements/discuss.css -text
 announcements/webapp/announcements/discuss.js -text
 audit/module.properties -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-14.10.sql -text

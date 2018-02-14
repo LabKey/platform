@@ -151,7 +151,7 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
             },
             success: function (response) {_onConvertSuccess(response, elementToUpdate)},
             failure: LABKEY.Utils.getCallbackWrapper(function(exceptionInfo) {
-                Ext4.Msg.alert('Error', 'Unable to convert your page to the new format for the following reason:<br/>' + exceptionInfo.exception);
+                LABKEY.Utils.alert('Error', 'Unable to convert your page to the new format for the following reason: ' + exceptionInfo.exception);
             }, this, true)
         });
     };

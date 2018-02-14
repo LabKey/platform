@@ -33,6 +33,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
+        dependencies.add("announcements/discuss.css");
         dependencies.add("announcements/discuss.js");
     }
 %>
@@ -106,7 +107,7 @@ if (settings.hasExpires())
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
                     <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
                 </div>
-                <div class="tab-pane form-control" style="height: 290px;" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
             </div>
         </td>
