@@ -497,7 +497,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     /**
-     * Returns all non-provisioned schemas claimed by the module in {@link:getSchemaNames()}. Override if a different
+     * Returns all non-provisioned schemas claimed by the module in {@link #getSchemaNames()}. Override if a different
      * set of schemas should be tested.
      */
     @Override
@@ -977,7 +977,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (StringUtils.isNotBlank(getLicenseUrl()))
             props.put("LicenseURL", getLicenseUrl());
         props.put("Extracted Path", getExplodedPath().getAbsolutePath());
-        props.put("Build Path", getBuildPath());
         props.put("VCS URL", getVcsUrl());
         props.put("VCS Revision", getVcsRevision());
         props.put("Build OS", getBuildOS());
