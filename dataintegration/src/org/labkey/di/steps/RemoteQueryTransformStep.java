@@ -34,6 +34,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.di.pipeline.TransformJobContext;
+import org.labkey.di.pipeline.TransformPipelineJob;
 import org.labkey.di.pipeline.TransformTaskFactory;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
@@ -43,7 +44,9 @@ import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -104,10 +107,12 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
             log.error("Invalid login credentials in the secure user store");
             return null;
         }
-
+        // Pass in named query parameters
+        Map<String, String> parameters = new HashMap<>();
+        ((TransformPipelineJob) getJob()).getTransformDescriptor().getDeclaredVariables().forEach((pd, o) -> parameters.put(pd.getName(), o.toString()));
         try
         {
-            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), url, user, password, container, meta.getSourceColumns());
+            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), url, user, password, container, meta.getSourceColumns(), parameters);
         }
         catch (IOException | CommandException exception)
         {
@@ -117,20 +122,20 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     }
 
     // Variant that takes valid, non-null credentials
-    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, @NotNull String user, @NotNull String password, String container, @Nullable List<String> columns)
+    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, @NotNull String user, @NotNull String password, String container, @Nullable List<String> columns, Map<String, String> parameters)
             throws IOException, CommandException
     {
-        return selectFromSource(new Connection(url, user, password), schemaName, queryName, container, columns);
+        return selectFromSource(new Connection(url, user, password), schemaName, queryName, container, columns, parameters);
     }
 
     // Version that connects as guest; for testing purposes only
     private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, String container)
             throws IOException, CommandException
     {
-        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container, null);
+        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container, null, Collections.emptyMap());
     }
 
-    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container, @Nullable List<String> columns)
+    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container, @Nullable List<String> columns, Map<String, String> parameters)
             throws IOException, CommandException
     {
         // connect to the remote server and retrieve an input stream
@@ -139,7 +144,10 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         {
             cmd.setColumns(columns);
         }
-
+        if (!parameters.isEmpty())
+        {
+            cmd.setQueryParameters(parameters);
+        }
         return SelectRowsStreamHack.go(cn, container, cmd);
     }
 
