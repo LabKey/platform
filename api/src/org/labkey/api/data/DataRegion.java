@@ -1506,6 +1506,7 @@ public class DataRegion extends DisplayElement
                     navtree.addChild(showUnselected);
                 }
 
+                // NOTE: This is replicated in the Paging Wigdet (Dataregion.js)
                 if (getShowRows() != ShowRows.ALL)
                 {
                     NavTree showAll = new NavTree("Show All");

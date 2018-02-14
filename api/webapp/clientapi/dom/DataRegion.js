@@ -1525,8 +1525,10 @@ if (!LABKEY.DataRegions) {
 
                     var showFirst = this.offset && this.offset > 0;
                     var showLast = !(low === 1 && high === this.totalRows) && (this.offset + this.maxRows <= this.totalRows);
+                    var showAll = showFirst || showLast;
                     var showFirstID = showFirst && LABKEY.Utils.id();
                     var showLastID = showLast && LABKEY.Utils.id();
+                    var showAllID = showAll && LABKEY.Utils.id();
 
                     var paginationText = low.toLocaleString() + ' - ' + high.toLocaleString();
 
@@ -1542,6 +1544,7 @@ if (!LABKEY.DataRegions) {
                             '<ul class="dropdown-menu dropdown-menu-left">',
                                 (showFirst ? '<li><a id="' + showFirstID + '" tabindex="0">Show first</a></li>' : '<li aria-disabled="true" class="disabled"><a>Show first</a></li>'),
                                 (showLast ? '<li><a id="' + showLastID + '" tabindex="0">Show last</a></li>' : '<li aria-disabled="true" class="disabled"><a>Show last</a></li>'),
+                                (showAll ? '<li><a id="' + showAllID + '" tabindex="0">Show all</a></li>' : '<li aria-disabled="true" class="disabled"><a>Show all</a></li>'),
                                 '<li class="dropdown-submenu"><a class="subexpand subexpand-icon" tabindex="0">Paging<i class="fa fa-chevron-right"></i></a>',
                                     '<ul class="dropdown-layer-menu">',
                                         '<li><a class="subcollapse" tabindex="3"><i class="fa fa-chevron-left"></i>Paging</a></li>',
@@ -1576,6 +1579,9 @@ if (!LABKEY.DataRegions) {
                     }
                     if (showLast) {
                         $('#' + showLastID).click(_lastPage.bind(this, showLast));
+                    }
+                    if (showAll) {
+                        $('#' + showAllID).click(_showRows.bind(this, this, 'all'));
                     }
 
                     for (var key in offsetIds) {
