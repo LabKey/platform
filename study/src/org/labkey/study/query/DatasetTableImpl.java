@@ -171,6 +171,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 });
 
                 column.setFk(new ParticipantForeignKey());
+                if (null == column.getURL())
+                    column.setURL(column.getFk().getURL(column));
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
