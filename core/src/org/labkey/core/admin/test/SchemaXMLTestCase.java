@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-@TestTimeout(120)
+@TestTimeout(240)
 public class SchemaXMLTestCase extends Assert
 {
     @Parameterized.Parameters(name = "{1}")
