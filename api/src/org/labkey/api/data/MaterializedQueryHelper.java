@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -121,7 +122,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private class SqlInvalidator extends Invalidator
     {
         final SQLFragment upToDateSql;
-        String result = null;
+        final AtomicReference<String> result = new AtomicReference<>();
 
         SqlInvalidator(SQLFragment sql)
         {
@@ -132,9 +133,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         @Override
         boolean stillValid(long createdTime)
         {
-            String prevResult = result;
-            result = new SqlSelector(scope, uptodateQuery).getObject(String.class);
-            return StringUtils.equals(prevResult,result);
+            String prevResult = result.get();
+            String newResult = new SqlSelector(scope, uptodateQuery).getObject(String.class);
+            if (StringUtils.equals(prevResult,newResult))
+                return true;
+            result.set(newResult);
+            return false;
         }
     }
 
@@ -159,7 +163,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private class SupplierInvalidator extends Invalidator
     {
         final Supplier<String> supplier;
-        String result = null;
+        final AtomicReference<String> result = new AtomicReference<>();
 
         SupplierInvalidator(Supplier<String> sup)
         {
@@ -169,9 +173,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         @Override
         boolean stillValid(long createdTime)
         {
-            String prevResult = result;
-            result = supplier.get();
-            return StringUtils.equals(prevResult,result);
+            String prevResult = result.get();
+            String newResult = supplier.get();
+            if (StringUtils.equals(prevResult,newResult))
+                return true;
+            result.set(newResult);
+            return false;
         }
     }
 
@@ -200,10 +207,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return eldest.getValue().created + maxTimeToCache < HeartBeat.currentTimeMillis();
         }
     };
-    public long lastUsed = HeartBeat.currentTimeMillis();
     // DEBUG variables
-    int countGetFromSql = 0;
-    int countSelectInto = 0;
+    final AtomicInteger countGetFromSql = new AtomicInteger();
+    final AtomicInteger countSelectInto = new AtomicInteger();
+    final AtomicLong lastUsed = new AtomicLong(HeartBeat.currentTimeMillis());
 
     boolean closed = false;
 
@@ -293,53 +300,58 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return null;
     }
 
-    public synchronized SQLFragment getFromSql(String tableAlias, Container c)
+    public SQLFragment getFromSql(String tableAlias, Container c)
     {
         if (null == selectQuery)
             throw new IllegalStateException("Must specify source query in constructor or in getFromSql()");
         return getFromSql(selectQuery, tableAlias, c);
     }
 
-    public synchronized SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias, Container c)
+    /* NOTE: we do not want to hold synchronized(this) while doing any SQL operations */
+    public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias, Container c)
     {
-        if (closed)
-            throw new IllegalStateException();
-        if (null != c)
-            throw new UnsupportedOperationException();
-
-        this.countGetFromSql++;
-        final long now = HeartBeat.currentTimeMillis();
-        final String txCacheKey = makeKey(scope.getCurrentTransaction(), c);
         Materialized materialized = null;
+        final String txCacheKey = makeKey(scope.getCurrentTransaction(), c);
+        final long now = HeartBeat.currentTimeMillis();
 
-        if (scope.isTransactionActive())
-            materialized = map.get(txCacheKey);
+        synchronized (this)
+        {
+            if (closed)
+                throw new IllegalStateException();
+            if (null != c)
+                throw new UnsupportedOperationException();
 
-        if (null == materialized)
-            materialized = map.get(makeKey(null,c));
+            this.countGetFromSql.incrementAndGet();
+
+            if (scope.isTransactionActive())
+                materialized = map.get(txCacheKey);
+
+            if (null == materialized)
+                materialized = map.get(makeKey(null, c));
+        }
 
         if (null != materialized)
         {
             boolean replace = false;
-            synchronized (materialized)
+            for (Invalidator i : materialized.invalidators)
             {
-                for (Invalidator i : materialized.invalidators)
-                {
-                    CacheCheck cc = i.checkValid(materialized.created);
-                    if (cc != CacheCheck.OK)
-                        replace = true;
-                }
+                CacheCheck cc = i.checkValid(materialized.created);
+                if (cc != CacheCheck.OK)
+                    replace = true;
             }
             if (replace)
             {
-                map.remove(materialized.cacheKey);
-                materialized = null;
+                synchronized (this)
+                {
+                    map.remove(materialized.cacheKey);
+                    materialized = null;
+                }
             }
         }
 
         if (null == materialized)
         {
-            this.countSelectInto++;
+            countSelectInto.incrementAndGet();
             DbSchema temp = DbSchema.getTemp();
             String name = prefix + "_" + GUID.makeHash();
             materialized = new Materialized(txCacheKey, now, "\"" + temp.getName() + "\".\"" + name + "\"");
@@ -360,7 +372,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 new SqlExecutor(scope).execute(StringUtils.replace(index,"${NAME}",name));
             }
 
-            map.put(materialized.cacheKey, materialized);
+            synchronized (this)
+            {
+                map.put(materialized.cacheKey, materialized);
+            }
         }
 
         if (scope.isTransactionActive())
@@ -368,7 +383,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             scope.getCurrentTransaction().addCommitTask(() -> map.remove(txCacheKey), DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
-        lastUsed = HeartBeat.currentTimeMillis();
+        lastUsed.set(HeartBeat.currentTimeMillis());
         SQLFragment sqlf = new SQLFragment(materialized.fromSql);
         if (!StringUtils.isBlank(tableAlias))
             sqlf.append(" " ).append(tableAlias);
