@@ -74,7 +74,7 @@
     if (hasTextComment) { %>
             <label style="text-decoration: underline">Comments</label>
     <% } %>
-            <div style="max-height:4em; overflow-y:hidden;"><%= text(html.toString()) %></div>
+            <div style="max-height:4em; overflow-y:hidden; word-break: break-all;"><%= text(html.toString()) %></div>
         </td>
     </tr>
 </table>
