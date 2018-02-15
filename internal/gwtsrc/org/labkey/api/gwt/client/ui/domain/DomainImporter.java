@@ -390,7 +390,8 @@ public class DomainImporter
             needGridAndButtons = true;
             grid = new DomainImportGrid(service, _domain);
             VerticalPanel gridPanel = new VerticalPanel();
-            gridPanel.add(new HTML("Showing first " + columns.get(0).getData().size() + " rows (uncheck column checkboxes to ignore import):<p>"));
+            gridPanel.add(new HTML("Uncheck a column to ignore it during import.<br/>"
+                    + "Showing first " + columns.get(0).getData().size() + " rows:<p>"));
             gridPanel.add(grid);
             mainPanel.add(gridPanel);
         }
