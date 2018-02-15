@@ -1119,18 +1119,36 @@ Ext4.define('File.panel.Browser', {
 
         // apply the gridConfig metadata, i.e. hidden and sortable state, if it exists
         if (json.config && json.config.gridConfig) {
-            var gridConfigColInfo = json.config.gridConfig.columns;
+            var gridConfigColInfo = json.config.gridConfig.columns.map(function(value, index){
+                value.ind = index;
+                return value;
+            });
+            finalColumns = finalColumns.map(function(value, index){
+                value.ind = index;
+                return value;
+            });
             for (i = 0; i < gridConfigColInfo.length; i++) {
                 var index = gridConfigColInfo[i].id - 1;
 
                 if (finalColumns[index]) {
                     finalColumns[index].hidden = gridConfigColInfo[i].hidden;
                     finalColumns[index].sortable = gridConfigColInfo[i].sortable;
+                    finalColumns[index].position = gridConfigColInfo[i].ind;
 
                     if (!json.canSeeFilePaths && 'absolutePath' == finalColumns[index].dataIndex)
                         finalColumns[index].hidden = true;    // Hide if user can't see file paths, even if customization showed it
                 }
             }
+            if (gridConfigColInfo.length > 0)
+                finalColumns.sort(function(a, b){
+                    if (a.position !== undefined && b.position !== undefined)
+                        return a.position - b.position;
+                    else if (a.position !== undefined)
+                        return -1;
+                    else if (b.position !== undefined)
+                        return 1;
+                    return a.ind - b.ind;
+                })
         }
 
         this.setDefaultColumns(finalColumns);

@@ -70,22 +70,7 @@ Ext4.define('File.panel.Toolbar', {
                 {id : 'emailPreferences', hideText : true, hideIcon : false},
                 {id : 'auditLog', hideText : false, hideIcon : false},
                 {id : 'customize', hideText : false, hideIcon : false}
-            ],
-            gridConfigs : {
-                columns : [
-                    {id : 1},
-                    {id : 2},
-                    {id : 3, sortable : true},                      // name
-                    {id : 4, sortable : true},                      // last modified
-                    {id : 5, sortable : true},                      // size
-                    {id : 6, sortable : true},                      // created by
-                    {id : 7, sortable : true},                      // description
-                    {id : 8, sortable : false, sortDisabled : true},                     // usages
-                    {id : 9, sortable : false, sortDisabled : true, hidden : true},      // download link
-                    {id : 10, sortable : false, sortDisabled : true, hidden : true},      // file extension
-                    {id : 11, sortable : false, sortDisabled : true, hidden : true}      // absolute path
-                ]
-            }
+            ]
         });
 
         Ext4.apply(config, {
@@ -147,38 +132,71 @@ Ext4.define('File.panel.Toolbar', {
         }, this);
 
         var columnData = [];
-        var baseColumnNames = ['Row Checker', 'File Icon', 'Name', 'Last Modified', 'Size', 'Created By', 'Description',
-                'Usages', 'Download Link', 'File Extension', 'Absolute File Path (permission required)'];
+        var customColumnNames = [];
         if (this.useCustomProps) {
             for (var i = 0; i < this.fileProperties.length; i++) {
                 if (this.fileProperties[i].label)
-                    baseColumnNames.push(this.fileProperties[i].label);
+                    customColumnNames.push(this.fileProperties[i].label);
                 else
-                    baseColumnNames.push(this.fileProperties[i].name);
+                    customColumnNames.push(this.fileProperties[i].name);
             }
         }
+        var defaultGridConfigs = {
+            columns : [
+                {id : 0, text: 'Row Checker'},
+                {id : 1, text: 'File Icon'},
+                {id : 2, sortable : true, text: 'Name'},                      // name
+                {id : 3, sortable : true, text: 'Last Modified'},                      // last modified
+                {id : 4, sortable : true, text: 'Size'},                      // size
+                {id : 5, sortable : true, text: 'Created By'},                      // created by
+                {id : 6, sortable : true, text: 'Description'},                      // description
+                {id : 7, sortable : false, sortDisabled : true, text: 'Usages'},                     // usages
+                {id : 8, sortable : false, sortDisabled : true, hidden : true, text: 'Download Link'},      // download link
+                {id : 9, sortable : false, sortDisabled : true, hidden : true, text: 'File Extension'},      // file extension
+                {id : 10, sortable : false, sortDisabled : true, hidden : true, text: 'Absolute File Path (permission required)'}      // absolute path
+            ]
+        };
+
+        if (this.gridConfigs)
+        {
+            if (this.gridConfigs.columns[1].text === undefined) //backward compatibility for old configs
+            {
+                var oldGridColumns = this.gridConfigs.columns;
+                for (var i = 0; i < oldGridColumns.length; i++)
+                {
+                    var gridColumn = oldGridColumns[i];
+                    var id = gridColumn.id;
+                    if (id)
+                    {
+                        if (id <defaultGridConfigs.columns.length)
+                        {
+                            var defaultColumn = defaultGridConfigs.columns[id];
+                            gridColumn.text = defaultColumn.text;
+                        }
+                        else if (id)
+                        {
+                            gridColumn.text = customColumnNames[id - defaultGridConfigs.columns.length];
+                        }
+                    }
+                }
+            }
+        }
+        else
+            this.gridConfigs = defaultGridConfigs;
+
 
         for (var i = 0; i < this.gridConfigs.columns.length; i++)
         {
-            if (this.gridConfigs.columns[i].id != i)
-                this.gridConfigs.columns[i].id = i;
-
-            if (this.gridConfigs.columns[i].id == 'checker' || this.gridConfigs.columns[i].id == 0)
+            var columnConfig = this.gridConfigs.columns[i];
+            if (columnConfig.id == 'checker' || columnConfig.id == 0)
                 continue;
-
-            columnData.push({
-                id   : this.gridConfigs.columns[i].id,
-                text : baseColumnNames[i],
-                hidden : this.gridConfigs.columns[i].hidden,
-                sortable : this.gridConfigs.columns[i].sortable,
-                sortDisabled : this.gridConfigs.columns[i].sortDisabled
-            });
+            columnData.push(this.gridConfigs.columns[i]);
         }
 
         // if we have custom file properties and they were not already included with the gridConfigs.columns, add them here
         for (var i = 0; i < this.fileProperties.length; i++)
         {
-            var index = i + 9;
+            var index = i + defaultGridConfigs.columns.length - 1;
             if (!columnData[index])
             {
                 columnData.push({
@@ -353,7 +371,7 @@ Ext4.define('File.panel.Toolbar', {
     getGridConfigs : function() {
         var columnsGrid = this.getComponent('columnsGrid'),
             gridConfigs = {
-                columns: [this.gridConfigs.columns[0]], // TODO: This should be removed or made more clear
+                columns: [],
                 importDataEnabled: this.gridConfigs.importDataEnabled
             };
 
@@ -362,6 +380,7 @@ Ext4.define('File.panel.Toolbar', {
                 id: item.get('id'),
                 hidden: item.get('hidden'),
                 sortable: item.get('sortable'),
+                text: item.get('text'),
                 // TODO: Setting ourselves up for failure with these i+1's
                 width: this.gridConfigs.columns[i+1] ? this.gridConfigs.columns[i+1].width : 80
             });
