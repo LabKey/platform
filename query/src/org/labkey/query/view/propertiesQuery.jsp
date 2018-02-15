@@ -24,7 +24,7 @@
 
 <labkey:errors />
 <labkey:form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
-    <table width="100%">
+    <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Name:</td>
             <td><input name="rename" value="<%=h(form.getQueryDef().getName())%>"></td>

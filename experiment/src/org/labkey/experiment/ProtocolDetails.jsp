@@ -25,7 +25,7 @@
     ExpProtocol protocol = me.getModelBean();
 %>
 
-<table>
+<table class="lk-fields-table">
     <tr>
         <td class="labkey-form-label">Name</td>
         <td><%= h(protocol.getName()) %></td>
