@@ -448,6 +448,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     // Deletes attachments & discussions, and removes list documents from full-text search index.
     public void deleteRelatedListData(final User user, final Container container)
     {
+        // Unindex all item docs and the entire list doc
+        ListManager.get().deleteIndexedList(_list);
+
         // Delete attachments and discussions associated with a list in batches of 1,000
         new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).forEachBatch(new ForEachBatchBlock<String>()
         {
@@ -464,9 +467,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 deleteRelatedListData(user, container, entityIds);
             }
         }, String.class, 1000);
-
-        // Unindex all item docs and the entire list doc
-        ListManager.get().deleteIndexedList(_list);
     }
 
     // delete the related list data for this block of entityIds

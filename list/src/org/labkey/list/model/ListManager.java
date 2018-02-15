@@ -753,8 +753,12 @@ public class ListManager implements SearchService.DocumentProvider
         deleteIndexedAttachments(list);
     }
 
-    private void deleteIndexedAttachments(ListDefinition list)
+    private void deleteIndexedAttachments(@NotNull ListDefinition list)
     {
+        // Can't delete attachments if list is already deleted
+        if (list == null)
+            return;
+
         AttachmentService as = AttachmentService.get();
 
         FieldKey entityIdKey = FieldKey.fromParts("EntityId");

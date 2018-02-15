@@ -513,6 +513,7 @@ public class ListDefinitionImpl implements ListDefinition
              ExperimentService.get().ensureTransaction())
         {
             // remove related attachments, discussions, and indices
+            ListManager.get().deleteIndexedList(this);
             if (qus instanceof ListQueryUpdateService)
                 ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
 
