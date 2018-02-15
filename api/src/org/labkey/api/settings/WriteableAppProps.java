@@ -172,6 +172,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(WEBFILES_ROOT_ENABLED, b);
     }
 
+    public void setFileUploadDisabled(boolean b)
+    {
+        storeBooleanValue(FILE_UPLOAD_DISABLED, b);
+    }
+
     public void setAdministratorContactEmail(String email)
     {
         storeStringValue(ADMINISTRATOR_CONTACT_EMAIL, email);

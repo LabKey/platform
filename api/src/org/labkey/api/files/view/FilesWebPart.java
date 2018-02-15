@@ -31,6 +31,7 @@ import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -260,7 +261,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (policy.hasPermission(user, InsertPermission.class))
         {
             actions.add(FilesForm.actions.editFileProps);
-            actions.add(FilesForm.actions.upload);
+            if (!PremiumService.get().isFileUploadDisabled())
+                actions.add(FilesForm.actions.upload);
         }
 
         if (canDisplayPipelineActions() && container.hasPermission(user, InsertPermission.class))

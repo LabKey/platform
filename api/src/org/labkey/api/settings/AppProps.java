@@ -228,4 +228,6 @@ public interface AppProps
 
     boolean isWebfilesRootEnabled();
 
+    boolean isFileUploadDisabled();
+
 }

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -102,6 +103,7 @@
             adminUser: <%=c.hasPermission(getUser(), AdminPermission.class)%>,
             statePrefix: <%=q(bean.getStatePrefix())%>,
             actions: buttonActions,
+            disableFileUpload: <%=PremiumService.get().isFileUploadDisabled()%>,
             autoResize: {
                 skipHeight: <%=!bean.isAutoResize()%>,
                 offsetY: 80,
