@@ -21,6 +21,8 @@ Ext4.define('File.panel.Toolbar', {
 
     useCustomProps: false,
 
+    disableFileUpload: false,
+
     constructor : function(config) {
 
         //
@@ -97,12 +99,14 @@ Ext4.define('File.panel.Toolbar', {
             refresh          : {icon : 'fa-refresh',      text : 'Refresh', used : false},
             renamePath       : {icon : 'fa-pencil',      text : 'Rename', used : false},
             folderTreeToggle : {icon : 'fa-sitemap', text : 'Toggle Folder Tree', used : false},
-            upload           : {icon : 'fa-file, fa-arrow-up labkey-fa-upload-files',      text : 'Upload Files', used : false}
+            upload           : {icon : 'fa-file, fa-arrow-up labkey-fa-upload-files',      text : 'Upload Files', used : false, notSupported: this.disableFileUpload}
         };
 
         var processedData = [];
         for (var i=0; i < this.tbarActions.length; i++) {
             var tbarAction = baseData[this.tbarActions[i].id];
+            if (tbarAction.notSupported)
+                continue;
             tbarAction.hideIcon = this.tbarActions[i].hideIcon;
             tbarAction.hideText = this.tbarActions[i].hideText;
             tbarAction.shown = !(this.tbarActions[i].hideIcon && this.tbarActions[i].hideText);
@@ -112,7 +116,7 @@ Ext4.define('File.panel.Toolbar', {
         }
 
         Ext4.iterate(baseData, function(id, data) {
-            if (data.used != true && data.used != null) {
+            if (data.used != true && data.used != null && !data.notSupported) {
                 data.hideIcon = false;
                 data.hideText = false;
                 data.shown = false;

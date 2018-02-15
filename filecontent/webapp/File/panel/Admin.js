@@ -94,6 +94,7 @@ Ext4.define('File.panel.Admin', {
                 gridConfigs: this.pipelineFileProperties.gridConfig,
                 useCustomProps: this.pipelineFileProperties.fileConfig === 'useCustom',
                 fileProperties: this.fileProperties,
+                disableFileUpload: this.disableFileUpload,
                 scope: this
             });
         }

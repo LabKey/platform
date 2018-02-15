@@ -53,6 +53,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -1178,6 +1179,9 @@ public class DavController extends SpringActionController
         @Override
         public WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
+            if (PremiumService.get().isFileUploadDisabled())
+                return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+
             WebdavResource resource = resolvePath();
             if (null == resource)
                 return notFound();
@@ -5011,7 +5015,7 @@ public class DavController extends SpringActionController
         User user = getUser();
         StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
 
-        boolean createResource = resource.canCreate(user,false);
+        boolean createResource = resource.canCreate(user,false) && !PremiumService.get().isFileUploadDisabled();
         boolean createCollection = resource.canCreateCollection(user,false);
 
         if (!resource.exists())

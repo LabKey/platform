@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.core.admin.FileListAction" %>
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -88,9 +89,23 @@
             <tr><td class="labkey-form-label">Enable _webfiles<%=helpPopup("_webfiles", "Alternative webdav tree with a compact representation of file root contents and child containers.")%></td>
                 <td><input type=checkbox id="webfilesEnabled" name="webfilesEnabled" <%=checked(bean.isWebfilesEnabled())%> style="margin-left: 10px;"></td>
             </tr>
-            <tr><td>&nbsp;</td></tr>
 
-            <td><%= button("Save").submit(true) %>&nbsp;
+        <%
+            if (PremiumService.get().isDisableFileUploadSupported()) {
+        %>
+            <tr><td colspan="2" class="labkey-announcement-title"><span>Disable file upload</span></td></tr>
+            <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
+            <tr><td colspan="2">Site level setting to enable/disable file upload.</td></tr>
+
+            <tr><td class="labkey-form-label">Disable file upload<%=helpPopup("Disable file upload", "If checked, file upload function through file browser and webdav will be disabled.")%></td>
+                <td><input type=checkbox id="fileUploadDisabled" name="fileUploadDisabled" <%=checked(bean.isFileUploadDisabled())%> style="margin-left: 10px;"></td>
+            </tr>
+        <%
+        }
+        %>
+
+        <tr><td>&nbsp;</td></tr>
+        <td><%= button("Save").submit(true) %>&nbsp;
                     <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
                 </td>
         <%

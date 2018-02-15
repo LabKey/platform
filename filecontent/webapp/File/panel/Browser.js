@@ -187,7 +187,10 @@ Ext4.define('File.panel.Browser', {
      * @cfg {Boolean} isWebDav
      */
     isWebDav : false,
-
+    /**
+     * @cfg {Boolean} disableFileUpload
+     */
+    disableFileUpload: false,
     /**
      * @cfg {Boolean} rootName
      */
@@ -604,19 +607,22 @@ Ext4.define('File.panel.Browser', {
                 scope: this
             });
 
-            this.actionsMap.upload = Ext4.create('File.panel.Action', {
-                text: 'Upload Files',
-                hardText: 'Upload Files',
-                itemId: 'upload',
-                fontCls: 'fa-file',
-                stacked: true,
-                stackedCls: 'fa-arrow-up labkey-fa-upload-files',
-                enableToggle: true,
-                pressed: this.showUpload && this.expandUpload,
-                handler : this.onUpload,
-                scope: this,
-                tooltip: 'Upload files or folders from your local machine to the server'
-            });
+            if (!this.disableFileUpload)
+            {
+                this.actionsMap.upload = Ext4.create('File.panel.Action', {
+                    text: 'Upload Files',
+                    hardText: 'Upload Files',
+                    itemId: 'upload',
+                    fontCls: 'fa-file',
+                    stacked: true,
+                    stackedCls: 'fa-arrow-up labkey-fa-upload-files',
+                    enableToggle: true,
+                    pressed: this.showUpload && this.expandUpload,
+                    handler : this.onUpload,
+                    scope: this,
+                    tooltip: 'Upload files or folders from your local machine to the server'
+                });
+            }
 
             this.actionsMap.folderTreeToggle = Ext4.create('File.panel.Action', {
                 text: 'Toggle Folder Tree',
@@ -3100,6 +3106,7 @@ Ext4.define('File.panel.Browser', {
                         fileProperties : json.fileProperties,
                         isPipelineRoot : this.isPipelineRoot,
                         containerPath : this.containerPath,
+                        disableFileUpload: this.disableFileUpload,
                         listeners: {
                             success: function(fileAdmin, updates) {
 

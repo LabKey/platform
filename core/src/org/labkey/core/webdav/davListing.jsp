@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -86,6 +87,7 @@
                 useHistory: true,
                 disableContextMenu: true,
                 fileSystem : fileSystem,
+                disableFileUpload: <%=PremiumService.get().isFileUploadDisabled()%>,
                 gridConfig : {
                     selModel: {
                         type: 'rowmodel',

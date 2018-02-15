@@ -25,6 +25,7 @@ public class FileSettingsForm
     private boolean _upgrade;
     private String _userRootPath;
     private boolean _webfilesEnabled;
+    private boolean _fileUploadDisabled;
 
     public String getRootPath()
     {
@@ -64,5 +65,15 @@ public class FileSettingsForm
     public void setWebfilesEnabled(boolean webfilesEnabled)
     {
         _webfilesEnabled = webfilesEnabled;
+    }
+
+    public boolean isFileUploadDisabled()
+    {
+        return _fileUploadDisabled;
+    }
+
+    public void setFileUploadDisabled(boolean fileUploadDisabled)
+    {
+        _fileUploadDisabled = fileUploadDisabled;
     }
 }

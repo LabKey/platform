@@ -31,10 +31,12 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.springframework.validation.BindException;
@@ -157,7 +159,20 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         {
             _svc.moveFileRoot(prev, _svc.getSiteDefaultRoot(), getUser(), getContainer());
         }
+
+        if (PremiumService.get().isDisableFileUploadSupported())
+        {
+            saveFileUploadDisabledSetting(form.isFileUploadDisabled());
+        }
+
         return true;
+    }
+
+    public void saveFileUploadDisabledSetting(boolean disabled)
+    {
+        WriteableAppProps props = AppProps.getWriteableInstance();
+        props.setFileUploadDisabled(disabled);
+        props.save();
     }
 
     private void upgradeExistingFileSets()
