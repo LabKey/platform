@@ -28,7 +28,6 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
@@ -71,6 +70,7 @@ import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.LineagePerfTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
@@ -117,7 +117,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 17.30;
+        return 17.31;
     }
 
     @Nullable
@@ -154,6 +154,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
                 "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
+
+        AdminConsole.addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, "Lineage performance improvements",
+                "This feature will turn on the lineage performance improvements", false);
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
@@ -375,7 +378,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 DomainPropertyImpl.TestCase.class,
                 ExpDataClassDataTestCase.class,
                 ExpSampleSetTestCase.class,
-                ExperimentServiceImpl.TestCase.class));
+                ExperimentServiceImpl.TestCase.class,
+                LineagePerfTest.class));
     }
 
     @NotNull

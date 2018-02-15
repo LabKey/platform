@@ -28,6 +28,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
@@ -495,7 +496,21 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             throw UnexpectedException.wrap(e);
         }
 
-        // Clean up DataInput and MaterialInput exp.object and properties
+        deleteInputObjects(svc, dialect);
+
+        deleteAppParametersAndInputs();
+
+        deleteRunMaterials(user);
+
+        deleteRunProtocolApps();
+
+        ExperimentRunGraph.clearCache(getContainer());
+        ExperimentServiceImpl.get().syncRunEdges(getRowId());
+    }
+
+    // Clean up DataInput and MaterialInput exp.object and properties
+    private void deleteInputObjects(ExperimentServiceImpl svc, SqlDialect dialect)
+    {
         OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
                 dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
                         "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
@@ -515,7 +530,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
                         "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
                 " FROM " + svc.getTinfoMaterialInput() + " WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+    }
 
+    private void deleteAppParametersAndInputs()
+    {
         String sql = " ";
         sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
 
@@ -532,16 +550,21 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
 
         new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
+    }
 
+    private void deleteRunMaterials(User user)
+    {
         for (ExpMaterial expMaterial : ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId()))
         {
             expMaterial.delete(user);
         }
-
-        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
-
-        ExperimentRunGraph.clearCache(getContainer());
     }
+
+    private void deleteRunProtocolApps()
+    {
+        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
+    }
+
 
     private synchronized void ensureFullyPopulated()
     {

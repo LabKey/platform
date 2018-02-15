@@ -5910,4 +5910,17 @@ public class ExperimentController extends SpringActionController
             return new ApiSimpleResponse(lineage.toJSON());
         }
     }
+
+    @RequiresPermission(AdminPermission.class)
+    @CSRF
+    public class RebuildEdgesAction extends MutatingApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            ExperimentServiceImpl.get().rebuildAllEdges();
+            return success();
+        }
+    }
+
 }

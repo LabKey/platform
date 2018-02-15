@@ -373,6 +373,9 @@ public class ExpGeneratorHelper
                 outputApp.addDataInput(job.getUser(), datas.get(uri), role);
             }
         }
+
+        ExperimentServiceImpl.get().syncRunEdges(run);
+
         return run;
     }
 

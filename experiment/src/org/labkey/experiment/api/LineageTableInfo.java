@@ -53,8 +53,9 @@ public class LineageTableInfo extends VirtualTable
     private @Nullable Integer _depth;
     private @Nullable String _expType;
     private @Nullable String _cpasType;
+    private boolean _veryNewHotness;
 
-    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
+    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType, boolean veryNewHotness)
     {
         super(schema.getDbSchema(), name, schema);
         _lsids = lsids;
@@ -66,13 +67,17 @@ public class LineageTableInfo extends VirtualTable
         _depth = depth;
         _expType = expType;
         _cpasType = cpasType;
+        _veryNewHotness = veryNewHotness;
 
         ColumnInfo selfLsid = new ColumnInfo(FieldKey.fromParts("self_lsid"), this, JdbcType.VARCHAR);
         selfLsid.setSqlTypeName("lsidtype");
         addColumn(selfLsid);
 
-        ColumnInfo selfRowId = new ColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
-        addColumn(selfRowId);
+        if (veryNewHotness)
+        {
+            ColumnInfo selfRowId = new ColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
+            addColumn(selfRowId);
+        }
 
         ColumnInfo depthCol = new ColumnInfo(FieldKey.fromParts("depth"), this, JdbcType.INTEGER);
         addColumn(depthCol);
@@ -114,7 +119,7 @@ public class LineageTableInfo extends VirtualTable
 
         return new LookupForeignKey("lsid") {
             @Override
-            public TableInfo getLookupTableInfo() { return new NodesTableInfo(_userSchema); }
+            public TableInfo getLookupTableInfo() { return new NodesTableInfo(_userSchema, _veryNewHotness); }
         };
     }
 
@@ -216,6 +221,7 @@ public class LineageTableInfo extends VirtualTable
         options.setExpType(_expType);
         if (_depth != null)
             options.setDepth(_depth);
+        options.setVeryNewHotness(_veryNewHotness);
 
         SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_lsids, options);
 
@@ -234,9 +240,12 @@ public class LineageTableInfo extends VirtualTable
      */
     private static class NodesTableInfo extends VirtualTable
     {
-        public NodesTableInfo(@Nullable UserSchema schema)
+        private boolean _veryNewHotness;
+
+        public NodesTableInfo(@Nullable UserSchema schema, boolean veryNewHotness)
         {
             super(schema.getDbSchema(), "Nodes", schema);
+            _veryNewHotness = veryNewHotness;
 
             ColumnInfo containerCol = new ColumnInfo(FieldKey.fromParts("Container"), this, JdbcType.VARCHAR);
             containerCol.setSqlTypeName("entityid");
@@ -267,13 +276,16 @@ public class LineageTableInfo extends VirtualTable
         public SQLFragment getFromSQL()
         {
             // Attempt to use materialized nodes table
-            ExperimentServiceImpl impl = ExperimentServiceImpl.get();
-            synchronized (impl.initEdgesLock)
+            if (!_veryNewHotness)
             {
-                if (impl.materializedEdges != null)
+                ExperimentServiceImpl impl = ExperimentServiceImpl.get();
+                synchronized (impl.initEdgesLock)
                 {
-                    SQLFragment temp = impl.materializedNodes.getFromSql(null, null);
-                    return new SQLFragment("SELECT * FROM ").append(temp);
+                    if (impl.materializedEdges != null)
+                    {
+                        SQLFragment temp = impl.materializedNodes.getFromSql(null, null);
+                        return new SQLFragment("SELECT * FROM ").append(temp);
+                    }
                 }
             }
 
@@ -286,12 +298,15 @@ public class LineageTableInfo extends VirtualTable
                     "UNION ALL\n" +
                     "\n" +
                     "SELECT container, CAST('Material' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
-                    "FROM exp.Material\n" +
-                    "\n" +
+                    "FROM exp.Material\n");
+            if (!_veryNewHotness)
+            {
+                    sql.append("\n" +
                     "UNION ALL\n" +
                     "\n" +
                     "SELECT container, CAST('ExperimentRun' AS VARCHAR(50)) AS exptype, CAST(NULL AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
                     "FROM exp.ExperimentRun\n");
+            }
             return sql;
         }
     }

@@ -773,6 +773,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-17.20-17.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.21-17.22.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.22-17.23.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.23-17.24.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-17.30-17.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -821,6 +822,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-17.20-17.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.21-17.22.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.22-17.23.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.23-17.24.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-17.30-17.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -889,6 +891,7 @@ experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java 
 experiment/src/org/labkey/experiment/FileLinkFileListener.java -text
 experiment/src/org/labkey/experiment/LSIDRelativizer.java -text
 experiment/src/org/labkey/experiment/LineageGraphDisplayColumn.java -text
+experiment/src/org/labkey/experiment/LineageManager.java -text
 experiment/src/org/labkey/experiment/MoveRunsBean.java -text
 experiment/src/org/labkey/experiment/NoPipelineRootSetView.java -text
 experiment/src/org/labkey/experiment/Parameters.jsp -text
@@ -961,12 +964,15 @@ experiment/src/org/labkey/experiment/api/Experiment.java -text
 experiment/src/org/labkey/experiment/api/ExperimentProtocolGraph.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRun.java -text
 experiment/src/org/labkey/experiment/api/ExperimentRunGraph.sql -text
+experiment/src/org/labkey/experiment/api/ExperimentRunGraph2.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRunGraphForLookup.sql -text
+experiment/src/org/labkey/experiment/api/ExperimentRunGraphForLookup2.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/IdentifiableEntity.java -text
 experiment/src/org/labkey/experiment/api/InputForeignKey.java -text
 experiment/src/org/labkey/experiment/api/LineageForeignKey.java -text
 experiment/src/org/labkey/experiment/api/LineageMethod.java -text
+experiment/src/org/labkey/experiment/api/LineagePerfTest.java -text
 experiment/src/org/labkey/experiment/api/LineageTableInfo.java -text
 experiment/src/org/labkey/experiment/api/LogDataType.java -text
 experiment/src/org/labkey/experiment/api/Material.java -text

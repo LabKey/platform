@@ -355,6 +355,7 @@ public class XarReader extends AbstractXarImporter
         for (ExpRun loadedRun : _loadedRuns)
         {
             ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
+            ExperimentService.get().syncRunEdges(loadedRun);
         }
     }
 

@@ -39,6 +39,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Collection;
 import java.util.Map;
@@ -197,5 +198,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 LOG.error("No MV column found for '" + prop.getName() + "' in table '" + domain.getName() + "'");
         }
         return mvColumn;
+    }
+
+    /** Called from exp-17.30-17.31.sql */
+    public static void rebuildAllEdges(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ExperimentServiceImpl.get().rebuildAllEdges();
     }
 }
