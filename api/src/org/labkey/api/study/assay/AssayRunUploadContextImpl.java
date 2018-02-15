@@ -170,7 +170,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private static Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties)
     {
         Map<DomainProperty, String> properties = new HashMap<>();
-        if (rawProperties != null && !rawProperties.isEmpty())
+        if (rawProperties != null)
         {
             for (DomainProperty prop : domain.getProperties())
             {
