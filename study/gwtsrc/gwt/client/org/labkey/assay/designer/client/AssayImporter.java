@@ -248,9 +248,8 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
         title.setStyleName("labkey-wp-title");
 
         //vPanel.add(title);
-        panel.add(new InlineHTML("These columns have been inferred from the uploaded file: <b>" + _file + "</b> and will be created as part of the assay definition. " +
-                "Uncheck the columns to ignore during the " +
-                "column creation step.<br/>"));
+        panel.add(new InlineHTML("These columns have been inferred from the uploaded file, <b>"
+                + _file + "</b>, and will be created as part of the assay definition."));
 
         panel.add(_domainImporter.getMainPanel());
     }
