@@ -444,9 +444,8 @@ public class SpecimenUtils
         Address[] notify = settings.getNewRequestNotifyAddresses();
         if (notify != null && notify.length > 0)
         {
-            SpecimenRequestEvent event = new SpecimenRequestEvent();
-            event.setContainer(getContainer());
-            event.setEntityId(request.getEntityId());
+            SpecimenRequestEvent event = SpecimenManager.getInstance().createRequestEvent(getUser(), request,
+                    SpecimenManager.RequestEventType.REQUEST_CREATED, null, Collections.emptyList());
             DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
                     "New Request Created", event, null, null, getViewContext());
             sendNotification(notification, true, errors);
