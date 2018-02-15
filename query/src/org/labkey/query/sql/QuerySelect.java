@@ -1745,13 +1745,17 @@ groupByLoop:
 
     private SelectColumn findColumnInSelectList(QueryRelation in, String colName)
     {
+        RelationColumn find = in.getColumn(colName);
+        if (null==find)
+            return null;
+
         for (SelectColumn sc : _columns.values())
         {
             QExpr expr = sc.getResolvedField();
             if (expr instanceof QField)
             {
                 QField f = (QField) expr;
-                if (f.getTable()==in && f.getName().equalsIgnoreCase(colName))
+                if (f._column == find)
                     return sc;
             }
         }
