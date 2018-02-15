@@ -365,6 +365,8 @@ LABKEY.Experiment = new function()
         lineage : function (config)
         {
             var params = {};
+            if (config.veryNewHotness !== undefined)
+                params.veryNewHotness = config.veryNewHotness;
             if (config.rowId)
                 params.rowId = config.rowId;
             else if (config.lsid)

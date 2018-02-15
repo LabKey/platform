@@ -289,6 +289,8 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             ExperimentService.get().onRunDataCreated(protocol, run, context.getContainer(), context.getUser());
         }
 
+        ExperimentService.get().syncRunEdges(run);
+
         return run;
     }
 

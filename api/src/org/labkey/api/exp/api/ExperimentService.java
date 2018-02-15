@@ -93,6 +93,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
     int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
 
+    String EXPERIMENTAL_LINEAGE_PERFORMANCE = "very-new-hotness";
+
     static ExperimentService get()
     {
         return ServiceRegistry.get(ExperimentService.class);
@@ -112,6 +114,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
     List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
     ExpRun createExperimentRun(Container container, String name);
+    void syncRunEdges(ExpRun run);
 
     ExpData getExpData(int rowid);
     ExpData getExpData(String lsid);

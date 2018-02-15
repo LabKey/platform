@@ -35,6 +35,8 @@ public class CPUTimer
 
 	private final String _name;
 	private long _cumulative = 0;
+    private long _min = Long.MAX_VALUE;
+    private long _max = Long.MIN_VALUE;
 	private long _start = 0;
 	private int _calls = 0;
 
@@ -72,7 +74,10 @@ public class CPUTimer
 		long stop = System.nanoTime();
 		if (stop > _start)
         {
-			_cumulative += (stop - _start);
+            long elapsed = (stop - _start);
+			_cumulative += elapsed;
+			_min = Math.min(_min, elapsed);
+			_max = Math.max(_max, elapsed);
 			_calls++;
         }
 		_start = 0;
@@ -94,6 +99,16 @@ public class CPUTimer
 	public long getTotal()
     {
         return _cumulative;
+    }
+
+    public long getMin()
+    {
+        return _min;
+    }
+
+    public long getMax()
+    {
+        return _max;
     }
 
 
@@ -120,10 +135,11 @@ public class CPUTimer
 
             StringBuilder sb = new StringBuilder();
             sb.append("TIMER SUMMARY: ").append(new Date().toString()).append("\n");
-			sb.append("  cumulative\t     average\t       calls\ttimer\n");
+            sb.append(header());
             for (CPUTimer cpuTimer : a)
             {
-                appendString(cpuTimer, sb);
+                sb.append(format(cpuTimer));
+                sb.append("\n");
             }
             logDebug(sb);
             return sb.toString();
@@ -133,25 +149,29 @@ public class CPUTimer
 
     private static final double msFactor = 1.0e-6;
 
-    public static void appendString(CPUTimer cpuTimer, StringBuilder sb)
+    public static String header()
     {
-        double ms = cpuTimer._cumulative * msFactor;
-        sb.append(ms);
-		sb.append("\t");
-		format((cpuTimer._calls == 0 ? 0 : ms / cpuTimer._calls), 12, sb);
-		sb.append("\t");
-		format(cpuTimer._calls, 12, sb);
-		sb.append("\t");
-		sb.append(cpuTimer._name);
+        return String.format("%20s\t%12s\t%12s\t%12s\t%12s\t%12s",
+            "", "cumulative", "min", "max", "average", "calls");
+    }
+
+    public static String format(CPUTimer t)
+    {
+        double ms = t._cumulative * msFactor;
+        return String.format("%20s\t%12f\t%12f\t%12f\t%12f\t%12d",
+                t._name,
+                ms,
+                t._min * msFactor,
+                t._max * msFactor,
+                (t._calls == 0 ? 0 : ms / t._calls),
+                t._calls);
     }
 
 
 	@Override
 	public String toString()
     {
-		StringBuilder sb = new StringBuilder();
-		appendString(this, sb);
-		return sb.toString();
+        return format(this);
     }
 
 

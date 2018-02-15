@@ -370,6 +370,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 throw new ExperimentException(errorMessage.toString());
             }
 
+            ExperimentService.get().syncRunEdges(run);
+
             transaction.commit();
             return batch;
         }
