@@ -22,6 +22,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -162,10 +164,24 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
         if (PremiumService.get().isDisableFileUploadSupported())
         {
-            saveFileUploadDisabledSetting(form.isFileUploadDisabled());
+            if (form.isFileUploadDisabled() != PremiumService.get().isFileUploadDisabled())
+            {
+                SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(ContainerManager.getRoot().getId(), "The setting for disable file upload was changed (see details).");
+                event.setChanges(getDisableFileUploadDiff(PremiumService.get().isFileUploadDisabled(), form.isFileUploadDisabled()));
+                AuditLogService.get().addEvent(getUser(), event);
+                saveFileUploadDisabledSetting(form.isFileUploadDisabled());
+            }
         }
 
         return true;
+    }
+
+    private String getDisableFileUploadDiff(boolean before, boolean after)
+    {
+        return "<table><tr><td class='labkey-form-label'>Disable file upload</td><td>" + String.valueOf(before) +
+                "&nbsp;&raquo;&nbsp;" +
+                String.valueOf(after) +
+                "</td></tr></table>";
     }
 
     public void saveFileUploadDisabledSetting(boolean disabled)
