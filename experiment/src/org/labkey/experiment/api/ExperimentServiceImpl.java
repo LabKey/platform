@@ -3426,8 +3426,10 @@ public class ExperimentServiceImpl implements ExperimentService
                     deleteRunsUsingInput(user, material.getDataObject());
                 }
 
-                SqlExecutor executor = new SqlExecutor(getExpSchema());
-                executor.execute("DELETE FROM " + getTinfoMaterialAliasMap() + " WHERE LSID = ?", material.getLSID());
+                SQLFragment deleteSql = new SQLFragment()
+                        .append("DELETE FROM ").append(String.valueOf(getTinfoMaterialAliasMap())).append(" WHERE LSID = ?;\n").add(material.getLSID())
+                        .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromLsid = ? OR toLsid = ?;").add(material.getLSID()).add(material.getLSID());
+                new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 OntologyManager.deleteOntologyObjects(container, material.getLSID());
             }
@@ -3528,8 +3530,10 @@ public class ExperimentServiceImpl implements ExperimentService
                     deleteRunsUsingInput(user, data);
                 }
 
-                SqlExecutor executor = new SqlExecutor(getExpSchema());
-                executor.execute("DELETE FROM " + getTinfoDataAliasMap() + " WHERE LSID = ?", data.getLSID());
+                SQLFragment deleteSql = new SQLFragment()
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?;\n").add(data.getLSID())
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromLsid = ? OR toLsid = ?;").add(data.getLSID()).add(data.getLSID());
+                new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 OntologyManager.deleteOntologyObjects(container, data.getLSID());
 
