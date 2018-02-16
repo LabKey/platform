@@ -9065,7 +9065,8 @@ public class AdminController extends SpringActionController
             //controller.new TestMothershipReportAction()
 
             // @RequiresPermission(AdminOperationsPermission.class)
-            assertForAdminOperationsPermission(user,
+            assertForAdminOperationsPermission(ContainerManager.getRoot(),user,
+                controller.new EmailTestAction(),
                 controller.new ShowNetworkDriveTestAction(),
                 controller.new DbCheckerAction(),
                 controller.new DoCheckAction(),
@@ -9093,7 +9094,6 @@ public class AdminController extends SpringActionController
                 controller.new ExportQueriesAction(),
                 controller.new MemTrackerAction(),
                 controller.new MemoryChartAction(),
-                controller.new EmailTestAction(),
                 controller.new FolderTypesAction(),
                 controller.new ShortURLAdminAction(),
                 controller.new CustomizeSiteAction(),
