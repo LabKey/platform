@@ -59,12 +59,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
 public class PageTemplate extends JspView<PageConfig>
 {
+    private static final Collection<String> ADMIN_WARNINGS = getNonVolatileAdminWarnings();
+
     private boolean isAppTemplate = false;
 
     protected PageTemplate(String template, PageConfig page)
@@ -172,6 +175,38 @@ public class PageTemplate extends JspView<PageConfig>
 
     }
 
+    // Check warning conditions that will never change while the server is running. No need to test these on every request.
+    private static Collection<String> getNonVolatileAdminWarnings()
+    {
+        List<String> warnings = new LinkedList<>();
+
+        //FIX: 9683
+        //show admins warning about inadequate heap size (<= 256Mb)
+        MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
+        long maxMem = membean.getHeapMemoryUsage().getMax();
+
+        if (maxMem > 0 && maxMem <= 256*1024*1024)
+        {
+            warnings.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
+                    "LabKey recommends " +
+                    new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least one gigabyte (-Xmx1024M)")
+                    + ".");
+        }
+
+        // Warn if running on a deprecated database version or some other non-fatal database configuration issue
+        DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(warnings);
+
+        if (!ModuleLoader.getInstance().getTomcatVersion().isSupported())
+        {
+            String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+            HelpTopic topic = new HelpTopic("supported");
+            warnings.add("The deployed version of Tomcat, " + serverInfo + ", is not supported." +
+                    " See the " + topic.getSimpleLinkHtml("Supported Technologies page") + " for more information.");
+        }
+
+        return warnings;
+    }
+
     private void buildWarnings(PageConfig page)
     {
         User user = getViewContext().getUser();
@@ -205,32 +240,7 @@ public class PageTemplate extends JspView<PageConfig>
                 page.addWarningMessage(upgradeMessage);
             }
 
-            //FIX: 9683
-            //show admins warning about inadequate heap size (<= 256Mb)
-            MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
-            long maxMem = membean.getHeapMemoryUsage().getMax();
-
-            if (maxMem > 0 && maxMem <= 268435456)
-            {
-                page.addWarningMessage("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
-                        "LabKey recommends " +
-                        new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least one gigabyte (-Xmx1024M)")
-                        + ".");
-            }
-
-            // Warn if running on a deprecated database version or some other non-fatal database configuration issue
-            List<String> sqlWarnings = new ArrayList<>();
-            DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(sqlWarnings);
-            if (sqlWarnings.size() > 0)
-                page.addWarningMessages(sqlWarnings);
-
-            if (!ModuleLoader.getInstance().getTomcatVersion().isSupported())
-            {
-                String serverInfo = ModuleLoader.getServletContext().getServerInfo();
-                HelpTopic topic = new HelpTopic("supported");
-                page.addWarningMessage("The deployed version of Tomcat, " + serverInfo + ", is not supported." +
-                        " See the " + topic.getSimpleLinkHtml("Supported Technologies page") + " for more information.");
-            }
+            page.addWarningMessages(ADMIN_WARNINGS);
         }
 
         if (AppProps.getInstance().isDevMode())
