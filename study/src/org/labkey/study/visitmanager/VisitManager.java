@@ -107,6 +107,17 @@ public abstract class VisitManager
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, logger);
     }
+    public void updateParticipantVisitsFromSpecimenImport(User user, @Nullable Logger logger)
+    {
+        updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
+    }
+    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
+                                        @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
+                                        @Nullable Logger logger)
+    {
+        updateParticipantVisits(user, changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants,
+                                participantVisitResyncRequired, false, logger);
+    }
 
     protected void info(@Nullable Logger logger, String message)
     {
@@ -123,9 +134,12 @@ public abstract class VisitManager
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
 * study. If null, all participants will be checked to see if they are still in the study.
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
+     * @param isSpecimenImport true if called from specimen import, which forces updateParticipantCohorts()
      * @param logger Log4j logger to use for detailed performance information
      */
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired, @Nullable Logger logger)
+    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
+                                        @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
+                                        boolean isSpecimenImport, @Nullable Logger logger)
     {
         info(logger, "Updating participants");
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
@@ -156,7 +170,7 @@ public abstract class VisitManager
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&
                 cohortDatasetId != null &&
-                    (participantVisitResyncRequired ||
+                    (isSpecimenImport ||
                     changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId))))
         {
             CohortManager.getInstance().updateParticipantCohorts(user, getStudy());

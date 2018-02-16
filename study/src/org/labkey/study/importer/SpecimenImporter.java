@@ -1265,7 +1265,7 @@ public class SpecimenImporter
         {
             StudyImpl study = StudyManager.getInstance().getStudy(_container);
             info("Updating study-wide subject/visit information...");
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.emptyList(), null, null, true, _logger);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsFromSpecimenImport(_user, _logger);
             info("Subject/visit update complete.");
         }
 
