@@ -134,7 +134,7 @@ function showPathname(filechooser, elementId)
             '</table>'
         ].join(''));
     }
-
+    LABKEY.setDirty(true);
     return true;
 }
 
