@@ -23,7 +23,7 @@ public enum TomcatVersion
     UNKNOWN(false),
     TOMCAT_7(true),
     TOMCAT_8(true),
-    TOMCAT_9(false);
+    TOMCAT_9(true);
 
     private final boolean _supported;
 
