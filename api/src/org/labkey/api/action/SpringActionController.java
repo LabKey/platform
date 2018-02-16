@@ -608,7 +608,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void beforeAction(Controller action)
+    protected void beforeAction(Controller action) throws ServletException
     {
     }
 

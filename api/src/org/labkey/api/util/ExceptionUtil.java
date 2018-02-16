@@ -646,6 +646,7 @@ public class ExceptionUtil
         {
             responseStatus = ((BadRequestException) ex).getStatus();
             message = ex.getMessage();
+            unhandledException = null;
         }
         else if (ex instanceof NotFoundException)
         {
@@ -725,11 +726,9 @@ public class ExceptionUtil
         }
 
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
-        if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED &&
-                responseStatus != HttpServletResponse.SC_FORBIDDEN &&
-                responseStatus != HttpServletResponse.SC_NOT_FOUND)
+        if (null != unhandledException && responseStatus != HttpServletResponse.SC_BAD_REQUEST)
         {
-            log.error("Unhandled exception: " + (null == message ? "" : message), ex);
+            log.error("Unhandled exception: " + message, unhandledException);
         }
 
         boolean isJSON = request.getContentType() != null && request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON);
