@@ -34,6 +34,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
@@ -54,6 +55,7 @@ import java.util.Set;
 import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 
 @TestWhen(TestWhen.When.WEEKLY)
+@TestTimeout(TestTimeout.DEFAULT * 10)
 public class LineagePerfTest extends Assert
 {
     private static final Logger LOG = Logger.getLogger(LineagePerfTest.class);
