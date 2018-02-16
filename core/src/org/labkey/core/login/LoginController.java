@@ -68,6 +68,7 @@ import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -104,6 +105,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 
 /**
@@ -127,6 +129,14 @@ public class LoginController extends SpringActionController
         PageConfig ret = super.defaultPageConfig();
         ret.setFrameOption(PageConfig.FrameOption.DENY);
         return ret;
+    }
+
+    @Override
+    protected void beforeAction(Controller action) throws ServletException
+    {
+        ActionURL url = getViewContext().getActionURL();
+        if (isNotBlank(url.getParameter("password")))
+            throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "password is not allowed on URL", null);
     }
 
     public static class LoginUrlsImpl implements LoginUrls
