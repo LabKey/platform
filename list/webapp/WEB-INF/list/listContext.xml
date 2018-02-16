@@ -13,7 +13,7 @@
             <list>
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
                     <constructor-arg value="listReloadTask"/>
-                    <property name="description" value="Reload list contents using a data file"/>
+                    <property name="description" value="Reload lists using data file"/>
                     <property name="protocolObjectId" value="list.listReload"/>
                     <property name="protocolName" value="List Reload"/>
                     <property name="protocolFactoryName" value="listReload"/>

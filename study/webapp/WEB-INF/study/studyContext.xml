@@ -112,7 +112,7 @@
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
                     <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.DatasetBatch"/>
                     <constructor-arg value="datasetImportTask"/>
-                    <property name="description" value="Import study datasets"/>
+                    <property name="description" value="Import/reload study datasets using data file"/>
                     <property name="protocolObjectId" value="study.datasetImport"/>
                     <property name="protocolName" value="Dataset Import"/>
                     <property name="protocolFactoryName" value="datasetImport"/>
@@ -137,7 +137,7 @@
 
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
                     <constructor-arg value="StudyReloadTask"/>
-                    <property name="description" value="Reload study archive"/>
+                    <property name="description" value="Reload study"/>
                     <property name="protocolObjectId" value="study.studyArchiveReload"/>
                     <property name="protocolName" value="Study Archive Reload"/>
                     <property name="protocolFactoryName" value="studyReload"/>
