@@ -25,7 +25,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -35,6 +35,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EmailNonUsersPermission;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
 import javax.mail.Address;
@@ -44,6 +45,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static java.lang.Boolean.TRUE;
 
 /**
  * User: klum
@@ -77,9 +80,12 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     public ApiResponse execute(MessageForm form, BindException errors) throws Exception
     {
-        JSONObject json = form.getJsonObject();
-        ApiSimpleResponse response = new ApiSimpleResponse();
+        if (TRUE == JdbcType.BOOLEAN.convert(System.getProperty("SendMessage.disable", "false")))
+            throw new NotFoundException("SendMessage is disabled");
 
+        JSONObject json = form.getJsonObject();
+        if (null == json)
+            json = new JSONObject();
         String from = json.getString(Props.msgFrom.name());
         String subject = json.getString(Props.msgSubject.name());
         JSONArray recipients;
@@ -116,6 +122,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
         MailHelper.send(msg, getUser(), getContainer());
 
+        ApiSimpleResponse response = new ApiSimpleResponse();
         response.put("success", true);
         return response;
     }
