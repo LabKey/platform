@@ -70,7 +70,6 @@ import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.LineagePerfTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
@@ -378,8 +377,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 DomainPropertyImpl.TestCase.class,
                 ExpDataClassDataTestCase.class,
                 ExpSampleSetTestCase.class,
-                ExperimentServiceImpl.TestCase.class,
-                LineagePerfTest.class));
+                ExperimentServiceImpl.TestCase.class
+                /*,LineagePerfTest.class*/));
     }
 
     @NotNull
