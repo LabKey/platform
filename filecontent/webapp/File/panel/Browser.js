@@ -314,6 +314,9 @@ Ext4.define('File.panel.Browser', {
                 // cache miss -- inflight
                 File.panel.Browser._pipelineConfigurationCache[containerPath].push({fn: cb, scope: scope, errorFn: errorCb});
             }
+            else if (scope && scope.isWebDav) {
+                Ext4.isFunction(cb) ? cb.call(scope, {}) : undefined
+            }
             else {
                 // prep cache
                 File.panel.Browser._pipelineConfigurationCache[containerPath] = [{fn: cb, scope: scope, errorFn: errorCb}];
@@ -1107,7 +1110,7 @@ Ext4.define('File.panel.Browser', {
 
             // initially populate the finalColumns array with the defaults
         var defaultColumns = this.getDefaultColumns();
-        var customColumns = json.fileProperties, i;
+        var customColumns = json.fileProperties ? json.fileProperties : [], i;
 
         for (i = 0; i < defaultColumns.length; i++) {
             finalColumns.push(defaultColumns[i]);
