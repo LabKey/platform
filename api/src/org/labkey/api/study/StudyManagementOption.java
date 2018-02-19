@@ -3,7 +3,7 @@ package org.labkey.api.study;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
-public abstract class StudyManagementOption
+public class StudyManagementOption
 {
     private String _title;
     private String _linkText;
@@ -12,9 +12,9 @@ public abstract class StudyManagementOption
 
     public StudyManagementOption(String title, String linkText, ActionURL linkUrl)
     {
-        this._title = title;
-        this._linkText = linkText;
-        this._linkUrl = linkUrl;
+        _title = title;
+        _linkText = linkText;
+        _linkUrl = linkUrl;
     }
 
     public String getDescription()
