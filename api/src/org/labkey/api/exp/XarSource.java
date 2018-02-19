@@ -28,12 +28,14 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +70,10 @@ public abstract class XarSource implements Serializable
 
     public abstract ExperimentArchiveDocument getDocument() throws XmlException, IOException;
 
+    @Deprecated
     public abstract File getRoot();
+
+    public abstract Path getRootPath();
 
     /**
      * Should be true if this was uploaded XML that was not part of a full XAR
@@ -91,9 +96,9 @@ public abstract class XarSource implements Serializable
             try
             {
                 URI uri = new URI(dataFileURL);
-                if ("file".equalsIgnoreCase(uri.getScheme()))
+                if ("file".equalsIgnoreCase(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
                 {
-                    urlToLookup = new File(uri).getPath();
+                    urlToLookup = FileUtil.uriToString(uri);
                 }
             }
             catch (IllegalArgumentException ignored) {}
@@ -107,7 +112,7 @@ public abstract class XarSource implements Serializable
 
     protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
 
-    public abstract File getLogFile() throws IOException;
+    public abstract File getLogFile() throws IOException;       // Log file always local file
 
     /**
      * Called before trying to import this XAR to let the source set up any resources that are required 
@@ -242,7 +247,12 @@ public abstract class XarSource implements Serializable
 
     public boolean allowImport(PipeRoot pr, Container container, File file)
     {
-        return pr != null && pr.isUnderRoot(file);
+        return allowImport(pr, container, file.toPath());
+    }
+
+    public boolean allowImport(PipeRoot pr, Container container, Path path)
+    {
+        return pr != null && pr.isUnderRoot(path);
     }
 
     @NotNull

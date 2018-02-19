@@ -28,6 +28,8 @@ import org.apache.xmlbeans.XmlException;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
 
 /**
  * User: jeckels
@@ -77,6 +79,11 @@ public abstract class AbstractFileXarSource extends XarSource
         return _xmlFile.getParentFile();
     }
 
+    public Path getRootPath()
+    {
+        return null != getRoot() ? getRoot().toPath() : null;
+    }
+
     public boolean shouldIgnoreDataFiles()
     {
         return false;
@@ -84,18 +91,22 @@ public abstract class AbstractFileXarSource extends XarSource
 
     public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
     {
-        File xarDirectory = getRoot();
-        File dataFile = new File(dataFileURL);
-        if (!dataFile.isAbsolute())
+        Path xarDirectory = getRootPath();
+        URI uri = FileUtil.createUri(dataFileURL);
+        if (!uri.isAbsolute())
         {
-            dataFile = new File(xarDirectory, dataFileURL);
-            String result = _dataFileURLs.get(dataFile.getAbsolutePath());
+            Path path = xarDirectory.resolve(dataFileURL);
+            String result = _dataFileURLs.get(FileUtil.getAbsolutePath(getXarContext().getContainer(), path));
             if (result != null)
             {
                 return result;
             }
+            return FileUtil.pathToString(FileUtil.getAbsoluteCaseSensitivePath(getXarContext().getContainer(), path.toUri()));
         }
-        return FileUtil.getAbsoluteCaseSensitiveFile(dataFile).toURI().toString();
+        else
+        {
+            return FileUtil.pathToString(FileUtil.getAbsoluteCaseSensitivePath(getXarContext().getContainer(), uri));
+        }
     }
 
     public static File getLogFileFor(File f) throws IOException

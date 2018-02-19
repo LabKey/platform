@@ -252,6 +252,22 @@ public class FileUtil
             return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri());
     }
 
+    public static String getAbsoluteCaseSensitivePathString(Container container, URI uri)
+    {
+        if (!FileUtil.hasCloudScheme(uri))
+            return getAbsoluteCaseSensitiveFile(new File(uri)).toURI().toString();
+        else
+            return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri());
+    }
+
+    public static Path getAbsoluteCaseSensitivePath(Container container, URI uri)
+    {
+        if (!FileUtil.hasCloudScheme(uri))
+            return getAbsoluteCaseSensitiveFile(new File(uri)).toPath();
+        else
+            return CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath();
+    }
+
     public static Path getPath(Container container, URI uri)
     {
         if (!FileUtil.hasCloudScheme(uri))
@@ -263,7 +279,7 @@ public class FileUtil
     public static URI createUri(String str)
     {
         str = str.replace("\\", "/");
-        if (str.matches("[A-z]:/.*"))
+        if (str.matches("^[A-z]:/.*"))
             return new File(str).toURI();
         
         if (str.startsWith("/"))
@@ -383,6 +399,12 @@ public class FileUtil
         return relativize(home, f, canonicalize).replace('\\', '/');
     }
 
+    public static String relativizeUnix(Path home, Path f, boolean canonicalize) throws IOException
+    {
+        if (!hasCloudScheme(home) && !hasCloudScheme(f))
+            return relativizeUnix(home.toFile(), f.toFile(), canonicalize);
+        return getPathStringWithoutAccessId(home.toUri().relativize(f.toUri()));
+    }
 
     /**
      * Break a path down into individual elements and add to a list.

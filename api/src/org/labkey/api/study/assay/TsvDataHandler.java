@@ -35,9 +35,11 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -109,11 +111,17 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     @Override
     public boolean hasContentToExport(ExpData data, File file)
     {
+        return hasContentToExport(data, null != file ? file.toPath() : null);
+    }
+
+    @Override
+    public boolean hasContentToExport(ExpData data, Path file)
+    {
         return data.isFinalRunOutput();
     }
 
     @Override
-    public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
+    public void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
     {
         if (data.isFinalRunOutput())
         {
@@ -138,7 +146,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                         {
                             TSVGridWriter writer = new TSVGridWriter(rs);
                             writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            File tempFile = File.createTempFile(FilenameUtils.getBaseName(dataFile.getName()), ".tsv");
+                            File tempFile = File.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
                             writer.write(tempFile);
                             writer.close();
                             FileUtils.copyFile(tempFile, out);

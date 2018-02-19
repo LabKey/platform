@@ -184,10 +184,4 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         deleteDataSql.append(" WHERE DataId = ?").add(data.getRowId());
         executor.execute(deleteDataSql);
     }
-
-    @Override
-    public void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
 }

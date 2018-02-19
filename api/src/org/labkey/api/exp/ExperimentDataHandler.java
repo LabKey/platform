@@ -22,12 +22,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -52,12 +54,21 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * owned by the module that holds the implementation of the ExperimentDataHandler.
      */
     void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException;
+    default void importFile(@NotNull ExpData data, Path dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException
+    {
+        if (FileUtil.hasCloudScheme(dataFile))
+            throw new ExperimentException(this.getClass().getName() + " does not support importFile on a cloud path");
+        importFile(data, dataFile.toFile(), info, log, context);
+    }
 
     /**
      * Stream the content of this data object. Typically this just streams the bytes of the file from disk, but could
      * create something based exclusively on what's in the database.
      */
     void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException;
+    default void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
+    {
+    }
 
     /** @return URL to the imported version of the data, like a grid view over a database table or a custom details page */
     @Nullable
@@ -77,8 +88,15 @@ public interface ExperimentDataHandler extends Handler<ExpData>
     void deleteData(ExpData data, Container container, User user);
 
     boolean hasContentToExport(ExpData data, File file);
+    default boolean hasContentToExport(ExpData data, Path file)
+    {
+        return false;
+    }
 
-    void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException;
+    default void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
+    {
+        // Do nothing
+    }
 
     void beforeMove(ExpData oldData, Container container, User user) throws ExperimentException;
 

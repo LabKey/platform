@@ -87,6 +87,7 @@ public interface PipeRoot extends SecurableResource
 
     /** @return whether the file specified is a child of the pipeline root */
     boolean isUnderRoot(File file);
+    boolean isUnderRoot(Path file);
 
     boolean hasPermission(Container container, User user, Class<? extends Permission> perm);
 
@@ -96,6 +97,9 @@ public interface PipeRoot extends SecurableResource
      * log files for some upgrade tasks, etc. Its contents are generally not exposed directly to the user */
     @NotNull
     File ensureSystemDirectory();
+
+    @NotNull
+    Path ensureSystemDirectoryPath();
 
     /** @return the entityId for this pipeline root, used to store permissions */
     String getEntityId();

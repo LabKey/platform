@@ -202,8 +202,15 @@ abstract public class PipelineProvider
      * @param rootDir the pipeline root directory on disk
      * @param systemDir the system directory itself
      */
+    @Deprecated
     public void initSystemDirectory(File rootDir, File systemDir)
-    {        
+    {
+        if (null != rootDir && null != systemDir)
+            initSystemDirectory(rootDir.toPath(), systemDir.toPath());
+    }
+
+    public void initSystemDirectory(Path rootDir, Path systemDir)
+    {
     }
 
     /**

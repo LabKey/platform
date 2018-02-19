@@ -55,11 +55,6 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
         // Do nothing
     }
 
-    public void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
-    {
-        // Do nothing
-    }
-
     public Handler.Priority getPriority(ExpData data)
     {
         return Handler.Priority.LOW;

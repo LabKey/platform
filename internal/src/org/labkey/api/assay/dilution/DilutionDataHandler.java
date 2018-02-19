@@ -609,11 +609,6 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return cutoffs;
     }
 
-    public void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not Yet Implemented");
-    }
-
     public ActionURL getContentURL(ExpData data)
     {
         ExpRun run = data.getRun();

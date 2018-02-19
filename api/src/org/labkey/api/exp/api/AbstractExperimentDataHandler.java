@@ -16,17 +16,19 @@
 
 package org.labkey.api.exp.api;
 
-import org.apache.commons.io.FileUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -42,11 +44,16 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
 
     public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
     {
+        exportFile(data, dataFile.toPath(), user, out);
+    }
+
+    public void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
+    {
         if (dataFile != null)
         {
             try
             {
-                FileUtils.copyFile(dataFile, out);
+                Files.copy(dataFile, out);
             }
             catch (IOException e)
             {
@@ -61,7 +68,17 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
 
     public boolean hasContentToExport(ExpData data, File file)
     {
-        return NetworkDrive.exists(file) && file.isFile();
+        return hasContentToExport(data, file.toPath());
+    }
+
+    public boolean hasContentToExport(ExpData data, Path path)
+    {
+        if (!FileUtil.hasCloudScheme(path))
+        {
+            File file = path.toFile();
+            return NetworkDrive.exists(file) && file.isFile();
+        }
+        return Files.exists(path) && !Files.isDirectory(path);
     }
 
     public void beforeMove(ExpData oldData, Container container, User user) throws ExperimentException
