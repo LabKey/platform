@@ -134,7 +134,7 @@ public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
     private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
-    private static List<StudyManagementOption> _managementOptions;
+    private static List<StudyManagementOption> _managementOptions = new ArrayList<>();
 
     private StudyServiceImpl() {}
 
@@ -1161,18 +1161,12 @@ public class StudyServiceImpl implements StudyService
     @NotNull
     public List<StudyManagementOption> getManagementOptions()
     {
-        if (null == _managementOptions)
-            return Collections.emptyList();
-
         return _managementOptions;
     }
 
     @Override
     public void registerManagementOption(StudyManagementOption option)
     {
-        if (_managementOptions == null)
-            _managementOptions = new ArrayList<>();
-
         _managementOptions.add(option);
     }
 }

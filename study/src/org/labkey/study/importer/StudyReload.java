@@ -288,7 +288,7 @@ public class StudyReload
                 Container c = ContainerManager.getForId(studyContainerId);
                 String message = null != c ? " in folder " + c.getPath() : "";
 
-                LOG.error("Study reload failed" + message, ie);
+                LOG.error("Study reload failed: " + message, ie);
             }
             catch (Throwable t)
             {
