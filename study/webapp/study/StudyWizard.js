@@ -1540,6 +1540,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     {name : 'createdByUserId',      type : 'int'},
                     {name : 'type'},
                     {name : 'icon'},
+                    {name : 'iconCls'},
                     {name : 'description'},
                     {name : 'schemaName'},
                     {name : 'queryName'},
@@ -1568,10 +1569,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 {header: 'Name', width: 200, sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode},
                 {header: 'Category', width: 120, sortable: true, dataIndex:'category', renderer: Ext.util.Format.htmlEncode},
                 {header: 'Type', width: 60, sortable: true, dataIndex: 'type', renderer : function(v, meta, rec) {
+                    var imgText;
+                    if (rec.data.iconCls) {
+                        imgText = '<div class="' + rec.data.iconCls + '"/>';
+                    }
+                    else {
+                        imgText = '<img title="' + rec.data.type + '" src="' + rec.data.icon + '" alt="' + rec.data.type +'" height="16px" width="16px">';
+                    }
                     return '<div style="margin-left: auto; margin-right: auto; width: 30px; vertical-align: middle;">' +
-                                '<img title="' + rec.data.type + '" src="' + rec.data.icon + '" alt="' + rec.data.type +'" height="16px" width="16px">' +
-                           '</div>';
-                }
+                                imgText +'</div>';
+                    }
                 },
                 {header: 'Description', sortable: true, dataIndex: 'description', renderer: Ext.util.Format.htmlEncode}
             ],
