@@ -17,15 +17,15 @@
 package org.labkey.experiment.pipeline;
 
 import org.labkey.api.pipeline.*;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
 
-import java.io.File;
+
 import java.io.IOException;
-import java.io.FileNotFoundException;
 
 /**
  * User: jeckels
@@ -41,10 +41,13 @@ public class MoveRunsPipelineJob extends PipelineJob
         super(ExperimentPipelineProvider.NAME, info, root);
         _runIds = runIds;
         _sourceContainer = sourceContainer;
-        File moveRunLogsDir = ExperimentPipelineProvider.getMoveDirectory(root);
-        moveRunLogsDir.mkdirs();
-        File logFile = File.createTempFile("moveRun", ".log", moveRunLogsDir);
-        setLogFile(logFile);
+
+        String baseLogFileName = FileUtil.makeFileNameWithTimestamp("moveRun", ".log");
+        LocalDirectory localDirectory = LocalDirectory.create(root, ExperimentService.MODULE_NAME, baseLogFileName,
+                root.isCloudRoot() ? FileUtil.getTempDirectory().getPath() : FileUtil.getAbsolutePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(root)));
+
+        setLocalDirectory(localDirectory);
+        setLogFile(localDirectory.determineLogFile());
 
         getLogger().info(getDescription());
         for (int runId : _runIds)

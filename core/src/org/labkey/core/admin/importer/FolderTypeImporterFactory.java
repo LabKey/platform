@@ -51,7 +51,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         return new FolderTypeImporter();
     }
 
-    public class FolderTypeImporter implements  FolderImporter<FolderDocument.Folder>
+    public class FolderTypeImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()

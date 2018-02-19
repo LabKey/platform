@@ -68,12 +68,13 @@ import org.labkey.experiment.xar.XarExportSelection;
 import org.w3c.dom.Document;
 
 import javax.xml.namespace.QName;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -174,8 +175,8 @@ public class XarExporter
 
         ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
 
-        File rootPath = FileUtil.getAbsoluteCaseSensitiveFile(data.getFile().getParentFile());
-        u.addFile(data, data.getFile(), "", rootPath, data.findDataHandler(), _user);
+        Path rootPath = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), data.getFilePath().getParent().toUri());
+        u.addFile(data, data.getFilePath(), "", rootPath, data.findDataHandler(), _user);
     }
 
     public void addExperimentRun(ExpRun run) throws ExperimentException
@@ -334,7 +335,7 @@ public class XarExporter
             }
 
             ExpDataImpl expData = new ExpDataImpl(data);
-            String url = _urlRewriter.rewriteURL(expData.getFile(), expData, roleName, run, _user);
+            String url = _urlRewriter.rewriteURL(expData.getFilePath(), expData, roleName, run, _user);
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
                 if (url != null && !"".equals(url))
@@ -379,7 +380,7 @@ public class XarExporter
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
                 // include a file path in the export, though.  We use the name of the data object as the file name.
                 if (data.getDataFileUrl() == null && data.isFinalRunOutput())
-                    data.setDataFileURI(new File(run.getFilePathRoot(), data.getName()).toURI());
+                    data.setDataFileURI(run.getFilePathRootPath().resolve(data.getName()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
             }
@@ -690,11 +691,11 @@ public class XarExporter
         xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
-        File f = data.getFile();
+        Path path = data.getFilePath();
         String url = null;
-        if (f != null)
+        if (path != null)
         {
-            url = _urlRewriter.rewriteURL(f, data, role, run, _user);
+            url = _urlRewriter.rewriteURL(path, data, role, run, _user);
         }
         xData.setName(data.getName());
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
@@ -953,12 +954,12 @@ public class XarExporter
                             try
                             {
                                 URI uri = new URI(link);
-                                if (uri.getScheme().equals("file"))
+                                if (uri.getScheme().equals("file") || FileUtil.hasCloudScheme(uri))
                                 {
-                                    File f = new File(uri);
-                                    if (f.exists())
+                                    Path path = FileUtil.getPath(parentContainer, uri);
+                                    if (Files.exists(path))
                                     {
-                                        link = _urlRewriter.rewriteURL(f, null, null, null, _user);
+                                        link = _urlRewriter.rewriteURL(path, null, null, null, _user);
                                     }
                                 }
                             }

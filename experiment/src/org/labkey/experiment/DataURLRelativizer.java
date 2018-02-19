@@ -24,8 +24,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * Options for how exp.data URL references can be exported in a XAR.
@@ -41,20 +41,12 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun, User user) throws ExperimentException
+                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun experimentRun, User user) throws ExperimentException
                 {
-                    try
-                    {
-                        if (f == null)
-                        {
-                            return null;
-                        }
-                        return f.getCanonicalPath();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new ExperimentException(e);
-                    }
+                    if (path == null)
+                        return null;
+
+                     return FileUtil.pathToString(path);
                 }
             };
         }
@@ -76,19 +68,18 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, String roleName, ExpRun expRun, User user) throws ExperimentException
+                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user) throws ExperimentException
                 {
                     try
                     {
-                        if (f == null)
-                        {
+                        if (path == null)
                             return null;
-                        }
+
                         if (expRun == null || expRun.getFilePathRoot() == null)
                         {
-                            return f.getCanonicalPath();
+                            return FileUtil.pathToString(path);
                         }
-                        return FileUtil.relativizeUnix(expRun.getFilePathRoot(), f, false);
+                        return FileUtil.relativizeUnix(expRun.getFilePathRootPath(), path, false);
                     }
                     catch (IOException e)
                     {
@@ -105,12 +96,11 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(File f, ExpData data, String roleName, ExpRun experimentRun, User user)
+                public String rewriteURL(Path f, ExpData data, String roleName, ExpRun experimentRun, User user)
                 {
                     if (data == null)
-                    {
                         return null;
-                    }
+
                     ActionURL dataURL = new ActionURL(ExperimentController.ShowFileAction.class, data.getContainer());
                     dataURL.addParameter("rowId", Integer.toString(data.getRowId()));
                     return dataURL.getURIString();

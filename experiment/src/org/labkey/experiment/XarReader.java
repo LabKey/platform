@@ -66,17 +66,17 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
+import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
 
 import javax.xml.namespace.QName;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -119,7 +119,7 @@ public class XarReader extends AbstractXarImporter
 
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
     {
-        FileOutputStream fos = null;
+        OutputStream fos = null;
 
         try
         {
@@ -137,8 +137,8 @@ public class XarReader extends AbstractXarImporter
             _experimentArchive = document.getExperimentArchive();
             loadDoc(reloadExistingRuns);
 
-            File expDir = new File(_xarSource.getRoot(), "export");
-            if (expDir.exists() && expDir.isDirectory() &&
+            Path expDir = _xarSource.getRootPath().resolve("export");
+            if (Files.exists(expDir) && Files.isDirectory(expDir) &&
                 _experimentArchive.getExperimentRuns() != null && _experimentArchive.getExperimentRuns().getExperimentRunArray().length > 0)
             {
                 ExperimentRunType a = _experimentArchive.getExperimentRuns().getExperimentRunArray(0);
@@ -147,7 +147,7 @@ public class XarReader extends AbstractXarImporter
                 for (int i = a.getExperimentLog().getExperimentLogEntryArray().length - 1; i >= 0; i--)
                     a.getExperimentLog().removeExperimentLogEntry(i);
 
-                fos = new FileOutputStream(new File(expDir, "experiment.xar.xml"));
+                fos = Files.newOutputStream(expDir.resolve("experiment.xar.xml"));
                 XmlOptions xOpt = new XmlOptions().setSavePrettyPrint();
                 document.save(fos, xOpt);
             }
@@ -339,12 +339,13 @@ public class XarReader extends AbstractXarImporter
         {
             for (DeferredDataLoad deferredDataLoad : _deferredDataLoads)
             {
-                if (deferredDataLoad.getData().getFile() == null)
+                Path path = deferredDataLoad.getData().getFilePath();
+                if (path == null)
                     continue;
-                else if (deferredDataLoad.getData().getFile().exists())
+                else if (Files.exists(path))
                     deferredDataLoad.getData().importDataFile(_job, _xarSource);
                 else
-                    getLog().warn("Data file " + deferredDataLoad.getData().getFile() + " does not exist and could not be loaded.");
+                    getLog().warn("Data file " + FileUtil.getFileName(path) + " does not exist and could not be loaded.");
             }
         }
         catch (SQLException e)
@@ -751,7 +752,7 @@ public class XarReader extends AbstractXarImporter
             vals.setProtocolLSID(runProtocolLSID);
             vals.setComments(trimString(a.getComments()));
 
-            vals.setFilePathRoot(_xarSource.getRoot().getPath());
+            vals.setFilePathRoot(FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
 
             run = Table.insert(getUser(), tiExperimentRun, vals);
@@ -1116,28 +1117,24 @@ public class XarReader extends AbstractXarImporter
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
         if (expData != null)
         {
-            File existingFile = expData.getFile();
+            Path existingFile = expData.getFilePath();
             String uri = _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
-            if (uri != null && existingFile != null && existingFile.isFile())
+            if (uri != null && existingFile != null && !Files.isDirectory(existingFile))
             {
-                try
+                Path newFile = FileUtil.stringToPath(context.getContainer(), uri);
+                if (null == newFile)
+                    throw new ExperimentException("Unable to create path from URI: " + uri);
+
+                if (!Files.isDirectory(newFile) && !newFile.equals(existingFile))
                 {
-                    File newFile = new File(new URI(uri));
-                    if (newFile.isFile() && !newFile.equals(existingFile))
+                    byte[] existingHash = hashFile(existingFile);
+                    byte[] newHash = hashFile(newFile);
+                    if (!Arrays.equals(existingHash, newHash))
                     {
-                        byte[] existingHash = hashFile(existingFile);
-                        byte[] newHash = hashFile(newFile);
-                        if (!Arrays.equals(existingHash, newHash))
-                        {
-                            throw new ExperimentException("The data file with LSID " + dataLSID + " (referenced as "
-                                    + xbData.getAbout() + " in the xar.xml, does not have the same contents as the " +
-                                    "existing data file that has already been loaded.");
-                        }
+                        throw new ExperimentException("The data file with LSID " + dataLSID + " (referenced as "
+                                + xbData.getAbout() + " in the xar.xml, does not have the same contents as the " +
+                                "existing data file that has already been loaded.");
                     }
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new ExperimentException(e);
                 }
             }
 
@@ -1157,7 +1154,12 @@ public class XarReader extends AbstractXarImporter
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));
             data.setCpasType(declaredType);
-            data.setContainer(getContainer());
+
+            // This existing hack is that newData has the source URL, but the dest container
+            // We change to set it with the source container here -- Handler must change the container along with the dataFileURL (Dave 2/15/18)
+            data.setContainer(_job instanceof MoveRunsPipelineJob ?
+                    ((MoveRunsPipelineJob)_job).getSourceContainer() :
+                    getContainer());
 
             if (null != sourceApplicationId)
             {
@@ -1187,8 +1189,8 @@ public class XarReader extends AbstractXarImporter
                 {
                     if (ORIGINAL_URL_PROPERTY.equals(simpleValue.getOntologyEntryURI()) && ORIGINAL_URL_PROPERTY_NAME.equals(simpleValue.getName()))
                     {
-                        File f = expData.getFile();
-                        if (f != null)
+                        Path path = expData.getFilePath();
+                        if (path != null)
                         {
                             getRootContext().addData(new ExpDataImpl(data), simpleValue.getStringValue());
                         }
@@ -1215,9 +1217,9 @@ public class XarReader extends AbstractXarImporter
         return expData.getDataObject();
     }
 
-    private byte[] hashFile(File existingFile) throws ExperimentException
+    private byte[] hashFile(Path existingFile) throws ExperimentException
     {
-        try (FileInputStream fIn = new FileInputStream(existingFile))
+        try (InputStream fIn =  Files.newInputStream(existingFile))
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
             DigestInputStream dIn = new DigestInputStream(fIn, digest);
@@ -1349,13 +1351,13 @@ public class XarReader extends AbstractXarImporter
                     try
                     {
                         String fullPath = _xarSource.getCanonicalDataFileURL(relativePath);
-                        File file = new File(new URI(fullPath));
-                        if (file.exists())
+                        Path file = FileUtil.stringToPath(getContainer(), fullPath);
+                        if (Files.exists(file))
                         {
                             objectProp.setStringValue(fullPath);
                         }
                     }
-                    catch (URISyntaxException | XarFormatException ignored)
+                    catch (XarFormatException ignored)
                     {
                         // That's OK, don't treat the value as a relative path to the file
                     }

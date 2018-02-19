@@ -470,28 +470,30 @@ public class ExperimentServiceImpl implements ExperimentService
         if (data == null)
         {
             // Have to make a new one
-            String path = FileUtil.uriToString(uri);
-            String[] parts = path.split("/");
+            String pathStr = FileUtil.uriToString(uri);
+            String[] parts = pathStr.split("/");
             String name = FileUtil.decodeSpaces(parts[parts.length - 1]);
+            Path path = FileUtil.getPath(source.getXarContext().getContainer(), uri);
 
-/*            if (f != null)
+            if (path != null)
             {
                 try
                 {
-                    f = new File(new URI(source.getCanonicalDataFileURL(f.getAbsolutePath())));
-                    path = FileUtil.relativizeUnix(source.getRoot(), f, false);
+                    path = FileUtil.stringToPath(source.getXarContext().getContainer(),
+                            source.getCanonicalDataFileURL(FileUtil.getAbsolutePath(source.getXarContext().getContainer(), path)));
+                    pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
                 }
-                catch (URISyntaxException | IOException e)
+                catch (IOException e)
                 {
-                    path = f.toString();
+                    pathStr = FileUtil.pathToString(path);
                 }
             }
             else
             {
-                path = FileUtil.uriToString(uri);
-            }   */
+                pathStr = FileUtil.uriToString(uri);
+            }
 
-            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(path, source.getXarContext().getContainer(), source)));
+            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(pathStr, source.getXarContext().getContainer(), source)));
             int version = 1;
             do
             {

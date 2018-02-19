@@ -47,9 +47,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -146,21 +146,39 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public File ensureSystemDirectory()
     {
-        File root = getRootPath();
-        File systemDir = new File(root, SYSTEM_DIRECTORY_NAME);
-        if (!NetworkDrive.exists(systemDir))
+        Path path = ensureSystemDirectoryPath();
+        if (FileUtil.hasCloudScheme(path))
+            throw new RuntimeException("System Dir is not on file system.");
+        return path.toFile();
+    }
+
+    @NotNull
+    public Path ensureSystemDirectoryPath()
+    {
+        Path root = getRootNioPath();
+        Path systemDir = root.resolve(SYSTEM_DIRECTORY_NAME);
+        if (!Files.exists(systemDir))
         {
-            systemDir.mkdirs();
-
-            File systemDirLegacy = new File(root, SYSTEM_DIRECTORY_LEGACY);
-            if (systemDirLegacy.exists())
+            try
             {
-                for (File f : systemDirLegacy.listFiles())
-                    f.renameTo(systemDir);
-            }
+                Files.createDirectories(systemDir);
 
-            for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
-                provider.initSystemDirectory(root, systemDir);
+                Path systemDirLegacy = root.resolve(SYSTEM_DIRECTORY_LEGACY);
+                if (Files.exists(systemDirLegacy))
+                {
+                    // Legacy means it must be on file system
+                    File legacyDir = systemDirLegacy.toFile();
+                    for (File f : legacyDir.listFiles())
+                        f.renameTo(systemDir.toFile());
+                }
+
+                for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
+                    provider.initSystemDirectory(root, systemDir);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
 
         return systemDir;
@@ -419,6 +437,11 @@ public class PipeRootImpl implements PipeRoot
     public boolean isUnderRoot(File file)
     {
         return findRootPath(file) != null;
+    }
+
+    public boolean isUnderRoot(Path path)
+    {
+        return findRootPath(path) != null;
     }
 
     // UNDONE: need wrappers for file download/upload permissions

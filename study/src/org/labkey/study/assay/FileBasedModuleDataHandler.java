@@ -63,9 +63,4 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
     }
-
-    public void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException
-    {
-        // We don't import these data files directly so no need to delete them
-    }
 }

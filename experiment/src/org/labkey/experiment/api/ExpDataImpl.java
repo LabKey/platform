@@ -276,8 +276,14 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public boolean isFileOnDisk()
     {
-        File f = getFile();
-        return f != null && NetworkDrive.exists(f) && f.isFile();
+        java.nio.file.Path f = getFilePath();
+        if (f != null)
+            if (!FileUtil.hasCloudScheme(f))
+                return NetworkDrive.exists(f.toFile()) && !Files.isDirectory(f);
+            else
+                return Files.exists(f);
+        else
+            return false;
     }
 
     public boolean isPathAccessible()
@@ -343,48 +349,41 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             return;
         }
 
+        job.debug("Trying to load data file " + dataFileURL + " into the system");
+
+        java.nio.file.Path path = FileUtil.stringToPath(getContainer(), dataFileURL);
+
+        if (!Files.exists(path))
+        {
+            job.debug("Unable to find the data file " + FileUtil.getAbsolutePath(getContainer(), path) + " on disk.");
+            return;
+        }
+
+        // Check that the file is under the pipeline root to prevent users from referencing a file that they
+        // don't have permission to import
+        PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
+        if (!xarSource.allowImport(pr, job.getContainer(), path))
+        {
+            if (pr == null)
+            {
+                job.warn("No pipeline root was set, skipping load of file " + FileUtil.getAbsolutePath(getContainer(), path));
+                return;
+            }
+            job.debug("The data file " + FileUtil.getAbsolutePath(getContainer(), path) + " is not under the folder's pipeline root: " + pr + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+            return;
+        }
+
+        ExperimentDataHandler handler = findDataHandler();
         try
         {
-            job.debug("Trying to load data file " + dataFileURL + " into the system");
-
-            File file = new File(new URI(dataFileURL));
-
-            if (!file.exists())
-            {
-                job.debug("Unable to find the data file " + file.getPath() + " on disk.");
-                return;
-            }
-
-            // Check that the file is under the pipeline root to prevent users from referencing a file that they
-            // don't have permission to import
-            PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
-            if (!xarSource.allowImport(pr, job.getContainer(), file))
-            {
-                if (pr == null)
-                {
-                    job.warn("No pipeline root was set, skipping load of file " + file.getPath());
-                    return;
-                }
-                job.debug("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root: " + pr + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
-                return;
-            }
-
-            ExperimentDataHandler handler = findDataHandler();
-            try
-            {
-                handler.importFile(this, file, job.getInfo(), job.getLogger(), xarSource.getXarContext());
-            }
-            catch (ExperimentException e)
-            {
-                throw new XarFormatException(e);
-            }
-
-            job.debug("Finished trying to load data file " + dataFileURL + " into the system");
+            handler.importFile(this, path, job.getInfo(), job.getLogger(), xarSource.getXarContext());
         }
-        catch (URISyntaxException e)
+        catch (ExperimentException e)
         {
             throw new XarFormatException(e);
         }
+
+        job.debug("Finished trying to load data file " + dataFileURL + " into the system");
     }
 
     // Get all text strings from the data class for indexing

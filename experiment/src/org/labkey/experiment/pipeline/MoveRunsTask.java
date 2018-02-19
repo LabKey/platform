@@ -16,6 +16,7 @@
 package org.labkey.experiment.pipeline;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -40,6 +41,8 @@ import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -118,7 +121,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 }
             }
 
-            MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), experimentRun.getFilePathRoot(), job);
+            MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), experimentRun.getFilePathRootPath(), job);
             XarReader reader = new XarReader(xarSource, job);
             reader.parseAndLoad(false);
 
@@ -127,7 +130,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
             for (String dataURL : dataFiles.keySet())
             {
-                ExpData newData = ExperimentService.get().getExpDataByURL(xarSource.getCanonicalDataFileURL(dataURL), job.getContainer());
+                ExpData newData = ExperimentService.get().getExpDataByURL(xarSource.getCanonicalDataFileURL(dataURL), job.getSourceContainer());
                 if (newData != null)
                 {
                     ExperimentDataHandler handler = newData.findDataHandler();
@@ -149,13 +152,15 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         private final String _uploadTime;
 
         private String _experimentName;
-        private File _root;
+        private String _root;
+        private Container _sourceContainer;
 
-        public MoveRunsXarSource(String xml, File root, PipelineJob job) throws ExperimentException
+        public MoveRunsXarSource(String xml, Path root, MoveRunsPipelineJob job) throws ExperimentException
         {
             super(job);
             _xml = xml;
-            _root = root;
+            _root = FileUtil.getAbsolutePath(job.getSourceContainer(), root);
+            _sourceContainer = job.getSourceContainer();
 
             int retry = 0;
             while (_logFileDir == null)
@@ -198,7 +203,14 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
         public File getRoot()
         {
-            return _root;
+            if (FileUtil.hasCloudScheme(_root))
+                throw new RuntimeException("Root is in cloud.");
+            return getRootPath().toFile();
+        }
+
+        public Path getRootPath()
+        {
+            return FileUtil.stringToPath(_sourceContainer, _root);
         }
 
         public boolean shouldIgnoreDataFiles()
@@ -208,17 +220,17 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
         public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
         {
-            File f = new File(dataFileURL);
-            File dataFile;
-            if (!f.isAbsolute())
+            URI uri = FileUtil.createUri(dataFileURL);
+            Path dataFilePath;
+            if (!uri.isAbsolute())
             {
-                dataFile = new File(getRoot(), dataFileURL);
+                dataFilePath = getRootPath().resolve(dataFileURL);
             }
             else
             {
-                dataFile = f;
+                dataFilePath = FileUtil.getPath(_sourceContainer, uri);
             }
-            return FileUtil.getAbsoluteCaseSensitiveFile(dataFile).toURI().toString();
+            return FileUtil.getAbsoluteCaseSensitivePathString(_sourceContainer, dataFilePath.toUri());
         }
 
         public File getLogFile() throws IOException

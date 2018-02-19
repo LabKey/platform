@@ -16,17 +16,19 @@
 
 package org.labkey.experiment;
 
-import org.apache.commons.io.FileUtils;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +39,7 @@ import java.util.Map;
  */
 public abstract class URLRewriter
 {
-    protected Map<File, FileInfo> _files = new HashMap<>();
+    protected Map<Path, FileInfo> _files = new HashMap<>();
 
     private boolean _includeXarXml;
 
@@ -51,7 +53,7 @@ public abstract class URLRewriter
         _includeXarXml = includeXarXml;
     }
 
-    public abstract String rewriteURL(File f, ExpData data, String role, ExpRun experimentRun, User user) throws ExperimentException;
+    public abstract String rewriteURL(Path path, ExpData data, String role, ExpRun experimentRun, User user) throws ExperimentException;
 
     public Collection<FileInfo> getFileInfos()
     {
@@ -65,15 +67,15 @@ public abstract class URLRewriter
 
     protected static class FileInfo
     {
-        private final File _file;
+        private final Path _path;
         private final String _name;
         private final ExperimentDataHandler _handler;
         private final ExpData _data;
         private final User _user;
 
-        public FileInfo(ExpData data, File file, String name, ExperimentDataHandler handler, User user)
+        public FileInfo(ExpData data, Path path, String name, ExperimentDataHandler handler, User user)
         {
-            _file = file;
+            _path = path;
             _name = name;
             _handler = handler;
             _data = data;
@@ -89,7 +91,7 @@ public abstract class URLRewriter
         {
             if (_handler != null)
             {
-                _handler.exportFile(_data, _file, _user, new OutputStream()
+                _handler.exportFile(_data, _path, _user, new OutputStream()
                 {
                     private boolean _closed = false;
 
@@ -127,7 +129,7 @@ public abstract class URLRewriter
             }
             else
             {
-                FileUtils.copyFile(_file, out);
+                Files.copy(_path, out);
             }
         }
 
@@ -135,11 +137,16 @@ public abstract class URLRewriter
         {
             if (_handler != null)
             {
-                return _handler.hasContentToExport(_data, _file);
+                return _handler.hasContentToExport(_data, _path);
             }
             else
             {
-                return NetworkDrive.exists(_file) && _file.isFile();
+                if (!FileUtil.hasCloudScheme(_path))
+                {
+                    File file = _path.toFile();
+                    return NetworkDrive.exists(file) && file.isFile();
+                }
+                return Files.exists(_path) && !Files.isDirectory(_path);
             }
         }
     }

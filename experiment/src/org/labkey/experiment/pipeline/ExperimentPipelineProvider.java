@@ -19,12 +19,16 @@ package org.labkey.experiment.pipeline;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * User: jeckels
@@ -38,20 +42,20 @@ public class ExperimentPipelineProvider extends PipelineProvider
     private static final String DIR_NAME_UPLOAD = "UploadedXARs";
     private static final String DIR_NAME_MOVE = "moveRunLogs";
 
-    public static File getMoveDirectory(PipeRoot pr)
+    public static Path getMoveDirectory(PipeRoot pr)
     {
         return getExperimentDirectory(pr, DIR_NAME_MOVE);
     }
 
-    private static File getExperimentDirectory(PipeRoot pr, String name)
+    private static Path getExperimentDirectory(PipeRoot pr, String name)
     {
-        File systemDir = pr.ensureSystemDirectory();
-        return new File(new File(systemDir, DIR_NAME_EXPERIMENT), name);
+        Path systemDir = pr.ensureSystemDirectoryPath();
+        return systemDir.resolve(DIR_NAME_EXPERIMENT).resolve(name);
     }
 
-    private static File getExperimentDirectory(File systemDir, String name)
+    private static Path getExperimentDirectory(Path systemDir, String name)
     {
-        return new File(new File(systemDir, DIR_NAME_EXPERIMENT), name);
+        return systemDir.resolve(DIR_NAME_EXPERIMENT).resolve(name);
     }
 
     public ExperimentPipelineProvider(Module owningModule)
@@ -60,17 +64,27 @@ public class ExperimentPipelineProvider extends PipelineProvider
         setShowActionsIfModuleInactive(true);
     }
 
-    public void initSystemDirectory(File rootDir, File systemDir)
+    public void initSystemDirectory(Path rootDir, Path systemDir)
     {
         locateSystemDir(systemDir, DIR_NAME_MOVE);
         locateSystemDir(systemDir, DIR_NAME_UPLOAD);
     }
 
-    public void locateSystemDir(File systemDir, String name)
+    public void locateSystemDir(Path systemDir, String name)
     {
-        File f = new File(systemDir, name);
-        if (f.exists())
-            f.renameTo(getExperimentDirectory(systemDir, name));
+        Path path = systemDir.resolve(name);
+        if (Files.exists(path))
+        {
+            try
+            {
+                Path dest = getExperimentDirectory(systemDir, name).resolve(FileUtil.getFileName(path));
+                Files.move(path, dest);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
@@ -93,5 +107,11 @@ public class ExperimentPipelineProvider extends PipelineProvider
             return lowerCase.endsWith(".xar.xml") ||
                    lowerCase.endsWith(".xar");
         }
+    }
+
+    @Override
+    public boolean supportsCloud()
+    {
+        return true;
     }
 }

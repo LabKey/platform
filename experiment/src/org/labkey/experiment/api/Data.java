@@ -58,23 +58,15 @@ public class Data extends ProtocolOutput
             return null;
         }
         
-        try
+        URI uri = FileUtil.createUri(getDataFileUrl());
+        if ("file".equals(uri.getScheme()))
         {
-            URI uri = new URI(getDataFileUrl());
-            if ("file".equals(uri.getScheme()))
-            {
-                //consider try/catch on IllegalArgumentException
-                return new File(uri);
-            }
-            else
-            {
-                return null;
-            }
-
+            //consider try/catch on IllegalArgumentException
+            return new File(uri);
         }
-        catch (URISyntaxException e)
+        else
         {
-            throw new IllegalArgumentException(e);
+            return null;
         }
     }
 
@@ -82,7 +74,13 @@ public class Data extends ProtocolOutput
     public Path getFilePath()
     {
         if (null != getDataFileUrl())
+        {
+            URI uri = FileUtil.createUri(getDataFileUrl());
+            if ("file".equals(uri.getScheme()))
+                return new File(uri).toPath();
+
             return FileUtil.stringToPath(getContainer(), getDataFileUrl());
+        }
         return null;
     }
 

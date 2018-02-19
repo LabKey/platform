@@ -25,8 +25,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -46,21 +47,21 @@ public class ArchiveURLRewriter extends URLRewriter
         _roles = roles == null ? null : new CaseInsensitiveHashSet(roles);
     }
 
-    public String rewriteURL(File f, ExpData data, String roleName, ExpRun run, User user) throws ExperimentException
+    public String rewriteURL(Path path, ExpData data, String roleName, ExpRun run, User user) throws ExperimentException
     {
-        if (f != null && (_roles == null || _roles.contains(roleName)))
+        if (path != null && (_roles == null || _roles.contains(roleName)))
         {
-            FileInfo existingInfo = _files.get(f);
+            FileInfo existingInfo = _files.get(path);
             if (existingInfo != null)
             {
                 return existingInfo.getName();
             }
-            File rootDir = null;
+            Path rootDir = null;
             if (run != null)
             {
-                rootDir = run.getFilePathRoot();
+                rootDir = run.getFilePathRootPath();
             }
-            return addFile(ExperimentService.get().getExpData(data.getRowId()), f, getDirectoryName(run), rootDir, data.findDataHandler(), user);
+            return addFile(ExperimentService.get().getExpData(data.getRowId()), path, getDirectoryName(run), rootDir, data.findDataHandler(), user);
         }
         return null;
     }
@@ -78,15 +79,15 @@ public class ArchiveURLRewriter extends URLRewriter
         return "Run" + run.getRowId();
     }
 
-    public String addFile(ExpData data, File f, String directoryName, File rootDir, ExperimentDataHandler dataHandler, User user)
+    public String addFile(ExpData data, Path path, String directoryName, Path rootDir, ExperimentDataHandler dataHandler, User user)
             throws ExperimentException
     {
         String name;
         try
         {
-            f = FileUtil.getAbsoluteCaseSensitiveFile(f);
+            path = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), path.toUri());
             boolean inSubTree = false;
-            File fileParentDir = f.getParentFile();
+            Path fileParentDir = path.getParent();
             while (fileParentDir != null)
             {
                 if (fileParentDir.equals(rootDir))
@@ -94,27 +95,27 @@ public class ArchiveURLRewriter extends URLRewriter
                     inSubTree = true;
                     break;
                 }
-                fileParentDir = fileParentDir.getParentFile();
+                fileParentDir = fileParentDir.getParent();
             }
 
             if (inSubTree)
             {
-                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, f, true));
+                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, path, true));
             }
             else
             {
-                name = dataHandler.getFileName(data, f.getName());
+                name = dataHandler.getFileName(data, FileUtil.getFileName(path));
             }
 
-            if (!_files.containsKey(f))
+            if (!_files.containsKey(path))
             {
                 if (name != null)
                 {
                     name = uniquifyFileName(name, directoryName, null);
                 }
-                if (f.exists() || (data.isFinalRunOutput()))
+                if (Files.exists(path) || (data.isFinalRunOutput()))
                 {
-                    _files.put(f, new FileInfo(data, f, name, dataHandler, user));
+                    _files.put(path, new FileInfo(data, path, name, dataHandler, user));
                 }
             }
         }
