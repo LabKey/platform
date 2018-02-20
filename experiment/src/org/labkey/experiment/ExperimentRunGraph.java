@@ -371,7 +371,7 @@ public class ExperimentRunGraph
         Map<ExpMaterial, String> runMaterialInputs = new HashMap<>(expRun.getMaterialInputs());
 
         int prevseq = 0;
-        boolean firstApp = true;
+
         for (ExpProtocolApplicationImpl protApp : expRun.getProtocolApplications())
         {
             int rowIdPA = protApp.getRowId();
@@ -379,13 +379,7 @@ public class ExperimentRunGraph
             int sequence = protApp.getActionSequence();
 
             ExpProtocol.ApplicationType cpasTypePA = protApp.getApplicationType();
-            if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRun)
-            {
-                assert firstApp;
-                firstApp = false;
-                continue;
-            }
-            if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
+            if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRun || cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
             {
                 continue;
             }
@@ -423,10 +417,8 @@ public class ExperimentRunGraph
                         groupIdPA = rowIdPA;
                     groupId = groupIdPA;
                 }
-                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
-                else
-                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
+
+                dg.addProtApp(groupId, rowIdPA, namePA, sequence);
                 // We only want to show the label once, so remove it from the map
                 String label = runMaterialInputs.remove(material);
                 dg.connectMaterialToProtocolApp(material.getRowId(), rowIdPA, label);
@@ -447,10 +439,7 @@ public class ExperimentRunGraph
                     groupId = groupIdPA;
                 }
 
-                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
-                else
-                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
+                dg.addProtApp(groupId, rowIdPA, namePA, sequence);
                 // We only want to show the label once, so remove it from the map
                 String label = runDataInputs.remove(data);
                 dg.connectDataToProtocolApp(data.getRowId(), rowIdPA, label);
@@ -468,10 +457,7 @@ public class ExperimentRunGraph
                         (outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = rowIdPA;
 
-                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
-                else
-                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
+                dg.addProtApp(groupId, rowIdPA, namePA, sequence);
                 dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
                 dg.connectProtocolAppToMaterial(rowIdPA, material.getRowId());
             }
@@ -484,10 +470,7 @@ public class ExperimentRunGraph
                         (outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
                     groupId = rowIdPA;
 
-                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
-                else
-                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
+                dg.addProtApp(groupId, rowIdPA, namePA, sequence);
                 dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
                 dg.connectProtocolAppToData(rowIdPA, data.getRowId());
 
