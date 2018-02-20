@@ -21,9 +21,11 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
@@ -49,6 +51,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -62,6 +65,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -442,6 +446,17 @@ public class ListImporter
         {
             boolean replaced = false;
             String name = tableType.getTableName();
+
+            int maxXmlIntPHI = PHIType.INT_NOT_PHI;
+            for (ColumnType column : tableType.getColumns().getColumnArray())
+            {
+                maxXmlIntPHI = Math.max(maxXmlIntPHI, Optional.ofNullable(column.getPhi()).orElse(PHIType.NOT_PHI).intValue());
+            }
+            PHI maxListPHI = PHI.valueOf(PHIType.Enum.forInt(maxXmlIntPHI).toString());
+            PHI maxAllowedPHI = ComplianceService.get().getMaxAllowedPhi(c, user);
+            if (!maxListPHI.isLevelAllowed(maxAllowedPHI))
+                throw new ImportException("PHI level in list \"" + name + "\" exceeds level allowed for current user. List contains PHI level \"" + maxListPHI.getLabel() + "\" but user is only allowed up to \"" + maxAllowedPHI.getLabel() + "\"." );
+
             Set<Integer> preferredListIds = new LinkedHashSet<>();
             ListDefinition def = lists.get(name);
 

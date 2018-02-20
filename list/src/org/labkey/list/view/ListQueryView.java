@@ -59,7 +59,6 @@ public class ListQueryView extends QueryView
     {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
-        getSettings();
         disableContainerFilterSelection();
     }
 
@@ -80,7 +79,8 @@ public class ListQueryView extends QueryView
             ActionButton btnUpload = new ActionButton("Design", designURL);
             bar.add(btnUpload);
         }
-        bar.add(super.createDeleteAllRowsButton("list"));
+        if (canDelete())
+            bar.add(super.createDeleteAllRowsButton("list"));
 
     }
 

@@ -754,6 +754,14 @@ public class ListController extends SpringActionController
             return count;
         }
 
+        @Override
+        protected void validatePermission(User user, BindException errors)
+        {
+            super.validatePermission(user, errors);
+            if (!_list.getAllowUpload())
+                errors.reject(SpringActionController.ERROR_MSG, "This list does not allow uploading data");
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
             return appendListNavTrail(root, _list, "Import Data");

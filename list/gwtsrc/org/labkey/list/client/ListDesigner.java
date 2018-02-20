@@ -1081,7 +1081,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             vPanel.add(createOptionsAndTemplatePanel(new String[]{"Standard title", "Custom title"}, titleHelp, "ff_" + type + "TitleSetting", titleSetting, "ff_" + type + "TitleTemplate", titleTemplate, readonly));
             vPanel.add(new Spacer());
-            vPanel.add(new InlineHTML("<strong>Warning:</strong> Do not include fields that contain PHI or PII. Full text search results could expose this information."));
+            vPanel.add(new InlineHTML("<strong>Warning:</strong> Fields annotated at a PHI level will not be indexed."));
             vPanel.add(createOptionsAndTemplatePanel(new String[]{"Index all text fields", "Index all fields (text, number, date and boolean)", "Index using custom template"}, bodyHelp, "ff_" + type + "BodySetting", bodySetting, "ff_" + type + "BodyTemplate", bodyTemplate, readonly));
 
             ClickHandler ch = new ClickHandler()
