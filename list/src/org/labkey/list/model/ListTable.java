@@ -103,7 +103,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             for (ColumnInfo baseColumn : getRealTable().getColumns())
             {
                 // Don't include PHI columns in full text search index
-                if (schema.getUser().isSearchUser() &&  baseColumn.getPHI().isLevelAllowed(PHI.NotPHI))
+                if (schema.getUser().isSearchUser() && !baseColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                     continue;
                 
                 String name = baseColumn.getName();
@@ -336,7 +336,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public boolean supportTableRules()
     {
-        return !getUserSchema().getUser().isServiceUser();
+        return true;
     }
 
     @Override
