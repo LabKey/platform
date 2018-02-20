@@ -386,6 +386,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         if (search == null)
         {
             search = new LimitedUser(new GuestUser("search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            search.setPrincipalType(PrincipalType.SERVICE);
         }
         return search;
     }
@@ -393,6 +394,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public boolean isSearchUser()
     {
         return this == getSearchUser();
+    }
+
+    public boolean isServiceUser()
+    {
+        return this.getPrincipalType() == PrincipalType.SERVICE;
     }
 
     public String getPhone()
