@@ -34,19 +34,21 @@ LABKEY.NavTrail = new function()
          * and title (which contains the title for the page). These will be assembled into the full list of ancestor pages at the top of the nav trail.
          * @param {string} [documentTitle] Document title
          * @param {boolean} [encode=true] HTML encode the contents of currentPageTitle. Can be set to false if you are looking to include html.
+         * @param {boolean} [removeFolderLink=false] Remove any folder navigation links that are showing after the nav trail
          * @example
 <pre name="code" class="xml">
 var ancestorURL = LABKEY.ActionURL.buildURL('project', 'begin');
 LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"}]);
 </pre>
          */
-        setTrail: function (currentPageTitle, ancestors, documentTitle, encode)
+        setTrail: function (currentPageTitle, ancestors, documentTitle, encode, removeFolderLink)
         {
             var elem = document.querySelector('.lk-body-title');
+            var folderLinkElem = document.querySelector('.lk-body-title-folder-outer');
             if (elem)
             {
                 var newTrail = '';
-                var newTitle = '<h3>' + (encode !== false ? LABKEY.Utils.encodeHtml(currentPageTitle) : currentPageTitle) + '</h3>';
+                var newTitle = '<h3 style="display: inline-block;">' + (encode !== false ? LABKEY.Utils.encodeHtml(currentPageTitle) : currentPageTitle) + '</h3>';
 
                 var trailEl = elem.querySelector('.breadcrumb');
                 if (trailEl && ancestors)
@@ -69,6 +71,8 @@ LABKEY.NavTrail.setTrail("People View", [{url: ancestorURL, title: "API Example"
 
                 elem.innerHTML = newTrail + newTitle;
             }
+            if (!removeFolderLink && folderLinkElem)
+                elem.appendChild(folderLinkElem);
 
             //set document title:
             //<currentPageTitle>: <container path>
