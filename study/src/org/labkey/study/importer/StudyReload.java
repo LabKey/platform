@@ -365,10 +365,10 @@ public class StudyReload
                     {
                         return reloadStudy(study, options, source, lastModified, lastReload);
                     }
-                    else
-                    {
-                        throw new ImportException("Could not find file " + STUDY_LOAD_FILENAME + " in the pipeline root for " + getDescription(study));
-                    }
+                }
+                else
+                {
+                    throw new ImportException("Could not find file " + STUDY_LOAD_FILENAME + " in the pipeline root for " + getDescription(study));
                 }
             }
 
