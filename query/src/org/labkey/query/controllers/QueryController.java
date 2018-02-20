@@ -2524,6 +2524,7 @@ public class QueryController extends SpringActionController
         private boolean _includeTotalCount = true;
         private boolean _includeStyle = false;
         private boolean _includeDisplayValues = false;
+        private boolean _minimalColumns = true;
 
         public Integer getStart()
         {
@@ -2603,6 +2604,16 @@ public class QueryController extends SpringActionController
         public void setIncludeDisplayValues(boolean includeDisplayValues)
         {
             _includeDisplayValues = includeDisplayValues;
+        }
+
+        public boolean isMinimalColumns()
+        {
+            return _minimalColumns;
+        }
+
+        public void setMinimalColumns(boolean minimalColumns)
+        {
+            _minimalColumns = minimalColumns;
         }
     }
 
@@ -2686,7 +2697,13 @@ public class QueryController extends SpringActionController
                         form.isIncludeDisplayValues());
             }
             response.includeStyle(form.isIncludeStyle());
-            response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+
+            // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
+            // requested minimal columns, as we now do for ExtJS stores
+            if (form.isMinimalColumns())
+            {
+                response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+            }
 
             return response;
         }
