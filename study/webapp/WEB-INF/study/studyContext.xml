@@ -145,9 +145,6 @@
                     <property name="allowForTriggerConfiguration" value="true"/>
                     <property name="initialInputExts">
                         <list>
-                            <ref bean="xlsxFileType"/>
-                            <ref bean="tsvFileType"/>
-                            <ref bean="xlsFileType"/>
                             <ref bean="txtFileType"/>
                         </list>
                     </property>
