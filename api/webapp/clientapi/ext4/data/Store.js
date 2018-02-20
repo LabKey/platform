@@ -167,6 +167,8 @@ Ext4.define('LABKEY.ext4.data.Store', {
         var baseParams = {};
         baseParams.schemaName = config.schemaName;
         baseParams.apiVersion = 9.1;
+        // Issue 32269 - force key and other non-requested columns to be sent back
+        baseParams.minimalColumns = false;
 
         if (config.parameters) {
             Ext4.iterate(config.parameters, function(param, value) {

@@ -118,7 +118,8 @@ Ext.namespace("LABKEY", "LABKEY.ext");
 LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     constructor: function(config) {
 
-        var baseParams = {schemaName: config.schemaName};
+        // Issue 32269 - force key and other non-requested columns to be sent back
+        var baseParams = {schemaName: config.schemaName, minimalColumns: false};
         var qsParams = {};
 
         if (config.queryName && !config.sql)
