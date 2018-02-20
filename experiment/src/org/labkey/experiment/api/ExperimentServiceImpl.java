@@ -2510,6 +2510,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (container == null)
             throw new IllegalArgumentException();
 
+        // To set the ownerObjectId, find the owner object if present
         String cpasType = (String)map.get("cpasType");
         Integer ownerObjectId = null;
         if (cpasType != null && !cpasType.equals(ExpMaterial.DEFAULT_CPAS_TYPE) && !cpasType.equals("Sample"))
@@ -2518,12 +2519,12 @@ public class ExperimentServiceImpl implements ExperimentService
             if (oo == null)
             {
                 // NOTE: for current edge objects (Samples and Data), only Samples use ownerObjectId.  Maybe ExpData that belong to a DataClass should too?
-                LOG.info("creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child object '" + lsid + "'");
                 ExpSampleSet ss = getSampleSet(cpasType);
                 if (ss != null)
-                    ownerObjectId = OntologyManager.ensureObject(ss.getContainer(), cpasType, (Integer)null);
-                else
-                    throw new IllegalStateException("Is it possible an sample that has no SampleSet can participates in lineage?");
+                {
+                    LOG.info("creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child object '" + lsid + "'");
+                    ownerObjectId = OntologyManager.ensureObject(ss.getContainer(), cpasType, (Integer) null);
+                }
             }
             else
             {
