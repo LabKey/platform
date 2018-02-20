@@ -146,6 +146,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -2488,32 +2489,55 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // TODO: bulk insert
-    private void insertEdge(Map<String, Object> from, Map<String, Object> to, int runId)
+    private void insertEdge(Set<Tuple3<String, String, Integer>> seen, Map<String, Object> from, Map<String, Object> to, int runId)
     {
         assert getExpSchema().getScope().isTransactionActive();
-        String fromLsid = ensureEdgeObject(from);
-        String toLsid = ensureEdgeObject(to);
+
+        // from object
+        String fromLsid = (String)from.get("LSID");
+        Objects.requireNonNull(fromLsid, "lsid");
+
+        // to object
+        String toLsid = (String)to.get("LSID");
+        Objects.requireNonNull(fromLsid, "lsid");
+
+        // ignore cycles from and to itself
+        if (fromLsid.equals(toLsid))
+            return;
+
+        // ignore duplicate edges within the same run
+        Tuple3<String, String, Integer> key = Tuple3.of(fromLsid, toLsid, runId);
+        if (seen.contains(key))
+            return;
+        seen.add(key);
+
+        String fromContainerId = (String)from.get("container");
+        Objects.requireNonNull(fromContainerId, "containerId");
+        Container fromContainer = ContainerManager.getForId(fromContainerId);
+        if (fromContainer == null)
+            throw new IllegalArgumentException();
+
+
+        String toContainerId = (String)to.get("container");
+        Objects.requireNonNull(toContainerId, "containerId");
+        Container toContainer = ContainerManager.getForId(toContainerId);
+        if (toContainer == null)
+            throw new IllegalArgumentException();
+
+
+        int fromObjectId = ensureEdgeObject(fromContainer, fromLsid, (String)from.get("cpasType"));
+        int toObjectId = ensureEdgeObject(toContainer, toLsid, (String)to.get("cpasType"));
 
         insertEdge(fromLsid, toLsid, runId);
     }
 
-    private String ensureEdgeObject(Map<String, Object> map)
+    private int ensureEdgeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType)
     {
         assert getExpSchema().getScope().isTransactionActive();
-        String lsid = (String)map.get("LSID");
-        Objects.requireNonNull(lsid, "lsid");
-
-        String containerId = (String)map.get("container");
-        Objects.requireNonNull(containerId, "containerId");
-
-        Container container = ContainerManager.getForId(containerId);
-        if (container == null)
-            throw new IllegalArgumentException();
 
         // To set the ownerObjectId, find the owner object if present
-        String cpasType = (String)map.get("cpasType");
         Integer ownerObjectId = null;
-        if (cpasType != null && !cpasType.equals(ExpMaterial.DEFAULT_CPAS_TYPE) && !cpasType.equals("Sample"))
+        if (cpasType != null && !cpasType.equals(ExpMaterial.DEFAULT_CPAS_TYPE) && !cpasType.equals("Sample") && !cpasType.equals(StudyService.SPECIMEN_NAMESPACE_PREFIX))
         {
             org.labkey.api.exp.OntologyObject oo = OntologyManager.getOntologyObject(null, cpasType);
             if (oo == null)
@@ -2531,8 +2555,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 ownerObjectId = oo.getObjectId();
             }
         }
-        int objectId = OntologyManager.ensureObject(container, lsid, ownerObjectId);
-        return lsid;
+        return OntologyManager.ensureObject(container, lsid, ownerObjectId);
     }
 
     private void insertEdge(String fromLsid, String toLsid, int runId)
@@ -2592,22 +2615,25 @@ public class ExperimentServiceImpl implements ExperimentService
             removeEdgesForRun(runId);
 
             // create edge for each input and output combination
+            int edgeCount = (fromDataLsids.size()     * (toDataLsids.size() + toMaterialLsids.size())) +
+                            (fromMaterialLsids.size() * (toDataLsids.size() + toMaterialLsids.size()));
+            Set<Tuple3<String, String, Integer>> seen = new HashSet<>(edgeCount);
             for (Map<String, Object> fromDataLsid : fromDataLsids)
             {
                 for (Map<String, Object> toDataLsid : toDataLsids)
-                    insertEdge(fromDataLsid, toDataLsid, runId);
+                    insertEdge(seen, fromDataLsid, toDataLsid, runId);
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    insertEdge(fromDataLsid, toMaterialLsid, runId);
+                    insertEdge(seen, fromDataLsid, toMaterialLsid, runId);
             }
 
             for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
             {
                 for (Map<String, Object> toDataLsid : toDataLsids)
-                    insertEdge(fromMaterialLsid, toDataLsid, runId);
+                    insertEdge(seen, fromMaterialLsid, toDataLsid, runId);
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    insertEdge(fromMaterialLsid, toMaterialLsid, runId);
+                    insertEdge(seen, fromMaterialLsid, toMaterialLsid, runId);
             }
 
             tx.commit();
