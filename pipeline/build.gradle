@@ -20,7 +20,8 @@ dependencies {
     external "commons-lang:commons-lang:${commonsLangVersion}"
     external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-connector_1.5_spec', version: geronimoJ2eeConnector15SpecVersion
 //    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-management_1.0_spec', version: geronimoJ2eeManagement10SpecVersion
-    external group: 'org.safehaus.jug', name: 'jug', version: jugVersion
+    // the jug jar offers a version with LGPL licence as well as  version with Apache Software Licence, distinguished by the classifier (lgpl vs asl)
+    external group: 'org.safehaus.jug', name: 'jug', version: jugVersion, classifier: 'asl'
     external("dom4j:dom4j:${dom4jVersion}")
         {
             // dom4j and jaxen don't play well together for tomcat versions higher than 7.0.33 apparently 
