@@ -24,7 +24,24 @@
     body { overflow-y: scroll; }
     .lk-trigger-section { display: none; }
 </style>
+<%
+    if (PipelineTriggerRegistry.get().getTypes().isEmpty()) { // PREMIUM UPSELL
+%>
+    <div class="alert alert-info">
+        <h3>There are no pipeline trigger types available on this server.</h3>
+        <hr>
+        <p>Premium edition subscribers have access to powerful <a class="alert-link" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher">file watcher</a>
+            triggers that can automatically initiate pipeline tasks.</p>
+        <p>In addition to this feature, premium editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
+        <br>
+        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank">Go Premium <i class="fa fa-external-link"></i></a></p>
+    </div>
 
+<%
+    }
+    else
+    {
+%>
 <labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=h(buildURL(PipelineController.CreatePipelineTriggerAction.class))%>">
 <labkey:panel className="panel-portal" title="<%=text(portalTitle)%>">
     <div class="row">
@@ -432,3 +449,6 @@
         }
     }(jQuery);
 </script>
+<%
+    }
+%>
