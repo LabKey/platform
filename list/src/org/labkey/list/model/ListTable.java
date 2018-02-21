@@ -347,10 +347,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         else
         {
             Set<FieldKey> loggingColumns = new LinkedHashSet<>();
-            loggingColumns.add(getRealTable().getColumn(_list.getKeyName()).getFieldKey());
-            loggingColumns.addAll(getRealTable().getColumns().stream()
-                    .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
-                    .map(ColumnInfo::getFieldKey).collect(Collectors.toSet()));
+            if (!getRealTable().getColumns().isEmpty()) // it shouldn't be, as it should at least have the standard tracking columns even on initial creation
+            {
+                if (_list != null && _list.getKeyName() != null && getRealTable().getColumn(_list.getKeyName()) != null)
+                    loggingColumns.add(getRealTable().getColumn(_list.getKeyName()).getFieldKey());
+                loggingColumns.addAll(getRealTable().getColumns().stream()
+                        .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                        .map(ColumnInfo::getFieldKey).collect(Collectors.toSet()));
+            }
             return loggingColumns;
         }
     }
