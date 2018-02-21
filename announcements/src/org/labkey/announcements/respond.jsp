@@ -53,7 +53,7 @@
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
 <%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
-<div style="max-width: 1050px;"><table style="width: 100%;"><%
+<div style="max-width: 1050px;"><table style="width: 100%;" class="lk-fields-table"><%
 
 if (settings.isTitleEditable())
 {
