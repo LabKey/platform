@@ -129,8 +129,11 @@ public class LocalDirectory implements Serializable
                 try
                 {
                     File tempFile = new File(_localDirectoryFile, filename);
-                    Files.copy(path, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-                    log.info("Created temp file because input is from cloud: " + FileUtil.pathToString(path));
+                    if (!Files.exists(tempFile.toPath()))
+                    {
+                        Files.copy(path, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                        log.info("Created temp file because input is from cloud: " + FileUtil.pathToString(path));
+                    }
                     return tempFile;
                 }
                 catch (IOException e)

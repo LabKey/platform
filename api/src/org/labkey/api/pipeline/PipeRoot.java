@@ -68,6 +68,9 @@ public interface PipeRoot extends SecurableResource
     @Nullable
     File resolvePath(String relativePath);
 
+    @NotNull
+    File getImportDirectory();
+
     /**
      * Create File object for the import directory and ensure that the directory does not exist
      * @return File object for import directory

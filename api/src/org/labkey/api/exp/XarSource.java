@@ -252,7 +252,15 @@ public abstract class XarSource implements Serializable
 
     public boolean allowImport(PipeRoot pr, Container container, Path path)
     {
-        return pr != null && pr.isUnderRoot(path);
+        try
+        {
+            return (pr != null && pr.isUnderRoot(path)) ||
+                    (!FileUtil.pathToString(path).equalsIgnoreCase(FileUtil.relativizeUnix(getRootPath(), path, true)));
+        }
+        catch (IOException e)
+        {
+            return false;
+        }
     }
 
     @NotNull
