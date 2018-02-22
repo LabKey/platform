@@ -15,6 +15,7 @@
  */
 package org.labkey.filecontent;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -70,8 +71,7 @@ public class FileWriter extends BaseFolderWriter
     @Override
     public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        WebdavService service = ServiceRegistry.get().getService(WebdavService.class);
-        WebdavResource resource = service.lookup(new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(FileContentService.FILES_LINK));
+        WebdavResource resource = getFilesDirectory(container);
         if (resource != null)
         {
             VirtualFile virtualRoot = vf.getDir(DIR_NAME);
@@ -99,5 +99,27 @@ public class FileWriter extends BaseFolderWriter
                 }
             }
         }
+    }
+
+    private WebdavResource getFilesDirectory(Container container)
+    {
+        WebdavService webdavService = ServiceRegistry.get().getService(WebdavService.class);
+        FileContentService fileContentService = FileContentService.get();
+        if (null == webdavService || null == fileContentService)
+            return null;
+
+        String resourcePath;
+        if (fileContentService.isCloudRoot(container))
+        {
+            String fileRootPath = FileRootManager.get().getFileRoot(container).getPath();
+            if (StringUtils.startsWith(fileRootPath, "/"))
+                fileRootPath = fileRootPath.substring(1);
+            resourcePath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(fileRootPath).toString();
+        }
+        else
+        {
+            resourcePath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(FileContentService.FILES_LINK).toString();
+        }
+        return webdavService.lookup(resourcePath);
     }
 }

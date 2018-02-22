@@ -324,8 +324,19 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             return new AdminController.AdminUrlsImpl().getProjectSettingsMenuURL(c);  // Delete... I don't think we ever get here
         else if (form.isFilesTab())
         {
-            String param = form.isPipelineRootForm() ? "piperootSet" : "rootSet";
-            return new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(c).addParameter(param, true);
+            ActionURL url = new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(c);
+            if (form.isPipelineRootForm())
+            {
+                url.addParameter("piperootSet", true);
+            }
+            else
+            {
+                if (form.isFileRootChanged())
+                    url.addParameter("rootSet", true);
+                if (form.isEnabledCloudStoresChanged())
+                    url.addParameter("cloudChanged", true);
+            }
+            return url;
         }
         else
             return new AdminController.AdminUrlsImpl().getProjectSettingsURL(c);

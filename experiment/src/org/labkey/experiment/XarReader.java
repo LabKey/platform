@@ -119,8 +119,6 @@ public class XarReader extends AbstractXarImporter
 
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
     {
-        OutputStream fos = null;
-
         try
         {
             ExperimentArchiveDocument document = _xarSource.getDocument();
@@ -147,23 +145,16 @@ public class XarReader extends AbstractXarImporter
                 for (int i = a.getExperimentLog().getExperimentLogEntryArray().length - 1; i >= 0; i--)
                     a.getExperimentLog().removeExperimentLogEntry(i);
 
-                fos = Files.newOutputStream(expDir.resolve("experiment.xar.xml"));
-                XmlOptions xOpt = new XmlOptions().setSavePrettyPrint();
-                document.save(fos, xOpt);
+                try (OutputStream fos = Files.newOutputStream(expDir.resolve("experiment.xar.xml")))
+                {
+                    XmlOptions xOpt = new XmlOptions().setSavePrettyPrint();
+                    document.save(fos, xOpt);
+                }
             }
         }
         catch (IOException | XmlException e)
         {
             throw new XarFormatException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (null != fos)
-                    fos.close();
-            }
-            catch (IOException ignored) {}
         }
     }
 

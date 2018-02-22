@@ -188,6 +188,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URI;
@@ -1854,18 +1855,21 @@ public class ExperimentController extends SpringActionController
                 boolean inline = _data.isInlineImage() || form.isInline() || "inlineImage".equalsIgnoreCase(form.getFormat());
                 if (_data.isInlineImage() && form.getMaxDimension() != null)
                 {
-                    BufferedImage image = ImageIO.read(Files.newInputStream(realContent));
-                    // If image, create a thumbnail, otherwise fall through as a regular download attempt
-                    if (image != null)
+                    try (InputStream inputStream = Files.newInputStream(realContent))
                     {
-                        int imageMax = Math.max(image.getHeight(), image.getWidth());
-                        if (imageMax > form.getMaxDimension().intValue())
+                        BufferedImage image = ImageIO.read(inputStream);
+                        // If image, create a thumbnail, otherwise fall through as a regular download attempt
+                        if (image != null)
                         {
-                            double scale = (double) form.getMaxDimension().intValue() / (double) imageMax;
-                            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                            ImageUtil.resizeImage(image, bOut, scale, 1);
-                            PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.getFileName(realContent) + ".png", bOut.toByteArray(), !inline);
-                            return null;
+                            int imageMax = Math.max(image.getHeight(), image.getWidth());
+                            if (imageMax > form.getMaxDimension().intValue())
+                            {
+                                double scale = (double) form.getMaxDimension().intValue() / (double) imageMax;
+                                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                                ImageUtil.resizeImage(image, bOut, scale, 1);
+                                PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.getFileName(realContent) + ".png", bOut.toByteArray(), !inline);
+                                return null;
+                            }
                         }
                     }
                 }
@@ -1879,7 +1883,10 @@ public class ExperimentController extends SpringActionController
                     return null;
                 }
 
-                PageFlowUtil.streamFile(getViewContext().getResponse(), Collections.emptyMap(), FileUtil.getFileName(realContent), Files.newInputStream(realContent), !inline);
+                try (InputStream inputStream = Files.newInputStream(realContent))
+                {
+                    PageFlowUtil.streamFile(getViewContext().getResponse(), Collections.emptyMap(), FileUtil.getFileName(realContent), inputStream, !inline);
+                }
             }
             catch (IOException e)
             {

@@ -33,6 +33,7 @@ import org.labkey.api.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -210,25 +211,28 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                 }
                 else                        // delete the entire folder (and subfolders)
                 {
-                    Files.newDirectoryStream(parentDir).forEach(attachmentFile -> {
-                        String fileName = FileUtil.getFileName(attachmentFile);
-                        if (!Files.isDirectory(attachmentFile) && !fileName.startsWith(".") && Files.exists(attachmentFile))
-                        {
-                            try
+                    try (DirectoryStream<Path> paths = Files.newDirectoryStream(parentDir))
+                    {
+                        paths.forEach(attachmentFile -> {
+                            String fileName = FileUtil.getFileName(attachmentFile);
+                            if (!Files.isDirectory(attachmentFile) && !fileName.startsWith(".") && Files.exists(attachmentFile))
                             {
-                                if (Files.deleteIfExists(attachmentFile))
+                                try
                                 {
-                                    FileContentServiceImpl.logFileAction(parentDir, fileName, FileContentServiceImpl.FileAction.DELETE, user);
-                                    AttachmentService.get().addAuditEvent(user, this, fileName, "The attachment: " + fileName + " was deleted");
+                                    if (Files.deleteIfExists(attachmentFile))
+                                    {
+                                        FileContentServiceImpl.logFileAction(parentDir, fileName, FileContentServiceImpl.FileAction.DELETE, user);
+                                        AttachmentService.get().addAuditEvent(user, this, fileName, "The attachment: " + fileName + " was deleted");
+                                    }
+                                }
+                                catch (IOException e)
+                                {
+                                    LOG.warn(e.getMessage());
                                 }
                             }
-                            catch (IOException e)
-                            {
-                                LOG.warn(e.getMessage());
-                            }
-                        }
 
-                    });
+                        });
+                    }
                 }
             }
         }

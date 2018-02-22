@@ -373,11 +373,19 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    @NotNull
+    public File getImportDirectory()
+    {
+        // If pipeline root is in File system, return that; otherwise return temp directory
+        File root = isCloudRoot() ?
+            FileUtil.getTempDirectory() :
+            getRootPath();
+        return new File(root, PipelineService.UNZIP_DIR);
+    }
+
     public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException
     {
-        File importDir = resolvePath(PipelineService.UNZIP_DIR);
-        if (null == importDir)
-            throw new FileNotFoundException();
+        File importDir = getImportDirectory();
 
         if (importDir.exists() && !FileUtil.deleteDir(importDir))
             throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
@@ -387,8 +395,8 @@ public class PipeRootImpl implements PipeRoot
 
     public void deleteImportDirectory() throws DirectoryNotDeletedException
     {
-        File importDir = resolvePath(PipelineService.UNZIP_DIR);
-        if (null != importDir && importDir.exists() && !FileUtil.deleteDir(importDir))
+        File importDir = getImportDirectory();
+        if (importDir.exists() && !FileUtil.deleteDir(importDir))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }

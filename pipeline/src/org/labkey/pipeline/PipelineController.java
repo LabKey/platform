@@ -1433,8 +1433,8 @@ public class PipelineController extends SpringActionController
                 try
                 {
                     // check if the archive file already exists in the unzip dir of this pipeline root
-                    File importDir = pipelineRoot.resolvePath(PipelineService.UNZIP_DIR);
-                    if (importDir != null && !archiveFile.getParentFile().getAbsolutePath().equals(importDir.getAbsolutePath()))
+                    File importDir = pipelineRoot.getImportDirectory();
+                    if (!archiveFile.getParentFile().getAbsolutePath().equals(importDir.getAbsolutePath()))
                         importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
 
                     ZipUtil.unzipToDirectory(archiveFile, importDir);

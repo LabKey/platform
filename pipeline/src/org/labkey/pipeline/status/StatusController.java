@@ -343,14 +343,14 @@ public class StatusController extends SpringActionController
                     Path path = FileUtil.stringToPath(c, strPath);
                     if (Files.exists(path))
                     {
-                        try
+                        try (InputStream inputStream = Files.newInputStream(path))
                         {
                             ActionURL url = getViewContext().cloneActionURL();
                             url.replaceParameter("showDetails", Boolean.toString(!form.isShowDetails()));
 
                             String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url);
 
-                            WebPartView logFileView = new JobStatusLogView(Files.newInputStream(path), form.isShowDetails(), prefix, "");
+                            WebPartView logFileView = new JobStatusLogView(inputStream, form.isShowDetails(), prefix, "");
                             logFileView.setTitle(FileUtil.getFileName(path));
                             result.addView(logFileView);
                         }

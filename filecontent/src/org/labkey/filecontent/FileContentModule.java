@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class FileContentModule extends DefaultModule
@@ -99,22 +100,25 @@ public class FileContentModule extends DefaultModule
             {
                 List<String> fileNames = new ArrayList<>();
                 List<String> directoryNames = new ArrayList<>();
-                for (Path child : Files.list(file).collect(Collectors.toSet()))
+                try (Stream<Path> paths = Files.list(file))
                 {
-                    if (!Files.isDirectory(child))
+                    for (Path child : paths.collect(Collectors.toSet()))
                     {
-                        fileCount++;
-                        if (fileNames.size() < 3)
+                        if (!Files.isDirectory(child))
                         {
-                            fileNames.add(FileUtil.getFileName(child));
+                            fileCount++;
+                            if (fileNames.size() < 3)
+                            {
+                                fileNames.add(FileUtil.getFileName(child));
+                            }
                         }
-                    }
-                    else
-                    {
-                        directoryCount++;
-                        if (directoryNames.size() < 3)
+                        else
                         {
-                            directoryNames.add(FileUtil.getFileName(child));
+                            directoryCount++;
+                            if (directoryNames.size() < 3)
+                            {
+                                directoryNames.add(FileUtil.getFileName(child));
+                            }
                         }
                     }
                 }

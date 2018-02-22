@@ -27,15 +27,12 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -66,34 +63,35 @@ public class FileImporter implements FolderImporter<XmlObject>
         if (filesVF != null)
         {
             FileContentService service = ServiceRegistry.get().get(FileContentService.class);
-            File rootFile = service.getFileRoot(ctx.getContainer(), FileContentService.ContentType.files);
-            rootFile.mkdirs();
-            if (rootFile.isDirectory())
+            Path rootFile = service.getFileRootPath(ctx.getContainer(), FileContentService.ContentType.files);
+            if (!Files.exists(rootFile))
+                Files.createDirectories(rootFile);
+            if (Files.isDirectory(rootFile))
             {
                 copy(filesVF, rootFile);
             }
         }
     }
 
-    private void copy(VirtualFile virtualFile, File realFile) throws IOException
+    private void copy(VirtualFile virtualFile, Path realPath) throws IOException
     {
         for (String child : virtualFile.list())
         {
-            File childFile = new File(realFile, child);
-            try (InputStream in = virtualFile.getInputStream(child);
-                OutputStream out = new BufferedOutputStream(new FileOutputStream(childFile)))
+            Path childPath = realPath.resolve(child);
+            try (InputStream in = virtualFile.getInputStream(child))
             {
-                FileUtil.copyData(in, out);
+                Files.copy(in, childPath);
             }
         }
 
         for (String childDir : virtualFile.listDirs())
         {
-            File realChildDir = new File(realFile, childDir);
-            realChildDir.mkdir();
-            if (!realChildDir.isDirectory())
+            Path realChildDir = realPath.resolve(childDir);
+            if (!Files.exists(realChildDir))
+                Files.createDirectories(realChildDir);
+            if (!Files.isDirectory(realChildDir))
             {
-                throw new IOException("Failed to create directory " + realChildDir);
+                throw new IOException("Failed to create directory " + realChildDir);        // TODO probably unnecessary
             }
             copy(virtualFile.getDir(childDir), realChildDir);
         }

@@ -115,17 +115,22 @@ public class PipelineDirectoryImpl implements PipelineDirectory
                 {
                     Path dirPath = _root.resolveToNioPath(_relativePath);
                     if (null != dirPath)
-                        Files.newDirectoryStream(dirPath).forEach(path -> {
-                            try
-                            {
-                                if (filter.accept(path))
-                                    listFiles.add(path);
-                            }
-                            catch (IOException e)
-                            {
-                                // Ignore
-                            }
-                        });
+                    {
+                        try (DirectoryStream<Path> paths = Files.newDirectoryStream(dirPath))
+                        {
+                            paths.forEach(path -> {
+                                try
+                                {
+                                    if (filter.accept(path))
+                                        listFiles.add(path);
+                                }
+                                catch (IOException e)
+                                {
+                                    // Ignore
+                                }
+                            });
+                        }
+                    }
                 }
             }
             else

@@ -157,7 +157,10 @@ public class FileContentServiceImpl implements FileContentService
         switch (type)
         {
             case files:
-                return _getFileRoot(c);             // Don't add @files when we're in the cloud
+                java.nio.file.Path fileRootPath = _getFileRoot(c);
+                if (null != fileRootPath && !FileUtil.hasCloudScheme(fileRootPath))  // Don't add @files when we're in the cloud
+                    fileRootPath = fileRootPath.resolve(getFolderName(type));
+                return fileRootPath;
 
             case pipeline:
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
