@@ -118,4 +118,20 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
             return NAME;
         }
     }
+
+    public List<String> getCustomizedDataLoggingValues(QueryLogging queryLogging, Set<Object> dataLoggingValues)
+    {
+        return null;
+    }
+
+    protected boolean isLogEmptyResults()
+    {
+        return true;
+    }
+
+    // if true, ignore compliance logging setting and always log
+    public boolean forceQueryLogging()
+    {
+        return false;
+    }
 }

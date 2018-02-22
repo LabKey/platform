@@ -56,7 +56,10 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
         if (!_queryLogging.isEmpty() && _queryLogging.isShouldAudit())
         {
             SelectQueryAuditEvent selectQueryAuditEvent = _queryLogging.getSelectQueryAuditEvent();
-            if (!_dataLoggingValues.isEmpty() || selectQueryAuditEvent.isLogEmptyResults())
+            SelectQueryAuditProvider selectQueryAuditProvider = _queryLogging.getSelectQueryAuditProvider();
+            boolean logEmpty = selectQueryAuditEvent.isLogEmptyResults()
+                    && (selectQueryAuditProvider == null || selectQueryAuditProvider.isLogEmptyResults());
+            if (!_dataLoggingValues.isEmpty() || logEmpty)
             {
                 selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
                 AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);

@@ -32,14 +32,21 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     private final String _loggingComment;
     private final FieldKey _originalColumnFieldKey;
     private String _originalTableName;
+    private SelectQueryAuditProvider _selectQueryAuditProvider;
 
-    public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment)
+    public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
     {
         _shouldLogName = shouldLogName;
         _dataLoggingColumns = dataLoggingColumns;
         _loggingComment = loggingComment;
         _originalColumnFieldKey = columnFieldKey;
         _originalTableName = null != parentTable ? parentTable.getName() : "";
+        _selectQueryAuditProvider = selectQueryAuditProvider;
+    }
+
+    public ColumnLogging(boolean shouldLogName, FieldKey columnFieldKey, TableInfo parentTable, Set<FieldKey> dataLoggingColumns, String loggingComment)
+    {
+        this(shouldLogName, columnFieldKey, parentTable, dataLoggingColumns, loggingComment, null);
     }
 
     public ColumnLogging(FieldKey columnFieldKey, TableInfo parentTable)
@@ -88,4 +95,10 @@ public class ColumnLogging implements Comparable<ColumnLogging>
             ret = this.getOriginalColumnFieldKey().compareTo(o.getOriginalColumnFieldKey());
         return ret;
     }
+
+    public SelectQueryAuditProvider getSelectQueryAuditProvider()
+    {
+        return _selectQueryAuditProvider;
+    }
+
 }

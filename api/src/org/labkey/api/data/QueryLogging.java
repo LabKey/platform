@@ -38,6 +38,7 @@ public class QueryLogging
     private final boolean _readOnly;
     private final boolean _metadataQuery;
     private boolean _shouldAudit = true;
+    private SelectQueryAuditProvider _selectQueryAuditProvider = null;
 
     public QueryLogging()
     {
@@ -53,7 +54,7 @@ public class QueryLogging
     }
 
     public void setQueryLogging(User user, Container container, String comment, Set<ColumnLogging> columnLoggings,
-                                Set<ColumnInfo> dataLoggingColumns)
+                                Set<ColumnInfo> dataLoggingColumns, SelectQueryAuditProvider selectQueryAuditProvider)
     {
         if (_readOnly)
             throw new IllegalStateException("This QueryLogging instance is read-only.");
@@ -63,6 +64,7 @@ public class QueryLogging
         _columnLoggings = columnLoggings;
         _dataLoggingColumns = dataLoggingColumns;
         _hasBeenValidated = true;
+        _selectQueryAuditProvider = selectQueryAuditProvider;
     }
 
     public boolean isEmpty()
@@ -163,5 +165,10 @@ public class QueryLogging
     public void setShouldAudit(boolean shouldAudit)
     {
         this._shouldAudit = shouldAudit;
+    }
+
+    public SelectQueryAuditProvider getSelectQueryAuditProvider()
+    {
+        return _selectQueryAuditProvider;
     }
 }

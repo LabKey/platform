@@ -107,6 +107,12 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
 
     protected List<String> getMappedAndSortedDataLoggingValues(QueryLogging queryLogging, Set<Object> dataLoggingValues)
     {
+        if (queryLogging != null && queryLogging.getSelectQueryAuditProvider() != null)
+        {
+            List<String> customLoggingValues = queryLogging.getSelectQueryAuditProvider().getCustomizedDataLoggingValues(queryLogging, dataLoggingValues);
+            if (customLoggingValues != null)
+                return customLoggingValues;
+        }
         // allow derived class to map values if needed; must convert
         List<String> sortedDataLoggingValues = new ArrayList<>();
         for (Object obj : dataLoggingValues)

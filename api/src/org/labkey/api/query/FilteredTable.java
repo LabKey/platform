@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -289,7 +290,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         }
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
         {
-            ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment()));
+            ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
         }
         return ret;
     }
@@ -471,7 +472,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
         {
-            ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment()));
+            ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
         }
         propagateKeyField(column, ret);
         addColumn(ret);
@@ -486,6 +487,14 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     public String getPHILoggingComment()
     {
         return "";
+    }
+
+    /**
+     * provide a way to customize identifieddata values
+     */
+    public SelectQueryAuditProvider getSelectQueryAuditProvider()
+    {
+        return null;
     }
 
     public ColumnInfo addWrapColumn(ColumnInfo column)
