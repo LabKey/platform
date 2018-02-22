@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.HtmlDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -89,6 +90,10 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns);
+        table.getColumn("Changes").setDisplayColumnFactory(new HtmlDisplayColumnFactory());
+        List<FieldKey> defaultCols = new ArrayList<>(table.getDefaultVisibleColumns());
+        defaultCols.add(FieldKey.fromParts("Changes"));
+        table.setDefaultVisibleColumns(defaultCols);
         DetailsURL url = DetailsURL.fromString("audit/showSiteSettingsAuditDetails.view?id=${rowId}");
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);

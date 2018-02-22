@@ -16,7 +16,9 @@
 
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.UsageReportingLevel;
 
@@ -29,17 +31,20 @@ import java.net.URISyntaxException;
  */
 public class WriteableAppProps extends AppPropsImpl
 {
+    private Container _container;
+
     public WriteableAppProps(Container c)
     {
         super();
+        _container = c;
         makeWriteable(c);
     }
 
-    /** Override to make public */
-    @Override
-    public void save()
+    /** Override to make public and collect user for auditing purposes */
+    public void save(@Nullable User user)
     {
         super.save();
+        writeAuditLogEvent(_container, user);
     }
 
     public void setAdminOnlyMessage(String adminOnlyMessage)
@@ -191,7 +196,7 @@ public class WriteableAppProps extends AppPropsImpl
     {
         WriteableAppProps app = AppProps.getWriteableInstance();
         app.incrementLookAndFeelRevision();
-        app.save();
+        app.save(null);
     }
 
     public void setUseContainerRelativeURL(boolean b)

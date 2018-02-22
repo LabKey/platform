@@ -82,9 +82,7 @@ public interface ExperimentalFeatureService
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.storeBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, enabled);
-            props.save();
-
-            props.writeAuditLogEvent(ContainerManager.getRoot(), user, props.getOldProperties());
+            props.save(user);
 
             if (_listeners != null && _listeners.containsKey(feature))
             {

@@ -94,11 +94,11 @@ public interface FileContentService
     File getSiteDefaultRoot();
     @NotNull
     Path getSiteDefaultRootPath();
-    void setSiteDefaultRoot(File root);
+    void setSiteDefaultRoot(File root, User user);
 
     @NotNull
     File getUserFilesRoot();
-    void setUserFilesRoot(File root);
+    void setUserFilesRoot(File root, User user);
 
     /**
      * Create an attachmentParent object that will allow storing files in the file system
@@ -246,7 +246,7 @@ public interface FileContentService
      */
     SQLFragment listFilesQuery(@NotNull User currentUser);
 
-    void setWebfilesEnabled(boolean enabled);
+    void setWebfilesEnabled(boolean enabled, User user);
 
     /**
      * Return file's virtual folder path that's relative to container's file root. Roots are matched in order of @files, @pipeline and then each @filesets.

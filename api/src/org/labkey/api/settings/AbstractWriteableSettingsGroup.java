@@ -91,9 +91,9 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         _properties.remove(name);
     }
 
-    public void writeAuditLogEvent(Container c, User user, Map<String,String> oldProps)
+    public void writeAuditLogEvent(Container c, User user)
     {
-        String diff = genDiffHtml(oldProps);
+        String diff = genDiffHtml(getOldProperties());
 
         if (null != diff)
         {

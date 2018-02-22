@@ -173,7 +173,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
                 WriteableAppProps writeable = AppProps.getWriteableInstance();
                 writeable.storeStringValue(BASE_SERVER_URL_PROP, initialRequestBaseServerUrl);
-                writeable.save();
+                writeable.save(null);
             }
             catch (URISyntaxException e)
             {
@@ -339,7 +339,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             {
                 WriteableAppProps writeable = AppProps.getWriteableInstance();
                 writeable.storeStringValue(SERVER_GUID, serverGUID);
-                writeable.save();
+                writeable.save(null);
             }
             catch (RootContainerException e)
             {
@@ -580,7 +580,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                     writeable.storeStringValue(prop.getName(), prop.getValue());
                 }
             });
-        writeable.save();
+        writeable.save(null);
     }
 
     @Override
