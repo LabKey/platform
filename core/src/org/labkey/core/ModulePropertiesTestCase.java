@@ -174,7 +174,7 @@ public class ModulePropertiesTestCase extends Assert
         // restore the Look And Feel server settings to how they were originally
         WriteableAppProps writeableSiteSettingsProps = AppProps.getWriteableInstance();
         writeableSiteSettingsProps.setMaxBLOBSize(originalMaxBlobSize);
-        writeableSiteSettingsProps.save();
+        writeableSiteSettingsProps.save(_user);
     }
 
     private class TestModule extends CodeOnlyModule

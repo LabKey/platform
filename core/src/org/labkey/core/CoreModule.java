@@ -582,7 +582,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             if (!app.isSetUseContainerRelativeURL())
             {
                 app.setUseContainerRelativeURL(false);
-                app.save();
+                app.save(moduleContext.getUpgradeUser());
             }
         }
 

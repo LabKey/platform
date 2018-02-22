@@ -1866,7 +1866,7 @@ public class LoginController extends SpringActionController
                             String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
                             WriteableAppProps appProps = AppProps.getWriteableInstance();
                             appProps.setDefaultDomain(defaultDomain);
-                            appProps.save();
+                            appProps.save(null);
                         }
 
                         transaction.commit();

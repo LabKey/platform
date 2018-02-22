@@ -565,7 +565,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void setSiteDefaultRoot(File root)
+    public void setSiteDefaultRoot(File root, User user)
     {
         if (root == null || !root.exists())
             throw new IllegalArgumentException("Invalid site root: does not exist");
@@ -574,7 +574,7 @@ public class FileContentServiceImpl implements FileContentService
         WriteableAppProps props = AppProps.getWriteableInstance();
 
         props.setFileSystemRoot(root.getAbsolutePath());
-        props.save();
+        props.save(user);
 
         FileRootManager.get().clearCache();
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
@@ -583,7 +583,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void setUserFilesRoot(File root)
+    public void setUserFilesRoot(File root, User user)
     {
         if (root == null || !root.exists())
             throw new IllegalArgumentException("Invalid site root: does not exist");
@@ -592,7 +592,7 @@ public class FileContentServiceImpl implements FileContentService
         WriteableAppProps props = AppProps.getWriteableInstance();
 
         props.setUserFilesRoot(root.getAbsolutePath());
-        props.save();
+        props.save(user);
 
         FileRootManager.get().clearCache();
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
@@ -601,11 +601,11 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void setWebfilesEnabled(boolean enabled)
+    public void setWebfilesEnabled(boolean enabled, User user)
     {
         WriteableAppProps props = AppProps.getWriteableInstance();
         props.setWebfilesEnabled(enabled);
-        props.save();
+        props.save(user);
     }
 
     @Override
@@ -1084,7 +1084,7 @@ public class FileContentServiceImpl implements FileContentService
                 .filter( prop -> prop.getModifier() != bootstrap || isBootstrap )
                 .forEach(prop -> {
                     File fileRoot = new File(prop.getValue());
-                    FileContentService.get().setSiteDefaultRoot(fileRoot);
+                    FileContentService.get().setSiteDefaultRoot(fileRoot, null);
                 });
     }
 
@@ -1535,7 +1535,7 @@ public class FileContentServiceImpl implements FileContentService
             Assert.assertEquals("The expected change in Site Root File was not found", testSiteRootFile.getAbsolutePath(), newSiteRootFile.getAbsolutePath());
 
             // restore the Site Root File server settings to how they were originally
-            FileContentService.get().setSiteDefaultRoot(originalSiteRootFile);
+            FileContentService.get().setSiteDefaultRoot(originalSiteRootFile, null);
             testSiteRootFile.delete();
         }
 

@@ -627,7 +627,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.save();
 
         //write an audit log event
-        props.writeAuditLogEvent(c, user, props.getOldProperties());
+        props.writeAuditLogEvent(c, user);
 
         return true;
     }

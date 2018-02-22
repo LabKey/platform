@@ -102,6 +102,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -1121,9 +1122,6 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static final String LIB_PATH = "/WEB-INF/lib/";
-    private static final String JAVA_CLIENT_API_JAR_PREFIX = "labkey-client-api-";
-
     private Set<String> getTomcatJars()
     {
         if (!AppProps.getInstance().isDevMode())
@@ -1420,10 +1418,7 @@ public class AdminController extends SpringActionController
             }
             props.setCSRFCheck(check);
 
-            props.save();
-
-            //write an audit log event
-            props.writeAuditLogEvent(getContainer(), getViewContext().getUser(), props.getOldProperties());
+            props.save(getViewContext().getUser());
 
             if (null != level)
                 level.scheduleUpgradeCheck();
@@ -3332,7 +3327,7 @@ public class AdminController extends SpringActionController
             _mb = mb;
         }
 
-        public int compareTo(MemoryCategory o)
+        public int compareTo(@NotNull MemoryCategory o)
         {
             return new Double(getMb()).compareTo(new Double(o.getMb()));
         }
@@ -3572,8 +3567,6 @@ public class AdminController extends SpringActionController
 
         private boolean upgradeInProgress;
 
-        ArrayList<String> _errorList = new ArrayList<>();
-
         public boolean isUpgradeInProgress()
         {
             return upgradeInProgress;
@@ -3706,8 +3699,7 @@ public class AdminController extends SpringActionController
             }
             if (r<0 || r>255) return false;
             if (g<0 || g>255) return false;
-            if (b<0 || b>255) return false;
-            return true;
+            return !(b < 0 || b > 255);
         }
 
         public void validate(Errors errors)
@@ -3903,7 +3895,7 @@ public class AdminController extends SpringActionController
                 }
                 lafProps.setSystemShortName(form.getSiteName());
 
-                appProps.save();
+                appProps.save(getUser());
                 lafProps.save();
 
                 // If the admin has not opted out of usage reporting, send an immediate report
@@ -3923,7 +3915,7 @@ public class AdminController extends SpringActionController
             {
                 File root = _svc.getSiteDefaultRoot();
 
-                if (root != null && root.exists())
+                if (root.exists())
                     form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
 
                 form.setAllowReporting(!AppProps.getInstance().isDevMode());
@@ -5451,7 +5443,7 @@ public class AdminController extends SpringActionController
 
             QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME);
             settings.setAllowChooseView(true);
-            settings.getBaseSort().insertSortColumn("DisplayName");
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("DisplayName"));
 
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
             QueryView queryView = new QueryView(schema, settings, errors)
@@ -5887,7 +5879,6 @@ public class AdminController extends SpringActionController
         private String _emailSender;
         private String _emailReplyTo;
         private String _emailMessage;
-        private String _returnURL;
         private String _templateDescription;
 
         public void setTemplateClass(String name){_templateClass = name;}
@@ -6210,20 +6201,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static ActionURL getShowMoveFolderTreeURL(Container c, boolean addAlias, boolean showAll)
-    {
-        ActionURL url = new ActionURL(ShowMoveFolderTreeAction.class, c);
-
-        if (addAlias)
-            url.addParameter("addAlias", "1");
-
-        if (showAll)
-            url.addParameter("showAll", "1");
-
-        return url;
-    }
-
-
     @RequiresPermission(AdminPermission.class)
     public class ShowMoveFolderTreeAction extends SimpleViewAction<ManageFoldersForm>
     {
@@ -6246,17 +6223,6 @@ public class AdminController extends SpringActionController
         {
             super("/org/labkey/core/admin/moveFolder.jsp", form, errors);
         }
-    }
-
-
-    public static ActionURL getMoveFolderURL(Container c, boolean addAlias)
-    {
-        ActionURL url = new ActionURL(MoveFolderAction.class, c);
-
-        if (addAlias)
-            url.addParameter("addAlias", "1");
-
-        return url;
     }
 
 
@@ -6379,14 +6345,11 @@ public class AdminController extends SpringActionController
             {
                 String title = "Create Folder";
 
-                if (null != c)
-                {
-                    title += " in /";
-                    if (c == ContainerManager.getHomeContainer())
-                        title += "Home";
-                    else
-                        title += c.getName();
-                }
+                title += " in /";
+                if (c == ContainerManager.getHomeContainer())
+                    title += "Home";
+                else
+                    title += c.getName();
 
                 getPageConfig().setTitle(title);
             }
@@ -6559,7 +6522,6 @@ public class AdminController extends SpringActionController
         {
             Container c = getContainer();
             String permissionType = form.getPermissionType();
-            StringBuilder error = new StringBuilder();
 
             if(c.isProject()){
                 _successURL = new AdminUrlsImpl().getInitialFolderSettingsURL(c);
@@ -6589,56 +6551,61 @@ public class AdminController extends SpringActionController
                 return false;
             }
 
-            if(permissionType.equals("CurrentUser"))
+            switch (permissionType)
             {
-                MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
-                Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
+                case "CurrentUser":
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
+                    Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
 
-                policy.addRoleAssignment(getUser(), role);
-                SecurityPolicyManager.savePolicy(policy);
-            }
-            else if (permissionType.equals("Inherit"))
-            {
-                SecurityManager.setInheritPermissions(c);
-            }
-            else if (permissionType.equals("CopyExistingProject"))
-            {
-                String targetProject = form.getTargetProject();
-                if(targetProject == null){
-                    errors.reject(ERROR_MSG, "In order to copy permissions from an existing project, you must pick a project.");
-                    return false;
-                }
-                Container source = ContainerManager.getForId(targetProject);
-                assert source != null;
+                    policy.addRoleAssignment(getUser(), role);
+                    SecurityPolicyManager.savePolicy(policy);
+                    break;
+                case "Inherit":
+                    SecurityManager.setInheritPermissions(c);
+                    break;
+                case "CopyExistingProject":
+                    String targetProject = form.getTargetProject();
+                    if (targetProject == null)
+                    {
+                        errors.reject(ERROR_MSG, "In order to copy permissions from an existing project, you must pick a project.");
+                        return false;
+                    }
+                    Container source = ContainerManager.getForId(targetProject);
+                    assert source != null;
 
-                HashMap<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
+                    Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
 
-                //copy role assignments
-                SecurityPolicy op = SecurityPolicyManager.getPolicy(source);
-                MutableSecurityPolicy np = new MutableSecurityPolicy(c);
-                for (RoleAssignment assignment : op.getAssignments()){
-                    Integer userId = assignment.getUserId();
-                    UserPrincipal p = SecurityManager.getPrincipal(userId);
-                    Role r = assignment.getRole();
+                    //copy role assignments
+                    SecurityPolicy op = SecurityPolicyManager.getPolicy(source);
+                    MutableSecurityPolicy np = new MutableSecurityPolicy(c);
+                    for (RoleAssignment assignment : op.getAssignments())
+                    {
+                        Integer userId = assignment.getUserId();
+                        UserPrincipal p = SecurityManager.getPrincipal(userId);
+                        Role r = assignment.getRole();
 
-                    if(p instanceof Group){
-                        Group g = (Group)p;
-                        if(!g.isProjectGroup()){
+                        if (p instanceof Group)
+                        {
+                            Group g = (Group) p;
+                            if (!g.isProjectGroup())
+                            {
+                                np.addRoleAssignment(p, r);
+                            }
+                            else
+                            {
+                                np.addRoleAssignment(groupMap.get(p), r);
+                            }
+                        }
+                        else
+                        {
                             np.addRoleAssignment(p, r);
                         }
-                        else {
-                            np.addRoleAssignment(groupMap.get(p), r);
-                        }
                     }
-                    else {
-                        np.addRoleAssignment(p, r);
-                    }
-                }
 
-                SecurityPolicyManager.savePolicy(np);
-            }
-            else {
-                throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);
+                    SecurityPolicyManager.savePolicy(np);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);
             }
             _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
@@ -6774,20 +6741,6 @@ public class AdminController extends SpringActionController
             getPageConfig().setFocusId("name");
             getPageConfig().setHelpTopic(new HelpTopic("createProject"));
             return null;
-        }
-    }
-
-    // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create
-
-    @RequiresNoPermission
-    public class ModifyFolderAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o)
-        {
-            if ("create".equalsIgnoreCase(getViewContext().getActionURL().getParameter("action")))
-                return new ActionURL(CreateFolderAction.class, getContainer());
-
-            throw new NotFoundException();
         }
     }
 
@@ -7966,17 +7919,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeMenuAction extends ApiAction<CustomizeMenuForm>
     {
-        Portal.WebPart _webPart;
-
-        public void validateCommand(CustomizeMenuForm form, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(CustomizeMenuForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return null;
-        }
-
         public ApiResponse execute(CustomizeMenuForm form, BindException errors) throws Exception
         {
             if (null != form.getUrl())
@@ -7991,16 +7933,6 @@ public class AdminController extends SpringActionController
 
             setCustomizeMenuForm(form, getContainer(),  getUser());
             return new ApiSimpleResponse("success", true);
-        }
-
-        public ActionURL getSuccessURL(CustomizeMenuForm form)
-        {
-            return new ActionURL(ProjectSettingsAction.class, getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -8965,7 +8897,7 @@ public class AdminController extends SpringActionController
             String old = AppProps.getInstance().getCSRFCheck();
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setCSRFCheck(valueForm.getValue());
-            props.save();
+            props.save(getUser());
             JSONObject ret = new JSONObject();
             ret.put("success",true);
             ret.put("previousValue", old);

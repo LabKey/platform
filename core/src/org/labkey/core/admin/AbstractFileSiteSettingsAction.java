@@ -144,13 +144,13 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
     public boolean handlePost(FormType form, BindException errors) throws Exception
     {
         File prev = _svc.getSiteDefaultRoot();
-        _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())));
-        _svc.setWebfilesEnabled(form.isWebfilesEnabled());
+        _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())), getUser());
+        _svc.setWebfilesEnabled(form.isWebfilesEnabled(), getUser());
 
         if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
         {
             File prevUserRoot = _svc.getUserFilesRoot();
-            _svc.setUserFilesRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getUserRootPath())));
+            _svc.setUserFilesRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getUserRootPath())), getUser());
         }
 
         if (form.isUpgrade())
@@ -169,7 +169,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
                 SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(ContainerManager.getRoot().getId(), "The setting for disable file upload was changed (see details).");
                 event.setChanges(getDisableFileUploadDiff(PremiumService.get().isFileUploadDisabled(), form.isFileUploadDisabled()));
                 AuditLogService.get().addEvent(getUser(), event);
-                saveFileUploadDisabledSetting(form.isFileUploadDisabled());
+                saveFileUploadDisabledSetting(form.isFileUploadDisabled(), getUser());
             }
         }
 
@@ -184,11 +184,11 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
                 "</td></tr></table>";
     }
 
-    public void saveFileUploadDisabledSetting(boolean disabled)
+    public void saveFileUploadDisabledSetting(boolean disabled, User user)
     {
         WriteableAppProps props = AppProps.getWriteableInstance();
         props.setFileUploadDisabled(disabled);
-        props.save();
+        props.save(user);
     }
 
     private void upgradeExistingFileSets()
