@@ -188,8 +188,6 @@ public class InputTag extends SimpleTagBase
 
         if (className != null)
             input.className(className);
-        else if (type != null && (type.equals("radio") || type.equals("checkbox")))
-            input.className(""); // prevent default className
 
         // special processing within a form
         if (form != null)

@@ -103,7 +103,7 @@ public class Input extends DisplayElement
     {
         _contextContent = builder._contextContent;
         _checked = builder._checked;
-        _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check " + builder._className : builder._className;
+        _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check" : builder._className;
         _disabled = builder._disabled == null ? false : builder._disabled;
         _forceSmallContext = builder._forceSmallContext == null ? false : builder._forceSmallContext;
         _format = builder._format;
