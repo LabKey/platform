@@ -2261,6 +2261,7 @@ public class QueryServiceImpl implements QueryService
         Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
         String columnLoggingComment = null;
+        SelectQueryAuditProvider selectQueryAuditProvider = null;
         for (ColumnInfo column : allInvolvedColumns)
         {
             if (!(column instanceof LookupColumn))
@@ -2274,6 +2275,8 @@ public class QueryServiceImpl implements QueryService
                     shouldLogNameToDataLoggingMap.get(column).addAll(columnLogging.getDataLoggingColumns());
                     if (null == columnLoggingComment)
                         columnLoggingComment = columnLogging.getLoggingComment();
+                    if (null == selectQueryAuditProvider)
+                        selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
                 }
             }
         }
@@ -2308,7 +2311,7 @@ public class QueryServiceImpl implements QueryService
 
         if (null != table.getUserSchema() && !queryLogging.isReadOnly())
             queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
-                                         shouldLogNameLoggings, dataLoggingColumns);
+                                         shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
         else if (!shouldLogNameLoggings.isEmpty())
             throw new UnauthorizedException("Column logging is required but cannot set query logging object.");
 
