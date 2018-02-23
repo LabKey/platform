@@ -18,6 +18,8 @@ package org.labkey.announcements;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,6 +34,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EmailNonUsersPermission;
 import org.labkey.api.util.MailHelper;
@@ -55,6 +58,7 @@ import static java.lang.Boolean.TRUE;
 @RequiresPermission(ReadPermission.class)
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
+    private static final Logger _log = Logger.getLogger(SendMessageAction.class);
     private Map<String, Set<String>> _recipientMap = new HashMap<>();
 
     enum Props
@@ -82,6 +86,9 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
     {
         if (TRUE == JdbcType.BOOLEAN.convert(System.getProperty("SendMessage.disable", "false")))
             throw new NotFoundException("SendMessage is disabled");
+
+        if (!getContainer().hasPermission(getUser(), CanUseSendMessageApiPermission.class) && !getUser().hasRootPermission(CanUseSendMessageApiPermission.class))
+            throw new IllegalArgumentException("The current user does not have permission to use the SendMessage API.");
 
         JSONObject json = form.getJsonObject();
         if (null == json)
@@ -114,7 +121,9 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
         MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();
 
-        msg.setFrom(getEmail(from));
+        Address fromAddress = getEmail(from);
+        if (fromAddress != null)
+            msg.setFrom(fromAddress);
         msg.setSubject(subject);
 
         addMsgRecipients(msg, recipients);
@@ -127,19 +136,27 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         return response;
     }
 
+    @Nullable
     private Address getEmail(String email) throws IllegalArgumentException
     {
         try
         {
             ValidEmail validEmail = new ValidEmail(email);
+            User user = UserManager.getUser(validEmail);
 
             if (!canEmailNonUsers(getUser()))
             {
-                User user = UserManager.getUser(validEmail);
-
                 if (user == null)
                     throw new IllegalArgumentException("The email address '" + email + "' is not associated with a user account, and the current user does not have permission to send to it.");
             }
+
+            // filter out disabled users or users who have never logged in : Issue #33255
+            if (user != null && (!user.isActive() || user.isFirstLogin()))
+            {
+                _log.warn("The user: " + user.getName() + " is either disabled or has never logged in and has been omitted.");
+                return null;
+            }
+
             return validEmail.getAddress();
         }
         catch (ValidEmail.InvalidEmailException e)
@@ -217,7 +234,8 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
                     if (!emails.contains(email))
                     {
                         Address address = getEmail(email);
-                        msg.addRecipient(rtype, address);
+                        if (address != null)
+                            msg.addRecipient(rtype, address);
 
                         emails.add(email);
                     }
