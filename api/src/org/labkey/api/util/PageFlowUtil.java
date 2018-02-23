@@ -1656,7 +1656,6 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = "<link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
-        /* Stylesheets for Ext 3.x, 4.x -- order matters as overrides are in stylesheet.css and themeStylesheet.view */
         Set<String> preIncludedCss = getExtJSStylesheets(c, resources);
         for (String cssPath : preIncludedCss)
             F.format(link, staticResourceUrl(cssPath));
