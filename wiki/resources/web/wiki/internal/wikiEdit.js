@@ -43,8 +43,6 @@ tinyMCE.init({
     // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
     gecko_spellcheck: true,
 
-    content_css: LABKEY.contextPath + "/core/themeStylesheet.view",
-
     // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
     pdw_toggle_on: 1,
     pdw_toggle_toolbars: "2,3",

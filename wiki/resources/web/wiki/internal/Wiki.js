@@ -135,9 +135,7 @@
 
             // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
             // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-            gecko_spellcheck : true,
-
-            content_css : LABKEY.contextPath + "/core/themeStylesheet.view"
+            gecko_spellcheck : true
         });
 
         this.ed.render();
