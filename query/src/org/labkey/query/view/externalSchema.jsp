@@ -30,6 +30,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -41,7 +42,7 @@
 %>
 <%
     Container c = getContainer();
-    BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();
+    QueryController.ExternalSchemaBean bean = (QueryController.ExternalSchemaBean) HttpView.currentModel();
     AbstractExternalSchemaDef def = bean.getSchemaDef();
     DataSourceInfo initialSource = bean.getInitialSource();
 

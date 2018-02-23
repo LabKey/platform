@@ -4248,9 +4248,6 @@ public class QueryController extends SpringActionController
         protected final boolean _insert;
         protected final Map<String, String> _help = new HashMap<>();
 
-        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemas = new LinkedHashMap<>();
-        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemasIncludingSystem = new LinkedHashMap<>();
-
         public BaseExternalSchemaBean(Container c, T def, boolean insert)
         {
             _c = c;
@@ -4263,26 +4260,9 @@ public class QueryController extends SpringActionController
                 .stream()
                 .filter(ci -> null != ci.getDescription())
                 .forEach(ci -> _help.put(ci.getName(), ci.getDescription()));
-
-            initSources();
         }
-
-        protected abstract void initSources();
 
         public abstract DataSourceInfo getInitialSource();
-
-        public Collection<DataSourceInfo> getSources()
-        {
-            return _sourcesAndSchemas.keySet();
-        }
-
-        public Collection<String> getSchemaNames(DataSourceInfo source, boolean includeSystem)
-        {
-            if (includeSystem)
-                return _sourcesAndSchemasIncludingSystem.get(source);
-            else
-                return _sourcesAndSchemas.get(source);
-        }
 
         public T getSchemaDef()
         {
@@ -4334,43 +4314,30 @@ public class QueryController extends SpringActionController
                 sourceContainer = _c;
             return sourceContainer;
         }
-
-        protected void initSources()
-        {
-            User user = HttpView.currentContext().getUser();
-            MultiValuedMap<Container, Container> containerTree = ContainerManager.getContainerTree(_c.getProject());
-            Set<Container> adminContainers = ContainerManager.getContainerSet(containerTree, user, AdminPermission.class);
-
-            SortedSet<Container> sortedContainers = new TreeSet<>(Comparator.comparing(Container::getPath));
-            sortedContainers.addAll(adminContainers);
-
-            // Add initial container if it isn't in the project tree
-            sortedContainers.add(getInitialContainer());
-
-            for (Container c : sortedContainers)
-            {
-                Collection<String> schemaNames = new LinkedList<>();
-                //Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
-
-                DefaultSchema defaultSchema = DefaultSchema.get(user, c);
-                Set<SchemaKey> userSchemas = defaultSchema.getUserSchemaPaths(false);
-                for (SchemaKey key : userSchemas)
-                {
-                    schemaNames.add(key.toString());
-                }
-
-                DataSourceInfo source = new DataSourceInfo(c);
-                _sourcesAndSchemas.put(source, schemaNames);
-                _sourcesAndSchemasIncludingSystem.put(source, schemaNames);
-            }
-        }
     }
 
     public static class ExternalSchemaBean extends BaseExternalSchemaBean<ExternalSchemaDef>
     {
+        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemas = new LinkedHashMap<>();
+        protected final Map<DataSourceInfo, Collection<String>> _sourcesAndSchemasIncludingSystem = new LinkedHashMap<>();
+
         public ExternalSchemaBean(Container c, ExternalSchemaDef def, boolean insert)
         {
             super(c, def, insert);
+            initSources();
+        }
+
+        public Collection<DataSourceInfo> getSources()
+        {
+            return _sourcesAndSchemas.keySet();
+        }
+
+        public Collection<String> getSchemaNames(DataSourceInfo source, boolean includeSystem)
+        {
+            if (includeSystem)
+                return _sourcesAndSchemasIncludingSystem.get(source);
+            else
+                return _sourcesAndSchemas.get(source);
         }
 
         @Override
