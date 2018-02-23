@@ -83,6 +83,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SurveyController extends SpringActionController implements SurveyUrls
 {
@@ -762,6 +763,10 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                     value = converter.convert(targetType, value);
                                 }
                                 settings.setBaseFilter(new SimpleFilter(pk, value));
+                                List<FieldKey> fieldKeys = table.getColumns().stream().
+                                        map(ColumnInfo::getFieldKey).
+                                        collect(Collectors.toList());
+                                settings.setFieldKeys(fieldKeys);
                                 QueryView view = schema.createView(getViewContext(), settings, errors);
 
                                 if (view != null)
