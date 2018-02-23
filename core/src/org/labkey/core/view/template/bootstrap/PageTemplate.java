@@ -488,6 +488,7 @@ public class PageTemplate extends JspView<PageConfig>
         {
             messages.append("<div class=\"alert alert-warning\" role=\"alert\">");
             appendMessageContent(page.getWarningMessages(), messages);
+            messages.append("</div>");
         }
 
         int dismissibleSize = page.getDismissibleWarningMessages().size();
@@ -497,21 +498,30 @@ public class PageTemplate extends JspView<PageConfig>
             messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
 
            appendMessageContent(page.getDismissibleWarningMessages(), messages);
+           messages.append("</div>");
         }
+
+        // Display a <noscript> warning message
+        messages.append("<noscript>");
+        messages.append("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>");
+        messages.append("</noscript>");
+
         return messages.toString();
     }
 
     private static void appendMessageContent(List<String> messages, StringBuilder html)
     {
-        int size = messages.size();
-        if (size == 1)
-            html.append(messages.get(0)).append("</div>");
-        else
+        if (messages.size() > 0)
         {
-            html.append("<ul>");
-            for (String msg : messages)
-                html.append("<li>").append(msg).append("</li>");
-            html.append("</ul></div>");
+            if (messages.size() == 1)
+                html.append(messages.get(0));
+            else
+            {
+                html.append("<ul>");
+                for (String msg : messages)
+                    html.append("<li>").append(msg).append("</li>");
+                html.append("</ul>");
+            }
         }
     }
 
