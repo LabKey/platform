@@ -32,7 +32,6 @@
     String notificationCountId = "labkey-notifications-count" + UniqueID.getServerSessionScopedUID();
     String notificationPanelId = "labkey-notifications-panel" + UniqueID.getServerSessionScopedUID();
 %>
-<labkey:scriptDependency/>
 <script type="text/javascript">
 (function($) {
     $(function() {

@@ -16,12 +16,12 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
 import java.io.IOException;
@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
  * User: klum
  * Date: 3/22/13
  */
+@Deprecated // Configure your view to include dependencies at initialization prior to render time
 public class ScriptDependenciesTag extends SimpleTagBase
 {
     private boolean _ajaxOnly;
@@ -38,7 +39,7 @@ public class ScriptDependenciesTag extends SimpleTagBase
     private String _scope;
 
     @Override
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         Object requestObj = this.getJspContext().getAttribute(PageContext.REQUEST);
 
@@ -55,54 +56,61 @@ public class ScriptDependenciesTag extends SimpleTagBase
                     JspBase jspView = (JspBase)page;
                     LinkedHashSet<ClientDependency> dependencies = jspView.getClientDependencies();
 
-                    ViewContext context = jspView.getViewContext();
-
-                    LinkedHashSet<String> includes = new LinkedHashSet<>();
-                    LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-                    PageFlowUtil.getJavaScriptFiles(context.getContainer(), dependencies, includes, implicitIncludes);
-
-                    LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
-                    for (ClientDependency d : dependencies)
+                    if (dependencies.size() > 0)
                     {
-                        cssScripts.addAll(d.getCssPaths(context.getContainer()));
-                    }
+                        LinkedHashSet<String> includes = new LinkedHashSet<>();
+                        LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
+                        LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+                        ViewContext context = jspView.getViewContext();
 
-                    if (!includes.isEmpty() || !cssScripts.isEmpty())
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("<script type=\"text/javascript\">");
+                        PageFlowUtil.getJavaScriptFiles(context.getContainer(), dependencies, includes, implicitIncludes);
+                        cssScripts.addAll(PageFlowUtil.getExtJSStylesheets(context.getContainer(), dependencies));
 
-                        if (_callback != null && _scope != null)
+                        for (ClientDependency d : dependencies)
                         {
-                            StringBuilder files = new StringBuilder("[");
-                            String delim = "";
-                            for (String script : includes)
+                            cssScripts.addAll(d.getCssPaths(context.getContainer()));
+                        }
+
+                        if (!includes.isEmpty() || !cssScripts.isEmpty())
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("<script type=\"text/javascript\">");
+
+                            if (_callback != null && _scope != null)
                             {
-                                files.append(delim);
-                                files.append("'").append(script).append("'");
+                                StringBuilder files = new StringBuilder("[");
+                                String delim = "";
+                                for (String script : includes)
+                                {
+                                    files.append(delim);
+                                    files.append("'").append(script).append("'");
 
-                                delim = ",";
+                                    delim = ",";
+                                }
+                                files.append(']');
+                                sb.append("\tLABKEY.requiresScript(").append(files).append(",").append(_callback).append(",").
+                                        append(_scope).append(", true);\n");
                             }
-                            files.append(']');
-                            sb.append("\tLABKEY.requiresScript(").append(files).append(",").append(_callback).append(",").
-                                    append(_scope).append(", true);\n");
-                        }
-                        else
-                        {
-                            for (String script : includes)
+                            else
                             {
-                                sb.append("\tLABKEY.requiresScript('").append(script).append("');\n");
+                                for (String script : includes)
+                                {
+                                    sb.append("\tLABKEY.requiresScript('").append(script).append("');\n");
+                                }
                             }
-                        }
 
-                        for (String script : cssScripts)
-                        {
-                            sb.append("\tLABKEY.requiresCss('").append(script).append("');\n");
-                        }
-                        sb.append("</script>\n");
+                            for (String script : cssScripts)
+                            {
+                                sb.append("\tLABKEY.requiresCss('").append(script).append("');\n");
+                            }
 
-                        JspWriter out = getOut();
-                        out.write(sb.toString());
+                            if (AppProps.getInstance().isDevMode())
+                                sb.append("console.warn('<labkey:scriptDependency/> was deprecated in 18.1. If you find that it is required for your usage please investigate why view dependencies are not loaded before render time.');");
+                            sb.append("</script>\n");
+
+                            JspWriter out = getOut();
+                            out.write(sb.toString());
+                        }
                     }
                 }
             }
