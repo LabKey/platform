@@ -76,6 +76,7 @@ public class RoleManager
         registerRole(new EmailNonUsersRole());
         registerRole(new SharedViewEditorRole());
         registerRole(new SeeFilePathsRole(), false);
+        registerRole(new CanUseSendMessageApi(), false);
     }
 
     public static Role getRole(String name)

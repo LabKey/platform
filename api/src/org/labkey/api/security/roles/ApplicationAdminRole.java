@@ -18,6 +18,7 @@ package org.labkey.api.security.roles;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
@@ -51,7 +52,8 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
                 SeeUserEmailAddressesPermission.class,
                 EmailNonUsersPermission.class,
                 EnableRestrictedModules.class,
-                CanSeeAuditLogPermission.class);
+                CanSeeAuditLogPermission.class,
+                CanUseSendMessageApiPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
