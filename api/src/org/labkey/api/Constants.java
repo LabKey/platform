@@ -33,7 +33,7 @@ public class Constants
      */
     public static double getPreviousReleaseVersion()
     {
-        return 17.30;
+        return 18.10;
     }
 
     /**
