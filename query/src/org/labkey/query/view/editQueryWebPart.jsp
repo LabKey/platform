@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -37,9 +38,9 @@
     Portal.WebPart part = me.getModelBean();
     ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
+    String renderId = "edit-query-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-<labkey:scriptDependency/>
-<div id="extDiv"></div>
+<div id="<%=h(renderId)%>"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
 
@@ -84,7 +85,7 @@
         }));
 
         var queryForm = Ext4.create('Ext.form.Panel', {
-            renderTo: 'extDiv',
+            renderTo: <%=q(renderId)%>,
             defaults : {
                 labelWidth: 225,
                 width : 525,

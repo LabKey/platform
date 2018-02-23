@@ -41,7 +41,6 @@
     final String ID_PREFIX = "wiki-input-";
     String sep;
 %>
-<labkey:scriptDependency/>
 <script type="text/javascript">
     LABKEY._wiki.setProps({
         entityId: <%=model.getEntityId()%>,

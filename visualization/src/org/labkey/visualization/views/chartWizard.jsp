@@ -73,10 +73,7 @@
 
     String renderId = form.getComponentId() != null ? form.getComponentId() : "chart-wizard-report";
 %>
-
-<labkey:scriptDependency/>
 <div id="<%=h(renderId)%>"></div>
-
 <script type="text/javascript">
 
     var init = function(reportId, renderTo, canEdit, editUrl)
