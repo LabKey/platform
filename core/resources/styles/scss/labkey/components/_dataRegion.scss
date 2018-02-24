@@ -392,7 +392,12 @@ td.labkey-blank-cell, th.labkey-blank-cell {
   -ms-user-select: none;
 }
 
+.labkey-pagination {
+  white-space: nowrap;
+}
+
 .paging-widget {
+  display: inline-block;
   top: 1px;
   > a {
     padding: 4px 3px;
