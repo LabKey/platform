@@ -137,6 +137,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -2478,6 +2479,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public int removeEdgesForRun(int runId)
     {
+        LOG.info("Removing edges for run " + runId);
         return Table.delete(getTinfoEdge(), new SimpleFilter("runId", runId));
     }
 
@@ -2588,6 +2590,15 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void syncRunEdges(int runId)
     {
+        syncRunEdges(runId, true);
+    }
+
+    private void syncRunEdges(int runId, boolean deleteFirst)
+    {
+        CPUTimer timer = new CPUTimer("sync edges");
+        timer.start();
+
+        LOG.info("Rebuilding edges for runId " + runId);
         try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
         {
             SQLFragment inputDatas = new SQLFragment()
@@ -2612,11 +2623,15 @@ public class ExperimentServiceImpl implements ExperimentService
             Collection<Map<String, Object>> toMaterialLsids = new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns("Container, LSID, CpasType"), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getMapCollection();
 
             // delete all existing edges for this run
-            removeEdgesForRun(runId);
+            if (deleteFirst)
+                removeEdgesForRun(runId);
 
-            // create edge for each input and output combination
             int edgeCount = (fromDataLsids.size()     * (toDataLsids.size() + toMaterialLsids.size())) +
                             (fromMaterialLsids.size() * (toDataLsids.size() + toMaterialLsids.size()));
+            LOG.info(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
+                    fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
+
+            // create edge for each input and output combination
             Set<Tuple3<String, String, Integer>> seen = new HashSet<>(edgeCount);
             for (Map<String, Object> fromDataLsid : fromDataLsids)
             {
@@ -2637,6 +2652,8 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
             tx.commit();
+            timer.stop();
+            LOG.info("  synced edges in " + timer.getDuration() + " ms");
         }
     }
 
@@ -2646,19 +2663,22 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             try (Timing t = MiniProfiler.step("delete edges"))
             {
+                LOG.info("Deleting all edges");
                 Table.delete(getTinfoEdge());
             }
 
             List<Integer> runIds = new TableSelector(getTinfoExperimentRun(), singleton("rowId"), null, new Sort("rowId")).getArrayList(Integer.class);
-            try (Timing t = MiniProfiler.step("create edges for " + runIds.size()))
+            try (Timing t = MiniProfiler.step("create edges"))
             {
-                syncRunEdges(runIds);
+                LOG.info("Rebuilding edges for " + runIds.size() + " runs");
+                for (Integer runId : runIds)
+                    syncRunEdges(runId, false);
             }
 
             if (timing != null)
             {
                 timing.stop();
-                LOG.info("Rebuilt all edges: " + timing.getDuration());
+                LOG.info("Rebuilt all edges: " + timing.getDuration() + " ms");
             }
         }
     }
