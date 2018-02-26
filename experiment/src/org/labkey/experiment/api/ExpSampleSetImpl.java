@@ -18,7 +18,6 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -29,10 +28,8 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ProtocolImplementation;
@@ -41,7 +38,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
@@ -54,20 +53,14 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
     private Domain _domain;
-    private StringExpression _parsedNameExpression;
+    private NameGenerator _nameGen;
 
     public ExpSampleSetImpl(MaterialSource ms)
     {
@@ -258,11 +251,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return _object.getNameExpression() != null;
     }
 
-    @Override
     @Nullable
-    public StringExpression getParsedNameExpression()
+    public NameGenerator getNameGenerator()
     {
-        if (_parsedNameExpression == null)
+        if (_nameGen == null)
         {
             String s = null;
             if (_object.getNameExpression() != null)
@@ -292,237 +284,82 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
             if (s != null)
             {
-                // NOTE: Side-effects are allowed so the sample counters can be incremented when evaluating the expression
-                _parsedNameExpression = StringExpressionFactory.create(s, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
+                TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
+                _nameGen = new NameGenerator(s, parentTable, true);
             }
         }
 
-        return _parsedNameExpression;
-    }
-
-    /**
-     * Create the name expression context shared for the entire batch of samples.
-     */
-    private Map<String, Object> createBatchExpressionContext()
-    {
-        Map<String, Object> map = new CaseInsensitiveHashMap<>();
-
-        map.put("BatchRandomId", String.valueOf(new Random().nextInt()).substring(1,5));
-        map.put("Now", new Date());
-
-        return map;
-    }
-
-    @Override
-    public void createSampleNames(@NotNull List<Map<String, Object>> maps) throws ExperimentException
-    {
-        createSampleNames(maps, null, null, null, false, false);
+        return _nameGen;
     }
 
     @Override
     public void createSampleNames(@NotNull List<Map<String, Object>> maps,
-                                  @Nullable StringExpression expr,
+                                  @Nullable StringExpressionFactory.FieldKeyStringExpression expr,
                                   @Nullable Set<ExpData> parentDatas,
                                   @Nullable Set<ExpMaterial> parentSamples,
                                   boolean skipDuplicates,
                                   boolean addUniqueSuffixForDuplicates)
             throws ExperimentException
     {
-        if (expr == null)
-            expr = getParsedNameExpression();
-
-        Map<String, Object> batchExpressionContext = createBatchExpressionContext();
-
-        Map<String, Integer> newNames = new CaseInsensitiveHashMap<>();
-        Map<String, Map<String, Object>> firstRowForName = new CaseInsensitiveHashMap<>();
-        int i = 0;
-        ListIterator<Map<String, Object>> li = maps.listIterator();
-        while (li.hasNext())
+        NameGenerator nameGen;
+        if (expr != null)
         {
-            i++;
-            Map<String, Object> map = li.next();
-            String name;
-            try
-            {
-                name = createSampleName(map, batchExpressionContext, expr, parentDatas, parentSamples);
-            }
-            catch (IllegalArgumentException e)
-            {
-                // Failed to generate a name due to some part of the expression not in the row
-                if (hasNameExpression())
-                    throw new ExperimentException("Failed to generate name for Sample on row " + i, e);
-                else if (hasNameAsIdCol())
-                    throw new ExperimentException("Name is required for Sample on row " + i, e);
-                else
-                    throw new ExperimentException("All id columns are required for Sample on row " + i, e);
-            }
+            TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
+            nameGen = new NameGenerator(expr, parentTable);
+        }
+        else
+        {
+            nameGen = getNameGenerator();
+            if (nameGen == null)
+                throw new ExperimentException("Error creating name expression generator");
+        }
 
-            if (newNames.containsKey(name))
-            {
-                if (addUniqueSuffixForDuplicates)
-                {
-                    // Update the first occurrence of the name to include the unique suffix
-                    Map<String, Object> first = firstRowForName.get(name);
-                    if (first != null)
-                    {
-                        first.put("Name", name + ".1");
-                        firstRowForName.remove(name);
-                    }
-
-                    // Add a unique suffix to the end of the name.
-                    int count = newNames.get(name) + 1;
-                    newNames.put(name, count);
-                    name += "." + count;
-                }
-                else if (skipDuplicates)
-                {
-                    // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
-                    li.remove();
-                    continue;
-                }
-                else
-                    throw new ExperimentException("Duplicate material '" + name + "' on row " + i);
-            }
+        try
+        {
+            nameGen.generateNames(maps, parentDatas, parentSamples, skipDuplicates, addUniqueSuffixForDuplicates, true);
+        }
+        catch (NameGenerator.DuplicateNameException dup)
+        {
+            throw new ExperimentException("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber(), dup);
+        }
+        catch (NameGenerator.NameGenerationException e)
+        {
+            // Failed to generate a name due to some part of the expression not in the row
+            if (hasNameExpression())
+                throw new ExperimentException("Failed to generate name for Sample on row " + e.getRowNumber(), e);
+            else if (hasNameAsIdCol())
+                throw new ExperimentException("Name is required for Sample on row " + e.getRowNumber(), e);
             else
-            {
-                newNames.put(name, 1);
-
-                // If we generating unique names, remember the first time we see each name
-                if (addUniqueSuffixForDuplicates)
-                    firstRowForName.put(name, map);
-            }
-
-            map.put("Name", name);
+                throw new ExperimentException("All id columns are required for Sample on row " + e.getRowNumber(), e);
         }
     }
 
     @Override
-    public String createSampleName(@NotNull Map<String, Object> rowMap)
+    public String createSampleName(@NotNull Map<String, Object> rowMap) throws ExperimentException
     {
-        return createSampleName(rowMap, null, null, null, null);
+        return createSampleName(rowMap, null, null);
     }
 
     @Override
     public String createSampleName(@NotNull Map<String, Object> rowMap,
-                                   @Nullable Map<String, Object> batchContext,
-                                   @Nullable StringExpression expr,
                                    @Nullable Set<ExpData> parentDatas,
                                    @Nullable Set<ExpMaterial> parentSamples)
+            throws ExperimentException
     {
-        // If a name is already provided, just use it as is
-        if (rowMap.get("name") != null)
-            return String.valueOf(rowMap.get("name"));
+        NameGenerator nameGen = getNameGenerator();
+        if (nameGen == null)
+            throw new ExperimentException("Error creating name expression generator");
 
-        if (expr == null)
-            expr = getParsedNameExpression();
-        if (expr == null)
-            return null;
-
-        if (batchContext == null)
-            batchContext = createBatchExpressionContext();
-
-        // Add extra context variables
-        Map<String, Object> ctx = additionalContext(rowMap, batchContext, parentDatas, parentSamples);
-
-        String name = expr.eval(ctx);
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("Can't create new sample name in sample set '" + getName() + "' using the name expression: " + expr.getSource());
-
-        return name;
+        try
+        {
+            return nameGen.generateName(rowMap, parentDatas, parentSamples, true);
+        }
+        catch (NameGenerator.NameGenerationException e)
+        {
+            throw new ExperimentException("Failed to generate name for Sample", e);
+        }
     }
 
-    private Map<String, Object> additionalContext(@NotNull Map<String, Object> rowMap, @NotNull Map<String, Object> batchContext, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples)
-    {
-        StringExpression expr = getParsedNameExpression();
-        assert expr != null;
-        String exprSource = expr.getSource().toLowerCase();
-
-        Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
-        ctx.putAll(batchContext);
-        ctx.put("RandomId", String.valueOf(new Random().nextInt()).substring(1,5));
-        ctx.putAll(rowMap);
-
-        // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map
-        Domain d = getType();
-        if (d != null)
-        {
-            for (DomainProperty dp : d.getProperties())
-            {
-                PropertyDescriptor pd = dp.getPropertyDescriptor();
-                if (rowMap.containsKey(pd.getPropertyURI()))
-                    ctx.put(pd.getName(), rowMap.get(pd.getPropertyURI()));
-            }
-        }
-
-        // Inspect the expression looking for any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
-        // If sample counters bound to a column are found, the sample counters will be incremented for that date when the expression is evaluated.
-        // Otherwise, update the sample counters for today's date immediately even if the expression doesn't contain a counter replacement token.
-        // TODO: Expose the set of expression variables and substitution formats instead of relying on the source
-        if (!(exprSource.contains(":dailysamplecount}") || exprSource.contains(":weeklysamplecount}") || exprSource.contains(":monthlysamplecount}") || exprSource.contains(":yearlysamplecount}")))
-        {
-            Date now = (Date)batchContext.get("now");
-            Map<String, Integer> counts = ExperimentServiceImpl.get().incrementSampleCounts(now);
-            ctx.putAll(counts);
-        }
-
-        // If needed, add the parent names to the replacement map
-        // TODO: Expose the set of expression variables instead of relying on the source
-        if (exprSource.contains("${inputs") || exprSource.contains("${datainputs") || exprSource.contains("${materialinputs"))
-        {
-            Set<String> allInputs = new LinkedHashSet<>();
-            Set<String> dataInputs = new LinkedHashSet<>();
-            Set<String> materialInputs = new LinkedHashSet<>();
-
-            if (parentDatas != null)
-            {
-                parentDatas.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
-                    allInputs.add(parentName);
-                    dataInputs.add(parentName);
-                });
-            }
-
-            if (parentSamples != null)
-            {
-                parentSamples.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
-                    allInputs.add(parentName);
-                    materialInputs.add(parentName);
-                });
-            }
-
-            for (String colName : rowMap.keySet())
-            {
-                Object value = rowMap.get(colName);
-                if (value == null)
-                    continue;
-
-                if (colName.startsWith(UploadSamplesHelper.DATA_INPUT_PARENT))
-                {
-                    parentNames(value, colName).forEach(parentName -> {
-                        allInputs.add(parentName);
-                        dataInputs.add(parentName);
-                    });
-                }
-                else if (colName.startsWith(UploadSamplesHelper.MATERIAL_INPUT_PARENT))
-                {
-                    parentNames(value, colName).forEach(parentName -> {
-                        allInputs.add(parentName);
-                        materialInputs.add(parentName);
-                    });
-                }
-            }
-
-            ctx.put("Inputs", allInputs);
-            ctx.put("DataInputs", dataInputs);
-            ctx.put("MaterialInputs", materialInputs);
-        }
-
-        return ctx;
-    }
-
-    private Collection<String> parentNames(Object value, String parentColName)
-    {
-        return UploadSamplesHelper.parentNames(value, parentColName).collect(Collectors.toList());
-    }
 
 
     @Override

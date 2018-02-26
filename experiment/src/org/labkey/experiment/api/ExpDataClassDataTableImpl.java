@@ -597,8 +597,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             DataIteratorBuilder step1 = DataIteratorBuilder.wrap(step0);
             if (_dataClass.getNameExpression() != null)
             {
-                StringExpression expr = StringExpressionFactory.create(_dataClass.getNameExpression());
-                step1 = new NameExpressionDataIteratorBuilder(step1, expr);
+                step1 = new NameExpressionDataIteratorBuilder(step1, _dataClass.getNameExpression());
             }
 
             return LoggingDataIterator.wrap(step1.getDataIterator(context));
@@ -842,31 +841,36 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
     private class NameExpressionDataIteratorBuilder implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
-        private final StringExpression _expr;
+        private final String _nameExpression;
 
-        public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, StringExpression expr)
+        public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, String nameExpression)
         {
             _pre = pre;
-            _expr = expr;
+            _nameExpression = nameExpression;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _expr));
+            return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _nameExpression));
         }
     }
 
     private class NameExpressionDataIterator extends WrapperDataIterator
     {
-        private final StringExpression _expr;
+        private final DataIteratorContext _context;
+        private final NameGenerator _nameGen;
         private final Integer _nameCol;
 
-        protected NameExpressionDataIterator(DataIterator di, DataIteratorContext context, StringExpression expr)
+        private NameGenerator.State _state;
+
+        protected NameExpressionDataIterator(DataIterator di, DataIteratorContext context, String nameExpression)
         {
             super(DataIteratorUtil.wrapMap(di, false));
-            _expr = expr;
+            _context = context;
+            _nameGen = new NameGenerator(nameExpression, ExpDataClassDataTableImpl.this, false);
+            _state = _nameGen.createState(false, false);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _nameCol = map.get("name");
@@ -876,6 +880,11 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
         MapDataIterator getInput()
         {
             return (MapDataIterator)_delegate;
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
         }
 
         @Override
@@ -891,13 +900,22 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
                     return curName;
 
                 Map<String, Object> currentRow = getInput().getMap();
-                String newName = _expr.eval(currentRow);
-                if (!StringUtils.isEmpty(newName))
-                    return newName;
+
+                try
+                {
+                    String newName = _nameGen.generateName(_state, currentRow);
+                    if (!StringUtils.isEmpty(newName))
+                        return newName;
+                }
+                catch (NameGenerator.NameGenerationException e)
+                {
+                    getErrors().addRowError(new ValidationException(e.getMessage()));
+                }
             }
 
             return super.get(i);
         }
+
     }
 
     private class DerivationDataIteratorBuilder implements DataIteratorBuilder

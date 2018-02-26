@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.DuplicateMaterialException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.SamplePropertyHelper;
 import org.labkey.api.exp.XarContext;
@@ -150,7 +151,14 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             {
                 context.put(entry.getKey().getName(), entry.getValue());
             }
-            return _sampleSet.createSampleName(context);
+            try
+            {
+                return _sampleSet.createSampleName(context);
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
         else
         {

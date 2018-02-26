@@ -241,6 +241,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             Map<String, Object> ret = super._update(user, c, row, oldRow, keys);
 
+            ExperimentServiceImpl.get().clearDataClassCache(c);
+
             ExperimentServiceImpl.get().indexDataClass(dc);
 
             return ret;

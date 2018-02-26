@@ -353,7 +353,7 @@ public class ExpSampleSetTestCase
         BatchValidationException errors = new BatchValidationException();
         svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
-        assertTrue(errors.getMessage().contains("Duplicate material 'S-red-10' on row 2"));
+        assertTrue("Expected \"Duplicate name 'S-red-10' on row 2\" but got: " + errors.getMessage(), errors.getMessage().contains("Duplicate name 'S-red-10' on row 2"));
 
         // Turn on unique suffix behavior
         Map<Enum, Object> configParams = new HashMap<>();
@@ -363,9 +363,9 @@ public class ExpSampleSetTestCase
         svc.insertRows(user, c, rows, errors, configParams, null);
         assertFalse(errors.hasErrors());
 
-        String expectedName1 = "S-red-10.1";
-        String expectedName2 = "S-red-10.2";
-        String expectedName3 = "S-red-10.3";
+        String expectedName1 = "S-red-10";
+        String expectedName2 = "S-red-10.1";
+        String expectedName3 = "S-red-10.2";
 
         ExpMaterial sample1 = ss.getSample(c, expectedName1);
         assertEquals(expectedName1, sample1.getName());

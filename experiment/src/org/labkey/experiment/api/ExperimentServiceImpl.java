@@ -200,6 +200,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class ExperimentServiceImpl implements ExperimentService
@@ -245,7 +246,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return dataClassCache;
     }
 
-    void clearDataClassCache(@Nullable Container c)
+    public void clearDataClassCache(@Nullable Container c)
     {
         if (c == null)
             dataClassCache.clear();
@@ -3748,6 +3749,15 @@ public class ExperimentServiceImpl implements ExperimentService
                 dataClass.delete(user);
             }
 
+            // delete all exp.edges referenced by exp.objects in this container
+            // These are usually deleted when the run is deleted (unless the run is in a different container)
+            // and would be cleaned up when deleting the exp.Material and exp.Data in this container at the end of this method.
+            // However, we need to delete any exp.edge referenced by exp.object before calling deleteAllObjects() for this container.
+            String deleteObjEdges = "DELETE FROM " + getTinfoEdge() + " WHERE EXISTS " +
+                    "(SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ? " +
+                    "AND edge.fromLsid = ObjectUri OR edge.toLsid = ObjectUri)";
+            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c);
+
             OntologyManager.deleteAllObjects(c, user);
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoDataAliasMap(), containerFilter);
@@ -6543,7 +6553,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
             filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
-            TableSelector ts = new TableSelector(OntologyManager.getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
+            TableSelector ts = new TableSelector(getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
             return (int) ts.getRowCount();
         }
     }
