@@ -50,10 +50,8 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
                 AdminPermission.class,
                 EditSharedViewPermission.class,
                 SeeUserEmailAddressesPermission.class,
-                EmailNonUsersPermission.class,
                 EnableRestrictedModules.class,
-                CanSeeAuditLogPermission.class,
-                CanUseSendMessageApiPermission.class);
+                CanSeeAuditLogPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
