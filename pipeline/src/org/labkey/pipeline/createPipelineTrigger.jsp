@@ -155,7 +155,7 @@
                               contextContent="Use this provider for running assay import runs" />
 
                 <labkey:input name="enabled"
-                              className="lk-pipeline-input"
+                              id="pipeline-enabled-check"
                               type="checkbox"
                               label="Enable this trigger"
                               checked="<%=bean.isEnabled()%>" />
@@ -173,7 +173,7 @@
                               contextContent="This can be an absolute path on the server's file system or a relative path under the container's pipeline root."/>
 
                 <labkey:input name="recursive"
-                              className="lk-pipeline-input"
+                              id="pipeline-recursive-check"
                               type="checkbox"
                               label="Include child folders" />
 
@@ -399,6 +399,12 @@
                     }
                 }
             });
+
+            var enabledCheck = jQuery('#pipeline-enabled-check')[0];
+            standardObj[enabledCheck.name] = enabledCheck.checked;
+
+            var recursiveCheck = jQuery('#pipeline-recursive-check')[0];
+            standardObj[recursiveCheck.name] = recursiveCheck.checked;
 
             var paramObj = {};
             var prefix = "pipeline, ";
