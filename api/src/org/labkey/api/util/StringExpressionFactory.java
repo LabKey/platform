@@ -243,7 +243,7 @@ public class StringExpressionFactory
 
     protected static final String UNDEFINED = "~~undefined~~";
 
-    protected static abstract class StringPart implements Cloneable
+    public static abstract class StringPart implements Cloneable
     {
         /**
          * @return The string value or null if the part is found in the map,
@@ -255,6 +255,17 @@ public class StringExpressionFactory
         final String valueOf(Object o)
         {
             return o == null ? "" : String.valueOf(o);
+        }
+
+        public abstract boolean isConstant();
+
+        /** Get the token that will be replaced -- either a String of FieldKey.  */
+        public abstract Object getToken();
+
+        @NotNull
+        public Collection<SubstitutionFormat> getFormats()
+        {
+            return Collections.emptyList();
         }
 
         public boolean hasSideEffects()
@@ -287,6 +298,13 @@ public class StringExpressionFactory
         {
             return _value;
         }
+
+        @Override
+        public boolean isConstant() { return true; }
+
+        @Override
+        public Object getToken() { throw new UnsupportedOperationException(); }
+
         @Override
         public String toString()
         {
@@ -377,6 +395,22 @@ public class StringExpressionFactory
         {
             _value = value;
             _formats = formats;
+        }
+
+        @Override
+        public boolean isConstant() { return false; }
+
+        @Override
+        public Object getToken()
+        {
+            return _value;
+        }
+
+        @NotNull
+        @Override
+        public Collection<SubstitutionFormat> getFormats()
+        {
+            return _formats;
         }
 
         public String getValue(Map map)
@@ -655,13 +689,12 @@ public class StringExpressionFactory
         }
 
 
-        protected synchronized ArrayList<StringPart> getParsedExpression()
+        public synchronized ArrayList<StringPart> getParsedExpression()
         {
             if (null == _parsedExpression)
                 parse();
             return _parsedExpression;
         }
-        
 
         protected void parse()
         {
@@ -913,6 +946,12 @@ public class StringExpressionFactory
             _key = key;
         }
 
+        @Override
+        public FieldKey getToken()
+        {
+            return _key;
+        }
+
         public String getValue(Map map)
         {
             Object lookupKey = _key;
@@ -953,17 +992,27 @@ public class StringExpressionFactory
             this(source, true, null);
         }
 
-        // NOTE: URL expressions are slightly different from vanilla string expressions
-        // in that they default to ReplaceNullWithBlank instead of NullResult.
         public FieldKeyStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
         {
-            super(source, nullValueBehavior != null ? nullValueBehavior : NullValueBehavior.ReplaceNullWithBlank);
+            this(source, urlEncodeSubstitutions, nullValueBehavior, false);
+        }
+
+        // NOTE: URL expressions are slightly different from vanilla string expressions
+        // in that they default to ReplaceNullWithBlank instead of NullResult.
+        public FieldKeyStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects)
+        {
+            super(source, nullValueBehavior != null ? nullValueBehavior : NullValueBehavior.ReplaceNullWithBlank, allowSideEffects);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
 
         public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
         {
             return new FieldKeyStringExpression(source, urlEncodeSubstitutions, nullValueBehavior);
+        }
+
+        public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects)
+        {
+            return new FieldKeyStringExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
         }
 
         protected StringPart parsePart(String expr)

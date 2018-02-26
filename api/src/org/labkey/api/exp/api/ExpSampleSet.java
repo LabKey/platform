@@ -23,7 +23,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -89,16 +89,6 @@ public interface ExpSampleSet extends ExpObject
     boolean hasNameExpression();
 
     /**
-     *  Get the parsed name expression defined on this SampleSet.  If a name expression hasn't
-     *  been explicitly set, a default name expression will be generated from the id columns.
-     *  Name expression will only be null if no name expression and no id columns have been set.
-     */
-    @Nullable
-    StringExpression getParsedNameExpression();
-
-    void createSampleNames(@NotNull List<Map<String, Object>> maps) throws ExperimentException;
-
-    /**
      * Generate sample names for each row map in <code>maps</code> sample group.
      * If a row map already has a non-null value for the "name" key, no sample name will be generated.
      *
@@ -124,8 +114,9 @@ public interface ExpSampleSet extends ExpObject
      *     <dd>A four digit random number for each sample row</dd>
      * </dl>
      *
-     * Example:
-     * <pre>${DataInputs:first:defaultValue('S')}-${now:date('yyyy-MM')}-${batchRandomId}}</pre>
+     * Examples:
+     * <pre>${DataInputs:first:defaultValue('S')}-${now:date('yyyy-MM')}-${batchRandomId}</pre>
+     * <pre>${ingredientId/name:defaultValue('S')}-${now:date('yyyy-MM')}-${dailySampleCount}</pre>
      *
      * @param maps The collection of row maps to generate sample names for.  The generated name added to the row map with the "name" key.
      * @param expr The name expression to use when generating sample names, otherwise use the SampleSet's name expression or id columns.
@@ -138,20 +129,18 @@ public interface ExpSampleSet extends ExpObject
      * @see org.labkey.api.util.SubstitutionFormat
      */
     void createSampleNames(@NotNull List<Map<String, Object>> maps,
-                           @Nullable StringExpression expr,
+                           @Nullable StringExpressionFactory.FieldKeyStringExpression expr,
                            @Nullable Set<ExpData> parentDatas,
                            @Nullable Set<ExpMaterial> parentSamples,
                            boolean skipDuplicates,
                            boolean addUniqueSuffixForDuplicates)
             throws ExperimentException;
 
-    String createSampleName(@NotNull Map<String, Object> rowMap);
+    String createSampleName(@NotNull Map<String, Object> rowMap) throws ExperimentException;
 
     String createSampleName(@NotNull Map<String, Object> rowMap,
-                            @Nullable Map<String, Object> batchContext,
-                            @Nullable StringExpression expr,
                             @Nullable Set<ExpData> parentDatas,
-                            @Nullable Set<ExpMaterial> parentSamples);
+                            @Nullable Set<ExpMaterial> parentSamples) throws ExperimentException;
 
     void setDescription(String s);
 

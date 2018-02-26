@@ -556,9 +556,14 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             {
                 JSONObject properties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
 
-                // XXX: may need to support all possible forms of the property name: label, import aliases, mv
-                // Throws IllegalArgumentException if the sample name can't be generated
-                materialName = sampleSet.createSampleName(properties);
+                try
+                {
+                    materialName = sampleSet.createSampleName(properties);
+                }
+                catch (ExperimentException e)
+                {
+                    throw new ValidationException(e.getMessage());
+                }
             }
 
             if (materialName != null && materialName.length() > 0)
