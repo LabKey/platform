@@ -96,7 +96,7 @@ public class MessageConfigManager
         for (EmailPref ep : new SqlSelector(_comm.getSchema(), sql).getCollection(EmailPref.class))
         {
             User user = ep.getUser();
-            if (c.hasPermission(user, ReadPermission.class) && user.isActive())
+            if (c.hasPermission(user, ReadPermission.class) && user.isActive() && !user.isFirstLogin())
                 prefs.add(ep);
         }
 
