@@ -1272,7 +1272,7 @@ public class PipelineController extends SpringActionController
                 {
                     errors.reject(ERROR_MSG, "Could not find file at path: " + form.getFilePath());
                 }
-                else if (!currentPipelineRoot.isUnderRoot(_archiveFile))
+                else if (!currentPipelineRoot.isCloudRoot() && !currentPipelineRoot.isUnderRoot(_archiveFile))     // TODO: check for isCloud, then file should be in temp
                 {
                     errors.reject(ERROR_MSG, "Cannot access file " + form.getFilePath());
                 }
