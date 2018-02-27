@@ -973,13 +973,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public boolean canAccessPhi(User user)
     {
         ComplianceService complianceService = ComplianceService.get();
-        if (null != complianceService)
+        if (canRead(user))
         {
             DatasetSchemaTableInfo table = getTableInfo(user);
             if (null != table)
                 return table.getMaxContainedPhi().isLevelAllowed(complianceService.getMaxAllowedPhi(getContainer(), user));
         }
-        return true;
+        return false;
     }
 
     @Override
