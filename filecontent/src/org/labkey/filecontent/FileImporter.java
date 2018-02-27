@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -80,7 +81,7 @@ public class FileImporter implements FolderImporter<XmlObject>
             Path childPath = realPath.resolve(child);
             try (InputStream in = virtualFile.getInputStream(child))
             {
-                Files.copy(in, childPath);
+                Files.copy(in, childPath, StandardCopyOption.REPLACE_EXISTING);
             }
         }
 
