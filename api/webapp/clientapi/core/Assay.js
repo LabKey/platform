@@ -607,8 +607,8 @@ LABKEY.Assay = new function()
                 formData.append("batchId", config.batchId);
 
             if (config.properties) {
-                for (var key in config.properties){
-                    if (typeof config.properties[key] === 'object')
+                for (var key in config.properties) {
+                    if (LABKEY.Utils.isObject(config.properties[key]))
                         formData.append("properties['" + key + "']", JSON.stringify(config.properties[key]));
                     else
                         formData.append("properties['" + key + "']", config.properties[key]);
@@ -616,8 +616,8 @@ LABKEY.Assay = new function()
             }
 
             if (config.batchProperties) {
-                for (var key in config.batchProperties){
-                    if (typeof config.batchProperties[key] === 'object')
+                for (var key in config.batchProperties) {
+                    if (LABKEY.Utils.isObject(config.batchProperties[key]))
                         formData.append("batchProperties['" + key + "']", JSON.stringify(config.batchProperties[key]));
                     else
                         formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
