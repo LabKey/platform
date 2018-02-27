@@ -16,8 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
@@ -28,6 +29,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
+<%@ page import="java.util.Arrays" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -38,6 +40,10 @@
     String clearMessage = folder ? "the default format properties" : "all look & feel properties";
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     String themeName = laf.getThemeName();
+    String siteThemeName = themeName;
+    if (!c.isRoot())
+        siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
+    boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
@@ -78,13 +84,16 @@
     <td class="labkey-form-label">Theme</td>
     <td>
         <select name="themeName">
-            <option value="Harvest" <%=selected("Harvest".equalsIgnoreCase(themeName))%>>Harvest</option>
-            <option value="Leaf" <%=selected("Leaf".equalsIgnoreCase(themeName))%>>Leaf</option>
-            <option value="Madison" <%=selected("Madison".equalsIgnoreCase(themeName))%>>Madison</option>
-            <option value="Mono" <%=selected("Mono".equalsIgnoreCase(themeName))%>>Mono</option>
-            <option value="Ocean" <%=selected("Ocean".equalsIgnoreCase(themeName))%>>Ocean</option>
-            <option value="Overcast" <%=selected("Overcast".equalsIgnoreCase(themeName))%>>Overcast</option>
-            <option value="Seattle" <%=selected("Seattle".equalsIgnoreCase(themeName))%>>Seattle</option>
+        <%
+            if (!c.isRoot())
+            {
+                %><option value="" <%=selected(themeNameInherited)%>>Site Default (<%=h(siteThemeName)%>)</option><%
+            }
+            for (String name : Arrays.asList("Harvest","Leaf","Madison","Mono","Ocean","Overcast","Seattle"))
+            {
+                %><option value="<%=h(name)%>" <%=selected(!themeNameInherited && name.equalsIgnoreCase(themeName))%>><%=h(name)%></option><%
+            }
+        %>
         </select>
     </td>
 </tr>

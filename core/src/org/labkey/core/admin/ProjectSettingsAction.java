@@ -78,6 +78,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * User: klum
  * Date: Nov 24, 2009
@@ -146,7 +148,12 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         try
         {
-            if (form.getThemeName() != null)
+            if (form.getThemeName() == null)
+            {
+                if (!c.isRoot())
+                    props.clearThemeName();
+            }
+            else
             {
                 props.setThemeName(form.getThemeName());
 
@@ -204,7 +211,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         props.setSystemShortName(form.getSystemShortName());
         props.setReportAProblemPath(form.getReportAProblemPath());
 
-        if (!StringUtils.isBlank(form.getSupportEmail()))
+        if (!isBlank(form.getSupportEmail()))
         {
             try
             {
