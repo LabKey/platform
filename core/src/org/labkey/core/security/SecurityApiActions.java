@@ -32,16 +32,33 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.*;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.InvalidGroupMembershipException;
+import org.labkey.api.security.MemberType;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.PrincipalType;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RoleAssignment;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -62,6 +79,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1935,6 +1953,7 @@ public class SecurityApiActions
     {
         private String _email;
         private boolean _sendEmail = true;
+        private boolean _skipFirstLogin = false;
 
         public String getEmail()
         {
@@ -1954,6 +1973,16 @@ public class SecurityApiActions
         public void setSendEmail(boolean sendEmail)
         {
             _sendEmail = sendEmail;
+        }
+
+        public boolean isSkipFirstLogin()
+        {
+            return _skipFirstLogin;
+        }
+
+        public void setSkipFirstLogin(boolean skipFirstLogin)
+        {
+            _skipFirstLogin = skipFirstLogin;
         }
     }
 
@@ -1986,6 +2015,10 @@ public class SecurityApiActions
             User user = UserManager.getUser(email);
             if (null == user)
                 throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
+
+            // Allow tests to create users that immediately register as having "logged in"
+            if (getViewContext().getUser().isInSiteAdminGroup() && form.isSkipFirstLogin())
+                user.setLastLogin(new Date());
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("userId", user.getUserId());
