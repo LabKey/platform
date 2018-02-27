@@ -607,13 +607,21 @@ LABKEY.Assay = new function()
                 formData.append("batchId", config.batchId);
 
             if (config.properties) {
-                for (var key in config.properties)
-                    formData.append("properties['" + key + "']", JSON.stringify(config.properties[key]));
+                for (var key in config.properties){
+                    if (typeof config.properties[key] === 'object')
+                        formData.append("properties['" + key + "']", JSON.stringify(config.properties[key]));
+                    else
+                        formData.append("properties['" + key + "']", config.properties[key]);
+                }
             }
 
             if (config.batchProperties) {
-                for (var key in config.batchProperties)
-                    formData.append("batchProperties['" + key + "']", JSON.stringify(config.batchProperties[key]));
+                for (var key in config.batchProperties){
+                    if (typeof config.batchProperties[key] === 'object')
+                        formData.append("batchProperties['" + key + "']", JSON.stringify(config.batchProperties[key]));
+                    else
+                        formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
+                }
             }
 
             if (config.dataRows)
