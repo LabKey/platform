@@ -179,8 +179,7 @@
 
                 <labkey:input name="filePattern"
                               className="form-control lk-pipeline-input"
-                              label="File pattern *"
-                              isRequired="true"
+                              label="File pattern"
                               forceSmallContext="true"
                               contextContent="A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties"/>
 
