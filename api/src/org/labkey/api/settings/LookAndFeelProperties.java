@@ -108,6 +108,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(THEME_NAME_PROP, WebTheme.DEFAULT.toString());
     }
 
+    public boolean isThemeNameInherited()
+    {
+        return isPropertyInherited(_settingsContainer, THEME_NAME_PROP);
+    }
+
+
     public String getThemeFont()
     {
         return lookupStringValue(THEME_FONT_PROP, ThemeFont.DEFAULT_THEME_FONT.getFriendlyName());

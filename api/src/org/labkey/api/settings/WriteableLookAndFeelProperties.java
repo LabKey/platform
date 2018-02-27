@@ -94,6 +94,11 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(THEME_NAME_PROP, themeName);
     }
 
+    public void clearThemeName()
+    {
+        remove(THEME_NAME_PROP);
+    }
+
     public void setLogoHref(String logoHref)
     {
         storeStringValue(LOGO_HREF_PROP, logoHref);
