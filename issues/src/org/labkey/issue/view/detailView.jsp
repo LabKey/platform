@@ -227,7 +227,7 @@
 <div class="labkey-nav-page-header-container"><span class="labkey-nav-page-header"><%=h(names.singularName + " " + issue.getIssueId() + ": " +issue.getTitle())%></span><p></div>
 <% } %>
 <labkey:panel type="portal">
-<table class="issue-fields" style="width:75%;">
+<table class="issue-fields" style="width:75%; max-width: 90vw">
     <tr>
         <td valign="top"><table class="lk-fields-table">
             <tr><%=text(bean.renderLabel(bean.getLabel("Status", false)))%><td><%=h(issue.getStatus())%></td></tr><%
@@ -298,11 +298,11 @@ for (int j = 0; j < commentLinkedList.size(); j++)
     Issue.Comment comment = commentLinkedList.get(j);
 if (!issue.getComments().contains(comment))
 {%>
-<div class="relatedIssue" style="display: none; word-break: break-all"><%
+<div class="relatedIssue" style="display: none; word-break: break-word; overflow-wrap: break-word"><%
         }
         else
         {%>
-    <div class="currentIssue" style="display: inline; word-break: break-all"><%
+    <div class="currentIssue" style="display: inline; word-break: break-word; overflow-wrap: break-word"><%
         }%>
 
         <table width="100%"><tr><td class="comment-created" align="left"><b>
