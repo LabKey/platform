@@ -180,22 +180,35 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     {
         VirtualFile vf = ctx.getRoot();
 
-        new TopLevelStudyPropertiesImporter().process(ctx, vf, errors);
-
+        TopLevelStudyPropertiesImporter importer1 = new TopLevelStudyPropertiesImporter();
+        job.setStatus("IMPORT " + importer1.getDataType());
+        importer1.process(ctx, vf, errors);
         // study.objective, study.personnel, and study.studyproperties tables
         new StudyPropertiesImporter().process(ctx, vf, errors);
 
         new MissingValueImporterFactory().create().process(job, ctx, vf);
-        new QcStatesImporter().process(ctx, vf, errors);
 
-        new VisitImporter().process(ctx, vf, errors);
+        QcStatesImporter importer3 = new QcStatesImporter();
+        job.setStatus("IMPORT " + importer3.getDataType());
+        importer3.process(ctx, vf, errors);
+
+        VisitImporter importer4 = new VisitImporter();
+        job.setStatus("IMPORT " + importer4.getDataType());
+        importer4.process(ctx, vf, errors);
         if (errors.hasErrors())
             throwFirstErrorAsPipelineJobException(errors);
 
-        new TreatmentDataImporter().process(ctx, vf, errors);
-        new AssayScheduleImporter().process(ctx, vf, errors);
+        TreatmentDataImporter importer5 = new TreatmentDataImporter();
+        job.setStatus("IMPORT " + importer5.getDataType());
+        importer5.process(ctx, vf, errors);
 
-        new DatasetDefinitionImporter().process(ctx, vf, errors);
+        AssayScheduleImporter importer6 = new AssayScheduleImporter();
+        job.setStatus("IMPORT " + importer6.getDataType());
+        importer6.process(ctx, vf, errors);
+
+        DatasetDefinitionImporter importer7 = new DatasetDefinitionImporter();
+        job.setStatus("IMPORT " + importer7.getDataType());
+        importer7.process(ctx, vf, errors);
     }
 
     private static void throwFirstErrorAsPipelineJobException(BindException errors) throws PipelineJobException
