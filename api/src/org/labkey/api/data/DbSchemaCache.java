@@ -53,10 +53,11 @@ public class DbSchemaCache
         // Infer type if it's unknown... should be rare
         if (DbSchemaType.Unknown == type)
         {
-            type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(schemaName);
+            String qualifiedName = DbSchema.getDisplayName(_scope, schemaName);
+            type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(qualifiedName);
 
             if (null == type)
-                type = DbSchemaType.Bare;  // Asking for a schema that doesn't exist falls back on Bare type
+                type = DbSchemaType.Bare;  // Schema isn't claimed by a module
         }
 
         return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
