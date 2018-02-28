@@ -24,6 +24,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.evaluation.EvaluationService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
@@ -38,6 +39,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DismissibleWarningMessage;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -267,6 +269,14 @@ public class PageTemplate extends JspView<PageConfig>
             String complianceWarning = ComplianceService.get().getPHIBanner(getViewContext());
             if (!StringUtils.isEmpty(complianceWarning))
                 page.addDismissibleWarningMessage(complianceWarning);
+        }
+
+        DismissibleWarningMessage expirationMessage = EvaluationService.get().getExpirationMessage();
+        if (expirationMessage != null && expirationMessage.showMessage(getViewContext()))
+        {
+            String expirationText = expirationMessage.getMessageHtml(getViewContext());
+            if (!StringUtils.isEmpty(expirationText))
+                page.addDismissibleWarningMessage(expirationText);
         }
     }
 
