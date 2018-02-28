@@ -309,7 +309,7 @@ public class NameGenerator
             }
 
             // If a name is already provided, just use it as is
-            String curName = String.valueOf(rowMap.get("name"));
+            String curName = (String)rowMap.get("name");
             if (StringUtils.isNotBlank(curName))
                 return curName;
 
