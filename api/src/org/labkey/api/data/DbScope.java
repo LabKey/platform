@@ -1948,6 +1948,51 @@ public class DbScope
         }
     }
 
+    public static class GroupConcatTestCase extends Assert
+    {
+        @Test
+        public void testGroupConcat()
+        {
+            for (DbScope scope : getDbScopes())
+            {
+                SqlDialect dialect = scope.getSqlDialect();
+                if (!dialect.supportsGroupConcat())
+                    continue;
+
+                boolean caseInsensitiveCollation = dialect.isSqlServer();
+
+                testGroupConcat(scope, dialect, false, false, "x Y z z y");
+                testGroupConcat(scope, dialect, true, false, caseInsensitiveCollation ? "x Y z" : "x y Y z");
+                testGroupConcat(scope, dialect, false, true, "x y Y z z");
+                testGroupConcat(scope, dialect, true, true, caseInsensitiveCollation ? "x Y z" : "x y Y z");
+            }
+        }
+
+        private void testGroupConcat(DbScope scope, SqlDialect dialect, boolean distinct, boolean sorted, String expected)
+        {
+            String delimiter = " ";
+
+            SQLFragment query = new SQLFragment("SELECT\n");
+            query.append("  COUNT(*) AS NumRows,\n");
+            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, dialect.getStringHandler().quoteStringLiteral(delimiter))).append(" AS StrVals\n");
+            query.append("FROM (\n");
+            query.append("  VALUES\n");
+            query.append("  (1, 'x'),\n");
+            query.append("  (2, 'Y'),\n");
+            query.append("  (3, 'z'),\n");
+            query.append("  (4, 'z'),\n");
+            query.append("  (5, 'y')\n");
+            query.append(") AS t (IntVal, StrVal)\n");
+
+            Map<String, Object> map = new SqlSelector(scope, query).getMap();
+            Number numRows = (Number)map.get("NumRows");
+            String strVals = (String)map.get("StrVals");
+
+            assertEquals(5, numRows.intValue());
+            assertEquals(expected, strVals);
+        }
+    }
+
 
     public static class TransactionTestCase extends Assert
     {
