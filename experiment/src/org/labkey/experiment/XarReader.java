@@ -743,7 +743,7 @@ public class XarReader extends AbstractXarImporter
             vals.setProtocolLSID(runProtocolLSID);
             vals.setComments(trimString(a.getComments()));
 
-            vals.setFilePathRoot(FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
+            vals.setFilePathRoot(FileUtil.pathToString(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
 
             run = Table.insert(getUser(), tiExperimentRun, vals);
