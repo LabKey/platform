@@ -23,6 +23,11 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -34,6 +39,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -47,9 +53,12 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -403,6 +412,64 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public Collection<NavTree> getActions(User user)
     {
         return Collections.emptyList();
+    }
+
+    protected Collection<NavTree> getActionsHelper(User user, List<ExpData> expDatas)
+    {
+        List<NavTree> result = new ArrayList<>();
+        Set<Integer> runIDs = new HashSet<>();
+
+        for (ExpData data : expDatas)
+        {
+            if (data == null || !data.getContainer().hasPermission(user, ReadPermission.class))
+                continue;
+
+            ActionURL dataURL = data.findDataHandler().getContentURL(data);
+            List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
+
+            for (ExpRun run : runs)
+            {
+                if (!run.getContainer().hasPermission(user, ReadPermission.class))
+                    continue;
+                if (!runIDs.add(run.getRowId()))
+                    continue;
+
+                ActionURL runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL;
+                String actionName;
+
+                if (!run.getName().equals(data.getName()))
+                {
+                    actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
+                }
+                else
+                {
+                    actionName = run.getProtocol().getName();
+                }
+
+                result.add(new NavTree(actionName, runURL));
+            }
+        }
+        return result;
+    }
+
+    protected List<ExpData> getExpDatasHelper(String canoncialURL, Container container)
+    {
+        List<ExpData> list = new LinkedList<>();
+
+        FlowService fs = ServiceRegistry.get(FlowService.class);
+        if (null != fs)
+        {
+            List<ExpData> f = fs.getExpDataByURL(canoncialURL, container);
+            list.addAll(f);
+        }
+        ExperimentService es = ExperimentService.get();
+        if (null != es)
+        {
+            ExpData d = es.getExpDataByURL(canoncialURL, null);
+            if (null != d)
+                list.add(d);
+        }
+        return list;
     }
 
     public static String c(String path, String... names)

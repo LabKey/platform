@@ -636,40 +636,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (!isFile())
             return Collections.emptyList();
 
-        List<NavTree> result = new ArrayList<>();
-        Set<Integer> runIDs = new HashSet<>();
-
-        for (ExpData data : getExpData())
-        {
-            if (data == null || !data.getContainer().hasPermission(user, ReadPermission.class))
-                continue;
-
-            ActionURL dataURL = data.findDataHandler().getContentURL(data);
-            List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
-
-            for (ExpRun run : runs)
-            {
-                if (!run.getContainer().hasPermission(user, ReadPermission.class))
-                    continue;
-                if (!runIDs.add(run.getRowId()))
-                    continue;
-
-                ActionURL runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL;
-                String actionName;
-
-                if (!run.getName().equals(data.getName()))
-                {
-                    actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
-                }
-                else
-                {
-                    actionName = run.getProtocol().getName();
-                }
-
-                result.add(new NavTree(actionName, runURL));
-            }
-        }
-        return result;
+        return getActionsHelper(user, getExpData());
     }
     
 
@@ -680,22 +647,7 @@ public class FileSystemResource extends AbstractWebdavResource
             try
             {
                 String fileURL = getFile().toURI().toURL().toString();
-                List<ExpData> list = new LinkedList<>();
-
-                FlowService fs = ServiceRegistry.get(FlowService.class);
-                if (null != fs)
-                {
-                    List<ExpData> f = fs.getExpDataByURL(fileURL, getContainer());
-                    list.addAll(f);
-                }
-                ExperimentService es = ExperimentService.get();
-                if (null != es)
-                {
-                    ExpData d = es.getExpDataByURL(fileURL, null);
-                    if (null != d)
-                        list.add(d);
-                }
-                _data = list;
+                _data = getExpDatasHelper(fileURL, getContainer());
             }
             catch (MalformedURLException e) {}
             _dataQueried = true;
