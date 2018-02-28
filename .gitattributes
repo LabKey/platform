@@ -560,6 +560,7 @@ api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/di/TaskRefTask.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
+api/src/org/labkey/api/evaluation/EvaluationService.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
@@ -1640,6 +1641,7 @@ api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/emailTemplate/UserOriginatedEmailTemplate.java -text
 api/src/org/labkey/api/util/mime.txt -text
+api/src/org/labkey/api/view/AbstractDismissibleWarningMessageImpl.java -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/AjaxCompletion.java -text
 api/src/org/labkey/api/view/AlwaysAvailableWebPartFactory.java -text
@@ -1648,6 +1650,7 @@ api/src/org/labkey/api/view/BaseWebPartFactory.java -text
 api/src/org/labkey/api/view/Collapsible.java -text
 api/src/org/labkey/api/view/ColorPickerDisplayColumn.java -text
 api/src/org/labkey/api/view/DefaultModelAndView.java -text
+api/src/org/labkey/api/view/DismissibleWarningMessage.java -text
 api/src/org/labkey/api/view/FolderManagement.java -text
 api/src/org/labkey/api/view/FolderTab.java -text
 api/src/org/labkey/api/view/ForbiddenProjectException.java -text
