@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.permissions.*;
 
@@ -42,6 +43,7 @@ public class SiteAdminRole extends AbstractContextualRole
                 EmailNonUsersPermission.class,
                 EnableRestrictedModules.class,
                 CanSeeAuditLogPermission.class,
-                CanUseSendMessageApiPermission.class);
+                CanUseSendMessageApiPermission.class,
+                FolderExportPermission.class);
     }
 }
