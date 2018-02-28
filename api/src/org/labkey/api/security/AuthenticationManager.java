@@ -529,6 +529,21 @@ public class AuthenticationManager
         return set;
     }
 
+    /**
+     * Return the first SSOAuthenticationProvider that is set to auto redirect from the login page.
+     * @return
+     */
+    public static SSOAuthenticationProvider getSSOAuthProviderAutoRedirect()
+    {
+        for (SSOAuthenticationProvider provider : getActiveProviders(SSOAuthenticationProvider.class))
+        {
+            if (provider.isAutoRedirect())
+                return provider;
+        }
+
+        return null;
+    }
+
     public enum AuthenticationStatus
     {
         Success
