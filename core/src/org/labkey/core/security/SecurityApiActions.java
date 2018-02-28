@@ -2018,7 +2018,10 @@ public class SecurityApiActions
 
             // Allow tests to create users that immediately register as having "logged in"
             if (getViewContext().getUser().isInSiteAdminGroup() && form.isSkipFirstLogin())
+            {
                 user.setLastLogin(new Date());
+                UserManager.updateLogin(user);
+            }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("userId", user.getUserId());
