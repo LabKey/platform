@@ -1085,11 +1085,9 @@ public class LoginController extends SpringActionController
         else if (request.getParameter("_skipAutoRedirect") == null && AuthenticationManager.hasSSOAuthenticationProvider())
         {
             // see if any of the SSO auth providers are set to autoRedirect from the login action
-            for (SSOAuthenticationProvider ssoAuthenticationProvider : AuthenticationManager.getActiveProviders(SSOAuthenticationProvider.class))
-            {
-                if (ssoAuthenticationProvider.isAutoRedirect())
-                    return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper()));
-            }
+            SSOAuthenticationProvider ssoAuthenticationProvider = AuthenticationManager.getSSOAuthProviderAutoRedirect();
+            if (ssoAuthenticationProvider != null)
+                return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper()));
         }
 
         page.setTemplate(PageConfig.Template.Dialog);
@@ -1937,6 +1935,13 @@ public class LoginController extends SpringActionController
             else
             {
                 _email = email;
+            }
+
+            // Issue 33321: this action does make sense if the server is set to auto redirect from the login page
+            if (AuthenticationManager.getSSOAuthProviderAutoRedirect() != null)
+            {
+                errors.reject("setPassword", "This action is invalid for a server set to use SSO auto redirect.");
+                _unrecoverableError = true;
             }
         }
 

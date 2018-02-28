@@ -1536,7 +1536,10 @@ public class UserController extends SpringActionController
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            if (isOwnRecord && loginExists)
+            // see if any of the SSO auth providers are set to autoRedirect from the login action
+            boolean isLoginAutoRedirect = AuthenticationManager.getSSOAuthProviderAutoRedirect() != null;
+
+            if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
                 ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
                 changePasswordButton.setActionType(ActionButton.Action.LINK);
@@ -1547,7 +1550,7 @@ public class UserController extends SpringActionController
             if (isUserManager)
             {
                 // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record
-                if (null != detailsEmail && !isOwnRecord && canManageDetailsUser)
+                if (null != detailsEmail && !isOwnRecord && canManageDetailsUser && !isLoginAutoRedirect)
                 {
                     // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
                     // in with SSO and later needing to use database authentication.  Also allows site admin to have
