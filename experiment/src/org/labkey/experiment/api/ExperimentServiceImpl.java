@@ -2491,8 +2491,9 @@ public class ExperimentServiceImpl implements ExperimentService
         Table.delete(getTinfoEdge(), new SimpleFilter("toLsid", lsid));
     }
 
-    // TODO: bulk insert
-    private void insertEdge(Set<Tuple3<String, String, Integer>> seen, Map<String, Object> from, Map<String, Object> to, int runId)
+    // prepare for bulk insert of edges
+    private void prepEdgeForInsert(List<List<Object>> params, Set<Pair<String, String>> seenEdges, Set<String> seenNodes,
+                                   Map<String, Object> from, Map<String, Object> to, int runId)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -2509,29 +2510,38 @@ public class ExperimentServiceImpl implements ExperimentService
             return;
 
         // ignore duplicate edges within the same run
-        Tuple3<String, String, Integer> key = Tuple3.of(fromLsid, toLsid, runId);
-        if (seen.contains(key))
+        Pair<String, String> key = Pair.of(fromLsid, toLsid);
+        if (seenEdges.contains(key))
             return;
-        seen.add(key);
+        seenEdges.add(key);
 
         String fromContainerId = (String)from.get("container");
         Objects.requireNonNull(fromContainerId, "containerId");
-        Container fromContainer = ContainerManager.getForId(fromContainerId);
-        if (fromContainer == null)
-            throw new IllegalArgumentException();
-
 
         String toContainerId = (String)to.get("container");
         Objects.requireNonNull(toContainerId, "containerId");
-        Container toContainer = ContainerManager.getForId(toContainerId);
-        if (toContainer == null)
-            throw new IllegalArgumentException();
 
+        if (!seenNodes.contains(fromLsid))
+        {
+            seenNodes.add(fromLsid);
+            Container fromContainer = ContainerManager.getForId(fromContainerId);
+            if (fromContainer == null)
+                throw new IllegalArgumentException();
 
-        int fromObjectId = ensureEdgeObject(fromContainer, fromLsid, (String)from.get("cpasType"));
-        int toObjectId = ensureEdgeObject(toContainer, toLsid, (String)to.get("cpasType"));
+            ensureEdgeObject(fromContainer, fromLsid, (String) from.get("cpasType"));
+        }
 
-        insertEdge(fromLsid, toLsid, runId);
+        if (!seenNodes.contains(toLsid))
+        {
+            seenNodes.add(toLsid);
+            Container toContainer = ContainerManager.getForId(toContainerId);
+            if (toContainer == null)
+                throw new IllegalArgumentException();
+
+            ensureEdgeObject(toContainer, toLsid, (String) to.get("cpasType"));
+        }
+
+        params.add(Arrays.asList(fromLsid, toLsid, runId));
     }
 
     private int ensureEdgeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType)
@@ -2574,6 +2584,23 @@ public class ExperimentServiceImpl implements ExperimentService
                 "fromLsid", fromLsid,
                 "toLsid", toLsid,
                 "runId", runId));
+    }
+
+    private void insertEdges(List<List<Object>> params)
+    {
+        assert getExpSchema().getScope().isTransactionActive();
+        if (params.isEmpty())
+            return;
+
+        String sql = "INSERT INTO " + getTinfoEdge() + " (fromLsid, toLsid, runId) VALUES (?, ?, ?)";
+        try
+        {
+            Table.batchExecute(getExpSchema(), sql, params);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     // CONSIDER: Incrementally add/remove edges as they are created
@@ -2632,29 +2659,35 @@ public class ExperimentServiceImpl implements ExperimentService
             LOG.info(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
+            Set<Pair<String, String>> seenEdges = new HashSet<>(edgeCount);
+            Set<String> seenNodes = new HashSet<>(edgeCount);
+            List<List<Object>> params = new ArrayList<>(edgeCount);
+
             // create edge for each input and output combination
-            Set<Tuple3<String, String, Integer>> seen = new HashSet<>(edgeCount);
             for (Map<String, Object> fromDataLsid : fromDataLsids)
             {
                 for (Map<String, Object> toDataLsid : toDataLsids)
-                    insertEdge(seen, fromDataLsid, toDataLsid, runId);
+                    prepEdgeForInsert(params, seenEdges, seenNodes, fromDataLsid, toDataLsid, runId);
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    insertEdge(seen, fromDataLsid, toMaterialLsid, runId);
+                    prepEdgeForInsert(params, seenEdges, seenNodes, fromDataLsid, toMaterialLsid, runId);
             }
 
+            // create edge for each input and output combination
             for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
             {
                 for (Map<String, Object> toDataLsid : toDataLsids)
-                    insertEdge(seen, fromMaterialLsid, toDataLsid, runId);
+                    prepEdgeForInsert(params, seenEdges, seenNodes, fromMaterialLsid, toDataLsid, runId);
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    insertEdge(seen, fromMaterialLsid, toMaterialLsid, runId);
+                    prepEdgeForInsert(params, seenEdges, seenNodes, fromMaterialLsid, toMaterialLsid, runId);
             }
+
+            insertEdges(params);
 
             tx.commit();
             timer.stop();
-            LOG.info("  synced edges in " + timer.getDuration() + " ms");
+            LOG.info("  synced edges in " + timer.getDuration());
         }
     }
 
