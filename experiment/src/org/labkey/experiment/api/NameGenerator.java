@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -308,8 +309,9 @@ public class NameGenerator
             }
 
             // If a name is already provided, just use it as is
-            if (rowMap.get("name") != null)
-                return String.valueOf(rowMap.get("name"));
+            String curName = String.valueOf(rowMap.get("name"));
+            if (StringUtils.isNotBlank(curName))
+                return curName;
 
             // Add extra context variables
             Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts);
