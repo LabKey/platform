@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudySchema;
@@ -122,7 +123,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         _destFolderCreated = c == null;
 
         // make sure the folder, if already existing doesn't already contain a study
-        _dstContainer = ContainerManager.ensureContainer(form.getDstPath());
+        _dstContainer = ContainerManager.ensureContainer(Path.parse(form.getDstPath()), getUser());
         if (_dstContainer != null)
         {
             Study study = StudyManager.getInstance().getStudy(_dstContainer);
