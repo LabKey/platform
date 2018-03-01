@@ -177,7 +177,7 @@ public abstract class AbstractParameter extends BoundMap
                 setStringValue((String) value);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown property type " + type);
+                throw new IllegalArgumentException("Unknown property type '" + type + "' for property: " + getName());
         }
     }
 

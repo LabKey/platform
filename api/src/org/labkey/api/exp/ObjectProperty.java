@@ -245,6 +245,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             case XML_TEXT:
                 return getStringValue();
 
+            case DATE:
+            case TIME:
             case DATE_TIME:
                 return dateTimeValue;
 
@@ -261,6 +263,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             case BOOLEAN:
                 return floatValue == null ? null : floatValue.intValue() != 0 ? Boolean.TRUE : Boolean.FALSE;
 
+            case DECIMAL:
+            case FLOAT:
             case DOUBLE:
                 return floatValue;
 

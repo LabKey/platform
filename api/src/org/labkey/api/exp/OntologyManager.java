@@ -831,7 +831,8 @@ public class OntologyManager
 
             // until we set a domain on objects themselves, we need to create a list of objects to
             // delete based on existing entries in ObjectProperties before we delete the objectProperties
-            // which we need to do before we delete the objects
+            // which we need to do before we delete the objects.
+            // TODO: Doesn't handle the case when PropertyDescriptors are shared across domains
             String selectObjectsToDelete = "SELECT DISTINCT O.ObjectId " +
                     " FROM " + getTinfoObject() + " O " +
                     " INNER JOIN " + getTinfoObjectProperty() + " OP ON(O.ObjectId = OP.ObjectId) " +
@@ -2988,11 +2989,21 @@ public class OntologyManager
                 case RESOURCE:
                     this.stringValue = (String) p.first;
                     break;
+                case DATE:
+                    // remove time portion of the java.util.Date
+                    this.dateTimeValue = new java.sql.Date( ((java.util.Date) p.first).getTime() );
+                    break;
+                case TIME:
+                    // remove date portion of the java.util.Date
+                    this.dateTimeValue = new java.sql.Time( ((java.util.Date) p.first).getTime() );
+                    break;
                 case DATE_TIME:
                     this.dateTimeValue = (java.util.Date) p.first;
                     break;
                 case INTEGER:
                 case DOUBLE:
+                case DECIMAL:
+                case FLOAT:
                     Number n = (Number) p.first;
                     if (null != n)
                         this.floatValue = n.doubleValue();
@@ -3002,7 +3013,7 @@ public class OntologyManager
                     this.floatValue = b == Boolean.TRUE ? 1.0 : 0.0;
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown property type: " + pt);
+                    throw new IllegalArgumentException("Unknown property type '" + pt + "' for property: " + pd.toString());
             }
         }
 
