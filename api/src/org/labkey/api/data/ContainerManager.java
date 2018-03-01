@@ -579,11 +579,15 @@ public class ContainerManager
 
     public static Container ensureContainer(String path)
     {
-        return ensureContainer(Path.parse(path));
+        return ensureContainer(Path.parse(path), null);
     }
 
-
     public static Container ensureContainer(Path path)
+    {
+        return ensureContainer(path, null);
+    }
+
+    public static Container ensureContainer(Path path, User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
 //        if (CORE.getSchema().getScope().isTransactionActive())
@@ -607,10 +611,10 @@ public class ContainerManager
             else
             {
                 Path parentPath = path.getParent();
-                c = ensureContainer(parentPath);
+                c = ensureContainer(parentPath, user);
                 if (null == c)
                     return null;
-                c = createContainer(c, path.getName());
+                c = createContainer(c, path.getName(), null, null, Container.TYPE.normal, user);
             }
         }
         return c;
