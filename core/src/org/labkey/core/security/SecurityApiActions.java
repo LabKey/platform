@@ -2021,6 +2021,7 @@ public class SecurityApiActions
             {
                 user.setLastLogin(new Date());
                 UserManager.updateLogin(user);
+                UserManager.clearUserList();
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
