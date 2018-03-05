@@ -73,6 +73,10 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     @Override
     public String getLookupSchemaName()
     {
+        if (_lookupSchemaName == null)
+        {
+            initTableAndColumnNames();
+        }
         return _lookupSchemaName;
     }
 
