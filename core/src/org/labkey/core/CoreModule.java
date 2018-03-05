@@ -114,6 +114,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.WriteableAppProps;
@@ -326,6 +327,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, new AnalyticsProviderRegistryImpl());
         ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, new SummaryStatisticRegistryImpl());
         ServiceRegistry.get().registerService(UsageMetricsService.class, new UsageMetricsServiceImpl());
+        ServiceRegistry.get().registerService(CustomLabelService.class, new CustomLabelService.CustomLabelServiceImpl());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
         // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup
