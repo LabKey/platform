@@ -184,7 +184,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             case DataClass:
             {
                 ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("classId"));
-                c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), getContainer(), getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
                 c.setUserEditable(false);
