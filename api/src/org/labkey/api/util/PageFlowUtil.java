@@ -59,6 +59,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.CustomLabelProvider;
+import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -2086,6 +2088,20 @@ public class PageFlowUtil
             for (AnalyticsProvider provider : analyticsProviderRegistry.getAllAnalyticsProviders())
                 analyticProviders.put(provider.getName(), provider.getLabel());
             json.put("analyticProviders", analyticProviders);
+        }
+
+        CustomLabelService customLabelService = ServiceRegistry.get().getService(CustomLabelService.class);
+        if (customLabelService != null)
+        {
+            Map<String, Map<String, String>> moduleLabels = new HashMap<>();
+            for (CustomLabelProvider provider : customLabelService.getCustomLabelProviders())
+            {
+                Map<String, String> labels = provider.getCustomLabels(container);
+                if (labels != null)
+                    moduleLabels.put(provider.getName(), labels);
+            }
+            if (!moduleLabels.isEmpty())
+                json.put("labels", moduleLabels);
         }
 
         // Include a few server-generated GUIDs/UUIDs

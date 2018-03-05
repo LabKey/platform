@@ -1302,6 +1302,8 @@ api/src/org/labkey/api/settings/AppPropsImpl.java -text
 api/src/org/labkey/api/settings/BaseServerProperties.java -text
 api/src/org/labkey/api/settings/ConceptURIProperties.java -text
 api/src/org/labkey/api/settings/ConfigProperty.java -text
+api/src/org/labkey/api/settings/CustomLabelProvider.java -text
+api/src/org/labkey/api/settings/CustomLabelService.java -text
 api/src/org/labkey/api/settings/DateParsingMode.java -text
 api/src/org/labkey/api/settings/ExperimentalFeatureService.java -text
 api/src/org/labkey/api/settings/FolderSettingsCache.java -text
