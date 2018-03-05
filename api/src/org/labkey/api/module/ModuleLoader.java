@@ -1721,6 +1721,7 @@ public class ModuleLoader implements Filter
 
 
     /*  Use data source qualified name (e.g., core or external.myschema)  */
+    @Deprecated // Use getModule(DbScope, String) below instead
     public @Nullable Module getModuleForSchemaName(String fullyQualifiedSchemaName)
     {
         SchemaDetails details = getSchemaDetails(fullyQualifiedSchemaName);
@@ -1728,16 +1729,29 @@ public class ModuleLoader implements Filter
         return null != details ? details.getModule() : null;
     }
 
-    /*  Use data source qualified name (e.g., core or external.myschema)  */
-    public @Nullable DbSchemaType getSchemaTypeForSchemaName(String fullyQualifiedSchemaName)
+    public @Nullable Module getModule(DbScope scope, String schemaName)
     {
-        SchemaDetails details = getSchemaDetails(fullyQualifiedSchemaName);
+        SchemaDetails details = getSchemaDetails(scope, schemaName);
+
+        return null != details ? details.getModule() : null;
+    }
+
+    public @Nullable DbSchemaType getSchemaType(DbScope scope, String schemaName)
+    {
+        SchemaDetails details = getSchemaDetails(scope, schemaName);
 
         return null != details ? details.getType() : null;
     }
 
+    private @Nullable SchemaDetails getSchemaDetails(DbScope scope, String schemaName)
+    {
+        String qualifiedName = DbSchema.getDisplayName(scope, schemaName);
+        return getSchemaDetails(qualifiedName);
+    }
+
     /**
      *  Use data source qualified name (e.g., core or external.myschema)
+     *  TODO: Merge this into getSchemaDetails(DbScope, String)
      */
     private @Nullable SchemaDetails getSchemaDetails(String fullyQualifiedSchemaName)
     {

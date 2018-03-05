@@ -26,6 +26,7 @@ import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
@@ -256,7 +257,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         String text = getViewContext().getRequest().getParameter("text");
         String path = getViewContext().getRequest().getParameter("path");
 
-        String module = getViewContext().getRequest().getParameter("module");
+        String moduleName = getViewContext().getRequest().getParameter("module");
         String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
 
         // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
@@ -299,12 +300,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
             else if (null != StringUtils.trimToNull(moduleResource))
             {
-                if (module == null && _target != null)
+                Module m = null;
+
+                if (moduleName != null)
                 {
-                    module = _target.getSchema().getName();
+                    m = ModuleLoader.getInstance().getModule(moduleName);
+                }
+                else if (_target != null)
+                {
+                    DbSchema schema = _target.getSchema();
+                    m =  ModuleLoader.getInstance().getModule(schema.getScope(), schema.getName());
                 }
 
-                Module m = module != null ? ModuleLoader.getInstance().getModuleForSchemaName(module) : null;
                 if (m == null)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Module required to import module resource");

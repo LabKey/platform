@@ -251,10 +251,12 @@ public class SqlScriptExecutor
         @Override
         public void execute()
         {
+            DbSchema ownerSchema = SqlScriptExecutor.this._schema;
+
             // find module that owns this script (may not be the target schema)
-            Module m = ModuleLoader.getInstance().getModuleForSchemaName(SqlScriptExecutor.this._schema.getName());
+            Module m = ModuleLoader.getInstance().getModule(ownerSchema.getScope(), ownerSchema.getName());
             if (null == m)
-                throw new IllegalStateException("Module not found for schema: " + SqlScriptExecutor.this._schema.getName());
+                throw new IllegalStateException("Module not found for schema: " + ownerSchema.getName());
 
             Path path;
             if (_filename.contains("/"))

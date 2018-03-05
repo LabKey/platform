@@ -165,8 +165,9 @@ public class DbSchema
 
     public static @NotNull DbSchema createFromMetaData(DbScope scope, String requestedSchemaName, DbSchemaType type) throws SQLException
     {
+        Module module = type.getModule(scope, requestedSchemaName);
+
         String fullyQualifiedSchemaName = DbSchema.getDisplayName(scope, requestedSchemaName);
-        Module module = type.getModule(fullyQualifiedSchemaName);
 
         if (null != module)
             fullyQualifiedSchemaName = module.getDatabaseSchemaName(fullyQualifiedSchemaName);

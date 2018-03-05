@@ -47,14 +47,14 @@ public enum DbSchemaType
 
         @Nullable
         @Override
-        public org.labkey.api.module.Module getModule(String fullyQualifiedSchemaName)
+        public org.labkey.api.module.Module getModule(DbScope scope, String schemaName)
         {
-            Module module = ModuleLoader.getInstance().getModuleForSchemaName(fullyQualifiedSchemaName);
+            Module module = ModuleLoader.getInstance().getModule(scope, schemaName);
 
             // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)
             // to provide backward compatibility for external modules that don't register their schemas.
             if (null == module)
-                throw new IllegalStateException("Schema \"" + fullyQualifiedSchemaName + "\" is not claimed by any module.");
+                throw new IllegalStateException("Schema \"" + DbSchema.getDisplayName(scope, schemaName) + "\" is not claimed by any module.");
 
             return module;
         }
@@ -164,7 +164,7 @@ public enum DbSchemaType
 
     abstract DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException;
 
-    public @Nullable org.labkey.api.module.Module getModule(String fullyQualifiedSchemaName)
+    public @Nullable org.labkey.api.module.Module getModule(DbScope scope, String schemaName)
     {
         return null;
     }

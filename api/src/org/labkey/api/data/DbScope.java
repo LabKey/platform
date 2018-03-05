@@ -869,7 +869,7 @@ public class DbScope
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
             LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
 
-            DbSchemaType type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(schemaName);
+            DbSchemaType type = ModuleLoader.getInstance().getSchemaType(schema.getScope(), schemaName);
 
             if (null != type && !type.applyXmlMetaData())
                 LOG.info("Shouldn't be loading metadata for " + type.name() + " schema \"" + displayName + "\"");
@@ -2016,10 +2016,9 @@ public class DbScope
                     continue;
 
                 String randomSchemaName = pickRandomElement(schemaNames);
-                String qualifiedName = DbSchema.getDisplayName(scope, randomSchemaName);
 
                 // Calling getSchema() with type Unknown will use Module type by default... we want Bare by default here
-                DbSchemaType type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(qualifiedName);
+                DbSchemaType type = ModuleLoader.getInstance().getSchemaType(scope, randomSchemaName);
                 if (null == type)
                     type = DbSchemaType.Bare;
 
