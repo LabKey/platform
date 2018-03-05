@@ -338,8 +338,9 @@ public interface Module extends Comparable<Module>
     Map<String, ModuleProperty> getModuleProperties();
 
     /**
-     * This will return a JSONObject that will be written to the page automatically.  By default, it will include any
-     * module properties where 'writeToClient' is true.  However, individual modules can override this to return any content they choose.
+     * The returned JSONObject will be written to the page automatically. By default, it includes any module properties where 'writeToClient'
+     * is true. However, individual modules can override this to return any content they choose. The method is called at page rendering time
+     * once startup is complete, so all module schemas should be upgraded and services should be registered.
      * Note: this is written as plain text.
      * @param context Current ViewContext for the page
      */

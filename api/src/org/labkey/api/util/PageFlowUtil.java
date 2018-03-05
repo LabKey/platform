@@ -2591,7 +2591,9 @@ public class PageFlowUtil
     public static JSONObject getModuleClientContext(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         JSONObject ret = new JSONObject();
-        if (resources != null)
+
+        // Don't call getPageContextJson() implementations until all modules have started, #33401
+        if (resources != null && ModuleLoader.getInstance().isStartupComplete())
         {
             Container c = context.getContainer();
             User u = context.getUser();
@@ -2612,6 +2614,7 @@ public class PageFlowUtil
                 ret.put(m.getName().toLowerCase(), m.getPageContextJson(context));
             }
         }
+
         return ret;
     }
 
