@@ -62,7 +62,7 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
         // for late-bound client dependencies
         if (null != bean.getClientDependencies() && bean.getClientDependencies().size() > 0)
         {
-            setClientDependencies(bean.getClientDependencies());
+            addClientDependencies(bean.getClientDependencies());
         }
 
         // set the default redirect url

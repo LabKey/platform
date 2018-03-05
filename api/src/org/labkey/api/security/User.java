@@ -247,6 +247,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable
      */
     public boolean isApplicationAdmin()
     {
+        // Issue 32695: app admin that impersonates a group should not retain the ApplicationAdminRole (see getStandardContextualRoles)
+        if (!isAllowedGlobalRoles())
+            return false;
+
         SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
         List<Role> rootAssignedRoles = rootContainerPolicy.getAssignedRoles(this);
         rootAssignedRoles.addAll(rootContainerPolicy.getRoles(getGroups()));

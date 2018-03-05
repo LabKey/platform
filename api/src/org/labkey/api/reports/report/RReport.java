@@ -477,15 +477,16 @@ public class RReport extends ExternalScriptEngineReport
             commentLineEnd = " -->\n";
         }
 
-        // TODO only add comments for RStudio editing, not regular runtime execution
         String ret;
         ret =
             yamlScript +
-            commentLineStart + "8< - - - do not edit this line - - - - - - - - - - - - - - - - - - - -" + commentLineEnd +
-            commentLineStart + "This code is not part of your R report, changes will not be saved     " + commentLineEnd +
+            (isRStudio ? (commentLineStart + "8< - - - do not edit this line - - - - - - - - - - - - - - - - - - - -" + commentLineEnd +
+                        commentLineStart + "This code is not part of your R report, changes will not be saved     " + commentLineEnd)
+                    : "") +
             StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters, isRStudio)) +
-            commentLineStart + "Your report code goes below the next line                             " + commentLineEnd +
-            commentLineStart + " - - - - do not edit this line - - - - - - - - - - - - - - - - - -  >8" + commentLineEnd +
+            (isRStudio ? (commentLineStart + "Your report code goes below the next line                             " + commentLineEnd +
+                        commentLineStart + " - - - - do not edit this line - - - - - - - - - - - - - - - - - -  >8" + commentLineEnd)
+                    : "") +
             script;
         return ret;
     }
@@ -867,6 +868,8 @@ public class RReport extends ExternalScriptEngineReport
 
     public static class TestCase extends Assert
     {
+        private boolean isRStudio = false; //TODO don't hardcode in trunk, test calling concatScriptProlog with isRStudio true and false
+
         @Test
         public void testProlog()
         {
@@ -878,12 +881,14 @@ public class RReport extends ExternalScriptEngineReport
             String pre = "print('hello world')\n\nprint('line 3')\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
 
-            assertTrue( post.contains("# 8<") );
-            assertTrue( post.contains(">8") );
+            if (isRStudio)
+            {
+                assertTrue( post.contains("# 8<") );
+                assertTrue( post.contains(">8") );
+                String strip = report.stripScriptProlog(post);
+                assertEquals(pre, strip);
+            }
             assertTrue( post.endsWith(pre) );
-
-            String strip = report.stripScriptProlog(post);
-            assertEquals(pre, strip);
         }
 
         @Test
@@ -898,12 +903,14 @@ public class RReport extends ExternalScriptEngineReport
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "<b>hello world</b>\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
-            assertTrue( post.contains("<!-- 8<") );
-            assertTrue( post.contains(">8 -->") );
+            if (isRStudio)
+            {
+                assertTrue( post.contains("<!-- 8<") );
+                assertTrue( post.contains(">8 -->") );
+                String strip = report.stripScriptProlog(post);
+                assertEquals(pre, strip);
+            }
             assertTrue( post.endsWith("<b>hello world</b>\n") );
-
-            String strip = report.stripScriptProlog(post);
-            assertEquals(pre, strip);
         }
 
         @Test
@@ -921,12 +928,14 @@ public class RReport extends ExternalScriptEngineReport
                     "hello world\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
             assertTrue( post.startsWith("---\n") );
-            assertTrue( post.contains("<!-- 8<") );
-            assertTrue( post.contains(">8") );
+            if (isRStudio)
+            {
+                assertTrue( post.contains("<!-- 8<") );
+                assertTrue( post.contains(">8") );
+                String strip = report.stripScriptProlog(post);
+                assertEquals(pre, strip);
+            }
             assertTrue( post.endsWith("hello world\n") );
-
-            String strip = report.stripScriptProlog(post);
-            assertEquals(pre, strip);
         }
     }
 }

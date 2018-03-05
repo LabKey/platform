@@ -32,8 +32,14 @@ public class SecurityMessage
     private String _type;
     private String _messagePrefix;
     private SecurityManager.SecurityEmailTemplate _template;
+    private boolean _maskToken;
 
     public SecurityMessage(){}
+
+    public SecurityMessage(boolean maskToken)
+    {
+        _maskToken = maskToken;
+    }
 
     public void setEmailTemplate(SecurityManager.SecurityEmailTemplate template)
     {
@@ -100,4 +106,13 @@ public class SecurityMessage
 
     public void setTo(String to){_to = to;}
     public String getTo(){return _to;}
+
+    public void setMaskToken(boolean maskToken)
+    {
+        _maskToken = maskToken;
+    }
+    public boolean isMaskToken()
+    {
+        return _maskToken;
+    }
 }

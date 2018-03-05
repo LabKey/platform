@@ -1040,6 +1040,10 @@ public class SecurityManager
     {
         try
         {
+            // Issue 33254: only allow Site Admins to see the verification token
+            if (message.isMaskToken() && !user.isInSiteAdminGroup())
+                verificationURL.replaceParameter("verification", "**********");
+
             message.setVerificationURL(verificationURL.getURIString());
             message.setOriginatingUser(user);
             if (message.getTo() == null)
@@ -2674,7 +2678,7 @@ public class SecurityManager
 
     public static SecurityMessage getRegistrationMessage(String mailPrefix, boolean isAdminCopy) throws Exception
     {
-        SecurityMessage sm = new SecurityMessage();
+        SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends RegistrationEmailTemplate> templateClass = isAdminCopy ? RegistrationAdminEmailTemplate.class : RegistrationEmailTemplate.class;
         EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
         sm.setMessagePrefix(mailPrefix);
@@ -2706,7 +2710,7 @@ public class SecurityManager
 
     private static SecurityMessage getDefaultResetMessage(boolean isAdminCopy) throws Exception
     {
-        SecurityMessage sm = new SecurityMessage();
+        SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends PasswordResetEmailTemplate> templateClass = isAdminCopy ? PasswordResetAdminEmailTemplate.class : PasswordResetEmailTemplate.class;
         EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
         sm.setEmailTemplate((SecurityEmailTemplate)et);
@@ -2763,10 +2767,14 @@ public class SecurityManager
             {
                 message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.");
 
-                message.append("  Click ");
-                String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
-                        email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
-                message.append(href).append(" to change the password from the random one that was assigned.");
+                // Issue 33254: only allow Site Admins to see the verification URL
+                if (currentUser.isInSiteAdminGroup())
+                {
+                    message.append("  Click ");
+                    String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
+                            email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                    message.append(href).append(" to change the password from the random one that was assigned.");
+                }
 
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
             }
