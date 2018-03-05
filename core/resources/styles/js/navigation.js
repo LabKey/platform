@@ -171,11 +171,12 @@
         var menuCache = {};
         $('[data-webpart]').on('show.bs.dropdown show.bs.mobiledrop', function() {
             var partName = $(this).data('name');
-            if (menuCache[partName]) {
+            var safeName = $(this).data('webpart');
+
+            if (menuCache[safeName]) {
                 return;
             }
 
-            var safeName = $(this).data('webpart');
             var target = $(this).find('.dropdown-menu');
 
             if (target.length === 0) {
@@ -235,7 +236,7 @@
                 }
 
                 var wp = new LABKEY.WebPart(config);
-                menuCache[partName] = wp;
+                menuCache[safeName] = wp;
                 wp.render();
                 $(this).unbind('click');
             }

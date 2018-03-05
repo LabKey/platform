@@ -1549,6 +1549,9 @@ public class SecurityController extends SpringActionController
 
                 SecurityMessage message = createMessage(form);
 
+                // Issue 33254: only allow Site Admins to see the verification token
+                message.setMaskToken(true);
+
                 if (SecurityManager.isVerified(email))
                 {
                     out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(email) + " has already chosen a password.");
