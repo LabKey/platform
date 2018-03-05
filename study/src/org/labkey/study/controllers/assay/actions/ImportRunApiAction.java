@@ -156,7 +156,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // Resolve file under module resources
             if (moduleName != null && moduleName.length() > 0)
             {
-                Module m = ModuleLoader.getInstance().getModuleForSchemaName(moduleName);
+                Module m = ModuleLoader.getInstance().getModule(moduleName);
                 if (m == null)
                     throw new NotFoundException("Could not find module " + moduleName);
 

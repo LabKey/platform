@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class ResetSchemaMetadata extends TaskRefTaskImpl
 {
-    private final String SCHEMA = "schema";
+    private static final String SCHEMA = "schema";
 
     @Override
     public List<String> getRequiredSettings()

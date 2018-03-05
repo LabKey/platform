@@ -21,6 +21,8 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
@@ -28,6 +30,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.pipeline.TaskRefTaskImpl;
 
@@ -62,7 +65,6 @@ import java.util.Set;
  */
 public class CubeMaintenanceTask extends TaskRefTaskImpl
 {
-
     private enum Action
     {
         @SuppressWarnings({"UnusedDeclaration"})
@@ -157,7 +159,8 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
 
     private static Set<Container> findContainers(String schema) throws PipelineJobException
     {
-        Module module = ModuleLoader.getInstance().getModuleForSchemaName(schema);
+        Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(schema);
+        Module module = ModuleLoader.getInstance().getModule(pair.first, pair.second);
         if (module == null)
             throw new PipelineJobException("No module found for schema " + schema);
         return ContainerManager.getAllChildrenWithModule(ContainerManager.getRoot(), module);
@@ -178,7 +181,8 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
             enumSettings.put(enumSetting, settings.get(enumSetting.name()));
 
         // Unfortunately no way to validate cube name or configId, but we can validate the schema name
-        if (null == ModuleLoader.getInstance().getModuleForSchemaName(enumSettings.get(Setting.schema)))
+        Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(enumSettings.get(Setting.schema));
+        if (null == ModuleLoader.getInstance().getModule(pair.first, pair.second))
             throw new XmlException("No module found for schema " + enumSettings.get(Setting.schema));
 
         // Defaults for optional parameters

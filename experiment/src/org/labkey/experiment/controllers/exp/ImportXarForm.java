@@ -56,7 +56,7 @@ public class ImportXarForm extends PipelinePathForm
         if (_module == null)
             return super.getValidatedFiles(c, allowNonExistentFiles);
 
-        Module m = ModuleLoader.getInstance().getModuleForSchemaName(_module);
+        Module m = ModuleLoader.getInstance().getModule(_module);
         if (m == null)
         {
             throw new NotFoundException("Could not find module " + _module);
