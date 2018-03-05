@@ -247,6 +247,11 @@ public class VisitMapImporter
             {
                 assert visitStudy.getContainer().equals(visit.getContainer()) : "Existing visit should have been created in shared visit study container";
 
+                if (!StringUtils.equals(visit.getLabel(), record.getVisitLabel()))
+                {
+                    visit = _ensureMutable(visit);
+                    visit.setLabel(record.getVisitLabel());
+                }
                 if (!StringUtils.equals(visit.getDescription(), record.getVisitDescription()))
                 {
                     visit = _ensureMutable(visit);
