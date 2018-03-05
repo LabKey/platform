@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
  */
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements IMultiValuedDisplayColumn
 {
+    private static final Logger LOG = Logger.getLogger(MultiValuedDisplayColumn.class);
+
     private final Set<FieldKey> _fieldKeys = new HashSet<>();
     private final Set<FieldKey> _additionalFieldKeys = new HashSet<>();
     private final ColumnInfo _boundCol;
@@ -59,10 +62,18 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
             ColumnInfo childKey = mvfk.createJunctionLookupColumn(_boundCol);
             if (childKey != null && childKey.getFk() != null)
             {
-                lookupCol = childKey.getFk().createLookupColumn(childKey, childKey.getFk().getLookupColumnName());
-                // Remove the intermediate junction table from the FieldKey
-                lookupCol.setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
-                _additionalFieldKeys.add(lookupCol.getFieldKey());
+                ForeignKey childKeyFk = childKey.getFk();
+                lookupCol = childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
+                if (lookupCol == null)
+                {
+                    LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaName() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");
+                }
+                else
+                {
+                    // Remove the intermediate junction table from the FieldKey
+                    lookupCol.setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
+                    _additionalFieldKeys.add(lookupCol.getFieldKey());
+                }
             }
         }
         _lookupCol = lookupCol;
