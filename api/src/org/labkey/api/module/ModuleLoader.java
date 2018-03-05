@@ -1720,15 +1720,6 @@ public class ModuleLoader implements Filter
     }
 
 
-    /*  Use data source qualified name (e.g., core or external.myschema)  */
-    @Deprecated // Use getModule(DbScope, String) below instead
-    public @Nullable Module getModuleForSchemaName(String fullyQualifiedSchemaName)
-    {
-        SchemaDetails details = getSchemaDetails(fullyQualifiedSchemaName);
-
-        return null != details ? details.getModule() : null;
-    }
-
     public @Nullable Module getModule(DbScope scope, String schemaName)
     {
         SchemaDetails details = getSchemaDetails(scope, schemaName);
@@ -1745,16 +1736,10 @@ public class ModuleLoader implements Filter
 
     private @Nullable SchemaDetails getSchemaDetails(DbScope scope, String schemaName)
     {
-        String qualifiedName = DbSchema.getDisplayName(scope, schemaName);
-        return getSchemaDetails(qualifiedName);
-    }
+        // Consider: change this to a per-scope cache (similar to SchemaTableInfo and DbSchema caching)
 
-    /**
-     *  Use data source qualified name (e.g., core or external.myschema)
-     *  TODO: Merge this into getSchemaDetails(DbScope, String)
-     */
-    private @Nullable SchemaDetails getSchemaDetails(String fullyQualifiedSchemaName)
-    {
+        String fullyQualifiedSchemaName = DbSchema.getDisplayName(scope, schemaName);
+
         // Note: Do not reference any DbSchemas (directly or indirectly) in this method. We may be in the midst of loading
         // a DbSchema and don't want to cause CacheLoader re-entrancy. See #26037.
         synchronized(_schemaNameToSchemaDetails)
@@ -1776,11 +1761,11 @@ public class ModuleLoader implements Filter
 
                     for (String moduleDataSourceName : moduleDataSourceNames)
                     {
-                        DbScope scope = DbScope.getDbScope(moduleDataSourceName);
+                        DbScope moduleScope = DbScope.getDbScope(moduleDataSourceName);
 
-                        if (null != scope && scope.getSqlDialect().canExecuteUpgradeScripts())
+                        if (null != moduleScope && moduleScope.getSqlDialect().canExecuteUpgradeScripts())
                         {
-                            String labkeySchemaName = DbSchema.getDisplayName(scope, "labkey");
+                            String labkeySchemaName = DbSchema.getDisplayName(moduleScope, "labkey");
                             _schemaNameToSchemaDetails.put(labkeySchemaName, new SchemaDetails(getCoreModule(), DbSchemaType.Module));
                         }
                     }
