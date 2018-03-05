@@ -525,8 +525,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return false;
     }
 
-    protected void renderInTemplate(ViewContext context, Controller action, PageConfig page, ModelAndView mv)
-            throws Exception
+    protected void renderInTemplate(ViewContext context, Controller action, PageConfig page, ModelAndView mv) throws Exception
     {
         View view = resolveView(mv);
         mv.setView(view);
@@ -534,10 +533,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (mv instanceof HttpView)
             page.addClientDependencies(((HttpView)mv).getClientDependencies());
 
-        ModelAndView template = getTemplate(context, mv, action, page);
+        HttpView<PageConfig> template = getTemplate(context, mv, action, page);
 
-        if (template instanceof HttpView)
-            page.addClientDependencies(((HttpView)template).getClientDependencies());
+        if (null != template)
+            page.addClientDependencies(template.getClientDependencies());
 
         ModelAndView render = template == null ? mv : template;
         render.getView().render(render.getModel(), context.getRequest(), context.getResponse());
@@ -559,10 +558,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
+    protected @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
     {
         NavTree root = new NavTree();
         appendNavTrail(action, root);
+
         if (root.hasChildren())
         {
             List<NavTree> children = root.getChildren();

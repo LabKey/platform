@@ -65,7 +65,7 @@ public class PageConfig
         Custom,  // must be handled by module
         App;
 
-        public HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView body, PageConfig page)
+        public @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView body, PageConfig page)
         {
             return ViewService.get().getTemplate(this, context, body, page);
         }

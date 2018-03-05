@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.WebPartView.FrameType;
@@ -38,6 +39,6 @@ public interface ViewService
         ServiceRegistry.get().registerService(ViewService.class, impl);
     }
 
-    HttpView<PageConfig> getTemplate(Template t, ViewContext context, ModelAndView body, PageConfig page);
+    @Nullable HttpView<PageConfig> getTemplate(Template t, ViewContext context, ModelAndView body, PageConfig page);
     WebPartFrame getFrame(FrameType frameType, ViewContext context, FrameConfig config);
 }
