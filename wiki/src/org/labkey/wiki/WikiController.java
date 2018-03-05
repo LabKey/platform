@@ -91,6 +91,7 @@ import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
@@ -151,11 +152,11 @@ public class WikiController extends SpringActionController
 
 
     @Override
-    protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
+    protected @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
     {
-        ModelAndView template = super.getTemplate(context, mv, action, page);
+        HttpView<PageConfig> template = super.getTemplate(context, mv, action, page);
 
-        if (template instanceof HttpView && !(action instanceof EditWikiAction) && !PageConfig.Template.Print.equals(page.getTemplate()))
+        if (null != template && !(action instanceof EditWikiAction) && page.getTemplate() != Template.Print)
         {
             VBox vbox = new VBox();
 
@@ -183,7 +184,7 @@ public class WikiController extends SpringActionController
             page.addClientDependencies(toc.getClientDependencies());
             vbox.addView(toc); //TODO: establish insertion order?
 
-            ((HttpView)template).setView(WebPartFactory.LOCATION_RIGHT, vbox);
+            template.setView(WebPartFactory.LOCATION_RIGHT, vbox);
         }
 
         return template;
@@ -688,7 +689,7 @@ public class WikiController extends SpringActionController
             JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
-            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTemplate(Template.Print);
 
             return v;
         }
@@ -720,7 +721,7 @@ public class WikiController extends SpringActionController
 
             JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTemplate(Template.Print);
 
             return v;
         }
@@ -762,7 +763,7 @@ public class WikiController extends SpringActionController
             Set<WikiTree> wikis = Collections.singleton(tree);
             JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
             v.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTemplate(Template.Print);
 
             return v;
         }
@@ -783,7 +784,7 @@ public class WikiController extends SpringActionController
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
             JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setTemplate(PageConfig.Template.Print);
+            getPageConfig().setTemplate(Template.Print);
 
             return v;
         }
@@ -1065,7 +1066,7 @@ public class WikiController extends SpringActionController
             bean.cancelURL = null == sourceContainer ? getBeginURL(c) : getBeginURL(sourceContainer);
 
             setHelpTopic("docTools");
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTemplate(Template.Dialog);
             getPageConfig().setShowHeader(true);
 
             return new JspView<>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
@@ -1171,7 +1172,7 @@ public class WikiController extends SpringActionController
             {
                 if ("none".equals(getViewContext().getRequest().getParameter("_template")))
                 {
-                    getPageConfig().setTemplate(PageConfig.Template.None);
+                    getPageConfig().setTemplate(Template.None);
                     HtmlView html = new HtmlView(_wikiversion.getBody());
                     html.setFrame(WebPartView.FrameType.NONE);
                     html.setContentType("text/plain");
