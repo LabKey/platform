@@ -471,6 +471,7 @@ public class SecurityApiActions
             Map<String, Object> props = new HashMap<>();
             props.put("uniqueName", role.getUniqueName());
             props.put("name", role.getName());
+            props.put("displayName", role.getDisplayName());
             props.put("description", role.getDescription());
             if (null != role.getSourceModule())
                 props.put("sourceModule", role.getSourceModule().getName());

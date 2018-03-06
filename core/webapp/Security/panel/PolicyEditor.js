@@ -272,7 +272,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                 border : false,
                 defaults: {border: false},
                 items: [{
-                    html: '<div><h3 class="rn">' + role.name + '</h3><div class="rd">' + role.description + '</div></div>',
+                    html: '<div><h3 class="rn">' + role.displayName + '</h3><div class="rd">' + role.description + '</div></div>',
                     bodyStyle : 'background-color: transparent;',
                     cls: 'rn',
                     width: 300

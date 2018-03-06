@@ -2767,7 +2767,7 @@ public class UserController extends SpringActionController
             for (Role role : roles)
             {
                 Map<String, Object> map = new HashMap<>();
-                map.put("displayName", role.getName());
+                map.put("displayName", role.getDisplayName());
                 map.put("roleName", role.getUniqueName());
                 map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
                 map.put("selected", impersonationRoles.contains(role));
