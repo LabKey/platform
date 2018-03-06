@@ -46,11 +46,20 @@ public interface Role extends Parameter.JdbcParameterValue
     String getUniqueName();
 
     /**
-     * Returns a short friendly name suitable for display in a user interface.
      * @return The role's name.
      */
     @NotNull
     String getName();
+
+    /**
+     * Returns a short friendly name suitable for display in a user interface.
+     * @return The role's display name.
+     */
+    @NotNull
+    default String getDisplayName()
+    {
+        return this.getName();
+    }
 
     /**
      * Returns a description of the role for display in a user interface.
