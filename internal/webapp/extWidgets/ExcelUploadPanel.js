@@ -68,6 +68,8 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 xtype: 'container',
                 itemId: 'templateArea'
             },{
+                xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
+            },{
                 xtype: 'container',
                 itemId: 'errorArea',
                 border: false,
