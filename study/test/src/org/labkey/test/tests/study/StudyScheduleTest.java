@@ -384,7 +384,7 @@ public class StudyScheduleTest extends StudyBaseTest
                 waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
                 setFormElement(fileUpload, file);
 
-                waitForElement(Locator.xpath("//div[@class = 'gwt-HTML' and contains(text(), 'Showing first 5 rows')]"), WAIT_FOR_JAVASCRIPT);
+                waitForElement(Locator.tagWithClass("div", "gwt-HTML").containing("Showing first 5 rows"), WAIT_FOR_JAVASCRIPT);
 
                 Locator.XPathLocator mouseId = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='MouseId:']/../div/div");
                 _extHelper.selectGWTComboBoxItem(mouseId, "ptid");
