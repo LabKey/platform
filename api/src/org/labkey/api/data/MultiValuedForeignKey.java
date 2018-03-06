@@ -71,6 +71,12 @@ public class MultiValuedForeignKey implements ForeignKey
         _displayField = source._displayField;
     }
 
+    // TODO: better name?
+    public ForeignKey getSourceFk()
+    {
+        return _fk;
+    }
+
 
     public String getJunctionLookup()
     {
