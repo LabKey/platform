@@ -1281,16 +1281,9 @@ public class FileContentServiceImpl implements FileContentService
                 Files.walk(rootPath, 100) // prevent symlink loop
                         .filter(path -> !Files.isSymbolicLink(path) && path.compareTo(rootPath) != 0) // exclude symlink & root
                         .forEach(path -> {
-                            try
-                            {
-                                String url = path.toUri().toURL().toString();
-                                if (!existingDataFileUrls.contains(url))
-                                    rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", url)));
-                            }
-                            catch (MalformedURLException e)
-                            {
-                                _log.error("Unable to parse file path: " + path);
-                            }
+                            String url = path.toUri().toString();
+                            if (!existingDataFileUrls.contains(url))
+                                rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", url)));
 
                         });
 

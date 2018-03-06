@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.reports.Report"%>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.Group"%>
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
@@ -204,16 +205,28 @@
     </span>
     </labkey:form>&nbsp;
 
-<table>
-    <tr><td colspan="2">An enabled group indicates that the group already has READ access to the dataset (and to this view) through
+    <p>
+        An enabled group indicates that the group already has READ access to the dataset (and to this view) through
         the project permissions. If a group is disabled, the group does not have READ access to the dataset
         and cannot be granted access through this view. If the checkbox is selected, the group has been given explicit
-        access through this view.<br/><br/>For more information on study security, consult the main documentation:
+        access through this view.
+    </p>
+
+    <% if (bean.allowShareButton(getUser(), getContainer())) { %>
+    <p>
+        This report type allows for sharing with individual users. Any users that this report has already been shared with
+        will be listed in the "Specific Users" section above. To add additional users, click the button below.<br/>
+        <%= button("Share Report").href(PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), bean)) %>
+    </p>
+    <% } %>
+
+    <p>
+        For more information on study security, consult the main documentation:
         <ul>
             <li><%=helpLink("security", "LabKey Security Documentation")%></li>
             <li><%=helpLink("studySecurity", "Study Security Documentation")%></li>
         </ul>
-</table>
+    </p>
 
 <%!
     SecurityController.PermissionType getPermissionType(Report report)

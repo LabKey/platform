@@ -483,7 +483,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 try
                 {
                     path = FileUtil.stringToPath(source.getXarContext().getContainer(),
-                            source.getCanonicalDataFileURL(FileUtil.getAbsolutePath(source.getXarContext().getContainer(), path)));
+                            source.getCanonicalDataFileURL(FileUtil.pathToString(path)));
                     pathStr = FileUtil.relativizeUnix(source.getRootPath(), path, false);
                 }
                 catch (IOException e)
@@ -3174,15 +3174,8 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataImpl getExpDataByURL(File file, @Nullable Container c)
     {
         File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
-        try
-        {
-            String url = canonicalFile.toURI().toURL().toString();
-            return getExpDataByURL(url, c);
-        }
-        catch (MalformedURLException e)
-        {
-            throw new UnexpectedException(e);
-        }
+        String url = canonicalFile.toPath().toUri().toString();
+        return getExpDataByURL(url, c);
     }
 
     @Override

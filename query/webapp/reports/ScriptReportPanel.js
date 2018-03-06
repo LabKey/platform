@@ -288,7 +288,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                 mode            : this.reportConfig.editAreaSyntax ? this.reportConfig.editAreaSyntax : 'text/plain',
                                 lineNumbers     : true,
                                 lineWrapping    : true,
-                                readOnly        : this.readOnly && !isScriptEditor,
+                                readOnly        : this.readOnly || !isScriptEditor,
                                 indentUnit      : 3
                             });
 
@@ -305,7 +305,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         items.push({
             xtype : 'fieldset',
             title : 'Options',
-            hidden: this.readOnly && !isScriptEditor,
+            hidden: this.readOnly || !isScriptEditor,
             defaults    : {xtype : 'checkbox', labelWidth : 12},
             items : [
                 {
@@ -355,7 +355,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 collapsible : true,
                 collapsed   : true,
                 defaults    : {xtype : 'radio', labelWidth : 12},
-                hidden      : this.readOnly && !isScriptEditor,
+                hidden      : this.readOnly || !isScriptEditor,
                 items : [
                     {name : 'knitrFormat',
                         inputValue : 'None',
@@ -400,7 +400,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 title : 'JavaScript Options',
                 collapsible : true,
                 collapsed   : true,
-                hidden      : this.readOnly && !isScriptEditor,
+                hidden      : this.readOnly || !isScriptEditor,
                 defaults    : {xtype : 'checkbox', labelWidth : 12},
                 items : [
                     {name : 'useGetDataApi',
@@ -436,7 +436,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 defaults    : {xtype : 'radio'},
                 collapsible : true,
                 collapsed   : true,
-                hidden      : this.readOnly && !isScriptEditor,
+                hidden      : this.readOnly || !isScriptEditor,
                 items       : thumbnails
             });
         }
@@ -457,7 +457,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 collapsible : true,
                 collapsed   : true,
                 defaults    : {xtype : 'checkbox'},
-                hidden      : this.readOnly && !isScriptEditor,
+                hidden      : this.readOnly || !isScriptEditor,
                 items : scripts
             });
         }
@@ -470,7 +470,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 title : 'Study Options',
                 collapsible : true,
                 collapsed   : true,
-                hidden      : this.readOnly && !isScriptEditor,
+                hidden      : this.readOnly || !isScriptEditor,
                 defaults    : {xtype : 'checkbox', labelWidth : 12},
                 items : [
                     {name : 'filterParam',
@@ -509,6 +509,19 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             scope: this,
             handler: function() {
                 this.showSaveReportPrompt(this.saveURL, 'Save Report As', true);
+            }
+        });
+
+        items.push({
+            xtype: 'button',
+            text: 'Share Report',
+            hidden: !this.allowShareReport || this.reportConfig.reportId == null,
+            style: 'margin-left: 5px;',
+            scope: this,
+            handler: function() {
+                window.location = LABKEY.ActionURL.buildURL('reports', 'shareReport', null, {
+                    reportId: this.reportConfig.reportId
+                });
             }
         });
 

@@ -951,16 +951,10 @@ public class FileContentController extends SpringActionController
                         }
 
                         // need this as a key for the query update service
-                        try {
-                            File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(resource.getFile());
-                            String url = canonicalFile.toURI().toURL().toString();
+                        File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(resource.getFile());
+                        String url = canonicalFile.toPath().toUri().toString();
 
-                            fileProps.put(ExpDataTable.Column.DataFileUrl.name(), url);
-                        }
-                        catch (MalformedURLException e)
-                        {
-                            errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, name, "Unable to create the DataFileUrl"));
-                        }
+                        fileProps.put(ExpDataTable.Column.DataFileUrl.name(), url);
                     }
                 }
             }

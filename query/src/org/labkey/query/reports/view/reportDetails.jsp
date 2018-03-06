@@ -21,7 +21,9 @@
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -48,6 +50,7 @@
 
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
+    ActionURL shareReportURL = PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
     String reportURLAttributes = report.getRunReportTarget() != null ? "target=\"" + report.getRunReportTarget() + "\"": "";
 
     String type = report.getTypeDescription();
@@ -251,6 +254,7 @@
         <td colspan="2">
             <%= button("View Report").href(vewReportURL).attributes(reportURLAttributes) %>
             <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : ""%>
+            <%= report.allowShareButton(getUser(), getContainer()) && (shareReportURL != null) ? button("Share Report").href(shareReportURL) : ""%>
         </td>
     </tr>
 </table>

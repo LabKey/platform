@@ -630,59 +630,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-    public static class LookupWorkbookForm
-    {
-        private String _id;
-
-        public String getId()
-        {
-            return _id;
-        }
-
-        public void setId(String id)
-        {
-            _id = id;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class LookupWorkbookAction extends SimpleViewAction<LookupWorkbookForm>
-    {
-        public ModelAndView getView(LookupWorkbookForm form, BindException errors) throws Exception
-        {
-            if (null == form.getId())
-                throw new NotFoundException("You must supply the id of the workbook you wish to find.");
-
-            try
-            {
-                int id = Integer.parseInt(form.getId());
-                //try to lookup based on id
-                Container container = ContainerManager.getForRowId(id);
-                //if found, ensure it's a descendant of the current container, and redirect
-                if (null != container && container.isDescendant(getContainer()))
-                    throw new RedirectException(container.getStartURL(getUser()));
-            }
-            catch (NumberFormatException e) { /* continue on with other approaches */ }
-
-            //next try to lookup based on name
-            Container container = getContainer().findDescendant(form.getId());
-            if (null != container)
-                throw new RedirectException(container.getStartURL(getUser()));
-
-            //otherwise, return a workbooks list with the search view
-            HtmlView message = new HtmlView("<p class='labkey-error'>Could not find a workbook with id '" + form.getId() + "' in this folder or subfolders. Try searching or entering a different id.</p>");
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
-            WorkbookQueryView wbqview = new WorkbookQueryView(getViewContext(), schema);
-            return new VBox(message, new WorkbookSearchView(wbqview), wbqview);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            //if a view ends up getting rendered, the workbook id was not found
-            return root.addChild("Workbooks");
-        }
-    }
-
     // Requires at least insert permission. Will check for admin if needed
     @RequiresPermission(InsertPermission.class)
     public class CreateContainerAction extends ApiAction<SimpleApiJsonForm>
@@ -2065,7 +2012,6 @@ public class CoreController extends SpringActionController
             assertForReadPermission(user,
                 controller.new ProjectsAction(),
                 controller.new DownloadFileLinkAction(),
-                controller.new LookupWorkbookAction(),
                 controller.new GetExtContainerTreeAction(),
                 controller.new GetExtSecurityContainerTreeAction(),
                 controller.new GetExtMWBContainerTreeAction(),

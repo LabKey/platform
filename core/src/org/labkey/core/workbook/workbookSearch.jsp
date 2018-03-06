@@ -15,25 +15,149 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.CoreController" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.workbook.WorkbookSearchBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    Container container = getContainer();
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+    }
 %>
-<table><tr>
-<td style="padding-bottom: 20px">
-<labkey:form method="GET" layout="inline" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
-    <labkey:input label="Jump To Workbook:" type="text" placeholder="Enter ID" id="wbsearch-id" name="id" value=""/>
-    <%= button("Go").submit(true) %>
-</labkey:form>
-</td><td style="padding-left:20px; padding-bottom: 20px">
-<labkey:form method="GET" layout="inline" action='<%=new ActionURL("search", "search", container)%>'>
-    <labkey:input label="Search Workbooks:" type="text" placeholder="Enter Text" id="wbtextsearch-id" name="q" size="40" value=""/>
-    <labkey:input type="hidden" name="container" value="<%=h(container.getId())%>"/>
-    <labkey:input type="hidden" name="includeSubfolders" value="1"/>
-    <%= button("Search").submit(true) %>
-</labkey:form>
-</td></tr></table>
+<%
+    JspView<WorkbookSearchBean> me = (JspView) HttpView.currentView();
+    String searchString = StringUtils.trimToNull(me.getModelBean().getSearchString());
+    int rowId = me.getModelBean().getQueryView().getWebPartRowId();
+
+
+%>
+
+<script type="text/javascript">
+
+    Ext4.onReady(function() {
+        Ext4.create('Ext.panel.Panel', {
+            border: false,
+            layout: 'hbox',
+            itemId: 'ownerPanel',
+            defaults: {
+                border: false,
+                style: 'margin-right: 10px'
+            },
+            items: [{
+                xtype: 'numberfield',
+                itemId: 'workbookId',
+                labelWidth: 130,
+                width: 250,
+                hideTrigger: true,
+                keyNavEnabled: false,
+                spinUpEnabled: false,
+                spinDownEnabled: false,
+                minValue: 0,
+                allowDecimals: false,
+                emptyText: 'Enter ID',
+                fieldLabel: 'Jump To Workbook',
+                enableKeyEvents: true,
+                listeners: {
+                    keyup: function (field, e) {
+                        if (e.getKey() === Ext4.EventObject.ENTER) {
+                            var btn = field.up('#ownerPanel').down('#workbookBtn');
+                            btn.handler(btn);
+                        }
+                    }
+                }
+            }, {
+                xtype: 'button',
+                itemId: 'workbookBtn',
+                border: true,
+                text: 'Go',
+                style: 'margin-right: 40px;margin-top: 0px',
+                handler: function (btn) {
+                    var field = btn.up('panel').down('#workbookId');
+                    if (!field.getValue()) {
+                        Ext4.Msg.alert('Error', 'Must enter a workbook Id');
+                        return;
+                    }
+
+                    var val = parseInt(field.getValue());
+                    if (!val){
+                        Ext4.Msg.alert('Error', 'Must enter a value');
+                        return;
+                    }
+
+                    Ext4.Msg.wait('Loading...');
+
+                    LABKEY.Query.selectRows({
+                        schemaName: 'core',
+                        queryName: 'containers',
+                        columns: 'Path',
+                        filterArray: [
+                            LABKEY.Filter.create('name', val),
+                            LABKEY.Filter.create('type', 'workbook')
+                        ],
+                        scope: this,
+                        error: function(){
+                            Ext4.Msg.alert('Error', 'There was an error searching for workbook: ' + val);
+                        },
+                        success: function (results) {
+                            Ext4.Msg.hide();
+
+                            if (!results.rows || !results.rows.length) {
+                                Ext4.Msg.alert('Error', 'Workbook not found');
+                                return;
+                            }
+
+                            var row = results.rows[0];
+                            window.location = LABKEY.ActionURL.buildURL('project', 'start', row['Path']);
+                        }
+                    });
+                }
+            }, {
+                xtype: 'textfield',
+                itemId: 'searchText',
+                labelWidth: 130,
+                width: 300,
+                fieldLabel: 'Search Workbooks',
+                emptyText: 'Enter Text',
+                enableKeyEvents: true,
+                value: <%=q(h(searchString == null ? "" : searchString))%>,
+                listeners: {
+                    keyup: function (field, e) {
+                        if (e.getKey() === Ext4.EventObject.ENTER) {
+                            var btn = field.up('#ownerPanel').down('#searchBtn');
+                            btn.handler(btn);
+                        }
+                    }
+                }
+            }, {
+                xtype: 'button',
+                border: true,
+                itemId: 'searchBtn',
+                text: 'Search',
+                //style: 'margin-top: 3px',
+                handler: function (btn) {
+                    var field = btn.up('panel').down('#searchText');
+                    if (!field.getValue()) {
+                        Ext4.Msg.alert('Error', 'Must enter a search term');
+                        return;
+                    }
+
+                    window.location = LABKEY.ActionURL.buildURL('search', 'search', null, {
+                        container: LABKEY.Security.currentContainer.id,
+                        includeWorkbooks: 1,
+                        q: field.getValue(),
+                        scope: 'FolderAndSubfolders'
+                    })
+                }
+            }]
+
+        }).render('workbookSearch_<%=h(rowId)%>');
+    });
+</script>
+
+<div id="workbookSearch_<%=h(rowId)%>"></div>
+<br>
