@@ -544,7 +544,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public String getCSRFCheck()
     {
-        return lookupStringValue(CSRF_CHECK, "ADMINONLY");
+        return lookupStringValue(CSRF_CHECK, "POST");
     }
 
     @Override
