@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.resource.Resource;
+import org.labkey.query.xml.DependenciesType;
 import org.labkey.query.xml.FunctionType;
 import org.labkey.query.xml.FunctionsType;
 import org.labkey.query.xml.ReportDescriptorType;
@@ -50,7 +51,7 @@ public class ModuleRReportResource extends ModuleReportDependenciesResource
     }
 
     @Override
-    protected org.labkey.query.xml.DependenciesType getXmlDependencies(ReportType type) throws XmlException
+    protected DependenciesType getXmlDependencies(ReportType type) throws XmlException
     {
         if (type.isSetR())
             return type.getR().getDependencies();

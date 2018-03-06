@@ -146,11 +146,12 @@ public class RReport extends ExternalScriptEngineReport
         RStudioService rs = getRStudioService();
         if (rs != null)
         {
+            User user = viewContext.getUser();
             Map<String, Object> dockerRConfig = new HashMap<>();
             dockerRConfig.put("name", "RStudio");
             dockerRConfig.put("finishUrl", rs.getFinishReportUrl(viewContext.getContainer()));
             dockerRConfig.put("entityId", getEntityId());
-            boolean isEditing = rs.isUserEditingReportInRStudio(viewContext.getUser(), getEntityId());
+            boolean isEditing = rs.isUserEditingReportInRStudio(user, getEntityId());
             dockerRConfig.put("editing", isEditing);
             Pair<String, String> externalEditor = rs.getReportRStudioUrl(viewContext, getEntityId());
             dockerRConfig.put("externalWindowTitle", externalEditor.getValue());
@@ -171,8 +172,8 @@ public class RReport extends ExternalScriptEngineReport
                     isRDockerConfigured = dockerREngine != null;
                 }
             }
-            if (!isRDockerConfigured)
-                dockerRConfig.put("warningMsg", "'R Docker Scripting Engine' is the preferred method of running R reports created from RStudio in LabKey. Please contact admin to enable it.");
+            if (!isRDockerConfigured && user != null && user.isInSiteAdminGroup())
+                dockerRConfig.put("warningMsg", "'R Docker Scripting Engine' is the preferred method of running R reports created from RStudio in LabKey.");
             return dockerRConfig;
         }
         return null;
@@ -862,8 +863,8 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public boolean allowShareButton(User user, Container container)
     {
-        // allow sharing if this R report is a DB report and the use canShare
-        return !getDescriptorType().equals(ModuleRReportDescriptor.TYPE) && canShare(user, container);
+        // allow sharing if this R report is a DB report and the user canShare
+        return !getDescriptor().isModuleBased() && canShare(user, container);
     }
 
     public static class TestCase extends Assert

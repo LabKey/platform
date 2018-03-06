@@ -63,6 +63,7 @@
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
+    boolean allowShareReport = report.allowShareButton(user, c);
     Mode mode = bean.getMode();
     boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
@@ -124,6 +125,7 @@
     reportConfig.put("sourceTabVisible", bean.isSourceTabVisible());
     reportConfig.put("runInBackground", bean.isRunInBackground());
     reportConfig.put("supportsPipeline", report.supportsPipeline());
+    reportConfig.put("isModuleBased", report.getDescriptor().isModuleBased());
 
     // must be project admin (or above to share a report to child folders
     reportConfig.put("allowInherit", user.hasRootAdminPermission() || ReportUtil.isInRole(user, c, ProjectAdminRole.class));
@@ -190,6 +192,7 @@
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
                 renderTo        : <%=q(renderId)%>,
                 readOnly        : <%=readOnly%>,
+                allowShareReport: <%=allowShareReport%>,
                 minHeight       : 500,
                 minWidth        : 500,
                 initialURL      : <%=q(initialViewURL.getLocalURIString())%>,

@@ -19,8 +19,8 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.query.xml.DependenciesType;
-import org.labkey.query.xml.DependencyType;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.query.xml.ReportType;
 
@@ -32,6 +32,8 @@ import java.util.LinkedHashSet;
  */
 public class ModuleReportDependenciesResource extends ModuleReportResource
 {
+    private static final Logger _log = Logger.getLogger(ModuleReportDependenciesResource.class);
+
     private LinkedHashSet<ClientDependency> _dependencies;
 
     public ModuleReportDependenciesResource(ReportDescriptor reportDescriptor, Resource sourceFile)
@@ -39,7 +41,7 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
         super(reportDescriptor, sourceFile);
     }
 
-    protected org.labkey.query.xml.DependenciesType getXmlDependencies(ReportType type) throws XmlException
+    protected DependenciesType getXmlDependencies(ReportType type) throws XmlException
     {
         if (type.isSetJavaScript())
             return type.getJavaScript().getDependencies();
@@ -64,9 +66,11 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
                     {
                         for (DependencyType depend : xmlDependencies.getDependencyArray())
                         {
-                            String path = depend.getPath();
-                            if (null != path)
-                                _dependencies.add(ClientDependency.fromPath(path));
+                            ClientDependency cd = ClientDependency.fromXML(depend);
+                            if (cd != null)
+                                _dependencies.add(cd);
+                            else
+                                _log.error("Unable to parse <dependency> tag for: " + getSourceFile().getName());
                         }
                     }
                 }

@@ -63,8 +63,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.data.xml.PermissionType;
-import org.labkey.moduleProperties.xml.DependencyType;
 import org.labkey.moduleProperties.xml.ModuleDocument;
 import org.labkey.moduleProperties.xml.ModuleType;
 import org.labkey.moduleProperties.xml.OptionsListType;
@@ -1043,7 +1043,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 {
                     try
                     {
-                        XmlBeansUtil.validateXmlDocument(moduleDoc);
+                        XmlBeansUtil.validateXmlDocument(moduleDoc, getName());
                     }
                     catch (XmlValidationException e)
                     {
@@ -1114,9 +1114,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                         String path = rt.getPath();
                         if (path != null)
                         {
-                            ClientDependency cd = ClientDependency.fromPath(path);
+                            ClientDependency cd = ClientDependency.fromXML(rt);
                             if (cd != null)
                                 _clientDependencies.add(cd);
+                            else
+                                _log.error("Unable to parse <dependency> in XML for module: " + getName());
                         }
                     }
                 }

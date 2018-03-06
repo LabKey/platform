@@ -644,12 +644,8 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         if (!_dataQueried)
         {
-            try
-            {
-                String fileURL = getFile().toURI().toURL().toString();
-                _data = getExpDatasHelper(fileURL, getContainer());
-            }
-            catch (MalformedURLException e) {}
+            String fileURL = getFile().toPath().toUri().toString();
+            _data = getExpDatasHelper(fileURL, getContainer());
             _dataQueried = true;
         }
         return _data;

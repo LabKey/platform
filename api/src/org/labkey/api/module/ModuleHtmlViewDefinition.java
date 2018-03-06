@@ -32,8 +32,8 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.data.xml.view.DependenciesType;
-import org.labkey.data.xml.view.DependencyType;
 import org.labkey.data.xml.view.ModuleContextType;
 import org.labkey.data.xml.view.PermissionClassListType;
 import org.labkey.data.xml.view.PermissionClassType;
@@ -118,7 +118,7 @@ public class ModuleHtmlViewDefinition
                 {
                     try
                     {
-                        XmlBeansUtil.validateXmlDocument(viewDoc);
+                        XmlBeansUtil.validateXmlDocument(viewDoc, r.getPath().toString());
                     }
                     catch (XmlValidationException e)
                     {
@@ -214,13 +214,11 @@ public class ModuleHtmlViewDefinition
         Set<ClientDependency> result = new LinkedHashSet<>();
         for (DependencyType r : resources)
         {
-            if (null != r.getPath())
-            {
-                ClientDependency cr = ClientDependency.fromPath(r.getPath());
-
-                if (cr != null)
-                    result.add(cr);
-            }
+            ClientDependency cr = ClientDependency.fromXML(r);
+            if (cr != null)
+                result.add(cr);
+            else
+                _log.error("Unable to process <dependency> for file: " + getName());
         }
         return result;
     }

@@ -35,11 +35,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.clientLibrary.xml.DependenciesType;
+import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.clientLibrary.xml.LibrariesDocument;
 import org.labkey.clientLibrary.xml.LibraryType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 import org.labkey.clientLibrary.xml.RequiredModuleType;
-import org.labkey.clientLibrary.xml.ScriptType;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -246,6 +246,18 @@ public class ClientDependency
     }
 
 
+    @Nullable
+    public static ClientDependency fromXML(DependencyType type)
+    {
+        if (null == type || null == type.getPath())
+            return null;
+
+        if (type.isSetMode())
+            return fromPath(type.getPath(), type.getMode());
+
+        return fromPath(type.getPath());
+    }
+
     public static ClientDependency fromPath(String path)
     {
         return fromPath(path, ModeTypeEnum.BOTH);
@@ -347,10 +359,13 @@ public class ClientDependency
                 DependenciesType dependencies = libDoc.getLibraries().getDependencies();
                 if (dependencies != null)
                 {
-                    for (ScriptType s : dependencies.getDependencyArray())
+                    for (DependencyType s : dependencies.getDependencyArray())
                     {
-                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : ModeTypeEnum.BOTH;
-                        _children.add(fromPath(s.getPath(), mode));
+                        ClientDependency cd = fromXML(s);
+                        if (cd != null)
+                            _children.add(cd);
+                        else
+                            _log.error("Unable to load <dependencies> in library " + _filePath.getName());
                     }
                 }
 
@@ -367,7 +382,7 @@ public class ClientDependency
                     }
                 }
 
-                for (ScriptType s : l.getScriptArray())
+                for (DependencyType s : l.getScriptArray())
                 {
                     ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
                         _compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;

@@ -240,7 +240,7 @@ public class FileUtil
     }
 
     public static String getAbsolutePath(Container container, Path path)
-    {
+    {   // Returned string is NOT necessarily a URI (i.e. it is not encoded)
         return getAbsolutePath(container, path.toUri());
     }
     
@@ -319,7 +319,7 @@ public class FileUtil
     }
 
     public static String pathToString(Path path)
-    {
+    {   // Returns a URI string (encoded)
         return getPathStringWithoutAccessId(path.toUri());
     }
 
@@ -346,6 +346,8 @@ public class FileUtil
         if (null != uri)
             if (hasCloudScheme(uri))
                 return uri.toString().replaceFirst("/\\w+@s3", "/s3");      // Remove accessId portion if exists
+            else if ("file".equalsIgnoreCase(uri.getScheme()) && !StringUtils.startsWith(uri.getRawSchemeSpecificPart(), "///"))
+                return new File(uri).toPath().toUri().toString();           // File.toURI() can produce URI like "file:/Users/...." We want "file:///Users/..."
             else
                 return uri.toString();
         else
