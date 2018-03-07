@@ -36,8 +36,8 @@
         {
 %>
     <labkey:input type="displayfield"
-          label="<%= text(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %>"
-          value="<%= text(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>"
+          label="<%= h(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %>"
+          value="<%= h(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>"
     />
 <%
         }

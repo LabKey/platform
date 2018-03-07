@@ -175,40 +175,32 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         }
     }
 
-
     private static void runImporters(StudyImportContext ctx, PipelineJob job, BindException errors) throws Exception
     {
-        VirtualFile vf = ctx.getRoot();
-
-        TopLevelStudyPropertiesImporter importer1 = new TopLevelStudyPropertiesImporter();
-        job.setStatus("IMPORT " + importer1.getDataType());
-        importer1.process(ctx, vf, errors);
+        processImporter(ctx, job, errors, new TopLevelStudyPropertiesImporter());
         // study.objective, study.personnel, and study.studyproperties tables
-        new StudyPropertiesImporter().process(ctx, vf, errors);
+        new StudyPropertiesImporter().process(ctx, ctx.getRoot(), errors);
 
-        new MissingValueImporterFactory().create().process(job, ctx, vf);
+        new MissingValueImporterFactory().create().process(job, ctx, ctx.getRoot());
 
-        QcStatesImporter importer3 = new QcStatesImporter();
-        job.setStatus("IMPORT " + importer3.getDataType());
-        importer3.process(ctx, vf, errors);
+        processImporter(ctx, job, errors, new QcStatesImporter());
 
-        VisitImporter importer4 = new VisitImporter();
-        job.setStatus("IMPORT " + importer4.getDataType());
-        importer4.process(ctx, vf, errors);
+        processImporter(ctx, job, errors, new VisitImporter());
         if (errors.hasErrors())
             throwFirstErrorAsPipelineJobException(errors);
 
-        TreatmentDataImporter importer5 = new TreatmentDataImporter();
-        job.setStatus("IMPORT " + importer5.getDataType());
-        importer5.process(ctx, vf, errors);
+        processImporter(ctx, job, errors, new TreatmentDataImporter());
 
-        AssayScheduleImporter importer6 = new AssayScheduleImporter();
-        job.setStatus("IMPORT " + importer6.getDataType());
-        importer6.process(ctx, vf, errors);
+        processImporter(ctx, job, errors, new AssayScheduleImporter());
 
-        DatasetDefinitionImporter importer7 = new DatasetDefinitionImporter();
-        job.setStatus("IMPORT " + importer7.getDataType());
-        importer7.process(ctx, vf, errors);
+        processImporter(ctx, job, errors, new DatasetDefinitionImporter());
+    }
+
+    private static void processImporter(StudyImportContext ctx, PipelineJob job, BindException errors, InternalStudyImporter importer) throws Exception
+    {
+        if (job != null)
+            job.setStatus("IMPORT " + importer.getDataType());
+        importer.process(ctx, ctx.getRoot(), errors);
     }
 
     private static void throwFirstErrorAsPipelineJobException(BindException errors) throws PipelineJobException

@@ -15,6 +15,7 @@
  */
 package org.labkey.test.util.mothership;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Pair;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
@@ -134,21 +135,24 @@ public class MothershipHelper
         HIGH
     }
 
-    public void createUsageReport(ReportLevel level, boolean submit)
+    public void createUsageReport(ReportLevel level, boolean submit, String forwardedFor)
     {
-        createMothershipReport("CheckForUpdates", level, submit);
+        createMothershipReport("CheckForUpdates", level, submit, forwardedFor);
     }
 
     public void createExceptionReport(ReportLevel level, boolean submit)
     {
-        createMothershipReport("ReportException", level, submit);
+        createMothershipReport("ReportException", level, submit, null);
     }
 
-    private void createMothershipReport(String type, ReportLevel level, boolean submit)
+    private void createMothershipReport(String type, ReportLevel level, boolean submit, @Nullable String forwardedFor)
     {
         String relativeUrl = "/admin-testMothershipReport.view?" + "type=" + type +
                 "&level=" + level.toString() +
-                "&submit=" + submit;
+                "&submit=" + submit +
+                "&testMode=true";
+        if (null != forwardedFor)
+            relativeUrl += "&forwardedFor=" + forwardedFor;
         test.beginAt(relativeUrl);
     }
 

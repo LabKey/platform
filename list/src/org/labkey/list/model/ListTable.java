@@ -54,7 +54,6 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -83,6 +82,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     private final ListDefinition _list;
     private static final Logger LOG = Logger.getLogger(ListTable.class);
     private final boolean _allowMaxPhi;
+    private final PHI _maxUserPhi;
 
     public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
     {
@@ -90,7 +90,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        _allowMaxPhi = isMaxPhiAllowed(schema);
+        _maxUserPhi = ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
+        _allowMaxPhi = isMaxPhiAllowed();
         List<ColumnInfo> defaultColumnsCandidates = new ArrayList<>();
 
         assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
@@ -351,8 +352,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             {
                 if (_list != null && _list.getKeyName() != null && getRealTable().getColumn(_list.getKeyName()) != null)
                     loggingColumns.add(getRealTable().getColumn(_list.getKeyName()).getFieldKey());
+                // Also log any participantId columns, but only if the user is allowed to see them. Otherwise the value wouldn't be in the SELECT list to log.
                 loggingColumns.addAll(getRealTable().getColumns().stream()
-                        .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                        .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(_maxUserPhi))
                         .map(ColumnInfo::getFieldKey).collect(Collectors.toSet()));
             }
             return loggingColumns;
@@ -362,21 +364,43 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public String getPHILoggingComment()
     {
-        return getPHIDataLoggingColumns().stream().map(fk -> getColumn(fk).getName())
+        return getPHIDataLoggingColumns().stream().map(FieldKey::getName)
                 .collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));
+    }
+
+    /**
+     * For logging, replace the provisioned table name with the nicer name
+     */
+    @Override
+    public ColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    {
+        ColumnInfo col = super.wrapColumn(underlyingColumn);
+        col.getColumnLogging().setOriginalTableName(getName());
+        return col;
+    }
+
+    /**
+     * For logging, replace the provisioned table name with the nicer name
+     */
+    @Override
+    public ColumnInfo addWrapColumn(ColumnInfo column)
+    {
+        ColumnInfo col = super.addWrapColumn(column);
+        col.getColumnLogging().setOriginalTableName(getName());
+        return col;
     }
 
     /**
      * Return true if the user is allowed the maximum phi level set across all list columns
      */
-    private boolean isMaxPhiAllowed(UserSchema schema)
+    private boolean isMaxPhiAllowed()
     {
         final PHI[] maxPHI = {PHI.NotPHI};
         getRealTable().getColumns().stream()
                 .max(Comparator.comparing(ColumnRenderProperties::getPHI))
                 .ifPresent(c -> maxPHI[0] = c.getPHI());
 
-        return maxPHI[0].isLevelAllowed(ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser()));
+        return maxPHI[0].isLevelAllowed(_maxUserPhi);
     }
 
     private String findTitleColumn(ListDefinition listDef, ColumnInfo colKey)

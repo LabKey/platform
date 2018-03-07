@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -280,22 +281,27 @@ public class MothershipManager
        sqlExecutor.execute("UPDATE " + getTableInfoExceptionStackTrace() + " SET ModifiedBy = NULL WHERE ModifiedBy = ?", u.getUserId());
     }
 
-    public synchronized ServerSession updateServerSession(ServerSession session, ServerInstallation installation, Container container)
+    public synchronized ServerSession updateServerSession(@Nullable String hostName, ServerSession session, ServerInstallation installation, Container container)
     {
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
         {
             ServerInstallation existingInstallation = getServerInstallation(installation.getServerInstallationGUID(), container);
 
-            String hostName = null;
-            try
+            if (null == hostName || MothershipReport.BORING_HOSTNAMES.contains(hostName))
             {
-                hostName = InetAddress.getByName(installation.getServerIP()).getCanonicalHostName();
+                try
+                {
+                    hostName = InetAddress.getByName(installation.getServerIP()).getCanonicalHostName();
+                }
+                catch (UnknownHostException e)
+                {
+                    // That's OK, not a big deal
+                }
             }
-            catch (UnknownHostException e)
+            else
             {
-                // That's OK, not a big deal
+                hostName = StringUtils.left(hostName, 256);
             }
-
             if (existingInstallation == null)
             {
                 installation.setContainer(container.getId());

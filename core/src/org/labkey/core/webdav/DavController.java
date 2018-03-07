@@ -3506,7 +3506,54 @@ public class DavController extends SpringActionController
         {
             checkReadOnly();
             checkLocked();
-            throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+
+            if (!isWindowsExplorer())
+            {
+                throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+            }
+
+            // Windows insists on calling PROPPATCH despite being told that we don't support it. It will consider
+            // uploads unsuccessful if this doesn't return a minimal response. See issue 33197
+            Writer writer = getResponse().getWriter();
+            assert track(writer);
+            try
+            {
+                WebdavResource resource = resolvePath();
+                if (resource == null)
+                {
+                    throw new DavException(WebdavStatus.SC_NOT_FOUND);
+                }
+
+                XMLResourceWriter resourceWriter = new XMLResourceWriter(writer);
+                resourceWriter.beginResponse(getResponse());
+
+                resourceWriter.xml.writeElement(null, "response", XMLWriter.OPENING);
+                String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
+
+                resourceWriter.xml.writeElement(null, "href", XMLWriter.OPENING);
+                resourceWriter.xml.writeText(h(resource.getLocalHref(getViewContext())));
+                resourceWriter.xml.writeElement(null, "href", XMLWriter.CLOSING);
+
+                resourceWriter.xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                resourceWriter.xml.writeElement(null, "status", XMLWriter.OPENING);
+                resourceWriter.xml.writeText(h(status));
+                resourceWriter.xml.writeElement(null, "status", XMLWriter.CLOSING);
+                resourceWriter.xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                resourceWriter.xml.writeElement(null, "response", XMLWriter.CLOSING);
+
+                resourceWriter.endResponse();
+                resourceWriter.sendData();
+
+                return WebdavStatus.SC_MULTI_STATUS;
+            }
+            catch (Exception e)
+            {
+                throw new DavException(e);
+            }
+            finally
+            {
+                close(writer, "response writer");
+            }
         }
     }
 

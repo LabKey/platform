@@ -49,6 +49,16 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
         return getInstallationValue("Distribution");
     }
 
+    public String getServerIP()
+    {
+        return getInstallationValue("Server IP");
+    }
+
+    public String getServerHostName()
+    {
+        return getInstallationValue("Server Host Name");
+    }
+
     public String getInstallationValue(String labelText)
     {
         return Locator.tagWithClassContaining("td", "lk-form-label")

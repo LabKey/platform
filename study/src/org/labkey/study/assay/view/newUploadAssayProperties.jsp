@@ -26,8 +26,8 @@
     AssayRunUploadForm bean = me.getModelBean();
 %>
 <labkey:form layout="horizontal">
-    <labkey:input type="displayfield" label="Name" value="<%= text(bean.getProtocol().getName()) %>" />
+    <labkey:input type="displayfield" label="Name" value="<%= h(bean.getProtocol().getName()) %>" />
     <% if (!StringUtils.isEmpty(bean.getProtocol().getDescription())) { %>
-    <labkey:input type="displayfield" label="Description" value="<%= text(bean.getProtocol().getProtocolDescription()) %>" />
+    <labkey:input type="displayfield" label="Description" value="<%= h(bean.getProtocol().getProtocolDescription()) %>" />
     <% } %>
 </labkey:form>

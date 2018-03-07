@@ -8835,28 +8835,30 @@ public class AdminController extends SpringActionController
         public Object execute(MothershipReportSelectionForm form, BindException errors) throws Exception
         {
             MothershipReport report;
+            MothershipReport.Target target = form.isTestMode() ? MothershipReport.Target.test : MothershipReport.Target.local;
             if (MothershipReport.Type.CheckForUpdates.toString().equals(form.getType()))
             {
-                report = UsageReportingLevel.generateReport(UsageReportingLevel.valueOf(form.getLevel()), true);
+                report = UsageReportingLevel.generateReport(UsageReportingLevel.valueOf(form.getLevel()), target);
             }
             else
             {
                 report = ExceptionUtil.createReportFromThrowable(getViewContext().getRequest(),
                         new SQLException("Intentional exception for testing purposes", "400"),
                         (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING),
-                        true,
+                        target,
                         ExceptionReportingLevel.valueOf(form.getLevel()), null);
-            }
-            if (null != report && form.isSubmit())
-            {
-                report.run();
             }
             Map<String, Object> result = new LinkedHashMap<>();
             if (null != report)
             {
                 result.put("report", report.getParams());
-                if (null != report.getContent())
-                    result.put("upgradeMessage", report.getContent());
+                if (form.isSubmit())
+                {
+                    report.setForwardedFor(form.getForwardedFor());
+                    report.run();
+                    if (null != report.getContent())
+                        result.put("upgradeMessage", report.getContent());
+                }
             }
             return new ObjectMapper().writeValueAsString(result);
         }
@@ -8912,6 +8914,9 @@ public class AdminController extends SpringActionController
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
         private String _level = UsageReportingLevel.MEDIUM.toString();
         private boolean _submit = false;
+        private String _forwardedFor = null;
+        // indicates action is being invoked for dev/test
+        private boolean _testMode = false;
 
         public String getType()
         {
@@ -8941,6 +8946,26 @@ public class AdminController extends SpringActionController
         public void setSubmit(boolean submit)
         {
             _submit = submit;
+        }
+
+        public String getForwardedFor()
+        {
+            return _forwardedFor;
+        }
+
+        public void setForwardedFor(String forwardedFor)
+        {
+            _forwardedFor = forwardedFor;
+        }
+
+        public boolean isTestMode()
+        {
+            return _testMode;
+        }
+
+        public void setTestMode(boolean testMode)
+        {
+            _testMode = testMode;
         }
     }
 

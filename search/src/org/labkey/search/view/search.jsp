@@ -283,16 +283,16 @@
             </small>
             <% } %>
             <% if (showAdvancedUI) { %>
-            <labkey:input type="hidden" name="category" value="<%=categories == null ? \"\" : categories%>"/>
-            <labkey:input type="hidden" name="showAdvanced" value="<%=form.isShowAdvanced()%>"/>
+            <labkey:input type="hidden" name="category" value="<%=h(categories)%>"/>
+            <labkey:input type="hidden" name="showAdvanced" value="<%=h(form.isShowAdvanced())%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
-            <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
+            <labkey:input type="hidden" name="scope" value="<%=h(form.getSearchScope())%>"/>
             <% } %>
             <% if (null != form.getTemplate()) { %>
-            <labkey:input type="hidden" name="template" value="<%=form.getTemplate()%>"/>
+            <labkey:input type="hidden" name="template" value="<%=h(form.getTemplate())%>"/>
             <% } %>
-            <input type="hidden" name="_dc" value="<%=Math.round(1000 * Math.random())%>">
+            <input type="hidden" name="_dc" value="<%=h(Math.round(1000 * Math.random()))%>">
             <%
                 String hiddenInputs = template.getHiddenInputsHtml(ctx);
                 if (hiddenInputs != null)

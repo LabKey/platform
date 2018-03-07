@@ -18,6 +18,7 @@ package org.labkey.mothership;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartColor;
@@ -787,7 +788,7 @@ public class MothershipController extends SpringActionController
                     installation.setServerInstallationGUID(form.getServerGUID());
                 }
 
-                installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
+                installation.setServerIP(getRemoteAddr(installation.getServerInstallationGUID()));
                 ExceptionStackTrace stackTrace = new ExceptionStackTrace();
                 stackTrace.setStackTrace(form.getStackTrace());
                 stackTrace.setContainer(getContainer().getId());
@@ -795,7 +796,7 @@ public class MothershipController extends SpringActionController
                 ServerSession session = form.toSession(getContainer());
 
                 installation.setUsedInstaller(form.isUsedInstaller());
-                session = MothershipManager.get().updateServerSession(session, installation, getContainer());
+                session = MothershipManager.get().updateServerSession(form.getServerHostName(), session, installation, getContainer());
                 if (form.getSvnRevision() != null && form.getSvnURL() != null)
                 {
                     ExceptionReport report = new ExceptionReport();
@@ -873,12 +874,12 @@ public class MothershipController extends SpringActionController
                 installation.setServerInstallationGUID(form.getServerGUID());
                 installation.setLogoLink(form.getLogoLink());
                 installation.setOrganizationName(form.getOrganizationName());
-                installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
+                installation.setServerIP(getRemoteAddr(form.getServerGUID()));
                 installation.setSystemDescription(form.getSystemDescription());
                 installation.setSystemShortName(form.getSystemShortName());
                 installation.setContainer(getContainer().getId());
                 installation.setUsedInstaller(form.isUsedInstaller());
-                MothershipManager.get().updateServerSession(session, installation, getContainer());
+                MothershipManager.get().updateServerSession(form.getServerHostName(), session, installation, getContainer());
                 setSuccessHeader();
                 getViewContext().getResponse().getWriter().print(getUpgradeMessage(form.parseSvnRevision()));
             }
@@ -891,6 +892,24 @@ public class MothershipController extends SpringActionController
         {
             return null;
         }
+    }
+
+    /**
+     * @return If this server is behind a load balancer, get the original request IP instead of the load balancer's address.
+     * @param serverGUID
+     */
+    private String getRemoteAddr(String serverGUID)
+    {
+        String forwardedFor = getViewContext().getRequest().getHeader(MothershipReport.X_FORWARDED_FOR);
+        if (null != forwardedFor)
+        {
+            if (InetAddressValidator.getInstance().isValid(forwardedFor))
+                return forwardedFor;
+            else
+                _log.warn("Invalid (spoofed?) IP address submitted in mothership report for server GUID: " + serverGUID + " . Bad IP: " + forwardedFor);
+
+        }
+        return getViewContext().getRequest().getRemoteAddr();
     }
 
     private void setSuccessHeader()
@@ -1003,6 +1022,7 @@ public class MothershipController extends SpringActionController
         private String _usageReportingLevel;
         private String _exceptionReportingLevel;
         private String _jsonMetrics;
+        private String _serverHostName;
 
         public String getSvnURL()
         {
@@ -1175,6 +1195,16 @@ public class MothershipController extends SpringActionController
         public void setHeapSize(Integer heapSize)
         {
             _heapSize = heapSize;
+        }
+
+        public String getServerHostName()
+        {
+            return _serverHostName;
+        }
+
+        public void setServerHostName(String serverHostName)
+        {
+            _serverHostName = serverHostName;
         }
 
         public ServerSession toSession(Container container)
