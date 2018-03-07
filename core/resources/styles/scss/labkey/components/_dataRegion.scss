@@ -103,7 +103,6 @@
 
   /* TODO: Make this the same as "danger" */
   tr.labkey-error-row {
-
     & > td {
       background: #ffdddd;
     }
@@ -116,7 +115,7 @@
   tr.lk-row-hl, tr.lk-row-hl.lk-row-over {
     & > td {
       color: $lk-grid-row-select-text-color;
-      background-color: $lk-grid-row-select-color;
+      background-color: $lk-grid-row-select-color !important;
       & > a {
         color: $lk-grid-row-select-link-color;
       }
@@ -124,7 +123,7 @@
   }
 
   tr.lk-row-over > td {
-    background-color: $lk-grid-row-color-hover;
+    background-color: $lk-grid-row-color-hover !important;
   }
 
   .lk-dr-action-icon {
