@@ -39,169 +39,169 @@ import java.util.HashMap;
 
 public enum JdbcType
 {
-    BIGINT(Types.BIGINT, Long.class)
+    BIGINT(Types.BIGINT, Long.class, Long.TYPE)
+    {
+        @Override
+        protected Object _fromNumber(Number n)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return n.longValue();
-            }
+            return n.longValue();
+        }
 
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new Long(s);
-            }
-        },
+        @Override
+        protected Object _fromString(String s)
+        {
+            return new Long(s);
+        }
+    },
 
     BINARY(Types.BINARY, ByteBuffer.class),
 
     // do we need separate BIT type?
-    BOOLEAN(Types.BOOLEAN, Boolean.class)
+    BOOLEAN(Types.BOOLEAN, Boolean.class, Boolean.TYPE)
+    {
+        @Override
+        protected Object _fromNumber(Number n)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return _toBoolean(n);
-            }
-        },
+            return _toBoolean(n);
+        }
+    },
 
     CHAR(Types.CHAR, String.class),
 
-    DECIMAL(Types.DECIMAL, BigDecimal.class, "numberfield")
+    DECIMAL(Types.DECIMAL, BigDecimal.class, null, "numberfield")
+    {
+        @Override
+        protected Object _fromNumber(Number n)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return _toBigDecimal(n);
-            }
+            return _toBigDecimal(n);
+        }
 
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new BigDecimal(s);
-            }
-        },
-
-    DOUBLE(Types.DOUBLE, Double.class, "numberfield")
+        @Override
+        protected Object _fromString(String s)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return n.doubleValue();
-            }
+            return new BigDecimal(s);
+        }
+    },
 
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new Double(s);
-            }
-        },
-
-    INTEGER(Types.INTEGER, Integer.class, "numberfield")
+    DOUBLE(Types.DOUBLE, Double.class, Double.TYPE, "numberfield")
+    {
+        @Override
+        protected Object _fromNumber(Number n)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return _toInt(n);
-            }
+            return n.doubleValue();
+        }
 
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new Integer(s);
-            }
-        },
+        @Override
+        protected Object _fromString(String s)
+        {
+            return new Double(s);
+        }
+    },
+
+    INTEGER(Types.INTEGER, Integer.class, Integer.TYPE, "numberfield")
+    {
+        @Override
+        protected Object _fromNumber(Number n)
+        {
+            return _toInt(n);
+        }
+
+        @Override
+        protected Object _fromString(String s)
+        {
+            return new Integer(s);
+        }
+    },
 
     LONGVARBINARY(Types.LONGVARBINARY, String.class),
 
     LONGVARCHAR(Types.LONGVARCHAR, String.class)
+    {
+        @Override
+        public Object convert(Object o) throws ConversionException
         {
-            @Override
-            public Object convert(Object o) throws ConversionException
-            {
-                return VARCHAR.convert(o);
-            }
-        },
+            return VARCHAR.convert(o);
+        }
+    },
 
-    REAL(Types.REAL, Float.class, "numberfield")
+    REAL(Types.REAL, Float.class, Float.TYPE, "numberfield")
+    {
+        @Override
+        protected Object _fromNumber(Number n)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return n.floatValue();
-            }
+            return n.floatValue();
+        }
 
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new Float(s);
-            }
-        },
-
-    SMALLINT(Types.SMALLINT, Short.class, "numberfield")
+        @Override
+        protected Object _fromString(String s)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return _toShort(n);
-            }
+            return new Float(s);
+        }
+    },
 
-
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new Short(s);
-            }
-        },
-
-    DATE(Types.DATE, java.sql.Date.class, "datefield"),
-
-    TIME(Types.TIME, java.sql.Time.class, "timefield"),
-
-    TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, "datefield")
+    SMALLINT(Types.SMALLINT, Short.class, Short.TYPE, "numberfield")
+    {
+        @Override
+        protected Object _fromNumber(Number n)
         {
-            @Override
-            protected Object _fromDate(Date d)
-            {
-                // presumably we would be called if d instanceof Timestamp
-                assert !(d instanceof Timestamp);
-                return new Timestamp(d.getTime());
-            }
-        },
+            return _toShort(n);
+        }
 
-    TINYINT(Types.TINYINT, Short.class, "numberfield")
+
+        @Override
+        protected Object _fromString(String s)
         {
-            @Override
-            protected Object _fromNumber(Number n)
-            {
-                return _toShort(n);
-            }
+            return new Short(s);
+        }
+    },
 
-            @Override
-            protected Object _fromString(String s)
-            {
-                return new Short(s);
-            }
-        },
+    DATE(Types.DATE, java.sql.Date.class, null, "datefield"),
+
+    TIME(Types.TIME, java.sql.Time.class, null, "timefield"),
+
+    TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, null, "datefield")
+    {
+        @Override
+        protected Object _fromDate(Date d)
+        {
+            // presumably we would be called if d instanceof Timestamp
+            assert !(d instanceof Timestamp);
+            return new Timestamp(d.getTime());
+        }
+    },
+
+    TINYINT(Types.TINYINT, Short.class, Short.TYPE, "numberfield")
+    {
+        @Override
+        protected Object _fromNumber(Number n)
+        {
+            return _toShort(n);
+        }
+
+        @Override
+        protected Object _fromString(String s)
+        {
+            return new Short(s);
+        }
+    },
 
     VARBINARY(Types.VARBINARY, ByteBuffer.class),
 
     VARCHAR(Types.VARCHAR, String.class)
+    {
+        @Override
+        public Object convert(Object o) throws ConversionException
         {
-            @Override
-            public Object convert(Object o) throws ConversionException
-            {
-                String s = (String)super.convert(o);
-                return null==s || s.isEmpty() ? null : s;
-            }
+            String s = (String)super.convert(o);
+            return null==s || s.isEmpty() ? null : s;
+        }
 
-            @Override
-            protected Object _fromDate(Date d)
-            {
-                return DateUtil.toISO(d);   // don't shorten
-            }
-        },
+        @Override
+        protected Object _fromDate(Date d)
+        {
+            return DateUtil.toISO(d);   // don't shorten
+        }
+    },
 
     GUID(Types.VARCHAR, String.class),
 
@@ -214,21 +214,29 @@ public enum JdbcType
     public final Class cls;
     public final String xtype;
     public final String json;
+
+    private final Class typeCls;
     private final Converter converter;
 
 
-    JdbcType(int type, Class cls)
+    JdbcType(int type, @NotNull Class cls)
     {
-        this(type,cls,"textfield");
+        this(type, cls, null);
     }
 
-    JdbcType(int type, Class cls, String xtype)
+    JdbcType(int type, @NotNull Class cls, @Nullable Class typeCls)
+    {
+        this(type, cls, typeCls, "textfield");
+    }
+
+    JdbcType(int type, Class cls, @Nullable Class typeCls, String xtype)
     {
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
         this.sqlType = type==Types.TINYINT ? Types.SMALLINT : type;
         this.cls = cls;
+        this.typeCls = typeCls;
         this.xtype = xtype;
         this.json = DisplayColumn.getJsonTypeName(cls);
         this.converter = ConvertUtils.lookup(cls);
@@ -379,11 +387,18 @@ public enum JdbcType
         return java.util.Date.class.isAssignableFrom(this.cls);
     }
 
+    // Return Object class
     public Class getJavaClass()
     {
         return cls;
     }
     
+    // Return Object class or TYPE
+    public Class getJavaClass(boolean isNullable)
+    {
+        return isNullable || null == typeCls ? cls : typeCls;
+    }
+
     public Object convert(Object o) throws ConversionException
     {
         if (null == o)

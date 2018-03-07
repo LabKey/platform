@@ -42,7 +42,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringExpression;
 
@@ -430,7 +429,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append(".");
                 sql.append(_assaySpecimenIdCol.getAlias());
                 sql.append(" AS ");
-                sql.append(dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR));
+                sql.append(dialect.getSqlTypeName(JdbcType.VARCHAR));
                 sql.append(")");
             }
 
@@ -521,7 +520,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         {
             if (_returnNull)
             {
-                return new SQLFragment("CAST(NULL AS " + getSqlDialect().sqlTypeNameFromJdbcType(getJdbcType()) + ")");
+                return new SQLFragment("CAST(NULL AS " + getSqlDialect().getSqlTypeName(getJdbcType()) + ")");
             }
             if (_specimenLookup)
             {

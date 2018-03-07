@@ -354,7 +354,7 @@ public class Parameter implements AutoCloseable
     private void setNull(JdbcType type) throws SQLException
     {
         for (int index : _indexes)
-            _stmt.setNull(index, null==type ? JdbcType.VARCHAR.sqlType : type.sqlType);
+            _stmt.setNull(index, (null == type ? JdbcType.VARCHAR : type).sqlType);
         _isSet = true;
         _isNull = true;
     }
@@ -367,7 +367,7 @@ public class Parameter implements AutoCloseable
                 _stmt.setObject(index, value);
         else
             for (int index : _indexes)
-                _stmt.setObject(index, value, type.sqlType== Types.TINYINT?Types.SMALLINT:type.sqlType);
+                _stmt.setObject(index, value, type.sqlType == Types.TINYINT ? Types.SMALLINT : type.sqlType);
         _isSet = true;
         _isNull = (value == null);
     }

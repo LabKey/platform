@@ -433,14 +433,8 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.append("(CASE WHEN ");
         sql.append(queryAlias + "." + colDimension.getSourceColumn().getAlias());
         sql.append("=");
-
-        // TODO: Remove this assert once we've tested the JdbcType-based method
-        String oldSqlValue = getSQLValue(colDimension.getSourceColumn().getSqlTypeInt(), member.getValue());
-        String newSqlValue = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
-
-        assert oldSqlValue.equals(newSqlValue);
-
-        sql.append(newSqlValue);
+        String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
+        sql.append(value);
         sql.append(" THEN ");
         sql.append(ifSql);
         sql.append(" ELSE ");
@@ -557,44 +551,6 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         }
         return map;
     }
-
-    /**
-     * Helper function to return the member value suitable for appending into a 
-     * SQL statement.
-     *
-     * @param sqlType The JDBC SQL type
-     * @param memberValue The member value
-     * @return A string representation of the member value suitable for appending into a SQL string as a literal value.
-     */
-    @Deprecated // Remove this after testing
-    private String getSQLValue(int sqlType, Object memberValue)
-    {
-        //CONSIDER: there *must* be something in query or utils that
-        //already does this. Maybe use param substitution instead?
-        switch(sqlType)
-        {
-            case Types.INTEGER:
-            case Types.BIGINT:
-            case Types.DECIMAL:
-            case Types.NUMERIC:
-            case Types.FLOAT:
-            case Types.SMALLINT:
-            case Types.TINYINT:
-                return memberValue.toString();
-            case Types.CHAR:
-            case Types.CLOB:
-            case Types.LONGVARCHAR:
-            case Types.VARCHAR:
-                return "'" + memberValue.toString().replace("'", "''") + "'";
-            case Types.BOOLEAN:
-            case Types.BIT:
-                return "CAST('" + Boolean.valueOf(memberValue.toString()).toString() +"' AS " + getSqlDialect().getBooleanDataType() + ")";
-
-            default:
-                //if you get this, add support for the type you want.
-                throw new IllegalArgumentException("Crosstab table info supports numeric and character types for the column dimension.");
-        }
-    } //getSQLValue()
 
     /**
      * Helper function to return the member value suitable for appending into a SQL statement.

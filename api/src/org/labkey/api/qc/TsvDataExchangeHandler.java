@@ -347,7 +347,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _sampleProperties.put(propertyName, rows);
     }
 
-    protected void writeRunProperties(AssayRunUploadContext<? extends AssayProvider> context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer) throws ValidationException
+    protected void writeRunProperties(AssayRunUploadContext<? extends AssayProvider> context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer)
     {
         // serialize the run properties to a tsv
         for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
@@ -993,15 +993,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     protected static String getSampleValue(DomainProperty prop)
     {
-        switch (prop.getPropertyDescriptor().getPropertyType().getSqlType())
+        switch (prop.getPropertyDescriptor().getPropertyType().getJdbcType())
         {
-            case Types.BOOLEAN :
+            case BOOLEAN :
                 return "true";
-            case Types.TIMESTAMP:
+            case TIMESTAMP:
                 DateFormat format = new SimpleDateFormat("MM/dd/yyyy");
                 return format.format(new Date());
-            case Types.DOUBLE:
-            case Types.INTEGER:
+            case DOUBLE:
+            case INTEGER:
                 return "1234";
             default:
                 return "demo value";
@@ -1025,7 +1025,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return _protocol;
         }
 
-        public Map<DomainProperty, String> getRunProperties() throws ExperimentException
+        public Map<DomainProperty, String> getRunProperties()
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
             return createDomainProperties(provider != null ? provider.getRunDomain(_protocol) : null);
@@ -1085,7 +1085,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @NotNull
-        public Map<String, File> getUploadedData() throws ExperimentException
+        public Map<String, File> getUploadedData()
         {
             return emptyMap();
         }
@@ -1125,7 +1125,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @Override
-        public void uploadComplete(ExpRun run) throws ExperimentException
+        public void uploadComplete(ExpRun run)
         {
             // no-op
         }
@@ -1142,6 +1142,5 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             return null;
         }
-
     }
 }

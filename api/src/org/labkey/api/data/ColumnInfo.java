@@ -985,7 +985,7 @@ public class ColumnInfo extends ColumnRenderProperties
             {
                 propertyType = pt;
                 jdbcType = propertyType.getJdbcType();
-                sqlTypeName = getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
+                sqlTypeName = getSqlDialect().getSqlTypeName(jdbcType);
                 inputType = propertyType.getInputType();
                 scale = propertyType.getScale();
             }
@@ -1805,7 +1805,7 @@ public class ColumnInfo extends ColumnRenderProperties
                 d = getParentTable().getSqlDialect();
 
             JdbcType jt = propertyType != null ? propertyType.getJdbcType() : jdbcType;
-            sqlTypeName = d.sqlTypeNameFromJdbcType(jt);
+            sqlTypeName = d.getSqlTypeName(jt);
         }
         return sqlTypeName;
     }

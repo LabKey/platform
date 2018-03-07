@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -92,7 +93,7 @@ public interface DomainProperty extends ImportAliasable
     void setDefaultValue(String value);
 
     PropertyType getPropertyType();
-    int getSqlType();
+    JdbcType getJdbcType();
     int getScale();
     String getInputType();
 

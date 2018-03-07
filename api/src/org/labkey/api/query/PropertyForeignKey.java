@@ -33,7 +33,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,6 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         assert null != (parentName = parent.getFieldKey().getName().toLowerCase());
         assert null != (valueSql = parent.getValueSql("X").getSQL().toLowerCase());
         assert _parentIsObjectId || parentName.contains("uri") || parentName.contains("lsid") || valueSql.contains("lsid") || valueSql.contains("uri");
-        assert _parentIsObjectId || parent.getSqlTypeInt() == Types.VARCHAR || parent.getSqlTypeInt() == -9; // NVARCHAR
         assert _parentIsObjectId || parent.getJdbcType() == JdbcType.VARCHAR;
 
         if (displayField == null)
@@ -228,7 +226,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         column.setHidden(pd.isHidden());
         column.setURL(pd.getURL());
         column.setImportAliasesSet(pd.getImportAliasSet());
-        column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType()));
+        column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().getSqlTypeName(pd.getPropertyType().getJdbcType()));
         column.setDescription(pd.getDescription());
         column.setFk(new PdLookupForeignKey(user, pd, _schema.getContainer()));
     }

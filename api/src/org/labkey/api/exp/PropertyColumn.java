@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -139,7 +140,7 @@ public class PropertyColumn extends LookupColumn
     public void setMvIndicatorColumn(boolean mv)
     {
         super.setMvIndicatorColumn(mv);
-        setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(PropertyType.STRING.getSqlType()));
+        setSqlTypeName(getSqlDialect().getSqlTypeName(JdbcType.VARCHAR));
     }
 
 
@@ -295,7 +296,7 @@ public class PropertyColumn extends LookupColumn
     }
 
     @Override
-    public Class getJavaClass()
+    public Class getJavaClass(boolean isNullable)
     {
         if (isMvIndicatorColumn())
         {

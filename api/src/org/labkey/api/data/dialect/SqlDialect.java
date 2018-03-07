@@ -278,7 +278,7 @@ public abstract class SqlDialect
     }
 
 
-    @NotNull
+    @NotNull @Deprecated
     public String sqlTypeNameFromSqlType(int sqlType)
     {
         String sqlTypeName = _sqlTypeIntMap.get(sqlType);
@@ -288,7 +288,7 @@ public abstract class SqlDialect
 
 
     @Nullable
-    public String sqlTypeNameFromJdbcType(JdbcType type)
+    public String getSqlTypeName(JdbcType type)
     {
         switch (type)
         {
@@ -300,12 +300,12 @@ public abstract class SqlDialect
     }
 
     @Nullable
-    public String sqlCastTypeNameFromJdbcType(JdbcType type)
+    public String getSqlCastTypeName(JdbcType type)
     {
-        return sqlTypeNameFromJdbcType(type);   // Override for alternate behavior
+        return getSqlTypeName(type);   // Override for alternate behavior
     }
 
-    public abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
+    public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
 
     protected String getDatabaseMaintenanceSql()
@@ -1234,7 +1234,7 @@ public abstract class SqlDialect
             SQLFragment ret = new SQLFragment();
             ret.append("CAST(");
             ret.append(sql).append(" AS ");
-            ret.append(sqlTypeNameFromSqlType(from.sqlType)).append("(36))");
+            ret.append(getSqlTypeName(from)).append("(36))");
             return ret;
         }
         // let server do default conversion

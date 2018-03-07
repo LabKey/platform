@@ -1242,7 +1242,7 @@ public class Table
             try
             {
                 PreparedStatement stmt = conn.prepareStatement("CREATE " + dialect.getTempTableKeyword() + " TABLE " + name +
-                        "(s VARCHAR(36), d " + dialect.sqlTypeNameFromJdbcType(JdbcType.TIMESTAMP) + ")");
+                        "(s VARCHAR(36), d " + dialect.getSqlTypeName(JdbcType.TIMESTAMP) + ")");
                 stmt.execute();
                 stmt.close();
 

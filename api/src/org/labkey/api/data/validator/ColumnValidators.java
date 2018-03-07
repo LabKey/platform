@@ -135,7 +135,7 @@ public class ColumnValidators
     public static DateValidator createDateValidator(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
         if ((col == null || !col.getJdbcType().isDateOrTime()) &&
-            (dp == null || !JdbcType.valueOf(dp.getSqlType()).isDateOrTime()))
+            (dp == null || !dp.getJdbcType().isDateOrTime()))
         {
             return null;
         }
@@ -171,5 +171,4 @@ public class ColumnValidators
         JdbcType jdbcType = col.getJdbcType();
         return new DuplicateSingleKeyValidator(label, jdbcType, caseSensitive);
     }
-
 }

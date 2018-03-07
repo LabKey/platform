@@ -77,8 +77,8 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
             sqlCreate.append(tableName)
                     .append("\n(Id ")
-                    .append(DbSchema.getTemp().getSqlDialect().sqlTypeNameFromSqlType(jdbcType.sqlType))
-                    .append(jdbcType==JdbcType.VARCHAR?"(450)":"")
+                    .append(DbSchema.getTemp().getSqlDialect().getSqlTypeName(jdbcType))
+                    .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
                     .append(");");
 
             new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);

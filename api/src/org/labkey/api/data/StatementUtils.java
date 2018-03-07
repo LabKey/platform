@@ -358,7 +358,7 @@ public class StatementUtils
 
     private SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, ParameterHolder p)
     {
-        if (JdbcType.valueOf(dp.getSqlType()) == JdbcType.BOOLEAN)
+        if (dp.getJdbcType() == JdbcType.BOOLEAN)
         {
             f.append("CASE CAST(");
             appendParameterOrVariable(f, p);
@@ -373,7 +373,6 @@ public class StatementUtils
             return appendParameterOrVariable(f, p);
         }
     }
-
 
 
     private Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
@@ -483,7 +482,7 @@ public class StatementUtils
                 objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
                 objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR)).append("(300);\n");
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300);\n");
                 useVariables = _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
@@ -880,7 +879,7 @@ public class StatementUtils
             for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
             {
                 ParameterHolder ph = e.getValue();
-                String type = _dialect.sqlTypeNameFromJdbcType(ph.p.getType());
+                String type = _dialect.getSqlTypeName(ph.p.getType());
                 fn.append("\n").append(comma);
                 fn.append(makePgRowTypeName(ph.variableName));
                 fn.append(" ");
@@ -1001,7 +1000,7 @@ public class StatementUtils
         sqlfDeclare.append(" ");
         JdbcType jdbcType = ph.p.getType();
         assert null != jdbcType;
-        String type = _dialect.sqlTypeNameFromJdbcType(jdbcType);
+        String type = _dialect.getSqlTypeName(jdbcType);
         assert null != type;
         // Workaround - SQLServer doesn't support TEXT, NTEXT, or IMAGE as local variables in statements, but is OK with NVARCHAR(MAX)
         if (("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type)) && _dialect.isSqlServer())
@@ -1009,7 +1008,7 @@ public class StatementUtils
             type = "NVARCHAR(MAX)";
         }
         sqlfDeclare.append(type);
-        if (jdbcType.isText() && ph.p.getType() != JdbcType.LONGVARCHAR && ph.p.getType() != JdbcType.GUID)
+        if (jdbcType.isText() && jdbcType != JdbcType.LONGVARCHAR && jdbcType != JdbcType.GUID)
         {
             int length = ph.length > 0 ? ph.length : 4000;
             sqlfDeclare.append("(").append(length).append(")");

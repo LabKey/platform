@@ -24,7 +24,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 
-import java.sql.Types;
 import java.util.Map;
 
 /**
@@ -74,7 +73,7 @@ public class StudyDatasetColumn extends ExprColumn
         joinSql.appendComment("<StudyDatasetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.append(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).append(" ON ");
         joinSql.append(datasetAlias).append("._key = CAST(").append(parentAlias).append(".").append(_provider.getTableMetadata(protocol).getResultRowIdFieldKey().getName()).append(" AS ");
-        joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200))");
+        joinSql.append(getSqlDialect().getSqlTypeName(JdbcType.VARCHAR)).append("(200))");
         joinSql.appendComment("</StudyDatasetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);
     }

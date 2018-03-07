@@ -142,15 +142,15 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    public String getSqlTypeName(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())
         {
-            throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
+            throw new IllegalArgumentException("AutoIncrement is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
         }
         else
         {
-            return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);
+            return getSqlTypeName(prop.getJdbcType());
         }
     }
 

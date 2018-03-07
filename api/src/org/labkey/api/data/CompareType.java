@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -1125,8 +1126,10 @@ public abstract class CompareType
         if (!(paramVal instanceof String))
             return paramVal;
 
+        String stringValue = (String)paramVal;
+
         // Expand the magic 'me' value if the column is a userid or a user display name
-        if ("~me~".equals(paramVal))
+        if ("~me~".equals(stringValue))
         {
             // get the current user from the query env
             User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
@@ -1151,6 +1154,18 @@ public abstract class CompareType
             }
         }
 
+        Object oldValue = getParamValueOld(colInfo, stringValue);
+        Object newValue = getParamValue(colInfo, stringValue);
+
+        assert Objects.equals(oldValue, newValue);
+
+        return newValue;
+    }
+
+
+    @Deprecated // TODO: Delete after testing this vs. getParamValue()
+    private static Object getParamValueOld(ColumnInfo colInfo, String stringValue)
+    {
         switch (colInfo.getSqlTypeInt())
         {
             case Types.INTEGER:
@@ -1158,7 +1173,6 @@ public abstract class CompareType
             case Types.SMALLINT:
             {
                 // Treat the empty string as null
-                String stringValue = (String)paramVal;
                 stringValue = StringUtils.trimToNull(stringValue);
                 if (stringValue == null)
                 {
@@ -1170,7 +1184,7 @@ public abstract class CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to an integer for column '" + colInfo.getName() + "'"));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to an integer for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -1178,11 +1192,11 @@ public abstract class CompareType
             {
                 try
                 {
-                    return new Long((String) paramVal);
+                    return new Long(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a long for column '" + colInfo.getName() + "'"));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a long for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -1192,7 +1206,6 @@ public abstract class CompareType
                 try
                 {
                     // Treat the empty string as null
-                    String stringValue = (String)paramVal;
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                     {
@@ -1202,7 +1215,7 @@ public abstract class CompareType
                 }
                 catch (Exception e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a boolean for column '" + colInfo.getName() + "'"));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a boolean for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -1212,11 +1225,11 @@ public abstract class CompareType
             {
                 try
                 {
-                    return ConvertUtils.convert((String) paramVal, Date.class);
+                    return ConvertUtils.convert(stringValue, Date.class);
                 }
                 catch (ConversionException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a date for column '" + colInfo.getName() + "'"));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a date for column '" + colInfo.getName() + "'"));
                 }
             }
 
@@ -1230,7 +1243,6 @@ public abstract class CompareType
                 try
                 {
                     // Treat the empty string as null
-                    String stringValue = (String)paramVal;
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                     {
@@ -1240,12 +1252,107 @@ public abstract class CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + paramVal + "' to a number for column '" + colInfo.getName() + "'"));
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a number for column '" + colInfo.getName() + "'"));
                 }
             }
         }
 
-        return paramVal;
+        return stringValue;
+    }
+
+
+    private static Object getParamValue(ColumnInfo colInfo, String stringValue)
+    {
+        JdbcType type = colInfo.getJdbcType();
+        switch (type)
+        {
+            case INTEGER:
+            case TINYINT:
+            case SMALLINT:
+            {
+                // Treat the empty string as null
+                stringValue = StringUtils.trimToNull(stringValue);
+                if (stringValue == null)
+                {
+                    return new Parameter.TypedValue(null, JdbcType.INTEGER);
+                }
+                try
+                {
+                    return new Integer(stringValue);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to an integer for column '" + colInfo.getName() + "'"));
+                }
+            }
+
+            case BIGINT:
+            {
+                try
+                {
+                    return new Long(stringValue);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a long for column '" + colInfo.getName() + "'"));
+                }
+            }
+
+            case BOOLEAN:
+            {
+                try
+                {
+                    // Treat the empty string as null
+                    stringValue = StringUtils.trimToNull(stringValue);
+                    if (stringValue == null)
+                    {
+                        return new Parameter.TypedValue(null, JdbcType.BOOLEAN);
+                    }
+                    return ConvertUtils.convert(stringValue, Boolean.class);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a boolean for column '" + colInfo.getName() + "'"));
+                }
+            }
+
+            case TIMESTAMP:
+            case DATE:
+            case TIME:
+            {
+                try
+                {
+                    return ConvertUtils.convert(stringValue, Date.class);
+                }
+                catch (ConversionException e)
+                {
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a date for column '" + colInfo.getName() + "'"));
+                }
+            }
+
+            //FALL THROUGH! (Decimal is better than nothing)
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+            {
+                try
+                {
+                    // Treat the empty string as null
+                    stringValue = StringUtils.trimToNull(stringValue);
+                    if (stringValue == null)
+                    {
+                        return new Parameter.TypedValue(null, JdbcType.DOUBLE);
+                    }
+                    return new Double(stringValue);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a number for column '" + colInfo.getName() + "'"));
+                }
+            }
+        }
+
+        return stringValue;
     }
 
 
@@ -1312,8 +1419,8 @@ public abstract class CompareType
      */
     private abstract static class DateCompareClause extends CompareClause
     {
-        String _filterTextDate;
-        String _filterTextOperator;
+        private final String _filterTextDate;
+        private final String _filterTextOperator;
 
         DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0)
         {

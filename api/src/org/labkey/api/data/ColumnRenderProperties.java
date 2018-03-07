@@ -25,8 +25,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.Date;
+import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -566,6 +569,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return getJdbcType().isNumeric();
     }
 
+    @Deprecated // TODO: Remove after testing JdbcType.getJavaClass(isNullable)
     public static Class javaClassFromSqlType(int sqlType, boolean isObj)
     {
         switch (sqlType)
@@ -646,22 +650,33 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     }
 
     /** Don't return TYPEs just real java objects */
-    public Class getJavaObjectClass()
+    public final Class getJavaObjectClass()
     {
-        PropertyType pt = getPropertyType();
-        if (pt != null)
-            return pt.getJavaType();
-
-        return javaClassFromSqlType(getSqlTypeInt(), true);
+        return getJavaClass(true);
     }
 
-    public Class getJavaClass()
+    /** Return Class or TYPE, based on isNullable */
+    public final Class getJavaClass()
+    {
+        return getJavaClass(isNullable());
+    }
+
+    private static final EnumSet<JdbcType> IGNORE = EnumSet.of(JdbcType.BINARY, JdbcType.OTHER, JdbcType.DECIMAL);
+
+    protected Class getJavaClass(boolean isNullable)
     {
         PropertyType pt = getPropertyType();
         if (pt != null)
             return pt.getJavaType();
 
-        return javaClassFromSqlType(getSqlTypeInt(), isNullable());
+        // TODO: Remove after testing
+        Class oldClass = javaClassFromSqlType(getSqlTypeInt(), isNullable);
+        Class newClass = getJdbcType().getJavaClass(isNullable);
+
+        if (!oldClass.equals(newClass) && !IGNORE.contains(getJdbcType()))
+            throw new IllegalStateException("Expected " + oldClass.getName() + " but was " + newClass);
+
+        return newClass;
     }
 
     public void setFacetingBehaviorType(FacetingBehaviorType type)

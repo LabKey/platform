@@ -312,12 +312,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         this.project = proj;
     }
 
-    @Override
-    public int getSqlTypeInt()
-    {
-        return getPropertyType().getSqlType();
-    }
-
     @NotNull
     @Override
     public JdbcType getJdbcType()

@@ -408,7 +408,7 @@ public enum PropertyType
     private String xarName;
     private char storageType;
     private int excelCellType;
-    @NotNull private JdbcType jdbcType;
+    private @NotNull JdbcType jdbcType;
     private int scale;
     private String inputType;
     private Class javaType;
@@ -451,11 +451,6 @@ public enum PropertyType
     public char getStorageType()
     {
         return storageType;
-    }
-
-    public int getSqlType()
-    {
-        return jdbcType.sqlType;
     }
 
     @NotNull
