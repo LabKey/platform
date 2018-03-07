@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -38,11 +39,14 @@ import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -59,6 +63,10 @@ public class MothershipReport implements Runnable
     private final String _errorCode;
     private int _responseCode = -1;
     private String _content;
+    private final Target _target;
+    private String _forwardedFor = null;
+    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    public static final List<String> BORING_HOSTNAMES = Arrays.asList("localhost", "127.0.0.1");
     public static final String MOTHERSHIP_STATUS_HEADER_NAME = "MothershipStatus";
     public static final String MOTHERSHIP_STATUS_SUCCESS = "Success";
     public static final int ERROR_CODE_LENGTH = 6;
@@ -137,13 +145,42 @@ public class MothershipReport implements Runnable
         return url.toLowerCase().contains((BASE_URL + "/" + Type.ReportException.getAction()).toLowerCase());
     }
 
-    public MothershipReport(Type type, boolean local, String errorCode) throws MalformedURLException, URISyntaxException
+    public enum Target
     {
-        URLHelper urlHelper = type.getURL();
-        URL url;
+        remote(false)
+                {
+                    @Override
+                    URL getUrl(URLHelper urlHelper) throws MalformedURLException
+                    {
+                        urlHelper.setContextPath("/");
+                        return new URL("https", "www.labkey.org", 443, urlHelper.toString());
+                    }
+                },
+        local(true),
+        test(true)
+                {
+                    @Override
+                    String getHostName()
+                    {
+                        return "TEST_" + super.getHostName();
+                    }
+                };
 
-        if (local)
+        private final boolean _local;
+
+        Target(boolean local)
         {
+            _local = local;
+        }
+
+        public boolean isLocal()
+        {
+            return _local;
+        }
+
+        URL getUrl(URLHelper urlHelper) throws MalformedURLException
+        {
+            URL url;
             // Don't submit to the mothership server, go to the local machine
             try
             {
@@ -156,13 +193,26 @@ public class MothershipReport implements Runnable
                 url = null;
             }
 
-            _url = url;
+            return url;
         }
-        else
+
+        String getHostName()
         {
-            urlHelper.setContextPath("/");
-            _url = new URL("https", "www.labkey.org", 443, urlHelper.toString());
+            try
+            {
+                return new URI(AppProps.getInstance().getBaseServerUrl()).getHost();
+            }
+            catch (URISyntaxException e)
+            {
+                return "localhost";
+            }
         }
+    }
+
+    public MothershipReport(Type type, Target target, String errorCode) throws MalformedURLException, URISyntaxException
+    {
+        _target = target;
+        _url = target.getUrl(type.getURL());
 
         if (type.includeErrorCode())
         {
@@ -211,12 +261,27 @@ public class MothershipReport implements Runnable
         return _errorCode;
     }
 
+    /**
+     * For local/TeamCity dev/test, allow spoofing the X-Forwarded-For header to simulate receiver being behind a load balancer.
+     */
+    public void setForwardedFor(String forwardedFor)
+    {
+        if (_target.isLocal())
+            _forwardedFor = forwardedFor;
+    }
+
+    public void addHostName()
+    {
+        String hostName = _target.getHostName();
+        if (!BORING_HOSTNAMES.contains(hostName))
+            addParam("serverHostName", hostName);
+    }
+
     public void run()
     {
         try
         {
-            HttpURLConnection connection = openConnectionWithRedirects(_url);
-
+            HttpURLConnection connection = openConnectionWithRedirects(_url, _forwardedFor);
             try
             {
                 _responseCode = connection.getResponseCode();
@@ -247,7 +312,7 @@ public class MothershipReport implements Runnable
         }
     }
 
-    private HttpURLConnection openConnectionWithRedirects(URL url)
+    private HttpURLConnection openConnectionWithRedirects(URL url, @Nullable String forwardedFor)
             throws IOException
     {
         boolean redirect;
@@ -256,7 +321,7 @@ public class MothershipReport implements Runnable
         do
         {
             redirect = false;
-            connection = submitRequest(url);
+            connection = submitRequest(url, forwardedFor);
             int responseCode = connection.getResponseCode();
             if (responseCode >= 300 && responseCode <= 307 && responseCode != 306 && responseCode != HttpURLConnection.HTTP_NOT_MODIFIED)
             {
@@ -278,7 +343,7 @@ public class MothershipReport implements Runnable
         return connection;
     }
 
-    private HttpURLConnection submitRequest(URL url) throws IOException
+    private HttpURLConnection submitRequest(URL url, @Nullable String forwardedFor) throws IOException
     {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         if (connection instanceof HttpsURLConnection)
@@ -290,7 +355,9 @@ public class MothershipReport implements Runnable
         connection.setInstanceFollowRedirects(false);
         connection.setDoOutput(true);
         connection.setDoInput(true);
-
+        // For dev/testing on a local submission simulating a receiver behind a load balancer
+        if (null != forwardedFor)
+            connection.setRequestProperty(X_FORWARDED_FOR, forwardedFor);
         try (PrintWriter out = new PrintWriter(connection.getOutputStream(), true))
         {
             boolean first = true;

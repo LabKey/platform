@@ -667,7 +667,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 Object o = map.get(pd.getName());
                 if (o instanceof String)
-                    o = ((String)o).trim();
+                {
+                    o = ((String) o).trim();
+                    map.put(pd.getName(), o);
+                    iter.set(map);
+                }
 
                 // validate the data value
                 if (validatorMap.containsKey(pd))

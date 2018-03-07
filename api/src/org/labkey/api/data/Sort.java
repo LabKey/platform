@@ -388,6 +388,8 @@ public class Sort
     private void replaceSortColumn(SortField sortField, int insertionIndex)
     {
         deleteSortColumn(sortField._fieldKey);
+        if (insertionIndex > _sortList.size())
+            insertionIndex = _sortList.size();
         _sortList.add(insertionIndex, sortField);
     }
 

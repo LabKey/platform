@@ -249,12 +249,12 @@ public class ExceptionUtil
         try
         {
             // Once to labkey.org, if so configured
-            errorCode = sendReport(createReportFromThrowable(request, ex, requestURL, false, getExceptionReportingLevel(), null));
+            errorCode = sendReport(createReportFromThrowable(request, ex, requestURL, MothershipReport.Target.remote, getExceptionReportingLevel(), null));
 
             // And once to the local server, if so configured. If submitting to both labkey.org and the local server, the errorCode will be the same.
             if (isSelfReportExceptions())
             {
-                String newErrorCode = sendReport(createReportFromThrowable(request, ex, requestURL, true, ExceptionReportingLevel.HIGH, errorCode));
+                String newErrorCode = sendReport(createReportFromThrowable(request, ex, requestURL, MothershipReport.Target.local, ExceptionReportingLevel.HIGH, errorCode));
                 if (null == errorCode)
                     errorCode = newErrorCode; // which may still be null, if server is configured to not send reports to either location.
             }
@@ -281,9 +281,9 @@ public class ExceptionUtil
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
-    public static MothershipReport createReportFromThrowable(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level, @Nullable String errorCode)
+    public static MothershipReport createReportFromThrowable(HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
     {
-        if (!shouldSend(level, local))
+        if (!shouldSend(level, target.isLocal()))
             return null;
 
         Map<Enum, String> decorations = getExceptionDecorations(ex);
@@ -349,7 +349,7 @@ public class ExceptionUtil
             }
         }
 
-        return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level, errorCode);
+        return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, target, level, errorCode);
     }
 
     /**
@@ -371,13 +371,13 @@ public class ExceptionUtil
             ExceptionReportingLevel level = getExceptionReportingLevel();
             if (shouldSend(level, false))
             {
-                errorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, level, null));
+                errorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, MothershipReport.Target.remote, level, null));
             }
 
             // And once to the local server, if so configured
             if (isSelfReportExceptions() && shouldSend(ExceptionReportingLevel.HIGH, true))
             {
-                String newErrorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH, errorCode));
+                String newErrorCode = sendReport(createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, MothershipReport.Target.local, ExceptionReportingLevel.HIGH, errorCode));
                 if (null == errorCode)
                     errorCode = newErrorCode;
             }
@@ -425,11 +425,11 @@ public class ExceptionUtil
         return send;
     }
 
-    private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, boolean local, ExceptionReportingLevel level, @Nullable String errorCode)
+    private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
     {
         try
         {
-            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local, errorCode);
+            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, target, errorCode);
             report.addServerSessionParams();
             report.addParam("stackTrace", stackTrace);
             report.addParam("sqlState", sqlState);

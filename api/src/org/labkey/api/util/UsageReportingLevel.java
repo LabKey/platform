@@ -116,6 +116,8 @@ public enum UsageReportingLevel
 
             metrics.put("modules", getModulesStats());
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
+
+            report.addHostName();
         }
     };
 
@@ -163,14 +165,14 @@ public enum UsageReportingLevel
         return _upgradeMessage;
     }
 
-    public static MothershipReport generateReport(UsageReportingLevel level, boolean local)
+    public static MothershipReport generateReport(UsageReportingLevel level, MothershipReport.Target target)
     {
         if (level.doGeneration())
         {
             MothershipReport report;
             try
             {
-                report = new MothershipReport(MothershipReport.Type.CheckForUpdates, local, null);
+                report = new MothershipReport(MothershipReport.Type.CheckForUpdates, target, null);
             }
             catch (MalformedURLException | URISyntaxException e)
             {
@@ -196,7 +198,7 @@ public enum UsageReportingLevel
 
         public void run()
         {
-            MothershipReport report = generateReport(_level, false);
+            MothershipReport report = generateReport(_level, MothershipReport.Target.remote);
             if (report != null)
             {
                 report.run();
