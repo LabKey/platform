@@ -1053,12 +1053,12 @@ public class StudyServiceImpl implements StudyService
                     col = t.getColumn(((StudyQuerySchema)userSchema).getSubjectColumnName());
                 if (null == col)
                 {
-                    sqlf.append("CAST(NULL AS ").append(dialect.sqlCastTypeNameFromJdbcType(colUnion.getJdbcType())).append(")");
+                    sqlf.append("CAST(NULL AS ").append(dialect.getSqlCastTypeName(colUnion.getJdbcType())).append(")");
                 }
                 else if (col.getJdbcType() != colUnion.getJdbcType())
                 {
                     sqlf.append("CAST(").append(col.getValueSql(tableAlias));
-                    sqlf.append(" AS ").append(dialect.sqlTypeNameFromJdbcType(colUnion.getJdbcType())).append(")");
+                    sqlf.append(" AS ").append(dialect.getSqlTypeName(colUnion.getJdbcType())).append(")");
                     col.declareJoins(tableAlias,joins);
                 }
                 else

@@ -27,6 +27,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
@@ -137,7 +138,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             if (participantCohortPropertyName != null)
             {
                 ColumnInfo cohortCol = datasetTable.getColumn(participantCohortPropertyName);
-                if (cohortCol != null && cohortCol.getSqlTypeInt() == Types.VARCHAR)
+                if (cohortCol != null && cohortCol.getJdbcType() == JdbcType.VARCHAR)
                 {
                     cohortCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
                     {

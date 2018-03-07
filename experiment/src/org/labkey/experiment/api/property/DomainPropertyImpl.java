@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -465,9 +466,10 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyType();
     }
 
-    public int getSqlType()
+    @Override
+    public JdbcType getJdbcType()
     {
-        return _pd.getPropertyType().getSqlType();
+        return _pd.getPropertyType().getJdbcType();
     }
 
     public int getScale()
@@ -852,7 +854,7 @@ public class DomainPropertyImpl implements DomainProperty
         private DomainPropertyImpl _dp;
 
         @Test
-        public void testUpdateDomainPropertyFromDescriptor() throws Exception
+        public void testUpdateDomainPropertyFromDescriptor()
         {
             Container c = ContainerManager.ensureContainer("/_DomainPropertyImplTest");
             String domainURI = new Lsid("Junit", "DD", "Domain1").toString();

@@ -584,7 +584,7 @@ public abstract class Method
                 try
                 {
                     JdbcType jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                    String typeName = dialect.sqlTypeNameFromJdbcType(jdbcType);
+                    String typeName = dialect.getSqlTypeName(jdbcType);
                     if (null == typeName)
                         throw new NullPointerException("No sql type name found for '" + jdbcType.name() + "' in " + dialect.getProductName() + " database");
                     if (fragments.length > 2)
@@ -993,7 +993,7 @@ public abstract class Method
             if (null == v)
                 return new SQLFragment("CAST(NULL AS VARCHAR)");
             else
-                return new SQLFragment("CAST(? AS " + dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", v);
+                return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + ")", v);
         }
     }
 
@@ -1027,7 +1027,7 @@ public abstract class Method
                 Container cCompile = getCompileTimeContainer(query);
                 if (null != cCompile)
                     value = mp.getEffectiveValue(cCompile);
-                return new SQLFragment("CAST(? AS " + dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
+                return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + ")", value);
             }
 
             return new SQLFragment("CAST(NULL AS VARCHAR)");
@@ -1093,7 +1093,7 @@ public abstract class Method
                 }
 
                 //see issue 19661.  SQLServer defaults to 30 for VARCHAR, unless a length is explicitly specified, so we CAST using the length of this string
-                return new SQLFragment("CAST(? AS " + dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + (value == null ? "" : "(" + value.toString().length() + ")") + ")", value);
+                return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + (value == null ? "" : "(" + value.toString().length() + ")") + ")", value);
             }
 
             // no legal field found

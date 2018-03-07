@@ -20,13 +20,11 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -95,7 +93,7 @@ public class RolapTestSchema extends UserSchema
                     sql.append(comma);
                     comma = ", ";
                     if (null == v)
-                        sql.append("CAST(NULL AS " + d.sqlTypeNameFromJdbcType(t) + (t.isText() ? "(100)" : "") + ")");
+                        sql.append("CAST(NULL AS " + d.getSqlTypeName(t) + (t.isText() ? "(100)" : "") + ")");
                     else
                         sql.append(RolapCubeDef.toSqlLiteral(t,v));
                     sql.append(" AS " + c.getSelectName());

@@ -59,7 +59,6 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -190,7 +189,7 @@ public abstract class VisitManager
     public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
         SqlDialect dialect = schema.getSqlDialect();
-        String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
+        String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
 
         //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
 

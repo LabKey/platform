@@ -94,7 +94,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1088,7 +1087,7 @@ public class SpecimenImporter
         StudySchema.getInstance().getScope().getSqlDialect();
         String typeName = JDBCtoIMPORTER_TYPE.get(property.getJdbcType());
         if (null == typeName)
-            typeName = dialect.sqlTypeNameFromSqlType(property.getJdbcType().sqlType);
+            typeName = dialect.getSqlTypeName(property.getJdbcType());
         if (null == typeName)
             throw new UnsupportedOperationException("Unsupported JdbcType: " + property.getJdbcType().toString());
         if ("VARCHAR".equals(typeName))
@@ -1786,7 +1785,7 @@ public class SpecimenImporter
                 if (null == column)
                     throw new IllegalStateException("Expected Vial table column to exist.");
                 vialPropertiesSB.append(", ").append(column.getSelectName()).append(" = ")
-                    .append(JdbcType.VARCHAR.equals(column.getJdbcType()) ? "?" : "CAST(? AS " + vialTable.getSqlDialect().sqlCastTypeNameFromJdbcType(column.getJdbcType()) + ")");
+                    .append(JdbcType.VARCHAR.equals(column.getJdbcType()) ? "?" : "CAST(? AS " + vialTable.getSqlDialect().getSqlCastTypeName(column.getJdbcType()) + ")");
             }
         }
 
@@ -2688,7 +2687,7 @@ public class SpecimenImporter
 
     private void appendEqualCheck(DbSchema schema, StringBuilder sql, ImportableColumn col)
     {
-        String dialectType = schema.getSqlDialect().sqlCastTypeNameFromJdbcType(col.getJdbcType());
+        String dialectType = schema.getSqlDialect().getSqlCastTypeName(col.getJdbcType());
         String paramCast = "CAST(? AS " + dialectType + ")";
         // Each unique col has two parameters in the null-equals check.
         sql.append("(").append(col.getLegalDbColumnName(_dialect)).append(" IS NULL AND ").append(paramCast).append(" IS NULL)");
@@ -3522,7 +3521,7 @@ public class SpecimenImporter
         ArrayList<String> hash = new ArrayList<>();
         hash.add("?");
         updateHashSql.add("Fld-" + container.getRowId());
-        String strType = schema.getSqlDialect().sqlCastTypeNameFromJdbcType(JdbcType.VARCHAR);
+        String strType = schema.getSqlDialect().getSqlCastTypeName(JdbcType.VARCHAR);
 
         Map<String, SpecimenColumn> loadedColumnMap = new HashMap<>();
         loadedColumns.forEach(col -> loadedColumnMap.put(col.getTsvColumnName(), col));
@@ -3627,7 +3626,7 @@ public class SpecimenImporter
 
         ArrayList<ColumnInfo> columns = new ArrayList<>();
 
-        String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
+        String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
 
         sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
         columns.add(new ColumnInfo("RowId", JdbcType.INTEGER, 0, false));

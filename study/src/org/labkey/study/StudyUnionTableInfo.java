@@ -32,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
-import java.sql.Types;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -156,19 +155,18 @@ public class StudyUnionTableInfo extends VirtualTable
                         // in at least Postgres, it isn't legal to union two columns where one is NULL and the other is
                         // numeric. It's OK when the other column is text.
                         String empty;
-                        switch (pd.getSqlTypeInt())
+                        switch (pd.getJdbcType())
                         {
-                            case Types.BIGINT:
-                            case Types.INTEGER:
-                            case Types.NUMERIC:
-                            case Types.DOUBLE:
-                            case Types.DECIMAL:
-                            case Types.FLOAT:
-                            case Types.TIMESTAMP:
-                            case Types.TIME:
-                            case Types.DATE:
-                            case Types.BOOLEAN:
-                                empty = "CAST(NULL AS " + getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()) + ")";
+                            case BIGINT:
+                            case INTEGER:
+                            case DOUBLE:
+                            case DECIMAL:
+                            case REAL:
+                            case TIMESTAMP:
+                            case TIME:
+                            case DATE:
+                            case BOOLEAN:
+                                empty = "CAST(NULL AS " + getSqlDialect().getSqlTypeName(pd.getJdbcType()) + ")";
                                 break;
                             default:
                                 empty = "NULL";
@@ -332,13 +330,7 @@ public class StudyUnionTableInfo extends VirtualTable
         {
             ColumnInfo ci = new ColumnInfo(pd.getName(), this);
             PropertyColumn.copyAttributes(_user, ci, pd, _study.getContainer(), null);
-
-            String oldName = StudySchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt());
-            String newName = StudySchema.getInstance().getSqlDialect().sqlTypeNameFromJdbcType(pd.getJdbcType());
-
-            assert oldName.equals(newName);
-
-            ci.setSqlTypeName(newName);
+            ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().getSqlTypeName(pd.getJdbcType()));
             safeAddColumn(ci);
         }
 

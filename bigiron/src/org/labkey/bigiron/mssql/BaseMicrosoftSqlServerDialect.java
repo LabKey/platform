@@ -178,52 +178,50 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    public String getSqlTypeName(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())
         {
-            if (prop.getJdbcType().sqlType == Types.INTEGER)
+            if (prop.getJdbcType() == JdbcType.INTEGER)
             {
                 return "INT IDENTITY (1, 1)";
             }
-            else if (prop.getJdbcType().sqlType == Types.BIGINT)
+            else if (prop.getJdbcType() == JdbcType.BIGINT)
             {
                 return "BIGINT IDENTITY (1, 1)";
             }
             else
             {
-                throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
+                throw new IllegalArgumentException("AutoIncrement is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
         else if (prop.isEntityId())
         {
-            if (prop.getJdbcType().sqlType == Types.VARCHAR)
+            if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
                 return SqlDialect.GUID_TYPE;
             }
             else
             {
-                throw new IllegalArgumentException("EntityId is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
+                throw new IllegalArgumentException("EntityId is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
-        else if (JdbcType.DATE.equals(prop.getJdbcType()) || JdbcType.TIME.equals(prop.getJdbcType()))
+        else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
         {
             // This is because the jtds driver has a bug where it returns these from the db as strings
             return "DATETIME";
         }
         else
         {
-            return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);
+            return getSqlTypeName(prop.getJdbcType());
         }
     }
 
     @Override
     @Nullable
-    public String sqlCastTypeNameFromJdbcType(JdbcType type)
+    public String getSqlCastTypeName(JdbcType type)
     {
-        if (type.equals(JdbcType.VARCHAR))
-            return "NVARCHAR(MAX)";
-        return sqlTypeNameFromJdbcType(type);   // Override for alternate behavior
+        return type == JdbcType.VARCHAR ? "NVARCHAR(MAX)" : getSqlTypeName(type);
     }
 
     @Override
@@ -1099,7 +1097,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
             String statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s(%s) ",
                     column.getName(),
-                    sqlTypeNameFromJdbcType(column.getJdbcType()),
+                    getSqlTypeName(column.getJdbcType()),
                     size);
 
             //T-SQL will drop any existing null constraints
@@ -1607,9 +1605,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         List<String> colSpec = new ArrayList<>();
         colSpec.add(makeLegalIdentifier(prop.getName()));
-        colSpec.add(sqlTypeNameFromSqlType(prop));
+        colSpec.add(getSqlTypeName(prop));
 
-        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
+        if (prop.getJdbcType() == JdbcType.VARCHAR && !prop.isEntityId())
         {
             // If size is -1 or is greater than allowed size, change to Max
             if (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE)

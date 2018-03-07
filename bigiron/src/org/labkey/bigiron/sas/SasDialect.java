@@ -77,11 +77,6 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
     @Override
-    protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
-    {
-    }
-
-    @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
         sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");

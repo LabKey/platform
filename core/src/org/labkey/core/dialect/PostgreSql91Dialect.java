@@ -1117,8 +1117,8 @@ abstract class PostgreSql91Dialect extends SqlDialect
         {
             //Using the common default max size to make type change to text
             String dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                    sqlTypeNameFromSqlType(Types.LONGVARCHAR) :
-                    sqlTypeNameFromJdbcType(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+                    getSqlTypeName(JdbcType.LONGVARCHAR) :
+                    getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
 
             sb.append(comma);
             comma = ", ";
@@ -1353,10 +1353,10 @@ abstract class PostgreSql91Dialect extends SqlDialect
     {
         List<String> colSpec = new ArrayList<>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
-        colSpec.add(sqlTypeNameFromSqlType(prop));
+        colSpec.add(getSqlTypeName(prop));
 
         //Apply size and precision to varchar and Decimal types
-        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId() && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
+        if (prop.getJdbcType() == JdbcType.VARCHAR && !prop.isEntityId() && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
@@ -1391,42 +1391,42 @@ abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String sqlTypeNameFromSqlType(PropertyStorageSpec prop)
+    public String getSqlTypeName(PropertyStorageSpec prop)
     {
         if (prop.isAutoIncrement())
         {
-            if (prop.getJdbcType().sqlType == Types.INTEGER)
+            if (prop.getJdbcType() == JdbcType.INTEGER)
             {
                 return "SERIAL";
             }
-            else if (prop.getJdbcType().sqlType == Types.BIGINT)
+            else if (prop.getJdbcType() == JdbcType.BIGINT)
             {
                 return "BIGSERIAL";
             }
             else
             {
-                throw new IllegalArgumentException("AutoIncrement is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
+                throw new IllegalArgumentException("AutoIncrement is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
         else if (prop.isEntityId())
         {
-            if (prop.getJdbcType().sqlType == Types.VARCHAR)
+            if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
                 return SqlDialect.GUID_TYPE;
             }
             else
             {
-                throw new IllegalArgumentException("EntityId is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
+                throw new IllegalArgumentException("EntityId is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
         //If varchar longer than common limit, then switch type to Text
-        else if (prop.getJdbcType().sqlType == Types.VARCHAR && (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE))
+        else if (prop.getJdbcType() == JdbcType.VARCHAR && (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE))
         {
-            return sqlTypeNameFromSqlType(Types.LONGVARCHAR);
+            return getSqlTypeName(JdbcType.LONGVARCHAR);
         }
         else
         {
-            return sqlTypeNameFromSqlType(prop.getJdbcType().sqlType);
+            return getSqlTypeName(prop.getJdbcType());
         }
     }
 

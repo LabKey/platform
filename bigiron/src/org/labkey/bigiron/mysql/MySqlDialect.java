@@ -103,17 +103,6 @@ public class MySqlDialect extends SimpleSqlDialect
         }
     }
 
-
-    @Override
-    protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
-    {
-    }
-
-    @Override
-    protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
-    {
-    }
-
     @Override
     public String getProductName()
     {

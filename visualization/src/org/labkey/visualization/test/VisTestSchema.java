@@ -113,7 +113,7 @@ public class VisTestSchema extends UserSchema
                     sql.append(comma);
                     comma = ", ";
                     if (null == v)
-                        sql.append("CAST(NULL AS ").append(d.sqlTypeNameFromJdbcType(t)).append(t.isText() ? "(100)" : "").append(")");
+                        sql.append("CAST(NULL AS ").append(d.getSqlTypeName(t)).append(t.isText() ? "(100)" : "").append(")");
                     else
                         sql.append(toSqlLiteral(t, v));
                     sql.append(" AS ").append(c.getSelectName());
