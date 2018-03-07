@@ -629,7 +629,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     {
         if (javaClass.equals(String.class))
             return "Text (String)";
-        else if (javaClass.equals(Integer.class) || javaClass.equals(Integer.TYPE))
+        else if (javaClass.equals(Integer.class) || javaClass.equals(Integer.TYPE) || javaClass.equals(Short.class) || javaClass.equals(Short.TYPE))
             return "Integer";
         else if (javaClass.equals(Double.class) || javaClass.equals(Double.TYPE))
             return "Number (Double)";
@@ -661,7 +661,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return getJavaClass(isNullable());
     }
 
-    private static final EnumSet<JdbcType> IGNORE = EnumSet.of(JdbcType.BINARY, JdbcType.OTHER, JdbcType.DECIMAL);
+    private static final EnumSet<JdbcType> IGNORE = EnumSet.of(JdbcType.BINARY, JdbcType.OTHER, JdbcType.DECIMAL, JdbcType.SMALLINT);
 
     protected Class getJavaClass(boolean isNullable)
     {
@@ -674,7 +674,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         Class newClass = getJdbcType().getJavaClass(isNullable);
 
         if (!oldClass.equals(newClass) && !IGNORE.contains(getJdbcType()))
-            throw new IllegalStateException("Expected " + oldClass.getName() + " but was " + newClass);
+            throw new IllegalStateException("Expected " + getJdbcType() + " to map to " + oldClass.getName() + " but it mapped to " + newClass);
 
         return newClass;
     }
