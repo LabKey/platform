@@ -16,6 +16,8 @@
 package org.labkey.api.exp.property;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Date;
@@ -30,20 +32,20 @@ import java.util.Set;
 // TODO: Consider getting rid of this, adding the xsd: to PropertyType instead
 public enum Type
 {
-    StringType("Text (String)", "xsd:string", "varchar", String.class),
+    StringType("Text (String)", "xsd:string", "varchar", String.class, ByteBuffer.class),
     IntType("Integer", "xsd:int", "integer", Integer.class, Integer.TYPE, Short.class, Short.TYPE, Byte.class, Byte.TYPE),
     LongType("Long", "xsd:long", "bigint", Long.class, long.class),
-    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
+    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE, BigDecimal.class), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     FloatType("Number (Float)", "xsd:float", "float", Float.class, Float.TYPE),
     DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class, Timestamp.class, java.sql.Time.class, java.sql.Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
     AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class);
 
-    private String label;
-    private String xsd;
-    private Class clazz;
-    private Set<Class> allClasses = new HashSet<>();
-    private String sqlTypeName;
+    private final String label;
+    private final String xsd;
+    private final Class clazz;
+    private final Set<Class> allClasses = new HashSet<>();
+    private final String sqlTypeName;
 
     Type(String label, String xsd, String sqlTypeName, Class clazz, Class... additionalClasses)
     {
