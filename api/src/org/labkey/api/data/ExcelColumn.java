@@ -50,6 +50,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.Date;
@@ -158,10 +159,12 @@ public class ExcelColumn extends RenderColumn
         Class valueClass = dc.getDisplayValueClass();
 
         if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
-                Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass))
+                Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass) ||
+                Short.class.isAssignableFrom(valueClass) || Short.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_INT;
         else if (Float.class.isAssignableFrom(valueClass) || Float.TYPE.isAssignableFrom(valueClass) ||
-                Double.class.isAssignableFrom(valueClass) || Double.TYPE.isAssignableFrom(valueClass))
+                Double.class.isAssignableFrom(valueClass) || Double.TYPE.isAssignableFrom(valueClass) ||
+                BigDecimal.class.isAssignableFrom(valueClass))
             _simpleType = TYPE_DOUBLE;
         else if (String.class.isAssignableFrom(valueClass))
         {
