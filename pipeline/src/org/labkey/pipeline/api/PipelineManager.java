@@ -662,7 +662,7 @@ public class PipelineManager
                 {
                     if (rowId == null || !rowId.equals(existingConfig.getRowId()))
                     {
-                        errors.rejectValue("Name", null, "\"A pipeline trigger configuration already exists in this container for the given name: \" + name");
+                        errors.rejectValue("Name", null, "A pipeline trigger configuration already exists in this container for the given name: " + name);
                         break;
                     }
                 }
