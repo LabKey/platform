@@ -54,6 +54,7 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
@@ -835,7 +836,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return;
         }
 
-        _autoDetectParser.parse(is, handler, metadata);
+        try
+        {
+            _autoDetectParser.parse(is, handler, metadata);
+        }
+        catch (ZeroByteFileException e)
+        {
+            // Just index as an empty file, #33236
+        }
     }
 
 

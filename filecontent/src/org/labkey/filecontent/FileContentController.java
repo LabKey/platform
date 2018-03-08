@@ -39,6 +39,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -92,6 +93,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -121,7 +123,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -931,7 +932,8 @@ public class FileContentController extends SpringActionController
 
                     for (Map<String, Object> fileProps : _files)
                     {
-                        WebdavResource resource = FileContentServiceImpl.getInstance().getResource(String.valueOf(fileProps.get("id")));
+                        FileContentServiceImpl fileContentService = FileContentServiceImpl.getInstance();
+                        WebdavResource resource = fileContentService.getResource(String.valueOf(fileProps.get("id")));
                         if (resource != null && !resource.getActions(getUser()).isEmpty())
                         {
                             errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, resource.getName(), "has been previously processed, properties cannot be edited"));
@@ -951,10 +953,24 @@ public class FileContentController extends SpringActionController
                         }
 
                         // need this as a key for the query update service
-                        File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(resource.getFile());
-                        String url = canonicalFile.toPath().toUri().toString();
-
-                        fileProps.put(ExpDataTable.Column.DataFileUrl.name(), url);
+                        File file = resource.getFile();
+                        if (null != file)
+                        {
+                            File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(resource.getFile());
+                            String url = canonicalFile.toPath().toUri().toString();
+                            fileProps.put(ExpDataTable.Column.DataFileUrl.name(), url);
+                        }
+                        else if (fileContentService.isCloudRoot(getContainer()))
+                        {
+                            Path path = resource.getPath();
+                            Path relativePath = path.subpath(path.getParent().getNameCount(), path.getNameCount());
+                            java.nio.file.Path fileRootPath = fileContentService.getFileRootPath(getContainer());  // TODO move out of loop?
+                            if (null != fileRootPath)
+                            {
+                                fileProps.put(ExpDataTable.Column.DataFileUrl.name(),
+                                              FileUtil.pathToString(fileRootPath.resolve(relativePath.toString())));
+                            }
+                        }
                     }
                 }
             }
@@ -1316,6 +1332,80 @@ public class FileContentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new BeginAction(getViewContext()).appendNavTrail(root).addChild("Send mail digest");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetCustomProperties extends ApiAction<CustomPropertiesForm>
+    {
+        @Override
+        public ApiResponse execute(CustomPropertiesForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            FileContentService service = FileContentService.get();
+            if (null != service)
+            {
+                List<Map<String, Object>> rows = new ArrayList<>();
+                TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString());
+                new TableSelector(tableInfo).forEachMap(data ->
+                {
+                    Object encodedUrl = data.get("dataFileUrl");
+                    if (null != encodedUrl)
+                    {
+                        java.nio.file.Path fileRootPath = service.getFileRootPath(getContainer());
+                        if (null != fileRootPath)
+                        {
+                            String relative = fileRootPath.relativize(FileUtil.stringToPath(getContainer(), (String) encodedUrl)).toString();
+                            if (null != relative)
+                            {
+                                if (!service.isCloudRoot(getContainer()))
+                                    relative = relative.replace(FileContentService.FILES_LINK + "/", "");
+                                Map<String, Object> row = new HashMap<>();
+                                row.put("dataFileUrl", relative);
+                                row.put("rowId", data.get("RowId"));
+                                row.put("name", data.get("Name"));
+                                if (null != form.getCustomProperties())
+                                {
+                                    for (String property : form.getCustomProperties())
+                                    {
+                                        ColumnInfo column = tableInfo.getColumn(property);
+                                        if (null != column)
+                                        {
+                                            Map<String, Object> map = new HashMap<>();
+                                            map.put("value", data.get(property));
+                                            StringExpression url = column.getEffectiveURL();
+                                            if (null != url)
+                                                map.put("url", url.eval(data));
+
+                                            // Display value for a lookup has already been handled by Exp.Data
+                                            row.put(property, map);
+                                        }
+                                    }
+                                }
+                                rows.add(row);
+                            }
+                        }
+                    }
+                });
+                response.put("rows", rows);
+            }
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    public static class CustomPropertiesForm
+    {
+        private String[] _customProperties;
+
+        public String[] getCustomProperties()
+        {
+            return _customProperties;
+        }
+
+        public void setCustomProperties(String[] customProperties)
+        {
+            _customProperties = customProperties;
         }
     }
 

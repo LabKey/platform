@@ -1290,16 +1290,17 @@ Ext4.define('File.panel.Browser', {
         //Copied array so as not to be include name/Row Id in extra columns
         var extraColumnNames = this.getExtraColumnNames();
 
-        LABKEY.Query.selectRows({
-            schemaName : 'exp',
-            queryName : 'Data',
-            columns : ['Name', 'Flag/Comment', 'Run', 'DataFileUrl', 'RowId'].concat(extraColumnNames),
-            requiredVersion : '9.1',
+        // Formerly we did selectRows on Exp.Data here and asked for columns Run and Flag/Comment. But those were not used by the processing
+        Ext4.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('fileContent', 'getCustomProperties', null, {'customProperties' : extraColumnNames}),
+            method: 'GET',
             success : function(resp) {
-                this.processCustomFileProperties(resp.rows, extraColumnNames);
+                var respText = Ext4.decode(resp.responseText);
+                this.processCustomFileProperties(respText.rows, extraColumnNames);
             },
-            scope : this
+            scope: this
         });
+
     },
 
     processCustomFileProperties : function(rows, extraColumnNames) {
@@ -1309,10 +1310,8 @@ Ext4.define('File.panel.Browser', {
             strStartIndex, fileStore = this.getFileStore();
 
         Ext4.each(rows, function(row) {
-            // use the record 'Id' to lookup the fileStore record because it includes the relative path and file/folder name
-            dataFileUrl = Ext4.Object.fromQueryString('url=' + row.DataFileUrl.value).url;
-            strStartIndex = dataFileUrl.indexOf(baseUrl);
-            recId = dataFileUrl.substring(strStartIndex);
+            // The record 'Id' to lookup the fileStore record is baseUrl + dataFileUrl
+            recId = baseUrl + row.dataFileUrl;
             idx = fileStore.findExact('id', recId);
 
             if (idx >= 0) {
@@ -1329,7 +1328,7 @@ Ext4.define('File.panel.Browser', {
                     cell = row[columnName];
                     value = Ext4.htmlEncode(cell.displayValue ? cell.displayValue : cell.value);
 
-                    if (cell.url) {
+                    if (cell.url && value) {
                         value = "<a href='" + cell.url + "'>" + value + "</a>";
                     }
 
@@ -1339,8 +1338,8 @@ Ext4.define('File.panel.Browser', {
                 }, this);
                 rec.set(values);
 
-                propName.rowId = row['RowId'].value;
-                propName.name = row['Name'].value;
+                propName.rowId = row['rowId'];
+                propName.name = row['name'];
                 this.fileProps[recId] = propName;
             }
         }, this);

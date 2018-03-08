@@ -1612,7 +1612,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public class CreatePipelineTriggerAction extends FormViewAction<PipelineTriggerForm>
     {
         @Override
