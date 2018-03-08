@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -1157,7 +1156,24 @@ public abstract class CompareType
         Object oldValue = getParamValueOld(colInfo, stringValue);
         Object newValue = getParamValue(colInfo, stringValue);
 
-        assert Objects.equals(oldValue, newValue);
+        if (oldValue instanceof Parameter.TypedValue)
+        {
+            Parameter.TypedValue typedValueOld = (Parameter.TypedValue)oldValue;
+
+            assert newValue instanceof Parameter.TypedValue : "Expected newValue to be TypedValue but was " + newValue;
+
+            Parameter.TypedValue typedValueNew = (Parameter.TypedValue)newValue;
+
+            if (!Objects.equals(typedValueOld.getJdbcParameterType(), typedValueNew.getJdbcParameterType()))
+                throw new IllegalStateException(typedValueOld.getJdbcParameterType() + " vs. " + typedValueNew.getJdbcParameterType());
+
+            if (!Objects.equals(typedValueOld.getJdbcParameterValue(), typedValueNew.getJdbcParameterValue()))
+                throw new IllegalStateException(typedValueOld.getJdbcParameterValue() + " vs. " + typedValueNew.getJdbcParameterValue());
+        }
+        else
+        {
+            assert Objects.equals(oldValue, newValue) : oldValue + " vs. " + newValue;
+        }
 
         return newValue;
     }
