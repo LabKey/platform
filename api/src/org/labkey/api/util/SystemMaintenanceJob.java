@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -37,6 +38,8 @@ import java.util.concurrent.Callable;
  */
 public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
 {
+    private static final Logger LOG = Logger.getLogger(SystemMaintenanceJob.class);
+
     private final @Nullable String _taskName;
     private final @Nullable User _user;
 
@@ -67,7 +70,7 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
     }
 
     @Override
-    // Determine the tasks to run and queue them up in the pipeline. This method may throw exceptions.
+    // Determine the tasks to run and queue a pipeline job to run them. This method may throw exceptions.
     public String call()
     {
         Set<String> disabledTasks = SystemMaintenance.getProperties().getDisabledTasks();
@@ -109,6 +112,7 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
         try
         {
             PipelineJob job = new MaintenancePipelineJob(vbi, root, tasksToRun);
+            LOG.info("Queuing MaintenancePipelineJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
             PipelineService.get().queueJob(job);
             jobGuid = job.getJobGUID();
         }

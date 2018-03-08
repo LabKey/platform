@@ -29,6 +29,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.query.AggregateRowConfig;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -2772,12 +2773,15 @@ public class DataRegion extends DisplayElement
 
     private void prepareView(RenderContext ctx)
     {
-        if (ctx.getView() != null && ctx.getView().getLabel() != null)
+        CustomView view = ctx.getView();
+
+        // 32294: Only display default view context action when it is being edited
+        if (view != null && view.getLabel() != null && (!isDefaultView(ctx) || view.isSession()))
         {
             ContextAction.Builder action = new ContextAction.Builder()
                     .iconCls("table")
                     .onClick(getJavaScriptObjectReference() + ".showCustomizeView(); return false;")
-                    .text(ctx.getView().getLabel());
+                    .text(view.getLabel());
             _viewActions.add(action.build());
         }
     }

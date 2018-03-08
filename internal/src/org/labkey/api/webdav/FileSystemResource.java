@@ -707,7 +707,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 try
                 {
                     File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(this.getFile());
-                    String url = canonicalFile.toURI().toURL().toString();
+                    String url = canonicalFile.toPath().toUri().toString();
                     Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), url);
                     List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
 
@@ -728,10 +728,6 @@ public class FileSystemResource extends AbstractWebdavResource
                             }
                         }
                     }
-                }
-                catch (MalformedURLException e)
-                {
-                    throw new UnexpectedException(e);
                 }
                 catch (SQLException x)
                 {
