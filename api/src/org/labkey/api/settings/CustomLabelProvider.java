@@ -13,5 +13,7 @@ public interface CustomLabelProvider
      */
     Map<String, String> getCustomLabels(@Nullable Container container);
 
+    Map<String, String> getSiteCustomLabels();
+
     String getName();
 }
