@@ -781,10 +781,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Tika can't parse all .mht files
             logAsWarning(r, "Can't parse this MHT file", rootMessage);
         }
-        else if (topMessage.equals("Zip bomb detected!") && StringUtils.endsWithIgnoreCase(r.getName(), ".key"))
+        else if (topMessage.equals("Zip bomb detected!"))
         {
-            // Tika flags some .key files as "zip bombs"
-            logAsWarning(r, "Can't parse this KEY file", rootMessage);
+            // Tika flags some files as "zip bombs"
+            logAsWarning(r, "Can't parse this file", rootMessage);
         }
         else if (topMessage.equals("Unable to unpack document stream"))
         {
