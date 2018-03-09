@@ -23,7 +23,7 @@ Ext4.define('File.panel.EmailProps', {
             MINUTEDIGEST: {
                 value: 513,
                 label: '15 Minute Digest',
-                description: 'send a email for file changes within a fifteen minute span.'
+                description: 'send an email for file changes within a fifteen minute span.'
             },
             DAILYDIGEST: {
                 value: 514,
