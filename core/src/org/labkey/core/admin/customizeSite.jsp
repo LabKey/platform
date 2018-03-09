@@ -417,7 +417,6 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td>&nbsp;</td>
 </tr>
-
 <tr>
     <td colspan=2>Ribbon Bar Message (<%=text(bean.helpLink)%>)</td>
 </tr>
@@ -472,6 +471,23 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td>&nbsp;</td>
 </tr>
+<tr>
+    <td colspan=2>Customize navigation options</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">
+        Always include inaccessible parent folders in project menu when child folder is accessible
+        <labkey:helpPopup title="Project menu access">
+            Unchecking this will only allow users to see folders in the project menu
+            where they have permissions to see the root project and all parent folders.
+        </labkey:helpPopup>
+    </td>
+    <td><input type="checkbox" name="navAccessOpen" id="navAccessOpen" <%=checked(appProps.isNavigationAccessOpen())%>></td>
+</tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>&nbsp;</td></tr>
 <tr>
     <td>
         <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>

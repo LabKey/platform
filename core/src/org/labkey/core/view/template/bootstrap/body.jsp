@@ -72,7 +72,9 @@
                    {
                        pageTitle = pageConfig.getAppBar().getFolderTitle();
 
-                       //the intent of this is to suppress pageTitle for the project, so we dont double-show this on the page.
+                       // The intent of this is to suppress pageTitle for the project, presumably so we dont double-show this on the page, given the project menu also shows project name?
+                       // This should be reviewed, since it creates inconsistent behavior between top-level containers and subfolders.
+                       // Perhaps this exception should be limited to the startURL()/getAppBar().getHref() alone?
                        if (pageTitle != null)
                        {
                            Container targetFolder = null;
@@ -101,17 +103,14 @@
                 </h3>
                 <%--For a normal folder, just show the title, unless this is the start page--%>
                 <%--For a workbook, always show ParentTitle / Workbook, making it easier for the user to return to the parent --%>
-                <% if (getContainer().isWorkbook() || !getActionURL().equals(getContainer().getStartURL(getUser()))) { %>
+                <% if (getContainer().isWorkbook() || !getActionURL().toString().equals(pageConfig.getAppBar().getHref())) { %>
                     <span class="lk-body-title-folder-outer">
                         <i class="fa fa-folder-o"></i>
+                        <%-- Note: pageConfig.getAppBar() returns a URL pointing to the current non-workbook container (i.e. parent if current container is a workbook --%>
+                        <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>"><%= h(getContainer().getSelfOrWorkbookParent().getTitle()) %></a>
                         <% if (getContainer().isWorkbook()) { %>
-                            <a class="lk-body-title-folder" href="<%= h(getContainer().getParent().getStartURL(getUser())) %>">
-                                <%= h(getContainer().getParent().getTitle()) %>
-                            </a> /
+                         / <a class="lk-body-title-folder" href="<%= h(getContainer().getStartURL(getUser()))%>"><%= h(getContainer().getDisplayTitle()) %></a>
                         <% } %>
-                        <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>">
-                            <%= h(getContainer().getDisplayTitle()) %>
-                        </a>
                     </span>
                 <% } %>
             <% } %>

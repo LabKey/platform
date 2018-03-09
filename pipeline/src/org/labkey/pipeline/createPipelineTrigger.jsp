@@ -283,10 +283,6 @@
                     }).attr('selected', true);
                 }
 
-                var enabled = row.Enabled;
-                if (enabled)
-                    $("input[name='enabled']").prop('checked', true);
-
                 //config objects must first be parsed as JSON
                 var configObj = JSON.parse(row.Configuration);
                 processConfigJson(configObj);
@@ -322,12 +318,17 @@
                                     $("input[name='" + keyName + "']").val(paramObject[key]);
                                 }
                             }
-                        }
-                        else {
+                        } else {
                             if (k.toLowerCase() === "quiet") {
                                 configObj[k] = configObj[k] / 1000;
                             }
-                            $("*[name='" + k + "']").val(configObj[k]);
+
+                            var input = $("*[name='" + k + "']");
+                            if (input.attr('type') === 'checkbox') {
+                                input.prop('checked', configObj[k]);
+                            } else {
+                                input.val(configObj[k]);
+                            }
                         }
                     }
                 }

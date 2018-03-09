@@ -1330,6 +1330,7 @@ public class AdminController extends SpringActionController
 
             props.setDefaultDomain(form.getDefaultDomain());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
+            props.setNavAccessOpen(form.isNavAccessOpen());
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
@@ -1928,6 +1929,7 @@ public class AdminController extends SpringActionController
         private boolean _allowApiKeys;
         private int _apiKeyExpirationSeconds;
         private boolean _allowSessionKeys;
+        private boolean _navAccessOpen;
 
         private String _CSRFCheck;
         private String _XFrameOptions;
@@ -1950,6 +1952,16 @@ public class AdminController extends SpringActionController
         public void setPipelineToolsDirectory(String pipelineToolsDirectory)
         {
             _pipelineToolsDirectory = pipelineToolsDirectory;
+        }
+
+        public boolean isNavAccessOpen()
+        {
+            return _navAccessOpen;
+        }
+
+        public void setNavAccessOpen(boolean navAccessOpen)
+        {
+            _navAccessOpen = navAccessOpen;
         }
 
         public boolean isSslRequired()
