@@ -171,6 +171,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return isWorkbook() ? getName() : getTitle();
     }
 
+    /**
+     * Returns the current container for normal folders, or the parent folder for workbooks
+     */
+    @NotNull
+    public Container getSelfOrWorkbookParent()
+    {
+        return isWorkbook() && getParent() != null ? getParent() : this;
+    }
+
     @NotNull
     public String getResourceName()
     {

@@ -52,7 +52,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -63,6 +62,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
@@ -1114,11 +1114,13 @@ public class ContainerManager
     }
 
 
-    public static NavTree getFolderListForUser(Container project, ViewContext viewContext)
+    public static NavTree getFolderListForUser(final Container project, ViewContext viewContext)
     {
-        Container c = viewContext.getContainer();
+        final boolean isNavAccessOpen = AppProps.getInstance().isNavigationAccessOpen();
+        final Container c = viewContext.getContainer();
+        final String cacheKey = isNavAccessOpen ? project.getId() : c.getId();
 
-        NavTree tree = (NavTree) NavTreeManager.getFromCache(project.getId(), viewContext);
+        NavTree tree = (NavTree) NavTreeManager.getFromCache(cacheKey, viewContext);
         if (null != tree)
             return tree;
 
@@ -1136,13 +1138,20 @@ public class ContainerManager
             Set<Container> containersInTree = new HashSet<>();
 
             Map<String, NavTree> m = new HashMap<>();
+            Map<String, Boolean> permission = new HashMap<>();
+
             for (Container f : folders)
             {
                 if (f.isWorkbookOrTab())
                     continue;
 
-                SecurityPolicy policy = f.getPolicy();
-                boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)) || (!f.hasPermission(user, ReadPermission.class)));
+                boolean hasPolicyRead = f.getPolicy().hasPermission(user, ReadPermission.class);
+
+                boolean skip = (
+                        !hasPolicyRead ||
+                        !f.shouldDisplay(user) ||
+                        !f.hasPermission(user, ReadPermission.class)
+                );
 
                 //Always put the project and current container in...
                 if (skip && !f.equals(project) && !f.equals(c))
@@ -1154,13 +1163,96 @@ public class ContainerManager
                     name = "Home";
 
                 NavTree t = new NavTree(name);
-                if (policy.hasPermission(user, ReadPermission.class))
+                if (hasPolicyRead)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
                     t.setHref(url.getEncodedLocalURIString());
                 }
-                containersInTree.add(f);
-                m.put(f.getId(), t);
+
+                boolean addFolder = false;
+
+                if (isNavAccessOpen)
+                {
+                    addFolder = true;
+                }
+                else
+                {
+                    // 32718: If navigation access is not open then hide projects that aren't directly
+                    // accessible in site folder navigation.
+
+                    if (f.equals(c) || f.isRoot() || (hasPolicyRead && f.isProject()))
+                    {
+                        // In current container, root, or readable project
+                        addFolder = true;
+                    }
+                    else
+                    {
+                        boolean isAscendant = f.isDescendant(c);
+                        boolean isDescendant = c.isDescendant(f);
+                        boolean inActivePath = isAscendant || isDescendant;
+                        boolean hasAncestryRead = false;
+
+                        if (inActivePath)
+                        {
+                            Container leaf = isAscendant ? f : c;
+                            Container localRoot = isAscendant ? c : f;
+
+                            List<Container> ancestors = containersToRootList(leaf);
+                            Collections.reverse(ancestors);
+
+                            for (Container p : ancestors)
+                            {
+                                if (!permission.containsKey(p.getId()))
+                                    permission.put(p.getId(), p.getPolicy().hasPermission(user, ReadPermission.class));
+                                boolean hasRead = permission.get(p.getId());
+
+                                if (p.equals(localRoot))
+                                {
+                                    hasAncestryRead = hasRead;
+                                    break;
+                                }
+                                else if (!hasRead)
+                                {
+                                    hasAncestryRead = false;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            hasAncestryRead = containersToRoot(f).stream().allMatch(p -> {
+                                if (!permission.containsKey(p.getId()))
+                                    permission.put(p.getId(), p.getPolicy().hasPermission(user, ReadPermission.class));
+                                return permission.get(p.getId());
+                            });
+                        }
+
+                        if (hasPolicyRead && hasAncestryRead && inActivePath)
+                        {
+                            // Is in the direct readable lineage of the current container
+                            addFolder = true;
+                        }
+                        else if (hasPolicyRead && f.getParent().equals(c.getParent()))
+                        {
+                            // Is a readable sibling of the current container
+                            addFolder = true;
+                        }
+                        else if (hasAncestryRead)
+                        {
+                            // Is a part of a fully readable ancestry
+                            addFolder = true;
+                        }
+                    }
+
+                    if (!addFolder)
+                        LOG.debug("isNavAccessOpen restriction: \"" + f.getPath() + "\"");
+                }
+
+                if (addFolder)
+                {
+                    containersInTree.add(f);
+                    m.put(f.getId(), t);
+                }
             }
 
             //Ensure parents of any accessible folder are in the tree. If not add them with no link.
@@ -1171,11 +1263,34 @@ public class ContainerManager
                     Set<Container> containersToRoot = containersToRoot(treeContainer);
                     //Possible will be added more than once, if several children are accessible, but that's OK...
                     for (Container missing : containersToRoot)
+                    {
                         if (!m.containsKey(missing.getId()))
                         {
-                            NavTree noLinkTree = new NavTree(missing.getName());
-                            m.put(missing.getId(), noLinkTree);
+                            if (isNavAccessOpen)
+                            {
+                                NavTree noLinkTree = new NavTree(missing.getName());
+                                m.put(missing.getId(), noLinkTree);
+                            }
+                            else
+                            {
+                                if (!permission.containsKey(missing.getId()))
+                                    permission.put(missing.getId(), missing.getPolicy().hasPermission(user, ReadPermission.class));
+
+                                if (!permission.get(missing.getId()))
+                                {
+                                    NavTree noLinkTree = new NavTree(missing.getName());
+                                    m.put(missing.getId(), noLinkTree);
+                                }
+                                else
+                                {
+                                    NavTree linkTree = new NavTree(missing.getName());
+                                    ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(missing);
+                                    linkTree.setHref(url.getEncodedLocalURIString());
+                                    m.put(missing.getId(), linkTree);
+                                }
+                            }
                         }
+                    }
                 }
             }
 
@@ -1196,7 +1311,7 @@ public class ContainerManager
 
             NavTree projectTree = m.get(projectId);
 
-            projectTree.setId(project.getId());
+            projectTree.setId(cacheKey);
 
             NavTreeManager.cacheTree(projectTree, user);
             return projectTree;

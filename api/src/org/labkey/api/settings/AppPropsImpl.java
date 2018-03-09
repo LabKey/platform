@@ -87,6 +87,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String MAX_BLOB_SIZE = "maxBLOBSize";
     static final String EXT3_REQUIRED = "ext3Required";
     static final String EXT3API_REQUIRED = "ext3APIRequired";
+    static final String NAV_ACCESS_OPEN = "navAccessOpen";
     static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
     static final String USE_CONTAINER_RELATIVE_URL = "useContainerRelativeURL";
     static final String ALLOW_API_KEYS = "allowApiKeys";
@@ -319,6 +320,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         {
             return ExceptionReportingLevel.LOW;
         }
+    }
+
+    public boolean isNavigationAccessOpen()
+    {
+        return lookupBooleanValue(NAV_ACCESS_OPEN, true);
     }
 
     public String getServerGUID()

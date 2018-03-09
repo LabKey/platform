@@ -169,6 +169,14 @@ public interface AppProps
 
     ExceptionReportingLevel getExceptionReportingLevel();
 
+    /**
+     * Flag specifying if the project navigation access is open/closed. Open (default) means users will see the full
+     * folder tree for all folders they have permissions to see. Closed follows the rules as specified in issue #32718.
+     *
+     * @return if navigation access is open
+     */
+    boolean isNavigationAccessOpen();
+
     boolean isSelfReportExceptions();
 
     String getServerGUID();

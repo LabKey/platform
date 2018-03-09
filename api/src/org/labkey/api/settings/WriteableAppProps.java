@@ -21,8 +21,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.view.NavTreeManager;
 
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 /**
  * A mutable version of {@link AppProps}.
@@ -45,6 +47,9 @@ public class WriteableAppProps extends AppPropsImpl
     {
         super.save();
         writeAuditLogEvent(_container, user);
+
+        if (!Objects.equals(this.getOldProperties().get(NAV_ACCESS_OPEN), this.getProperties().get(NAV_ACCESS_OPEN)))
+            NavTreeManager.uncacheAll();
     }
 
     public void setAdminOnlyMessage(String adminOnlyMessage)
@@ -135,6 +140,11 @@ public class WriteableAppProps extends AppPropsImpl
     public void setUserRequestedAdminOnlyMode(boolean adminOnlyMode)
     {
         storeBooleanValue(USER_REQUESTED_ADMIN_ONLY_MODE, adminOnlyMode);
+    }
+
+    public void setNavAccessOpen(boolean navAccessOpen)
+    {
+        storeBooleanValue(NAV_ACCESS_OPEN, navAccessOpen);
     }
 
     public void setNetworkDriveLetter(String letter)
