@@ -195,7 +195,7 @@
                               className="form-control lk-pipeline-input"
                               label="Move process to"
                               forceSmallContext="true"
-                              contextContent="Where the file should be moved before analysis. This can be absolute or relative to the current project/folder."/>
+                              contextContent="Where the file should be moved before analysis. This must be a relative or absolute container path."/>
 
                 <labkey:input name="copy"
                               className="form-control lk-pipeline-input"
