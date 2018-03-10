@@ -554,7 +554,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     /**
      * Subclasses should override this if they need to create a filter clause with an explicit permission (for example,
-     * the DefaultAudityTypeTable).  See issue 19515
+     * the DefaultAuditTypeTable).  See issue 19515
      */
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
