@@ -317,7 +317,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
                 _plate.getPlateNumber(), getName(), run.getContainer(),
                 Type.REPLICATE.equals(getType()));
         if (1 != dilutionDataRows.size())
-            throw new IllegalStateException("Expected DilutionData row to calculate wellgroup stats.");
+            throw new IllegalStateException("Expected a single DilutionData row to calculate wellgroup stats, but found " + dilutionDataRows.size() + " rows");
         _dilutionDataRow = dilutionDataRows.get(0);
         _mean = _dilutionDataRow.getMean();
         _min = _dilutionDataRow.getMin();
