@@ -661,7 +661,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return getJavaClass(isNullable());
     }
 
-    private static final EnumSet<JdbcType> IGNORE = EnumSet.of(JdbcType.BINARY, JdbcType.OTHER, JdbcType.DECIMAL, JdbcType.SMALLINT, JdbcType.TINYINT, JdbcType.NULL);
+    private static final EnumSet<JdbcType> IGNORE = EnumSet.of(JdbcType.BINARY, JdbcType.OTHER, JdbcType.DECIMAL, JdbcType.SMALLINT, JdbcType.TINYINT, JdbcType.NULL, JdbcType.VARBINARY);
 
     protected Class getJavaClass(boolean isNullable)
     {
