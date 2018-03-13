@@ -438,6 +438,11 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
             var val = item.getValue();
 
+            // Check raw value. Pivot queries
+            if (Array.isArray(val) && typeof val[0] === 'undefined') {
+                val = [item.getRawValue()];
+            }
+
             if(item.originalConfig.formatter && typeof item.originalConfig.formatter === "function" ) {
                 val = item.originalConfig.formatter(val);
             }
