@@ -17,6 +17,7 @@ package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -250,26 +251,36 @@ class ScriptReferenceImpl implements ScriptReference
         @Override
         public Map<Path, CompiledScript> load(Stream<? extends Resource> resources, Module module)
         {
-            return unmodifiable(resources
+            Map<Path, CompiledScript> map = new HashMap<>();
+
+            resources
                 .filter(getFilter(".js"))
-                .collect(Collectors.toMap(Resource::getPath, this::compile)));
+                .forEach(r->{
+                    CompiledScript script = compile(r, module);
+
+                    if (null != script)
+                        map.put(r.getPath(), script);
+                });
+
+            return unmodifiable(map);
         }
 
-        private CompiledScript compile(Resource r)
+        private @Nullable CompiledScript compile(Resource r, Module module)
         {
             RhinoEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
             Context ctx = Context.enter();
 
-            LOG.info("Compiling script '" + r.getPath().toString() + "'");
+            LOG.info("Compiling script '" + r.toString() + "'");
 
             try (Reader reader = Readers.getReader(r.getInputStream()))
             {
                 engine.put(ScriptEngine.FILENAME, r.getPath().toString());
                 return engine.compile(reader);
             }
-            catch (IOException | ScriptException e)
+            catch (Throwable t)
             {
-                throw new UnexpectedException(e);
+                LOG.error("Failed to compile script '" + r.toString() + "': " + t.getMessage());
+                return null;
             }
             finally
             {
