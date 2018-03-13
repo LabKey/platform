@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -58,6 +59,8 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL);
 
     ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns);
+
+    ActionURL getShowRunsURL(Container c, ExperimentRunType type);
 
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 
