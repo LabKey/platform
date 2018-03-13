@@ -32,10 +32,12 @@ import java.util.Set;
  */
 public class VisitDatasetDomainKind extends DatasetDomainKind
 {
+    public static String KIND_NAME = "StudyDatasetVisit";
+
     @Override
     public String getKindName()
     {
-        return "StudyDatasetVisit";
+        return KIND_NAME;
     }
 
     @Override

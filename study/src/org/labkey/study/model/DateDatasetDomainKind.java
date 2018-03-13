@@ -28,10 +28,12 @@ import java.util.Set;
  */
 public class DateDatasetDomainKind extends DatasetDomainKind
 {
+    public static String KIND_NAME = "StudyDatasetDate";
+
     @Override
     public String getKindName()
     {
-        return "StudyDatasetDate";
+        return KIND_NAME;
     }
 
     @Override

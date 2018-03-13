@@ -28,23 +28,35 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
+import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: matthewb
@@ -283,10 +295,101 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public boolean canCreateDefinition(User user, Container container)
+    {
+        return container.hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user,
         @Nullable TemplateInfo templateInfo)
     {
-        return super.createDomain(domain, arguments, container, user, templateInfo);
+        String name = domain.getName();
+        Integer datasetId = arguments.containsKey("datasetId") ? (Integer)arguments.get("datasetId") : null;
+        Integer categoryId = arguments.containsKey("categoryId") ? (Integer)arguments.get("categoryId") : null;
+        boolean demographics = arguments.containsKey("demographics") ? (Boolean)arguments.get("demographics") : false;
+        String keyPropertyName = arguments.containsKey("keyPropertyName") ? (String)arguments.get("keyPropertyName") : null;
+        boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
+
+        if (name == null)
+            throw new IllegalArgumentException("Dataset name must not be null");
+
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (study == null)
+            throw new IllegalArgumentException("A study does not exist for this folder");
+
+        // make sure the domain matches the timepoint type
+        TimepointType timepointType = study.getTimepointType();
+        if (timepointType.isVisitBased() && getKindName().equals(DateDatasetDomainKind.KIND_NAME))
+            throw new IllegalArgumentException("Visit based studies require a visit based dataset domain. Please specify a kind name of : " + VisitDatasetDomainKind.KIND_NAME);
+        else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
+            throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME);
+
+        DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
+                demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField);
+
+        if (def.getDomain() != null)
+        {
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+            {
+                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+                List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+
+                Domain newDomain = def.getDomain();
+                if (newDomain != null)
+                {
+                    Set<String> reservedNames = getReservedPropertyNames(newDomain);
+                    Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                    Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
+                    Map<DomainProperty, Object> defaultValues = new HashMap<>();
+                    Set<String> propertyUris = new HashSet<>();
+
+                    for (GWTPropertyDescriptor pd : properties)
+                    {
+                        if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
+                        {
+                            throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                        }
+                        DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
+                    }
+
+                    Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+                    for (GWTIndex index : indices)
+                    {
+                        PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+                        propertyIndices.add(propIndex);
+                    }
+                    newDomain.setPropertyIndices(propertyIndices);
+                    newDomain.save(user);
+                }
+                else
+                    throw new IllegalArgumentException("Failed to create domain for dataset : " + name);
+                transaction.commit();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return study.getDataset(def.getDatasetId()).getDomain();
+    }
+
+    @Override
+    public void deleteDomain(User user, Domain domain)
+    {
+        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(domain.getTypeURI());
+        if (def == null)
+            throw new NotFoundException("Dataset not found: " + domain.getTypeURI());
+
+        StudyImpl study = StudyManager.getInstance().getStudy(domain.getContainer());
+        if (study == null)
+            throw new IllegalArgumentException("A study does not exist for this folder");
+
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            StudyManager.getInstance().deleteDataset(study, user, def, false);
+            transaction.commit();
+        }
     }
 
     @Override
