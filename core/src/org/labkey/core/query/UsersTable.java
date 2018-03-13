@@ -360,7 +360,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext) throws ValidationException
     {
         super.fireRowTrigger(c, type, before, rowNumber, newRow, oldRow, extraContext);
-        Integer userId = null!=newRow ? (Integer)newRow.get("UserId") : null!=oldRow ? (Integer)oldRow.get("UserId") : null;
+        Integer userId = null!=oldRow ? (Integer)oldRow.get("UserId") : null!=newRow ? (Integer)newRow.get("UserId") : null;
         if (null != userId && !before)
             UserManager.fireUserPropertiesChanged(userId);
     }

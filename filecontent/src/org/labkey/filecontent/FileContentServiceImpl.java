@@ -1281,9 +1281,8 @@ public class FileContentServiceImpl implements FileContentService
                 Files.walk(rootPath, 100) // prevent symlink loop
                         .filter(path -> !Files.isSymbolicLink(path) && path.compareTo(rootPath) != 0) // exclude symlink & root
                         .forEach(path -> {
-                            String url = path.toUri().toString();
-                            if (!existingDataFileUrls.contains(url))
-                                rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", url)));
+                            if (!containsUrlOrVariation(existingDataFileUrls, path))
+                                rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", path.toUri().toString())));
 
                         });
 
@@ -1334,6 +1333,33 @@ public class FileContentServiceImpl implements FileContentService
         if (null == path || FileUtil.hasCloudScheme(path))
             throw new RuntimeException("Cannot get File object from Cloud File Root.");    // TODO: new exception?
     }
+
+    private boolean containsUrlOrVariation(List<String> existingUrls, java.nio.file.Path path)
+    {
+        String url = path.toUri().toString();
+        if (existingUrls.contains(url))
+            return true;
+
+        boolean urlHasTrailingSlash = (Files.isDirectory(path) && (url.endsWith("/") || url.endsWith(File.pathSeparator)));
+        if (urlHasTrailingSlash && existingUrls.contains(url.substring(0, url.length() - 1)))
+            return true;
+
+        if (!FileUtil.hasCloudScheme(path))
+        {
+            File file = path.toFile();
+            if (null != file)
+            {
+                String legacyUrl = file.toURI().toString();
+                if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
+                    return true;
+
+                if (existingUrls.contains(file.getPath()))
+                    return true;
+            }
+        }
+        return false;
+    }
+
     // Cache with short-lived entries so that exp.files can perform reasonably
     private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
 
@@ -1465,7 +1491,7 @@ public class FileContentServiceImpl implements FileContentService
             childFile.createNewFile();
 
             ExpData data = ExperimentService.get().createData(subsubfolder, new DataType("FileContentTest"));
-            data.setDataFileURI(childFile.toURI());
+            data.setDataFileURI(childFile.toPath().toUri());
             data.save(TestContext.get().getUser());
             int rowId = data.getRowId();
 
@@ -1483,7 +1509,7 @@ public class FileContentServiceImpl implements FileContentService
             ExpData movedData = ExperimentService.get().getExpData(rowId);
             Assert.assertNotNull(movedData);
 
-            assertPathsEqual("Incorrect file path", expectedFile, movedData.getFile());
+            assertPathsEqual("Incorrect file path", expectedFile, FileUtil.stringToPath(movedSubfolder, movedData.getDataFileUrl()).toFile());
         }
 
         @Test

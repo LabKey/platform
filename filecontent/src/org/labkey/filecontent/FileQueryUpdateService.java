@@ -320,7 +320,12 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
 
 
-        ExpData data = ExperimentService.get().getExpDataByURL(dataFileUrl, container);
+        ExpData data = null != dataFileUrl ?
+                FileUtil.hasCloudScheme(dataFileUrl) ?
+                    ExperimentService.get().getExpDataByURL(dataFileUrl, container) :
+                    ExperimentService.get().getExpDataByURL(new File(URI.create(dataFileUrl)), container) :
+                null;
+
         return new Pair<>(data, dataFileUrl);
     }
 

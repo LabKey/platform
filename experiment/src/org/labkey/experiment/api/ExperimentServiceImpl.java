@@ -469,7 +469,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataImpl createData(URI uri, XarSource source) throws XarFormatException
     {
         // Check if it's in the database already
-        ExpDataImpl data = getExpDataByURL(FileUtil.uriToString(uri), source.getXarContext().getContainer());
+        ExpDataImpl data = getExpDataByURL(FileUtil.getPath(source.getXarContext().getContainer(), uri), source.getXarContext().getContainer());
         if (data == null)
         {
             // Have to make a new one
@@ -3175,7 +3175,19 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
         String url = canonicalFile.toPath().toUri().toString();
-        return getExpDataByURL(url, c);
+        ExpDataImpl data = getExpDataByURL(url, c);
+        if (null == data)
+        {                   // Look for legacy format
+            try
+            {
+                data = getExpDataByURL(canonicalFile.toURI().toURL().toString(), c);
+            }
+            catch (MalformedURLException e)
+            {
+                throw new UnexpectedException(e);
+            }
+        }
+        return data;
     }
 
     @Override
