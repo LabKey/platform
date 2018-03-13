@@ -96,12 +96,11 @@ public class ExpDataFileConverter implements Converter
 
             //check to see if this is already an ExpData
             File file = pipelineRoot.resolvePath(pipelinePath);
-            URI uri = file.toURI();
-            ExpData data = expSvc.getExpDataByURL(FileUtil.uriToString(uri), container);
+            ExpData data = null != file ? expSvc.getExpDataByURL(file, container) : null;
 
             if (null == data)
             {
-                if (!NetworkDrive.exists(file))
+                if (null == file || !NetworkDrive.exists(file))
                 {
                     throw new IllegalArgumentException("No file with relative pipeline path '" + pipelinePath + "' was found");
                 }
@@ -111,7 +110,7 @@ public class ExpDataFileConverter implements Converter
                 DataType type = getDataType(file, knownTypes);
                 String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
-                data.setDataFileURI(uri);
+                data.setDataFileURI(file.toPath().toUri());
                 data.save(user);
             }
             return data;

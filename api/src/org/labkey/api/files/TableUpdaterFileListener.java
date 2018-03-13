@@ -30,6 +30,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
@@ -60,9 +61,11 @@ public class TableUpdaterFileListener implements FileListener
     public interface PathGetter
     {
         /** @return the string that is expected to be the in database */
-        public abstract String get(File f);
+        String get(File f);
         /** @return the file path separator (typically '/' or '\' */
-        public abstract String getSeparatorSuffix();
+        String getSeparatorSuffix();
+
+        boolean isType(Type type);
     }
 
     public enum Type implements PathGetter
@@ -81,6 +84,12 @@ public class TableUpdaterFileListener implements FileListener
             {
                 return "/";
             }
+
+            @Override
+            public boolean isType(Type type)
+            {
+                return uri.ordinal() == type.ordinal();
+            }
         },
 
         /** Just uses getPath() to turn the File into a String */
@@ -97,6 +106,12 @@ public class TableUpdaterFileListener implements FileListener
             {
                 return File.separator;
             }
+
+            @Override
+            public boolean isType(Type type)
+            {
+                return filePath.ordinal() == type.ordinal();
+            }
         },
 
         /** Just uses getPath() to turn the File into a String, but replaces all backslashes with forward slashes */
@@ -112,6 +127,12 @@ public class TableUpdaterFileListener implements FileListener
             public String getSeparatorSuffix()
             {
                 return "/";
+            }
+
+            @Override
+            public boolean isType(Type type)
+            {
+                return filePathForwardSlash.ordinal() == type.ordinal();
             }
         }
     }
@@ -153,11 +174,12 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
-        String srcPath = _pathGetter.get(src);
+        String srcPath = getSourcePath(src, container);
         String destPath = _pathGetter.get(dest);
 
         DbSchema schema = _table.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
+        String dbColumnName = _table.getSqlDialect().makeLegalIdentifier(_pathColumn);
 
         // Build up SQL that can be used for both the file and any children
         SQLFragment sharedSQL = new SQLFragment("UPDATE ");
@@ -174,13 +196,13 @@ public class TableUpdaterFileListener implements FileListener
             sharedSQL.append("ModifiedBy = ?, ");
             sharedSQL.add(user.getUserId());
         }
-        sharedSQL.append(_table.getSqlDialect().makeLegalIdentifier(_pathColumn));
+        sharedSQL.append(dbColumnName);
         sharedSQL.append(" = ");
 
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
         singleEntrySQL.append("? WHERE ");
-        singleEntrySQL.append(_table.getSqlDialect().makeLegalIdentifier(_pathColumn));
+        singleEntrySQL.append(dbColumnName);
         singleEntrySQL.append(" = ?");
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
@@ -214,12 +236,22 @@ public class TableUpdaterFileListener implements FileListener
                 destPath = destPath + _pathGetter.getSeparatorSuffix();
             }
 
+            SQLFragment whereClause = new SQLFragment(" WHERE ");
+            if (destPath.startsWith("file:"))
+            {
+                // Consider paths file:/... and file:///...
+                String srcCore = srcPath.replaceFirst("^file:/+", "/");
+                whereClause.append(dbColumnName).append(" LIKE ").append("'file:").append(srcCore).append("%' OR ")
+                           .append(dbColumnName).append(" LIKE ").append("'file://").append(srcCore).append("%'");
+            }
+            else
+            {
+                whereClause.append(dbColumnName).append(" LIKE '").append(srcPath).append("%'");
+            }
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_table.getSqlDialect().makeLegalIdentifier(_pathColumn), Integer.toString(srcPath.length() + 1), "5000"))));
-            childPathsSQL.append(" WHERE ");
-            childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(_table.getSqlDialect().makeLegalIdentifier(_pathColumn))));
-            childPathsSQL.append(" = 1");
+            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
+            childPathsSQL.append(whereClause);
 
             int childRows = new SqlExecutor(schema).execute(childPathsSQL);
             LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + src + " to " + dest);
@@ -301,5 +333,41 @@ public class TableUpdaterFileListener implements FileListener
         selectFrag.append("WHERE ").append(dialect.makeLegalIdentifier(_pathColumn)).append(" IS NOT NULL\n");
 
         return selectFrag;
+    }
+
+    @NotNull
+    private String getSourcePath(File file, Container container)
+    {
+        // For uri pathGetter, check that file path exists in table, looking for legacy as well
+        if (_pathGetter.isType(Type.uri))
+        {
+            String srcPath = _pathGetter.get(file);
+            if (pathExists(srcPath, container))
+                return srcPath;
+
+            srcPath = file.toURI().toString();      // Legacy URI format (file:/users/...)
+            if (pathExists(srcPath, container))
+                return srcPath;
+
+            srcPath = file.getPath();               // File path format (/users/...)
+            if (pathExists(srcPath, container))
+                return srcPath;
+
+            // use original if none found, for directories
+        }
+
+        return _pathGetter.get(file);
+    }
+
+    private boolean pathExists(String srcPath, Container container)
+    {
+
+        SimpleFilter filter = (null != _table.getColumn("container")) ?
+                SimpleFilter.createContainerFilter(container) :
+                (null != _table.getColumn("folder")) ?
+                        SimpleFilter.createContainerFilter(container, "folder") :
+                        new SimpleFilter();
+        filter.addCondition(FieldKey.fromString(_pathColumn), srcPath);
+        return new TableSelector(_table, filter, null).exists();
     }
 }

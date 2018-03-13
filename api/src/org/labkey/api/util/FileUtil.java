@@ -281,11 +281,22 @@ public class FileUtil
         str = str.replace("\\", "/");
         if (str.matches("^[A-z]:/.*"))
             return new File(str).toURI();
-        
-        if (str.startsWith("/"))
-            str = "file://" + str;
-        str = str.replace(" ", "%20"); // Spaces in paths make URI unhappy
-        return URI.create(str);
+
+        String str2 = str;
+        if (str2.startsWith("/"))
+            str2 = "file://" + str;
+        str2 = str2.replace(" ", "%20"); // Spaces in paths make URI unhappy
+        try
+        {
+            return new URI(str2);
+        }
+        catch (URISyntaxException e)
+        {
+            // We're handling encoded and unencoded, so this can fail because of certain reserved chars;
+            if (str.startsWith("/"))
+                return new File(str).toPath().toUri();
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public static String getFileName(Path fullPath)

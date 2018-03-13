@@ -452,20 +452,20 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return result;
     }
 
-    protected List<ExpData> getExpDatasHelper(String canoncialURL, Container container)
+    protected List<ExpData> getExpDatasHelper(java.nio.file.Path path, Container container)
     {
         List<ExpData> list = new LinkedList<>();
 
         FlowService fs = ServiceRegistry.get(FlowService.class);
         if (null != fs)
         {
-            List<ExpData> f = fs.getExpDataByURL(canoncialURL, container);
+            List<ExpData> f = fs.getExpDataByURL(FileUtil.pathToString(path), container);
             list.addAll(f);
         }
         ExperimentService es = ExperimentService.get();
         if (null != es)
         {
-            ExpData d = es.getExpDataByURL(canoncialURL, null);
+            ExpData d = es.getExpDataByURL(path, null);
             if (null != d)
                 list.add(d);
         }

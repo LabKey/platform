@@ -454,6 +454,7 @@ public class ExceptionUtil
                 report.addParam("exceptionMessage", exceptionMessage);
                 report.addParam("requestURL", requestURL);
                 report.addParam("referrerURL", referrerURL);
+                report.addHostName();
 
                 if (level == ExceptionReportingLevel.HIGH)
                 {
