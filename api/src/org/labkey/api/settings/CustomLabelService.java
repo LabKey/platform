@@ -1,11 +1,11 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public interface CustomLabelService
 {
@@ -20,7 +20,7 @@ public interface CustomLabelService
 
     class CustomLabelServiceImpl implements CustomLabelService
     {
-        private static final ConcurrentNavigableMap<String, CustomLabelProvider> REGISTERED_PROVIDERS = new ConcurrentCaseInsensitiveSortedMap<>();
+        private static final ConcurrentMap<String, CustomLabelProvider> REGISTERED_PROVIDERS = new ConcurrentHashMap<>();
 
         @Override
         public void registerProvider(CustomLabelProvider customLabelProvider)
