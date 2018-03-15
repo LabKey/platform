@@ -34,7 +34,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
@@ -45,7 +45,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -597,7 +596,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             DataIteratorBuilder step1 = DataIteratorBuilder.wrap(step0);
             if (_dataClass.getNameExpression() != null)
             {
-                step1 = new NameExpressionDataIteratorBuilder(step1, _dataClass.getNameExpression());
+                step1 = new NameExpressionDataIteratorBuilder(step1, _dataClass.getNameExpression(), ExpDataClassDataTableImpl.this);
             }
 
             return LoggingDataIterator.wrap(step1.getDataIterator(context));
@@ -836,86 +835,6 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             }
             return hasNext;
         }
-    }
-
-    private class NameExpressionDataIteratorBuilder implements DataIteratorBuilder
-    {
-        final DataIteratorBuilder _pre;
-        private final String _nameExpression;
-
-        public NameExpressionDataIteratorBuilder(DataIteratorBuilder pre, String nameExpression)
-        {
-            _pre = pre;
-            _nameExpression = nameExpression;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _pre.getDataIterator(context);
-            return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _nameExpression));
-        }
-    }
-
-    private class NameExpressionDataIterator extends WrapperDataIterator
-    {
-        private final DataIteratorContext _context;
-        private final NameGenerator _nameGen;
-        private final Integer _nameCol;
-
-        private NameGenerator.State _state;
-
-        protected NameExpressionDataIterator(DataIterator di, DataIteratorContext context, String nameExpression)
-        {
-            super(DataIteratorUtil.wrapMap(di, false));
-            _context = context;
-            _nameGen = new NameGenerator(nameExpression, ExpDataClassDataTableImpl.this, false);
-            _state = _nameGen.createState(false, false);
-
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _nameCol = map.get("name");
-            assert _nameCol != null;
-        }
-
-        MapDataIterator getInput()
-        {
-            return (MapDataIterator)_delegate;
-        }
-
-        private BatchValidationException getErrors()
-        {
-            return _context.getErrors();
-        }
-
-        @Override
-        public Object get(int i)
-        {
-            if (i == _nameCol)
-            {
-                Object curName = super.get(_nameCol);
-                if (curName instanceof String)
-                    curName = StringUtils.isEmpty((String)curName) ? null : curName;
-
-                if (curName != null)
-                    return curName;
-
-                Map<String, Object> currentRow = getInput().getMap();
-
-                try
-                {
-                    String newName = _nameGen.generateName(_state, currentRow);
-                    if (!StringUtils.isEmpty(newName))
-                        return newName;
-                }
-                catch (NameGenerator.NameGenerationException e)
-                {
-                    getErrors().addRowError(new ValidationException(e.getMessage()));
-                }
-            }
-
-            return super.get(i);
-        }
-
     }
 
     private class DerivationDataIteratorBuilder implements DataIteratorBuilder

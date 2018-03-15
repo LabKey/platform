@@ -982,7 +982,6 @@ experiment/src/org/labkey/experiment/api/LogDataType.java -text
 experiment/src/org/labkey/experiment/api/Material.java -text
 experiment/src/org/labkey/experiment/api/MaterialInput.java -text
 experiment/src/org/labkey/experiment/api/MaterialSource.java -text
-experiment/src/org/labkey/experiment/api/NameGenerator.java -text
 experiment/src/org/labkey/experiment/api/Protocol.java -text
 experiment/src/org/labkey/experiment/api/ProtocolAction.java -text
 experiment/src/org/labkey/experiment/api/ProtocolActionPredecessor.java -text

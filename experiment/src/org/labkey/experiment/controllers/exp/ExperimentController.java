@@ -4942,7 +4942,7 @@ public class ExperimentController extends SpringActionController
             for (ExpMaterial material : materialInputs.keySet())
             {
                 ExpSampleSet ss = material.getSampleSet();
-                String keyName = UploadSamplesHelper.MATERIAL_INPUT_PARENT + "/" + ss.getName();
+                String keyName = ExpMaterial.MATERIAL_INPUT_PARENT + "/" + ss.getName();
                 parentInputNames.merge(keyName, material.getName(), (s1, s2) -> s1.concat(",").concat(s2));
             }
 
@@ -4951,7 +4951,7 @@ public class ExperimentController extends SpringActionController
             for (ExpData d : dataInputs.keySet())
             {
                 ExpDataClass dc = d.getDataClass();
-                String keyName = UploadSamplesHelper.DATA_INPUT_PARENT + "/" + dc.getName();
+                String keyName = ExpData.DATA_INPUT_PARENT + "/" + dc.getName();
                 parentInputNames.merge(keyName, d.getName(), (s1, s2) -> s1.concat(",").concat(s2));
             }
 

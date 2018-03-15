@@ -68,6 +68,7 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 import org.labkey.experiment.samples.UploadMaterialSetForm.NameFormatChoice;
@@ -75,8 +76,6 @@ import org.labkey.experiment.samples.UploadMaterialSetForm.NameFormatChoice;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,15 +85,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
-    public static final String MATERIAL_INPUT_PARENT = "MaterialInputs";
-    public static final String DATA_INPUT_PARENT = "DataInputs";
-    public static final String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
-    public static final String DATA_OUTPUT_CHILD = "DataOutputs";
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 
     UploadMaterialSetForm _form;
@@ -564,8 +558,8 @@ public class UploadSamplesHelper
     public static boolean isInputOutputHeader(String name)
     {
         String[] parts = name.split("\\.|/");
-        return parts[0].equalsIgnoreCase(DATA_INPUT_PARENT) || parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT) ||
-                parts[0].equalsIgnoreCase(DATA_OUTPUT_CHILD) || parts[0].equalsIgnoreCase(MATERIAL_OUTPUT_CHILD);
+        return parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) ||
+                parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD);
     }
 
     private boolean isReservedHeader(String name)
@@ -898,7 +892,7 @@ public class UploadSamplesHelper
             String[] parts = parentColName.split("\\.|/");
             if (parts.length == 2)
             {
-                if (parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT))
+                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
                     ExpMaterial sample = findMaterial(c, parts[1], parentValue);
                     if (sample != null)
@@ -906,7 +900,7 @@ public class UploadSamplesHelper
                     else
                         throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
-                else if (parts[0].equalsIgnoreCase(MATERIAL_OUTPUT_CHILD))
+                else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
                 {
                     ExpMaterial sample = findMaterial(c, parts[1], parentValue);
                     if (sample != null)
@@ -914,7 +908,7 @@ public class UploadSamplesHelper
                     else
                         throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
-                else if (parts[0].equalsIgnoreCase(DATA_INPUT_PARENT))
+                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
                 {
                     if (source != null)
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
@@ -924,7 +918,7 @@ public class UploadSamplesHelper
                     else
                         throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
-                else if (parts[0].equalsIgnoreCase(DATA_OUTPUT_CHILD))
+                else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
                 {
                     ExpData data = findData(c, user, parts[1], parentValue);
                     if (data != null)
@@ -1029,34 +1023,9 @@ public class UploadSamplesHelper
 
     private Set<Pair<String, String>> parentColumnAndNamePairs(Object value, String parentColName)
     {
-        return parentNames(value, parentColName)
+        return NameGenerator.parentNames(value, parentColName)
                 .map(o -> Pair.of(parentColName, o))
                 .collect(Collectors.toSet());
-    }
-
-    public static Stream<String> parentNames(Object value, String parentColName)
-    {
-        if (value == null)
-            return Stream.empty();
-
-        Stream<String> values;
-        if (value instanceof String)
-        {
-            values = Arrays.stream(((String)value).split(","));
-        }
-        else if (value instanceof Collection)
-        {
-            Collection<?> coll = (Collection)value;
-            values = coll.stream().map(String::valueOf);
-        }
-        else
-        {
-            throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
-        }
-
-        return values
-                .map(String::trim)
-                .filter(s -> !s.isEmpty());
     }
 
     public static Lsid.LsidBuilder generateSampleLSID(MaterialSource source)
