@@ -354,6 +354,7 @@ api/src/org/labkey/api/data/MultiValuedForeignKey.java -text
 api/src/org/labkey/api/data/MultiValuedLookupColumn.java -text
 api/src/org/labkey/api/data/MultiValuedRenderContext.java -text
 api/src/org/labkey/api/data/MvUtil.java -text
+api/src/org/labkey/api/data/NameGenerator.java -text
 api/src/org/labkey/api/data/NestableDataRegion.java -text
 api/src/org/labkey/api/data/NestableQueryView.java -text
 api/src/org/labkey/api/data/NestedRenderContext.java -text
@@ -532,6 +533,8 @@ api/src/org/labkey/api/dataiterator/FilterDataIterator.java -text
 api/src/org/labkey/api/dataiterator/ListofMapsDataIterator.java -text
 api/src/org/labkey/api/dataiterator/LoggingDataIterator.java -text
 api/src/org/labkey/api/dataiterator/MapDataIterator.java -text
+api/src/org/labkey/api/dataiterator/NameExpressionDataIterator.java -text
+api/src/org/labkey/api/dataiterator/NameExpressionDataIteratorBuilder.java -text
 api/src/org/labkey/api/dataiterator/Pump.java -text
 api/src/org/labkey/api/dataiterator/QueryDataIteratorBuilder.java -text
 api/src/org/labkey/api/dataiterator/RemoveDuplicatesDataIterator.java -text

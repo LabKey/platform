@@ -25,6 +25,8 @@ import java.util.Map;
 public interface ExpMaterial extends ExpProtocolOutput
 {
     String DEFAULT_CPAS_TYPE = "Material";
+    String MATERIAL_INPUT_PARENT = "MaterialInputs";
+    String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
 
     @Nullable
     ExpSampleSet getSampleSet();

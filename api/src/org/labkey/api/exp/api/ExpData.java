@@ -34,6 +34,8 @@ import java.sql.SQLException;
 public interface ExpData extends ExpProtocolOutput
 {
     String DEFAULT_CPAS_TYPE = "Data";
+    String DATA_INPUT_PARENT = "DataInputs";
+    String DATA_OUTPUT_CHILD = "DataOutputs";
 
     DataType getDataType();
     /** Strongly typed variant of getDataFileUrl() */
