@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -332,8 +333,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static VisitImpl fromMap(Map<String, Object> map, Container container)
     {
         // required properties
-        double seqNumMin = (double) map.get("sequencenummin");
-        double seqNumMax = map.containsKey("sequencenummax") ? (double) map.get("sequencenummax") : seqNumMin;
+        // For now, assume incoming SequenceNums could be BigDecimal or Double. TODO: Change this to BigDecimal always and migrate VisitImpl to work with BigDecimal.
+        double seqNumMin = (double)JdbcType.DOUBLE.convert(map.get("sequencenummin"));
+        double seqNumMax = map.containsKey("sequencenummax") ? (double)JdbcType.DOUBLE.convert(map.get("sequencenummax")) : seqNumMin;
         String label = map.containsKey("label") ? (String) map.get("label") : null;
         Character type = map.containsKey("type") ? (Character) map.get("type") : null;
 
