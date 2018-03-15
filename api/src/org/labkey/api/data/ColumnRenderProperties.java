@@ -676,8 +676,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         if (!oldClass.equals(newClass) && !IGNORE.contains(getJdbcType()))
             throw new IllegalStateException("Expected " + getJdbcType() + " to map to " + oldClass.getName() + " but it mapped to " + newClass);
 
-        // TODO: Temporary workaround for DataSpace tests (VisitImpl.fromMap() cast exception)
-        return JdbcType.DECIMAL == getJdbcType() ? oldClass : newClass;
+        return newClass;
     }
 
     public void setFacetingBehaviorType(FacetingBehaviorType type)
