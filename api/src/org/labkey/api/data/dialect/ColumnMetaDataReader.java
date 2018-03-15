@@ -101,5 +101,4 @@ public abstract class ColumnMetaDataReader
 
         return false;
     }
-
 }

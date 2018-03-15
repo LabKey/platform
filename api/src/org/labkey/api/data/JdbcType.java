@@ -234,6 +234,7 @@ public enum JdbcType
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
+        // TODO: Don't do this -- JdbcType should represent the actual type in the database. Callers can choose to use SMALLINT instead of TINYINT if they need to.
         this.sqlType = type==Types.TINYINT ? Types.SMALLINT : type;
         this.cls = cls;
         this.typeCls = typeCls;
