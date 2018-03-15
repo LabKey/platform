@@ -64,8 +64,6 @@ public class TableUpdaterFileListener implements FileListener
         String get(File f);
         /** @return the file path separator (typically '/' or '\' */
         String getSeparatorSuffix();
-
-        boolean isType(Type type);
     }
 
     public enum Type implements PathGetter
@@ -84,12 +82,6 @@ public class TableUpdaterFileListener implements FileListener
             {
                 return "/";
             }
-
-            @Override
-            public boolean isType(Type type)
-            {
-                return uri.ordinal() == type.ordinal();
-            }
         },
 
         /** Just uses getPath() to turn the File into a String */
@@ -106,12 +98,6 @@ public class TableUpdaterFileListener implements FileListener
             {
                 return File.separator;
             }
-
-            @Override
-            public boolean isType(Type type)
-            {
-                return filePath.ordinal() == type.ordinal();
-            }
         },
 
         /** Just uses getPath() to turn the File into a String, but replaces all backslashes with forward slashes */
@@ -127,12 +113,6 @@ public class TableUpdaterFileListener implements FileListener
             public String getSeparatorSuffix()
             {
                 return "/";
-            }
-
-            @Override
-            public boolean isType(Type type)
-            {
-                return filePathForwardSlash.ordinal() == type.ordinal();
             }
         }
     }
@@ -241,13 +221,16 @@ public class TableUpdaterFileListener implements FileListener
             {
                 // Consider paths file:/... and file:///...
                 String srcCore = srcPath.replaceFirst("^file:/+", "/");
-                whereClause.append(dbColumnName).append(" LIKE ").append("'file:").append(srcCore).append("%' OR ")
-                           .append(dbColumnName).append(" LIKE ").append("'file://").append(srcCore).append("%'");
+                String srcPath1 = "file:" + srcCore;
+                String srcPath2 = "file://" + srcCore;
+                whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath1), new SQLFragment(dbColumnName))).append(" = 1 OR ");
+                whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath2), new SQLFragment(dbColumnName))).append(" = 1");
             }
             else
             {
-                whereClause.append(dbColumnName).append(" LIKE '").append(srcPath).append("%'");
+                whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(dbColumnName))).append(" = 1");
             }
+
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
             childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
@@ -339,7 +322,7 @@ public class TableUpdaterFileListener implements FileListener
     private String getSourcePath(File file, Container container)
     {
         // For uri pathGetter, check that file path exists in table, looking for legacy as well
-        if (_pathGetter.isType(Type.uri))
+        if (Type.uri == _pathGetter)
         {
             String srcPath = _pathGetter.get(file);
             if (pathExists(srcPath, container))
