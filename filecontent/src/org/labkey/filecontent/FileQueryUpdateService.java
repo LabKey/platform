@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
@@ -200,8 +201,20 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
         else if (keys.containsKey(ExpDataTable.Column.DataFileUrl.name()))
         {
-            Object o = keys.get(ExpDataTable.Column. DataFileUrl.name());
-            filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), o);
+            String dataFileUrl = (String)keys.get(ExpDataTable.Column. DataFileUrl.name());
+            if (null != dataFileUrl)
+            {
+                dataFileUrl = dataFileUrl.replaceFirst("^file:/+", "/");
+                filter = new SimpleFilter(new SimpleFilter.OrClause(
+                        new CompareType.EqualsCompareClause(FieldKey.fromParts("DataFileUrl"), CompareType.EQUAL, dataFileUrl),
+                        new CompareType.EqualsCompareClause(FieldKey.fromParts("DataFileUrl"), CompareType.EQUAL, "file:" + dataFileUrl),
+                        new CompareType.EqualsCompareClause(FieldKey.fromParts("DataFileUrl"), CompareType.EQUAL, "file://" + dataFileUrl)
+                ));
+            }
+            else
+            {
+                throw new QueryUpdateServiceException("Either RowId, LSID, DataFileURL or AbsoluteFilePath is required to get ExpData.");
+            }
         }
         else if (keys.containsKey("AbsoluteFilePath"))
         {

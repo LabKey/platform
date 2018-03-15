@@ -1355,34 +1355,41 @@ public class FileContentController extends SpringActionController
                         java.nio.file.Path fileRootPath = service.getFileRootPath(getContainer());
                         if (null != fileRootPath)
                         {
-                            String relative = fileRootPath.relativize(FileUtil.stringToPath(getContainer(), (String) encodedUrl)).toString();
-                            if (null != relative)
+                            try
                             {
-                                if (!service.isCloudRoot(getContainer()))
-                                    relative = relative.replace(FileContentService.FILES_LINK + "/", "");
-                                Map<String, Object> row = new HashMap<>();
-                                row.put("dataFileUrl", relative);
-                                row.put("rowId", data.get("RowId"));
-                                row.put("name", data.get("Name"));
-                                if (null != form.getCustomProperties())
+                                String relative = FileUtil.relativizeUnix(fileRootPath, FileUtil.stringToPath(getContainer(), (String) encodedUrl), false);
+                                if (null != relative)
                                 {
-                                    for (String property : form.getCustomProperties())
+                                    if (!service.isCloudRoot(getContainer()))
+                                        relative = relative.replace(FileContentService.FILES_LINK + "/", "");
+                                    Map<String, Object> row = new HashMap<>();
+                                    row.put("dataFileUrl", relative);
+                                    row.put("rowId", data.get("RowId"));
+                                    row.put("name", data.get("Name"));
+                                    if (null != form.getCustomProperties())
                                     {
-                                        ColumnInfo column = tableInfo.getColumn(property);
-                                        if (null != column)
+                                        for (String property : form.getCustomProperties())
                                         {
-                                            Map<String, Object> map = new HashMap<>();
-                                            map.put("value", data.get(property));
-                                            StringExpression url = column.getEffectiveURL();
-                                            if (null != url)
-                                                map.put("url", url.eval(data));
+                                            ColumnInfo column = tableInfo.getColumn(property);
+                                            if (null != column)
+                                            {
+                                                Map<String, Object> map = new HashMap<>();
+                                                map.put("value", data.get(property));
+                                                StringExpression url = column.getEffectiveURL();
+                                                if (null != url)
+                                                    map.put("url", url.eval(data));
 
-                                            // Display value for a lookup has already been handled by Exp.Data
-                                            row.put(property, map);
+                                                // Display value for a lookup has already been handled by Exp.Data
+                                                row.put(property, map);
+                                            }
                                         }
                                     }
+                                    rows.add(row);
                                 }
-                                rows.add(row);
+                            }
+                            catch (IOException e)
+                            {
+                                // Ignore
                             }
                         }
                     }

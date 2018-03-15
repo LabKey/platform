@@ -599,6 +599,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // than one scope pointed at the core database (e.g., external schemas). See #17077 (pg example) and #19177 (ss example)
         for (DbScope scope : DbScope.getDbScopes())
             scope.getSqlDialect().prepare(scope);
+
+        // Now that we know the standard containers have been created, add a listener that warms the just-cleared caches with
+        // core.Containers meta data and a few common containers. This may prevent some deadlocks during upgrade, #33550.
+        CacheManager.addListener(() -> {
+            ContainerManager.getRoot();
+            ContainerManager.getHomeContainer();
+            ContainerManager.getSharedContainer();
+        });
     }
 
 
