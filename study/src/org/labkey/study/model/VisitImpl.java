@@ -344,7 +344,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             visit.setRowId((int) map.get("rowid"));
         if (map.containsKey("description"))
             visit.setDescription((String) map.get("description"));
-        if (map.containsKey("showbydefalut"))
+        if (map.containsKey("showbydefault"))
             visit.setShowByDefault((boolean) map.get("showbydefault"));
         if (map.containsKey("displayorder"))
             visit.setDisplayOrder((int) map.get("displayorder"));
