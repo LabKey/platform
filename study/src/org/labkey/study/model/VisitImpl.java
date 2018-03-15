@@ -355,7 +355,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         if (map.containsKey("sequencenumhandling"))
             visit.setSequenceNumHandling((String) map.get("sequencenumhandling"));
         if (map.containsKey("protocolday"))
-            visit.setProtocolDay((double) map.get("protocolday"));
+            visit.setProtocolDay((double)JdbcType.DOUBLE.convert(map.get("protocolday")));
 
         return visit;
     }
