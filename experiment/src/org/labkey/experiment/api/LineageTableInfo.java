@@ -298,15 +298,12 @@ public class LineageTableInfo extends VirtualTable
                     "UNION ALL\n" +
                     "\n" +
                     "SELECT container, CAST('Material' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
-                    "FROM exp.Material\n");
-            if (!_veryNewHotness)
-            {
-                    sql.append("\n" +
+                    "FROM exp.Material\n" +
+                    "\n" +
                     "UNION ALL\n" +
                     "\n" +
                     "SELECT container, CAST('ExperimentRun' AS VARCHAR(50)) AS exptype, CAST(NULL AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
                     "FROM exp.ExperimentRun\n");
-            }
             return sql;
         }
     }

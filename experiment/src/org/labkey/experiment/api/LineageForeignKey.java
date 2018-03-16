@@ -87,14 +87,10 @@ class LineageForeignKey extends LookupForeignKey
         {
             addLineageColumn("All", _parents, null, null, null);
             //addLineageColumn("Nearest", _parents, null, null, null); // TODO: filter to the nearest parent.  Not sure if this is still needed
-            if (_veryNewHotness)
-                addLineageColumn("First", _parents, 1, null, null);
 
-            //addLevelColumn("Runs", "Run", ...
             addLevelColumn("Data", "Data", () -> ExperimentService.get().getDataClasses(_userSchema.getContainer(), _userSchema.getUser(), true));
             addLevelColumn("Materials", "Material", () -> ExperimentService.get().getSampleSets(_userSchema.getContainer(), _userSchema.getUser(), true));
-            if (!_veryNewHotness)
-                addLevelColumn("Runs", "ExperimentRun", () -> ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(_userSchema.getContainer()));
+            addLevelColumn("Runs", "ExperimentRun", () -> ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(_userSchema.getContainer()));
 
             return this;
         }
@@ -275,19 +271,11 @@ class LineageForeignKey extends LookupForeignKey
             // TODO: Nearest
 
             // First level children or parents
-            int depth;
-            if (_veryNewHotness)
-            {
-                depth = 1;
-            }
-            else
-            {
-                // NOTE: We currently only add the LineageForeignKey to exp.Data and exp.Material tables
-                // NOTE: so the first generation in the lineage will always be an experiment run.  To get
-                // NOTE: the first data or material generation, we must skip the run generation -- hence depth of 2.
-                // NOTE: If we ever add the magic Inputs and Outputs columns to the Runs table, we'll need to change the depths.
-                depth = _expType.equals("ExperimentRuns") ? 1 : 2;
-            }
+            // NOTE: We currently only add the LineageForeignKey to exp.Data and exp.Material tables
+            // NOTE: so the first generation in the lineage will always be an experiment run.  To get
+            // NOTE: the first data or material generation, we must skip the run generation -- hence depth of 2.
+            // NOTE: If we ever add the magic Inputs and Outputs columns to the Runs table, we'll need to change the depths.
+            int depth = _expType.equals("ExperimentRuns") ? 1 : 2;
             addLineageColumn("First", _parents, depth, _expType, null);
 
             for (ExpObject item : _items.get())

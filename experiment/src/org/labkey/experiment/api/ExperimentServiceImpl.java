@@ -2055,22 +2055,12 @@ public class ExperimentServiceImpl implements ExperimentService
             Integer parentRowId = (Integer)m.get("parent_rowid");
             Integer childRowId = (Integer)m.get("child_rowid");
 
+            String role;
             if (options.isVeryNewHotness())
-            {
-                Integer runId = (Integer)m.get("runId");
-                String runLsid = (String)m.get("runLsid");
-                if (runId != null && runLsid != null)
-                {
-                    edges.add(new ExpLineage.Edge(parentLSID, runLsid, "no role"));
-                    edges.add(new ExpLineage.Edge(runLsid, childLSID, "no role"));
-                    runids.add(runId);
-                }
-            }
+                role = "no role";
             else
-            {
-                String role = (String)m.get("role");
-                edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
-            }
+                role = (String)m.get("role");
+            edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
 
             // process parents
             if ("Data".equals(parentExpType))
@@ -2480,8 +2470,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public int removeEdgesForRun(int runId)
     {
-        LOG.info("Removing edges for run " + runId);
-        return Table.delete(getTinfoEdge(), new SimpleFilter("runId", runId));
+        int count = Table.delete(getTinfoEdge(), new SimpleFilter("runId", runId));
+        LOG.info("Removed edges for run " + runId + "; count = " + count);
+        return count;
     }
 
     // cleanup edges for the object
@@ -2492,56 +2483,41 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // prepare for bulk insert of edges
-    private void prepEdgeForInsert(List<List<Object>> params, Set<Pair<String, String>> seenEdges, Set<String> seenNodes,
-                                   Map<String, Object> from, Map<String, Object> to, int runId)
+    private void prepEdgeForInsert(List<List<Object>> params, @NotNull String fromLsid, @NotNull String toLsid, int runId)
     {
         assert getExpSchema().getScope().isTransactionActive();
-
-        // from object
-        String fromLsid = (String)from.get("LSID");
-        Objects.requireNonNull(fromLsid, "lsid");
-
-        // to object
-        String toLsid = (String)to.get("LSID");
-        Objects.requireNonNull(fromLsid, "lsid");
 
         // ignore cycles from and to itself
         if (fromLsid.equals(toLsid))
             return;
 
-        // ignore duplicate edges within the same run
-        Pair<String, String> key = Pair.of(fromLsid, toLsid);
-        if (seenEdges.contains(key))
-            return;
-        seenEdges.add(key);
-
-        String fromContainerId = (String)from.get("container");
-        Objects.requireNonNull(fromContainerId, "containerId");
-
-        String toContainerId = (String)to.get("container");
-        Objects.requireNonNull(toContainerId, "containerId");
-
-        if (!seenNodes.contains(fromLsid))
-        {
-            seenNodes.add(fromLsid);
-            Container fromContainer = ContainerManager.getForId(fromContainerId);
-            if (fromContainer == null)
-                throw new IllegalArgumentException();
-
-            ensureEdgeObject(fromContainer, fromLsid, (String) from.get("cpasType"));
-        }
-
-        if (!seenNodes.contains(toLsid))
-        {
-            seenNodes.add(toLsid);
-            Container toContainer = ContainerManager.getForId(toContainerId);
-            if (toContainer == null)
-                throw new IllegalArgumentException();
-
-            ensureEdgeObject(toContainer, toLsid, (String) to.get("cpasType"));
-        }
-
         params.add(Arrays.asList(fromLsid, toLsid, runId));
+    }
+
+    // insert objects for any LSIDs not yet in exp.object
+    private void ensureEdgeObjects(Map<String, Map<String, Object>> allNodesByLsid)
+    {
+        SQLFragment sql = new SQLFragment("SELECT lsid FROM (\n");
+        sql.append("VALUES\n");
+        String sep = "";
+        for (String lsid : allNodesByLsid.keySet())
+        {
+            sql.append(sep).append("(?)").add(lsid);
+            sep = ",\n";
+        }
+        sql.append(") AS t (lsid)\n");
+        sql.append("WHERE NOT EXISTS (SELECT 1 FROM ").append(getTinfoObject(), "o").append(" WHERE o.objectUri = lsid)");
+
+        SqlSelector ss = new SqlSelector(getExpSchema(), sql);
+        ss.getCollection(String.class).forEach(missingObjectLsid -> {
+            Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
+            Container container = ContainerManager.getForId((String)missingObjectRow.get("container"));
+            if (container == null)
+                throw new IllegalArgumentException();
+            String cpasType = (String)missingObjectRow.get("cpasType");
+            ensureEdgeObject(container, missingObjectLsid, cpasType);
+        });
+
     }
 
     private int ensureEdgeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType)
@@ -2607,21 +2583,15 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void syncRunEdges(ExpRun run)
     {
-        syncRunEdges(run.getRowId());
+        syncRunEdges(run.getRowId(), run.getLSID(), run.getContainer());
     }
 
-    public void syncRunEdges(Collection<Integer> runIds)
+    public void syncRunEdges(int runId, String runLsid, Container runContainer)
     {
-        for (Integer runId : runIds)
-            syncRunEdges(runId);
+        syncRunEdges(runId, runLsid, runContainer, true);
     }
 
-    public void syncRunEdges(int runId)
-    {
-        syncRunEdges(runId, true);
-    }
-
-    private void syncRunEdges(int runId, boolean deleteFirst)
+    private void syncRunEdges(int runId, String runLsid, Container runContainer, boolean deleteFirst)
     {
         CPUTimer timer = new CPUTimer("sync edges");
         timer.start();
@@ -2654,36 +2624,47 @@ public class ExperimentServiceImpl implements ExperimentService
             if (deleteFirst)
                 removeEdgesForRun(runId);
 
-            int edgeCount = (fromDataLsids.size()     * (toDataLsids.size() + toMaterialLsids.size())) +
-                            (fromMaterialLsids.size() * (toDataLsids.size() + toMaterialLsids.size()));
+            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size();
             LOG.info(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
-            Set<Pair<String, String>> seenEdges = new HashSet<>(edgeCount);
-            Set<String> seenNodes = new HashSet<>(edgeCount);
-            List<List<Object>> params = new ArrayList<>(edgeCount);
-
-            // create edge for each input and output combination
-            for (Map<String, Object> fromDataLsid : fromDataLsids)
+            if (edgeCount > 0)
             {
+                // ensure objects first
+                ensureEdgeObject(runContainer, runLsid, null);
+
+                Map<String, Map<String, Object>> allNodesByLsid = new HashMap<>();
+                fromDataLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
+                fromMaterialLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
+                toDataLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
+                toMaterialLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
+                ensureEdgeObjects(allNodesByLsid);
+
+                List<List<Object>> params = new ArrayList<>(edgeCount);
+
+                //
+                // from lsid -> run lsid
+                //
+
+                for (Map<String, Object> fromDataLsid : fromDataLsids)
+                    prepEdgeForInsert(params, (String) fromDataLsid.get("lsid"), runLsid, runId);
+
+                for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
+                    prepEdgeForInsert(params, (String) fromMaterialLsid.get("lsid"), runLsid, runId);
+
+
+                //
+                // run lsid -> to lsid
+                //
+
                 for (Map<String, Object> toDataLsid : toDataLsids)
-                    prepEdgeForInsert(params, seenEdges, seenNodes, fromDataLsid, toDataLsid, runId);
+                    prepEdgeForInsert(params, runLsid, (String) toDataLsid.get("lsid"), runId);
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    prepEdgeForInsert(params, seenEdges, seenNodes, fromDataLsid, toMaterialLsid, runId);
+                    prepEdgeForInsert(params, runLsid, (String) toMaterialLsid.get("lsid"), runId);
+
+                insertEdges(params);
             }
-
-            // create edge for each input and output combination
-            for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
-            {
-                for (Map<String, Object> toDataLsid : toDataLsids)
-                    prepEdgeForInsert(params, seenEdges, seenNodes, fromMaterialLsid, toDataLsid, runId);
-
-                for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    prepEdgeForInsert(params, seenEdges, seenNodes, fromMaterialLsid, toMaterialLsid, runId);
-            }
-
-            insertEdges(params);
 
             tx.commit();
             timer.stop();
@@ -2701,12 +2682,19 @@ public class ExperimentServiceImpl implements ExperimentService
                 Table.delete(getTinfoEdge());
             }
 
-            List<Integer> runIds = new TableSelector(getTinfoExperimentRun(), singleton("rowId"), null, new Sort("rowId")).getArrayList(Integer.class);
+            Collection<Map<String, Object>> runs = new TableSelector(getTinfoExperimentRun(),
+                    getTinfoExperimentRun().getColumns("rowId", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
             try (Timing t = MiniProfiler.step("create edges"))
             {
-                LOG.info("Rebuilding edges for " + runIds.size() + " runs");
-                for (Integer runId : runIds)
-                    syncRunEdges(runId, false);
+                LOG.info("Rebuilding edges for " + runs.size() + " runs");
+                for (Map<String, Object> run : runs)
+                {
+                    Integer runId = (Integer)run.get("rowId");
+                    String runLsid = (String)run.get("lsid");
+                    String containerId = (String)run.get("container");
+                    Container runContainer = ContainerManager.getForId(containerId);
+                    syncRunEdges(runId, runLsid, runContainer, false);
+                }
             }
 
             if (timing != null)
@@ -3791,10 +3779,10 @@ public class ExperimentServiceImpl implements ExperimentService
             // These are usually deleted when the run is deleted (unless the run is in a different container)
             // and would be cleaned up when deleting the exp.Material and exp.Data in this container at the end of this method.
             // However, we need to delete any exp.edge referenced by exp.object before calling deleteAllObjects() for this container.
-            String deleteObjEdges = "DELETE FROM " + getTinfoEdge() + " WHERE EXISTS " +
-                    "(SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ? " +
-                    "AND edge.fromLsid = ObjectUri OR edge.toLsid = ObjectUri)";
-            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c);
+            String deleteObjEdges = "DELETE FROM " + getTinfoEdge() + "\n" +
+                    "WHERE fromLsid IN (SELECT ObjectUri FROM " + getTinfoObject() + " WHERE Container = ?)\n" +
+                    "   OR toLsid   IN (SELECT ObjectUri FROM " + getTinfoObject() + " WHERE Container = ?)";
+            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c);
 
             OntologyManager.deleteAllObjects(c, user);
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
@@ -5184,7 +5172,10 @@ public class ExperimentServiceImpl implements ExperimentService
 
             uncacheLineageGraph();
 
-            syncRunEdges(runLsidToRowId.values());
+            for (Map.Entry<String, Integer> run : runLsidToRowId.entrySet())
+            {
+                syncRunEdges(run.getValue(), run.getKey(), _container, false);
+            }
         }
 
         public boolean isEmpty()
