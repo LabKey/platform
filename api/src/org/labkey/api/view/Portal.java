@@ -646,7 +646,7 @@ public class Portal
 
         try
         {
-            insertPortalPage(c, pageId, index, null);
+            insertPortalPage(getTableInfoPortalPages(), c, pageId, index, null);
         }
         catch (SQLException | DataIntegrityViolationException x)
         {
@@ -739,11 +739,11 @@ public class Portal
                     if (mustUpdateIndexes)
                         p.setIndex(validPageIndex);
                     if (currentPages.containsKey(p.getPageId()))
-                        Table.update(null, portalTable, p, new Object[]{p.getContainer(), p.getPageId()});
+                        _insertOrUpdate(portalTable, p, true);
                     else
                     {
                         assert mustUpdateIndexes;
-                        insertPortalPage(c, p);
+                        insertPortalPage(portalTable, c, p);
                     }
                     validPageIndex -= 1;
                 }
@@ -761,23 +761,133 @@ public class Portal
         }
     }
 
-    private static PortalPage insertPortalPage(Container c, String pageId, int index, @Nullable String caption) throws SQLException
+    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption) throws SQLException
     {
         PortalPage p = new PortalPage();
         p.setPageId(pageId);
         p.setIndex(index);
         if (null != caption)
             p.setCaption(caption);
-        return insertPortalPage(c, p);
+        return insertPortalPage(portalTable, c, p);
     }
 
-    private static PortalPage insertPortalPage(Container c, PortalPage p) throws SQLException
+    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, PortalPage p) throws SQLException
     {
         p.setEntityId(new GUID());
         p.setContainer(new GUID(c.getId()));
         p.setType("portal");
-        Table.insert(null, getTableInfoPortalPages(), p);
+        _insertOrUpdate(portalTable, p, false);
         return p;
+    }
+
+    private static void _insertOrUpdate(TableInfo portalTable, PortalPage p, boolean update)
+    {
+        int count = 0;
+        String legalIndexName = portalTable.getSqlDialect().makeLegalIdentifier("Index");
+        if (!update)
+        {
+            // Try insert; SQL checks if pageId or index is already there and doesn't insert in those cases.
+            List<String> insertColumns = new ArrayList<>();
+            SQLFragment insertSQL = new SQLFragment("INSERT INTO ");
+
+            insertColumns.add("EntityId");
+            insertSQL.add(p.getEntityId());
+            insertColumns.add("Container");
+            insertSQL.add(p.getContainer());
+            insertColumns.add("PageId");
+            insertSQL.add(p.getPageId());
+            insertColumns.add(legalIndexName);
+            insertSQL.add(p.getIndex());
+            insertColumns.add("Caption");
+            insertSQL.add(p.getCaption());
+            insertColumns.add("Hidden");
+            insertSQL.add(p.isHidden());
+            insertColumns.add("Type");
+            insertSQL.add(p.getType());
+            insertColumns.add("Action");
+            insertSQL.add(p.getAction());
+            insertColumns.add("TargetFolder");
+            insertSQL.add(p.getTargetFolder());
+            insertColumns.add("Permanent");
+            insertSQL.add(p.isPermanent());
+            insertColumns.add("Properties");
+            insertSQL.add(p.getProperties());
+
+            insertSQL.append(portalTable.getSelectName())
+                    .append("\n(")
+                    .append(StringUtils.join(insertColumns, ", "))
+                    .append(")\n")
+                    .append(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
+                    .add(p.getPageId())
+                    .append("SELECT PageId FROM ")
+                    .append(portalTable.getSelectName())
+                    .append(" WHERE Container = ? AND PageId = ?) AND\n")
+                    .add(p.getContainer()).add(p.getPageId())
+                    .append(" ? NOT IN (SELECT ").append(legalIndexName).append(" FROM ")
+                    .add(p.getIndex())
+                    .append(portalTable.getSelectName())
+                    .append(" WHERE Container = ?))")
+                    .add(p.getContainer());
+            count = new SqlExecutor(portalTable.getSchema()).execute(insertSQL);
+        }
+
+        if (0 == count)
+        {
+            // Either we're only updating or insert found that pageId or index is already there.
+            // If index is already there for a different page, update will update other fields, but not index.
+            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            updateSQL.append(portalTable.getSelectName());
+
+            SQLFragment indexSQL = new SQLFragment("CASE WHEN ? NOT IN\n(SELECT ");
+            indexSQL.append(legalIndexName).append(" FROM ")
+                    .add(p.getIndex())
+                    .append(portalTable.getSelectName())
+                    .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").append(legalIndexName).append(" END\n")
+                    .add(p.getContainer()).add(p.getPageId()).add(p.getIndex());
+
+            if (portalTable.getSqlDialect().isPostgreSQL())
+            {
+                List<String> updateColumns = new ArrayList<>();
+                updateColumns.add(legalIndexName);
+                updateColumns.add("Caption");
+                updateColumns.add("Hidden");
+                updateColumns.add("Type");
+                updateColumns.add("Action");
+                updateColumns.add("TargetFolder");
+                updateColumns.add("Permanent");
+                updateColumns.add("Properties");
+
+                updateSQL.append("\nSET (")
+                        .append(StringUtils.join(updateColumns, ", "))
+                        .append(") =\n")
+                        .append("(")
+                        .append(indexSQL)
+
+                        .append(", ?, ?, ?, ?, ?, ?, ?)\n");
+
+            }
+            else
+            {       // SQL Server
+                updateSQL.append("\nSET ")
+                        .append(legalIndexName).append(" = ").append(indexSQL).append(", ")
+                        .append("Caption").append(" = ?, ")
+                        .append("Hidden").append(" = ?, ")
+                        .append("Type").append(" = ?, ")
+                        .append("Action").append(" = ?, ")
+                        .append("TargetFolder").append(" = ?, ")
+                        .append("Permanent").append(" = ?, ")        
+                        .append("Properties").append(" = ? \n");
+            }
+
+            updateSQL.add(p.getCaption()).add(p.isHidden()).add(p.getType()).add(p.getAction())
+                    .add(p.getTargetFolder()).add(p.isPermanent()).add(p.getProperties())
+                    .append("WHERE Container = ? AND PageId = ?")
+                    .add(p.getContainer()).add(p.getPageId());
+
+            count = new SqlExecutor(portalTable.getSchema()).execute(updateSQL);
+            if (0 == count)
+                LOG.warn((update ? "Update" : "Insert") + " failed for page '" + p.pageId + "' in container '" + ContainerManager.getForId(p.getContainer()).getPath() + "'");
+        }
     }
 
     public static void swapPageIndexes(Container c, PortalPage page1, PortalPage page2)
