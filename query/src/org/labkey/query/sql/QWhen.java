@@ -40,14 +40,14 @@ public class QWhen extends QExpr
     }
 
     @Override @NotNull
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         QNode valueChild = getLastChild();
         if (valueChild instanceof QExpr)
         {
-            return ((QExpr)valueChild).getSqlType();
+            return ((QExpr)valueChild).getJdbcType();
         }
-        return super.getSqlType();
+        return super.getJdbcType();
     }
 
     @Override

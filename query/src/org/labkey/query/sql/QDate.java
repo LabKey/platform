@@ -52,7 +52,7 @@ public class QDate extends QExpr implements IConstant
         builder.append("{d ").append(getTokenText()).append("}");
     }
 
-    public @NotNull JdbcType getSqlType()
+    public @NotNull JdbcType getJdbcType()
     {
         return JdbcType.DATE;
     }

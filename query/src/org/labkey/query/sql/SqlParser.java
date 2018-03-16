@@ -1551,7 +1551,7 @@ public class SqlParser
                 assertTrue(test.first + " no result and no error!", null != e || !errors.isEmpty());
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);
-                assertEquals(e.getSqlType(), test.second);
+                assertEquals(e.getJdbcType(), test.second);
             }
         }
 

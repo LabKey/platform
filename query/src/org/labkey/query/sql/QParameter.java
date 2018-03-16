@@ -26,11 +26,11 @@ import org.labkey.api.query.QueryService;
  */
 public class QParameter extends QExpr implements QueryService.ParameterDecl
 {
-    QNode _decl;
-    final String _name;
-    final ParameterType _type;
-    final boolean _required;
-    final Object _defaultValue;
+    private final QNode _decl;
+    private final String _name;
+    private final ParameterType _type;
+    private final boolean _required;
+    private final Object _defaultValue;
 
 
     QParameter(QNode decl, String name, ParameterType type, boolean required, Object def)
@@ -58,13 +58,6 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
 
     @Override
     public JdbcType getJdbcType()
-    {
-        return _type.type;
-    }
-
-    @NotNull
-    @Override
-    public JdbcType getSqlType()
     {
         return _type.type;
     }

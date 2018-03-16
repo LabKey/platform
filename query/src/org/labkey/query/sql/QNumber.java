@@ -101,7 +101,7 @@ public class QNumber extends QExpr implements IConstant
         builder.append(getValueString());
     }
 
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         return _sqlType;
     }

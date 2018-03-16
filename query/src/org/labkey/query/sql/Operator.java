@@ -108,7 +108,7 @@ public enum Operator
                     for (QNode operand : operands)
                     {
                         SQLFragment sqlf = ((QExpr) operand).getSqlFragment(builder.getDialect(), query);
-                        JdbcType type = ((QExpr) operand).getSqlType();
+                        JdbcType type = ((QExpr) operand).getJdbcType();
                         if (null != builder.getDialect())
                             sqlf = builder.getDialect().implicitConvertToString(type, sqlf);
                         terms.add(sqlf);

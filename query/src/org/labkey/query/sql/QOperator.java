@@ -97,7 +97,7 @@ final public class QOperator extends QExpr
     }
 
     @Override @NotNull
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         if (_op.getResultType() == Operator.ResultType.bool)
         {
@@ -112,7 +112,7 @@ final public class QOperator extends QExpr
             return getChildrenSqlType();
         }
 
-        return super.getSqlType();
+        return super.getJdbcType();
     }
 
     @Override

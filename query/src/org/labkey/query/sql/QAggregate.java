@@ -159,7 +159,7 @@ public class QAggregate extends QExpr
     }
 
     @Override @NotNull
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         if (getType() == Type.COUNT)
         {
@@ -170,7 +170,7 @@ public class QAggregate extends QExpr
             return JdbcType.VARCHAR;
         }
 		if (getFirstChild() != null)
-			return ((QExpr)getFirstChild()).getSqlType();
+			return ((QExpr)getFirstChild()).getJdbcType();
         return JdbcType.OTHER;
     }
 

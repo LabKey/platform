@@ -51,7 +51,7 @@ public class QTimestamp extends QExpr implements IConstant
         builder.append("{ts " + getTokenText() + "}");
     }
 
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         return JdbcType.TIMESTAMP;
     }

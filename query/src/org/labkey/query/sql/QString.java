@@ -33,7 +33,7 @@ public class QString extends QExpr implements IConstant
         return str;
     }
 
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         return JdbcType.VARCHAR;
     }

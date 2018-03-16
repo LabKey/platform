@@ -1994,7 +1994,7 @@ groupByLoop:
             QExpr expr = getResolvedField();
 
             // NOTE SqlServer does not like predicates (A=B) in select list, try to help out
-            if (expr instanceof QMethodCall && expr.getSqlType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer())
+            if (expr instanceof QMethodCall && expr.getJdbcType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer())
             {
                 b.append("CASE WHEN (");
                 expr.appendSql(b, _query);
@@ -2047,7 +2047,7 @@ groupByLoop:
 
         public JdbcType getJdbcType()
         {
-            return null != _resolved ? _resolved.getSqlType() : JdbcType.NULL;
+            return null != _resolved ? _resolved.getJdbcType() : JdbcType.NULL;
         }
 
 

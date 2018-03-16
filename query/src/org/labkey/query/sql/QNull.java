@@ -42,7 +42,7 @@ public class QNull extends QExpr implements IConstant
     }
 
     @Override
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         return JdbcType.NULL;
     }

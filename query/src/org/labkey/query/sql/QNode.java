@@ -413,7 +413,7 @@ abstract public class QNode implements Cloneable
         private void test(String expr, JdbcType t)
         {
             QExpr n = bind(expr);
-            assertEquals(n.getSqlType(), t);
+            assertEquals(n.getJdbcType(), t);
         }
 
 

@@ -23,7 +23,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ColumnInfo;
 
 import java.util.List;
@@ -69,7 +68,7 @@ abstract public class QExpr extends QNode
     }
 
     @NotNull
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         return JdbcType.OTHER;
     }
@@ -95,7 +94,7 @@ abstract public class QExpr extends QNode
 
     public ColumnInfo createColumnInfo(SQLTableInfo table, String name, final Query query)
     {
-        return new ExprColumn(table, name, new SQLFragment("{{expr}}"), getSqlType())
+        return new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
@@ -129,7 +128,7 @@ abstract public class QExpr extends QNode
         {
             if (qNode instanceof QExpr)
             {
-                JdbcType nextType = ((QExpr) qNode).getSqlType();
+                JdbcType nextType = ((QExpr) qNode).getJdbcType();
                 result = JdbcType.promote(result, nextType);
             }
             else

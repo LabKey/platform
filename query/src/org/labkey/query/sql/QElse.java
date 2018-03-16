@@ -42,7 +42,7 @@ public class QElse extends QExpr
     }
 
     @Override
-    public @NotNull JdbcType getSqlType()
+    public @NotNull JdbcType getJdbcType()
     {
         return getChildrenSqlType();
     }

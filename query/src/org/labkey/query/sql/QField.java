@@ -155,7 +155,7 @@ public class QField extends QInternalExpr
     }
 
 
-    public @NotNull JdbcType getSqlType()
+    public @NotNull JdbcType getJdbcType()
     {
         if (_column != null)
             return _column.getJdbcType();

@@ -51,7 +51,7 @@ public class QCase extends QExpr
     }
 
     @Override
-    public @NotNull JdbcType getSqlType()
+    public @NotNull JdbcType getJdbcType()
     {
         if (!_switch)
             return getChildrenSqlType();

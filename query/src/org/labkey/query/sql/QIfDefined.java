@@ -72,10 +72,10 @@ public class QIfDefined extends QExpr
 
     @NotNull
     @Override
-    public JdbcType getSqlType()
+    public JdbcType getJdbcType()
     {
         if (isDefined)
-            return ((QExpr)getFirstChild()).getSqlType();
+            return ((QExpr)getFirstChild()).getJdbcType();
         else
             return JdbcType.OTHER;
     }
