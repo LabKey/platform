@@ -57,7 +57,7 @@ public class TestDomainKind extends DomainKind
     {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
         baseFields.add(new PropertyStorageSpec("RowId", JdbcType.INTEGER, 0, PropertyStorageSpec.Special.PrimaryKey, false, true, null));       // pk
-        baseFields.add(new PropertyStorageSpec("Container", JdbcType.VARCHAR).setEntityId(true));
+        baseFields.add(new PropertyStorageSpec("Container", JdbcType.GUID).setNullable(false));
         baseFields.add(new PropertyStorageSpec("Comment", JdbcType.VARCHAR));
         baseFields.add(new PropertyStorageSpec("Created", JdbcType.TIMESTAMP));
         baseFields.add(new PropertyStorageSpec("CreatedBy", JdbcType.INTEGER));

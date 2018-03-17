@@ -76,13 +76,13 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
         baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
-        baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true));
+        baseFields.add(createFieldSpec("Container", JdbcType.GUID).setNullable(false));
         baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
         baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
         baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
         baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
         baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
-        baseFields.add(createFieldSpec("ProjectId", JdbcType.VARCHAR).setEntityId(true));
+        baseFields.add(createFieldSpec("ProjectId", JdbcType.GUID));  // Nullable
         _baseFields = Collections.unmodifiableSet(baseFields);
     }
 

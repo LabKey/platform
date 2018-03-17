@@ -124,18 +124,17 @@ public class PropertyStorageSpec
         }
     }
 
-    String name;
-    JdbcType jdbcType;
+    private String name;
+    private JdbcType jdbcType;
     private String typeURI;
     boolean primaryKey = false;
     boolean primaryKeyNonClustered = false;
     boolean nullable = true;
     boolean autoIncrement = false;
     boolean isMvEnabled = false;
-    boolean entityId = false;
     private String description;
     private String importAliases;
-    Integer size = DEFAULT_SIZE;
+    private Integer size = DEFAULT_SIZE;
     private Object defaultValue = null;
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
@@ -318,22 +317,6 @@ public class PropertyStorageSpec
     public PropertyStorageSpec setAutoIncrement(boolean autoIncrement)
     {
         this.autoIncrement = autoIncrement;
-        return this;
-    }
-
-
-    public boolean isEntityId()
-    {
-        return entityId;
-    }
-
-    /**
-     * defaults false if not set
-     * Assumes that the JdbcType is JdbcType.VARCHAR. Enforced in dialect.
-     */
-    public PropertyStorageSpec setEntityId(boolean entityId)
-    {
-        this.entityId = entityId;
         return this;
     }
 

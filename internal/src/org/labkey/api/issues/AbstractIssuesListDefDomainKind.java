@@ -90,8 +90,8 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         )));
 
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-            new PropertyStorageSpec("EntityId", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
-            new PropertyStorageSpec("Container", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
+            new PropertyStorageSpec("EntityId", JdbcType.GUID).setNullable(false),
+            new PropertyStorageSpec("Container", JdbcType.GUID).setNullable(false),
             new PropertyStorageSpec("Status", JdbcType.VARCHAR, 60).setNullable(false),
             new PropertyStorageSpec("Created", JdbcType.TIMESTAMP),
             new PropertyStorageSpec("CreatedBy", JdbcType.INTEGER).setNullable(false),
