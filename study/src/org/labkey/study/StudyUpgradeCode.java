@@ -136,7 +136,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
                                 // Container column to be dropped
                                 Collection<PropertyStorageSpec> propsDropped = new ArrayList<>();
-                                propsDropped.add(new PropertyStorageSpec(DatasetDomainKind.CONTAINER, JdbcType.GUID));
+                                propsDropped.add(new PropertyStorageSpec(DatasetDomainKind.CONTAINER, JdbcType.GUID).setNullable(false));
 
                                 // Lsid primary key to be dropped
                                 Constraint dropPk = new Constraint(domain.getStorageTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, false, null);

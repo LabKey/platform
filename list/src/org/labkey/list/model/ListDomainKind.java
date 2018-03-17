@@ -73,13 +73,13 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
     static
     {
-        BASE_PROPERTIES = PageFlowUtil.set(new PropertyStorageSpec("entityId", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
+        BASE_PROPERTIES = PageFlowUtil.set(new PropertyStorageSpec("entityId", JdbcType.GUID).setNullable(false),
                 new PropertyStorageSpec("created", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("createdBy", JdbcType.INTEGER),
                 new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
                 new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
-                new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false));
+                new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false));
     }
 
     public void setListDefinition(ListDefinitionImpl list)

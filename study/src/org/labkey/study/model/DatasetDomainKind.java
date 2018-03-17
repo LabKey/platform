@@ -96,7 +96,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         DATASPACE_BASE_PROPERTIES = new HashSet<>(Arrays.asList(
             new PropertyStorageSpec(DSROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null),
-            new PropertyStorageSpec(CONTAINER, JdbcType.GUID),
+            new PropertyStorageSpec(CONTAINER, JdbcType.GUID).setNullable(false),
             new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
             new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),

@@ -1356,7 +1356,7 @@ abstract class PostgreSql91Dialect extends SqlDialect
         colSpec.add(getSqlTypeName(prop));
 
         //Apply size and precision to varchar and Decimal types
-        if (prop.getJdbcType() == JdbcType.VARCHAR && !prop.isEntityId() && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
+        if (prop.getJdbcType() == JdbcType.VARCHAR && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
@@ -1366,13 +1366,13 @@ abstract class PostgreSql91Dialect extends SqlDialect
 
         if (null != prop.getDefaultValue())
         {
-            if (prop.getJdbcType().sqlType == Types.BOOLEAN)
+            if (prop.getJdbcType() == JdbcType.BOOLEAN)
             {
                 String defaultClause = " DEFAULT " +
                         ((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
                 colSpec.add(defaultClause);
             }
-            else if (prop.getJdbcType().sqlType == Types.VARCHAR)
+            else if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
                 colSpec.add(" DEFAULT '" + prop.getDefaultValue().toString() + "'");
             }
@@ -1406,17 +1406,6 @@ abstract class PostgreSql91Dialect extends SqlDialect
             else
             {
                 throw new IllegalArgumentException("AutoIncrement is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
-            }
-        }
-        else if (prop.isEntityId())
-        {
-            if (prop.getJdbcType() == JdbcType.VARCHAR)
-            {
-                return SqlDialect.GUID_TYPE;
-            }
-            else
-            {
-                throw new IllegalArgumentException("EntityId is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
         //If varchar longer than common limit, then switch type to Text

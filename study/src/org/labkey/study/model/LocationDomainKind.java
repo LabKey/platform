@@ -68,8 +68,8 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
         {
             new PropertyStorageSpec(ROWID, JdbcType.INTEGER, 0, PropertyStorageSpec.Special.PrimaryKey, false, true, null),
             new PropertyStorageSpec(LABEL, JdbcType.VARCHAR, 200),
-            new PropertyStorageSpec(ENTITYID, JdbcType.GUID, 36, false, null),
-            new PropertyStorageSpec(CONTAINER, JdbcType.GUID, 36, false, null),
+            new PropertyStorageSpec(ENTITYID, JdbcType.GUID).setNullable(false),
+            new PropertyStorageSpec(CONTAINER, JdbcType.GUID).setNullable(false),
             new PropertyStorageSpec(EXTERNALID, JdbcType.INTEGER, 0),
             new PropertyStorageSpec(LDMSLABCODE, JdbcType.INTEGER, 0),
             new PropertyStorageSpec(LABWARELABCODE, JdbcType.VARCHAR, 20),

@@ -52,7 +52,7 @@ public final class PrimaryTypeDomainKind extends AbstractSpecimenDomainKind
         PropertyStorageSpec[] props =
         {
             new PropertyStorageSpec(ROWID, JdbcType.INTEGER, 0, PropertyStorageSpec.Special.PrimaryKey, false, true, null),
-            new PropertyStorageSpec(CONTAINER, JdbcType.GUID, 36, false, null),
+            new PropertyStorageSpec(CONTAINER, JdbcType.GUID).setNullable(false),
             new PropertyStorageSpec(EXTERNALID, JdbcType.INTEGER, 0, false, null),
             new PropertyStorageSpec(PRIMARYLDMSCODE, JdbcType.VARCHAR, 5),
             new PropertyStorageSpec(PRIMARYLABWARECODE, JdbcType.VARCHAR, 5),
