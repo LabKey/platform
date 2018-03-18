@@ -596,7 +596,8 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             DataIteratorBuilder step1 = DataIteratorBuilder.wrap(step0);
             if (_dataClass.getNameExpression() != null)
             {
-                step1 = new NameExpressionDataIteratorBuilder(step1, _dataClass.getNameExpression(), ExpDataClassDataTableImpl.this);
+                step0.addColumn(new ColumnInfo("nameExpression"), (Supplier) () -> _dataClass.getNameExpression());
+                step1 = new NameExpressionDataIteratorBuilder(step1,  ExpDataClassDataTableImpl.this);
             }
 
             return LoggingDataIterator.wrap(step1.getDataIterator(context));
