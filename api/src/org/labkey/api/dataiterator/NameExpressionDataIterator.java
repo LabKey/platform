@@ -6,27 +6,30 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.Pair;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class NameExpressionDataIterator extends WrapperDataIterator
 {
     private final DataIteratorContext _context;
-    private final NameGenerator _nameGen;
+    private Map<String, Pair<NameGenerator, NameGenerator.State>> _nameGeneratorMap = new HashMap<>();
     private final Integer _nameCol;
+    private Integer _expressionCol;
+    private TableInfo _parentTable;
 
-    private NameGenerator.State _state;
-
-    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, String nameExpression, @Nullable TableInfo parentTable)
+    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable)
     {
         super(DataIteratorUtil.wrapMap(di, false));
         _context = context;
-        _nameGen = new NameGenerator(nameExpression, parentTable, false);
-        _state = _nameGen.createState(false, false);
+        _parentTable = parentTable;
 
         Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
         _nameCol = map.get("name");
+        _expressionCol = map.get("nameExpression");
         assert _nameCol != null;
+        assert _expressionCol != null;
     }
 
     MapDataIterator getInput()
@@ -37,6 +40,13 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private BatchValidationException getErrors()
     {
         return _context.getErrors();
+    }
+
+    private void addNameGenerator(String nameExpression)
+    {
+        NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false);
+        NameGenerator.State state = nameGen.createState(false, false);
+        _nameGeneratorMap.put(nameExpression, Pair.of(nameGen, state));
     }
 
     @Override
@@ -55,7 +65,14 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
             try
             {
-                String newName = _nameGen.generateName(_state, currentRow);
+                String nameExpression = (String) super.get(_expressionCol);
+                if (!_nameGeneratorMap.containsKey(nameExpression))
+                {
+                    addNameGenerator(nameExpression);
+                }
+
+                Pair<NameGenerator, NameGenerator.State> nameGenPair = _nameGeneratorMap.get(nameExpression);
+                String newName = nameGenPair.first.generateName(nameGenPair.second, currentRow);
                 if (!StringUtils.isEmpty(newName))
                     return newName;
             }
