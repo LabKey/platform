@@ -204,6 +204,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             allowHeaderLock         : false,
             buttonBar   : {
                 includeStandardButton: false,
+                suppressWarnings: true,
                 items: [LABKEY.QueryWebPart.standardButtons.exportRows, LABKEY.QueryWebPart.standardButtons.print]
             },
             success : this.onDataSuccess,
