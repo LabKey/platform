@@ -67,6 +67,7 @@ public class ButtonBarConfig
             _position = getPosition(json.getString("position"));
 
         _includeStandardButtons = json.optBoolean("includeStandardButtons", false);
+        boolean suppressWarnings = json.optBoolean("suppressWarnings", false);
 
         if (json.has("items"))
         {
@@ -76,7 +77,9 @@ public class ButtonBarConfig
                 Object item = items.get(idx);
                 if (item instanceof String)
                 {
-                    _items.add(new BuiltInButtonConfig((String)item));
+                    BuiltInButtonConfig config = new BuiltInButtonConfig((String)item);
+                    config.setSuppressWarning(suppressWarnings);
+                    _items.add(config);
                 }
                 else if (item instanceof JSONObject)
                 {

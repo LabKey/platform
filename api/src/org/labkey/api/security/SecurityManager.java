@@ -3396,50 +3396,44 @@ public class SecurityManager
 
     public static List<User> parseRecipientListForContainer(Container container, String recipientList, Errors errors)
     {
+        String[] recipientArr = StringUtils.split(StringUtils.trimToEmpty(recipientList), "\n");
         List<User> validRecipients = new ArrayList<>();
 
-        if (recipientList != null)
+        for (String recipient : recipientArr)
         {
-            String[] recipientArr = recipientList.split("\n");
-            List<String> invalidRecipients = new ArrayList<>();
-            List<ValidEmail> potentialValidRecipients = SecurityManager.normalizeEmails(recipientArr, invalidRecipients);
+            recipient = StringUtils.trimToNull(recipient);
+            if (null == recipient)
+                continue;
 
-            // validate that the recipient emails are valid
-            for (String rawEmail : invalidRecipients)
+            User user = UserManager.getUserByDisplayName(recipient);
+            if (user == null)
             {
-                // Ignore lines of all whitespace, otherwise show an error.
-                if (!"".equals(rawEmail.trim()))
+                try
                 {
-                    errors.reject(ERROR_MSG, "Invalid email address: " + rawEmail.trim());
+                    user = UserManager.getUser(new ValidEmail(recipient));
+                }
+                catch (InvalidEmailException x)
+                {
+                  errors.reject(ERROR_MSG, "Invalid email address: " + recipient);
+                  continue;
                 }
             }
-
-            // validate that the valid emails are for users that have read permissions to this container
-            for (ValidEmail validRecipient : potentialValidRecipients)
+            if (null == user)
             {
-                User validUser = UserManager.getUser(validRecipient);
-                if (validUser != null)
-                {
-                    if (container.hasPermission(validUser, ReadPermission.class))
-                    {
-                        if (!validRecipients.contains(validUser))
-                            validRecipients.add(validUser);
-                    }
-                    else
-                    {
-                        errors.reject(ERROR_MSG, "User does not have permissions to this container: " + validRecipient.getEmailAddress());
-                    }
-                }
-                else
-                {
-                    errors.reject(ERROR_MSG, "Unknown user: " + validRecipient.getEmailAddress());
-                }
+                errors.reject(ERROR_MSG, "Unknown user: " + recipient);
+                continue;
             }
+            if (!container.hasPermission(user, ReadPermission.class))
+            {
+                errors.reject(ERROR_MSG, "User does not have permissions to this folder: " + user.getEmail());
+                continue;
+            }
+            if (!validRecipients.contains(user))
+                validRecipients.add(user);
         }
-        else
-        {
+
+        if (validRecipients.isEmpty() && !errors.hasErrors())
             errors.reject(ERROR_MSG, "No recipients provided.");
-        }
 
         return validRecipients;
     }
