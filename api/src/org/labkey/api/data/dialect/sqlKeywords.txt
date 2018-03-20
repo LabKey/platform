@@ -1,6 +1,7 @@
 # A list of SQL keyword candidates -- all known and potential future keywords across all databases. We use this for testing.
 # Sources include the old, hard-coded keyword lists in the dialects, the reserved word lists in the PostgreSQL, MySQL, and
 # SQL Server documentation, and the return values of DatabaseMetaData.getSqlKeywords() for every database we support.
+# Note: build is required after altering this file.
 a
 abort
 abs
@@ -45,6 +46,7 @@ assignment
 asymmetric
 at
 atomic
+attach
 attribute
 attributes
 audit
@@ -152,6 +154,7 @@ condition
 condition_number
 configuration
 confirm
+conflict
 connect
 connection
 connection_name
@@ -237,6 +240,7 @@ delimiter
 delimiters
 dense_rank
 deny
+depends
 depth
 deref
 derived
@@ -246,6 +250,7 @@ describe
 descriptor
 destroy
 destructor
+detach
 deterministic
 diagnostics
 dictionary
@@ -329,6 +334,7 @@ explain
 export
 extend
 extended
+extension
 extent_size
 external
 extract
@@ -479,6 +485,7 @@ key_member
 key_type
 keys
 kill
+label
 lag
 language
 large
@@ -517,8 +524,10 @@ localtimestamp
 location
 locator
 lock
+locked
 locks
 logfile
+logged
 login
 logs
 long
@@ -556,6 +565,7 @@ master_tls_version
 master_user
 match
 matched
+materialized
 max
 max_cardinality
 max_connections_per_hour
@@ -709,6 +719,7 @@ p
 pack_keys
 pad
 page
+parallel
 parameter
 parameter_mode
 parameter_name
@@ -746,6 +757,7 @@ plugin
 plugin_dir
 plugins
 point
+policy
 polygon
 port
 position
@@ -772,8 +784,10 @@ processexit
 processlist
 profile
 profiles
+program
 proxy
 public
+publication
 purge
 quarter
 query
@@ -803,6 +817,7 @@ redundant
 ref
 references
 referencing
+refresh
 regexp
 regr_avgx
 regr_avgy
@@ -927,6 +942,7 @@ signed
 similar
 simple
 size
+skip
 slave
 slow
 smallint
@@ -1002,6 +1018,7 @@ sublist
 submultiset
 subpartition
 subpartitions
+subscription
 substring
 substring_regex
 successful
@@ -1094,6 +1111,7 @@ unknown
 unlink
 unlisten
 unlock
+unlogged
 unnamed
 unnest
 unpartition
@@ -1141,6 +1159,7 @@ varying
 verbose
 version
 view
+views
 virtual
 volatile
 wait
