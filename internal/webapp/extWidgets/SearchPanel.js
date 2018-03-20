@@ -437,7 +437,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
 
             var val;
-            if (typeof  this.metadata[item.getName()] !== 'undefined' && this.metadata[item.getName()].rawData) {
+            if (this.metadata && typeof this.metadata[item.getName()] !== 'undefined' && this.metadata[item.getName()].rawData) {
                 val = [item.getRawValue()];
             }
             else {
