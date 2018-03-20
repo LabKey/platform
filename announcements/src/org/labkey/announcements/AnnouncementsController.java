@@ -280,10 +280,12 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static ActionURL getAdminEmailURL(Container c, URLHelper returnURL)
+    public static ActionURL getAdminEmailURL(Container c, @Nullable URLHelper returnURL)
     {
         ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getNotificationsURL(c);
-        url.addReturnURL(returnURL);
+        if (returnURL != null)
+            url.addReturnURL(returnURL);
+
         return url;
     }
 
@@ -648,10 +650,13 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getAdminURL(Container c, URLHelper returnUrl)
+    public static ActionURL getAdminURL(Container c, @Nullable URLHelper returnUrl)
     {
-        return new ActionURL(CustomizeAction.class, c)
-            .addReturnURL(returnUrl);
+        ActionURL url = new ActionURL(CustomizeAction.class, c);
+        if (returnUrl != null)
+            url.addReturnURL(returnUrl);
+
+        return url;
     }
 
 
@@ -1049,9 +1054,13 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static ActionURL getInsertURL(Container c, ActionURL returnURL)
+    private static ActionURL getInsertURL(Container c, @Nullable ActionURL returnURL)
     {
-        return new ActionURL(InsertAction.class, c).addReturnURL(returnURL);
+        ActionURL url = new ActionURL(InsertAction.class, c);
+        if (returnURL != null)
+            url.addReturnURL(returnURL);
+
+        return url;
     }
 
 
@@ -1460,11 +1469,14 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getEmailPreferencesURL(Container c, URLHelper srcUrl, String srcIdentifier)
+    public static ActionURL getEmailPreferencesURL(Container c, @Nullable URLHelper srcUrl, String srcIdentifier)
     {
         ActionURL result = new ActionURL(EmailPreferencesAction.class, c);
         result.addParameter("srcIdentifier", srcIdentifier);
-        return result.addParameter("srcUrl", srcUrl.getLocalURIString());
+        if (srcUrl != null)
+            result.addParameter("srcUrl", srcUrl.getLocalURIString());
+
+        return result;
     }
 
 
@@ -2284,7 +2296,11 @@ public class AnnouncementsController extends SpringActionController
                 SimpleFilter filter = getFilter(settings, perm, displayAll);
                 Pair<Collection<AnnouncementModel>, Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, settings.getSort(), 100);
 
-                init(c, url, user, settings, perm, displayAll, false, pair.second ? 100 : 0);
+                //Issue 33501: Don't include return URL if the web part was called via getWebPart API
+                if (url.getAction().equalsIgnoreCase("getWebPart"))
+                    init(c, null, user, settings, perm, displayAll, false, pair.second ? 100 : 0);
+                else
+                    init(c, url, user, settings, perm, displayAll, false, pair.second ? 100 : 0);
                 
                 announcementModels = pair.first;
                 listURL = getListURL(c);
