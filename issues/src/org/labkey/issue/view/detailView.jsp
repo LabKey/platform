@@ -20,11 +20,13 @@
 <%@ page import="org.labkey.api.issues.IssueDetailHeaderLinkProvider" %>
 <%@ page import="org.labkey.api.issues.IssuesListDefService" %>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
@@ -40,8 +42,9 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.view.PopupMenuView" %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
+<%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -66,7 +69,7 @@
 
     List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
+    EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
 
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
@@ -101,23 +104,19 @@
         hasAttachments = hasAttachments || !bean.renderAttachments(context, comment).isEmpty();
     }
 
-    String commentTextStr="The related issue has " + commentCount;
-    if (commentCount==1)
-        commentTextStr += " comment";
-    else
-        commentTextStr += " comments";
+    String commentTextStr = "The related " + names.singularName.toLowerCase() + " has " + StringUtilsLabKey.pluralize(commentCount, "comment");
     if (hasAttachments)
         commentTextStr += " and includes attachments."; // no nice way to count these as of now
     else
-        commentTextStr +=".";
+        commentTextStr += ".";
 
     StringBuilder relatedIssues = new StringBuilder("javascript:createRelatedIssue(");
     relatedIssues.append(q(issueDef.getName())).append(",");
 
     relatedIssues.append("{");
     relatedIssues.append("callbackURL : ").append(bean.getCallbackURL() == null ? null : q(bean.getCallbackURL()));
-    relatedIssues.append(", body :").append(q(commentTextStr));
-    relatedIssues.append(", title :").append(q(issue.getTitle()));
+    relatedIssues.append(", body :").append(hq(commentTextStr));
+    relatedIssues.append(", title :").append(hq(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
     relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
     relatedIssues.append(", priority :").append(issue.getPriority());

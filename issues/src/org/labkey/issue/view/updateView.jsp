@@ -124,7 +124,9 @@
     List<DomainProperty> column2Props = new ArrayList<>();
     List<DomainProperty> extraColumns = new ArrayList<>();
 
-    final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c, issueListDef.getName()));
+    EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef.getName());
+
+    final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), names);
 
     // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
     extraColumns.addAll(Stream.of("type", "area", "priority", "milestone")
@@ -270,7 +272,7 @@
             }
             else
             {%>
-            <%=text(bean.renderLabel("Issue " + issue.getIssueId()))%><%
+            <%=text(bean.renderLabel(h(names.singularName) + " " + issue.getIssueId()))%><%
             }%>
             <td colspan="3">
                 <%=text(bean.writeInput("title", issue.getTitle(), "id=title style=\"width:100%;\""))%>
