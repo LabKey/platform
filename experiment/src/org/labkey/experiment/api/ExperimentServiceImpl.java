@@ -2646,22 +2646,40 @@ public class ExperimentServiceImpl implements ExperimentService
                 // from lsid -> run lsid
                 //
 
+                Set<String> seen = new HashSet<>();
                 for (Map<String, Object> fromDataLsid : fromDataLsids)
-                    prepEdgeForInsert(params, (String) fromDataLsid.get("lsid"), runLsid, runId);
+                {
+                    String lsid = (String) fromDataLsid.get("lsid");
+                    if (seen.add(lsid))
+                        prepEdgeForInsert(params, lsid, runLsid, runId);
+                }
 
                 for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
-                    prepEdgeForInsert(params, (String) fromMaterialLsid.get("lsid"), runLsid, runId);
+                {
+                    String lsid = (String) fromMaterialLsid.get("lsid");
+                    if (seen.add(lsid))
+                        prepEdgeForInsert(params, lsid, runLsid, runId);
+                }
 
 
                 //
                 // run lsid -> to lsid
                 //
 
+                seen = new HashSet<>();
                 for (Map<String, Object> toDataLsid : toDataLsids)
-                    prepEdgeForInsert(params, runLsid, (String) toDataLsid.get("lsid"), runId);
+                {
+                    String lsid = (String) toDataLsid.get("lsid");
+                    if (seen.add(lsid))
+                        prepEdgeForInsert(params, runLsid, lsid, runId);
+                }
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    prepEdgeForInsert(params, runLsid, (String) toMaterialLsid.get("lsid"), runId);
+                {
+                    String lsid = (String) toMaterialLsid.get("lsid");
+                    if (seen.add(lsid))
+                        prepEdgeForInsert(params, runLsid, lsid, runId);
+                }
 
                 insertEdges(params);
             }
