@@ -1408,6 +1408,12 @@ abstract class PostgreSql91Dialect extends SqlDialect
                 throw new IllegalArgumentException("AutoIncrement is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
+        else if (prop.getJdbcType() == JdbcType.GUID)
+        {
+            // Create EntityId columns using our custom ENTITYID type. We recognize this type and translate to JdbcType.GUID when
+            // reading meta data. TODO: But wait... why doesn't getGuidType() return "ENTITYID"? If it did, this clause would go away.
+            return "ENTITYID";
+        }
         //If varchar longer than common limit, then switch type to Text
         else if (prop.getJdbcType() == JdbcType.VARCHAR && (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE))
         {
