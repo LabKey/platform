@@ -60,6 +60,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -225,12 +227,7 @@ public class SimpleUserSchema extends UserSchema
         public void addColumns()
         {
             wrapAllColumns();
-            Collection<FieldKey> domainDefaultCols = addDomainColumns();
-
-            Collection<FieldKey> fieldKeys = new ArrayList<>(getRealTable().getDefaultVisibleColumns());
-            fieldKeys.addAll(domainDefaultCols);
-
-            setDefaultVisibleColumns(fieldKeys);
+            addDomainColumns();
         }
 
         protected boolean acceptColumn(ColumnInfo col)
