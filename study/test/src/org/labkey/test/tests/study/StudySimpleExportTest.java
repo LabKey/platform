@@ -195,15 +195,15 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Dataset QC States"));
         waitForText("Manage Dataset QC States");
-        assertFormElementEquals(Locator.name("blankQCStatePublic"), "true");
-        assertFormElementEquals(Locator.name("labels").index(0), "First QC State");
-        assertFormElementEquals(Locator.name("descriptions").index(0), "The first qc state description");
+        assertEquals("true", getFormElement(Locator.name("blankQCStatePublic")));
+        assertEquals("First QC State", getFormElement(Locator.name("labels").index(0)));
+        assertEquals("The first qc state description", getFormElement(Locator.name("descriptions").index(0)));
         assertNotChecked(Locator.name("publicData").index(0));
-        assertFormElementEquals(Locator.name("labels").index(1), "Second QC State");
-        assertFormElementEquals(Locator.name("descriptions").index(1), "The second qc state description");
+        assertEquals("Second QC State", getFormElement(Locator.name("labels").index(1)));
+        assertEquals("The second qc state description", getFormElement(Locator.name("descriptions").index(1)));
         assertNotChecked(Locator.name("publicData").index(1));
-        assertFormElementEquals(Locator.name("labels").index(2), "Third QC State");
-        assertFormElementEquals(Locator.name("descriptions").index(2), "The third qc state description");
+        assertEquals("Third QC State", getFormElement(Locator.name("labels").index(2)));
+        assertEquals("The third qc state description", getFormElement(Locator.name("descriptions").index(2)));
         assertNotChecked(Locator.name("publicData").index(2));
         assertEquals("First QC State", getSelectedOptionText(Locator.name("defaultPipelineQCState")).trim());
         assertEquals("Second QC State", getSelectedOptionText(Locator.name("defaultAssayQCState")).trim());
@@ -228,7 +228,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickButton("Save");
 
         Locator l = Locator.tagWithName("input", "labels");
-        assertFormElementEquals(l.index(getElementCount(l) - 1), name);
+        assertEquals(name, getFormElement(l.index(l.findElements(getDriver()).size() - 1)));
     }
 
     @Test
@@ -288,9 +288,9 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder("Default Dataset Formats");
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
-        assertFormElementEquals(Locator.name("defaultDateFormat"), "MMM dd, yyyy");
-        assertFormElementEquals(Locator.name("defaultDateTimeFormat"), "MMM dd, yyyy HH:mm");
-        assertFormElementEquals(Locator.name("defaultNumberFormat"), "#.000");
+        assertEquals("MMM dd, yyyy", getFormElement(Locator.name("defaultDateFormat")));
+        assertEquals("MMM dd, yyyy HH:mm", getFormElement(Locator.name("defaultDateTimeFormat")));
+        assertEquals("#.000", getFormElement(Locator.name("defaultNumberFormat")));
         assertChecked(Locator.name("restrictedColumnsEnabled"));
 
         clickTab("Clinical and Assay Data");
@@ -372,8 +372,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         ManageVisitPage manageVisitPage = new ManageVisitPage(getDriver());
         manageVisitPage.goToEditVisit(visitLabel);
         waitForElement(Locator.name("description"));
-        assertFormElementEquals(Locator.name("label"), visitLabel);
-        assertFormElementEquals(Locator.name("description"), visitDescription);
+        assertEquals(visitLabel, getFormElement(Locator.name("label")));
+        assertEquals(visitDescription, getFormElement(Locator.name("description")));
         visitDescription += " <b>testing</b>";
         setFormElement(Locator.name("description"), visitDescription);
         setFormElement(Locator.name("protocolDay"), visitProtocolDay);
@@ -382,7 +382,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Visit Properties: add dataset record using new visit");
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
-        DataRegionTable.findDataRegion(this).clickImportBulkData();
+        DataRegionTable.DataRegion(getDriver()).find().clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestString\nPTID123\t" + visitSeqNumMin + "\tBCD");
         clickButton("Submit");
@@ -400,11 +400,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder("Visit Properties");
         _studyHelper.goToManageVisits().goToEditVisit(visitLabel);
         waitForElement(Locator.name("description"));
-        assertFormElementEquals(Locator.name("label"), visitLabel);
-        assertFormElementEquals(Locator.name("description"), visitDescription);
-        assertFormElementEquals(Locator.name("sequenceNumMin"), visitSeqNumMin);
-        assertFormElementEquals(Locator.name("sequenceNumMax"), visitSeqNumMax);
-        assertFormElementEquals(Locator.name("protocolDay"), visitProtocolDay);
+        assertEquals(visitLabel, getFormElement(Locator.name("label")));
+        assertEquals(visitDescription, getFormElement(Locator.name("description")));
+        assertEquals(visitSeqNumMin, getFormElement(Locator.name("sequenceNumMin")));
+        assertEquals(visitSeqNumMax, getFormElement(Locator.name("sequenceNumMax")));
+        assertEquals(visitProtocolDay, getFormElement(Locator.name("protocolDay")));
 
         log("Visit Properties: verify visit description in study navigator hover");
         clickTab("Overview");
@@ -490,7 +490,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitForElement(Locator.name("Investigator"));
         for (String key : newProps.keySet())
         {
-            assertFormElementEquals(Locator.name(key), newProps.get(key));
+            assertEquals(newProps.get(key), getFormElement(Locator.name(key)));
         }
 
         log("Study Properties: verify display of some properties in overview webpart");
@@ -556,14 +556,14 @@ public class StudySimpleExportTest extends StudyBaseTest
         DataRegionTable dt = new DataRegionTable("Cohort", getDriver());
         dt.clickEditRow(0);
         waitForText("Update Cohort: " + cohort1label);
-        assertFormElementEquals(Locator.name("quf_subjectCount"), cohort1count);
-        assertFormElementEquals(Locator.name("quf_description"), cohort1description);
+        assertEquals(cohort1count, getFormElement(Locator.name("quf_subjectCount")));
+        assertEquals(cohort1description, getFormElement(Locator.name("quf_description")));
         clickButton("Cancel");
         waitForText(cohort2label);
         dt.clickEditRow(1);
         waitForText("Update Cohort: " + cohort2label);
-        assertFormElementEquals(Locator.name("quf_subjectCount"), cohort2count);
-        assertFormElementEquals(Locator.name("quf_description"), cohort2description);
+        assertEquals(cohort2count, getFormElement(Locator.name("quf_subjectCount")));
+        assertEquals(cohort2description, getFormElement(Locator.name("quf_description")));
         clickButton("Cancel");
 
         log("Cohort Properties: verify display of cohorts in subjects webpart");
@@ -790,7 +790,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                     continue;
                 
                 waitForText("Insert");
-                DataRegionTable.findDataRegion(this).clickInsertNewRow();
+                DataRegionTable.DataRegion(getDriver()).find().clickInsertNewRow();
                 populateFormData(row, "quf_");
                 clickButton("Submit");
             }
@@ -1045,8 +1045,8 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         waitAndClickAndWait(Locator.linkWithText("Manage Display and Behavior"));
         log("Verify Display and Behavior");
-        assertOptionEquals(Locator.tagWithName("select", "defaultToCommentsMode"), "Comments Mode");
-        assertOptionEquals(Locator.tagWithName("select", "enableManualQCFlagging"), "Disabled");
+        assertEquals("Comments Mode", getSelectedOptionText(Locator.tagWithName("select", "defaultToCommentsMode")));
+        assertEquals("Disabled", getSelectedOptionText(Locator.tagWithName("select", "enableManualQCFlagging")));
         clickButton("Cancel");
 
         waitAndClickAndWait(Locator.linkWithText("Manage New Request Form"));
@@ -1061,11 +1061,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Manage Notifications"));
         log("Verify Notifications");
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("replyToCurrentUser", "false"));
-        assertFormElementEquals(Locator.tagWithName("input", "replyTo"), NOTIFICATION_EMAIL);
+        assertEquals(NOTIFICATION_EMAIL, getFormElement(Locator.tagWithName("input", "replyTo")));
 
         assertChecked(Locator.checkboxByName("ccCheckbox"));
         waitForElement(Locator.xpath("//textarea[@id='cc']"));
-        assertFormElementEquals(Locator.xpath("//textarea[@id='cc']"), NOTIFICATION_EMAIL);
+        assertEquals(NOTIFICATION_EMAIL, getFormElement(Locator.xpath("//textarea[@id='cc']")));
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("defaultEmailNotify", "None"));
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("specimensAttachment", "ExcelAttachment"));
         clickButton("Cancel");
@@ -1167,9 +1167,9 @@ public class StudySimpleExportTest extends StudyBaseTest
             log("verifying form element: " + name);
 
             if (isElementPresent(Locator.tagWithName("input", name)))
-                assertFormElementEquals(Locator.tagWithName("input", name), (String)formData.get(key));
+                assertEquals((String)formData.get(key), getFormElement(Locator.tagWithName("input", name)));
             else if (isElementPresent(Locator.tagWithName("textarea", name)))
-                assertFormElementEquals(Locator.tagWithName("textarea", name), (String)formData.get(key));
+                assertEquals((String)formData.get(key), getFormElement(Locator.tagWithName("textarea", name)));
             else
                 fail("Unable to locate form element: " + name);
         }
