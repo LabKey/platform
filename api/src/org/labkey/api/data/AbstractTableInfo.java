@@ -870,12 +870,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             for (TableType xmlTable : xmlTables)
                 loadFromXML(schema, xmlTable, errors);
-
-            // make sure to filter out columns that may be hidden by the extra metadata
-            setDefaultVisibleColumns(getDefaultVisibleColumns().stream().filter(fieldKey -> {
-                ColumnInfo column = getColumn(fieldKey);
-                return (null == column) || !getColumn(fieldKey).isHidden();
-            }).collect(Collectors.toList()));
         }
     }
 
