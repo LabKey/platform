@@ -686,7 +686,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             List<QuerySnapshotDefinition> dependencies = getDependencies(data);
                             for (QuerySnapshotDefinition snapshotDef : dependencies)
                             {
-                                LOG.info("Updating snapshot definition : " + snapshotDef.getName());
+                                LOG.info("Scheduling update of snapshot data : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef);
                             }
                         }
@@ -798,7 +798,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         public void run()
         {
-            LOG.debug("Automatically Updating Dataset Snapshot : " + _def.getName());
+            LOG.info("Updating snapshot data : " + _def.getName());
 
             try
             {

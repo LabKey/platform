@@ -23,8 +23,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.HasResolvedTables;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -33,12 +35,11 @@ import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
+public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable, HasResolvedTables
 {
     QueryRelation _relation;
     private ContainerFilter _containerFilter;
@@ -179,5 +180,11 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         for (QueryTable.TableColumn tableColumn : _relation._query.getInvolvedTableColumns())
             allInvolvedColumns.add(tableColumn._col);
         return allInvolvedColumns;
+    }
+
+    @Override
+    public Set<SchemaKey> getResolvedTables()
+    {
+        return _relation.getResolvedTables();
     }
 }

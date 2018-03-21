@@ -18,6 +18,7 @@ package org.labkey.study.dataset;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -25,12 +26,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.HasResolvedTables;
 import org.labkey.api.data.UnionTableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
@@ -40,7 +43,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -119,14 +121,11 @@ public abstract class SnapshotDependency
                     if (isContainerValid(sourceData.getContainer()))
                     {
                         List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudySchema.getInstance().getSchemaName());
-                        if (!snapshots.isEmpty())
+                        for (QuerySnapshotDefinition snapshot : snapshots)
                         {
-                            for (QuerySnapshotDefinition snapshot : snapshots)
+                            if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, dsDef))
                             {
-                                if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, dsDef))
-                                {
-                                    dependencies.put(snapshot.getId(), snapshot);
-                                }
+                                dependencies.put(snapshot.getId(), snapshot);
                             }
                         }
                     }
@@ -150,6 +149,9 @@ public abstract class SnapshotDependency
 
         private boolean hasDependency(QuerySnapshotDefinition qsDef, @NotNull org.labkey.api.study.Dataset dsDef)
         {
+            if (QueryService.get().isQuerySnapshot(dsDef.getContainer(), StudySchema.getInstance().getSchemaName(), dsDef.getName()))
+                return false;
+
             if (dsDef.getContainer().getId().equals(qsDef.getQueryTableContainerId()))
             {
                 // dataset snapshots must have an underlying dataset definition defined
@@ -160,6 +162,24 @@ public abstract class SnapshotDependency
                     if (qsDef.getQueryTableName().equals(dsDef.getName()))
                     {
                         return true;
+                    }
+                }
+            }
+
+            QueryView view = getSnapshotQueryView(qsDef);
+            if (view != null)
+            {
+                TableInfo tinfo = view.getTable();
+                if (tinfo instanceof HasResolvedTables)
+                {
+                    SchemaKey datasetKey = SchemaKey.fromParts(StudySchema.getInstance().getSchemaName(), dsDef.getName());
+                    for (SchemaKey key : ((HasResolvedTables)tinfo).getResolvedTables())
+                    {
+                        if (datasetKey.equals(key))
+                        {
+                            _log.info("Snapshot: " + qsDef.getName() + " base table: " + key + " matched modified dataset table");
+                            return true;
+                        }
                     }
                 }
             }
@@ -179,6 +199,21 @@ public abstract class SnapshotDependency
             return false;
         }
 
+        private @Nullable QueryView getSnapshotQueryView(QuerySnapshotDefinition def)
+        {
+            if (isContainerValid(def.getContainer()))
+            {
+                // can't assume that the dependency check is coming from the same container that
+                // the snapshot is defined in.
+                ViewContext context = new ViewContext(DatasetSnapshotProvider.getViewContext(def, false));
+                context.setContainer(def.getContainer());
+
+                BindException errors = new NullSafeBindException(def, "snapshot");
+                return DatasetSnapshotProvider.createQueryView(context, def, errors);
+            }
+            return null;
+        }
+
         private boolean hasDependency(QuerySnapshotDefinition def, String propertyURI)
         {
             Map<String, String> propertyMap;
@@ -189,14 +224,7 @@ public abstract class SnapshotDependency
                 {
                     propertyMap = new HashMap<>();
                     _snapshotPropertyMap.put(def.getId(), propertyMap);
-
-                    // can't assume that the dependency check is coming from the same container that
-                    // the snapshot is defined in.
-                    ViewContext context = new ViewContext(DatasetSnapshotProvider.getViewContext(def, false));
-                    context.setContainer(def.getContainer());
-
-                    BindException errors = new NullSafeBindException(def, "snapshot");
-                    QueryView view = DatasetSnapshotProvider.createQueryView(context, def, errors);
+                    QueryView view = getSnapshotQueryView(def);
                     if (view != null)
                     {
                         TableInfo tinfo = view.getTable();

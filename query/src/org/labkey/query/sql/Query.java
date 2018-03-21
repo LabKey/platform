@@ -65,6 +65,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySchemaWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -145,6 +146,7 @@ public class Query
     String _name = null;
 	String _querySource;
     ArrayList<QParameter> _parameters;
+    private Set<SchemaKey> _resolvedTables = new HashSet<>();
 
     final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
@@ -657,6 +659,12 @@ public class Query
         try
         {
             ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
+            if (ret != null)
+            {
+                TableInfo tinfo = ret.getTableInfo();
+                if (tinfo != null)
+                    _resolvedTables.add(SchemaKey.fromParts(tinfo.getSchema().getName(), tinfo.getName()));
+            }
         }
         catch (QueryNotFoundException qnfe)
         {
@@ -703,6 +711,10 @@ public class Query
         return ret;
     }
 
+    public Set<SchemaKey> getResolvedTables()
+    {
+        return _resolvedTables;
+    }
 
     private QueryRelation _resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias,
             // OUT parameters

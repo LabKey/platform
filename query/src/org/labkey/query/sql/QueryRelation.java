@@ -29,6 +29,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
@@ -219,6 +220,14 @@ public abstract class QueryRelation
         if (col == null)
             col = getColumn("folder");
         return col != null ? col.getFieldKey() : null;
+    }
+
+    /**
+     * Return the resolved tables for this query
+     */
+    public Set<SchemaKey> getResolvedTables()
+    {
+        return _query.getResolvedTables();
     }
 
     /**
