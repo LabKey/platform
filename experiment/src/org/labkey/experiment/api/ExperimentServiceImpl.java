@@ -147,7 +147,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -187,7 +186,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -3274,27 +3272,35 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (protocol != null)
                     {
                         protocolImpl = protocol.getImplementation();
-                        for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(Collections.singletonList(run), user))
+                        StudyService studyService = StudyService.get();
+                        if (studyService != null)
                         {
-                            if (!dataset.canWrite(user))
+                            for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
-                                throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
-                            }
-                            UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                            TableInfo tableInfo = schema.getTable(dataset.getName());
-                            AssayProvider provider = AssayService.get().getProvider(protocol);
-                            if (provider != null)
-                            {
-                                AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                                SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
-                                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
+                                if (!dataset.canWrite(user))
+                                {
+                                    throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
+                                }
+                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                                TableInfo tableInfo = schema.getTable(dataset.getName());
+                                AssayProvider provider = AssayService.get().getProvider(protocol);
+                                if (provider != null)
+                                {
+                                    AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                                    SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
+                                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                                // Do the actual delete on the dataset for the rows in question
-                                dataset.deleteDatasetRows(user, lsids);
+                                    // Do the actual delete on the dataset for the rows in question
+                                    dataset.deleteDatasetRows(user, lsids);
 
-                                // Add an audit event to the copy to study history
-                                StudyService.get().addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
+                                    // Add an audit event to the copy to study history
+                                    studyService.addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
+                                }
                             }
+                        }
+                        else
+                        {
+                            LOG.warn("Could not delete dataset rows associated with this run: Study service not available.");
                         }
                     }
 
@@ -3423,9 +3429,17 @@ public class ExperimentServiceImpl implements ExperimentService
                     batch.delete(user);
                 }
 
-                for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                StudyService studyService = StudyService.get();
+                if (studyService != null)
                 {
-                    dataset.delete(user);
+                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                    {
+                        dataset.delete(user);
+                    }
+                }
+                else
+                {
+                    LOG.warn("Could not delete datasets associated with this protocol: Study service not available.");
                 }
             }
 
@@ -3437,15 +3451,21 @@ public class ExperimentServiceImpl implements ExperimentService
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
+            AssayService assayService = AssayService.get();
             if (actionIds.length > 0)
             {
                 for (Protocol protocol : protocols)
                 {
                     ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-                    AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
-                    if (provider != null)
+                    if (assayService != null)
                     {
-                        provider.deleteProtocol(protocolToDelete, user);
+                        AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
+                        if (provider != null)
+                            provider.deleteProtocol(protocolToDelete, user);
+                    }
+                    else
+                    {
+                        LOG.warn("Could not delete assay protocol: Assay service not available.");
                     }
                 }
 
@@ -3472,15 +3492,22 @@ public class ExperimentServiceImpl implements ExperimentService
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
-            transaction.addCommitTask(() -> {
-                // Be sure that we clear the cache after we commit the overall transaction, in case it
-                // gets repopulated by another thread before then
-                AssayService.get().clearProtocolCache();
-                for (Protocol protocol : protocols)
-                {
-                    uncacheProtocol(protocol);
-                }
-            }, POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
+            if (assayService != null)
+            {
+                transaction.addCommitTask(() -> {
+                    // Be sure that we clear the cache after we commit the overall transaction, in case it
+                    // gets repopulated by another thread before then
+                    assayService.clearProtocolCache();
+                    for (Protocol protocol : protocols)
+                    {
+                        uncacheProtocol(protocol);
+                    }
+                }, POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
+            }
+            else
+            {
+                LOG.warn("Could not clear protocol cache: Assay service not available.");
+            }
 
             transaction.commit();
         }
@@ -4721,13 +4748,22 @@ public class ExperimentServiceImpl implements ExperimentService
 
             if (saveProperties)
                 savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
-            AssayService.get().clearProtocolCache();
 
-            getExpSchema().getScope().addCommitTask(() -> {
-                // Be sure that we clear the cache after we commit the overall transaction, in case it
-                // gets repopulated by another thread before then
-                AssayService.get().clearProtocolCache();
-            }, POSTCOMMIT);
+            AssayService assayService = AssayService.get();
+            if (assayService != null)
+            {
+                assayService.clearProtocolCache();
+
+                getExpSchema().getScope().addCommitTask(() -> {
+                    // Be sure that we clear the cache after we commit the overall transaction, in case it
+                    // gets repopulated by another thread before then
+                    assayService.clearProtocolCache();
+                }, POSTCOMMIT);
+            }
+            else
+            {
+                LOG.warn("Could not clear protocol cache: Assay service not available.");
+            }
 
             transaction.commit();
             return result;
