@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -274,6 +275,14 @@ public class LinkedSchema extends ExternalSchema
 
         // Copy properties from source table to query table
         tableInfo.setDefaultVisibleColumns(sourceTable.getDefaultVisibleColumns());
+
+        // make sure to filter out columns that may be hidden by the extra metadata that may be set later.
+        // see issue 28533
+        tableInfo.setDefaultVisibleColumns(() -> sourceTable.getDefaultVisibleColumns().stream().filter(fieldKey -> {
+            ColumnInfo column = tableInfo.getColumn(fieldKey);
+            return (null == column) || !tableInfo.getColumn(fieldKey).isHidden();
+        }).iterator());
+
 
         LinkedTableInfo linkedTableInfo = new LinkedTableInfo(this, tableInfo, includedFields, null);
         linkedTableInfo.init();
