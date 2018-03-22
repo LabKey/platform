@@ -17,7 +17,9 @@ package org.labkey.api.reader;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.iterator.CloseableIterator;
@@ -28,13 +30,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * kevink
@@ -59,12 +62,31 @@ public class MapLoader extends DataLoader
     {
         List<Object[]> lineFields = new ArrayList<>(rows.size());
 
+        Set<String> colNames;
+        if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap)
+        {
+            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+        }
+        else
+        {
+            // preserve column header order
+            colNames = new LinkedHashSet<>();
+            CaseInsensitiveHashSet set = new CaseInsensitiveHashSet();
+            for (Map<String,Object> row : rows)
+            {
+                for (String key : row.keySet())
+                {
+                    if (set.add(key))
+                        colNames.add(key);
+                }
+            }
+        }
+
+        headers = colNames.toArray(new String[colNames.size()]);
+        lineFields.add(headers);
+
         if (rows.size() > 0)
         {
-            Collection<String> keys = rows.get(0).keySet();
-            headers = keys.toArray(new String[keys.size()]);
-            lineFields.add(headers);
-
             for (Map<String, Object> row : rows)
             {
                 if (!(row instanceof CaseInsensitiveMapWrapper))
@@ -173,6 +195,7 @@ public class MapLoader extends DataLoader
             row2.put("date", "");
             row2.put("number", "");
             row2.put("noload", "");
+            row2.put("other", "foo");
 
             Map<String, Object> row3 = new CaseInsensitiveHashMap<>();
             row3.put("Name", "sally");
@@ -189,6 +212,7 @@ public class MapLoader extends DataLoader
             assertEquals("number", cd[2].name); assertEquals(Double.class, cd[2].clazz);
             assertEquals("noload", cd[3].name); assertEquals(String.class, cd[3].clazz);
             cd[3].load = false;
+            assertEquals("other",  cd[4].name); assertEquals(String.class, cd[4].clazz);
 
             List<Map<String, Object>> data = loader.load();
             assertEquals("bob", data.get(0).get("name"));
@@ -199,11 +223,17 @@ public class MapLoader extends DataLoader
 
             assertEquals(cal.getTime(), data.get(0).get("date"));
             assertEquals(1.1, data.get(0).get("number"));
+            assertEquals(null, data.get(1).get("number"));
             assertEquals(1.2, data.get(2).get("number"));
 
+            // ensure keys are present for all rows even if no value provided
+            assertEquals(null, data.get(0).get("other"));
+            assertEquals("foo", data.get(1).get("other"));
+            assertEquals(null, data.get(2).get("other"));
+
             // 11374: make sure we don't load inactive columns
-            assertEquals(data.get(0).size(), 3);
-            assertEquals(data.get(1).size(), 3);
+            assertEquals(data.get(0).size(), 4);
+            assertEquals(data.get(1).size(), 4);
             assertNull(data.get(0).get("noload"));
             assertNull(data.get(0).get("noload"));
         }
