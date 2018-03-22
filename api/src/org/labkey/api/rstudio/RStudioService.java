@@ -21,12 +21,15 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Core api proxy interface to RStudio premium module functionality
@@ -83,4 +86,10 @@ public interface RStudioService
     {
         return null;
     }
+
+    default Controller createHttpProxy(ServletContext servletContext, String servletName, Properties properties, String injectJavascriptHook, boolean capture) throws Exception
+    {
+        return null;
+    }
+
 }

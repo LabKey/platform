@@ -564,6 +564,8 @@ api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/di/TaskRefTask.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
+api/src/org/labkey/api/docker/DockerContainerService.java -text
+api/src/org/labkey/api/docker/DockerContainerSessionListener.java -text
 api/src/org/labkey/api/evaluation/EvaluationService.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
@@ -1767,6 +1769,7 @@ api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text
 api/src/org/labkey/api/writer/ZipFile.java -text
 api/src/org/labkey/api/writer/ZipUtil.java -text
+api/src/org/mitre/dsmiley/httpproxy/ProxyServlet.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text
 api/src/org/systemsbiology/jrap/MSOperator.java -text
