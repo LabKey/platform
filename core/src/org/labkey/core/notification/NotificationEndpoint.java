@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.security.SecurityManager;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.CloseReason;
@@ -49,7 +50,6 @@ public class NotificationEndpoint extends Endpoint
 
     private Session session;
     private int userId;
-    private HttpSession httpSession;
     private boolean errored;
 
     public NotificationEndpoint()
@@ -60,7 +60,6 @@ public class NotificationEndpoint extends Endpoint
     public void onOpen(Session session, EndpointConfig endpointConfig)
     {
         this.session = session;
-        this.httpSession = (HttpSession)endpointConfig.getUserProperties().get("httpSession");
 
         Integer id = (Integer)endpointConfig.getUserProperties().get("userId");
         this.userId = null==id ? 0 : id;
@@ -116,9 +115,13 @@ public class NotificationEndpoint extends Endpoint
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response)
         {
             HttpSession session = (HttpSession) request.getHttpSession();
-            User user = org.labkey.api.security.SecurityManager.getSessionUser(session);
-            config.getUserProperties().put("httpSession", session);
-            config.getUserProperties().put("userId", null==user ? 0 : user.getUserId());
+            User user = SecurityManager.getSessionUser(session);
+
+            // config.getUserProperties() is backed by a ConcurrentHashMap which does not allow null keys or values.
+            if (session != null)
+                config.getUserProperties().put("httpSession", session);
+
+            config.getUserProperties().put("userId", null == user ? 0 : user.getUserId());
         }
     }
 
@@ -178,9 +181,7 @@ public class NotificationEndpoint extends Endpoint
         long count = endpoints(userId)
                 .stream()
                 .filter(e -> e.isSameHttpSession(httpSession))
-                .map(e -> e.safely(() -> {
-                    e.session.close(reason);
-                }))
+                .map(e -> e.safely(() -> e.session.close(reason)))
                 .count();
 
         if (count == 0)
