@@ -195,6 +195,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 throw new IllegalArgumentException("AutoIncrement is not supported for JdbcType " + prop.getJdbcType() + " (" + getSqlTypeName(prop.getJdbcType()) + ")");
             }
         }
+        else if (JdbcType.GUID == prop.getJdbcType())
+        {
+            return "ENTITYID";
+        }
         else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
         {
             // This is because the jtds driver has a bug where it returns these from the db as strings
