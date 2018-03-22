@@ -826,8 +826,9 @@ public class Portal
                     .append(" ? NOT IN (SELECT ").append(legalIndexName).append(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable.getSelectName())
-                    .append(" WHERE Container = ?))")
-                    .add(p.getContainer());
+                    .append(" WHERE Container = ?)")
+                    .add(p.getContainer())
+                    .append(getSqlDialect().isPostgreSQL() ? " FOR UPDATE)" : ")");
             count = new SqlExecutor(portalTable.getSchema()).execute(insertSQL);
         }
 
