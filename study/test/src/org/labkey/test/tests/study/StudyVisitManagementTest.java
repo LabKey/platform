@@ -31,6 +31,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
+import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
@@ -135,9 +136,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void verifySpecimenDataRowCount(int expectedRowCount)
     {
-        goToModule("Query");
-        viewQueryData("study", "SpecimenDetail", null);
-        DataRegionTable table = new DataRegionTable("query", this);
+        DataRegionTable table = ExecuteQueryPage.beginAt(this,"study", "SpecimenDetail").getDataRegion();
         if (expectedRowCount < 100)
             assertEquals("Unexpected number of specimen rows", expectedRowCount, table.getDataRowCount());
         else
