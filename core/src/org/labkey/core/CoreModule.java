@@ -45,6 +45,7 @@ import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
@@ -250,7 +251,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
     {
-        SqlDialectManager.register(new PostgreSqlDialectFactory());
+        SqlDialectRegistry.register(new PostgreSqlDialectFactory());
     }
 
     @Override

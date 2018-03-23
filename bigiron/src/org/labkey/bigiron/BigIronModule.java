@@ -19,7 +19,7 @@ package org.labkey.bigiron;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
-import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
@@ -38,10 +38,10 @@ public class BigIronModule extends CodeOnlyModule
     // Register these dialects extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
     {
-        SqlDialectManager.register(new MicrosoftSqlServerDialectFactory());
-        SqlDialectManager.register(new MySqlDialectFactory());
-        SqlDialectManager.register(new SasDialectFactory());
-        SqlDialectManager.register(new OracleDialectFactory());
+        SqlDialectRegistry.register(new MicrosoftSqlServerDialectFactory());
+        SqlDialectRegistry.register(new MySqlDialectFactory());
+        SqlDialectRegistry.register(new SasDialectFactory());
+        SqlDialectRegistry.register(new OracleDialectFactory());
     }
 
     public String getName()
