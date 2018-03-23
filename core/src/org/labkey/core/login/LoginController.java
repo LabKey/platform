@@ -1725,6 +1725,19 @@ public class LoginController extends SpringActionController
                 errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             }
         }
+
+        public URLHelper getSuccessURL(SetPasswordForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public ModelAndView getSuccessView(SetPasswordForm form) throws Exception
+        {
+            // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
+            AuthenticationManager.AuthenticationResult result = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+            return HttpView.redirect(result.getRedirectURL(), true);
+        }
     }
 
     public static void checkVerificationErrors(boolean isVerified, User user, ValidEmail email, String verification, Errors errors)
