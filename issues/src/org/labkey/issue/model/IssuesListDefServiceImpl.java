@@ -182,4 +182,10 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         IssueManager.saveIssue(user, container, issue);
         return issue.getIssueId();
     }
+
+    @Override
+    public void uncache(Container container)
+    {
+        IssueListDefCache.uncache(container);
+    }
 }
