@@ -23,7 +23,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,21 +34,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 */
 public class SqlDialectManager
 {
-    private static List<SqlDialectFactory> _factories = new CopyOnWriteArrayList<>();
-
-    public static void register(SqlDialectFactory factory)
-    {
-        _factories.add(factory);
-    }
+    // Ensures that all SqlDialectFactories are registered and SqlDialectFactory modifiers are applied before the first
+    // dialect is created. See #33518.
+    private static final List<SqlDialectFactory> FACTORIES = SqlDialectRegistry.getFactories();
 
     /**
      * Getting the SqlDialect from the datasource properties won't return the version-specific dialect -- use
      * getFromMetaData() if possible.
      * @throws SqlDialectNotSupportedException if database is not supported
      */
-    public static @NotNull SqlDialect getFromDriverClassname(String dsName, String driverClassName) throws ServletException
+    public static @NotNull SqlDialect getFromDriverClassname(String dsName, String driverClassName)
     {
-        for (SqlDialectFactory factory : _factories)
+        for (SqlDialectFactory factory : FACTORIES)
         {
             SqlDialect dialect = factory.createFromDriverClassName(driverClassName);
 
@@ -76,7 +72,7 @@ public class SqlDialectManager
      */
     public static @NotNull SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        for (SqlDialectFactory factory : _factories)
+        for (SqlDialectFactory factory : FACTORIES)
         {
             SqlDialect dialect = factory.createFromProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings, primaryDataSource);
 
@@ -92,7 +88,7 @@ public class SqlDialectManager
     {
         Set<Class> classes = new HashSet<>();
 
-        for (SqlDialectFactory factory : _factories)
+        for (SqlDialectFactory factory : FACTORIES)
             classes.addAll(factory.getJUnitTests());
 
         // TODO: Why don't we register these directly in the module?
@@ -108,7 +104,7 @@ public class SqlDialectManager
     {
         Set<SqlDialect> dialects = new HashSet<>();
 
-        for (SqlDialectFactory factory : _factories)
+        for (SqlDialectFactory factory : FACTORIES)
         {
             for (SqlDialect dialect : factory.getDialectsToTest())
             {
@@ -120,11 +116,5 @@ public class SqlDialectManager
         }
 
         return dialects;
-    }
-
-
-    public static List<SqlDialectFactory> getFactories()
-    {
-        return new LinkedList<>(_factories);
     }
 }
