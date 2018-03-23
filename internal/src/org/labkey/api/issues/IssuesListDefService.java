@@ -134,5 +134,11 @@ public interface IssuesListDefService
      * @return int IssueId for the newly created Issue
      */
     int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body) throws Exception;
+
+    /**
+     * Clears the issue list definition cache
+     * @param container
+     */
+    void uncache(Container container);
 }
 
