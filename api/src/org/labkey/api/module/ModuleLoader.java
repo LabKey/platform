@@ -837,7 +837,7 @@ public class ModuleLoader implements Filter
     @JavaRuntimeVersion
     private void verifyJavaVersion() throws ConfigurationException
     {
-        if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_1_8))
+        if (!SystemUtils.IS_JAVA_1_8)
             throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8.");
     }
 
