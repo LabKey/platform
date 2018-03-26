@@ -581,11 +581,13 @@ core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
 core/src/org/labkey/core/view/feedback.jsp -text
 core/src/org/labkey/core/view/styleGuide.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/AppTemplate.java -text
+core/src/org/labkey/core/view/template/bootstrap/CoreWarningProvider.java -text
 core/src/org/labkey/core/view/template/bootstrap/DialogTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/Header.java -text
 core/src/org/labkey/core/view/template/bootstrap/PageTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/PrintTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/ViewServiceImpl.java -text
+core/src/org/labkey/core/view/template/bootstrap/WarningServiceImpl.java -text
 core/src/org/labkey/core/view/template/bootstrap/WizardTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/body.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/dialog.jsp -text

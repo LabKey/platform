@@ -352,7 +352,6 @@ public class SecurityController extends SpringActionController
             setHelpTopic("configuringPerms#siteperm");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setTitle("Permissions for " + getContainer().getPath());
-            getPageConfig().setSkipPHIBanner(true); // since save permission doesn't reload page, skip phi banner as it may be stale
 
             return permsView;
         }

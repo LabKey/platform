@@ -62,7 +62,7 @@ public class ViewServiceImpl implements ViewService
     }
 
     @Override
-    public HttpView<PageConfig> getTemplate(Template t, ViewContext context, ModelAndView body, PageConfig page)
+    public PageTemplate getTemplate(Template t, ViewContext context, ModelAndView body, PageConfig page)
     {
         switch (t)
         {

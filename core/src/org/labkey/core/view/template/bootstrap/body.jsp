@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 --%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.WebPartFactory" %>
-<%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
-<%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.template.AppBar" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable
@@ -62,7 +62,7 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <%= text(PageTemplate.renderSiteMessages(pageConfig)) %>
+            <%= text(pageConfig.renderSiteMessages(getViewContext())) %>
             <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
                {
                    String trail = renderTrail(pageConfig.getAppBar().getNavTrail());

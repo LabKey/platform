@@ -147,6 +147,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
+import org.labkey.api.view.template.WarningService;
 import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -214,6 +215,8 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
+import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
+import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
@@ -329,6 +332,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, new SummaryStatisticRegistryImpl());
         ServiceRegistry.get().registerService(UsageMetricsService.class, new UsageMetricsServiceImpl());
         ServiceRegistry.get().registerService(CustomLabelService.class, new CustomLabelService.CustomLabelServiceImpl());
+        ServiceRegistry.get().registerService(WarningService.class, new WarningServiceImpl());
+
+        WarningService.get().register(new CoreWarningProvider());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
         // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup

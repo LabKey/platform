@@ -24,9 +24,8 @@ import org.labkey.api.data.bigiron.AbstractClrInstallationManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.bigiron.BigIronController;
-
-import java.util.Collection;
 
 /**
  * User: adam
@@ -111,10 +110,10 @@ public class GroupConcatInstallationManager extends AbstractClrInstallationManag
     }
 
     @Override
-    protected void addAdminWarningMessages(Collection<String> messages)
+    protected void addAdminWarningMessages(Warnings warnings)
     {
         ActionURL downloadURL = new ActionURL(BigIronController.DownloadGroupConcatInstallScriptAction.class, ContainerManager.getRoot());
-        messages.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. <a href=\"" + downloadURL + "\">Download installation script.</a> " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
+        warnings.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. <a href=\"" + downloadURL + "\">Download installation script.</a> " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
     }
 
     public static class TestCase extends Assert
