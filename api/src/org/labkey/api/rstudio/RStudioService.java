@@ -87,7 +87,34 @@ public interface RStudioService
         return null;
     }
 
-    default Controller createHttpProxy(ServletContext servletContext, String servletName, Properties properties, String injectJavascriptHook, boolean capture) throws Exception
+    /**
+     * Inject javascript by converting response stream to String and inject js string to html.
+     * This method does not preserve non-string content, such as images,
+     * @param servletContext
+     * @param servletName
+     * @param properties
+     * @param injectJavascriptHook the js string to inject to html
+     * @param capture True to use controller that supports getBody method
+     * @return
+     * @throws Exception
+     */
+    default Controller createInjectScriptHttpProxy(ServletContext servletContext, String servletName, Properties properties, String injectJavascriptHook, boolean capture) throws Exception
+    {
+        return null;
+    }
+
+    /**
+     * Modify html content of response without losing non string content (images).
+     * Unless html contains <img> tab contents, createInjectScriptHttpProxy is preferred for better performance.
+     * @param servletContext
+     * @param servletName
+     * @param properties
+     * @param searchString The anchor html substring to be replaced
+     * @param replacementString Replace searchString with replacementString for html
+     * @return
+     * @throws Exception
+     */
+    default Controller createModifyHtmlHttpProxy(ServletContext servletContext, String servletName, Properties properties, String searchString, String replacementString) throws Exception
     {
         return null;
     }
