@@ -567,7 +567,6 @@ api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
 api/src/org/labkey/api/docker/DockerContainerService.java -text
 api/src/org/labkey/api/docker/DockerContainerSessionListener.java -text
-api/src/org/labkey/api/evaluation/EvaluationService.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
