@@ -31,6 +31,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -1330,7 +1331,7 @@ public abstract class SqlDialect
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
     // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
-    public void addAdminWarningMessages(Collection<String> messages)
+    public void addAdminWarningMessages(Warnings warnings)
     {
     }
 

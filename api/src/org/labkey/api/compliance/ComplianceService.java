@@ -60,10 +60,6 @@ public interface ComplianceService
     {
         return null;
     }
-    default String getPHIBanner(ViewContext viewContext)
-    {
-        return null;
-    }
 
     class DefaultComplianceService implements ComplianceService
     {

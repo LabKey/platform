@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -33,10 +34,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +76,8 @@ public class PageConfig
 		Default, True, False
 	}
 
+    private static final Collection<String> STATIC_ADMIN_WARNINGS = getStaticAdminWarnings();
+
     private Template _template = Template.Home;
     private String _title;
     private HelpTopic _helpTopic;
@@ -96,9 +98,6 @@ public class PageConfig
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
-    private List<String> _warningMessages = null;
-    private List<String> _dismissibleWarningMessages = null;
-    private boolean _skipPHIBanner = false;
 
     public PageConfig()
     {
@@ -386,58 +385,75 @@ public class PageConfig
         _resources.add(resource);
     }
 
-    public void addWarningMessage(String html)
+    // Check warning conditions that will never change while the server is running. This will be called once per server
+    // session; no need to test on every request.
+    private static Collection<String> getStaticAdminWarnings()
     {
-        if (_warningMessages == null)
-            _warningMessages = new ArrayList<>();
-        _warningMessages.add(html);
+        List<String> messages = new LinkedList<>();
+
+        Warnings warnings = Warnings.of(messages);
+        WarningService.get().forEachProvider(p->p.addStaticWarnings(warnings));
+
+        return messages;
     }
 
-    public void addWarningMessages(Collection<String> messages)
+    // For now, gives a central place to render messaging
+    public String renderSiteMessages(ViewContext context)
     {
-        if (_warningMessages == null)
-            _warningMessages = new ArrayList<>();
-        _warningMessages.addAll(messages);
+        // Collect warnings
+        List<String> warningMessages = new LinkedList<>();
+        User user = context.getUser();
+
+        if (null != user && user.isInSiteAdminGroup())
+            warningMessages.addAll(STATIC_ADMIN_WARNINGS);
+
+        Warnings warnings = Warnings.of(warningMessages);
+        WarningService.get().forEachProvider(p->p.addWarnings(warnings, context));
+
+        List<String> dismissibleWarningMessages = new LinkedList<>();
+        Warnings dismissibleWarnings = Warnings.of(dismissibleWarningMessages);
+        WarningService.get().forEachProvider(p->p.addDismissibleWarnings(dismissibleWarnings, context));
+
+        // Render warnings
+        StringBuilder messages = new StringBuilder();
+
+        if (!warningMessages.isEmpty())
+        {
+            messages.append("<div class=\"alert alert-warning\" role=\"alert\">");
+            appendMessageContent(warningMessages, messages);
+            messages.append("</div>");
+        }
+
+        if (!dismissibleWarningMessages.isEmpty())
+        {
+            messages.append("<div class=\"alert alert-warning alert-dismissable lk-dismissable-warn\">");
+            messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
+
+            appendMessageContent(dismissibleWarningMessages, messages);
+            messages.append("</div>");
+        }
+
+        // Display a <noscript> warning message
+        messages.append("<noscript>");
+        messages.append("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>");
+        messages.append("</noscript>");
+
+        return messages.toString();
     }
 
-    @NotNull
-    public List<String> getWarningMessages()
+    private void appendMessageContent(List<String> messages, StringBuilder html)
     {
-        if (_warningMessages != null)
-            return _warningMessages;
-        return Collections.emptyList();
+        if (!messages.isEmpty())
+        {
+            if (messages.size() == 1)
+                html.append(messages.get(0));
+            else
+            {
+                html.append("<ul>");
+                for (String msg : messages)
+                    html.append("<li>").append(msg).append("</li>");
+                html.append("</ul>");
+            }
+        }
     }
-
-    public void addDismissibleWarningMessage(String html)
-    {
-        if (_dismissibleWarningMessages == null)
-            _dismissibleWarningMessages = new ArrayList<>();
-        _dismissibleWarningMessages.add(html);
-    }
-
-    public void addDismissibleWarningMessages(Collection<String> messages)
-    {
-        if (_dismissibleWarningMessages == null)
-            _dismissibleWarningMessages = new ArrayList<>();
-        _dismissibleWarningMessages.addAll(messages);
-    }
-
-    @NotNull
-    public List<String> getDismissibleWarningMessages()
-    {
-        if (_dismissibleWarningMessages != null)
-            return _dismissibleWarningMessages;
-        return Collections.emptyList();
-    }
-
-    public boolean isSkipPHIBanner()
-    {
-        return _skipPHIBanner;
-    }
-
-    public void setSkipPHIBanner(boolean skipPHIBanner)
-    {
-        _skipPHIBanner = skipPHIBanner;
-    }
-
 }

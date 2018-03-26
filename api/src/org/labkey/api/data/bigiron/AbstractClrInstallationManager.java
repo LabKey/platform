@@ -28,9 +28,9 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.view.template.Warnings;
 
 import java.sql.Connection;
-import java.util.Collection;
 
 /**
  * Base class for handling installation of CLR Assemblies on SQL Server. Most methods/logic
@@ -183,5 +183,5 @@ public abstract class AbstractClrInstallationManager
     protected abstract String getUninstallationExceptionMsg();
     protected abstract String getInstallationCheckSql();
     protected abstract String getVersionCheckSql();
-    protected abstract void addAdminWarningMessages(Collection<String> messages);
+    protected abstract void addAdminWarningMessages(Warnings warnings);
 }

@@ -1722,6 +1722,9 @@ api/src/org/labkey/api/view/template/ClientDependency.java -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
 api/src/org/labkey/api/view/template/FrameFactoryClassic.java -text
 api/src/org/labkey/api/view/template/PageConfig.java -text
+api/src/org/labkey/api/view/template/WarningProvider.java -text
+api/src/org/labkey/api/view/template/WarningService.java -text
+api/src/org/labkey/api/view/template/Warnings.java -text
 api/src/org/labkey/api/visualization/GenericChartReport.java -text
 api/src/org/labkey/api/visualization/GenericChartReportDescriptor.java -text
 api/src/org/labkey/api/visualization/IVisualizationSourceQuery.java -text

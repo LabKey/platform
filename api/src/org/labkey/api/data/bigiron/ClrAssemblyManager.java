@@ -16,8 +16,8 @@
 package org.labkey.api.data.bigiron;
 
 import org.labkey.api.data.DbScope;
+import org.labkey.api.view.template.Warnings;
 
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -43,13 +43,13 @@ public class ClrAssemblyManager
         _managers.add(manager);
     }
 
-    public static void addAdminWarningMessages(Collection<String> messages)
+    public static void addAdminWarningMessages(Warnings warnings)
     {
         for (AbstractClrInstallationManager manager : _managers)
         {
             if (!manager.isInstalled(DbScope.getLabKeyScope()))
             {
-                manager.addAdminWarningMessages(messages);
+                manager.addAdminWarningMessages(warnings);
             }
         }
     }
