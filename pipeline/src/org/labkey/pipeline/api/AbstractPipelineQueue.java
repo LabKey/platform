@@ -16,12 +16,16 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.notification.Notification;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.mule.util.StringUtils;
 
 import java.nio.file.Path;
 
@@ -79,4 +83,28 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
     }
 
     protected abstract void enqueue(PipelineJob job);
+
+    protected void notifyDone(PipelineJob job)
+    {
+        User user = job.getUser();
+        if (null == user || user.isServiceUser())
+            return;
+
+        try
+        {
+            Notification n = new Notification(job.getJobGUID(), "pipeline", user);
+            String description = StringUtils.defaultString(job.getDescription(), job.toString());
+            n.setContent("Background job completed\n" + description, "text/plain");
+            if (null != job.getStatusHref())
+            {
+                n.setActionLinkURL(job.getStatusHref().getLocalURIString());
+                n.setActionLinkText("view");
+            }
+            NotificationService.get().addNotification(job.getContainer(), user, n);
+        }
+        catch (ValidationException x)
+        {
+            LOG.warn("Notification error", x);
+        }
+    }
 }

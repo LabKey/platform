@@ -18,6 +18,8 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.notification.Notification;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -26,6 +28,7 @@ import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JobRunner;
@@ -96,13 +99,20 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         // WARNING: This method is for pipeline maintenance only.  Do not put
         //          important functionality side-effects in here, since this
         //          function is not supported in the Enterprise Pipeline.
-        LOG.debug("COMPLETED: " + job.toString());
-        ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-        boolean removed = _running.remove(job);
-        assert removed;
-        removed = _submitted.remove(job);
-        assert removed;
-        submitJobs();
+        try
+        {
+            LOG.debug("COMPLETED: " + job.toString());
+            notifyDone(job);
+            ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
+            boolean removed = _running.remove(job);
+            assert removed;
+            removed = _submitted.remove(job);
+            assert removed;
+        }
+        finally
+        {
+            submitJobs();
+        }
     }
 
     /**
