@@ -121,7 +121,9 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            form.setLoader(new MapLoader(rows));
+            MapLoader loader = new MapLoader(rows);
+            loader.setIncludeBlankLines(true);
+            form.setLoader(loader);
 
             UploadSamplesHelper helper = new UploadSamplesHelper(form, _ss.getDataObject());
             Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
