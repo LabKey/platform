@@ -2,10 +2,8 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.evaluation.EvaluationService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -13,8 +11,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DismissibleWarningMessage;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
@@ -104,19 +100,6 @@ public class CoreWarningProvider implements WarningProvider
             String message = AppProps.getInstance().getRibbonMessageHtml();
             message = ModuleHtmlView.replaceTokens(message, context);
             warnings.add(message);
-        }
-    }
-
-    @Override
-    public void addDismissibleWarnings(Warnings warnings, ViewContext context)
-    {
-        // TODO: Move this to a WarningProvider in the evaluationContent module
-        DismissibleWarningMessage expirationMessage = EvaluationService.get().getExpirationMessage();
-        if (expirationMessage != null && expirationMessage.showMessage(context))
-        {
-            String expirationText = expirationMessage.getMessageHtml(context);
-            if (!StringUtils.isEmpty(expirationText))
-                warnings.add(expirationText);
         }
     }
 }
