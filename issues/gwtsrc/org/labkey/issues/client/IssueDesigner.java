@@ -91,7 +91,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
         _typeURI = PropertyUtil.getServerProperty("typeURI");
 
         _root =  RootPanel.get("org.labkey.issues.Designer-Root");
-        _propTable = new PropertiesEditor.PD(_root, this, getService());
+        _propTable = new PropertiesEditor.PD(_root, this, getService(), true);
         _loading = new Label("");
         _root.add(_loading);
 
