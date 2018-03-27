@@ -16,6 +16,8 @@
 
 package org.labkey.test.tests.study;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
@@ -56,6 +58,13 @@ public class QuerySnapshotTest extends StudyBaseTest
                     "\"APX-1\".APXtempc,\n" +
                     "\"APX-1\".APXtemqc,\n" +
                     "FROM \"APX-1\"";
+
+    private static final String CUSTOM_QUERY_CALC_COL =
+            "SELECT \n" +
+                    "mouseId.mouseId,\n" +
+                    "sequenceNum,\n" +
+                    "(APXwtkg + APXtempc) AS combinedWeightTemp\n" +
+                    "FROM \"APX-1\"";
     @Override
     protected BrowserType bestBrowser()
     {
@@ -65,22 +74,26 @@ public class QuerySnapshotTest extends StudyBaseTest
     @Override
     protected void doCreateSteps()
     {
+    }
+
+    @BeforeClass
+    public static void doSetup()
+    {
+        QuerySnapshotTest test = (QuerySnapshotTest)getCurrentTest();
+
         // create two study folders (054 and 065) and start importing a study in each
-        setFolderName(FOLDER_1);
-        importStudy();
+        test.setFolderName(FOLDER_1);
+        test.importStudy();
 
-        setFolderName(FOLDER_2);
-        importStudy();
+        test.setFolderName(FOLDER_2);
+        test.importStudy();
 
-        waitForStudyLoad(FOLDER_1);
-        waitForStudyLoad(FOLDER_2);
+        test.waitForStudyLoad(FOLDER_1);
+        test.waitForStudyLoad(FOLDER_2);
     }
 
     @Override
-    protected void doVerifySteps()
-    {
-        doQuerySnapshotTest();
-    }
+    protected void doVerifySteps(){}
 
     @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
@@ -126,11 +139,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         return getFolderName();
     }
 
-    protected void doQuerySnapshotTest()
+    @Test
+    public void testDatasetSnapshot() throws Exception
     {
         // create a snapshot from a dataset
         log("create a snapshot from a dataset");
-        clickFolder(getStudyLabel());
+        goToProjectHome();
+        clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         createQuerySnapshot(DEMOGRAPHICS_SNAPSHOT, true, false);
 
@@ -139,7 +154,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         // test automatic updates by altering the source dataset
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         log("test automatic updates by altering the source dataset");
-        clickFolder(getStudyLabel());
+        clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         table.clickInsertNewRow();
         setFormElement(Locator.name("quf_MouseId"), "999121212");
@@ -147,7 +162,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         clickButton("Submit");
 
-        clickFolder(getStudyLabel());
+        clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText(DEMOGRAPHICS_SNAPSHOT));
         table.clickHeaderMenu("QC State", "All data");
         waitForSnapshotUpdate("Armenian");
@@ -155,11 +170,15 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("delete the snapshot");
         table.goToView("Edit Snapshot");
         deleteSnapshot();
+    }
 
+    @Test
+    public void testCustomView() throws Exception
+    {
         // snapshot over a custom view
         // test automatic updates by altering the source dataset
         log("create a snapshot over a custom view");
-        navigateToFolder(getProjectName(), getStudyLabel());
+        navigateToFolder(getProjectName(), FOLDER_1);
         clickAndWait(Locator.linkWithText("APX-1: Abbreviated Physical Exam"));
         _customizeViewsHelper.openCustomizeViewPanel();
 
@@ -169,14 +188,15 @@ public class QuerySnapshotTest extends StudyBaseTest
         createQuerySnapshot(APX_SNAPSHOT, true, false);
         assertTextNotPresent("Slovakian");
 
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         log("test automatic updates for a joined snapshot view");
-        navigateToFolder(getProjectName(), getStudyLabel());
+        navigateToFolder(getProjectName(), FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         table.clickEditRow(table.getRowIndex("Mouse Id", "999320016"));
         setFormElement(Locator.name("quf_DEMraco"), "Slovakian");
         clickButton("Submit");
 
-        navigateToFolder(getProjectName(), getStudyLabel());
+        navigateToFolder(getProjectName(), FOLDER_1);
         clickAndWait(Locator.linkWithText(APX_SNAPSHOT));
         table.clickHeaderMenu("QC State", "All data");
         waitForSnapshotUpdate("Slovakian");
@@ -184,10 +204,15 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("delete the snapshot");
         table.goToView("Edit Snapshot");
         deleteSnapshot();
+    }
 
+    @Test
+    public void testCustomQuery() throws Exception
+    {
         // snapshot over a custom query
         log("create a snapshot over a custom query");
-        clickFolder(getStudyLabel());
+        goToProjectHome();
+        clickFolder(FOLDER_1);
         goToManageViews();
         new BootstrapMenu(getDriver(),
                 Locator.tagWithClassContaining("div", "lk-menu-drop")
@@ -207,6 +232,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         assertTextPresent("Dataset: Custom Query Snapshot");
 
         // edit snapshot then delete
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         log("edit the snapshot");
         table.goToView("Edit Snapshot");
         checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]"));
@@ -226,8 +252,14 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickTab("Manage");
         waitForText(10000, "Manage Datasets");
         assertElementNotPresent(Locator.linkWithText("Custom Query Snapshot"));
+    }
 
+    @Test
+    public void testCrossFolderSnapshot() throws Exception
+    {
         // create a custom query for a cross study scenario
+        goToProjectHome();
+        clickFolder(FOLDER_1);
         goToModule("Query");
         createNewQuery("study");
 
@@ -235,47 +267,97 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickButton("Create and Edit Source");
         setCodeEditorValue("queryText", CROSS_STUDY_QUERY_SQL);
         clickButton("Save & Finish");
-        
+
         createQuerySnapshot(CROSS_STUDY_SNAPSHOT, true, false, "keyField", 3);
 
         // verify refresh from both datasets
         clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.clickInsertNewRow();
-        setFormElement(Locator.name("quf_MouseId"), "999121212");
+        setFormElement(Locator.name("quf_MouseId"), "999131313");
         setFormElement(Locator.name("quf_DEMsex"), "Unknown");
 
         clickButton("Submit");
 
-        clickFolder(FOLDER_2);
+        clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText(CROSS_STUDY_SNAPSHOT));
         waitForSnapshotUpdate("Unknown");
-        
+
         clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         table.clickInsertNewRow();
-        setFormElement(Locator.name("quf_MouseId"), "999151515");
+        setFormElement(Locator.name("quf_MouseId"), "999141414");
         setFormElement(Locator.name("quf_DEMsexor"), "Undecided");
 
         clickButton("Submit");
 
-        clickFolder(FOLDER_2);
+        clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText(CROSS_STUDY_SNAPSHOT));
         waitForSnapshotUpdate("Undecided");
 
         table.goToView("Edit Snapshot");
         deleteSnapshot();
 
-        clickFolder(getStudyLabel());
+        clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
         createQuerySnapshot(DEMOGRAPHICS_SNAPSHOT, true, false);
         changeDatasetLabel(DEMOGRAPHICS_SNAPSHOT, "New Demographics");
-        clickFolder(getStudyLabel());
+        clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("New Demographics"));
         table.goToView("Edit Snapshot");
         changeDatasetName(DEMOGRAPHICS_SNAPSHOT, "New Dem");
-        clickFolder(getStudyLabel());
+        clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("New Demographics"));
+        table.goToView("Edit Snapshot");
+        deleteSnapshot();
+    }
+
+    private static final String CALC_COL_QUERY = "CalculatedColumnQuery";
+    private static final String CALC_COL_QUERY_SNAPSHOT = "CalculatedColumnQuery Snapshot";
+
+    @Test
+    public void testArbitraryCustomQuery() throws Exception
+    {
+        // snapshot over a custom query with calculated columns : issue #31255
+        log("create a snapshot over a custom query with calculated columns");
+        goToProjectHome();
+        clickFolder(FOLDER_1);
+        goToManageViews();
+        new BootstrapMenu(getDriver(),
+                Locator.tagWithClassContaining("div", "lk-menu-drop")
+                        .waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).clickSubMenu(true, "Grid View");
+
+        clickAndWait(Locator.linkWithText("Modify Dataset List (Advanced)"));
+        createNewQuery("study");
+
+        setFormElement(Locator.id("ff_newQueryName"), CALC_COL_QUERY);
+        selectOptionByText(Locator.name("ff_baseTableName"), "APX-1 (APX-1: Abbreviated Physical Exam)");
+        clickButton("Create and Edit Source");
+        setCodeEditorValue("queryText", CUSTOM_QUERY_CALC_COL);
+        clickButton("Save & Finish");
+
+        waitForText(WAIT_FOR_PAGE, CALC_COL_QUERY);
+        createQuerySnapshot(CALC_COL_QUERY_SNAPSHOT, true, false);
+        assertTextPresent("Dataset: " + CALC_COL_QUERY_SNAPSHOT);
+
+        // verify refresh
+        clickFolder(FOLDER_1);
+        clickAndWait(Locator.linkWithText("APX-1: Abbreviated Physical Exam"));
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
+        table.clickInsertNewRow();
+        setFormElement(Locator.name("quf_MouseId"), "999151515");
+        setFormElement(Locator.name("quf_SequenceNum"), "1701");
+        setFormElement(Locator.name("quf_APXwtkg"), "-1");
+        setFormElement(Locator.name("quf_APXtempc"), "-1");
+
+        clickButton("Submit");
+
+        clickFolder(FOLDER_1);
+        clickAndWait(Locator.linkWithText(CALC_COL_QUERY_SNAPSHOT));
+        waitForSnapshotUpdate("-2");
+
+        // delete the snapshot
         table.goToView("Edit Snapshot");
         deleteSnapshot();
     }
