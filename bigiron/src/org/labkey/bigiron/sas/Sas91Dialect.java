@@ -17,9 +17,11 @@
 package org.labkey.bigiron.sas;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -55,7 +57,7 @@ public class Sas91Dialect extends SasDialect
         @Override
         public String getSqlTypeName() throws SQLException
         {
-            return sqlTypeNameFromSqlType(getSqlType());
+            return Sas91Dialect.this.getSqlTypeName(JdbcType.valueOf(getSqlType()));
         }
 
         @Override
