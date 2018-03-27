@@ -659,7 +659,7 @@ public class Query
         try
         {
             ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
-            if (ret != null)
+            if ((ret != null) && (queryDefOUT[0] == null))
             {
                 TableInfo tinfo = ret.getTableInfo();
                 if (tinfo != null)
