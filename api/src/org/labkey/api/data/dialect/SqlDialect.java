@@ -70,13 +70,12 @@ import java.util.regex.Pattern;
 // dialect holds state specific to each database, for example, reserved words, user defined type information, etc.
 public abstract class SqlDialect
 {
+    public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
+    public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
+
     protected static final Logger LOG = Logger.getLogger(SqlDialect.class);
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
-    public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
-    public static final String GUID_TYPE = "ENTITYID";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
-
-    public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
 
     private int _databaseVersion = 0;
     private String _productVersion = "0";
@@ -279,15 +278,6 @@ public abstract class SqlDialect
     }
 
 
-    @NotNull @Deprecated
-    public String sqlTypeNameFromSqlType(int sqlType)
-    {
-        String sqlTypeName = _sqlTypeIntMap.get(sqlType);
-
-        return null != sqlTypeName ? sqlTypeName : "OTHER";
-    }
-
-
     @Nullable
     public String getSqlTypeName(JdbcType type)
     {
@@ -300,10 +290,11 @@ public abstract class SqlDialect
         }
     }
 
+    // Override for alternative behavior
     @Nullable
     public String getSqlCastTypeName(JdbcType type)
     {
-        return getSqlTypeName(type);   // Override for alternate behavior
+        return getSqlTypeName(type);
     }
 
     public abstract String getSqlTypeName(PropertyStorageSpec prop);

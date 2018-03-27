@@ -505,12 +505,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return rangeURI;
     }
 
-    @Deprecated
-    public int getSqlTypeInt()
-    {
-        return getJdbcType().sqlType;
-    }
-
     @NotNull
     public abstract JdbcType getJdbcType();
 
@@ -569,57 +563,6 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return getJdbcType().isNumeric();
     }
 
-    @Deprecated // TODO: Remove after testing JdbcType.getJavaClass(isNullable)
-    public static Class javaClassFromSqlType(int sqlType, boolean isObj)
-    {
-        switch (sqlType)
-        {
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.NUMERIC:
-            case Types.DECIMAL:
-                if (isObj)
-                    return Double.class;
-                else
-                    return Double.TYPE;
-            case Types.REAL:
-                if (isObj)
-                    return Float.class;
-                else
-                    return Float.TYPE;
-            case Types.BIT:
-            case Types.BOOLEAN:
-                if (isObj)
-                    return Boolean.class;
-                else
-                    return Boolean.TYPE;
-            case Types.INTEGER:
-            case Types.SMALLINT:
-            case Types.TINYINT:
-                if (isObj)
-                    return Integer.class;
-                else
-                    return Integer.TYPE;
-            case Types.BIGINT:
-                if (isObj)
-                    return Long.class;
-                else
-                    return Long.TYPE;
-            case Types.TIMESTAMP:
-                return java.sql.Timestamp.class;
-            case Types.TIME:
-                return java.sql.Time.class;
-            case Types.DATE:
-                return java.sql.Date.class;
-            case Types.VARCHAR:
-            case Types.CHAR:
-            case Types.LONGVARCHAR:
-                return String.class;
-            default:
-                return String.class;
-        }
-    }
-
     public String getFriendlyTypeName()
     {
         return getFriendlyTypeName(getJavaClass());
@@ -661,22 +604,13 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return getJavaClass(isNullable());
     }
 
-    private static final EnumSet<JdbcType> IGNORE = EnumSet.of(JdbcType.BINARY, JdbcType.OTHER, JdbcType.DECIMAL, JdbcType.SMALLINT, JdbcType.TINYINT, JdbcType.NULL, JdbcType.VARBINARY);
-
     protected Class getJavaClass(boolean isNullable)
     {
         PropertyType pt = getPropertyType();
         if (pt != null)
             return pt.getJavaType();
 
-        // TODO: Remove after testing
-        Class oldClass = javaClassFromSqlType(getSqlTypeInt(), isNullable);
-        Class newClass = getJdbcType().getJavaClass(isNullable);
-
-        if (!oldClass.equals(newClass) && !IGNORE.contains(getJdbcType()))
-            throw new IllegalStateException("Expected " + getJdbcType() + " to map to " + oldClass.getName() + " but it mapped to " + newClass);
-
-        return newClass;
+        return getJdbcType().getJavaClass(isNullable);
     }
 
     public void setFacetingBehaviorType(FacetingBehaviorType type)
