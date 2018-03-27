@@ -31,17 +31,22 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h3>External Schemas</h3>
 <p>
-    Administrators can define external schemas to make data stored in any PostgreSQL, Microsoft SQL Server, SAS, MySQL,
-    or Oracle relational database available for viewing, querying, and editing via LabKey Server. This feature should be
-    used with great caution since, depending on your configuration, any user with access to this folder could view and
-    modify arbitrary data in your databases.
-</p>
-<p>
-    Defining any of the standard LabKey schemas as an external schema is strongly discouraged since it bypasses LabKey's
-    security and data integrity checks. Also, the database schema may change in future releases, so queries written
-    directly against LabKey schemas may stop working after an upgrade.
+    Site administrators can define external schemas to make data stored in any PostgreSQL, Microsoft SQL Server, SAS, MySQL,
+    or Oracle relational database available for viewing, querying, and editing via LabKey Server.
 </p>
 <%
+    if (getUser().isInSiteAdminGroup())
+    {
+%>
+<p>
+    This feature should be used with great caution since, depending on your configuration, any user with access to this folder
+    could view and modify arbitrary data in your databases. Defining any of the standard LabKey schemas as an external schema
+    is strongly discouraged since it bypasses LabKey's security and data integrity checks. Also, the LabKey schemas may change
+    in future releases, so queries written directly against LabKey schemas may stop working after an upgrade.
+</p>
+<%
+    }
+
     Container c = getContainer();
     boolean isAdmin = c.hasPermission(getUser(), AdminOperationsPermission.class);
     QueryUrlsImpl urls = new QueryUrlsImpl();
@@ -138,9 +143,9 @@ else
 
 <h3>Linked Schemas</h3>
 <p>
-    Linked schemas can be created by referencing an existing LabKey schema in the current or different folder.
+    Site administrators can create linked schemas by referencing an existing LabKey schema in the current or different folder.
     The linked schema may expose some or all of the tables and queries from the original schema.
-    The linked tables and queries may be filtered such that only a subset of the rows are available.
+    The linked tables and queries may be filtered such that only a subset of the rows and/or columns are available.
 </p>
 <%
     List<LinkedSchemaDef> linkedSchemas = QueryManager.get().getLinkedSchemaDefs(c);
