@@ -1921,9 +1921,6 @@ public class ModuleLoader implements Filter
     /**
      * Returns the config properties for the specified scope. If no scope is
      * specified then all properties are returned.
-     *
-     * @param scope
-     * @return
      */
     @NotNull
     public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
@@ -1944,9 +1941,6 @@ public class ModuleLoader implements Filter
 
     /**
      * Sets the entire config properties MultiValueMap.
-     *
-     * @param configProperties
-     * @return
      */
     public void setConfigProperties(@Nullable MultiValuedMap<String, ConfigProperty> configProperties)
     {

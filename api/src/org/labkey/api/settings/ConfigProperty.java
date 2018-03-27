@@ -18,6 +18,8 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Config properties are passed from the deployment environment into the application, and can set defaults
+ * during bootstrapping or subsequent server sessions.
  * Created by klum on 6/12/2017.
  */
 public class ConfigProperty
