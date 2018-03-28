@@ -170,6 +170,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                 else
                     this.stringValue = value == null ? null : value.toString();
                 break;
+            case DATE:
             case DATE_TIME:
                 if (value instanceof Date)
                     this.dateTimeValue = (Date) value;
