@@ -63,6 +63,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +81,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     protected static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     protected static final Set<PropertyStorageSpec> BASE_REQUIRED_PROPERTIES;
     protected static final Set<PropertyStorageSpec.Index> INDEXES;
+    private final ReentrantLock _lock = new ReentrantLock();
 
     static
     {
@@ -275,56 +277,53 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
             providerName = getKindName();
 
         int issueDefId;
-        synchronized (this)
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
-            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+            issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
+
+            List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+            List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+
+            Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+            if (newDomain != null)
             {
-                issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
+                Set<String> reservedNames = getReservedPropertyNames(newDomain);
+                Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
+                Map<DomainProperty, Object> defaultValues = new HashMap<>();
+                Set<String> propertyUris = new HashSet<>();
 
-                List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
-                List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
-
-                Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
-                if (newDomain != null)
+                for (GWTPropertyDescriptor pd : properties)
                 {
-                    Set<String> reservedNames = getReservedPropertyNames(newDomain);
-                    Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
-                    Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
-                    Map<DomainProperty, Object> defaultValues = new HashMap<>();
-                    Set<String> propertyUris = new HashSet<>();
-
-                    for (GWTPropertyDescriptor pd : properties)
+                    if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                     {
-                        if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
-                        {
-                            throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
-                        }
-                        DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
+                        throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
                     }
-
-                    Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-                    for (GWTIndex index : indices)
-                    {
-                        PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-                        propertyIndices.add(propIndex);
-                    }
-                    newDomain.setPropertyIndices(propertyIndices);
-
-                    // set default values on the base properties
-                    DomainKind domainKind = newDomain.getDomainKind();
-                    if (domainKind instanceof AbstractIssuesListDefDomainKind)
-                    {
-                        setDefaultValues(newDomain, ((AbstractIssuesListDefDomainKind)domainKind).getRequiredProperties());
-                    }
-                    newDomain.save(user);
+                    DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                 }
-                transaction.addCommitTask(() -> IssuesListDefService.get().uncache(container), DbScope.CommitTaskOption.POSTCOMMIT);
-                transaction.commit();
+
+                Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+                for (GWTIndex index : indices)
+                {
+                    PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+                    propertyIndices.add(propIndex);
+                }
+                newDomain.setPropertyIndices(propertyIndices);
+
+                // set default values on the base properties
+                DomainKind domainKind = newDomain.getDomainKind();
+                if (domainKind instanceof AbstractIssuesListDefDomainKind)
+                {
+                    setDefaultValues(newDomain, ((AbstractIssuesListDefDomainKind)domainKind).getRequiredProperties());
+                }
+                newDomain.save(user);
             }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
+            transaction.addCommitTask(() -> IssuesListDefService.get().uncache(container), DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
         return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
     }
