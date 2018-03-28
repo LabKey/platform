@@ -239,4 +239,9 @@ abstract public class DomainKind implements Handler<String>
         //Most domains don't need to do anything here
         return false;
     }
+
+    public boolean ensurePropertyLookup()
+    {
+        return false;
+    }
 }

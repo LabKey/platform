@@ -87,6 +87,11 @@ public class DomainUtil
 
     public static String getFormattedDefaultValue(User user, DomainProperty property, Object defaultValue)
     {
+        return getFormattedDefaultValue(user, property, defaultValue, false);
+    }
+
+    public static String getFormattedDefaultValue(User user, DomainProperty property, Object defaultValue, boolean validateOnly)
+    {
         if (defaultValue == null)
             return "[none]";
         if (defaultValue instanceof Date)
@@ -135,12 +140,15 @@ public class DomainUtil
                         ColumnInfo pkColumnInfo = table.getColumn(pkCol);
                         if (!pkColumnInfo.getClass().equals(defaultValue.getClass()))
                             defaultValue = ConvertUtils.convert(defaultValue.toString(), pkColumnInfo.getJavaClass());
-                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(pkCol), defaultValue);
 
-                        Object value = new TableSelector(table, Collections.singleton(table.getTitleColumn()), filter, null).getObject(Object.class);
+                        if (!validateOnly)
+                        {
+                            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(pkCol), defaultValue);
+                            Object value = new TableSelector(table, Collections.singleton(table.getTitleColumn()), filter, null).getObject(Object.class);
 
-                        if (value != null)
-                            return value.toString();
+                            if (value != null)
+                                return value.toString();
+                        }
                     }
                 }
             }
@@ -468,64 +476,6 @@ public class DomainUtil
             s.add(pd.getPropertyId());
         for (GWTPropertyDescriptor pd : update.getFields())
         {
-            String format = pd.getFormat();
-            String type = "";
-            try {
-                if (!StringUtils.isEmpty(format))
-                {
-                    String ptype = pd.getRangeURI();
-                    if (ptype.equalsIgnoreCase(PropertyType.DATE_TIME.getTypeUri()))
-                    {
-                        type = " for type " + PropertyType.DATE_TIME.getXarName();
-                        // Allow special named formats (these would otherwise fail validation)
-                        if (!DateUtil.isSpecialNamedFormat(format))
-                            FastDateFormat.getInstance(format);
-                    }
-                    else if (ptype.equalsIgnoreCase(PropertyType.DOUBLE.getTypeUri()))
-                    {
-                        type = " for type " + PropertyType.DOUBLE.getXarName();
-                        new DecimalFormat(format);
-                    }
-                    else if (ptype.equalsIgnoreCase(PropertyType.INTEGER.getTypeUri()))
-                    {
-                        type = " for type " + PropertyType.INTEGER.getXarName();
-                        new DecimalFormat(format);
-                    }
-                }
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.add(format + " is an illegal format" + type);
-            }
-
-            String url = pd.getURL();
-            if (null != url)
-            {
-                String message;
-                try
-                {
-                    message = StringExpressionFactory.validateURL(url);
-                    if (null == message && null == StringExpressionFactory.createURL(url))
-                        message = "Can't parse url: " + url;    // unexpected parse problem   
-                }
-                catch (Exception x)
-                {
-                    message = x.getMessage();
-                }
-                if (null != message)
-                {
-                    errors.add(message);
-                    pd.setURL(null);    // or else _copyProperties() will blow up
-                }
-            }
-
-            //Issue 15484: because the server will auto-generate MV indicator columns, which can result in naming conflicts we disallow any user-defined field w/ this suffix
-            String name = pd.getName();
-            if (name != null && name.toLowerCase().endsWith(OntologyManager.MV_INDICATOR_SUFFIX))
-            {
-                errors.add("Field name cannot end with the suffix '" + OntologyManager.MV_INDICATOR_SUFFIX + "': " + pd.getName());
-            }
-
             s.remove(pd.getPropertyId());
         }
 
