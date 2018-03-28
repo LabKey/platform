@@ -225,9 +225,10 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                     fields.add(FieldKey.fromString(additionalField));
             }
 
-            //now the native columns plus any additional fields requested
+            //now the native columns plus any additional fields requested. Use a copy of the values
+            // in the reference columnMetadata map, as it may get additional entries later when the view columns are serialized
             columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, false);
-            resp.put("columns", columnMetadata.values());
+            resp.put("columns", new ArrayList<>(columnMetadata.values()));
 
             // table indices
             JSONObject jsonIndices = new JSONObject();
