@@ -16,8 +16,10 @@
 
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -57,22 +59,28 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -341,6 +349,126 @@ public class DomainImpl implements Domain
         }
     }
 
+    private void validatePropertyDefaultValue(User user, DomainProperty dp, String value, boolean validateOnly) throws ChangePropertyDescriptorException
+    {
+        try
+        {
+            // Will throw ConversionException or IllegalArgumentException if default value does not format correctly or
+            // match data type
+            DomainUtil.getFormattedDefaultValue(user, dp, value, validateOnly);
+        }
+        catch (ConversionException | IllegalArgumentException e)
+        {
+            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": " + e.getMessage());
+        }
+    }
+
+    private void validatePropertyName(DomainProperty dp) throws ChangePropertyDescriptorException
+    {
+        //Issue 15484: because the server will auto-generate MV indicator columns, which can result in naming conflicts we disallow any user-defined field w/ this suffix
+        String name = dp.getName();
+        if (name != null && name.toLowerCase().endsWith(OntologyManager.MV_INDICATOR_SUFFIX))
+        {
+            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": " + "Field name cannot end with the suffix '" + OntologyManager.MV_INDICATOR_SUFFIX);
+        }
+    }
+
+    private void validatePropertyUrl(DomainProperty dp) throws ChangePropertyDescriptorException
+    {
+        String url = dp.getURL();
+        if (null != url)
+        {
+            String message;
+            try
+            {
+                message = StringExpressionFactory.validateURL(url);
+                if (null == message && null == StringExpressionFactory.createURL(url))
+                    message = "Can't parse url: " + url;    // unexpected parse problem
+            }
+            catch (Exception x)
+            {
+                message = x.getMessage();
+            }
+            if (null != message)
+            {
+                dp.setURL(null);    // or else _copyProperties() will blow up
+                throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": " + message);
+            }
+        }
+    }
+
+    private void validatePropertyFormat(DomainProperty dp) throws ChangePropertyDescriptorException
+    {
+        String format = dp.getFormat();
+        String type = "";
+
+        try {
+            if (!StringUtils.isEmpty(dp.getFormat()))
+            {
+                String ptype = dp.getRangeURI();
+                if (ptype.equalsIgnoreCase(PropertyType.DATE_TIME.getTypeUri()))
+                {
+                    type = " for type " + PropertyType.DATE_TIME.getXarName();
+                    // Allow special named formats (these would otherwise fail validation)
+                    if (!DateUtil.isSpecialNamedFormat(format))
+                        FastDateFormat.getInstance(format);
+                }
+                else if (ptype.equalsIgnoreCase(PropertyType.DOUBLE.getTypeUri()))
+                {
+                    type = " for type " + PropertyType.DOUBLE.getXarName();
+                    new DecimalFormat(format);
+                }
+                else if (ptype.equalsIgnoreCase(PropertyType.INTEGER.getTypeUri()))
+                {
+                    type = " for type " + PropertyType.INTEGER.getXarName();
+                    new DecimalFormat(format);
+                }
+            }
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": " + format + " is an illegal format" + type);
+        }
+    }
+
+    private void validatePropertyLookup(User user, DomainProperty dp) throws ChangePropertyDescriptorException
+    {
+        if (dp.getLookup() != null)
+        {
+            Container lookupContainer = dp.getLookup().getContainer();
+            String schemaName = dp.getLookup().getSchemaName();
+            String queryName = dp.getLookup().getQueryName();
+
+            if (lookupContainer == null)
+            {
+                lookupContainer = dp.getContainer();
+            }
+
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, schemaName);
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(queryName);
+                if (table != null)
+                {
+                    List<String> pks = table.getPkColumnNames();
+                    String pkCol = pks.get(0);
+                    if ((pkCol.equalsIgnoreCase("container") || pkCol.equalsIgnoreCase("containerid")) && pks.size() == 2)
+                    {
+                        pkCol = pks.get(1);
+                    }
+                    if (pkCol != null)
+                    {
+                        ColumnInfo pkColumnInfo = table.getColumn(pkCol);
+                        if (!dp.getPropertyType().getJdbcType().equals(pkColumnInfo.getJdbcType()))
+                        {
+                            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": Lookup table " + schemaName + "." + queryName
+                                    + " pk does not match property data type. Expected: " + pkColumnInfo.getJdbcType() + ", Actual: " + dp.getPropertyType().getJdbcType());
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
@@ -483,6 +611,24 @@ public class DomainImpl implements Domain
                                 impl._pd.setStorageColumnName(tmpName);
                             }
                         }
+                    }
+
+                    validatePropertyName(impl);
+                    validatePropertyUrl(impl);
+
+                    if (impl.getDefaultValue() != null)
+                    {
+                        validatePropertyDefaultValue(user, impl, impl.getDefaultValue(), true);
+                    }
+
+                    if (impl.getFormat() != null)
+                    {
+                        validatePropertyFormat(impl);
+                    }
+
+                    if ( getDomainKind() != null && getDomainKind().ensurePropertyLookup())
+                    {
+                        validatePropertyLookup(user, impl);
                     }
 
                     // Auditing:gather validators and conditional formats before save; then build diff using new validators and formats after save
