@@ -109,12 +109,11 @@ public interface RStudioService
      * @param servletContext
      * @param servletName
      * @param properties
-     * @param searchString The anchor html substring to be replaced
-     * @param replacementString Replace searchString with replacementString for html
+     * @param searchReplacements List of pairs of search string and replacement string
      * @return
      * @throws Exception
      */
-    default Controller createModifyHtmlHttpProxy(ServletContext servletContext, String servletName, Properties properties, String searchString, String replacementString) throws Exception
+    default Controller createModifyHtmlHttpProxy(ServletContext servletContext, String servletName, Properties properties, List<Pair<String, String>> searchReplacements) throws Exception
     {
         return null;
     }
