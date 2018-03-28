@@ -101,6 +101,15 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         String p;
         String q;
+
+        String fragment = null;
+        int hashIndex = url.indexOf('#');
+        if (hashIndex != -1)
+        {
+            fragment = url.substring(hashIndex + 1);
+            url = url.substring(0,hashIndex);
+        }
+
         int i = url.indexOf('?');
         if (i == -1)
         {
@@ -112,10 +121,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable
             p = url.substring(0,i);
             q = url.substring(i+1);
         }
+
         if (-1 != p.indexOf(' '))
             p = StringUtils.replace(p, " ", "%20");
         if (!StringUtils.isEmpty(p))
             _setURI(new URI(p));
+        assert _fragment == null : "The call to _setURI unexpectedly resulted in a fragment being set" ;
+        _fragment = fragment;
         setRawQuery(q);
     }
 
@@ -937,6 +949,18 @@ public class URLHelper implements Cloneable, Serializable, Taintable
             h = new URLHelper("http://server/index.html?x='%22<script>hi</script>");
             assertFalse(StringUtils.containsAny(h.toString(), "'\"<>"));
             assertFalse(StringUtils.containsAny(h.getLocalURIString(), "'\"<>"));
+        }
+
+        @Test
+        public void testParseWithHash() throws URISyntaxException
+        {
+            URLHelper h;
+            String url = "/ehr-animalHistory" +
+                    ".view?#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
+
+            h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
+                    ":1&activeReport:virusTesting");
+            assertEquals(url,h.toString());
         }
     }
 
