@@ -98,8 +98,11 @@ public class QuerySnapshotTest extends StudyBaseTest
     @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        //Check for errors before cleanup to avoid SQLException from deleting study so soon after updating it
-        super.checkLeaksAndErrors();
+        if (afterTest)
+        {
+            //Check for errors before cleanup to avoid SQLException from deleting study so soon after updating it
+            checkErrors();
+        }
 
         super.doCleanup(afterTest);
     }
