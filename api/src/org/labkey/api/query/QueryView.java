@@ -62,6 +62,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTrailConfig;
 import org.labkey.api.view.NavTree;
@@ -1308,7 +1309,10 @@ public class QueryView extends WebPartView<Object>
         ActionURL exportUrl = urlFor(QueryAction.exportScript).replaceParameter("scriptType","r");
         TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey,
                                                                    getColumnHeaderType(), exportUrl, null, null);
-        exportButton.addSubPanel("RStudio", new JspView<>("/org/labkey/api/query/rstudioExport.jsp", textBean));
+        HttpView exportView = rss.getExportToRStudioView(textBean);
+        if (exportView == null)
+            return;
+        exportButton.addSubPanel("RStudio", exportView);
     }
 
 

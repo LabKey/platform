@@ -16,9 +16,12 @@
 package org.labkey.api.rstudio;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -118,4 +121,9 @@ public interface RStudioService
         return null;
     }
 
+    default HttpView getExportToRStudioView(QueryView.TextExportOptionsBean textBean)
+    {
+//        return null;  //TODO on git merge, uncomment and remove rstudioExport.jsp from core
+        return new JspView<>("/org/labkey/api/query/rstudioExport.jsp", textBean);
+    }
 }
