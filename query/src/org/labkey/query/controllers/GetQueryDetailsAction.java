@@ -227,7 +227,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             //now the native columns plus any additional fields requested. Use a copy of the values
             // in the reference columnMetadata map, as it may get additional entries later when the view columns are serialized
-            columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, false);
+            columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, false, form.isIncludeSuggestedQueryColumns());
             resp.put("columns", new ArrayList<>(columnMetadata.values()));
 
             // table indices
@@ -391,6 +391,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         private String _fk;
         private String[] _additionalFields;
         private boolean _initializeMissingView;
+        private boolean _includeSuggestedQueryColumns = true;
 
         public String getSchemaName()
         {
@@ -450,6 +451,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         public void setInitializeMissingView(boolean initializeMissingView)
         {
             _initializeMissingView = initializeMissingView;
+        }
+
+        public boolean isIncludeSuggestedQueryColumns()
+        {
+            return _includeSuggestedQueryColumns;
+        }
+
+        public void setIncludeSuggestedQueryColumns(boolean includeSuggestedQueryColumns)
+        {
+            _includeSuggestedQueryColumns = includeSuggestedQueryColumns;
         }
     }
 }
