@@ -41,11 +41,12 @@ import java.util.stream.Collectors;
  */
 public class JsonWriter
 {
-    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tableInfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
+    public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tableInfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat, boolean includeAdditionalQueryColumns)
     {
         List<DisplayColumn> displayColumns = QueryService.get().getColumns(tableInfo, fields, tableInfo.getColumns())
                 .values()
                 .stream()
+                .filter(cinfo -> includeAdditionalQueryColumns || !cinfo.isAdditionalQueryColumn())
                 .map(cinfo -> cinfo.getDisplayColumnFactory().createRenderer(cinfo))
                 .collect(Collectors.toList());
 
