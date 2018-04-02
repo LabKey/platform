@@ -513,5 +513,12 @@ public class QueryLookupWrapper extends QueryRelation
         {
             return _lkCol.getValueSql(_source.getAlias());
         }
+
+        @Override
+        public int addRef(@NotNull Object refer)
+        {
+            _foreignKey.addRef(refer);
+            return super.addRef(refer);
+        }
     }
 }
