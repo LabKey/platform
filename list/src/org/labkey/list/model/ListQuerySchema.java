@@ -92,7 +92,7 @@ public class ListQuerySchema extends UserSchema
         if (def != null)
         {
             Domain domain = def.getDomain();
-            if (domain != null)
+            if (domain != null && domain.getDomainKind() != null)       // #33459: domainKind can be null from Indexing Service
             {
                 try
                 {
