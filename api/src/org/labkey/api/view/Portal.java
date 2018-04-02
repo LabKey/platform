@@ -632,23 +632,24 @@ public class Portal
     private static void ensurePage(Container c, String pageId)
     {
         assert getSchema().getScope().isTransactionActive();
-        PortalPage find = Portal.getPortalPage(c, pageId);
-        if (null != find)
-        {
-            _setHidden(find, false);
-            return;
-        }
 
         Map<String, PortalPage> pages = Portal.getPages(c, true);
         int index = pages.size() + 1;           // new index must be at least this big
         for (PortalPage p : pages.values())
-            index = Math.max(p.getIndex()+1, index);
+        {
+            if (StringUtils.equalsIgnoreCase(pageId, p.getPageId()))
+            {
+                _setHidden(p, false);
+                return;
+            }
+            index = Math.max(p.getIndex() + 1, index);
+        }
 
         try
         {
             insertPortalPage(getTableInfoPortalPages(), c, pageId, index, null);
         }
-        catch (SQLException | DataIntegrityViolationException x)
+        catch (RuntimeSQLException | DataIntegrityViolationException x)
         {
             throw getPortalPageException(x);
         }
@@ -751,7 +752,7 @@ public class Portal
                 transaction.commit();
             }
         }
-        catch (SQLException | DataIntegrityViolationException x)
+        catch (DataIntegrityViolationException x)
         {
             throw getPortalPageException(x);
         }
@@ -761,7 +762,7 @@ public class Portal
         }
     }
 
-    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption) throws SQLException
+    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption)
     {
         PortalPage p = new PortalPage();
         p.setPageId(pageId);
@@ -771,7 +772,7 @@ public class Portal
         return insertPortalPage(portalTable, c, p);
     }
 
-    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, PortalPage p) throws SQLException
+    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, PortalPage p)
     {
         p.setEntityId(new GUID());
         p.setContainer(new GUID(c.getId()));
