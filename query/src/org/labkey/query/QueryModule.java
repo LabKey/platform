@@ -46,6 +46,7 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
+import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
@@ -179,6 +180,8 @@ public class QueryModule extends DefaultModule
 
         ReportService.registerProvider(ReportServiceImpl.getInstance());
         ReportService.get().addUIProvider(new ReportUIProvider());
+        ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
+        ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
 
         ChartRendererFactory.get().addChartRenderer(XYChartRenderer.getInstance());
         ChartRendererFactory.get().addChartRenderer(TimeSeriesRenderer.getInstance());

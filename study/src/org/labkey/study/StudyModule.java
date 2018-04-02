@@ -51,6 +51,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -409,6 +410,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
+        ReportService.get().addGlobalItemFilterType(QueryReport.TYPE);
 
         SearchService ss = SearchService.get();
 

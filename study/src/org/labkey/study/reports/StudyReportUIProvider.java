@@ -18,11 +18,8 @@ package org.labkey.study.reports;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.JavaScriptReport;
-import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
@@ -36,7 +33,6 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -86,24 +82,18 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconClsMap.put(AssayProgressReport.TYPE, "fa fa-calendar");
     }
 
-    private static final ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
-            public boolean accept(String reportType, String label)
-            {
-                if (StudyCrosstabReport.TYPE.equals(reportType)) return true;
-                if (StudyChartQueryReport.TYPE.equals(reportType)) return true;
-                if (ChartReportView.TYPE.equals(reportType)) return true;
-                if (StudyRReport.TYPE.equals(reportType)) return true;
-                if (ExternalReport.TYPE.equals(reportType)) return true;
-                if (QuerySnapshotService.TYPE.equals(reportType)) return true;
-                if (StudyQueryReport.TYPE.equals(reportType)) return true;
-                if (TimeChartReport.TYPE.equals(reportType)) return true;
-                if (JavaScriptReport.TYPE.equals(reportType)) return true;
-                if (ParticipantReport.TYPE.equals(reportType)) return true;
-                if (GenericChartReport.TYPE.equals(reportType)) return true;
-                if (QueryReport.TYPE.equals(reportType)) return true;
-                return false;
-            }
-        };
+    private static final ReportService.ItemFilter _filter = (type, label) -> {
+        if (ReportService.get().getGlobalItemFilterTypes().contains(type)) return true;
+        if (StudyCrosstabReport.TYPE.equals(type)) return true;
+        if (StudyChartQueryReport.TYPE.equals(type)) return true;
+        if (ChartReportView.TYPE.equals(type)) return true;
+        if (StudyRReport.TYPE.equals(type)) return true;
+        if (ExternalReport.TYPE.equals(type)) return true;
+        if (StudyQueryReport.TYPE.equals(type)) return true;
+        if (TimeChartReport.TYPE.equals(type)) return true;
+        if (ParticipantReport.TYPE.equals(type)) return true;
+        return false;
+    };
 
     /**
      * Add report creation to UI's that aren't associated with a query (manage views, data views)
