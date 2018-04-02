@@ -577,6 +577,18 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Returns an Array of LABKEY.Filter instances applied when creating this DataRegion. These cannot be removed through the UI.
+     * @returns {Array} Array of {@link LABKEY.Filter} objects that represent currently applied base filters.
+     */
+    LABKEY.DataRegion.prototype.getBaseFilters = function() {
+        if (this.filters) {
+            return this.filters.slice();
+        }
+
+        return [];
+    };
+
+    /**
      * Returns the {@link LABKEY.Query.containerFilter} currently applied to the DataRegion. Defaults to LABKEY.Query.containerFilter.current.
      * @returns {String} The container filter currently applied to this DataRegion. Defaults to 'undefined' if a container filter is not specified by the configuration.
      * @see LABKEY.DataRegion#getUserContainerFilter to get the containerFilter value from the URL.
