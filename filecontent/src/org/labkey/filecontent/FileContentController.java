@@ -962,13 +962,10 @@ public class FileContentController extends SpringActionController
                         }
                         else if (fileContentService.isCloudRoot(getContainer()))
                         {
-                            Path path = resource.getPath();
-                            Path relativePath = path.subpath(path.getParent().getNameCount(), path.getNameCount());
-                            java.nio.file.Path fileRootPath = fileContentService.getFileRootPath(getContainer());  // TODO move out of loop?
-                            if (null != fileRootPath)
+                            java.nio.file.Path filePath = resource.getNioPath();
+                            if (null != filePath)
                             {
-                                fileProps.put(ExpDataTable.Column.DataFileUrl.name(),
-                                              FileUtil.pathToString(fileRootPath.resolve(relativePath.toString())));
+                                fileProps.put(ExpDataTable.Column.DataFileUrl.name(), FileUtil.pathToString(filePath));
                             }
                         }
                     }

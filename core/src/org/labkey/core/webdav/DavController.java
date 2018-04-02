@@ -41,6 +41,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -1250,6 +1251,8 @@ public class DavController extends SpringActionController
 
                 if (status == WebdavStatus.SC_CREATED)
                 {
+                    if (!resource.isCollection())                           // If we added a directory as parent, we need to re-resolve
+                        resource = resolvePath(true);
                     WebdavResource newDest = resource.find(filename);       // #30569: get newly created resource object that now has metadata
                     PropfindAction action = new PropfindAction()
                     {
@@ -1567,6 +1570,14 @@ public class DavController extends SpringActionController
                             Collection<String> listPaths = resource.listNames();
                             for (String listPath : listPaths)
                             {
+                                // Don't show @cloud if no configs are enabled
+                                if (CloudStoreService.CLOUD_NAME.equals(listPath))
+                                {
+                                    CloudStoreService cloudStoreService = CloudStoreService.get();
+                                    Container resourceContainer = ContainerManager.getForId(resource.getContainerId());
+                                    if (null != cloudStoreService && null != resourceContainer && cloudStoreService.getEnabledCloudStores(resourceContainer).isEmpty())
+                                        continue;
+                                }
                                 Path newPath = currentPath.append(listPath);
                                 stackBelow.addLast(newPath);
                             }
@@ -3296,7 +3307,7 @@ public class DavController extends SpringActionController
         updateIndexAndDataObject(resource);
 
         Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
-        File file = resource.getFile();
+        java.nio.file.Path file = resource.getNioPath();
         if (null != file)
             FileContentService.get().fireFileCreateEvent(file, getUser(), srcContainer);
         _log.debug("fireFileCreatedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
@@ -3310,7 +3321,7 @@ public class DavController extends SpringActionController
 
     private void updateDataObject(WebdavResource resource)
     {
-        File file = resource.getFile();
+        java.nio.file.Path file = resource.getNioPath();
         if (file != null)
         {
             Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
@@ -3321,8 +3332,8 @@ public class DavController extends SpringActionController
                 if (data == null)
                 {
                     data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
-                    data.setName(file.getName());
-                    data.setDataFileURI(file.toURI());
+                    data.setName(FileUtil.getFileName(file));
+                    data.setDataFileURI(file.toUri());
                 }
                 if (data.getDataFileUrl() != null && data.getDataFileUrl().length() > ExperimentService.get().getTinfoData().getColumn("DataFileURL").getScale())
                 {
@@ -3355,7 +3366,7 @@ public class DavController extends SpringActionController
     private void removeFromDataObject(WebdavResource resource)
     {
         Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
-        File file = resource.getFile();
+        java.nio.file.Path file = resource.getNioPath();
         if (c != null && file != null)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(file, c);
@@ -3720,9 +3731,11 @@ public class DavController extends SpringActionController
 
         Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
 
-        if (src.getFile() != null && dest.getFile() != null)
+        java.nio.file.Path srcPath = src.getNioPath();
+        java.nio.file.Path destPath = dest.getNioPath();
+        if (srcPath != null && destPath != null)
         {
-            FileContentService.get().fireFileMoveEvent(src.getFile(), dest.getFile(), getUser(), srcContainer);
+            FileContentService.get().fireFileMoveEvent(srcPath, destPath, getUser(), srcContainer);
         }
 
         removeFromIndex(src);
@@ -5278,6 +5291,11 @@ public class DavController extends SpringActionController
 
     @Nullable WebdavResource resolvePath() throws DavException
     {
+        return resolvePath(false);
+    }
+
+    @Nullable WebdavResource resolvePath(boolean reload) throws DavException
+    {
         // NOTE: security is enforced via WebFolderInfo, however we expect the container to be a parent of the path
         Container c = getContainer();
         Path path = getResourcePath();
@@ -5296,7 +5314,7 @@ public class DavController extends SpringActionController
             if (m.matches())
                 path = path.getParent().append(m.group(1) + m.group(2));
         }
-        return resolvePath(path);
+        return resolvePath(path, reload);
     }
 
     

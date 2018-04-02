@@ -24,6 +24,7 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
@@ -105,13 +106,21 @@ public class FileWriter extends BaseFolderWriter
     {
         WebdavService webdavService = ServiceRegistry.get().getService(WebdavService.class);
         FileContentService fileContentService = FileContentService.get();
-        if (null == webdavService || null == fileContentService)
+        if (null == webdavService || null == fileContentService || !(fileContentService instanceof FileContentServiceImpl))
             return null;
 
         String resourcePath;
         if (fileContentService.isCloudRoot(container))
         {
-            String fileRootPath = FileRootManager.get().getFileRoot(container).getPath();
+            FileRoot fileRoot = FileRootManager.get().getFileRoot(container);
+            if (null == fileRoot || null == fileRoot.getPath())
+            {
+                // Container uses default file root from an ancestor
+                fileRoot = ((FileContentServiceImpl)fileContentService).getDefaultFileRoot(container);
+                if (null == fileRoot || null == fileRoot.getPath())
+                    return null;
+            }
+            String fileRootPath = fileRoot.getPath();
             if (StringUtils.startsWith(fileRootPath, "/"))
                 fileRootPath = fileRootPath.substring(1);
             resourcePath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(fileRootPath).toString();

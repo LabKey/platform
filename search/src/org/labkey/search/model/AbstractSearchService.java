@@ -169,6 +169,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void addResource(@NotNull WebdavResource r, PRIORITY pri)
         {
+            if (!r.shouldIndex())
+                return;
             Item i = new Item(this, OPERATION.add, r.getDocumentId(), r, pri);
             addItem(i);
             queueItem(i);

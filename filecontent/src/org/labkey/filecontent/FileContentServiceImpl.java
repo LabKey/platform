@@ -303,7 +303,7 @@ public class FileContentServiceImpl implements FileContentService
 
     @Nullable
     // Get FileRoot associated with path returned form getDefaultRootPath()
-    private FileRoot getDefaultFileRoot(Container c)
+    public FileRoot getDefaultFileRoot(Container c)
     {
         Container firstOverride = getFirstAncestorWithOverride(c);
 
@@ -757,18 +757,60 @@ public class FileContentServiceImpl implements FileContentService
         @Override
         public void containerMoved(Container c, Container oldParent, User user)
         {
-            // only attempt to move the root if this is a managed file system
+            /* **** Cases:
+                SRC                         DEST
+                specific local path         same -- no work
+                specific cloud path         same -- no work
+                local default               local default -- move tree
+                local default               cloud default -- move tree
+                cloud default               local default -- move tree
+                cloud default               cloud default -- if change bucket, move tree
+             *************************************************************/
             if (isUseDefaultRoot(c))
             {
-                java.nio.file.Path path = _getFileRoot(oldParent);
-                if (null != path && !FileUtil.hasCloudScheme(path))
+                java.nio.file.Path srcParent = _getFileRoot(oldParent);
+                java.nio.file.Path dest = _getFileRoot(c);
+                if (null != srcParent && null != dest)
                 {
-                    File src = new File(path.toFile(), c.getName());
-                    if (src.exists())
+                    if (!FileUtil.hasCloudScheme(srcParent))
                     {
-                        java.nio.file.Path dstPath = _getFileRoot(c);
-                        if (null != dstPath && !FileUtil.hasCloudScheme(dstPath))
-                            moveFileRoot(src, dstPath.toFile(), user, c);
+                        File src = new File(srcParent.toFile(), c.getName());
+                        if (src.exists())
+                        {
+                            if (!FileUtil.hasCloudScheme(dest))
+                            {
+                                // local -> local
+                                moveFileRoot(src, dest.toFile(), user, c);
+                            }
+                            else
+                            {
+                                // local -> cloud; source starts under @files
+                                File filesSrc = new File(src, FILES_LINK);
+                                if (filesSrc.exists())
+                                    moveFileRoot(filesSrc.toPath(), dest, user, c);
+                                FileUtil.deleteDir(src);        // moveFileRoot will delete @files, but we need to delete its parent
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Get source path using moving container and parent's config (cloudRoot), because that config must be the source config
+                        java.nio.file.Path src = CloudStoreService.get().getPath(c, getCloudRootName(oldParent), new Path(""));
+                        if (!FileUtil.hasCloudScheme(dest))
+                        {
+                            // cloud -> local; destination is under @files
+                            dest = dest.resolve(FILES_LINK);
+                            moveFileRoot(src, dest, user, c);
+                        }
+                        else
+                        {
+                            // cloud -> cloud
+                            if (!getCloudRootName(oldParent).equals(getCloudRootName(c)))
+                            {
+                                // Different configs
+                                moveFileRoot(src, dest, user, c);
+                            }
+                        }
                     }
                 }
             }
@@ -965,6 +1007,29 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
+    public void moveFileRoot(java.nio.file.Path prev, java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(prev) && !FileUtil.hasCloudScheme(dest))
+        {
+            moveFileRoot(prev.toFile(), dest.toFile(), user, container);    // Both files; try rename
+        }
+        else
+        {
+            try
+            {
+                // At least one is in the cloud
+                FileUtil.copyDirectory(prev, dest);
+                FileUtil.deleteDir(prev);
+                fireFileMoveEvent(prev, dest, user, container);
+            }
+            catch (IOException e)
+            {
+                _log.error("error occurred moving the file root", e);
+            }
+        }
+    }
+
+    @Override
     public void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container)
     {
         try
@@ -984,7 +1049,7 @@ public class FileContentServiceImpl implements FileContentService
                 _log.info("rename failed, attempting to copy");
 
                 //listFiles can return null, which could cause a NPE
-                if(prev.listFiles() != null)
+                if (prev.listFiles() != null)
                 {
                     for (File file : prev.listFiles())
                         FileUtil.copyBranch(file, dest);
@@ -1002,22 +1067,34 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container)
     {
-        created = FileUtil.getAbsoluteCaseSensitiveFile(created);
+        fireFileCreateEvent(created.toPath(), user, container);
+    }
+
+    @Override
+    public void fireFileCreateEvent(@NotNull java.nio.file.Path created, @Nullable User user, @Nullable Container container)
+    {
+        java.nio.file.Path absPath = FileUtil.getAbsoluteCaseSensitivePath(container, created);
         for (FileListener fileListener : _fileListeners)
         {
-            fileListener.fileCreated(created, user, container);
+            fileListener.fileCreated(absPath, user, container);
         }
     }
 
     @Override
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
+        fireFileMoveEvent(src.toPath(), dest.toPath(), user, container);
+    }
+
+    @Override
+    public void fireFileMoveEvent(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
+    {
         // Make sure that we've got the best representation of the file that we can
-        src = FileUtil.getAbsoluteCaseSensitiveFile(src);
-        dest = FileUtil.getAbsoluteCaseSensitiveFile(dest);
+        java.nio.file.Path absSrc = FileUtil.getAbsoluteCaseSensitivePath(container, src);
+        java.nio.file.Path absDest = FileUtil.getAbsoluteCaseSensitivePath(container, dest);
         for (FileListener fileListener : _fileListeners)
         {
-            fileListener.fileMoved(src, dest, user, container);
+            fileListener.fileMoved(absSrc, absDest, user, container);
         }
     }
 

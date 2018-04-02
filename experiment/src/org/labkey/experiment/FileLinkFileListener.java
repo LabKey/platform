@@ -32,8 +32,11 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileListener;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,7 +64,18 @@ public class FileLinkFileListener implements FileListener
     }
 
     @Override
+    public void fileCreated(@NotNull Path created, @Nullable User user, @Nullable Container container)
+    {
+    }
+
+    @Override
     public void fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container)
+    {
+        fileMoved(srcFile.toPath(), destFile.toPath(), user, container);
+    }
+
+    @Override
+    public void fileMoved(@NotNull Path srcFile, @NotNull Path destFile, @Nullable User user, @Nullable Container container)
     {
         updateObjectProperty(srcFile, destFile);
 
@@ -69,10 +83,10 @@ public class FileLinkFileListener implements FileListener
     }
 
     /** Migrate FileLink values stored in exp.ObjectProperty */
-    private void updateObjectProperty(File srcFile, File destFile)
+    private void updateObjectProperty(Path srcFile, Path destFile)
     {
-        String srcPath = srcFile.getPath();
-        String destPath = destFile.getPath();
+        String srcPath = FileUtil.hasCloudScheme(srcFile) ? FileUtil.pathToString(srcFile) : srcFile.toFile().getPath();
+        String destPath = FileUtil.hasCloudScheme(destFile) ? FileUtil.pathToString(destFile) : destFile.toFile().getPath();
 
         SqlDialect dialect = OntologyManager.getSqlDialect();
 
@@ -104,7 +118,7 @@ public class FileLinkFileListener implements FileListener
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
-        if (!destFile.isFile())
+        if (Files.isDirectory(destFile))
         {
             if (!srcPath.endsWith(File.separator))
             {
@@ -133,7 +147,7 @@ public class FileLinkFileListener implements FileListener
         }
     }
 
-    private void updateHardTables(final File srcFile, final File destFile, final User user, final Container container)
+    private void updateHardTables(final Path srcFile, final Path destFile, final User user, final Container container)
     {
         hardTableFileLinkColumns(new ForEachFileLinkColumn() {
             @Override

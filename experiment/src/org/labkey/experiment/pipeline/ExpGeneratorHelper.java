@@ -342,7 +342,7 @@ public class ExpGeneratorHelper
                 if (outputData.getSourceApplication() != null)
                 {
                     datas.remove(dd.getURI());
-                    datas.remove(outputData.getDataFileURI());
+                    datas.remove(outputData.getDataFileURI());     // TODO should look for old pattern, too
                     outputData.setDataFileURI(null);
                     outputData.save(job.getUser());
 
