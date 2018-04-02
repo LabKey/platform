@@ -210,12 +210,9 @@ public class QueryView extends WebPartView<Object>
 
     public static ReportService.ItemFilter DEFAULT_ITEM_FILTER = (type, label) ->
     {
+        if (ReportService.get().getGlobalItemFilterTypes().contains(type)) return true;
         if (RReport.TYPE.equals(type)) return true;
-        if (QueryReport.TYPE.equals(type)) return true;
-        if (QuerySnapshotService.TYPE.equals(type)) return true;
         if (CrosstabReport.TYPE.equals(type)) return true;
-        if (JavaScriptReport.TYPE.equals(type)) return true;
-        if (GenericChartReport.TYPE.equals(type)) return true;
         return ChartQueryReport.TYPE.equals(type);
     };
 

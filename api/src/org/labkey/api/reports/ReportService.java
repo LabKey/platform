@@ -140,6 +140,10 @@ public interface ReportService
 
     List<UIProvider> getUIProviders();
 
+    void addGlobalItemFilterType(String type);
+
+    List<String> getGlobalItemFilterTypes();
+
     Report createFromQueryString(String queryString) throws Exception;
 
     @NotNull
