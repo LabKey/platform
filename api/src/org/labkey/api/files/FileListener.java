@@ -20,8 +20,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Collection;
 
 /**
@@ -40,7 +42,12 @@ public interface FileListener
      * @param user if available, the user who initiated the create
      * @param container if available, the container in which the create was initiated
      */
-    public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container);
+    void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container);
+    default void fileCreated(@NotNull Path created, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(created))
+            fileCreated(created.toFile(), user, container);
+    }
 
     /**
      * Called AFTER the file (or directory) has already been moved on disk
@@ -49,13 +56,19 @@ public interface FileListener
      * @param user if available, the user who initiated the move
      * @param container if available, the container in which the move was initiated
      */
-    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    default void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(src) && !FileUtil.hasCloudScheme(dest))
+            fileMoved(src.toFile(), dest.toFile(), user, container);
+    }
 
     /**
      * List file paths in the database this FileListener is aware of.
      * @param container If not null, list files in the given container, otherwise from all containers.
      */
-    public Collection<File> listFiles(@Nullable Container container);
+    public Collection<File> listFiles(@Nullable Container container);             // Nobody really calls this
+//    public Collection<Path> listFilePaths(@Nullable Container container);
 
     /**
      * Returns a SQLFragment for file paths that this FileListener is aware of.

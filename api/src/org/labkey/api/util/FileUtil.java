@@ -39,11 +39,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -124,17 +124,35 @@ public class FileUtil
 
     public static void deleteDir(@NotNull Path dir) throws IOException
     {
-        if (hasCloudScheme(dir))
+        if (Files.exists(dir))
         {
-            // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
-            for (Path path : Files.walk(dir).sorted(Comparator.reverseOrder()).collect(Collectors.toList()))
+            if (hasCloudScheme(dir))
             {
-                Files.deleteIfExists(path);
+                // TODO: On Windows, collect is yielding AccessDenied Exception, so only do this for cloud
+                for (Path path : Files.walk(dir).sorted(Comparator.reverseOrder()).collect(Collectors.toList()))
+                {
+                    Files.deleteIfExists(path);
+                }
+            }
+            else
+            {
+                deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
             }
         }
-        else
+    }
+
+    public static void copyDirectory(Path srcPath, Path destPath) throws IOException
+    {
+        // Will replace existing files
+        if (!Files.exists(destPath))
+            Files.createDirectory(destPath);
+        for (Path srcChild : Files.list(srcPath).collect(Collectors.toList()))
         {
-            deleteDir(dir.toFile());    // Note: we maintain existing behavior from before Path work, which is to ignore any error
+            Path destChild = destPath.resolve(srcChild.getFileName().toString());
+            if (Files.isDirectory(srcChild))
+                copyDirectory(srcChild, destChild);
+            else
+                Files.copy(srcChild, destChild, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -219,7 +237,14 @@ public class FileUtil
 
     public static boolean hasCloudScheme(Path path)
     {
-        return hasCloudScheme(path.toUri());
+        try
+        {
+            return hasCloudScheme(path.toUri());
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 
     public static boolean hasCloudScheme(URI uri)
@@ -266,6 +291,14 @@ public class FileUtil
             return getAbsoluteCaseSensitiveFile(new File(uri)).toPath();
         else
             return CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath();
+    }
+
+    public static Path getAbsoluteCaseSensitivePath(Container container, Path path)
+    {
+        if (!FileUtil.hasCloudScheme(path))
+            return getAbsoluteCaseSensitiveFile(path.toFile()).toPath();
+        else
+            return path.toAbsolutePath();
     }
 
     public static Path getPath(Container container, URI uri)

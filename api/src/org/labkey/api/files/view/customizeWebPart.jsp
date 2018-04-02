@@ -131,7 +131,7 @@
         var containerPath = LABKEY.container.path;
         var rootPath = contextUrl + containerPath + '/';
         var rootOffset = null;
-        var fileRootName = <%=q(form.getFileRoot())%>;
+        var fileRootName = <%=q(form.getDecodedFileRoot())%>;
         if (fileRootName) {
             rootOffset = containerPath;
             if (fileRootName.substring(0, 1) !== '/')

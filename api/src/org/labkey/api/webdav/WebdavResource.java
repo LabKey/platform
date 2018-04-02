@@ -24,9 +24,11 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,11 @@ public interface WebdavResource extends Resource
 
     // TODO move more functionality into interface and remove this method
     @Nullable File getFile();
+    default @Nullable Path getNioPath()
+    {
+        File file = getFile();
+        return file != null ? file.toPath() : null;
+    }
 
     Collection<? extends WebdavResource> list();
 

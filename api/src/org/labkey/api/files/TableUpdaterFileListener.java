@@ -35,6 +35,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -62,6 +64,7 @@ public class TableUpdaterFileListener implements FileListener
     {
         /** @return the string that is expected to be the in database */
         String get(File f);
+        String get(Path f);
         /** @return the file path separator (typically '/' or '\' */
         String getSeparatorSuffix();
     }
@@ -71,6 +74,12 @@ public class TableUpdaterFileListener implements FileListener
         /** Turns the file path into a "file:"-prefixed URI */
         uri
         {
+            @Override
+            public String get(Path path)
+            {
+                return FileUtil.pathToString(path);
+            }
+
             @Override
             public String get(File f)
             {
@@ -88,6 +97,15 @@ public class TableUpdaterFileListener implements FileListener
         filePath
         {
             @Override
+            public String get(Path path)
+            {
+                if (FileUtil.hasCloudScheme(path))
+                    return FileUtil.pathToString(path);
+                else
+                    return get(path.toFile());
+            }
+
+            @Override
             public String get(File f)
             {
                 return f.getPath();
@@ -103,6 +121,15 @@ public class TableUpdaterFileListener implements FileListener
         /** Just uses getPath() to turn the File into a String, but replaces all backslashes with forward slashes */
         filePathForwardSlash
         {
+            @Override
+            public String get(Path path)
+            {
+                if (FileUtil.hasCloudScheme(path))
+                    return FileUtil.pathToString(path);
+                else
+                    return get(path.toFile());
+            }
+
             @Override
             public String get(File f)
             {
@@ -152,7 +179,18 @@ public class TableUpdaterFileListener implements FileListener
     }
 
     @Override
+    public void fileCreated(@NotNull Path created, @Nullable User user, @Nullable Container container)
+    {
+    }
+
+    @Override
     public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    {
+        fileMoved(src.toPath(), dest.toPath(), user, container);
+    }
+
+    @Override
+    public void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
     {
         String srcPath = getSourcePath(src, container);
         String destPath = _pathGetter.get(dest);
@@ -205,7 +243,7 @@ public class TableUpdaterFileListener implements FileListener
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
-        if (!dest.isFile())
+        if (!Files.exists(dest) || Files.isDirectory(dest))
         {
             if (!srcPath.endsWith(_pathGetter.getSeparatorSuffix()))
             {
@@ -319,27 +357,30 @@ public class TableUpdaterFileListener implements FileListener
     }
 
     @NotNull
-    private String getSourcePath(File file, Container container)
+    private String getSourcePath(Path path, Container container)
     {
         // For uri pathGetter, check that file path exists in table, looking for legacy as well
         if (Type.uri == _pathGetter)
         {
-            String srcPath = _pathGetter.get(file);
+            String srcPath = _pathGetter.get(path);
             if (pathExists(srcPath, container))
                 return srcPath;
 
-            srcPath = file.toURI().toString();      // Legacy URI format (file:/users/...)
-            if (pathExists(srcPath, container))
-                return srcPath;
+            if (!FileUtil.hasCloudScheme(path))
+            {
+                srcPath = path.toFile().toURI().toString();      // Legacy URI format (file:/users/...)
+                if (pathExists(srcPath, container))
+                    return srcPath;
 
-            srcPath = file.getPath();               // File path format (/users/...)
-            if (pathExists(srcPath, container))
-                return srcPath;
+                srcPath = path.toFile().getPath();               // File path format (/users/...)
+                if (pathExists(srcPath, container))
+                    return srcPath;
+            }
 
             // use original if none found, for directories
         }
 
-        return _pathGetter.get(file);
+        return _pathGetter.get(path);
     }
 
     private boolean pathExists(String srcPath, Container container)

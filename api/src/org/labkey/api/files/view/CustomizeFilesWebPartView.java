@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -179,6 +180,11 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         public String getFileRoot()
         {
             return fileRoot;
+        }
+
+        public String getDecodedFileRoot()
+        {
+            return URLDecoder.decode(fileRoot);
         }
 
         public void setFileRoot(String fileRoot)

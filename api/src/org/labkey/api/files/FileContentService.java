@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
@@ -219,11 +220,28 @@ public interface FileContentService
     QueryUpdateService getFilePropsUpdateService(TableInfo tinfo, Container container);
 
     void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container);
+    default void moveFileRoot(Path prev, Path dest, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(prev) && !FileUtil.hasCloudScheme(dest))
+        {
+            moveFileRoot(prev.toFile(), dest.toFile(), user, container);
+        }
+    }
 
     /** Notifies all registered FileListeners that a file or directory has been created */
     void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container);
+    default void fireFileCreateEvent(@NotNull Path created, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(created))
+            fireFileCreateEvent(created.toFile(), user, container);
+    }
     /** Notifies all registered FileListeners that a file or directory has moved */
     void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    default void fireFileMoveEvent(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
+    {
+        if (!FileUtil.hasCloudScheme(src) && !FileUtil.hasCloudScheme(dest))
+            fireFileMoveEvent(src.toFile(), dest.toFile(), user, container);
+    }
     /** Add a listener that will be notified when files are created or are moved */
     void addFileListener(FileListener listener);
 
