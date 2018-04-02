@@ -22,7 +22,8 @@
             testParameterizedQueries: testParameterizedQueries,
             testRemovableFilters: testRemovableFilters,
             testHidePagingCount: testHidePagingCount,
-            testShowAllTotalRows: testShowAllTotalRows
+            testShowAllTotalRows: testShowAllTotalRows,
+            testGetBaseFilters: testGetBaseFilters
         };
 
         var PAGE_OFFSET = 4;
@@ -583,6 +584,60 @@
             });
         }
 
+        function testGetBaseFilters() {
+            var loadCount = 0;
+
+            var baseFilter = LABKEY.Filter.create('id', 4, LABKEY.Filter.Types.LESS_THAN_OR_EQUAL);
+            var removableFilter = LABKEY.Filter.create('id', 4, LABKEY.Filter.Types.EQUAL);
+
+            new LABKEY.QueryWebPart({
+                title: 'Use getBaseFilters',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                filterArray: [baseFilter],
+                removeableFilters: [removableFilter],
+                failure: function() {
+                    alert('Failed test: Use getBaseFilters');
+                },
+                listeners: {
+                    render: function(dr) {
+                        loadCount++;
+                        var rowCount = getRowCount(dr);
+
+                        if (loadCount === 1) {
+                            if (rowCount !== 1) {
+                                alert('Failed test: Use getBaseFilters. Expected 1 row, actual ' + rowCount + ' rows.');
+                                return;
+                            }
+
+                            dr.removeFilter(removableFilter);
+                        }
+                        else if (loadCount === 2) {
+                            if (rowCount !== 4) {
+                                alert('Failed test: Use getBaseFilters. Expected 4 rows, actual ' + rowCount + ' rows.');
+                                return;
+                            }
+
+                            var filters = dr.getBaseFilters();
+                            if (filters.length !== 1) {
+                                alert('Failed test: Use getBaseFilters. Expected 1 base filter, actual ' + filters.length + ' base filters.');
+                                return;
+                            }
+
+                            var filter = filters[0];
+                            if (filter.getURLParameterName() !== baseFilter.getURLParameterName() ||
+                                filter.getURLParameterValue() !== baseFilter.getURLParameterValue()) {
+                                alert('Failed test: Use getBaseFilters. Base filter not equivalent to what was set.');
+                                return;
+                            }
+
+                            LABKEY.Utils.signalWebDriverTest('testGetBaseFilters');
+                        }
+                    }
+                }
+            });
+        }
     });
 
 })(jQuery);
