@@ -248,7 +248,7 @@
 <%
     if (!folder) {
         String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
-            " the format: <module>-<name>. For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
+            " the format: [module]-[name]. For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
             " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
             "<br/><br/>Requires AdminOperationsPermission to update.";
 %>
