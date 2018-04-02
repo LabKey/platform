@@ -73,6 +73,6 @@ public class CollaborationFolderType extends MultiPortalFolderType
     @Override
     public HelpTopic getHelpTopic()
     {
-        return new HelpTopic("workflowModules");
+        return new HelpTopic("default");
     }
 }
