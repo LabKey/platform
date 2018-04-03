@@ -34,7 +34,6 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -196,7 +195,7 @@ public class DefaultFolderType implements FolderType
         {
             if (folderTab.isContainerTab() && !c.isContainerTab())
             {
-                Container containerDummy = folderTab.getContainerTab(c, user);
+               folderTab.getContainerTab(c, user);
             }
         }
 
