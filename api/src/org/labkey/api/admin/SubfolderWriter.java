@@ -82,9 +82,7 @@ public class SubfolderWriter extends BaseFolderWriter
     {
         for (Container child : potentialChildren)
         {
-            // only include subfolders if requested by user (otherwise just container tabs)
-            // but don't include the current folder in the case of creating a folder from template
-            if (child.isContainerTab() || (context.isIncludeSubfolders() && !child.isWorkbook()))
+            if (child.includeForImportExport(context))
                 childrenToExport.add(child);
         }
     }

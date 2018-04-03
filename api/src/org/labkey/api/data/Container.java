@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -157,6 +158,33 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return this;
     }
 
+    public Boolean includeForImportExport(ImportContext context)
+    {
+        // only include subfolders if requested by user (otherwise just container tabs)
+        // but don't include the current folder in the case of creating a folder from template
+        // tab - always
+        // normal - if context says to
+        // workbook - never
+        return isContainerTab() || (context.isIncludeSubfolders() && !isWorkbook());
+    }
+
+    public Boolean includePropertiesAsChild(boolean includeTabs)
+    {
+        // workbook - never
+        // normal - always
+        // tab - if flagged
+        return !isWorkbook() && (includeTabs || !isContainerTab());
+    }
+
+    public Boolean useParentForFolderManagement()
+    {
+        return isContainerTab();
+    }
+
+    public Boolean shouldRemoveFromPortal()
+    {
+        return isContainerTab();
+    }
 
     @NotNull
     public String getName()
@@ -167,7 +195,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     /**
      * Returns the folder title for normal folders, or the name (i.e. number) for workbooks
      */
-    public String getDisplayTitle(){
+    public String getChildTitle(){
         return isWorkbook() ? getName() : getTitle();
     }
 
@@ -175,7 +203,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      * Returns the current container for normal folders, or the parent folder for workbooks
      */
     @NotNull
-    public Container getSelfOrWorkbookParent()
+    public Container getTitleFolder()
     {
         return isWorkbook() && getParent() != null ? getParent() : this;
     }

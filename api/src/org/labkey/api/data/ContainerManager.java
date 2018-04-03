@@ -1540,7 +1540,7 @@ public class ContainerManager
                 return false;
             }
 
-            if (c.isContainerTab())
+            if (c.shouldRemoveFromPortal())
             {
                 // Need to remove portal page, too; container name is page's pageId and in container's parent container
                 Portal.PortalPage page = Portal.getPortalPage(c.getParent(), c.getName());
