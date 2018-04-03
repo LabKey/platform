@@ -31,7 +31,7 @@
     Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
-<p>Please choose the initial security configuration for the new <%= h(c.isProject() ? "project" : (c.isWorkbook() ? "workbook" : "folder"))%>.</p>
+<p>Please choose the initial security configuration for the new <%= h(c.getContainerNoun())%>.</p>
 <div id="folderPermissionsDiv"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
