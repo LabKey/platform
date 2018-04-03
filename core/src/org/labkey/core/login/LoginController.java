@@ -282,10 +282,14 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL)
+        public ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
             url.addParameter("provider", provider.getName());
+            if (skipProfile)
+            {
+                url.addParameter("skipProfile", 1);
+            }
             if (null != returnURL)
             {
                 String fragment = returnURL.getFragment();
@@ -1087,7 +1091,7 @@ public class LoginController extends SpringActionController
             // see if any of the SSO auth providers are set to autoRedirect from the login action
             SSOAuthenticationProvider ssoAuthenticationProvider = AuthenticationManager.getSSOAuthProviderAutoRedirect();
             if (ssoAuthenticationProvider != null)
-                return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper()));
+                return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
         }
 
         page.setTemplate(PageConfig.Template.Dialog);

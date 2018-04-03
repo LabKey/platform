@@ -796,6 +796,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.populateUserGroupsWithStartupProps();
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
         LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps();
+        // populate folder types from startup properties as appropriate for not bootstrap
+        FolderTypeManager.get().populateWithStartupProps();
 
         AdminController.registerAdminConsoleLinks();
         AdminController.registerFolderManagementTabs();

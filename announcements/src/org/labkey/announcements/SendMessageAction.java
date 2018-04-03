@@ -19,6 +19,7 @@ package org.labkey.announcements;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -121,9 +122,8 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
         MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();
 
-        Address fromAddress = getEmail(from);
-        if (fromAddress != null)
-            msg.setFrom(fromAddress);
+        Address fromAddress = getEmailFrom(from);
+        msg.setFrom(fromAddress);
         msg.setSubject(subject);
 
         addMsgRecipients(msg, recipients);
@@ -137,26 +137,44 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
     }
 
     @Nullable
-    private Address getEmail(String email) throws IllegalArgumentException
+    private Address getEmailTo(String email) throws IllegalArgumentException
     {
         try
         {
             ValidEmail validEmail = new ValidEmail(email);
-            User user = UserManager.getUser(validEmail);
-
-            if (!canEmailNonUsers(getUser()))
+            if (canEmailNonUsers(getUser()))
             {
-                if (user == null)
-                    throw new IllegalArgumentException("The email address '" + email + "' is not associated with a user account, and the current user does not have permission to send to it.");
+                return validEmail.getAddress();
             }
 
+            User user = UserManager.getUser(validEmail);
+            if (user == null)
+                throw new IllegalArgumentException("The email address '" + email + "' is not associated with a user account, and the current user does not have permission to send to it.");
+
             // filter out disabled users or users who have never logged in : Issue #33255
-            if (user != null && (!user.isActive() || user.isFirstLogin()))
+            if (!user.isActive() || user.isFirstLogin())
             {
                 _log.warn("The user: " + user.getName() + " is either disabled or has never logged in and has been omitted.");
                 return null;
             }
 
+            return validEmail.getAddress();
+        }
+        catch (ValidEmail.InvalidEmailException e)
+        {
+            throw new IllegalArgumentException("Invalid email format.", e);
+        }
+    }
+
+    @NotNull
+    private Address getEmailFrom(String email) throws IllegalArgumentException
+    {
+        try
+        {
+            ValidEmail validEmail = new ValidEmail(email);
+            User user = UserManager.getUser(validEmail);
+            if (user == null)
+                throw new IllegalArgumentException("The email address '" + email + "' is not associated with a user account, and the current user does not have permission to send to it.");
             return validEmail.getAddress();
         }
         catch (ValidEmail.InvalidEmailException e)
@@ -217,7 +235,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
                 Message.RecipientType rtype = Message.RecipientType.TO;
 
                 if (!_recipientMap.containsKey(type))
-                    _recipientMap.put(type, new HashSet<String>());
+                    _recipientMap.put(type, new HashSet<>());
                 
                 if (StringUtils.equalsIgnoreCase(type, "TO"))
                     rtype = Message.RecipientType.TO;
@@ -233,10 +251,9 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
                     // avoid duplicate emails per type
                     if (!emails.contains(email))
                     {
-                        Address address = getEmail(email);
+                        Address address = getEmailTo(email);
                         if (address != null)
                             msg.addRecipient(rtype, address);
-
                         emails.add(email);
                     }
                 }

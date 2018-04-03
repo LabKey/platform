@@ -790,9 +790,36 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             buttons: [{
                 text: 'Edit in LabKey',
                 onClick : function () {
-                    if (me.externalEditWindow && me.externalEditWindow.location.href === config.externalUrl) {
-                        me.externalEditWindow.close();
+                    this.disable();
+                    var selfWindowName = 'lk' + (new Date()).getTime(); //a unique window name for current window
+                    window.name = selfWindowName;
+                    // close external edit window to avoid simultaneous editing
+                    if (me.externalEditWindow && me.externalEditWindow.window) {
+                        if (!me.externalEditWindow.window.closed && me.externalEditWindow.location.href.indexOf(config.externalUrl) !== -1)
+                            me.externalEditWindow.close();
                     }
+                    else
+                    {
+                        // open a temp window with desired window title, but without explicit href.
+                        // This will open a new window only if config.externalWindowTitle isn't already open.
+                        var tmpWin = window.open('', config.externalWindowTitle);
+                        if (tmpWin) {
+                            var href = tmpWin.location.href;
+                            // if temp window href is desired externalUrl, temp window is the target external window.
+                            if (href.indexOf(config.externalUrl) !== -1) // if RStudio report
+                                tmpWin.close();
+                            // if temp window href is about:blank, temp window is newly opened and should be closed.
+                            else if (href === 'about:blank') // if newly opened blank window
+                                tmpWin.close();
+                            // otherwise, the window used to be target external report window, but has been navigated away, no action
+                            else
+                            {
+                                // switch focus back to LabKey report window
+                                tmpWin.open('', selfWindowName).focus();
+                            }
+                        }
+                    }
+
                     Ext4.Ajax.request(
                             {
                                 method: "POST",
