@@ -106,14 +106,12 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.template.ClientDependency;
@@ -124,13 +122,10 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.CreateWorkbookBean;
 import org.labkey.core.workbook.MoveWorkbooksBean;
 import org.labkey.core.workbook.WorkbookFolderType;
-import org.labkey.core.workbook.WorkbookQueryView;
-import org.labkey.core.workbook.WorkbookSearchView;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1058,7 +1053,7 @@ public class CoreController extends SpringActionController
                 for (Container child : parent.getChildren())
                 {
                     // Don't show workbook and don't show containerTabs if we're told not to
-                    if (!child.isWorkbook() && (form.isShowContainerTabs() || !child.isContainerTab()))
+                    if (child.includePropertiesAsChild(form.isShowContainerTabs()))
                     {
                         AccessType accessType = getAccessType(child, user, _reqPerm);
                         if (accessType != AccessType.none)
@@ -1151,7 +1146,7 @@ public class CoreController extends SpringActionController
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
                 {
-                    if (!child.isWorkbook() && (form.isShowContainerTabs() || !child.isContainerTab()))
+                    if (child.includePropertiesAsChild(form.isShowContainerTabs()))
                     {
                         AccessType accessType = getAccessType(child, getUser(), _reqPerm);
                         if (accessType != AccessType.none)
@@ -1217,7 +1212,7 @@ public class CoreController extends SpringActionController
                 JSONArray childrenProps = new JSONArray();
                 for (Container child : c.getChildren())
                 {
-                    if (!child.isWorkbook() && (form.isShowContainerTabs() || !child.isContainerTab()))
+                    if (child.includePropertiesAsChild(form.isShowContainerTabs()))
                     {
                         AccessType accessType = getAccessType(child, getUser(), _reqPerm);
                         if (accessType != AccessType.none)
