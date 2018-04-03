@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -24,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.Path;
 
 import java.util.ArrayList;
@@ -37,6 +39,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
 
 /**
  * Manager to registering and tracking the various {@link FolderType} implementations provided by modules.
@@ -284,6 +288,29 @@ public class FolderTypeManager
                     FolderTypeManager.get().clearAllFolderTypes();
                 }
             };
+        }
+    }
+
+    public void populateWithStartupProps()
+    {
+        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
+
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_FOLDER_TYPES)
+            .forEach(prop -> {
+                // only apply disabledTypes prop at bootstrap
+                if ("disabledTypes".equalsIgnoreCase(prop.getName()) && prop.getModifier() == bootstrap && isBootstrap)
+                    populateDisabledFolderTypesWithStartupProps(prop.getValue());
+            });
+    }
+
+    private void populateDisabledFolderTypesWithStartupProps(String value)
+    {
+        if (value != null)
+        {
+            PropertyManager.PropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
+            for (String folderTypeName : StringUtils.split(value, ';'))
+                enabledStates.put(folderTypeName, Boolean.toString(false));
+            enabledStates.save();
         }
     }
 

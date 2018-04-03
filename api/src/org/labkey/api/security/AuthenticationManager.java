@@ -1382,13 +1382,13 @@ public class AuthenticationManager
             if (null != img)
                 content = img;
 
-            return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL)) + "\">" + content + "</a>";
+            return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + content + "</a>";
         }
 
-        public ActionURL getURL(URLHelper returnURL)
+        public ActionURL getURL(URLHelper returnURL, boolean skipProfile)
         {
             //noinspection ConstantConditions
-            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_provider, returnURL);
+            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_provider, returnURL, skipProfile);
         }
 
         public String getImg(String prefix)
