@@ -1742,7 +1742,7 @@ public class OntologyManager
     }
 
 
-    private static void insertProperties(Container c, List<ObjectProperty> props) throws SQLException, ValidationException
+    private static void insertProperties(Container c, List<ObjectProperty> props, boolean skipValidation) throws SQLException, ValidationException
     {
         HashMap<String, PropertyDescriptor> descriptors = new HashMap<>();
         HashMap<String, Integer> objects = new HashMap<>();
@@ -1788,7 +1788,10 @@ public class OntologyManager
             {
                 pd = getPropertyDescriptor(property.getPropertyId());
             }
-            validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property, errors, validatorCache);
+            if (!skipValidation)
+            {
+                validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property, errors, validatorCache);
+            }
         }
         if (!errors.isEmpty())
             throw new ValidationException(errors);
@@ -1959,6 +1962,11 @@ public class OntologyManager
 
     public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
+        insertProperties(container, ownerObjectLsid, false, properties);
+    }
+
+    public static void insertProperties(Container container, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    {
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             Integer parentId = ownerObjectLsid == null ? null : ensureObject(container, ownerObjectLsid);
@@ -1966,7 +1974,7 @@ public class OntologyManager
             {
                 oprop.setObjectOwnerId(parentId);
             }
-            insertProperties(container, Arrays.asList(properties));
+            insertProperties(container, Arrays.asList(properties), skipValidation);
 
             transaction.commit();
         }
