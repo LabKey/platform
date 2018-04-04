@@ -60,6 +60,25 @@ public class ValidationException extends Exception implements Iterable<Validatio
     private String _queryName;
     private Map<String, Object> _row;
     private int _rowNumber = -1;
+    private SEVERITY _severity = SEVERITY.ERROR;
+
+    public enum SEVERITY
+    {
+        ERROR("Error"),
+        WARN("Warning"),
+        INFO("Info");
+
+        String _sevName;
+        SEVERITY(String sevName)
+        {
+            _sevName = sevName;
+        }
+
+        public String toString()
+        {
+            return _sevName;
+        }
+    }
 
     public ValidationException()
     {
@@ -73,6 +92,18 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public ValidationException(String message)
     {
         addError(new SimpleValidationError(message));
+    }
+
+    public ValidationException(String message, SEVERITY severity)
+    {
+        _severity = severity;
+        addError(new SimpleValidationError(message));
+    }
+
+    public ValidationException(String message, String property, SEVERITY severity)
+    {
+        _severity = severity;
+        addError(new PropertyValidationError(message, property));
     }
 
     public ValidationException(String message, String property)
@@ -143,6 +174,16 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public void setRowNumber(int rowNumber)
     {
         _rowNumber = rowNumber;
+    }
+
+    public SEVERITY getSeverity()
+    {
+        return _severity;
+    }
+
+    public void setSeverity(SEVERITY severity)
+    {
+        _severity = severity;
     }
 
     public ValidationException fillIn(String schemaName, String queryName, Map<String, Object> row, int rowNumber)
