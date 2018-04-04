@@ -2029,7 +2029,7 @@ public class QueryController extends SpringActionController
                 else
                 {
                     // Otherwise, save it in the current container
-                    container = getContainer().isWorkbook() ? getContainer().getParent() : getContainer();
+                    container = getContainer().getContainerFor(Container.DataType.customQueryViews);
                 }
 
                 if (container == null)

@@ -39,8 +39,7 @@
     // Only show the nav trail if you are at least one level into the nav tree (i.e. not at project)
     if (size > 1)
     {
-        String title = containers.get(size - 1).isWorkbook()
-                ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
+        String title = containers.get(size - 1).getChildTitle();
 
         if (c.isProject() && c.equals(ContainerManager.getHomeContainer()))
             title = "Home";

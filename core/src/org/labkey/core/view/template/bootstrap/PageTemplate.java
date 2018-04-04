@@ -126,7 +126,7 @@ public class PageTemplate extends JspView<PageConfig>
 
         //HACK to fix up navTrail to delete navBar items
         List<NavTree> navTrail = page.getNavTrail();
-        if (context.getContainer().isWorkbook())
+        if (!context.getContainer().isInFolderNav())
         {
             // Add the main page for the workbook to the nav trail
             navTrail = new ArrayList<>(navTrail);

@@ -78,7 +78,7 @@
                 {
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                String title = containers.get(size - 1).isWorkbook() ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
+                String title = containers.get(size - 1).getChildTitle();
                 %><span style="color: black;"><%=h(title)%></span><%
             }
             else
@@ -92,7 +92,7 @@
                 {
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                String title = containers.get(size - 1).isWorkbook() ? containers.get(size - 1).getName() : containers.get(size - 1).getTitle();
+                String title = containers.get(size - 1).getChildTitle();
                 %><span style="color: black;"><%=h(title)%></span><%
             }
         %>

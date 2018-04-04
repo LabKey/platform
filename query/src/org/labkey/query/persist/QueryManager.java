@@ -213,9 +213,9 @@ public class QueryManager
         List<CstmView> views = new ArrayList<>();
 
         getCstmViewsInContainer(views, container, schemaName, queryName, owner, false, sharedOnly);
-        if (container.isWorkbook())
+        if (!container.isContainerFor(Container.DataType.customQueryViews))
         {
-            getCstmViewsInContainer(views, container.getParent(), schemaName, queryName, owner, false, sharedOnly);
+            getCstmViewsInContainer(views, container.getContainerFor(Container.DataType.customQueryViews), schemaName, queryName, owner, false, sharedOnly);
         }
 
         if (!inheritable)

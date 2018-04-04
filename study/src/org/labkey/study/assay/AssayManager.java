@@ -17,7 +17,6 @@
 package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -382,18 +381,8 @@ public class AssayManager implements AssayService
         return PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
             // Build up a set of containers so that we can query them all at once
-            Set<Container> containers = new HashSet<>();
-            containers.add(c);
+            Set<Container> containers = c.getContainersFor(Container.DataType.assayProtocols);
             containers.add(ContainerManager.getSharedContainer());
-            Container project = c.getProject();
-            if (project != null)
-            {
-                containers.add(project);
-            }
-            if (c.isWorkbook())
-            {
-                containers.add(c.getParent());
-            }
 
             List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
             List<ExpProtocol> result = new ArrayList<>();
@@ -564,14 +553,7 @@ public class AssayManager implements AssayService
                 {
                     containers.remove(currentContainer);
                     ActionURL url = provider.getImportURL(currentContainer, protocol);
-                    if (currentContainer.isWorkbook())
-                    {
-                        uploadButton.addMenuItem("Current Workbook (" + currentContainer.getTitle() + ")", url);
-                    }
-                    else
-                    {
-                        uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
-                    }
+                    uploadButton.addMenuItem("Current " + currentContainer.getContainerNoun(true) + " (" + currentContainer.getImportTitle() + ")", url);
                 }
                 for (Container container : containers)
                 {
@@ -783,13 +765,7 @@ public class AssayManager implements AssayService
                 containers.add(new Pair<>(project, String.format("%s (%s)", "Project", project.getName())));
         }
 
-        // for workbooks, use the parent folder as the current folder (unless it happens to be the project)
-        if (container.isWorkbook())
-        {
-            container = container.getParent();
-            if (container != null && container.isProject())
-                container = null;
-        }
+        container = container.getContainerFor(Container.DataType.assays);
 
         // current folder
         if (container != null && container.hasPermission(user, DesignAssayPermission.class))

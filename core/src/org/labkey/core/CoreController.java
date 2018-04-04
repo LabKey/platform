@@ -708,7 +708,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            if (!target.isWorkbook())
+            if (target.requiresAdminToDelete())
             {
                 if (!target.hasPermission(getUser(), AdminPermission.class))
                 {

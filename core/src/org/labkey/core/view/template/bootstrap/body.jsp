@@ -102,13 +102,13 @@
                     <%= h(pageTitle) %>
                 </h3>
                 <%--For a normal folder, just show the title, unless this is the start page--%>
-                <%--For a workbook, always show ParentTitle / Workbook, making it easier for the user to return to the parent --%>
-                <% if (getContainer().isWorkbook() || !getActionURL().toString().equals(pageConfig.getAppBar().getHref())) { %>
+                <%--For a folder not in the folder navigation, always show ParentTitle / Folder Title, making it easier for the user to return to the parent --%>
+                <% if (!getContainer().isInFolderNav() || !getActionURL().toString().equals(pageConfig.getAppBar().getHref())) { %>
                     <span class="lk-body-title-folder-outer">
                         <i class="fa fa-folder-o"></i>
                         <%-- Note: pageConfig.getAppBar() returns a URL pointing to the current non-workbook container (i.e. parent if current container is a workbook) --%>
                         <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>"><%= h(getContainer().getTitleFolder().getTitle()) %></a>
-                        <% if (getContainer().isWorkbook()) { %>
+                        <% if (!getContainer().isInFolderNav()) { %>
                          / <a class="lk-body-title-folder" href="<%= h(getContainer().getStartURL(getUser()))%>"><%= h(getContainer().getChildTitle()) %></a>
                         <% } %>
                     </span>

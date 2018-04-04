@@ -85,8 +85,8 @@ public class SecurityAccessView extends VBox
         // Note: _containerTree.get() returns empty collection if no mapping or no children
         for (Container child : _containerTree.get(parent))
         {
-            // Skip workbooks as they don't have directly assigned permissions (they inherit from their parent)
-            if (child.isWorkbook())
+            // Skip containers that don't have directly assigned permissions (they inherit from their parent)
+            if (!child.isContainerFor(Container.DataType.permissions))
                 continue;
 
             SecurityPolicy policy = child.getPolicy();

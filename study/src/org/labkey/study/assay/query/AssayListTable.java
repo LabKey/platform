@@ -16,7 +16,6 @@
 
 package org.labkey.study.assay.query;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
@@ -41,7 +40,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 {
     public AssayListTable(AssaySchemaImpl schema)
     {
-        super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.WorkbookAssay(schema.getUser()));
+        super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.AssayLocation(schema.getUser()));
         setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
         setName(AssaySchema.ASSAY_LIST_TABLE_NAME);
@@ -112,7 +111,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
     @Override
     public boolean hasDefaultContainerFilter()
     {
-        return getContainerFilter() instanceof ContainerFilter.WorkbookAssay;
+        return getContainerFilter() instanceof ContainerFilter.AssayLocation;
     }
 
     @Override

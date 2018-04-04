@@ -1146,14 +1146,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
             else
             {
-                String type;
-
-                if (c.isProject())
-                    type = "Project";
-                else if (c.isWorkbook())
-                    type = "Workbook";
-                else
-                    type = "Folder";
+                String type = c.getContainerNoun(true);
 
                 String containerTitle = c.getTitle();
 
