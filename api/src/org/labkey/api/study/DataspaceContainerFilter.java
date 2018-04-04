@@ -131,7 +131,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             for (GUID guid : _containerIds)
             {
                 Container c = ContainerManager.getForId(guid);
-                if (null != c && !c.isWorkbook() && c.hasPermission(_user, perm, roles))
+                if (null != c && c.isContainerFor(Container.DataType.dataspace) && c.hasPermission(_user, perm, roles))
                     allowedContainers.add(guid);
             }
         }

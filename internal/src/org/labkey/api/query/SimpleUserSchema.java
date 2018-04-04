@@ -60,8 +60,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -398,7 +396,7 @@ public class SimpleUserSchema extends UserSchema
         protected Container getDomainContainer()
         {
             Container c = getContainer();
-            return c == null ? null : c.isWorkbook() ? c.getParent() : c;
+            return c == null ? null : c.getContainerFor(Container.DataType.domainDefinitions);
         }
 
         @Override

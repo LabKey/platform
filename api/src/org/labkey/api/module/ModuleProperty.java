@@ -307,9 +307,9 @@ public class ModuleProperty
 
         String value;
         if(isCanSetPerContainer())
-            value = PropertyManager.getCoalecedProperty(propertyUser, c, getCategory(), getName());
+            value = PropertyManager.getCoalescedProperty(propertyUser, c, getCategory(), getName());
         else
-            value = PropertyManager.getCoalecedProperty(propertyUser, ContainerManager.getRoot(), getCategory(), getName());
+            value = PropertyManager.getCoalescedProperty(propertyUser, ContainerManager.getRoot(), getCategory(), getName());
 
         if(value == null)
             value = getDefaultValue();

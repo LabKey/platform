@@ -145,26 +145,26 @@ public class PropertyManager
      * NOTE: this does not test permissions.  Callers should ensure the requested user has the appropriate
      * permissions to read these properties
      */
-    public static String getCoalecedProperty(User user, Container c, String category, String name, boolean includeNullUser)
+    public static String getCoalescedProperty(User user, Container c, String category, String name, boolean includeNullUser)
     {
-        String value = getCoalecedPropertyForContainer(user, c, category, name);
+        String value = getCoalescedPropertyForContainer(user, c, category, name);
 
         if(includeNullUser && value == null && user != SHARED_USER)
-            value = getCoalecedPropertyForContainer(SHARED_USER, c, category, name);
+            value = getCoalescedPropertyForContainer(SHARED_USER, c, category, name);
 
         return value;
     }
 
-    public static String getCoalecedProperty(User user, Container c, String category, String name)
+    public static String getCoalescedProperty(User user, Container c, String category, String name)
     {
-        return getCoalecedProperty(user, c, category, name, true);
+        return getCoalescedProperty(user, c, category, name, true);
     }
 
-    private static String getCoalecedPropertyForContainer(User user, Container c, String category, String name)
+    private static String getCoalescedPropertyForContainer(User user, Container c, String category, String name)
     {
         Container curContainer = c;
 
-        while (curContainer != null && curContainer.isWorkbook())
+        while (curContainer != null && !curContainer.isContainerFor(Container.DataType.properties))
             curContainer = curContainer.getParent();
 
         String value;

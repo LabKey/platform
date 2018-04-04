@@ -447,10 +447,10 @@ public class ContainerManager
                                     " matches container tab, but cannot be converted to a tab folder because it has " + childCount + " children.");
                         }
 
-                        if (child.isWorkbook())
+                        if (!child.isConvertibleToTab())
                         {
                             errorStrings.add("Child folder " + child.getName() +
-                                    " matches container tab, but cannot be converted to a tab folder because it is a workbook.");
+                                    " matches container tab, but cannot be converted to a tab folder because it is a " + child.getContainerNoun() + ".");
                         }
 
                         if (!child.isContainerTab())

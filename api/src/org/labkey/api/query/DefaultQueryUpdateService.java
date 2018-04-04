@@ -469,7 +469,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             {
                 //Issue 15301: allow workbooks records to be deleted/updated from the parent container
                 Container rowContainer = ContainerManager.getForId((String)oldContainer);
-                if (rowContainer != null && rowContainer.isWorkbook() && rowContainer.getParent().equals(container))
+                if (rowContainer != null && rowContainer.canDeleteFromContainer(container))
                     container = rowContainer;
                 else
                     throw new UnauthorizedException("The row is from the wrong container.");
@@ -600,7 +600,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             if (row.get("container") != null)
             {
                 Container rowContainer = ContainerManager.getForId((String)row.get("container"));
-                if (rowContainer != null && rowContainer.isWorkbook() && rowContainer.getParent().equals(container))
+                if (rowContainer != null && rowContainer.canUpdateFromContainer(container))
                 {
                     return;
                 }

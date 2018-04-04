@@ -424,8 +424,7 @@ public class DefaultFolderType implements FolderType
         String controllerName = context.getActionURL().getController();
         Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
         startPage.setSelected(currentModule == getDefaultModule());
-        String title = context.getContainer().isWorkbook() ? context.getContainer().getTitle() : context.getContainer().getName();
-        return new AppBar(title, context.getContainer().getStartURL(context.getUser()), startPage);
+        return new AppBar(context.getContainer().getAppBarTitle(), context.getContainer().getStartURL(context.getUser()), startPage);
     }
 
     @Override

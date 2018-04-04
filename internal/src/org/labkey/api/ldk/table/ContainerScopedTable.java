@@ -321,7 +321,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                 return exists;
             }
 
-            Container target = c.isWorkbook() ? c.getParent() : c;
+            Container target = c.getContainerFor(Container.DataType.userSchema);
             SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_pseudoPk), key, CompareType.EQUAL);
             filter.addClause(ContainerFilter.CURRENT.createFilterClause(_rootTable.getSchema(), getContainerFieldKey(), target));
             TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_pseudoPk), filter, null);

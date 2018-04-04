@@ -33,7 +33,6 @@ import org.labkey.data.xml.TbarBtnOptions;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -109,8 +108,7 @@ public class FilesAdminOptions
                 if (pipeOptions.getFilePropertiesConfig() != null)
                     _fileConfig = fileConfig.valueOf(pipeOptions.getFilePropertiesConfig());
 
-                // Make sure workbooks always defer to their parent
-                _inheritedTbarConfig = pipeOptions.getInheritedTbarConfig() || getContainer().isWorkbook();
+                _inheritedTbarConfig = pipeOptions.getInheritedTbarConfig() || !getContainer().isContainerFor(Container.DataType.fileAdmin);
 
                 ActionOptions actionOptions = pipeOptions.getActionConfig();
                 if (actionOptions != null)
@@ -233,8 +231,7 @@ public class FilesAdminOptions
     public List<FilesTbarBtnOption> getEffectiveTbarConfig()
     {
         Collection<FilesTbarBtnOption> configs;
-        // Workbooks always defer to their parent
-        if (!getContainer().isWorkbook() && (!_inheritedTbarConfig || getContainer().isProject() || getContainer().isRoot()))
+        if (getContainer().isContainerFor(Container.DataType.fileAdmin) && (!_inheritedTbarConfig || getContainer().isProject() || getContainer().isRoot()))
         {
             configs = _tbarConfig.values();
         }

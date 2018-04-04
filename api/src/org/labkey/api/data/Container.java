@@ -84,6 +84,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.data.Container.DataType.assayProtocols;
+import static org.labkey.api.data.Container.DataType.inventory;
+import static org.labkey.api.data.Container.DataType.sharedDataTable;
+
 
 /**
  * Basic hierarchical structure for holding data within LabKey Server. Security is configured at the container level.
@@ -93,7 +97,7 @@ import java.util.Set;
  *
  * CONSIDER: extend {@link org.labkey.api.data.Entity}
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue, ContainerType
 {
     private GUID _id;
     private Path _path;
@@ -110,6 +114,30 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private transient WeakReference<Container> _parent;
 
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
+
+    /**
+     * An enumeration of the different types of data relevant to a container that may be stored in a different container
+     * in its hierarchy, usually depending on the type of container.
+     */
+    public enum DataType
+    {
+        assayProtocols,
+        assays,
+        customQueryViews,
+        dataspace,
+        domainDefinitions,
+        fileAdmin,
+        folderManagement,
+        inventory,
+        navVisibility,
+        permissions,
+        pipelineRoot,
+        properties,
+        protocol,
+        sharedDataTable,
+        tabs,
+        userSchema,
+    }
 
     public enum TYPE
     {
@@ -176,14 +204,126 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return !isWorkbook() && (includeTabs || !isContainerTab());
     }
 
-    public Boolean useParentForFolderManagement()
+    public Boolean shouldRemoveFromPortal()
     {
         return isContainerTab();
     }
 
-    public Boolean shouldRemoveFromPortal()
+    public Boolean isDuplicatedInContainerFilter()
     {
-        return isContainerTab();
+        // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
+        // automatically because we always add them via the SQL that we generate
+        return isWorkbook();
+    }
+
+    public Boolean isContainerFor(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case assayProtocols:
+                return true;
+            case folderManagement:
+                return isContainerTab();
+            case inventory:
+            case sharedDataTable:
+                return true;
+            case tabs:
+                return !isContainerTab() && !isWorkbook();
+            default:
+                return !isWorkbook();
+        }
+    }
+
+    public Container getContainerFor(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case assays:
+                Container container = this;
+                // for workbooks, use the parent folder as the current folder (unless it happens to be the project)
+                if (isWorkbook())
+                {
+                    container = this.getParent();
+                    if (container != null && container.isProject())
+                        container = null;
+                }
+                return container;
+            case assayProtocols:
+                return this;
+            case dataspace:
+            case folderManagement:
+                return this.getParent();
+            case inventory:
+            case sharedDataTable:
+                return this;
+            case tabs:
+                return (isContainerTab() || isWorkbook()) ? this.getParent() : this;
+            default:
+                return isWorkbook() ? this.getParent() : this;
+        }
+    }
+
+    public Set<Container> getContainersFor(DataType dataType)
+    {
+        Set<Container> containers = new HashSet<>();
+
+        if (dataType == assayProtocols)
+        {
+            containers.add(this);
+            Container project = this.getProject();
+            if (project != null)
+            {
+                containers.add(project);
+            }
+            if (this.isWorkbook())
+            {
+                containers.add(this.getParent());
+            }
+        }
+        else if (dataType == sharedDataTable)
+        {
+            containers.add(ContainerManager.getSharedContainer());
+            if (isWorkbook())
+            {
+                containers.add(this.getParent());
+            }
+        }
+        return containers;
+    }
+
+    public Boolean isInFolderNav()
+    {
+        return !isWorkbook() && !isContainerTab();
+    }
+
+    public Boolean parentDataIsRelevant(DataType dataType)
+    {
+        return dataType == inventory && isWorkbook();
+    }
+
+    public Boolean isConvertibleToTab()
+    {
+        return !isWorkbook();
+    }
+
+    public Boolean canDeleteFromContainer(Container container)
+    {
+        return isWorkbook() && this.getParent().equals(container);
+    }
+
+    public Boolean canUpdateFromContainer(Container container)
+    {
+        return isWorkbook() && this.getParent().equals(container);
+    }
+
+    public Boolean canAdminFolder()
+    {
+        return !isWorkbook();
+    }
+
+    public Boolean requiresAdminToDelete()
+    {
+        return !isWorkbook();
     }
 
     @NotNull
@@ -199,8 +339,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return isWorkbook() ? getName() : getTitle();
     }
 
+    public String getImportTitle()
+    {
+        return isWorkbook() ? getTitle() : getPath();
+    }
+
+    public String getAppBarTitle()
+    {
+        return isWorkbook() ? getTitle() : getName();
+    }
+
     /**
-     * Returns the current container for normal folders, or the parent folder for workbooks
+     * Returns the container whose title is to be displayed next to the folder icon in the PageTemplate
      */
     @NotNull
     public Container getTitleFolder()
@@ -1420,7 +1570,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public String getContainerNoun(boolean titleCase)
     {
         String noun = isProject() ? "project" : isWorkbook() ? "workbook" : "folder";
-        if(titleCase)
+        if (titleCase)
         {
             return noun.substring(0, 1).toUpperCase() + noun.substring(1);
         }

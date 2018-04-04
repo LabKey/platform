@@ -56,8 +56,9 @@ public class FolderManagement
 
     public static final Predicate<Container> EVERY_CONTAINER = container -> true;
     public static final Predicate<Container> NOT_ROOT = container -> !container.isRoot();
-    public static final Predicate<Container> FOLDERS_AND_PROJECTS = container -> !container.isRoot() && !container.isWorkbook();
-    public static final Predicate<Container> FOLDERS_ONLY = container -> !container.isRoot() && !container.isProject() && !container.isWorkbook();
+    // Choosing "isInFolderNav" does not include Tabs, which is a slight change in functionality (previously excluded just workbooks), but that seems proper.
+    public static final Predicate<Container> FOLDERS_AND_PROJECTS = container -> !container.isRoot() && container.isInFolderNav();
+    public static final Predicate<Container> FOLDERS_ONLY = container -> !container.isRoot() && !container.isProject() && container.isInFolderNav();
 
     public abstract static class FolderManagementTabStrip extends TabStripView
     {

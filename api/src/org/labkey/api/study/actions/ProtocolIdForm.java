@@ -17,13 +17,18 @@
 package org.labkey.api.study.actions;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewForm;
 
 /**
  * User: brittp
@@ -115,7 +120,7 @@ public class ProtocolIdForm extends ViewForm
             if (protocol == null || (validateContainer && !protocol.getContainer().equals(getContainer()) &&
                                                           !protocol.getContainer().equals(getContainer().getProject()) &&
                                                           !protocol.getContainer().equals(ContainerManager.getSharedContainer()) &&
-                                                          !(getContainer().isWorkbook() && protocol.getContainer().equals(getContainer().getParent()))))
+                                                          !protocol.getContainer().equals(getContainer().getContainerFor(Container.DataType.protocol))))
             {
                 if (protocol != null && protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {

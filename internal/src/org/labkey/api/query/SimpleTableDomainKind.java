@@ -119,18 +119,13 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     {
         try
         {
-            XarContext xc = getXarContext(schemaName, tableName, getDomainContainer(c), u);
+            XarContext xc = getXarContext(schemaName, tableName, c.getContainerFor(Container.DataType.domainDefinitions), u);
             return LsidUtils.resolveLsidFromTemplate(SimpleModule.DOMAIN_LSID_TEMPLATE, xc, SimpleModule.DOMAIN_NAMESPACE_PREFIX_TEMPLATE);
         }
         catch (XarFormatException xfe)
         {
             return null;
         }
-    }
-
-    protected static Container getDomainContainer(Container c)
-    {
-        return c.isWorkbook() ? c.getParent() : c;
     }
 
     public static String createPropertyURI(String schemaName, String tableName, Container c, User u)
@@ -194,7 +189,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        if (containerUser.getContainer().isWorkbook())
+        if (!containerUser.getContainer().isContainerFor(Container.DataType.domainDefinitions))
             return null;
 
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), true, true, true);
@@ -203,13 +198,13 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
-        return super.urlCreateDefinition(schemaName, queryName, getDomainContainer(container), user);
+        return super.urlCreateDefinition(schemaName, queryName, container.getContainerFor(Container.DataType.domainDefinitions), user);
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class) && !container.isWorkbook();
+        return container.hasPermission(user, AdminPermission.class) && container.isContainerFor(Container.DataType.domainDefinitions);
     }
 
     @Override

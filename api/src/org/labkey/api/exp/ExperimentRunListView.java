@@ -219,7 +219,7 @@ public class ExperimentRunListView extends QueryView
             if (!protocols.isEmpty())
             {
                 MenuButton addRunsButton;
-                if(c.getFolderType().getForceAssayUploadIntoWorkbooks() && !c.isWorkbook())
+                if (c.getFolderType().getForceAssayUploadIntoWorkbooks() && c.isContainerFor(Container.DataType.assays))
                 {
                     addRunsButton = new MenuButton("Upload Assay Runs"){
                         public void render(RenderContext ctx, Writer out) throws IOException
@@ -243,7 +243,7 @@ public class ExperimentRunListView extends QueryView
                     if (provider != null)
                     {
                         NavTree btn;
-                        if(c.getFolderType().getForceAssayUploadIntoWorkbooks() && !c.isWorkbook())
+                        if (c.getFolderType().getForceAssayUploadIntoWorkbooks() && c.isContainerFor(Container.DataType.assays))
                         {
                             btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
                             btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +

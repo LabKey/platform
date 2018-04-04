@@ -84,7 +84,7 @@ abstract public class AbstractNavItem implements NavItem
     @Override
     public boolean isVisible(Container c, User u)
     {
-        Container targetContainer = c.isWorkbook() ? c.getParent() : c;
+        Container targetContainer = c.getContainerFor(Container.DataType.navVisibility);
         if (getDataProvider() != null && getDataProvider().getOwningModule() != null)
         {
             if (!targetContainer.getActiveModules().contains(getDataProvider().getOwningModule()))

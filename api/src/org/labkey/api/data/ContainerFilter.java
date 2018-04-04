@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents which set of containers should be included when querying for data. In general, the code will
@@ -94,12 +95,12 @@ public abstract class ContainerFilter
      * This is important for servers that have lots and lots of workbooks, like the O'Connor server which has more than
      * 10,000.
      */
-    protected Collection<Container> removeWorkbooks(Collection<Container> containers)
+    protected Collection<Container> removeDuplicatedContainers(Collection<Container> containers)
     {
         Set<Container> result = new HashSet<>(containers.size());
         for (Container c : containers)
         {
-            if (!c.isWorkbook())
+            if (!c.isDuplicatedInContainerFilter())
             {
                 result.add(c);
             }
@@ -356,11 +357,11 @@ public abstract class ContainerFilter
                 return new CurrentPlusProjectAndShared(user);
             }
         },
-        WorkbookAssay("Current folder, project, and Shared project")
+        AssayLocation("Current folder, project, and Shared project")
         {
             public ContainerFilter create(User user)
             {
-                return new WorkbookAssay(user);
+                return new AssayLocation(user);
             }
         },
         WorkbookAndParent("Current workbook and parent")
@@ -546,7 +547,7 @@ public abstract class ContainerFilter
             Set<Container> containers = new HashSet<>();
             for(Container c : ContainerManager.getChildren(currentContainer, _user, perm, roles))
             {
-                if(!c.isWorkbook() && c.hasPermission(_user, perm, roles))
+                if (c.isInFolderNav() && c.hasPermission(_user, perm, roles))
                 {
                     containers.add(c);
                 }
@@ -580,7 +581,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            List<Container> containers = new ArrayList<>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, perm, roles)));
+            List<Container> containers = new ArrayList<>(removeDuplicatedContainers(ContainerManager.getAllChildren(currentContainer, _user, perm, roles)));
             if (currentContainer.hasPermission(_user, perm, roles))
                 containers.add(currentContainer);
             return toIds(containers);
@@ -649,9 +650,9 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class WorkbookAssay extends CurrentPlusProjectAndShared
+    public static class AssayLocation extends CurrentPlusProjectAndShared
     {
-        public WorkbookAssay(User user)
+        public AssayLocation(User user)
         {
             super(user);
         }
@@ -664,9 +665,9 @@ public abstract class ContainerFilter
             {
                 return null;
             }
-            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm, roles))
+            if (!currentContainer.isContainerFor(Container.DataType.assays) && currentContainer.getContainerFor(Container.DataType.assays).hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getParent().getEntityId());
+                result.add(currentContainer.getContainerFor(Container.DataType.assays).getEntityId());
             }
             return result;
         }
@@ -674,7 +675,7 @@ public abstract class ContainerFilter
         @Override
         public Type getType()
         {
-            return Type.WorkbookAssay;
+            return Type.AssayLocation;
         }
     }
 
@@ -887,7 +888,7 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<>(removeWorkbooks(ContainerManager.getAllChildren(project, _user, perm, roles)));
+            Set<Container> containers = new HashSet<>(removeDuplicatedContainers(ContainerManager.getAllChildren(project, _user, perm, roles)));
             if (project.hasPermission(_user, perm, roles))
                 containers.add(project);
             return toIds(containers);
@@ -915,16 +916,10 @@ public abstract class ContainerFilter
                 return null;
             }
             List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, perm, roles);
-            // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
-            // automatically because we always add them via the SQL that we generate
-            Set<GUID> ids = new HashSet<>();
-            for (Container container : containers)
-            {
-                if (!container.isWorkbook())
-                {
-                    ids.add(container.getEntityId());
-                }
-            }
+            Set<GUID> ids = containers.stream()
+                    .filter(c -> !c.isDuplicatedInContainerFilter())
+                    .map(Container::getEntityId)
+                    .collect(Collectors.toSet());
             if (ContainerManager.getRoot().hasPermission(_user, perm, roles))
             {
                 ids.add(ContainerManager.getRoot().getEntityId());
