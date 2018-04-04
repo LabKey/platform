@@ -61,9 +61,17 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
 
     public AnnouncementTable(AnnouncementSchema schema)
     {
+        // Standard usage omits unapproved announcements
+        this(schema, new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.GT));
+    }
+
+    public AnnouncementTable(AnnouncementSchema schema, SimpleFilter filter)
+    {
         super(CommSchema.getInstance().getTableInfoAnnouncements(), schema);
+        addCondition(filter);
         wrapAllColumns(true);
         removeColumn(getColumn("Container"));
+        removeColumn(getColumn("Approved"));
         ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
         addColumn(folderColumn);

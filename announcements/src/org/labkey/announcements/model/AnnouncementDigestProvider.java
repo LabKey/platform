@@ -59,20 +59,20 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
     // Messages are grouped by thread and threads are sorted by earliest post within each thread
     private static final String RECENT_ANN_SQL = "SELECT annModel.* FROM\n" +
             "\t(\n" +
-            "\tSELECT Thread, MIN(Created) AS Earliest FROM\n" +
-            "\t\t(SELECT Created, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM " + _comm.getTableInfoAnnouncements() + " annModel LEFT OUTER JOIN\n" +
+            "\tSELECT Thread, MIN(Approved) AS Earliest FROM\n" +
+            "\t\t(SELECT Approved, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM " + _comm.getTableInfoAnnouncements() + " annModel LEFT OUTER JOIN\n" +
             "\t\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
-            "\t\t\tWHERE Container = ? AND Created >= ? AND Created < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)) x\n" +
+            "\t\t\tWHERE Container = ? AND Approved >= ? AND Approved < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)) x\n" +
             "\tGROUP BY Thread\n" +
             "\t) X LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " annModel ON Parent = Thread OR EntityId = Thread LEFT OUTER JOIN\n" +
             "\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
-            "WHERE Container = ? AND Created >= ? AND Created < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)\n" +
-            "ORDER BY Earliest, Thread, Created";
+            "WHERE Container = ? AND Approved >= ? AND Approved < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)\n" +
+            "ORDER BY Earliest, Thread, Approved";
 
     @Override
     public void sendDigestForAllContainers(Date start, Date end) throws Exception
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Created >= ? and Created < ?", start, end);
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + _comm.getTableInfoAnnouncements() + " WHERE Approved >= ? and Approved < ?", start, end);
         Collection<String> containerIds = new SqlSelector(_comm.getSchema(), sql).getCollection(String.class);
 
         for (String id : containerIds)

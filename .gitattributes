@@ -2,6 +2,7 @@
 announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-15.10.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-18.10-18.11.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-12.10.sql -text
@@ -15,6 +16,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-14.12-14.13.s
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-14.30-14.31.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-14.30-15.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-15.10.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-18.10-18.11.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-12.10.sql -text
@@ -70,6 +72,7 @@ announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.ja
 announcements/src/org/labkey/announcements/model/InsertMessagePermission.java -text
 announcements/src/org/labkey/announcements/model/MessageBoardContributorRole.java -text
 announcements/src/org/labkey/announcements/model/MessageConfigManager.java -text
+announcements/src/org/labkey/announcements/model/ModeratorReview.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text

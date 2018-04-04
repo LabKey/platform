@@ -17,14 +17,17 @@ package org.labkey.announcements.model;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.AnnouncementsController.ModeratorReviewAction;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -43,19 +46,24 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
+import org.labkey.api.util.MailHelper.MultipartMessage;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -88,6 +96,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: mbellew
@@ -246,36 +255,94 @@ public class AnnouncementManager
 
         try
         {
-            AttachmentService.get().addAttachments(insert.getAttachmentParent(), files, user);
+            AttachmentService.get().addAttachments(ann.getAttachmentParent(), files, user);
         }
         finally
         {
-            // If addAttachment() throws, still send emails and index, #30178
-            // Send email if there's body text or an attachment.
-            if (sendEmailNotifications && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
-            {
-                String rendererTypeName = ann.getRendererType();
-                WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
-                if (null == currentRendererType)
-                {
-                    WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-                    if (null != wikiService)
-                        currentRendererType = wikiService.getDefaultMessageRendererType();
-                }
-                sendNotificationEmails(insert, currentRendererType, c, user);
-            }
+            // If addAttachment() throws, still call approve() or notifyModerators, as appropriate. #30178
 
-            indexThread(insert);
+            ModeratorReview mr = ModeratorReview.get(getMessageBoardSettings(c).getModeratorReview());
+
+            if (mr.isApproved(c, user, ann))
+                approve(c, user, sendEmailNotifications, ann, ann.getCreated());
+            else
+                notifyModerators(c, user, ann);
         }
 
         return ann;
+    }
+
+    public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)
+    {
+        updateApproved(c, ann, date);
+
+        // Send email if there's body text or an attachment.
+        if (sendEmailNotifications && (null != ann.getBody() || !ann.getAttachments().isEmpty()))
+        {
+            String rendererTypeName = ann.getRendererType();
+            WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
+            if (null == currentRendererType)
+            {
+                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                if (null != wikiService)
+                    currentRendererType = wikiService.getDefaultMessageRendererType();
+            }
+            sendNotificationEmails(ann, currentRendererType, c, user);
+        }
+
+        indexThread(ann);
+    }
+
+    private static void notifyModerators(Container c, User user, AnnouncementModel ann)
+    {
+        BulkEmailer emailer = new BulkEmailer(user);
+        List<String> toList = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class)).stream()
+            .map(admin->admin.getEmail())
+            .collect(Collectors.toList());
+
+        if (toList.isEmpty())
+        {
+            Logger.getLogger(AnnouncementManager.class).warn("New message requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
+        }
+        else
+        {
+            MultipartMessage msg = MailHelper.createMultipartMessage();
+
+            try
+            {
+                msg.setFrom(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getSystemEmailAddress());
+                msg.setSubject("New message in " + c.getPath() + " requires moderator review");
+                msg.setTextContent("Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString());
+                emailer.addMessage(toList, msg);
+                emailer.start();
+            }
+            catch (Exception e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        };
+    }
+
+    // Magic date value used to mark an annoucement that a moderator has reviewed and "disapproved" (e.g., determined to be spam).
+    public static final Date SPAM_MAGIC_DATE = new Date(0);
+
+    public static void markAsSpam(Container c, AnnouncementModel ann)
+    {
+        updateApproved(c, ann, SPAM_MAGIC_DATE);
+    }
+
+    // Execute direct SQL (not Table.update())... I don't think we want to change Modified or ModifiedBy. Could consider adding column for Moderator, though.
+    private static void updateApproved(Container c, AnnouncementModel ann, Date date)
+    {
+        TableInfo ti = CommSchema.getInstance().getTableInfoAnnouncements();
+        new SqlExecutor(ti.getSchema()).execute("UPDATE " + ti.getSelectName() + " SET Approved = ? WHERE Container = ? AND RowId = ?", date, c, ann.getRowId());
     }
 
     // Render and send all the email notifications on a background thread, #13143
     private static void sendNotificationEmails(final AnnouncementModel a, final WikiRendererType currentRendererType, final Container c, final User user)
     {
         Thread renderAndEmailThread = new Thread(() -> {
-            DiscussionService.Settings settings = DiscussionService.get().getSettings(c);
+            Settings settings = DiscussionService.get().getSettings(c);
 
             boolean isResponse = null != a.getParent();
             AnnouncementModel parent = a;
@@ -324,7 +391,7 @@ public class AnnouncementManager
 
                         try
                         {
-                            MailHelper.MultipartMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason, user);
+                            MultipartMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason, user);
                             m.setHeader("References", references);
                             m.setHeader("Message-ID", messageId);
 
@@ -344,7 +411,7 @@ public class AnnouncementManager
         renderAndEmailThread.start();
     }
 
-    private static MailHelper.MultipartMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason, User sender) throws Exception
+    private static MultipartMessage getMessage(Container c, User recipient, Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason, User sender) throws Exception
     {
         ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
 
@@ -354,7 +421,7 @@ public class AnnouncementManager
 
             NotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NotificationEmailTemplate.class, c);
             template.init(notificationBean, sender);
-            MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+            MultipartMessage message = MailHelper.createMultipartMessage();
             template.renderAllToMessage(message, c);
 
             return message;
@@ -520,7 +587,7 @@ public class AnnouncementManager
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
-    public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws IllegalAccessException, InvocationTargetException
+    public static void saveMessageBoardSettings(Container c, Settings settings) throws IllegalAccessException, InvocationTargetException
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
@@ -536,15 +603,23 @@ public class AnnouncementManager
         props.put("defaultAssignedTo", null == settings.getDefaultAssignedTo() ? null : settings.getDefaultAssignedTo().toString());
         props.put("titleEditable", String.valueOf(settings.isTitleEditable()));
         props.put("includeGroups", String.valueOf(settings.includeGroups()));
+        props.put("moderatorReview", settings.getModeratorReview());
         props.save();
     }
 
-    public static DiscussionService.Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException
+    public static Settings getMessageBoardSettings(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, MESSAGE_BOARD_SETTINGS);
-        DiscussionService.Settings settings = new DiscussionService.Settings();
+        Settings settings = new Settings();
         settings.setDefaults();
-        BeanUtils.populate(settings, props);
+        try
+        {
+            BeanUtils.populate(settings, props);
+        }
+        catch (IllegalAccessException | InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        }
         return settings;
     }
 
@@ -707,14 +782,7 @@ public class AnnouncementManager
 
     private static boolean isSecure(@NotNull Container c)
     {
-        try
-        {
-            return AnnouncementManager.getMessageBoardSettings(c).isSecure();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return AnnouncementManager.getMessageBoardSettings(c).isSecure();
     }
 
 
@@ -1032,7 +1100,7 @@ public class AnnouncementManager
         private final AnnouncementModel parentModel;
         private final boolean isResponse;
         private final String body;
-        private final DiscussionService.Settings settings;
+        private final Settings settings;
         private final ActionURL removeURL;
         private final Reason reason;
         private final boolean includeGroups;
@@ -1040,7 +1108,7 @@ public class AnnouncementManager
         public enum Reason { signedUp, memberList }
 
         public EmailNotificationBean(Container c,
-                                     User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
+                                     User recipient, Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
             this.recipient = recipient;

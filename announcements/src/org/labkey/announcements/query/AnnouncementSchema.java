@@ -24,6 +24,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
@@ -37,6 +38,7 @@ public class AnnouncementSchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "announcement";
     public static final String ANNOUNCEMENT_TABLE_NAME = "Announcement";
+    public static final String MODERATOR_REVIEW_TABLE_NAME = "ModeratorReview";
     public static final String FORUM_SUBSCRIPTION_TABLE_NAME = "ForumSubscription";
     public static final String ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME = "AnnouncementSubscription";
     public static final String EMAIL_OPTION_TABLE_NAME = "EmailOption";
@@ -91,6 +93,10 @@ public class AnnouncementSchema extends UserSchema
         if (ANNOUNCEMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createAnnouncementTable();
+        }
+        if (MODERATOR_REVIEW_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return createModeratorReviewTable();
         }
         if (EMAIL_FORMAT_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -157,6 +163,16 @@ public class AnnouncementSchema extends UserSchema
     public AnnouncementTable createAnnouncementTable()
     {
         return new AnnouncementTable(this);
+    }
+
+    public AnnouncementTable createModeratorReviewTable()
+    {
+        AnnouncementTable table = new AnnouncementTable(this, new SimpleFilter(FieldKey.fromParts("Approved"), null, CompareType.ISBLANK));
+
+        for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "DiscussionSrcURL", "Folder", "LastIndexed"))
+            table.getColumn(name).setHidden(true);
+
+        return table;
     }
 
     public TableInfo createToursTable()

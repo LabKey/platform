@@ -103,7 +103,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 18.10;
+        return 18.11;
     }
 
     protected void init()
@@ -147,6 +147,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         AnnouncementListener listener = new AnnouncementListener();
@@ -217,6 +218,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         return PageFlowUtil.set(CommSchema.getInstance().getSchemaName());
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -230,12 +232,14 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
 
+    @Override
     public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
         Runnable r = () -> AnnouncementManager.indexMessages(task, c, modifiedSince);
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
+    @Override
     public void indexDeleted()
     {
         new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.announcements SET LastIndexed=NULL");

@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -81,6 +83,38 @@
                     <td valign="top"><input type="radio" name="secure" value="1"<%=checked(settings.isSecure())%>></td>
                     <td><b>ON</b> - Only editors and those on the member list can view conversations, content can't be modified after posting, content is never sent via email</td>
                 </tr>
+            </table>
+        </td>
+    </tr>
+    <%
+        boolean moderatorReview = "InitialPost".equals(settings.getModeratorReview()) || "All".equals(settings.getModeratorReview());
+    %>
+    <tr>
+        <td class="labkey-form-label" valign="middle">Moderator review</td>
+        <td>
+            <table>
+                <tr>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="None"<%=checked(!moderatorReview)%>></td>
+                    <td><b>None</b> - New messages never require moderator review.</td>
+                </tr>
+                <tr>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="InitialPost"<%=checked("InitialPost".equals(settings.getModeratorReview()))%>></td>
+                    <td><b>Initial Post</b> - Authors must have their initial message(s) approved by a moderator. Subsequent messages are approved automatically.</td>
+                </tr>
+                <tr>
+                    <td valign="top"><input type="radio" name="moderatorReview" value="All"<%=checked("All".equals(settings.getModeratorReview()))%>></td>
+                    <td><b>All</b> - Every new message by an Author must be approved by a moderator.</td>
+                </tr>
+                <%
+                    if (moderatorReview)
+                    {
+                %>
+                <tr>
+                    <td colspan=2 valign="top"><%=textLink("Moderator Review page", new ActionURL(ModeratorReviewAction.class, getContainer()))%></td>
+                </tr>
+                <%
+                    }
+                %>
             </table>
         </td>
     </tr>

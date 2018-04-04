@@ -33,6 +33,7 @@ import org.labkey.announcements.model.InsertMessagePermission;
 import org.labkey.announcements.model.NormalMessageBoardPermissions;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.SecureMessageBoardPermissions;
+import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -59,6 +60,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
@@ -74,9 +76,12 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresAnyOf;
@@ -106,6 +111,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -144,6 +150,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Shows a set of announcementModels or bulletin board items with replies.
@@ -163,22 +170,15 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private DiscussionService.Settings getSettings()
+    private Settings getSettings()
     {
         return getSettings(getContainer());
     }
 
 
-    public static DiscussionService.Settings getSettings(Container c)
+    public static Settings getSettings(Container c)
     {
-        try
-        {
-            return AnnouncementManager.getMessageBoardSettings(c);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);  // Not great... but this method is called from all over (webpart constructors, etc.)
-        }
+        return AnnouncementManager.getMessageBoardSettings(c);
     }
 
 
@@ -188,7 +188,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static Permissions getPermissions(Container c, User user, DiscussionService.Settings settings)
+    public static Permissions getPermissions(Container c, User user, Settings settings)
     {
         if (settings.isSecure())
             return new SecureMessageBoardPermissions(c, user, settings);
@@ -215,7 +215,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    // Anyone with read permission can attempt to view the list.  AnnouncementWebPart will do further permission checking.  For example,
+    // Anyone with read permission can attempt to view the list. AnnouncementWebPart will do further permission checking. For example,
     //   in a secure message board, those without Editor permissions will only see messages when they are on the member list
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
@@ -530,7 +530,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RemoveUserView extends JspView<RemoveUserView.RemoveUserBean>
     {
-        public RemoveUserView(AnnouncementModel ann, String email, DiscussionService.Settings settings)
+        public RemoveUserView(AnnouncementModel ann, String email, Settings settings)
         {
             super("/org/labkey/announcements/confirmRemoveUser.jsp", new RemoveUserBean(ann, email, settings));
         }
@@ -661,14 +661,14 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class CustomizeAction extends FormViewAction<DiscussionService.Settings>
+    public class CustomizeAction extends FormViewAction<Settings>
     {
-        public URLHelper getSuccessURL(DiscussionService.Settings form)
+        public URLHelper getSuccessURL(Settings form)
         {
             return form.getReturnURLHelper();
         }
 
-        public ModelAndView getView(DiscussionService.Settings form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Settings form, boolean reshow, BindException errors) throws Exception
         {
             CustomizeBean bean = new CustomizeBean();
 
@@ -685,14 +685,14 @@ public class AnnouncementsController extends SpringActionController
             return new JspView<>("/org/labkey/announcements/customize.jsp", bean);
         }
 
-        public boolean handlePost(DiscussionService.Settings form, BindException errors) throws Exception
+        public boolean handlePost(Settings form, BindException errors) throws Exception
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
 
             return true;
         }
 
-        public void validateCommand(DiscussionService.Settings settings, Errors errors)
+        public void validateCommand(Settings settings, Errors errors)
         {
         }
 
@@ -708,7 +708,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class CustomizeBean
     {
-        public DiscussionService.Settings settings;
+        public Settings settings;
         public URLHelper returnURL;    // TODO: Settings has a returnUrl
         public String securityWarning;
         public String assignedToSelect;
@@ -853,7 +853,7 @@ public class AnnouncementsController extends SpringActionController
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
             Container c = getContainer();
-            DiscussionService.Settings settings = getSettings(c);
+            Settings settings = getSettings(c);
             Permissions perm = getPermissions(c, getUser(), settings);
 
             if (!perm.allowInsert())
@@ -939,7 +939,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getStatusSelect(DiscussionService.Settings settings, String currentValue)
+    private static String getStatusSelect(Settings settings, String currentValue)
     {
         List<String> options = Arrays.asList(settings.getStatusOptions().split(";"));
 
@@ -1077,7 +1077,7 @@ public class AnnouncementsController extends SpringActionController
             WikiRendererType currentRendererType;
             Integer assignedTo;
 
-            DiscussionService.Settings settings = getSettings(c);
+            Settings settings = getSettings(c);
 
             if (reshow)
             {
@@ -1143,7 +1143,7 @@ public class AnnouncementsController extends SpringActionController
 
         public static class InsertBean
         {
-            public DiscussionService.Settings settings;
+            public Settings settings;
             public String assignedToSelect;
             public String statusSelect;
             public String memberList;
@@ -2146,7 +2146,7 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract static class LinkBarBean
     {
-        public DiscussionService.Settings settings;
+        public Settings settings;
         public String filterText;
         public ActionURL adminURL;
         public ActionURL emailPrefsURL;
@@ -2156,7 +2156,7 @@ public class AnnouncementsController extends SpringActionController
         public ActionURL siteEmailTemplateURL;
         public boolean includeGroups;
 
-        protected void init(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll, boolean isFiltered, int rowLimit)
+        protected void init(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll, boolean isFiltered, int rowLimit)
         {
             SecurityLogger.indent(getClass().getName());
             try
@@ -2201,7 +2201,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class ListLinkBar extends JspView<ListLinkBar.ListBean>
     {
-        private ListLinkBar(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
+        private ListLinkBar(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll)
         {
             super("/org/labkey/announcements/announcementListLinkBar.jsp", new ListBean(c, url, user, settings, perm, displayAll));
 
@@ -2218,7 +2218,7 @@ public class AnnouncementsController extends SpringActionController
             public ActionURL messagesURL;
             public String urlFilterText;
 
-            private ListBean(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
+            private ListBean(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll)
             {
                 SimpleFilter urlFilter = new SimpleFilter(url, "Threads");
                 boolean isFiltered = !urlFilter.isEmpty();
@@ -2347,7 +2347,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static SimpleFilter getFilter(DiscussionService.Settings settings, Permissions perm, boolean displayAll)
+    private static SimpleFilter getFilter(Settings settings, Permissions perm, boolean displayAll)
     {
         // Filter out threads that this user can't read
         SimpleFilter filter = perm.getThreadFilter();
@@ -2363,7 +2363,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     // Requires HTML encoding for display
-    private static String getFilterText(DiscussionService.Settings settings, boolean displayAll, boolean isFiltered, int rowLimit)
+    private static String getFilterText(Settings settings, boolean displayAll, boolean isFiltered, int rowLimit)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -2419,7 +2419,7 @@ public class AnnouncementsController extends SpringActionController
             User user = ctx.getUser();
             ActionURL url = ctx.getActionURL();
 
-            DiscussionService.Settings settings = getSettings(c);
+            Settings settings = getSettings(c);
             Permissions perm = getPermissions(c, user, settings);
             DataRegion rgn = getDataRegion(perm, settings);
 
@@ -2482,7 +2482,7 @@ public class AnnouncementsController extends SpringActionController
             _vbox = new VBox(bar, gridView);
         }
 
-        protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)
+        protected DataRegion getDataRegion(Permissions perm, Settings settings)
         {
             QuerySettings qs = new QuerySettings(getViewContext(), "Announcements");
             DataRegion rgn = new DataRegion();
@@ -2532,7 +2532,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)
+        protected DataRegion getDataRegion(Permissions perm, Settings settings)
         {
             DataRegion rgn = super.getDataRegion(perm, settings);
 
@@ -2565,7 +2565,7 @@ public class AnnouncementsController extends SpringActionController
         public String message = "";
         public Permissions perm = null;
         public boolean isResponse = false;
-        public DiscussionService.Settings settings;
+        public Settings settings;
         public ActionURL messagesURL;
         public ActionURL listURL;
         public URLHelper printURL;
@@ -2841,7 +2841,7 @@ public class AnnouncementsController extends SpringActionController
                 Container c = form.getContainer();
                 String reshowMemberList = (String)form.get("memberList");
 
-                this.annModel = ann;
+                annModel = ann;
                 settings = getSettings(c);
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
@@ -2850,6 +2850,98 @@ public class AnnouncementsController extends SpringActionController
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnURLHelper();
             }
+        }
+    }
+
+
+    public static class ModeratorReviewForm extends QueryForm
+    {
+        private boolean _approve = false;
+        private boolean _spam = false;
+
+        public boolean isApprove()
+        {
+            return _approve;
+        }
+
+        public void setApprove(boolean approve)
+        {
+            _approve = approve;
+        }
+
+        public boolean isSpam()
+        {
+            return _spam;
+        }
+
+        public void setSpam(boolean spam)
+        {
+            _spam = spam;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ModeratorReviewAction extends FormViewAction<ModeratorReviewForm>
+    {
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
+        }
+
+        @Override
+        public void validateCommand(ModeratorReviewForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ModeratorReviewForm form, boolean reshow, BindException errors) throws Exception
+        {
+            UserSchema schema = new AnnouncementSchema(getUser(), getContainer());
+            QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+            settings.setQueryName(AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME);
+
+            QueryView qv = new QueryView(schema, settings, errors) {
+                @Override
+                protected void populateButtonBar(DataView view, ButtonBar bar)
+                {
+                    ActionButton spamButton = new ActionButton(new ActionURL(ModeratorReviewAction.class, getContainer()).addParameter("spam", 1), "Mark As Spam");
+                    spamButton.setRequiresSelection(true, "Are you sure you want to mark this message as spam?", "Are you sure you want to mark these messages as spam?");
+                    bar.add(spamButton);
+
+                    ActionButton approveButton = new ActionButton(new ActionURL(ModeratorReviewAction.class, getContainer()).addParameter("approve", 1), "Approve");
+                    approveButton.setRequiresSelection(true, "Are you sure you want to approve this message?", "Are you sure you want to approve these messages?");
+                    bar.add(approveButton);
+                }
+            };
+
+            return qv;
+        }
+
+        @Override
+        public boolean handlePost(ModeratorReviewForm form, BindException errors)
+        {
+            Stream<AnnouncementModel> stream = getViewContext().getList(DataRegion.SELECT_CHECKBOX_NAME).stream()
+                .map(s -> Integer.parseInt(s))
+                .map(rowId -> AnnouncementManager.getAnnouncement(getContainer(), rowId));
+
+            if (form.isSpam())
+            {
+                stream.forEach(ann -> AnnouncementManager.markAsSpam(getContainer(), ann));
+            }
+            else if (form.isApprove())
+            {
+                stream.forEach(ann -> AnnouncementManager.approve(getContainer(), getUser(), true, ann, new Date()));
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ModeratorReviewForm form)
+        {
+            return null;
         }
     }
 }

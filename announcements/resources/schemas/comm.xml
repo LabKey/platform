@@ -124,6 +124,7 @@
           <isUserEditable>false</isUserEditable>
           <description>When this row was last indexed by the full-text search service</description>
       </column>
+      <column columnName="Approved" />
     </columns>
     <tableTitle>Announcements</tableTitle>
     <pkColumnName>RowId</pkColumnName>
