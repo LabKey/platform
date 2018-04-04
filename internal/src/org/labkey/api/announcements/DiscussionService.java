@@ -16,6 +16,7 @@
 
 package org.labkey.api.announcements;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
@@ -131,6 +132,7 @@ public interface DiscussionService
         boolean _titleEditable = false;
         boolean _includeGroups = false;
         SortOrder _sortOrder = SortOrder.getDefaultSortOrder();
+        String _moderatorReview = "None";
 
         String _statusOptions = ACTIVE + ";" + CLOSED;
 
@@ -336,6 +338,16 @@ public interface DiscussionService
         public void setIncludeGroups(boolean includeGroups)
         {
             _includeGroups = includeGroups;
+        }
+
+        public String getModeratorReview()
+        {
+            return _moderatorReview;
+        }
+
+        public void setModeratorReview(String moderatorReview)
+        {
+            _moderatorReview = moderatorReview;
         }
     }
 }
