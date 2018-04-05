@@ -223,7 +223,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             case assayProtocols:
                 return true;
             case folderManagement:
-                return isContainerTab();
+                return !isContainerTab();
             case inventory:
             case sharedDataTable:
                 return true;
@@ -252,7 +252,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 return this;
             case dataspace:
             case folderManagement:
-                return this.getParent();
+                return isContainerTab() ? this.getParent() : this;
             case inventory:
             case sharedDataTable:
                 return this;
