@@ -377,6 +377,10 @@
             <name>value</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>contextContent</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
     </tag>
     <tag>
         <name>autoCompleteText</name>

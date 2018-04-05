@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.jsp.JspException;
@@ -29,6 +30,7 @@ public class SelectTag extends BodyTagSupport
     private String label = null;
     private String name = null;
     private Object value = null;
+    private String contextContent;
 
     private String onChange = null;
     private String onKeyUp = null;
@@ -93,6 +95,11 @@ public class SelectTag extends BodyTagSupport
         this.value = value;
     }
 
+    public void setContextContent(String contextContent)
+    {
+        this.contextContent = contextContent;
+    }
+
     public String getOnChange()
     {
         return onChange;
@@ -123,6 +130,8 @@ public class SelectTag extends BodyTagSupport
 
         sb.append("<label class=\"control-label\">");
         sb.append(PageFlowUtil.filter(getLabel()));
+        if (StringUtils.isNotEmpty(contextContent))
+            doContextField(sb);
         sb.append("</label>");
 
         sb.append("<select")
@@ -160,6 +169,13 @@ public class SelectTag extends BodyTagSupport
 
         write(sb);
         return BodyTagSupport.EVAL_PAGE;
+    }
+
+    protected void doContextField(StringBuilder sb)
+    {
+        sb.append("<i class=\"fa fa-question-circle context-icon\" data-container=\"body\" data-tt=\"tooltip\" data-placement=\"top\" title=\"");
+        sb.append(contextContent);
+        sb.append("\"></i>");
     }
 
     private void write(StringBuilder sb) throws JspException
