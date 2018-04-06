@@ -141,6 +141,127 @@ LABKEY.Query = new function(impl, $) {
         submitForm(url, formData);
     };
 
+    function loadingSelect(select) {
+        select.prop('disabled', true);
+        select.empty().append($('<option>', {text: 'Loading...'}));
+    }
+
+    function populateSelect(select, options, valueProperty, textProperty, initialValue) {
+        select.empty().append($('<option>'));
+        $.each(options, function (i, option) {
+            var value = valueProperty ? option[valueProperty] : option;
+            var text = textProperty ? option[textProperty] : option;
+            var selected = initialValue && value === initialValue;
+            select.append($('<option>', { value: value,  text: text,  selected: selected}));
+        });
+
+        select.prop('disabled', false);
+    }
+
+    var SCHEMA_QUERIES_CACHE = {}; // cache of queries by schema
+    function loadQueries(schemaSelect, querySelect, selectedSchema, initialValue) {
+        schemaSelect.prop('disabled', true);
+        loadingSelect(querySelect);
+
+        if (SCHEMA_QUERIES_CACHE[selectedSchema]) {
+            populateSelect(querySelect, SCHEMA_QUERIES_CACHE[selectedSchema], 'name', 'title', initialValue);
+            schemaSelect.prop('disabled', false);
+        }
+        else {
+            LABKEY.Query.getQueries({
+                schemaName: selectedSchema,
+                includeColumns: false,
+                success: function(data) {
+                    // add the sorted set of queries for this schema to the cache
+                    SCHEMA_QUERIES_CACHE[selectedSchema] = data.queries.sort(function (a, b){
+                        var aTitle = a.title.toLowerCase();
+                        var bTitle = b.title.toLowerCase();
+                        return ((aTitle < bTitle) ? -1 : ((aTitle > bTitle) ? 1 : 0));
+                    });
+
+                    populateSelect(querySelect, SCHEMA_QUERIES_CACHE[selectedSchema], 'name', 'title', initialValue);
+                    schemaSelect.prop('disabled', false);
+                }
+            });
+        }
+    }
+
+    /**
+     * Load the set of user visible schemas from the given container into a standard <select> input element.
+     * @param config An object which contains the following configuration properties.
+     * @param {String} config.inputName name of the <select> input to load the LabKey queries into.
+     * @param {String} config.initValue the initial value to try and set the <select> element value after it loads.
+     */
+    impl.schemaSelectInput = function(config) {
+        var SCHEMA_SELECT;
+
+        if (!config || !config.inputName) {
+            console.error('Invalid config object. Missing inputName property for the <select> element.');
+            return;
+        }
+
+        SCHEMA_SELECT = $("select[name='" + config.inputName + "']");
+        if (SCHEMA_SELECT.length !== 1) {
+            console.error('Invalid config object. Expect to find exactly one <select> element for the inputName provided (found: ' + SCHEMA_SELECT.length + ').');
+            return;
+        }
+
+        loadingSelect(SCHEMA_SELECT);
+        LABKEY.Query.getSchemas({
+            includeHidden: false,
+            success: function(data) {
+                populateSelect(SCHEMA_SELECT, data.schemas.sort(), null, null, config.initValue);
+
+                // if there is a selected schema, fire the change event to load the queries
+                if (SCHEMA_SELECT.val()) {
+                    SCHEMA_SELECT.trigger('change', [SCHEMA_SELECT.val()]);
+                }
+            }
+        });
+    };
+
+    /**
+     * Load the set of queries from this container for a given schema into a standard <select> input. The config object
+     * must define which <select> input is for the schemas and which <select> input is for the queries. This function
+     * also then associates the two <select> inputs so that a selection change in the schema input will update the
+     * query input accordingly.
+     * @param config An object which contains the following configuration properties.
+     * @param {String} config.inputName name of the <select> input to load the LabKey queries into.
+     * @param {String} config.schemaInputName name of the <select> input to load the LabKey schemas into.
+     * @param {String} config.initValue the initial value to try and set the <select> element value after it loads.
+     */
+    impl.querySelectInput = function(config) {
+        var SCHEMA_SELECT, QUERY_SELECT;
+
+        if (!config || !config.inputName || !config.schemaInputName) {
+            var msg = 'Invalid config object. ';
+            if (!config.inputName) {
+                msg += 'Missing inputName property for the <select> element. ';
+            }
+            if (!config.schemaInputName) {
+                msg += 'Missing schemaInputName property for the parent <select> element. ';
+            }
+            console.error(msg);
+            return;
+        }
+
+        QUERY_SELECT = $("select[name='" + config.inputName + "']");
+        if (QUERY_SELECT.length !== 1) {
+            console.error('Invalid config object. Expect to find exactly one <select> element with the name provided (found: ' + QUERY_SELECT.length + ').');
+            return;
+        }
+
+        SCHEMA_SELECT = $("select[name='" + config.schemaInputName + "']");
+        if (SCHEMA_SELECT.length !== 1) {
+            console.error('Invalid config object. Expect to find exactly one <select> element with the name provided (found: ' + SCHEMA_SELECT.length + ').');
+            return;
+        }
+
+        SCHEMA_SELECT.on('change', function (event, schemaName) {
+            loadQueries(SCHEMA_SELECT, QUERY_SELECT, schemaName || event.target.value, config.initValue);
+        });
+    };
+
     return impl;
 
 }(LABKEY.Query, jQuery);
