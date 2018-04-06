@@ -1067,6 +1067,7 @@ LABKEY.Query = new function()
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName Get schemas under the given schemaName.
          * @param {String} config.apiVersion Version of the API. Changed the structure of the server's response.
+         * @param {String} config.includeHidden Default true.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -1102,6 +1103,9 @@ LABKEY.Query = new function()
                 params.apiVersion = config.apiVersion;
             if (config.schemaName)
                 params.schemaName = config.schemaName;
+
+            if (config.hasOwnProperty("includeHidden"))
+                params.includeHidden = config.includeHidden;
 
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas.api', config.containerPath),

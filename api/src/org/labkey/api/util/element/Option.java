@@ -87,6 +87,12 @@ public class Option
         {
         }
 
+        public OptionBuilder(String label, String value)
+        {
+            _label = label;
+            _value = value;
+        }
+
         public OptionBuilder disabled(boolean disabled)
         {
             _disabled = disabled;
