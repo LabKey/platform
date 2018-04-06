@@ -582,7 +582,11 @@
                         displayValue = (Ext4.util.Format.numberRenderer(meta.extFormat || this.format || '0'))(displayValue);
                         break;
                     case "boolean":
-                        var t = this.trueText || 'true', f = this.falseText || 'false', u = this.undefinedText || ' ';
+
+                        var t = meta.editorConfig && meta.editorConfig.trueText ? meta.editorConfig.trueText : (this.trueText || 'true');
+                        var f = meta.editorConfig && meta.editorConfig.falseText ? meta.editorConfig.falseText : (this.falseText || 'false');
+                        var u = meta.editorConfig && meta.editorConfig.undefinedText ? meta.editorConfig.undefinedText : (this.undefinedText || ' ');
+
                         if(displayValue === undefined){
                             displayValue = u;
                         }
