@@ -44,7 +44,7 @@ public class SubfolderWriter extends BaseFolderWriter
     public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         // start with just those child containers that the user has permissions to export.
-        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), FolderExportPermission.class, true);
+        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), FolderExportPermission.class);
         List<Container> childrenToExport = new ArrayList<>();
         getChildrenToExport(ctx, allChildren, childrenToExport);
 

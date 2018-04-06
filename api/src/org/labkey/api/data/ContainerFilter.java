@@ -665,9 +665,9 @@ public abstract class ContainerFilter
             {
                 return null;
             }
-            if (!currentContainer.isContainerFor(Container.DataType.assays) && currentContainer.getContainerFor(Container.DataType.assays).hasPermission(_user, perm, roles))
+            if (!currentContainer.isContainerFor(Container.DataType.assayLocationFilter) && currentContainer.getContainerFor(Container.DataType.assayLocationFilter).hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getContainerFor(Container.DataType.assays).getEntityId());
+                result.add(currentContainer.getContainerFor(Container.DataType.assayLocationFilter).getEntityId());
             }
             return result;
         }

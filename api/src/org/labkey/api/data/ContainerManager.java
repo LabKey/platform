@@ -89,6 +89,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -720,27 +721,27 @@ public class ContainerManager
         return new ArrayList<>(getChildrenMap(parent).values());
     }
 
-
+    // Default is to include all types of children, as seems only appropriate
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getChildren(parent, u, perm, null, true);
+        return getChildren(parent, u, perm, null, Container.TYPE.asSet());
     }
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
     {
-        return getChildren(parent, u, perm, roles, true);
+        return getChildren(parent, u, perm, roles, Container.TYPE.asSet());
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Container.TYPE typeIncluded)
     {
-        return getChildren(parent, u, perm, null, includeWorkbooksAndTabs);
+        return getChildren(parent, u, perm, null, EnumSet.of(typeIncluded));
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, boolean includeWorkbooksAndTabs)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, EnumSet<Container.TYPE> includedTypes)
     {
         List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
-            if (child.hasPermission(u, perm, roles) && (includeWorkbooksAndTabs || !child.isWorkbookOrTab()))
+            if (includedTypes.contains(child.getType()) && child.hasPermission(u, perm, roles))
                 children.add(child);
 
         return children;
@@ -748,32 +749,33 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u)
     {
-        return getAllChildren(parent, u, ReadPermission.class, null, true);
+        return getAllChildren(parent, u, ReadPermission.class, null, Container.TYPE.asSet());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getAllChildren(parent, u, perm, null, true);
+        return getAllChildren(parent, u, perm, null, Container.TYPE.asSet());
     }
 
+    // Default is to include all types of children, as seems only appropriate
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
     {
-        return getAllChildren(parent, u, perm, roles, true);
+        return getAllChildren(parent, u, perm, roles, Container.TYPE.asSet());
     }
 
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm,  Container.TYPE typeIncluded)
     {
-        return getAllChildren(parent, u, perm, null, includeWorkbooksAndTabs);
+        return getAllChildren(parent, u, perm, null, EnumSet.of(typeIncluded));
     }
-    
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, boolean includeWorkbooksAndTabs)
+
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, EnumSet<Container.TYPE> typesIncluded)
     {
         Set<Container> allChildren = getAllChildren(parent);
         List<Container> result = new ArrayList<>(allChildren.size());
 
         for (Container container : allChildren)
         {
-            if ((includeWorkbooksAndTabs || !container.isWorkbookOrTab()) && container.hasPermission(u, perm, roles))
+            if (typesIncluded.contains(container.getType()) && container.hasPermission(u, perm, roles))
             {
                 result.add(container);
             }

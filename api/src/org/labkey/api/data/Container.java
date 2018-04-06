@@ -77,6 +77,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -121,6 +122,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public enum DataType
     {
+        assayLocationFilter,
         assayProtocols,
         assays,
         customQueryViews,
@@ -145,6 +147,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         workbook,
         tab;
 
+        private static EnumSet<TYPE> typeSet = EnumSet.allOf(TYPE.class);
+
         public static TYPE typeFromString(String s)
         {
             if (null != s)
@@ -155,6 +159,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return normal;
         }
 
+        public static EnumSet<TYPE> asSet()
+        {
+            return typeSet;
+        }
     }
 
     //is this container a workbook, tab or normal?
