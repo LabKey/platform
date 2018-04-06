@@ -188,12 +188,12 @@ public class MenuViewFactory
         {
             if (form.isIncludeAllDescendants())
             {
-                containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, false);    // no workbooks
+                containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, Container.TYPE.normal);
                 containersTemp.remove(rootFolder);      // getAllChildren adds root, which we don't want
             }
             else
             {
-                containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, false);   // no workbooks
+                containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, Container.TYPE.normal);
     //            containersTemp.add(rootFolder);      // Don't add root folder; later we may add a checkbox to allow it to be added, if so, check root's permissions
             }
         }

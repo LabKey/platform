@@ -1678,7 +1678,7 @@ public class IssuesController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             Collection<Map<String, Object>> responseContainers = new LinkedList<>();
             Container root = ContainerManager.getRoot();
-            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, false);
+            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, Container.TYPE.normal);
 
             // remove current container
             allContainers.remove(getContainer());
