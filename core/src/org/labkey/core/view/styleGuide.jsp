@@ -263,6 +263,25 @@
             <labkey:input name="checkbox3" type="checkbox" label="Checkbox 3"/>
         </labkey:form>
         <br>
+        <h2>Schema/Query Select Inputs</h2>
+        <labkey:form>
+            <%= new Select.SelectBuilder().name("schemaNameInput").label("Schema")
+                    .layout(Input.Layout.HORIZONTAL)
+                    .formGroup(true)
+                    .disabled(true)
+            %>
+
+            <%= new Select.SelectBuilder().name("queryNameInput").label("Query")
+                    .layout(Input.Layout.HORIZONTAL)
+                    .formGroup(true)
+                    .disabled(true)
+            %>
+        </labkey:form>
+        <script type="application/javascript">
+            LABKEY.Query.schemaSelectInput({inputName: 'schemaNameInput', initValue: 'core'});
+            LABKEY.Query.querySelectInput({inputName: 'queryNameInput', schemaInputName: 'schemaNameInput', initValue: 'Users'});
+        </script>
+        <br><br><br><br>
         <h2>LabKey table property form (DEPRECATED)</h2>
         <br>
         <div class="lk-sg-example">
