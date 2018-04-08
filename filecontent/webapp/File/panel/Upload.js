@@ -248,7 +248,7 @@ Ext4.define('File.panel.Upload', {
                             file.status = Dropzone.ERROR;
                             Ext4.Msg.show({
                                 title: "Unauthorized",
-                                msg: "You do not have privileges to this directory. Verify that you are signed in appropriately.",
+                                msg: "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : ""),
                                 cls : 'data-window',
                                 icon: Ext4.Msg.ERROR,
                                 buttons: Ext4.Msg.OK
@@ -281,7 +281,7 @@ Ext4.define('File.panel.Upload', {
                         else if (xhr.status == 200)
                         {
                             title = "Unauthorized";
-                            message = "You do not have privileges to this directory. Verify that you are signed in appropriately.";
+                            message = "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : "")
                         }
                     }
 
@@ -593,7 +593,7 @@ Ext4.define('File.panel.Upload', {
                                 {
                                     Ext4.Msg.show({
                                         title: "Unauthorized",
-                                        msg: "You do not have privileges to this directory. Verify that you are signed in appropriately.",
+                                        msg: "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : ""),
                                         cls : 'data-window',
                                         icon: Ext4.Msg.ERROR,
                                         buttons: Ext4.Msg.OK
