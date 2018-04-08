@@ -39,6 +39,8 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
@@ -337,7 +339,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public boolean canWrite(User user, boolean forWrite)
     {
-        return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(UpdatePermission.class);
+        return hasAccess(user) && !user.isGuest() &&
+                getPolicy().hasPermission(user, UpdatePermission.class, user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : null);
     }
 
 
