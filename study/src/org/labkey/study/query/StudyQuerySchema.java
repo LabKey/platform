@@ -125,6 +125,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String VISIT_TABLE_NAME = "Visit";
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
+    public static final String VISIT_ALIASES = "VisitAliases";
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
@@ -321,10 +322,11 @@ public class StudyQuerySchema extends UserSchema
                 names.add(studyService.getSubjectTableName(getContainer()));
                 names.add(LOCATION_TABLE_NAME);
                 if (_study.getTimepointType() != TimepointType.CONTINUOUS)
+                {
                     names.add(VISIT_TABLE_NAME);
-
-                if (_study.getTimepointType() != TimepointType.CONTINUOUS)
                     names.add(studyService.getSubjectVisitTableName(getContainer()));
+                    names.add(VISIT_ALIASES);
+                }
 
                 names.add(SPECIMEN_EVENT_TABLE_NAME);
                 names.add(SPECIMEN_DETAIL_TABLE_NAME);
@@ -648,6 +650,10 @@ public class StudyQuerySchema extends UserSchema
         if (VISIT_TABLE_NAME.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
             return new VisitTable(this);
+        }
+        if (VISIT_ALIASES.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
+        {
+            return new VisitAliasesTable(this);
         }
         if ("DataSets".equalsIgnoreCase(name))
         {
