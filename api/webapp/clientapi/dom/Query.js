@@ -210,10 +210,10 @@ LABKEY.Query = new function(impl, $) {
                     // NOTE: in the future if we allow this to work for view other than the default, this logic will need to change
                     var queryView = null;
                     $.each(data.views, function(i, view) {
-                        // if (view.default) {
-                        //     queryView = view;
-                        //     return false;
-                        // }
+                        if (view['default']) {
+                            queryView = view;
+                            return false;
+                        }
                     });
 
                     QUERY_COLUMNS_CACHE[queryKey] = [];
