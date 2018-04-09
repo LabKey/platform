@@ -7,18 +7,20 @@
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("internal/jQuery");
+    }
+%>
 
 <%
     HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
     PipelineController.PipelineTriggerForm bean = me.getModelBean();
-
-    String portalTitle = "Create Pipeline Trigger";
-    Integer rowId = bean.getRowId();
-    //If we have a rowId, then we have to fill in input values from the table
-    if (rowId != null)
-        portalTitle = "Update Pipeline Trigger";
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
@@ -43,7 +45,6 @@
     {
 %>
 <labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=h(buildURL(PipelineController.CreatePipelineTriggerAction.class))%>">
-<labkey:panel className="panel-portal" title="<%=text(portalTitle)%>">
     <div class="row">
         <div class="col-sm-2">
             <div id="lk-trigger-nav" class="list-group">
@@ -143,7 +144,7 @@
 
                 <labkey:input name="username"
                               className="form-control lk-pipeline-param-input"
-                              label="Run as username"
+                              label="Run As Username"
                               forceSmallContext="true"
                               value="<%=h(getUser().getDisplayName(getUser()))%>"
                               contextContent="The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions."/>
@@ -157,10 +158,13 @@
                 <labkey:input name="enabled"
                               id="pipeline-enabled-check"
                               type="checkbox"
-                              label="Enable this trigger"
+                              label="Enable This Trigger"
                               checked="<%=bean.isEnabled()%>" />
 
-                <h4 style="margin-top: 20px"><a href="#configuration">Configure parameters <i class="fa fa-arrow-circle-right" aria-hidden="true"></i> </a></h4>
+                <br/>
+                <%= button("Cancel").href(bean.getReturnUrl()).addClass("lk-pipeline-allowNavigate") %>
+                &nbsp;&nbsp;
+                <%= button("Next").primary(true).href("#configuration") %>
             </div>
 
             <div id="configuration" class="lk-trigger-section">
@@ -175,17 +179,17 @@
                 <labkey:input name="recursive"
                               id="pipeline-recursive-check"
                               type="checkbox"
-                              label="Include child folders" />
+                              label="Include Child Folders" />
 
                 <labkey:input name="filePattern"
                               className="form-control lk-pipeline-input"
-                              label="File pattern"
+                              label="File Pattern"
                               forceSmallContext="true"
                               contextContent="A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties"/>
 
                 <labkey:input name="quiet"
                               className="form-control lk-pipeline-input"
-                              label="Quiet period (seconds) *"
+                              label="Quiet Period (Seconds) *"
                               type="number"
                               value="1"
                               forceSmallContext="true"
@@ -193,13 +197,13 @@
 
                 <labkey:input name ="move"
                               className="form-control lk-pipeline-input"
-                              label="Move process to"
+                              label="Move Process To"
                               forceSmallContext="true"
                               contextContent="Where the file should be moved before analysis. This must be a relative or absolute container path."/>
 
                 <labkey:input name="copy"
                               className="form-control lk-pipeline-input"
-                              label="Copy file to"
+                              label="Copy File To"
                               forceSmallContext="true"
                               contextContent="Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder."/>
 
@@ -217,26 +221,29 @@
                         %>
                     </div>
                 </div>
-                <div id="extraParams"></div>
-                <div class="col-sm-3 col-lg-2" style="text-align: right; margin-top: 4px; cursor: pointer"><a class="lk-pipeline-addParamGroup">Add custom parameter</a></div>
 
-                <div style="margin-top: 25px">
-                    &nbsp;
+                <div class=" form-group">
+                    <div class="col-sm-12 col-lg-12">
+                        <div id="extraParams"></div>
+                        <a class="lk-pipeline-addParamGroup" style="cursor: pointer; color: #555;">
+                            <i class="fa fa-plus-circle"></i> add custom parameter
+                        </a>
+                    </div>
                 </div>
 
                 <labkey:input type="hidden" name="configJson" id="configJSON"/>
                 <labkey:input type="hidden" name="customConfigJson" id="customConfigJSON"/>
                 <labkey:input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>"/>
                 <labkey:input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>"/>
-                <div style="margin-bottom: 20px">
-                    <h4><a href="#details"><i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Edit details</a></h4>
-                </div>
-                <%= button("Save").id("btnSubmit").addClass("lk-pipeline-allowNavigate") %>
-                <%= button("Cancel").href(bean.getReturnUrl()).id("btnCancel").addClass("lk-pipeline-allowNavigate") %>
+
+                <br/>
+                <%= button("Cancel").href(bean.getReturnUrl()).addClass("lk-pipeline-allowNavigate") %>
+                &nbsp;&nbsp;
+                <%= button("Back").href("#details") %>
+                <%= button("Save").primary(true).id("btnSubmit").addClass("lk-pipeline-allowNavigate") %>
             </div>
         </div>
     </div>
-</labkey:panel>
 </labkey:form>
 <script type="text/javascript">
     +function($) {
@@ -251,7 +258,7 @@
                 processCustomConfigJson(customConfigObj);
         <%
         }
-        else if (rowId != null) {
+        else if (bean.getRowId() != null) {
         %>
             function onSuccess(data) {
                 var row = data.rows[0];
@@ -292,7 +299,7 @@
             }
 
             function onFailure(data) {
-                LABKEY.Utils.alert("Error", 'Error fetching row: ' + <%=q(Integer.toString(rowId))%>)
+                LABKEY.Utils.alert("Error", 'Error fetching row: ' + <%=bean.getRowId()%>)
             }
 
             $(document).ready(function () {
@@ -301,7 +308,7 @@
                     queryName: "TriggerConfigurations",
                     success: onSuccess,
                     failure: onFailure,
-                    filterArray: [LABKEY.Filter.create("RowId", <%=q(Integer.toString(rowId))%>)]
+                    filterArray: [LABKEY.Filter.create("RowId", <%=bean.getRowId()%>)]
                 })
             });
         <%}%>
@@ -400,10 +407,10 @@
                 }
             });
 
-            var enabledCheck = jQuery('#pipeline-enabled-check')[0];
+            var enabledCheck = $('#pipeline-enabled-check')[0];
             standardObj[enabledCheck.name] = enabledCheck.checked;
 
-            var recursiveCheck = jQuery('#pipeline-recursive-check')[0];
+            var recursiveCheck = $('#pipeline-recursive-check')[0];
             standardObj[recursiveCheck.name] = recursiveCheck.checked;
 
             var paramObj = {};
@@ -438,7 +445,7 @@
                     "</div>" +
                     "<div class='col-sm-9 col-lg-10'>" +
                     "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' name='customParamValue' style='display: inline-block;'>" +
-                    "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px;'></i></a>" +
+                    "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
                     "</div>" +
                     "</div>");
 

@@ -1615,6 +1615,8 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class CreatePipelineTriggerAction extends FormViewAction<PipelineTriggerForm>
     {
+        String _title = "Create Pipeline Trigger";
+
         @Override
         public URLHelper getSuccessURL(PipelineTriggerForm form)
         {
@@ -1642,12 +1644,16 @@ public class PipelineController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            setHelpTopic("fileWatcher");
+            return root.addChild(_title);
         }
 
         @Override
         public ModelAndView getView(PipelineTriggerForm form, boolean reshow, BindException errors)
         {
+            if (form.getRowId() != null)
+                _title = "Update Pipeline Trigger";
+
             if (form.getReturnUrl() == null)
                 form.setReturnUrl(getContainer().getStartURL(getUser()).toString());
 
