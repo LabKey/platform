@@ -2460,7 +2460,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.toggleSummaryStatForCustomView = function(viewName, colFieldKey, summaryStatName) {
         this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+            if (view && _viewContainsColumn(view, colFieldKey)) {
                 var colProviderNames = [];
                 $.each(view.analyticsProviders, function(index, existingProvider) {
                     if (existingProvider.fieldKey === colFieldKey)
@@ -2487,7 +2487,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.getColumnAnalyticsProviders = function(viewName, colFieldKey, callback, callbackScope) {
         this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+            if (view && _viewContainsColumn(view, colFieldKey)) {
                 var colProviderNames = [];
                 $.each(view.analyticsProviders, function(index, existingProvider) {
                     if (existingProvider.fieldKey === colFieldKey) {
@@ -2511,7 +2511,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.setColumnSummaryStatistics = function(viewName, colFieldKey, summaryStatProviderNames) {
         this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+            if (view && _viewContainsColumn(view, colFieldKey)) {
                 var newAnalyticsProviders = [];
                 $.each(view.analyticsProviders, function(index, existingProvider) {
                     if (existingProvider.fieldKey !== colFieldKey || existingProvider.name.indexOf('AGG_') != 0) {
@@ -2541,7 +2541,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.removeColumn = function(viewName, colFieldKey) {
         this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+            if (view && _viewContainsColumn(view, colFieldKey)) {
                 var colFieldKeys = $.map(view.columns, function (c) {
                             return c.fieldKey;
                         }),
@@ -2565,7 +2565,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.addAnalyticsProviderForCustomView = function(viewName, colFieldKey, providerName) {
         this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+            if (view && _viewContainsColumn(view, colFieldKey)) {
                 _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
 
                 var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
@@ -2586,7 +2586,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.removeAnalyticsProviderForCustomView = function(viewName, colFieldKey, providerName) {
         this.getQueryDetails(function(queryDetails) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
-            if (view && _queryDetailsContainsColumn(queryDetails, colFieldKey)) {
+            if (view && _viewContainsColumn(view, colFieldKey)) {
                 _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
 
                 var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
@@ -2870,12 +2870,12 @@ if (!LABKEY.DataRegions) {
         return matchingView;
     };
 
-    var _queryDetailsContainsColumn = function(queryDetails, colFieldKey) {
-        var keys = $.map(queryDetails.columns, function(c){ return c.fieldKey; }),
+    var _viewContainsColumn = function(view, colFieldKey) {
+        var keys = $.map(view.columns, function(c){ return c.fieldKey; }),
             exists = keys.indexOf(colFieldKey) > -1;
 
         if (!exists) {
-            console.warn('Unable to find column in query: ' + colFieldKey);
+            console.warn('Unable to find column in view: ' + colFieldKey);
         }
 
         return exists;
