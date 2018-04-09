@@ -265,21 +265,28 @@
         <br>
         <h2>Schema/Query Select Inputs</h2>
         <labkey:form>
-            <%= new Select.SelectBuilder().name("schemaNameInput").label("Schema")
+            <%= new Select.SelectBuilder().id("schemaNameInput").label("Schema")
                     .layout(Input.Layout.HORIZONTAL)
                     .formGroup(true)
                     .disabled(true)
             %>
 
-            <%= new Select.SelectBuilder().name("queryNameInput").label("Query")
+            <%= new Select.SelectBuilder().id("queryNameInput").label("Query")
+                    .layout(Input.Layout.HORIZONTAL)
+                    .formGroup(true)
+                    .disabled(true)
+            %>
+
+            <%= new Select.SelectBuilder().id("columnInput").label("Column")
                     .layout(Input.Layout.HORIZONTAL)
                     .formGroup(true)
                     .disabled(true)
             %>
         </labkey:form>
         <script type="application/javascript">
-            LABKEY.Query.schemaSelectInput({inputName: 'schemaNameInput', initValue: 'core'});
-            LABKEY.Query.querySelectInput({inputName: 'queryNameInput', schemaInputName: 'schemaNameInput', initValue: 'Users'});
+            LABKEY.Query.schemaSelectInput({renderTo: 'schemaNameInput', initValue: 'core'});
+            LABKEY.Query.querySelectInput({renderTo: 'queryNameInput', schemaInputId: 'schemaNameInput', initValue: 'Users'});
+            LABKEY.Query.columnSelectInput({renderTo: 'columnInput', schemaName: 'core', queryName: 'Users', initValue: 'DisplayName'});
         </script>
         <br><br><br><br>
         <h2>LabKey table property form (DEPRECATED)</h2>
