@@ -2134,7 +2134,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private enum Token
     {
-        BEGIN(TokenType.BEGIN), CASE(TokenType.BEGIN), END(TokenType.END), COMMIT(TokenType.END);
+        BEGIN(TokenType.BEGIN),
+        CASE(TokenType.BEGIN),
+        END(TokenType.END),
+        COMMIT(TokenType.END),
+        OPEN_PAREN(TokenType.BEGIN)
+        {
+            @Override
+            public String toString()
+            {
+                return "(";
+            }
+        },
+        CLOSE_PAREN(TokenType.END);
 
         private final TokenType _type;
 
@@ -2168,11 +2180,23 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             // EnumSet won't allow these to be called in Token constructor
             BEGIN.setTerminatingTokens(EnumSet.copyOf(Arrays.asList(END, COMMIT)));
             CASE.setTerminatingTokens(EnumSet.copyOf(Collections.singletonList(END)));
+            OPEN_PAREN.setTerminatingTokens(EnumSet.copyOf(Collections.singletonList(CLOSE_PAREN)));
+        }
+
+        static Token getToken(String tokenString)
+        {
+            if ("(".equals(tokenString))
+                return OPEN_PAREN;
+            else if (")".equals(tokenString))
+                return CLOSE_PAREN;
+            else
+                return Token.valueOf(tokenString.toUpperCase());
         }
     }
 
-    private final static CaseInsensitiveHashSet BEGIN = new CaseInsensitiveHashSet("BEGIN");
+    private final static CaseInsensitiveHashSet BEGIN_RETURNS = new CaseInsensitiveHashSet("BEGIN", "TABLE");
     private final static CaseInsensitiveHashSet BEGIN_END = new CaseInsensitiveHashSet("BEGIN", "CASE", "END", "COMMIT");
+    private final static CaseInsensitiveHashSet PARENS = new CaseInsensitiveHashSet("(", ")");
 
     @Override
     public Collection<String> getScriptWarnings(String name, String sql)
@@ -2181,39 +2205,66 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // statement or end of the script. These will cause major problems if they are missed during script consolidation.
 
         // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
-        String[] tokens = sql.replace(";", "").split("\\s+|,");
+        String[] tokens = sql
+            .replace(";", "")     // Remove semicolons
+            .replace("(", " ( ")  // Ensure whitespace around parentheses so they are treated as individual tokens
+            .replace(")", " ) ")
+            .split("\\s+|,");
+
         int idx = 0;
 
         while (-1 != (idx = skipToCreateProcedure(tokens, idx)))
         {
             idx += 2;
             String procedureName = tokens[idx];
-
-            idx = skipToToken(tokens, idx, BEGIN);
+            idx = skipToToken(tokens, idx, BEGIN_RETURNS);
 
             if (-1 == idx)
-                return Collections.singleton("Stored procedure definition " + procedureName + " has no BEGIN statement!");
+                return Collections.singleton("Stored procedure definition " + procedureName + " lacks both BEGIN and TABLE keywords!");
+
+            Token firstToken;
+            CaseInsensitiveHashSet skipToSet;
+
+            if ("BEGIN".equalsIgnoreCase(tokens[idx]))
+            {
+                // BEGIN ... END
+                firstToken = Token.BEGIN;
+                skipToSet = BEGIN_END;
+            }
+            else
+            {
+                // RETURNS TABLE AS RETURN ( ... )
+                if (!"RETURNS".equalsIgnoreCase(tokens[idx - 1]))
+                    return Collections.singleton("Stored procedure definition " + procedureName + " doesn't seem to have a RETURNS keyword in the right spot");
+
+                skipToSet = PARENS;
+                firstToken = Token.OPEN_PAREN;
+                idx = skipToToken(tokens, idx + 1, new CaseInsensitiveHashSet("("));
+
+                if (-1 == idx)
+                    return Collections.singleton("Stored procedure definition " + procedureName + " doesn't have an opening (");
+            }
 
             Stack<Token> stack = new Stack<>();
-            stack.push(Token.BEGIN);
+            stack.push(firstToken);
 
             while (!stack.isEmpty())
             {
-                idx = skipToToken(tokens, idx + 1, BEGIN_END);
+                idx = skipToToken(tokens, idx + 1, skipToSet);
 
                 if (-1 == idx)
-                    return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing an END statement!");
+                    return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing a terminating token for " + firstToken.toString());
 
-                Token token = Token.valueOf(tokens[idx].toUpperCase());
+                Token token = Token.getToken(tokens[idx]);
 
                 if (token.getType() == TokenType.BEGIN)
                 {
-                    // BEGIN or CASE
+                    // BEGIN, CASE, or (
                     stack.push(token);
                 }
                 else
                 {
-                    // END or COMMIT
+                    // END, COMMIT, or )
                     Token beginToken = stack.pop();
 
                     if (!beginToken.getTerminatingTokens().contains(token))
