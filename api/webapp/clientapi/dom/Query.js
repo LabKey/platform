@@ -194,7 +194,7 @@ LABKEY.Query = new function(impl, $) {
     }
 
     var QUERY_COLUMNS_CACHE = {}; // cache of columns by schema|query
-    function loadColumns(select, schemaName, queryName, filterFn, initValue) {
+    function loadQueryColumns(select, schemaName, queryName, filterFn, initValue) {
         loadingSelect(select);
 
         var queryKey = schemaName + '|' + queryName;
@@ -210,10 +210,10 @@ LABKEY.Query = new function(impl, $) {
                     // NOTE: in the future if we allow this to work for view other than the default, this logic will need to change
                     var queryView = null;
                     $.each(data.views, function(i, view) {
-                        if (view.default) {
-                            queryView = view;
-                            return false;
-                        }
+                        // if (view.default) {
+                        //     queryView = view;
+                        //     return false;
+                        // }
                     });
 
                     QUERY_COLUMNS_CACHE[queryKey] = [];
@@ -360,7 +360,7 @@ LABKEY.Query = new function(impl, $) {
             return;
         }
 
-        loadColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.filterFn, config.initValue);
+        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.filterFn, config.initValue);
     };
 
     return impl;
