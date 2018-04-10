@@ -1941,51 +1941,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-    public static class FeedbackForm extends ViewForm
-    {
-        private String _serverSessionId;
-
-        public String getServerSessionId()
-        {
-            return _serverSessionId;
-        }
-
-        public void setServerSessionId(String serverSessionId)
-        {
-            _serverSessionId = serverSessionId;
-        }
-    }
-
-    @RequiresNoPermission
-    public class FeedbackAction extends FormViewAction<FeedbackForm>
-    {
-        public ModelAndView getView(FeedbackForm form, boolean reshow, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView<>("/org/labkey/core/view/feedback.jsp", form, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Feedback");
-        }
-
-        @Override
-        public boolean handlePost(FeedbackForm form, BindException errors) throws Exception
-        {
-            return true;
-        }
-
-        public ActionURL getSuccessURL(FeedbackForm form)
-        {
-            return null;
-        }
-
-        public void validateCommand(FeedbackForm target, Errors errors)
-        {
-        }
-    }
-
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Test
