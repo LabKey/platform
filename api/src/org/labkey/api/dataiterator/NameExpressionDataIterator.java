@@ -15,6 +15,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 {
     private final DataIteratorContext _context;
     private Map<String, Pair<NameGenerator, NameGenerator.State>> _nameGeneratorMap = new HashMap<>();
+    private Map<String, String> _newNames = new HashMap<>();
     private final Integer _nameCol;
     private Integer _expressionCol;
     private TableInfo _parentTable;
@@ -50,6 +51,14 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     }
 
     @Override
+    public boolean next() throws BatchValidationException
+    {
+        // Clear cache of generated names
+        _newNames.clear();
+        return super.next();
+    }
+
+    @Override
     public Object get(int i)
     {
         if (i == _nameCol)
@@ -71,8 +80,12 @@ public class NameExpressionDataIterator extends WrapperDataIterator
                     addNameGenerator(nameExpression);
                 }
 
-                Pair<NameGenerator, NameGenerator.State> nameGenPair = _nameGeneratorMap.get(nameExpression);
-                String newName = nameGenPair.first.generateName(nameGenPair.second, currentRow);
+                if (_newNames.get(nameExpression) == null)
+                {
+                    Pair<NameGenerator, NameGenerator.State> nameGenPair = _nameGeneratorMap.get(nameExpression);
+                    _newNames.put(nameExpression, nameGenPair.first.generateName(nameGenPair.second, currentRow));
+                }
+                String newName = _newNames.get(nameExpression);
                 if (!StringUtils.isEmpty(newName))
                     return newName;
             }
