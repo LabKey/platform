@@ -2626,16 +2626,19 @@ public class ExperimentController extends SpringActionController
 
             List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<>();
-            for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
+            if (StudyService.get() != null)
             {
-                ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
-                if (dataset.canWrite(getUser()))
+                for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
                 {
-                    permissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
-                }
-                else
-                {
-                    noPermissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                    ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
+                    if (dataset.canWrite(getUser()))
+                    {
+                        permissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                    }
+                    else
+                    {
+                        noPermissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                    }
                 }
             }
 
@@ -2750,22 +2753,25 @@ public class ExperimentController extends SpringActionController
             String noun = "Assay Design";
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
-            for (ExpProtocol protocol : protocols)
+            if (AssayService.get() != null && StudyService.get() != null)
             {
-                if (AssayService.get().getProvider(protocol) == null)
+                for (ExpProtocol protocol : protocols)
                 {
-                    noun = "Protocol";
-                }
-                for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
-                {
-                    Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataset, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
-                    if (dataset.canDeleteDefinition(getUser()))
+                    if (AssayService.get().getProvider(protocol) == null)
                     {
-                        deleteableDatasets.add(entry);
+                        noun = "Protocol";
                     }
-                    else
+                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
                     {
-                        noPermissionDatasets.add(entry);
+                        Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataset, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
+                        if (dataset.canDeleteDefinition(getUser()))
+                        {
+                            deleteableDatasets.add(entry);
+                        }
+                        else
+                        {
+                            noPermissionDatasets.add(entry);
+                        }
                     }
                 }
             }

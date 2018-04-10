@@ -3300,7 +3300,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         }
                         else
                         {
-                            LOG.warn("Could not delete dataset rows associated with this run: Study service not available.");
+                            LOG.info("Skipping delete of dataset rows associated with this run: Study service not available.");
                         }
                     }
 
@@ -3454,19 +3454,20 @@ public class ExperimentServiceImpl implements ExperimentService
             AssayService assayService = AssayService.get();
             if (actionIds.length > 0)
             {
-                for (Protocol protocol : protocols)
+                if (assayService != null)
                 {
-                    ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-                    if (assayService != null)
+                    for (Protocol protocol : protocols)
                     {
+                        ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
+
                         AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
                         if (provider != null)
                             provider.deleteProtocol(protocolToDelete, user);
                     }
-                    else
-                    {
-                        LOG.warn("Could not delete assay protocol: Assay service not available.");
-                    }
+                }
+                else
+                {
+                    LOG.info("Skipping delete of assay protocol: Assay service not available.");
                 }
 
                 String actionIdsJoined = "(" + StringUtils.join(actionIds, ", ") + ")";
@@ -3506,7 +3507,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             else
             {
-                LOG.warn("Could not clear protocol cache: Assay service not available.");
+                LOG.info("Skipping clear of protocol cache: Assay service not available.");
             }
 
             transaction.commit();
@@ -4762,7 +4763,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             else
             {
-                LOG.warn("Could not clear protocol cache: Assay service not available.");
+                LOG.info("Skipping clear of protocol cache: Assay service not available.");
             }
 
             transaction.commit();
