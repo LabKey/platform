@@ -370,7 +370,7 @@
         </tr>
         <tr>
             <td>
-                <table>
+                <table class="table-condensed">
                     <tr>
                         <th valign="top" align="right">Requester</th>
                         <td><%= h(creatingUser != null ? creatingUser.getDisplayName(user) : "Unknown") %></td>
