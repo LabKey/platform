@@ -311,8 +311,8 @@ public class AnnouncementManager
             try
             {
                 msg.setFrom(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getSystemEmailAddress());
-                msg.setSubject("New message in " + c.getPath() + " requires moderator review");
-                msg.setTextContent("Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString());
+                msg.setSubject("New message in " + c.getPath() + " (" + c.getTitle() + ") requires moderator review");
+                msg.setTextContent(user.getDisplayName(user) + " (" + user.getEmail() + ") posted a new message with subject \"" + ann.getTitle() + "\". Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString());
                 emailer.addMessage(toList, msg);
                 emailer.start();
             }
