@@ -207,13 +207,6 @@ public class CoreController extends SpringActionController
             return new ActionURL(DownloadFileLinkAction.class, container).addParameter("propertyId", pd.getPropertyId());
         }
 
-        @NotNull
-        @Override
-        public String getFeedbackURL()
-        {
-            return "https://www.labkey.org/UX Refresh Feedback/core-feedback.view?serverSessionId=" + AppProps.getInstance().getServerSessionGUID();
-        }
-
         @Override
         public ActionURL getAttachmentIconURL(Container c, String filename)
         {
