@@ -68,9 +68,6 @@ public class PopupUserView extends PopupMenuView
         ImpersonationContext impersonationContext = user.getImpersonationContext();
         impersonationContext.addMenu(tree, c, user, currentURL);
 
-        NavTree feedBack = new NavTree("Give UI Feedback", PageFlowUtil.urlProvider(CoreUrls.class).getFeedbackURL());
-        feedBack.setTarget("_blank");
-
         tree.addSeparator();
 
         if (pageConfig != null)
@@ -80,8 +77,6 @@ public class PopupUserView extends PopupMenuView
             for (NavTree child : help.getChildren())
                 tree.addChild(child);
         }
-
-        tree.addChild(feedBack);
 
         return tree;
     }

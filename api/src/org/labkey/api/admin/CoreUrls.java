@@ -39,7 +39,5 @@ public interface CoreUrls extends UrlProvider
     /** Still needs objectURI parameter and value tacked on */
     ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd);
 
-    @NotNull String getFeedbackURL();
-
     ActionURL getPermissionsURL(@NotNull Container c);
 }
