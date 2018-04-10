@@ -88,22 +88,22 @@ var enableExceptionTest = function() {
 var enableTestButtion = function(el, level) {
     if ("NONE" == level)
     {
-        LABKEY.Utils.replaceClass(el, 'labkey-button', 'labkey-disabled-button');
+        LABKEY.Utils.addClass(el, 'labkey-disabled-button');
     }
     else
     {
-        LABKEY.Utils.replaceClass(el, 'labkey-disabled-button', 'labkey-button');
+        LABKEY.Utils.removeClass(el, 'labkey-disabled-button');
     }
 };
 
 var testUsageReport = function() {
     var level = document.querySelector('input[name="usageReportingLevel"]:checked').value;
-    testMothershipReport('CheckForUpdates', level);
+    testMothershipReport('CheckForUpdates', level, 'Usage');
 };
 
 var testExceptionReport = function() {
     var level = document.querySelector('input[name="exceptionReportingLevel"]:checked').value;
-    testMothershipReport('ReportException', level);
+    testMothershipReport('ReportException', level, 'Exception');
 };
 
 var testMothershipReport = function(type, level, title) {
@@ -120,25 +120,24 @@ var testMothershipReport = function(type, level, title) {
             var reportStr = '';
             if (report != undefined)
             {
+                var indent = 4;
                 if (report.jsonMetrics != undefined)
                 {
-                    var jsonMetrics = JSON.parse(report.jsonMetrics);  // jsonMetrics is a nested object, doesn't stringify well
-                    if (jsonMetrics.modules != undefined)
-                    {
-                        jsonMetrics.modules = "Installed module list omitted from sample report."; // module list is ugly
-                    }
-                    report.jsonMetrics = jsonMetrics;
+                    report.jsonMetrics = JSON.parse(report.jsonMetrics);
                 }
                 else if (report.stackTrace != undefined)
                 {
-                    report.stackTrace = "StackTrace omitted from sample report."; // Stack trace is ugly/truncated in the window alert
+                    report.stackTrace = report.stackTrace.replace(/(?:\r\n|\r|\n)/g, '<br/>').replace(/\t/g, '&nbsp;'.repeat(indent * 8));
                 }
-                reportStr = JSON.stringify(report, null, "  ");
+                reportStr = JSON.stringify(report, null, indent);
             }
             else {
                 reportStr = 'An error occurred generating the sample report.';
             }
-            window.alert(reportStr);
+            var sampleTab = window.open('about:blank', '_blank');
+            sampleTab.document.write('<span style="white-space: pre-wrap;">Sample ' + title + ' Report for Level ' + level +'</span><br/><br/>');
+            sampleTab.document.write('<span style="white-space: pre-wrap;">' + reportStr + '</span>');
+            sampleTab.document.close();
         })
     });
 };
