@@ -12,4 +12,3 @@ CREATE TABLE exp.Edge
   CONSTRAINT UQ_Edge_FromLsid_ToLsid_RunId UNIQUE (FromLsid, ToLsid, RunId)
 );
 
-EXEC core.executeJavaUpgradeCode 'rebuildAllEdges';
