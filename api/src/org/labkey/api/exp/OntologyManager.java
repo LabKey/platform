@@ -1880,10 +1880,17 @@ public class OntologyManager
 
     public static void deleteProperty(OntologyObject o, PropertyDescriptor pd)
     {
+        deleteProperty(o, pd, true);
+    }
+
+    public static void deleteProperty(OntologyObject o, PropertyDescriptor pd, boolean deleteCache)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), o.getObjectId());
         filter.addCondition(FieldKey.fromParts("PropertyId"), pd.getPropertyId());
         Table.delete(getTinfoObjectProperty(), filter);
-        clearPropertyCache(o.getObjectURI());
+
+        if (deleteCache)
+            clearPropertyCache(o.getObjectURI());
     }
 
     /**
