@@ -399,7 +399,7 @@ td.labkey-blank-cell, th.labkey-blank-cell {
   display: inline-block;
   top: 1px;
   > a {
-    padding: 4px 3px;
+    padding: 4px 20px 4px 3px;
     color: $gray-base;
     border: 1px solid transparent;
     &:hover {
