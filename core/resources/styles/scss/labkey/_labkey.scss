@@ -1100,6 +1100,11 @@ body.print
 input[type="checkbox"], input[type="radio"] {
   margin: 0 4px 0 0;
   padding: 0;
+
+  /* Add additional space on top of form-generated checkboxes to center them in their block */
+  &.form-check {
+    margin-top: $padding-small-vertical;
+  }
 }
 
 /* Webkit Scrollbar */
