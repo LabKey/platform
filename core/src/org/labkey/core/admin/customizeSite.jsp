@@ -27,6 +27,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
+<%@ page import="org.labkey.api.security.Group" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -193,9 +194,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label" valign="top">Primary site administrator</td>
     <td>
         <select name="administratorContactEmail" id="administratorContactEmail">
-            <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
+            <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds(Group.groupAdministrators, false);
+                String selectedAdminEmail = appProps.getAdministratorContactEmail(false);
                 for (Pair<Integer,String> member : members) { %>
-            <option value="<%=h(member.getValue())%>"<%=selected(Objects.equals(member.getValue(), appProps.getAdministratorContactEmail()))%>><%=h(member.getValue())%></option>
+                    <option value="<%=h(member.getValue())%>"<%=selected(Objects.equals(member.getValue(), selectedAdminEmail))%>><%=h(member.getValue())%></option>
             <% } %>
         </select>
     </td>
