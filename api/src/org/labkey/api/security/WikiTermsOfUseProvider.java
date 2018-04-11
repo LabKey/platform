@@ -118,7 +118,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         if (!ModuleLoader.getInstance().isStartupComplete())
             return NO_TERMS;
 
-        WikiService service = ServiceRegistry.get().getService(WikiService.class);
+        WikiService service = WikiService.get();
         //No wiki service. Must be in weird state. Don't do terms here...
         if (null == service)
             return NO_TERMS;

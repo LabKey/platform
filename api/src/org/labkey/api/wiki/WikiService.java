@@ -16,9 +16,11 @@
 
 package org.labkey.api.wiki;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
@@ -32,6 +34,16 @@ import java.util.List;
  */
 public interface WikiService
 {
+    static @Nullable WikiService get()
+    {
+        return ServiceRegistry.get(WikiService.class);
+    }
+
+    static void setInstance(WikiService impl)
+    {
+        ServiceRegistry.get().registerService(WikiService.class, impl);
+    }
+
     /** Name of the UserSchema exposed by the Wiki module */
     String SCHEMA_NAME = "wiki";
 

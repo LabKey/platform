@@ -14,6 +14,11 @@ public interface CustomLabelService
         return ServiceRegistry.get(CustomLabelService.class);
     }
 
+    static void setInstance(CustomLabelService impl)
+    {
+        ServiceRegistry.get().registerService(CustomLabelService.class, impl);
+    }
+
     void registerProvider(CustomLabelProvider customLabelProvider);
     CustomLabelProvider getCustomLabelProvider(@NotNull String name);
     Collection<CustomLabelProvider> getCustomLabelProviders();

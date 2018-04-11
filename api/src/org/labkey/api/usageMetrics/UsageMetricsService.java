@@ -15,6 +15,8 @@
  */
 package org.labkey.api.usageMetrics;
 
+import org.labkey.api.services.ServiceRegistry;
+
 import java.util.Map;
 
 /**
@@ -25,6 +27,16 @@ import java.util.Map;
 public interface UsageMetricsService
 {
     String ERRORS = "ModuleUsageReportingErrors";
+
+    static UsageMetricsService get()
+    {
+        return ServiceRegistry.get(UsageMetricsService.class);
+    }
+
+    static void setInstance(UsageMetricsService impl)
+    {
+        ServiceRegistry.get().registerService(UsageMetricsService.class, impl);
+    }
 
     void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
 

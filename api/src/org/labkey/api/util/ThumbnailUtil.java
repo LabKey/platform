@@ -40,7 +40,7 @@ public class ThumbnailUtil
         {
             try
             {
-                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+                DocumentConversionService svc = DocumentConversionService.get();
 
                 if (null != svc)
                 {

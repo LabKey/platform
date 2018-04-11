@@ -276,7 +276,7 @@ public class ExperimentJSONConverter
         {
             File f = (File)convertedValue;
             PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             File fileRoot = fileService == null ? null : fileService.getFileRoot(container);
             boolean acceptableFile = (root != null && root.isUnderRoot((File)convertedValue)) || (fileRoot != null && URIUtil.isDescendant(fileRoot.toURI(), f.toURI()));
             if (!acceptableFile)

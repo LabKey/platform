@@ -171,7 +171,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             if (cloud != null)
             {
                 for (String store : cloud.getEnabledCloudStores(container))
-                    if (CloudStoreService.get().containerFolderExists(store, container))
+                    if (cloud.containerFolderExists(store, container))
                         cloudStoreNames.add(store);
             }
             return cloudStoreNames;

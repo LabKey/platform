@@ -39,13 +39,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class WebdavService
 {
-    WebdavResolver _resolver = null;
-    CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
-    private Set<String> _preGzippedExtensions = new CaseInsensitiveHashSet();
-
     private static final List<WebdavResolver> _rootResolvers = new CopyOnWriteArrayList<>();
+    private static final WebdavService _instance;
 
-    final static WebdavService _instance;
+    private final CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
+    private final Set<String> _preGzippedExtensions = new CaseInsensitiveHashSet();
+
+    private WebdavResolver _resolver = null;
+
     static
     {
         _instance = new WebdavService();

@@ -297,7 +297,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
 
         private File getFileRootFile(Container container)
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             if (svc != null)
             {
                 try

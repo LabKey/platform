@@ -300,7 +300,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         form.setShowFolderTree(true);
         form.setFolderTreeCollapsed(true);
 
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         if (null == svc)
             throw new IllegalStateException("FileContentService not found.");
         if (null == getRootContext())
@@ -401,7 +401,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
             // reference the same location, then import and customize actions should be disabled
 
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             if (null == svc)
                 throw new IllegalStateException("FileContentService not found.");
             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
@@ -442,7 +442,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     public void setFileSet(String fileSet)
     {
         this.fileSet = fileSet;
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         if (null == svc)
             throw new IllegalStateException("FileContentService not found.");
 

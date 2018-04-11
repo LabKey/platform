@@ -327,7 +327,7 @@ public class NameGenerator
             if (_incrementSampleCounts && !_exprHasSampleCounterFormats)
             {
                 Date now = (Date)_batchExpressionContext.get("now");
-                sampleCounts = ServiceRegistry.get(ExperimentService.class).incrementSampleCounts(now);
+                sampleCounts = ExperimentService.get().incrementSampleCounts(now);
             }
 
             // If a name is already provided, just use it as is

@@ -15,11 +15,23 @@
  */
 package org.labkey.api.data.statistics;
 
+import org.labkey.api.services.ServiceRegistry;
+
 /**
  * Created by klum on 1/14/14.
  */
 public interface StatsService
 {
+    static StatsService get()
+    {
+        return ServiceRegistry.get(StatsService.class);
+    }
+
+    static void setInstance(StatsService impl)
+    {
+        ServiceRegistry.get().registerService(StatsService.class, impl);
+    }
+
     enum CurveFitType
     {
         FOUR_PARAMETER("Four Parameter", "4pl"),

@@ -2081,7 +2081,7 @@ public class PageFlowUtil
 
         json.put("defaultHeaders", defaultHeaders);
 
-        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();
         if (analyticsProviderRegistry != null)
         {
             Map<String, String> analyticProviders = new HashMap<>();
@@ -2090,7 +2090,7 @@ public class PageFlowUtil
             json.put("analyticProviders", analyticProviders);
         }
 
-        CustomLabelService customLabelService = ServiceRegistry.get().getService(CustomLabelService.class);
+        CustomLabelService customLabelService = CustomLabelService.get();
         if (customLabelService != null)
         {
             Map<String, Map<String, String>> moduleLabels = new HashMap<>();

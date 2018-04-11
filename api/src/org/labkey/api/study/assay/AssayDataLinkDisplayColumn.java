@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ContainerFilter;
@@ -66,7 +67,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
                 protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
                 _protocols.put(protocolId, protocol);
             }
-            Container container = ContainerManager.getContainerService().getForId(containerId);
+            Container container = ContainerService.get().getForId(containerId);
             if (null != container)
             {
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, _containerFilter, runId.intValue());

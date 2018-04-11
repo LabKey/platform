@@ -15,6 +15,7 @@
  */
 package org.labkey.api.markdown;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.services.ServiceRegistry;
@@ -29,6 +30,16 @@ import javax.script.ScriptException;
  */
 public interface MarkdownService
 {
+    static @Nullable MarkdownService get()
+    {
+        return ServiceRegistry.get(MarkdownService.class);
+    }
+
+    static void setInstance(MarkdownService impl)
+    {
+        ServiceRegistry.get().registerService(MarkdownService.class, impl);
+    }
+
     /**
      * @return the html string that will render the content described by the markdown text of the input string
      */
@@ -37,18 +48,17 @@ public interface MarkdownService
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
-
         /**
          * Test that MarkdownService correctly translates markdown of headings to html
          */
         @Test
         public void testMdHeadingToHtml() throws Exception
         {
-            MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
+            MarkdownService markdownService = MarkdownService.get();
             String testMdText = "# This is a H1 header";
             String expectedHtmlText = "<h1>This is a H1 header</h1>\n";
             String htmlText = markdownService.toHtml(testMdText);
-            assertTrue("The MarkdownService failed to correctly translate markdown of heading 1 text to html.", expectedHtmlText.equals(htmlText));
+            assertEquals("The MarkdownService failed to correctly translate markdown of heading 1 text to html.", expectedHtmlText, htmlText);
         }
 
         /**
@@ -57,11 +67,11 @@ public interface MarkdownService
         @Test
         public void testMdBoldToHtml() throws Exception
         {
-            MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
+            MarkdownService markdownService = MarkdownService.get();
             String testMdText = "**This is bold text**";
             String expectedHtmlText = "<p><strong>This is bold text</strong></p>\n";
             String htmlText = markdownService.toHtml(testMdText);
-            assertTrue("The MarkdownService failed to correctly translate markdown of bold text to html.", expectedHtmlText.equals(htmlText));
+            assertEquals("The MarkdownService failed to correctly translate markdown of bold text to html.", expectedHtmlText, htmlText);
         }
 
         /**
@@ -70,7 +80,7 @@ public interface MarkdownService
         @Test
         public void testMdComplexToHtml() throws Exception
         {
-            MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
+            MarkdownService markdownService = MarkdownService.get();
             // this sample of markdown and translation taken from part of: https://markdown-it.github.io/
             String testMdText = "---\n" +
                     "\n" +
@@ -345,5 +355,4 @@ public interface MarkdownService
             assertTrue("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText.equals(htmlText));
         }
     }
-
 }

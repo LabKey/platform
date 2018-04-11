@@ -18,6 +18,7 @@ package org.labkey.api.rstudio;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -42,6 +43,16 @@ public interface RStudioService
     String R_DOCKER_SANDBOX = "rDockerSandbox";
     String R_DOCKER_ENGINE ="R Docker Scripting Engine";
     String NO_RSTUDIO = "RStudio module is not present.";
+
+    static RStudioService get()
+    {
+        return ServiceRegistry.get(RStudioService.class);
+    }
+
+    static void setInstance(RStudioService impl)
+    {
+        ServiceRegistry.get().registerService(RStudioService.class, impl);
+    }
 
     default boolean isConfigured()
     {

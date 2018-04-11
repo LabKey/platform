@@ -552,7 +552,7 @@ public class FileSystemResource extends AbstractWebdavResource
             return false;
 
         try {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             AttachmentDirectory dir;
             dir = svc.getMappedAttachmentDirectory(getContainer(), false);
             String fileDirPath = file.getParent();
@@ -691,7 +691,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (_customProperties == null)
         {
             _customProperties = new HashMap<>();
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             ExpData data = svc.getDataObject(this, getContainer());
 
             if (null != data)

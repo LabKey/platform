@@ -47,7 +47,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
             // we want to express the neutralization values as percentages
             data[i++] = new DoublePoint(well.getDilution(), well.getNeutralization() * 100);
         }
-        StatsService service = ServiceRegistry.get().getService(StatsService.class);
+        StatsService service = StatsService.get();
 
         CurveFit curveFit = service.getCurveFit(fitType, data);
         curveFit.setAssumeCurveDecreasing(assumeDecreasing);

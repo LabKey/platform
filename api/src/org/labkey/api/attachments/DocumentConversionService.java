@@ -17,6 +17,7 @@ package org.labkey.api.attachments;
 
 import org.apache.batik.transcoder.TranscoderException;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
@@ -31,6 +32,16 @@ import java.io.Reader;
 // Expose some interesting conversion methods via this service.
 public interface DocumentConversionService
 {
+    static @Nullable DocumentConversionService get()
+    {
+        return ServiceRegistry.get(DocumentConversionService.class);
+    }
+
+    static void setInstance(DocumentConversionService impl)
+    {
+        ServiceRegistry.get().registerService(DocumentConversionService.class, impl);
+    }
+
     // Closes the passed in pdfStream. Returns null if requested page doesn't exist.
     @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page);
     // Closes the passed in pdfStream. Returns null if requested page doesn't exist.

@@ -1298,7 +1298,7 @@ public class QueryView extends WebPartView<Object>
 
     public void addExportRStudio(PanelButton exportButton, String selectionKey)
     {
-        RStudioService rss = ServiceRegistry.get(RStudioService.class);
+        RStudioService rss = RStudioService.get();
         if (null == rss || null == rss.getRStudioLink(getUser()))
             return;
         if (null == getExportScriptFactory("r"))

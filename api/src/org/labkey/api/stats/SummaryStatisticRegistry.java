@@ -17,9 +17,20 @@ package org.labkey.api.stats;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.services.ServiceRegistry;
 
 public interface SummaryStatisticRegistry
 {
+    static SummaryStatisticRegistry get()
+    {
+        return ServiceRegistry.get(SummaryStatisticRegistry.class);
+    }
+
+    static void setInstance(SummaryStatisticRegistry impl)
+    {
+        ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, impl);
+    }
+
     void register(@NotNull Aggregate.Type summaryStatistic);
     Aggregate.Type getByName(@NotNull String name);
 }

@@ -40,7 +40,7 @@ public class FolderWriterImpl extends BaseFolderWriter
 
     public FolderWriterImpl()
     {
-        FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry registry = FolderSerializationRegistry.get();
         if (null == registry)
         {
             throw new RuntimeException();

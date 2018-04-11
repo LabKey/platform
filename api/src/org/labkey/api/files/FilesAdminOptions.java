@@ -238,7 +238,7 @@ public class FilesAdminOptions
         else
         {
             // Recurse up to our parent, which may have its own settings or defer further up the chain
-            configs = ServiceRegistry.get().getService(FileContentService.class).getAdminOptions(_container.getParent()).getEffectiveTbarConfig();
+            configs = FileContentService.get().getAdminOptions(_container.getParent()).getEffectiveTbarConfig();
         }
 
         List<FilesTbarBtnOption> result = new ArrayList<>(configs);
@@ -267,7 +267,7 @@ public class FilesAdminOptions
     {
         JSONObject o = new JSONObject();
 
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         Container container = getContainer();
         FilesAdminOptions options = svc.getAdminOptions(container);
 

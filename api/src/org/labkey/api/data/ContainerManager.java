@@ -2602,39 +2602,10 @@ public class ContainerManager
     }
 
 
-
-    static final ContainerService _instance = new ContainerServiceImpl();
-
+    @Deprecated // For backward compatibility; use ContainerService.get() instead
     public static ContainerService getContainerService()
     {
-        return _instance;
-    }
-
-    private static class ContainerServiceImpl implements ContainerService
-    {
-        @Override
-        public Container getForId(GUID id)
-        {
-            return ContainerManager.getForId(id);
-        }
-
-        @Override
-        public Container getForId(String id)
-        {
-            return ContainerManager.getForId(id);
-        }
-
-        @Override
-        public Container getForPath(Path path)
-        {
-            return ContainerManager.getForPath(path);
-        }
-
-        @Override
-        public Container getForPath(String path)
-        {
-            return ContainerManager.getForPath(path);
-        }
+        return ContainerService.get();
     }
 
     public static Container createFakeContainer(@Nullable String name, @Nullable Container parent)

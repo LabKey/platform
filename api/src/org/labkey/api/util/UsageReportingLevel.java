@@ -92,7 +92,7 @@ public enum UsageReportingLevel
             Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
             metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
 
-            FlowService fs = ServiceRegistry.get(FlowService.class);
+            FlowService fs = FlowService.get();
             if (null != fs)
             {
                 metrics.put("flowTempTableCount", fs.getTempTableCount());
@@ -255,7 +255,7 @@ public enum UsageReportingLevel
             allModulesStats.put(UsageMetricsService.ERRORS, errors);
         }
 
-        UsageMetricsService svc = ServiceRegistry.get().getService(UsageMetricsService.class);
+        UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
             svc.getModuleUsageMetrics().forEach((module, metrics) ->

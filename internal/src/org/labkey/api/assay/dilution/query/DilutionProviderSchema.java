@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.data.statistics.StatsService.CurveFitType;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
@@ -88,7 +89,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         }
         if (CURVE_FIT_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<StatsService.CurveFitType> result = new EnumTableInfo<>(StatsService.CurveFitType.class, this, StatsService.CurveFitType::getLabel, false, "List of possible curve fitting methods for the " + getProvider().getResourceName() + " assay.");
+            EnumTableInfo<CurveFitType> result = new EnumTableInfo<>(CurveFitType.class, this, CurveFitType::getLabel, false, "List of possible curve fitting methods for the " + getProvider().getResourceName() + " assay.");
             result.setPublicSchemaName(_schemaName);
             result.setPublicName(CURVE_FIT_METHOD_TABLE_NAME);
             return result;

@@ -72,7 +72,7 @@ public interface QueryService
         return ServiceRegistry.get(QueryService.class);
     }
 
-    static void set(QueryService impl)
+    static void setInstance(QueryService impl)
     {
         ServiceRegistry.get().registerService(QueryService.class, impl);
     }

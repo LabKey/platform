@@ -459,7 +459,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         List<ExpData> list = new LinkedList<>();
 
-        FlowService fs = ServiceRegistry.get(FlowService.class);
+        FlowService fs = FlowService.get();
         if (null != fs)
         {
             List<ExpData> f = fs.getExpDataByURL(FileUtil.pathToString(path), container);

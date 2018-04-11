@@ -19,6 +19,7 @@ package org.labkey.api.flow.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.List;
 
@@ -29,6 +30,16 @@ import java.util.List;
  */
 public interface FlowService
 {
+    static @Nullable FlowService get()
+    {
+        return ServiceRegistry.get(FlowService.class);
+    }
+
+    static void setInstance(FlowService impl)
+    {
+        ServiceRegistry.get().registerService(FlowService.class, impl);
+    }
+
     /**
      * Flow data files are usually imported via temp files so ExperimentService.get().getExpDataByURL() doesn't work
      * @param canonicalURL

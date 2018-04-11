@@ -35,7 +35,7 @@ public class VisualizationAggregateColumn extends VisualizationSourceColumn
         if (aggregate == null)
             aggregate = "MAX";
 
-        SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        SummaryStatisticRegistry registry = SummaryStatisticRegistry.get();
         _aggregate = registry != null ? registry.getByName(aggregate) : null;
 
         if (_aggregate == null)

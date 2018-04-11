@@ -38,6 +38,11 @@ public interface DataLoaderService
         return ServiceRegistry.get(DataLoaderService.class);
     }
 
+    static void setInstance(DataLoaderService impl)
+    {
+        ServiceRegistry.get().registerService(DataLoaderService.class, impl);
+    }
+
     void registerFactory(@NotNull DataLoaderFactory factory);
 
     @Nullable

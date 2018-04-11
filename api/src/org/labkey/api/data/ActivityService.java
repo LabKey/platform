@@ -17,10 +17,21 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 
 public interface ActivityService
 {
+    static ActivityService get()
+    {
+        return ServiceRegistry.get(ActivityService.class);
+    }
+
+    static void setInstance(ActivityService impl)
+    {
+        ServiceRegistry.get().registerService(ActivityService.class, impl);
+    }
+
     @Nullable Activity getCurrentActivity(ViewContext context);
 
     @Nullable JSONObject getCurrentActivityAsJson(ViewContext context);

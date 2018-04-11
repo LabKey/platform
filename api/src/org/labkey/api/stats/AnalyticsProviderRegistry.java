@@ -19,11 +19,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collection;
 
 public interface AnalyticsProviderRegistry
 {
+    static AnalyticsProviderRegistry get()
+    {
+        return ServiceRegistry.get(AnalyticsProviderRegistry.class);
+    }
+
+    static void setInstance(AnalyticsProviderRegistry impl)
+    {
+        ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, impl);
+    }
+
     void registerProvider(AnalyticsProvider analyticsProvider);
     ColumnAnalyticsProvider getColumnAnalyticsProvider(@NotNull String name);
     Collection<ColumnAnalyticsProvider> getColumnAnalyticsProviders(@Nullable ColumnInfo columnInfo, boolean sort);

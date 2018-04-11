@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 
@@ -25,6 +26,16 @@ import org.labkey.api.util.Path;
  */
 public interface ContainerService
 {
+    static ContainerService get()
+    {
+        return ServiceRegistry.get(ContainerService.class);
+    }
+
+    static void setInstance(ContainerService impl)
+    {
+        ServiceRegistry.get().registerService(ContainerService.class, impl);
+    }
+
     @Nullable
     Container getForId(GUID id);
     @Nullable

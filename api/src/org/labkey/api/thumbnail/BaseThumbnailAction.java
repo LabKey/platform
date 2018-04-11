@@ -53,7 +53,7 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
     @Override
     public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception
     {
-        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+        ThumbnailService svc = ThumbnailService.get();
 
         if (null == svc)
             return;

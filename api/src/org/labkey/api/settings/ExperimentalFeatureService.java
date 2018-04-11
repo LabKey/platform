@@ -17,6 +17,7 @@ package org.labkey.api.settings;
 
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,16 @@ import static org.labkey.api.settings.AppPropsImpl.EXPERIMENTAL_FEATURE_PREFIX;
  */
 public interface ExperimentalFeatureService
 {
+    static ExperimentalFeatureService get()
+    {
+        return ServiceRegistry.get(ExperimentalFeatureService.class);
+    }
+
+    static void setInstance(ExperimentalFeatureService impl)
+    {
+        ServiceRegistry.get().registerService(ExperimentalFeatureService.class, impl);
+    }
+
     void addFeatureListener(String feature, ExperimentFeatureListener listener);
 
     boolean isFeatureEnabled(String feature);

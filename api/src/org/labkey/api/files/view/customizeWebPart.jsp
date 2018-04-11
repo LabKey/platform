@@ -42,7 +42,7 @@
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);
-    FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+    FileContentService svc = FileContentService.get();
     Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
     List<String> cloudStoreNames = form.getEnabledCloudStores(getContainer());

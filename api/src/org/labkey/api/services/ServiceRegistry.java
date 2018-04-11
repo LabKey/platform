@@ -113,13 +113,6 @@ public class ServiceRegistry
     }
 
 
-    /** Check a service has been registered. */
-    public static <T> boolean has(Class<T> type)
-    {
-        return get().hasService(type);
-    }
-
-
     /**
      * Registers a service implementation. Modules that expose services should call this method
      * at load time, passing the service interface class and the implementation instance.

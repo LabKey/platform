@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.labkey.api.admin.FolderImporterFactory;
+import org.labkey.api.services.ServiceRegistry;
 
 /*
 * User: adam
@@ -25,5 +26,15 @@ import org.labkey.api.admin.FolderImporterFactory;
 */
 public interface StudySerializationRegistry
 {
+    static StudySerializationRegistry get()
+    {
+        return ServiceRegistry.get().getService(StudySerializationRegistry.class);
+    }
+
+    static void setInstance(StudySerializationRegistry impl)
+    {
+        ServiceRegistry.get().registerService(StudySerializationRegistry.class, impl);
+    }
+
     void addImportFactory(FolderImporterFactory importerFactory);
 }

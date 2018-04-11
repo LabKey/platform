@@ -24,17 +24,18 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.audit.provider.GroupAuditProvider;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -501,7 +502,7 @@ public class GroupManager
             SecurityPolicyManager.savePolicy(op);
 
             String newContainerPath = "GroupManagerJunitTestProject";
-            Container newProject = ContainerManager.getContainerService().getForPath("GroupManagerJunitTestProject");
+            Container newProject = ContainerService.get().getForPath("GroupManagerJunitTestProject");
             if (newProject != null)
                 assertTrue(ContainerManager.delete(newProject, getUser()));
 

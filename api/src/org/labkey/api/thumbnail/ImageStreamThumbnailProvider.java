@@ -85,7 +85,7 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
         {
             if ("image/svg+xml".equals(_contentType))
             {
-                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+                DocumentConversionService svc = DocumentConversionService.get();
 
                 if (null != svc)
                 {

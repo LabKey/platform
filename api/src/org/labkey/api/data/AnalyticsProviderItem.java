@@ -200,8 +200,8 @@ public class AnalyticsProviderItem
         if (type == null)
             return null;
 
-        SummaryStatisticRegistry ssRegistry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
-        AnalyticsProviderRegistry apRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        SummaryStatisticRegistry ssRegistry = SummaryStatisticRegistry.get();
+        AnalyticsProviderRegistry apRegistry = AnalyticsProviderRegistry.get();
 
         // backwards compatibility for AVG summary stat to map to MEAN
         if ("AVG".equalsIgnoreCase(type))
@@ -251,7 +251,7 @@ public class AnalyticsProviderItem
     {
         if (isSummaryStatistic())
         {
-            AnalyticsProviderRegistry apRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+            AnalyticsProviderRegistry apRegistry = AnalyticsProviderRegistry.get();
             ColumnAnalyticsProvider analyticsProvider = apRegistry != null ? apRegistry.getColumnAnalyticsProvider(getName()) : null;
             if (analyticsProvider != null && analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
             {

@@ -1203,7 +1203,7 @@ public class DataRegion extends DisplayElement
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
     {
-        AnalyticsProviderRegistry registry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        AnalyticsProviderRegistry registry = AnalyticsProviderRegistry.get();
         boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(ctx.getCurrentRegion().getName() + ".disableAnalytics"));
 
         if (!disableAnalytics && registry != null && ctx.getBaseAnalyticsProviders() != null)

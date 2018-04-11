@@ -15,6 +15,8 @@
  */
 package org.labkey.api.admin;
 
+import org.labkey.api.services.ServiceRegistry;
+
 import java.util.Collection;
 
 /**
@@ -23,6 +25,16 @@ import java.util.Collection;
  */
 public interface FolderSerializationRegistry
 {
+    static FolderSerializationRegistry get()
+    {
+        return ServiceRegistry.get(FolderSerializationRegistry.class);
+    }
+
+    static void setInstance(FolderSerializationRegistry impl)
+    {
+        ServiceRegistry.get().registerService(FolderSerializationRegistry.class, impl);
+    }
+
     void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory);
     void addImportFactory(FolderImporterFactory importerFactory);
     Collection<FolderWriter> getRegisteredFolderWriters();

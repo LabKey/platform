@@ -16,6 +16,7 @@
 package org.labkey.api.cloud;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -33,9 +34,14 @@ public interface CloudStoreService
     /** Root node for containers that are exposing cloud-backed storage in WebDAV */
     String CLOUD_NAME = "@cloud";
 
-    static CloudStoreService get()
+    static @Nullable CloudStoreService get()
     {
         return ServiceRegistry.get(CloudStoreService.class);
+    }
+
+    static void setInstance(CloudStoreService impl)
+    {
+        ServiceRegistry.get().registerService(CloudStoreService.class, impl);
     }
 
     /**

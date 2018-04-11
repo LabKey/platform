@@ -18,6 +18,7 @@ package org.labkey.api.thumbnail;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
@@ -31,6 +32,16 @@ import java.util.Set;
  */
 public interface ThumbnailService
 {
+    static ThumbnailService get()
+    {
+        return ServiceRegistry.get(ThumbnailService.class);
+    }
+
+    static void setInstance(ThumbnailService impl)
+    {
+        ServiceRegistry.get().registerService(ThumbnailService.class, impl);
+    }
+
     Set<String> ImageFilenames = PageFlowUtil.set(ImageType.Large.getFilename(), ImageType.Small.getFilename());
 
     enum ImageType

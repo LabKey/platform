@@ -82,7 +82,7 @@ public class PdfOutput extends DownloadParamReplacement
     @Override
     public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
-        DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+        DocumentConversionService svc = DocumentConversionService.get();
 
         if (null == svc)
             return null;

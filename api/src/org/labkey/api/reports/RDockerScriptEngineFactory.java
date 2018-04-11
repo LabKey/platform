@@ -30,7 +30,7 @@ public class RDockerScriptEngineFactory extends ExternalScriptEngineFactory
 
     public synchronized ScriptEngine getScriptEngine()
     {
-        RStudioService rs = ServiceRegistry.get(RStudioService.class);
+        RStudioService rs = RStudioService.get();
         if (null != rs && rs.isConfigured() && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
             return new RDockerScriptEngine(_def, rs, rs.getMount() + "/R_Sandbox");
         else return null;

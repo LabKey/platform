@@ -61,7 +61,7 @@ public class PopupDeveloperView extends PopupMenuView
         items.add(memTrackerNavTree);
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
         items.add(new NavTree("XML Schema Reference", "https://www.labkey.org/download/schema-docs/xml-schemas"));
-        RStudioService rstudio = ServiceRegistry.get(RStudioService.class);
+        RStudioService rstudio = RStudioService.get();
         if (null != rstudio)
         {
             ActionURL url = rstudio.getRStudioLink(context.getUser());

@@ -38,6 +38,11 @@ public interface MessageConfigService
         return impl;
     }
 
+    static void setInstance(MessageConfigService impl)
+    {
+        ServiceRegistry.get().registerService(MessageConfigService.class, impl);
+    }
+
     void savePreference(User currentUser, Container c, User projectUser, ConfigTypeProvider provider, int preference, String srcIdentifier);
 
     UserPreference getPreference(Container c, User user, ConfigTypeProvider provider, String srcIdentifier);

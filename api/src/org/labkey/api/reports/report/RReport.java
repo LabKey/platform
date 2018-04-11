@@ -134,7 +134,7 @@ public class RReport extends ExternalScriptEngineReport
     @Nullable
     private RStudioService getRStudioService()
     {
-        RStudioService rs = ServiceRegistry.get().getService(RStudioService.class);
+        RStudioService rs = RStudioService.get();
         if (null != rs && rs.isEditInRStudioAvailable())
             return rs;
         else return null;

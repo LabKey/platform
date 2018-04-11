@@ -47,7 +47,7 @@ public class PolynomialCurveImpl extends WellGroupCurveImpl
             // we want to express the neutralization values as percentages
             data[i++] = new DoublePoint(well.getDilution(), well.getNeutralization() * 100);
         }
-        StatsService service = ServiceRegistry.get().getService(StatsService.class);
+        StatsService service = StatsService.get();
         return service.getCurveFit(type, data);
     }
 }

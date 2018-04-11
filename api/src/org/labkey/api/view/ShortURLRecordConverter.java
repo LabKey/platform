@@ -33,7 +33,7 @@ public class ShortURLRecordConverter implements Converter
             return null;
         else
         {
-            ShortURLRecord record = ServiceRegistry.get(ShortURLService.class).getForEntityId(value.toString());
+            ShortURLRecord record = ShortURLService.get().getForEntityId(value.toString());
             if(record == null)
             {
                 throw new ConversionException("Could not convert " + value.toString() + " to a ShortURLRecord.");

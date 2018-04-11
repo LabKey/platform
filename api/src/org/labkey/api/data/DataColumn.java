@@ -123,7 +123,7 @@ public class DataColumn extends DisplayColumn
         _textAlign = _displayColumn.getTextAlign();
 
         // get the applicable ColumnAnalyticsProviders
-        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();
         if (analyticsProviderRegistry != null)
         {
             for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn, true))

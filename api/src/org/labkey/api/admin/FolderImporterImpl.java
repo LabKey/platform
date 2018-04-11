@@ -43,7 +43,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 
     public FolderImporterImpl(@Nullable PipelineJob job)
     {
-        FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry registry = FolderSerializationRegistry.get();
         if (null == registry)
         {
             throw new RuntimeException();

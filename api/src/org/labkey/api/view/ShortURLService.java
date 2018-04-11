@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 
 import java.util.List;
@@ -30,6 +31,16 @@ import java.util.List;
  */
 public interface ShortURLService
 {
+    static ShortURLService get()
+    {
+        return ServiceRegistry.get(ShortURLService.class);
+    }
+
+    static void setInstance(ShortURLService impl)
+    {
+        ServiceRegistry.get().registerService(ShortURLService.class, impl);
+    }
+
     /** Checks for a registered short URL that matches the string. The string itself should not contain slashes */
     @Nullable
     ShortURLRecord resolveShortURL(@NotNull String shortURL);

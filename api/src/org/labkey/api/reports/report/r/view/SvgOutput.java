@@ -51,7 +51,7 @@ public class SvgOutput extends HtmlOutput
     @Override
     public Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
-        DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+        DocumentConversionService svc = DocumentConversionService.get();
 
         if (null != svc)
         {

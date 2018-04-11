@@ -34,6 +34,11 @@ public interface EmailService
         return ServiceRegistry.get().getService(EmailService.class);
     }
 
+    static void setInstance(EmailService impl)
+    {
+        ServiceRegistry.get().registerService(EmailService.class, impl);
+    }
+
     EmailMessage createMessage(String from, List<String> to, String subject);
 
     /**

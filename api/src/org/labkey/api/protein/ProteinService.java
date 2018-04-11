@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
@@ -35,6 +36,16 @@ import java.util.Set;
  */
 public interface ProteinService
 {
+    static ProteinService get()
+    {
+        return ServiceRegistry.get().getService(ProteinService.class);
+    }
+
+    static void setInstance(ProteinService impl)
+    {
+        ServiceRegistry.get().registerService(ProteinService.class, impl);
+    }
+
     int ensureProtein(String sequence, String organism, String name, String description);
     int ensureProtein(String sequence, int orgId, String name, String description);
 

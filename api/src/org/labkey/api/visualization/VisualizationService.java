@@ -22,6 +22,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.springframework.validation.BindException;
@@ -33,6 +34,16 @@ import java.util.Map;
 
 public interface VisualizationService
 {
+    static VisualizationService get()
+    {
+        return ServiceRegistry.get().getService(VisualizationService.class);
+    }
+
+    static void setInstance(VisualizationService impl)
+    {
+        ServiceRegistry.get().registerService(VisualizationService.class, impl);
+    }
+
     class SQLResponse
     {
         public SchemaKey schemaKey;
