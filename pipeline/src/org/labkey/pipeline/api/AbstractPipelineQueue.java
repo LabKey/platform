@@ -87,7 +87,9 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
     protected void notifyDone(PipelineJob job)
     {
         User user = job.getUser();
-        if (null == user || user.isServiceUser())
+        if (null == user || user.isServiceUser() || user.getUserId() <= 0)
+            return;
+        if (null == job.getJobGUID())
             return;
 
         try
