@@ -694,7 +694,7 @@ public class AdminController extends SpringActionController
             }
             else if (maintenanceMode)
             {
-                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                WikiService wikiService = WikiService.get();
                 if (null != wikiService)
                 {
                     content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
@@ -1064,7 +1064,7 @@ public class AdminController extends SpringActionController
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
-                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                WikiService wikiService = WikiService.get();
                 if (null != wikiService)
                 {
                     String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
@@ -4731,7 +4731,7 @@ public class AdminController extends SpringActionController
         // of building up a map of Writer object names to display in the UI, we are instead adding them to the list of Writers
         // to apply during the implicit export.
         Set<String> registeredFolderWriters = new HashSet<>();
-        FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry registry = FolderSerializationRegistry.get();
         if (null == registry)
         {
             throw new RuntimeException();
@@ -5237,7 +5237,7 @@ public class AdminController extends SpringActionController
     public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form)
     {
         boolean changed = false;
-        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService service = FileContentService.get();
         if (null != service)
         {
             if (form.isDisableFileSharing())
@@ -5356,7 +5356,7 @@ public class AdminController extends SpringActionController
 
     public static void setFormAndConfirmMessage(ViewContext ctx, FileManagementForm form) throws IllegalArgumentException
     {
-        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService service = FileContentService.get();
         String confirmMessage = null;
         String rootSetParam = ctx.getActionURL().getParameter("rootSet");
         boolean fileRootChanged = null != rootSetParam && "true".equalsIgnoreCase(rootSetParam);
@@ -6712,7 +6712,7 @@ public class AdminController extends SpringActionController
                 return false;
             }
 
-            FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService service = FileContentService.get();
             if(fileRootOption.equals("default"))
             {
                 service.setIsUseDefaultRoot(c, true);
@@ -7813,7 +7813,7 @@ public class AdminController extends SpringActionController
 
             if (isPost())
             {
-                ExperimentalFeatureService svc = ServiceRegistry.get().getService(ExperimentalFeatureService.class);
+                ExperimentalFeatureService svc = ExperimentalFeatureService.get();
                 if (svc != null)
                     svc.setFeatureEnabled(form.getFeature(), form.isEnabled(), getUser());
             }
@@ -8515,7 +8515,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.setSavedShortURLs(ServiceRegistry.get(ShortURLService.class).getAllShortURLs());
+            form.setSavedShortURLs(ShortURLService.get().getAllShortURLs());
             JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
             newView.setTitle("Create New Short URL");
             newView.setFrame(WebPartView.FrameType.PORTAL);
@@ -8565,7 +8565,7 @@ public class AdminController extends SpringActionController
                 return false;
             }
 
-            ShortURLService service = ServiceRegistry.get(ShortURLService.class);
+            ShortURLService service = ShortURLService.get();
             if (form.isDelete())
             {
                 ShortURLRecord shortURLRecord = service.resolveShortURL(shortURL);

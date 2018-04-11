@@ -316,7 +316,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         SystemProperty.registerProperties();
 
-        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());

@@ -238,7 +238,7 @@ public class ChangeSummary
         formattedComment.append("<div class=\"wiki\">");
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
-        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+        WikiService wikiService = WikiService.get();
         if (null != wikiService)
         {
             String html = wikiService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);

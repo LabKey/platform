@@ -154,11 +154,6 @@ public class WikiManager implements WikiService
         return DiscussionService.get();
     }
 
-    ContainerService getContainerService()
-    {
-        return ServiceRegistry.get(ContainerService.class);
-    }
-
     // Used to verify that entityId is a wiki and belongs in the specified container
     public Wiki getWikiByEntityId(Container c, String entityId)
     {
@@ -601,7 +596,7 @@ public class WikiManager implements WikiService
             unindexWiki(page.getEntityId());
             return;
         }
-        Container c = getContainerService().getForId(page.getContainerId());
+        Container c = ContainerService.get().getForId(page.getContainerId());
         if (null != c)
             indexWikis(null, c, null, page.getName());
     }

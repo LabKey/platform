@@ -66,7 +66,7 @@ public class StatsServiceImpl implements StatsService
         {
             double[] testData = new double[TEST_DATA_SIZE];
             RandomDataImpl generator = new RandomDataImpl();
-            StatsService service = new StatsServiceImpl();
+            StatsService service = StatsService.get();
             SummaryStatistics statsChecker = new SummaryStatistics();
 
             for (int i=0; i < 10; i++)
@@ -93,7 +93,7 @@ public class StatsServiceImpl implements StatsService
         @Test
         public void TestCurveFits() throws Exception
         {
-            StatsService service = new StatsServiceImpl();
+            StatsService service = StatsService.get();
 
             // set up the validation data and objects to iterate over
             List<CurveValidation> validations = new ArrayList<>();

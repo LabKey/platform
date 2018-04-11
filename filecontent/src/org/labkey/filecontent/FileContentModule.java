@@ -164,7 +164,7 @@ public class FileContentModule extends DefaultModule
         ContainerManager.addContainerListener(new FileContentContainerListener());
         ContainerManager.addContainerListener(FileContentServiceImpl.getInstance().getContainerListener());
 
-        FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry fsr = FolderSerializationRegistry.get();
         if (fsr != null)
         {
             fsr.addFactories(new FileWriter.Factory(), new FileImporter.Factory());

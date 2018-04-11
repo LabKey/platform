@@ -1598,7 +1598,7 @@ public class ReportsController extends SpringActionController
 
             if (isManageThumbnails())
             {
-                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+                ThumbnailService svc = ThumbnailService.get();
 
                 if (null != svc && (form.getThumbnailType() != null))
                 {
@@ -1983,7 +1983,7 @@ public class ReportsController extends SpringActionController
 
                 tx.commit();
 
-                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+                ThumbnailService svc = ThumbnailService.get();
 
                 if (null != svc)
                     svc.queueThumbnailRendering(report, ImageType.Large, ThumbnailType.AUTO);

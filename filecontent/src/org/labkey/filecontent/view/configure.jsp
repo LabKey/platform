@@ -35,7 +35,7 @@
 <%
     JspView<FileContentController.FileContentForm> me = (JspView<FileContentController.FileContentForm>) HttpView.currentView();
     FileContentController.FileContentForm form = me.getModelBean();
-    FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+    FileContentService service = FileContentService.get();
     Collection<AttachmentDirectory> attachmentDirs = service.getRegisteredDirectories(getContainer());
 
     String fileSetHelp = "A file set enables web file sharing of data in subdirectories that do not correspond " +

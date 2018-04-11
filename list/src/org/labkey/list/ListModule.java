@@ -110,14 +110,14 @@ public class ListModule extends SpringModule
     {
         AuditLogService.get().registerAuditType(new ListAuditProvider());
 
-        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderListWriter.Factory(), new FolderListImporter.Factory());
         }
 
         // support importing lists from the study archive for backwards compatibility
-        StudySerializationRegistry studyRegistry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
+        StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
         if (null != studyRegistry)
         {
             studyRegistry.addImportFactory(new FolderListImporter.Factory());

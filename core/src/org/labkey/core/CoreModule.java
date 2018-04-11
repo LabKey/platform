@@ -111,12 +111,13 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.CustomLabelService;
+import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -286,8 +287,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw new UnexpectedException(e);
         }
 
-        ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
-        ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
+        ContainerService.setInstance(new ContainerServiceImpl());
+        FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();
@@ -297,7 +298,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         dls.registerFactory(new HTMLDataLoader.Factory());
         dls.registerFactory(new JSONDataLoader.Factory());
         dls.registerFactory(new FastaDataLoader.Factory());
-        ServiceRegistry.get().registerService(DataLoaderService.class, dls);
+        DataLoaderService.setInstance(dls);
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
@@ -321,18 +322,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.register(NotificationServiceImpl.getInstance());
-        ViewService.setInstance(ViewServiceImpl.getInstance());
 
-        ServiceRegistry.get().registerService(ExperimentalFeatureService.class, new ExperimentalFeatureService.ExperimentalFeatureServiceImpl());
-        ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
-        ServiceRegistry.get().registerService(ShortURLService.class, new ShortURLServiceImpl());
-        ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
-        ServiceRegistry.get().registerService(SiteValidationService.class, new SiteValidationServiceImpl());
-        ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, new AnalyticsProviderRegistryImpl());
-        ServiceRegistry.get().registerService(SummaryStatisticRegistry.class, new SummaryStatisticRegistryImpl());
-        ServiceRegistry.get().registerService(UsageMetricsService.class, new UsageMetricsServiceImpl());
-        ServiceRegistry.get().registerService(CustomLabelService.class, new CustomLabelService.CustomLabelServiceImpl());
-        ServiceRegistry.get().registerService(WarningService.class, new WarningServiceImpl());
+        ViewService.setInstance(ViewServiceImpl.getInstance());
+        ExperimentalFeatureService.setInstance(new ExperimentalFeatureServiceImpl());
+        ThumbnailService.setInstance(new ThumbnailServiceImpl());
+        ShortURLService.setInstance(new ShortURLServiceImpl());
+        StatsService.setInstance(new StatsServiceImpl());
+        SiteValidationService.setInstance(new SiteValidationServiceImpl());
+        AnalyticsProviderRegistry.setInstance(new AnalyticsProviderRegistryImpl());
+        SummaryStatisticRegistry.setInstance(new SummaryStatisticRegistryImpl());
+        UsageMetricsService.setInstance(new UsageMetricsServiceImpl());
+        CustomLabelService.setInstance(new CustomLabelServiceImpl());
+        WarningService.setInstance(new WarningServiceImpl());
 
         WarningService.get().register(new CoreWarningProvider());
 
@@ -373,7 +374,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
 
-        SiteValidationService svc = ServiceRegistry.get().getService(SiteValidationService.class);
+        SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
         {
             svc.registerProvider("core", new PermissionsValidator());
@@ -809,7 +810,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         SecurityManager.addViewFactory(new SecurityController.GroupDiagramViewFactory());
 
-        FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry fsr = FolderSerializationRegistry.get();
         if (null != fsr)
         {
             fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
@@ -875,6 +876,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void startBackgroundThreads()
     {
         SystemMaintenance.setTimer();
+        ThumbnailServiceImpl.startThread();
     }
 
     private static final String LIB_PATH = "/WEB-INF/lib/";

@@ -19,10 +19,9 @@
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResult.Level" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationResultList" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <style type="text/css">
@@ -30,7 +29,7 @@
 </style>
 <%
     final String LINK_HEADING = "More info";
-    SiteValidationService validationService = ServiceRegistry.get().getService(SiteValidationService.class);
+    SiteValidationService validationService = SiteValidationService.get();
     if (null == validationService)
     { %>
         <span>SiteValidationService has not been registered.</span>

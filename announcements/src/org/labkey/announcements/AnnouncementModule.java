@@ -155,7 +155,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
         AuditLogService.get().registerAuditType(new MessageAuditProvider());
-        ServiceRegistry.get().registerService(EmailService.class, new EmailServiceImpl());
+        EmailService.setInstance(new EmailServiceImpl());
 
         TourListener tourListener = new TourListener();
         ContainerManager.addContainerListener(tourListener);
@@ -174,7 +174,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
 
         // initialize message config service and add a config provider for announcements
-        ServiceRegistry.get().registerService(MessageConfigService.class, new MessageConfigServiceImpl());
+        MessageConfigService.setInstance(new MessageConfigServiceImpl());
         MessageConfigService.get().registerConfigType(new AnnouncementEmailConfig());
         
         SearchService ss = SearchService.get();
@@ -185,7 +185,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             ss.addDocumentProvider(this);
         }
 
-        FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry fsr = FolderSerializationRegistry.get();
         if (null != fsr)
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());

@@ -574,7 +574,7 @@ public class PipelineController extends SpringActionController
     {
         public ApiResponse execute(SaveOptionsForm form, BindException errors) throws Exception
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
 
             Map<String, Object> props = form.getProps();
@@ -597,7 +597,7 @@ public class PipelineController extends SpringActionController
             {
                 throw new NotFoundException("Pipeline root not set or does not exist on disk");
             }
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             FilesAdminOptions options = svc.getAdminOptions(container);
 
             for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
@@ -633,7 +633,7 @@ public class PipelineController extends SpringActionController
 
     private List<GWTPropertyDescriptor> getFileProperties(Container container, FilesAdminOptions.fileConfig config)
     {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         List<GWTPropertyDescriptor> properties = new ArrayList<>();
 
         switch (config) {

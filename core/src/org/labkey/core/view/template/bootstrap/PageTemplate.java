@@ -82,7 +82,7 @@ public class PageTemplate extends JspView<PageConfig>
         //show the header on the home template
         page.setShowHeader(true);
 
-        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+        WikiService wikiService = WikiService.get();
 
         WebPartView header = null;
         if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())

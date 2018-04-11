@@ -49,7 +49,7 @@ public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
     // TODO: Send plain text wikis straight through instead of rendering to HTML then parsing?
     private String getHtml(String body, WikiRendererType type)
     {
-        WikiService service = ServiceRegistry.get().getService(WikiService.class);
+        WikiService service = WikiService.get();
 
         if (null == service)
             throw new IllegalStateException("WikiService not found");

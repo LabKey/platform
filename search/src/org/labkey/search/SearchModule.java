@@ -120,7 +120,7 @@ public class SearchModule extends DefaultModule
                 return null;
             }
         });
-        ServiceRegistry.get().registerService(DocumentConversionService.class, new DocumentConversionServiceImpl());
+        DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
     }
 
 

@@ -38,7 +38,7 @@
 <%
     AdminController.FileManagementForm bean = ((JspView<AdminController.FileManagementForm>)HttpView.currentView()).getModelBean();
 
-    FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+    FileContentService service = FileContentService.get();
     if (null == service)
         throw new IllegalStateException("FileContentService not found.");
 

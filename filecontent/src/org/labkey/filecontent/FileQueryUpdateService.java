@@ -259,7 +259,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     {
         if (_domain == null)
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             String uri = svc.getDomainURI(container);
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
 

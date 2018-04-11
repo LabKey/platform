@@ -94,7 +94,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
 
     public Path getFileSystemDirectoryPath() throws MissingRootDirectoryException
     {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         if (null == svc)
             throw new IllegalStateException("FileContentService not found.");
 

@@ -237,7 +237,7 @@ public class TableWriter
             schemas.put("core", queries);
             form.setSchemas(schemas);
 
-            Container container = ContainerManager.getContainerService().getForPath("/");
+            Container container = ContainerManager.getForPath("/");
             File file = FileUtil.getTempDirectory();
 
             try (ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip")))

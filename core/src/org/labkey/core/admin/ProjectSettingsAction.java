@@ -305,7 +305,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private boolean handleFilesPost(AdminController.ProjectSettingsForm form, BindException errors) throws Exception
     {
-        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService service = FileContentService.get();
         if (service != null)
         {
             if (form.isPipelineRootForm())

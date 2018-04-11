@@ -1139,7 +1139,7 @@ public class UserController extends SpringActionController
         {
             User user = UserManager.getUser(_pkVal);
             ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
-            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+            ThumbnailService svc = ThumbnailService.get();
 
             if (svc != null)
             {

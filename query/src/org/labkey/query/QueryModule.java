@@ -133,8 +133,7 @@ public class QueryModule extends DefaultModule
 {
     public QueryModule()
     {
-        QueryServiceImpl i = new QueryServiceImpl();
-        QueryService.set(i);
+        QueryService.setInstance(new QueryServiceImpl());
         QueryDriver.register();
         ReportAndDatasetChangeDigestProvider.set(new ReportAndDatasetChangeDigestProviderImpl());
     }
@@ -242,7 +241,7 @@ public class QueryModule extends DefaultModule
 
         ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabKeyScriptEngineManager());
 
-        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new QueryWriter.Factory(), new QueryImporter.Factory());
@@ -252,7 +251,7 @@ public class QueryModule extends DefaultModule
         }
 
         // support importing Queries, Custom Views, and Reports from the study archive for backwards compatibility
-        StudySerializationRegistry studyRegistry = ServiceRegistry.get().getService(StudySerializationRegistry.class);
+        StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
         if (null != studyRegistry)
         {
             studyRegistry.addImportFactory(new QueryImporter.Factory());
@@ -287,7 +286,7 @@ public class QueryModule extends DefaultModule
                 adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
         });
 
-        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();
         if (null != analyticsProviderRegistry)
         {
             analyticsProviderRegistry.registerProvider(new AggregatesCountNonBlankAnalyticsProvider());
@@ -299,7 +298,7 @@ public class QueryModule extends DefaultModule
             analyticsProviderRegistry.registerProvider(new RemoveColumnAnalyticsProvider());
         }
 
-        SummaryStatisticRegistry summaryStatisticRegistry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        SummaryStatisticRegistry summaryStatisticRegistry = SummaryStatisticRegistry.get();
         if (null != summaryStatisticRegistry)
         {
             summaryStatisticRegistry.register(Aggregate.BaseType.SUM);

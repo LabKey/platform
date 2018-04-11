@@ -34,7 +34,7 @@
 <%
     String projectDefaultRoot = "";
 
-    File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
+    File siteRoot = FileContentService.get().getSiteDefaultRoot();
     if (siteRoot != null)
     {
         File projRoot = new File(siteRoot, getContainer().getProject().getName());

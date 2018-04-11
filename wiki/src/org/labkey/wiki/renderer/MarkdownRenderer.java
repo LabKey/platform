@@ -37,7 +37,7 @@ public class MarkdownRenderer extends HtmlRenderer
     public FormattedHtml format(String text)
     {
         // translate the markdown to html and reuse the html renderer
-        MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
+        MarkdownService markdownService = MarkdownService.get();
         if (null != markdownService)
         {
             try

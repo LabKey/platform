@@ -31,7 +31,7 @@ import java.util.List;
 
 public class ExpFilesTableImpl extends ExpDataTableImpl
 {
-    protected FileContentService _svc = ServiceRegistry.get().getService(FileContentService.class);
+    protected FileContentService _svc = FileContentService.get();
 
     public ExpFilesTableImpl(String name, UserSchema schema)
     {

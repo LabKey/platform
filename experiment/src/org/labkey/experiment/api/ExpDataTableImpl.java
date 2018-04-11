@@ -139,7 +139,7 @@ public class ExpDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataTable.Co
         if (isFilesTable)
             flagCol.setLabel("Description");
 
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         String domainURI = svc.getDomainURI(getContainer());
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, getContainer());
 
@@ -174,7 +174,7 @@ public class ExpDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataTable.Co
     @Override
     public QueryUpdateService getUpdateService()
     {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         return svc.getFilePropsUpdateService(this, getContainer());
     }
 

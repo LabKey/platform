@@ -30,7 +30,7 @@
     JspView<SetupForm> thisView = (JspView<SetupForm>) HttpView.currentView();
     SetupForm bean = thisView.getModelBean();
     Container c = getContainer();
-    FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+    FileContentService service = FileContentService.get();
     if (null == service)
         throw new IllegalStateException("FileContentService not found.");
 

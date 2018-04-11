@@ -256,7 +256,7 @@ public class AnnouncementModel extends Entity implements Serializable
     {
         if (_rendererType == null)
         {
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            WikiService wikiService = WikiService.get();
             _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
         }
 
@@ -276,7 +276,7 @@ public class AnnouncementModel extends Entity implements Serializable
 
     private String getFormattedHtml(@Nullable String attachPrefix)
     {
-        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+        WikiService wikiService = WikiService.get();
 
         if (null == wikiService)
             return null;

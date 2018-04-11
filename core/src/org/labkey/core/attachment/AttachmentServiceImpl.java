@@ -1127,7 +1127,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         public boolean exists()
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             if (_parent instanceof AttachmentDirectory)
             {
                 if (null == ((AttachmentDirectory)_parent).getName())
@@ -1583,7 +1583,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             Container proj = ContainerManager.ensureContainer(_testDirName);
             Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
 
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             AttachmentService svc = AttachmentService.get();
 
             File curRoot = fileService.getFileRoot(proj);

@@ -48,13 +48,13 @@ public class ThumbnailServiceImpl implements ThumbnailService
     private static final BlockingQueue<ThumbnailRenderingBean> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final ThumbnailGeneratingThread THREAD = new ThumbnailGeneratingThread();
 
-    static
-    {
-        THREAD.start();
-    }
-
     public ThumbnailServiceImpl()
     {
+    }
+
+    public static void startThread()
+    {
+        THREAD.start();
     }
 
     @Override
@@ -148,7 +148,7 @@ public class ThumbnailServiceImpl implements ThumbnailService
         @Override
         public void run()
         {
-            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+            ThumbnailService svc = ThumbnailService.get();
 
             if (null == svc)
             {

@@ -2606,7 +2606,7 @@ public class WikiController extends SpringActionController
 
                 wikiver.setRendererType(form.getFromFormat());
 
-                MarkdownService markdownService = ServiceRegistry.get().getService(MarkdownService.class);
+                MarkdownService markdownService = MarkdownService.get();
                 newBody = markdownService.toHtml(form.getBody());
             }
 

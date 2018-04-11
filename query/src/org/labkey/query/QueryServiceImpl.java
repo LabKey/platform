@@ -2930,9 +2930,8 @@ public class QueryServiceImpl implements QueryService
         @Test
         public void testSelect() throws SQLException
         {
-            QueryService qs = ServiceRegistry.get().getService(QueryService.class);
+            QueryService qs = QueryService.get();
             assertNotNull(qs);
-            assertEquals(qs, QueryService.get());
             TableInfo roleAssignments = DbSchema.get("core", DbSchemaType.Module).getTable("roleassignments");
             assertNotNull(roleAssignments);
 

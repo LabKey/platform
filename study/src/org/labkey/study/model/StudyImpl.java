@@ -745,7 +745,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
         else
         {
-            WikiService ws = ServiceRegistry.get().getService(WikiService.class);
+            WikiService ws = WikiService.get();
 
             if (null != ws)
             {

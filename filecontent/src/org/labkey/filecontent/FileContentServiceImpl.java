@@ -114,7 +114,8 @@ public class FileContentServiceImpl implements FileContentService
     private final ContainerListener _containerListener = new FileContentServiceContainerListener();
     private final List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
 
-    enum Props {
+    enum Props
+    {
         root,
         rootDisabled,
     }
@@ -1464,7 +1465,7 @@ public class FileContentServiceImpl implements FileContentService
 
             _expectedPaths = new HashMap<>();
 
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
             Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
@@ -1523,7 +1524,7 @@ public class FileContentServiceImpl implements FileContentService
 
         private File getTestRoot()
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             File siteRoot = svc.getSiteDefaultRoot();
             File testRoot = new File(siteRoot, FILE_ROOT_SUFFIX);
             testRoot.mkdirs();
@@ -1542,7 +1543,7 @@ public class FileContentServiceImpl implements FileContentService
 
             _expectedPaths = new HashMap<>();
 
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
             Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
@@ -1595,7 +1596,7 @@ public class FileContentServiceImpl implements FileContentService
             //pre-clean
             cleanup();
 
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
             Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
@@ -1654,7 +1655,7 @@ public class FileContentServiceImpl implements FileContentService
         @After
         public void cleanup()
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
             Container project1 = ContainerManager.getForPath(PROJECT1);

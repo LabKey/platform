@@ -408,7 +408,7 @@ public class CustomViewXmlReader
         if (null == aggregates)
             return Collections.emptyList();
 
-        SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        SummaryStatisticRegistry registry = SummaryStatisticRegistry.get();
 
         List<AnalyticsProviderItem> ret = new ArrayList<>();
         for (AggregateType aggregate : aggregates.getAggregateArray())
@@ -435,7 +435,7 @@ public class CustomViewXmlReader
         if (null == analyticsProviders)
             return Collections.emptyList();
 
-        AnalyticsProviderRegistry registry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        AnalyticsProviderRegistry registry = AnalyticsProviderRegistry.get();
 
         List<AnalyticsProviderItem> ret = new ArrayList<>();
         for (AnalyticsProviderType analytic : analyticsProviders.getAnalyticsProviderArray())

@@ -182,7 +182,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         if (null != FileContentService.get())
             FileContentService.get().addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
-        SiteValidationService svc = ServiceRegistry.get().getService(SiteValidationService.class);
+        SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
         {
             svc.registerProvider(getName(), new PipelineSetupValidator());

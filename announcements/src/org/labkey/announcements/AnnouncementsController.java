@@ -1073,7 +1073,7 @@ public class AnnouncementsController extends SpringActionController
             Container c = getViewContext().getContainer();
 
             // In reshow case we leave all form values as is so user can correct the errors.
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            WikiService wikiService = WikiService.get();
             WikiRendererType currentRendererType;
             Integer assignedTo;
 

@@ -1637,7 +1637,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(FolderWriterForm form, BindException errors) throws Exception
         {
-            FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+            FolderSerializationRegistry registry = FolderSerializationRegistry.get();
             if (null == registry)
             {
                 throw new RuntimeException();
@@ -1727,7 +1727,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(FolderImporterForm form, BindException errors) throws Exception
         {
-            FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+            FolderSerializationRegistry registry = FolderSerializationRegistry.get();
             if (null == registry)
                 throw new RuntimeException();
 

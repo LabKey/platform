@@ -1078,7 +1078,7 @@ public class LoginController extends SpringActionController
         else if (isAdminOnlyMode())
         {
             String content = "The site is currently undergoing maintenance.";
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            WikiService wikiService = WikiService.get();
             if (null != wikiService)
             {
                 content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());

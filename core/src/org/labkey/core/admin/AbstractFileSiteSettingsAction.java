@@ -56,7 +56,7 @@ import java.util.Map;
 public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettingsForm> extends FormViewAction<FormType>
 {
     private static Logger _log = Logger.getLogger(FilesSiteSettingsAction.class);
-    protected FileContentService _svc = ServiceRegistry.get().getService(FileContentService.class);
+    protected FileContentService _svc = FileContentService.get();
 
     public AbstractFileSiteSettingsAction(Class<FormType> commandClass)
     {

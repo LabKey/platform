@@ -200,7 +200,7 @@ public class PipelineServiceImpl implements PipelineService
         {
             if (PRIMARY_ROOT.equals(type))
             {
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                FileContentService svc = FileContentService.get();
                 if (svc != null && container != null)
                 {
                     if (svc.isCloudRoot(container))
@@ -910,7 +910,7 @@ public class PipelineServiceImpl implements PipelineService
             File pipelineRoot = pipelineRootSetting.getRootPath();
 
             // obtain the file root
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are set to defaults and they they point to the same place
@@ -937,7 +937,7 @@ public class PipelineServiceImpl implements PipelineService
             _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
 
             // customize the file root to point to a new location off the site root
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // obtain the pipeline root (customized implicitly because the file root was customized)
@@ -969,7 +969,7 @@ public class PipelineServiceImpl implements PipelineService
             _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
 
             // customize the file root to point to a new location off the site root
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // customize the pipeline root to point to a new location off the site root
@@ -1007,7 +1007,7 @@ public class PipelineServiceImpl implements PipelineService
             _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
 
             // customize the file root to point to a new location off the site root
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // create a subfolder of this project
@@ -1051,7 +1051,7 @@ public class PipelineServiceImpl implements PipelineService
             _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
 
             // customize the file root to point to a new location off the site root
-            FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService fileService = FileContentService.get();
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // customize the project pipeline root to point to a new location off the site root
@@ -1087,7 +1087,7 @@ public class PipelineServiceImpl implements PipelineService
 
         private File getTestRoot(String rootSufix)
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             File siteRoot = svc.getSiteDefaultRoot();
             File testRoot = new File(siteRoot, rootSufix);
             testRoot.mkdirs();

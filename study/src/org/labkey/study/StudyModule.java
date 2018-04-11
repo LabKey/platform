@@ -285,7 +285,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
-        ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
+        StudySerializationRegistry.setInstance(StudySerializationRegistryImpl.get());
 
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
@@ -368,7 +368,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
-        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+        WikiService wikiService = WikiService.get();
         if(null != wikiService)
             wikiService.registerMacroProvider("study", new StudyMacroProvider());
         PlateManager.get().registerLsidHandlers();
@@ -426,7 +426,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SystemMaintenance.addTask(new SpecimenRefreshMaintainanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
 
-        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());

@@ -62,7 +62,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
 
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         if (svc == null)
         {
             return null;
@@ -98,7 +98,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
 
-        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService service = FileContentService.get();
         if (null == service)
             return null;
         if (service.isCloudRoot(c))
@@ -177,7 +177,7 @@ public class FileWebdavProvider implements WebdavService.Provider
             _c = c;
             setPolicy(_c.getPolicy());
             
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             for (AttachmentDirectory dir : svc.getRegisteredDirectories(_c))
             {
                 if (StringUtils.isEmpty(dir.getLabel()))

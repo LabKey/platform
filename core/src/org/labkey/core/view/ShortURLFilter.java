@@ -61,7 +61,7 @@ public class ShortURLFilter implements Filter
         {
             potentialShortURL = potentialShortURL.substring(0, potentialShortURL.length() - ShortURLRecord.URL_SUFFIX.length());
         }
-        ShortURLRecord fullURL = ServiceRegistry.get(ShortURLService.class).resolveShortURL(potentialShortURL);
+        ShortURLRecord fullURL = ShortURLService.get().resolveShortURL(potentialShortURL);
         if (fullURL != null)
         {
             // We found a match, do a redirect and bail out

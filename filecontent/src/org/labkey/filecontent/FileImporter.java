@@ -63,7 +63,7 @@ public class FileImporter implements FolderImporter<XmlObject>
         VirtualFile filesVF = root.getDir(DIR_NAME);
         if (filesVF != null)
         {
-            FileContentService service = ServiceRegistry.get().get(FileContentService.class);
+            FileContentService service = FileContentService.get();
             Path rootFile = service.getFileRootPath(ctx.getContainer(), FileContentService.ContentType.files);
             if (!Files.exists(rootFile))
                 Files.createDirectories(rootFile);

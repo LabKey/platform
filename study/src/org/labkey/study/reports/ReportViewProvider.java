@@ -364,7 +364,7 @@ public class ReportViewProvider implements DataViewProvider
                         throw new ValidationException(errors);
 
                     ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), descriptor.getReportKey(), report);
-                    ThumbnailService svc1 = ServiceRegistry.get().getService(ThumbnailService.class);
+                    ThumbnailService svc1 = ThumbnailService.get();
 
                     boolean isDeleteThumbnail = props.containsKey(Property.deleteCustomThumbnail.name()) &&
                             Boolean.parseBoolean((String)props.get(Property.deleteCustomThumbnail.name()));

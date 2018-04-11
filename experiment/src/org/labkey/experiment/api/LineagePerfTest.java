@@ -67,7 +67,7 @@ public class LineagePerfTest extends Assert
     @BeforeClass
     public static void setup()
     {
-        _currentSetting = ServiceRegistry.get(ExperimentalFeatureService.class).isFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE);
+        _currentSetting = ExperimentalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE);
         LOG.info("lineage perf setting currently enabled: " + _currentSetting);
 
         _user = TestContext.get().getUser();
@@ -84,7 +84,7 @@ public class LineagePerfTest extends Assert
     public static void cleanup()
     {
         LOG.info("restoring previous perf setting: " + _currentSetting);
-        ServiceRegistry.get(ExperimentalFeatureService.class).setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, _currentSetting, _user);
+        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, _currentSetting, _user);
         //deleteTestContainer();
     }
 
@@ -311,11 +311,11 @@ public class LineagePerfTest extends Assert
         //
 
         LOG.info("TEST querying with very OLD hotness: ");
-        ServiceRegistry.get(ExperimentalFeatureService.class).setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, false, _user);
+        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, false, _user);
         lineageQueries("OLD", oldLineageQuery, oldLineageGraph, oldInsertMoreTimer, ss, firstData);
 
         LOG.info("TEST querying with very NEW hotness: ");
-        ServiceRegistry.get(ExperimentalFeatureService.class).setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, true, _user);
+        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, true, _user);
         lineageQueries("NEW", newLineageQuery, newLineageGraph, newInsertMoreTimer, ss, firstData);
 
         elapsedTimer.stop();

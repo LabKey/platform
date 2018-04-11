@@ -103,14 +103,14 @@ public class VisualizationModule extends CodeOnlyModule
         ReportService.get().addUIProvider(new VisualizationUIProvider());
         ReportService.get().addGlobalItemFilterType(GenericChartReport.TYPE);
 
-        ServiceRegistry.get().registerService(VisualizationService.class, new VisualizationServiceImpl());
+        VisualizationService.setInstance(new VisualizationServiceImpl());
     }
 
 
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();
         if (null != analyticsProviderRegistry)
         {
             analyticsProviderRegistry.registerProvider(new MeasureBoxPlotAnalyticsProvider());

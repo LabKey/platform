@@ -283,7 +283,7 @@ public class AnnouncementManager
             WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
             if (null == currentRendererType)
             {
-                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                WikiService wikiService = WikiService.get();
                 if (null != wikiService)
                     currentRendererType = wikiService.getDefaultMessageRendererType();
             }
@@ -1127,7 +1127,7 @@ public class AnnouncementManager
 
             if (!settings.isSecure())
             {
-                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                WikiService wikiService = WikiService.get();
                 this.body = null != wikiService ? wikiService.getFormattedHtml(currentRendererType, a.getBody()) : null;
             }
             else

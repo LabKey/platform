@@ -89,11 +89,11 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     {
         addController("wiki", WikiController.class, "attachments");
 
-        ServiceRegistry.get().registerService(WikiService.class, WikiManager.get());
+        WikiService.setInstance(WikiManager.get());
 
         try
         {
-            ServiceRegistry.get().registerService(MarkdownService.class, new MarkdownServiceImpl());
+            MarkdownService.setInstance(new MarkdownServiceImpl());
         }
         catch (Exception e)
         {
@@ -133,7 +133,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             ss.addDocumentProvider(this);
         }
 
-        ServiceRegistry.get().getService(FolderSerializationRegistry.class).addFactories(new WikiWriterFactory(), new WikiImporterFactory());
+        FolderSerializationRegistry.get().addFactories(new WikiWriterFactory(), new WikiImporterFactory());
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();

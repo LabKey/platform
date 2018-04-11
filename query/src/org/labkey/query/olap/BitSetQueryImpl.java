@@ -755,7 +755,7 @@ public class BitSetQueryImpl
                 String sql = expr.sql;
                 if (null != expr.getData || null != expr.getDataCDS)
                 {
-                    VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+                    VisualizationService vs = VisualizationService.get();
                     if (null == vs)
                         throw new UnsupportedOperationException("VisualizationService not registered");
                     try

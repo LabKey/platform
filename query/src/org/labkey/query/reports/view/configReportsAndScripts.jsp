@@ -42,7 +42,7 @@
     boolean isRDockerAvailable = false;
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {
-        RStudioService rs = ServiceRegistry.get(RStudioService.class);
+        RStudioService rs = RStudioService.get();
         if (null != rs)
             isRDockerAvailable = rs.isConfigured();
     }

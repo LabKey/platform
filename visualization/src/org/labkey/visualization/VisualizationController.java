@@ -263,7 +263,7 @@ public class VisualizationController extends SpringActionController
     {
         public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
         {
-            VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+            VisualizationService vs = VisualizationService.get();
             Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = vs.getMeasures(getContainer(), getUser(), measureRequest);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -289,7 +289,7 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
         {
             String key = getContainer().getId() + ":" + measureRequest.getCacheKey();
-            ActivityService activityService = ServiceRegistry.get(ActivityService.class);
+            ActivityService activityService = ActivityService.get();
             if (activityService != null)
             {
                 Activity activity = activityService.getCurrentActivity(getViewContext());
@@ -300,7 +300,7 @@ public class VisualizationController extends SpringActionController
             List<Map<String,Object>> json = (List<Map<String,Object>>)_getMeasuresCache.get(key);
             if (json == null)
             {
-                VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+                VisualizationService vs = VisualizationService.get();
                 Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = vs.getMeasures(getContainer(), getUser(), measureRequest);
                  json = vs.toJSON(measures);
                 _getMeasuresCache.put(key,json);
@@ -342,7 +342,7 @@ public class VisualizationController extends SpringActionController
 
         public ApiResponse execute(MeasureSetRequest measureRequest, BindException errors) throws Exception
         {
-            VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+            VisualizationService vs = VisualizationService.get();
             Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = vs.getDimensions(getContainer(), getUser(), measureRequest);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -767,7 +767,7 @@ public class VisualizationController extends SpringActionController
             response.setContentType("image/png");
             response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("png") + "\"");
 
-            DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+            DocumentConversionService svc = DocumentConversionService.get();
 
             if (null != svc)
                 svc.svgToPng(getSVGSource(), response.getOutputStream());
@@ -1587,7 +1587,7 @@ public class VisualizationController extends SpringActionController
 
     private void saveSVGThumbnail(SvgThumbnailGenerator generator, String svg, String thumbnailType) throws Exception
     {
-        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+        ThumbnailService svc = ThumbnailService.get();
 
         if (null != svc)
         {

@@ -176,7 +176,7 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+                DocumentConversionService svc = DocumentConversionService.get();
 
                 if (null != svc)
                 {
@@ -264,7 +264,7 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+                DocumentConversionService svc = DocumentConversionService.get();
 
                 if (null != svc)
                 {

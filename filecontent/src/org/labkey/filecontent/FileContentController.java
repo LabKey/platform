@@ -188,7 +188,7 @@ public class FileContentController extends SpringActionController
 
             String fileSet = StringUtils.trimToNull(form.getFileSet());
             AttachmentDirectory p;
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
 
             if (svc == null)
                 throw new NotFoundException();
@@ -500,7 +500,7 @@ public class FileContentController extends SpringActionController
    {
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors) throws Exception
        {
-           FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+           FileContentService service = FileContentService.get();
 
            if (service != null)
            {
@@ -564,7 +564,7 @@ public class FileContentController extends SpringActionController
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
            String path = StringUtils.trimToNull(form.getPath());
-           FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+           FileContentService service = FileContentService.get();
 
            if (null == name)
               	errors.reject(SpringActionController.ERROR_MSG, "Please enter a label for the file set. ");
@@ -611,7 +611,7 @@ public class FileContentController extends SpringActionController
        public boolean handlePost(FileContentForm form, BindException errors) throws Exception
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
-           FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+           FileContentService service = FileContentService.get();
 
            if (null == name)
            {
@@ -734,7 +734,7 @@ public class FileContentController extends SpringActionController
                 c = ContainerManager.getRoot();
 
             Set<Map<String, Object>> children = new LinkedHashSet<>();
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
 
             try
             {
@@ -825,7 +825,7 @@ public class FileContentController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             String uri = svc.getDomainURI(getContainer());
             OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
             Map<String, String> properties = new HashMap<>();
@@ -917,7 +917,7 @@ public class FileContentController extends SpringActionController
         {
             _files = parseFromJSON(form.getProps());
 
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             String uri = svc.getDomainURI(getContainer());
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
 
@@ -1035,7 +1035,7 @@ public class FileContentController extends SpringActionController
 
             if (_resource != null)
             {
-                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                FileContentService svc = FileContentService.get();
                 String uri = svc.getDomainURI(getContainer());
                 DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
 
@@ -1091,7 +1091,7 @@ public class FileContentController extends SpringActionController
 
         public ApiResponse execute(CustomFilePropsForm form, BindException errors) throws Exception
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             ExpData data = svc.getDataObject(_resource, getContainer());
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -1147,7 +1147,7 @@ public class FileContentController extends SpringActionController
     {
         public ApiResponse execute(ResetType form, BindException errors) throws Exception
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
 
             if (form.getType().equalsIgnoreCase("tbar"))
@@ -1215,7 +1215,7 @@ public class FileContentController extends SpringActionController
             }
 
             //filesets
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FileContentService svc = FileContentService.get();
             for (AttachmentDirectory attDir : svc.getRegisteredDirectories(getContainer()))
             {
                 ret.put(FileContentService.FILE_SETS_LINK + "/" + attDir.getLabel(), WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.FILE_SETS_LINK).append(attDir.getLabel()).toString());
@@ -1592,7 +1592,7 @@ public class FileContentController extends SpringActionController
     private AttachmentDirectory getAttachmentParent(AttachmentForm form) throws NotFoundException
     {
         AttachmentDirectory attachmentParent;
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        FileContentService svc = FileContentService.get();
         try
         {
             if (null == form.getEntityId() || form.getEntityId().equals(getContainer().getId()))

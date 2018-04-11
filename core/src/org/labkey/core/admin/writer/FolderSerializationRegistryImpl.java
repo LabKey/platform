@@ -34,17 +34,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class FolderSerializationRegistryImpl implements FolderSerializationRegistry
 {
-    private static final FolderSerializationRegistryImpl INSTANCE = new FolderSerializationRegistryImpl();
     private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<>();
     private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<>();
 
-    private FolderSerializationRegistryImpl()
+    public FolderSerializationRegistryImpl()
     {
-    }
-
-    public static FolderSerializationRegistryImpl get()
-    {
-        return INSTANCE;
     }
 
     // These writers can be defined and registered by other modules.  They have no knowledge of folder internals, other

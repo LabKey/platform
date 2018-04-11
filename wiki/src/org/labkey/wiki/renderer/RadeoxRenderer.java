@@ -835,7 +835,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         public void setup()
         {
            _r = new RadeoxRenderer();
-           _ws = ServiceRegistry.get().getService(WikiService.class);
+           _ws = WikiService.get();
         }
 
         @Test

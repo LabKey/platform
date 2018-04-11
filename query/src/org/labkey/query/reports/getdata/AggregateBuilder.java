@@ -56,7 +56,7 @@ public class AggregateBuilder
     public Aggregate create()
     {
         // lookup the Aggregate.Type from the String value
-        SummaryStatisticRegistry registry = ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
+        SummaryStatisticRegistry registry = SummaryStatisticRegistry.get();
         Aggregate.Type type = registry != null ? registry.getByName(_type) : null;
         if (type == null)
             throw new IllegalArgumentException("Invalid aggregate type: '" + _type + "'.");

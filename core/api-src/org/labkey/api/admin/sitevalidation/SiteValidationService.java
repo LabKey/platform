@@ -18,6 +18,7 @@ package org.labkey.api.admin.sitevalidation;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
 
@@ -33,6 +34,16 @@ import java.util.Map;
  */
 public interface SiteValidationService
 {
+    static SiteValidationService get()
+    {
+        return ServiceRegistry.get(SiteValidationService.class);
+    }
+
+    static void setInstance(SiteValidationService impl)
+    {
+        ServiceRegistry.get().registerService(SiteValidationService.class, impl);
+    }
+
     void registerProvider(String module, SiteValidationProvider provider);
 
     /**
