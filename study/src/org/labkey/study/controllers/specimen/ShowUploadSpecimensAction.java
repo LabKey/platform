@@ -221,7 +221,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": duplicate vial id " + vialId);
 
             Set<String> requiredFields;
-            if (study.getTimepointType() == TimepointType.DATE)
+            if (study.getTimepointType() == TimepointType.DATE || study.getTimepointType() == TimepointType.CONTINUOUS)
                 requiredFields = PageFlowUtil.set(SimpleSpecimenImporter.DRAW_TIMESTAMP);
             else
                 requiredFields = PageFlowUtil.set(SimpleSpecimenImporter.VISIT);
