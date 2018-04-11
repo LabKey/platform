@@ -22,7 +22,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
@@ -478,13 +481,21 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public String getAdministratorContactEmail()
+    public String getAdministratorContactEmail(boolean includeAppAdmins)
     {
         String defaultValue = null;
-        // Default to the oldest site administrator's email address
-        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds("Administrators");
-        // Sort to find the minimum user id
+        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(Group.groupAdministrators, false);
+
+        // Issue 33403: add option to include application admins
+        if (includeAppAdmins)
+        {
+            for (User appAdmin : UserManager.getAppAdmins())
+                members.add(new Pair<>(appAdmin.getUserId(), appAdmin.getEmail()));
+        }
+
+        // Sort to find the minimum user id (i.e. oldest administrator's email address)
         members.sort(Comparator.comparing(Pair::getKey));
+        
         Set<String> validOptions = new HashSet<>();
         for (Pair<Integer, String> entry : members)
         {
@@ -507,7 +518,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public String getAdministratorContactHTML()
     {
-        return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail()) + "\">contact a system administrator</a>";
+        return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail(true)) + "\">contact a system administrator</a>";
     }
 
     // TODO: Ditch this in favor of Constants.getPreviousReleaseVersion()?

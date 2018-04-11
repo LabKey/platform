@@ -112,7 +112,7 @@ public enum UsageReportingLevel
             report.addParam("organizationName", laf.getCompanyName());
             report.addParam("systemDescription", laf.getDescription());
             report.addParam("systemShortName", laf.getShortName());
-            report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail());
+            report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail(true));
 
             metrics.put("modules", getModulesStats());
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
