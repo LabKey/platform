@@ -49,7 +49,7 @@ public class GetRelatedFolder extends ApiAction<IssuesController.IssuesForm>
             if (c.hasPermission(getUser(), InsertPermission.class))
             {
                 containers.add(PageFlowUtil.map(
-                        "containerId", c.getId(),
+                        "key", c.getPath() + "|" + def.getName(),
                         "containerPath", c.getPath(),
                         "issueDefName", def.getName(),
                         "displayName", String.format("%s (%s)", c.getPath(), def.getName())));

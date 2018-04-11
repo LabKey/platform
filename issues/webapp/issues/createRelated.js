@@ -35,7 +35,7 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
 
         this.createCombo = Ext4.create('Ext.form.field.ComboBox', {
             store           : this.getStore(),
-            valueField      : 'containerPath',
+            valueField      : 'key',
             displayField    : 'displayName',
             fieldLabel      : 'Folder',
             triggerAction   : 'all',
@@ -51,9 +51,9 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
                 scope: this,
                 'change': function(cb, value) {
 
-                    rec = cb.getStore().findRecord('containerPath', value);
+                    rec = cb.getStore().findRecord('key', value);
                     if (rec){
-
+                        this.containerPath = rec.get('containerPath');
                         this.destIssueDefName = rec.get('issueDefName');
                     }
                 }
@@ -90,10 +90,10 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
             Ext4.define('Issues.model.Containers', {
                 extend: 'Ext.data.Model',
                 fields: [
-                    {name: 'containerId', type: 'string'},
+                    {name: 'key', type: 'string'},
                     {name: 'containerPath', type: 'string'},
                     {name: 'displayName', type: 'string'},
-                    {name: 'issueDefName'}
+                    {name: 'issueDefName', type: 'string'}
                 ]
             });
         }
@@ -119,7 +119,7 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
 
             var form = formPanel.getForm();
             form.submit({
-                url : LABKEY.ActionURL.buildURL('issues', 'insert.view', this.createCombo.getValue(), {issueDefName : this.destIssueDefName}),
+                url : LABKEY.ActionURL.buildURL('issues', 'insert.view', this.containerPath, {issueDefName : this.destIssueDefName}),
                 standardSubmit : true
             })
         }
