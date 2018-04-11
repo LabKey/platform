@@ -72,6 +72,7 @@ public class DefaultRequestNotification
         {
             SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
             view.setDisableLowVialIndicators(true);
+            view.getSettings().setMaxRows(-1);
             return view.getSimpleHtmlTable();
         }
         return null;
@@ -88,6 +89,7 @@ public class DefaultRequestNotification
             if (vials != null && vials.size() > 0)
             {
                 SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
+                view.getSettings().setMaxRows(-1);
                 view.setDisableLowVialIndicators(true);
                 if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum())
                     specimenListFile = view.exportToExcelFile(ExcelWriter.ExcelDocumentType.xls, null, null, false);
