@@ -220,15 +220,18 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             if (!vialIds.add(vialId))
                 errors.reject(SpringActionController.ERROR_MSG, "Error in row " + rowNum + ": duplicate vial id " + vialId);
 
-            Set<String> requiredFields;
-            if (study.getTimepointType() == TimepointType.DATE || study.getTimepointType() == TimepointType.CONTINUOUS)
-                requiredFields = PageFlowUtil.set(SimpleSpecimenImporter.DRAW_TIMESTAMP);
-            else
-                requiredFields = PageFlowUtil.set(SimpleSpecimenImporter.VISIT);
-            for (String col : requiredFields)
+            // Check timepoint field
+            if (study.getTimepointType() == TimepointType.CONTINUOUS && null == row.get(SimpleSpecimenImporter.DRAW_TIMESTAMP) && null == row.get(SimpleSpecimenImporter.VISIT))
             {
-                if (null == row.get(col))
-                    errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + (null == labels.get(col) ? col : labels.get(col)));
+                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " must contain a value for field " + SimpleSpecimenImporter.DRAW_TIMESTAMP + " or " + SimpleSpecimenImporter.VISIT);
+            }
+            else if (study.getTimepointType() == TimepointType.DATE && null == row.get(SimpleSpecimenImporter.DRAW_TIMESTAMP))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + SimpleSpecimenImporter.DRAW_TIMESTAMP);
+            }
+            else if (study.getTimepointType() == TimepointType.VISIT && null == row.get(SimpleSpecimenImporter.VISIT))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + SimpleSpecimenImporter.VISIT);
             }
 
             if (errors.getAllErrors().size() >= 3)
