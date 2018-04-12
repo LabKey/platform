@@ -23,7 +23,8 @@
             testRemovableFilters: testRemovableFilters,
             testHidePagingCount: testHidePagingCount,
             testShowAllTotalRows: testShowAllTotalRows,
-            testGetBaseFilters: testGetBaseFilters
+            testGetBaseFilters: testGetBaseFilters,
+            testFilterOnSortColumn: testFilterOnSortColumn
         };
 
         var PAGE_OFFSET = 4;
@@ -159,19 +160,12 @@
                 queryName: 'sampleDataTest1',
                 filterArray: [LABKEY.Filter.create('tag', 'blue', LABKEY.Filter.Types.EQUAL)],
                 renderTo: RENDERTO,
-                success: function() {
-                    var results = $('tr.labkey-alternate-row, tr.labkey-row');
-                    var failed = false;
-                    if (results && results.length > 0) {
-                        for (var i = 0; i < results.length; i++) {
-                            if (results[i].lastChild.innerHTML !== 'blue') {
-                                alert('Failed test: Filter by Tag = blue');
-                                failed = true;
-                            }
-                        }
+                success: function(dr) {
+                    if (getRowCount(dr) !== 2) {
+                        alert('Failed test: Filter by Tag = blue. Expected exactly 2 rows with "Tag" equaling "blue".');
                     }
-                    if (!failed) {
-                        LABKEY.Utils.signalWebDriverTest("testFilterArray");
+                    else {
+                        LABKEY.Utils.signalWebDriverTest('testFilterArray');
                     }
                 },
                 failure: function() {
@@ -195,7 +189,7 @@
                         var result3 = results[2].lastChild.innerHTML;
 
                         if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
-                            alert('Failed test: Sort by Tag');
+                            alert('Failed test: Sort by Tag. Expected "tag" column to be sorted ascending');
                         }
                         else {
                             LABKEY.Utils.signalWebDriverTest("testSort");
@@ -633,6 +627,58 @@
                             }
 
                             LABKEY.Utils.signalWebDriverTest('testGetBaseFilters');
+                        }
+                    }
+                }
+            });
+        }
+
+        function testFilterOnSortColumn() {
+            var loadCount = 0;
+            new LABKEY.QueryWebPart({
+                title: 'Filter on "Sort" column (Regression #33536)',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                filterArray: [
+                    LABKEY.Filter.create('Sort', '50;60;70', LABKEY.Filter.Types.EQUALS_ONE_OF)
+                ],
+                failure: function() {
+                    alert('Failed test: Show All Rows');
+                },
+                listeners: {
+                    render: function(dr) {
+                        var rowCount = getRowCount(dr);
+
+                        if (loadCount === 0) {
+                            if (rowCount !== 3) {
+                                alert('Failed test: Filter on "Sort" column. Expected 3 rows from initial filter, actual ' + rowCount + ' rows present.');
+                                return;
+                            }
+                            loadCount++;
+                            dr.changeSort('Tag', '-');
+                        }
+                        else if (loadCount === 1) {
+                            if (rowCount !== 3) {
+                                alert('Failed test: Filter on "Sort" column. Expected 3 rows from filter after sort, actual ' + rowCount + ' rows present.');
+                                return;
+                            }
+
+                            var rowElements = $('tr.labkey-alternate-row, tr.labkey-row');
+
+                            if (rowElements.length !== 3) {
+                                alert('Failed test: Filter on "Sort" column. rowElements length not consistent with rows found (3).');
+                                return;
+                            }
+
+                            var tagRowValue = rowElements[0].lastChild.innerHTML;
+
+                            if (tagRowValue !== 'white') {
+                                alert('Failed test: Filter on "Sort" column. Expected descending sort with "Tag" column containing "white" in first row.');
+                                return;
+                            }
+
+                            LABKEY.Utils.signalWebDriverTest('testFilterOnSortColumn');
                         }
                     }
                 }

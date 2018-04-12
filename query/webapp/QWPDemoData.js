@@ -20,6 +20,9 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
                 name : 'id',
                 rangeURI : 'int'
             },{
+                name : 'sort',
+                rangeURI: 'int'
+            },{
                 name : 'tag',
                 rangeURI : 'string'
             }]
@@ -64,14 +67,14 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
 }
 function setUpDomains()
 {
-    var rows1 =[{"Alias":  'alias 1', "Id": 1, "Tag": 'blue'},
-                {"Alias":  'alias 2', "Id": 2, "Tag": 'red'},
-                {"Alias":  'alias 3', "Id": 3, "Tag": 'yellow'},
-                {"Alias":  'alias 4', "Id": 4, "Tag": 'white'},
-                {"Alias":  'alias 5', "Id": 5, "Tag": 'black'},
-                {"Alias":  'alias 6', "Id": 6, "Tag": 'blue'}];
-    var rows2 =[ {"Alias":  'alias 2-1', "Id": 201, "Tag": 'square'}];
-    var rows3 =[ {"Alias":  'alias 3-1', "Id": 301, "Tag": 'Hispanic'}];
+    var rows1 =[{"Alias":  'alias 1', "Id": 1, "Sort": 100, "Tag": 'blue'},
+                {"Alias":  'alias 2', "Id": 2, "Sort": 90,  "Tag": 'red'},
+                {"Alias":  'alias 3', "Id": 3, "Sort": 80,  "Tag": 'yellow'},
+                {"Alias":  'alias 4', "Id": 4, "Sort": 70,  "Tag": 'white'},
+                {"Alias":  'alias 5', "Id": 5, "Sort": 60,  "Tag": 'black'},
+                {"Alias":  'alias 6', "Id": 6, "Sort": 50,  "Tag": 'blue'}];
+    var rows2 =[ {"Alias":  'alias 2-1', "Id": 201, "Sort": 1000, "Tag": 'square'}];
+    var rows3 =[ {"Alias":  'alias 3-1', "Id": 301, "Sort": 500,  "Tag": 'Hispanic'}];
     sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags', function(){
         sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample set with shape tags', function(){
             sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags');
