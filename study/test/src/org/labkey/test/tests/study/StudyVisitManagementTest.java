@@ -71,14 +71,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Before
-    public void preTest() throws Exception
+    public void preTest()
     {
         resetErrors();
         goToProjectHome();
     }
 
     @Test
-    public void testDeleteMultipleVisits() throws Exception
+    public void testDeleteMultipleVisits()
     {
         _containerHelper.createSubfolder(getProjectName(), "testDeleteMultipleVisits");
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 1, false);
@@ -152,14 +152,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testFailForUndefinedVisitsSpecimen() throws Exception
+    public void testFailForUndefinedVisitsSpecimen()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsSpecimen");
         testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, SPECIMEN_UNDEFINED_VISIT_MSG, 3);
     }
 
     @Test
-    public void testFailForUndefinedVisitsDataset() throws Exception
+    public void testFailForUndefinedVisitsDataset()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsDataset");
         testFailForUndefinedVisits(DATASETS_ONLY_FOLDER_ARCHIVE, DATASET_UNDEFINED_VISIT_MSG, 11);
@@ -203,7 +203,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testFailForUndefinedVisitsReload() throws Exception
+    public void testFailForUndefinedVisitsReload()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsReload");
 

@@ -102,7 +102,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             setHelpTopic(new HelpTopic("studySecurity"));
             StudyImpl study = BaseStudyController.getStudyRedirectIfNull(getContainer());
@@ -122,7 +122,7 @@ public class SecurityController extends SpringActionController
         {
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             HttpServletRequest request = getViewContext().getRequest();
@@ -224,7 +224,7 @@ public class SecurityController extends SpringActionController
     {
         private String _messageText = null;
 
-        public ModelAndView getView(ReturnUrlForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, boolean reshow, BindException errors)
         {
             if (errors.hasErrors())
             {
@@ -255,7 +255,7 @@ public class SecurityController extends SpringActionController
 
         }
 
-        public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlForm form, BindException errors)
         {
             List<String> messages = new ArrayList<>();
             StudyPermissionExporter exporter = new StudyPermissionExporter();
@@ -350,7 +350,7 @@ public class SecurityController extends SpringActionController
         {
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
@@ -484,7 +484,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
-        public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors)
         {
             setHelpTopic(new HelpTopic("reportPermissions"));
             return new ReportPermissionsTabStrip(form);
@@ -494,7 +494,7 @@ public class SecurityController extends SpringActionController
         {
         }
 
-        public boolean handlePost(PermissionsForm form, BindException errors) throws Exception
+        public boolean handlePost(PermissionsForm form, BindException errors)
         {
             Report report = null;
             if (form.getReportId() != null)
@@ -583,7 +583,7 @@ public class SecurityController extends SpringActionController
         {
         }
 
-        public boolean handlePost(StudySecurityForm form, BindException errors) throws Exception
+        public boolean handlePost(StudySecurityForm form, BindException errors)
         {
             StudyImpl study = BaseStudyController.getStudy(getContainer());
             if (study != null && form.getSecurityType() != study.getSecurityType())

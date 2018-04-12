@@ -244,7 +244,7 @@ public class ParticipantGroupController extends BaseStudyController
     public class GetParticipantCategory extends ApiAction<ParticipantCategoryImpl>
     {
         @Override
-        public ApiResponse execute(ParticipantCategoryImpl form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategoryImpl form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -261,7 +261,7 @@ public class ParticipantGroupController extends BaseStudyController
     public class GetParticipantCategories extends ApiAction<GetParticipantCategoriesForm>
     {
         @Override
-        public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             Collection<ParticipantCategoryImpl> categories;
@@ -290,7 +290,7 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class GetParticipantGroupsWithLiveFilters extends ApiAction
     {
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             Container c = getContainer();
             User u = getUser();
@@ -408,7 +408,7 @@ public class ParticipantGroupController extends BaseStudyController
     public class GetParticipantsFromSelectionAction extends MutatingApiAction<ParticipantSelection>
     {
         @Override
-        public ApiResponse execute(ParticipantSelection form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantSelection form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             try
@@ -506,7 +506,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(BrowseGroupsForm form, BindException errors) throws Exception
+        public ApiResponse execute(BrowseGroupsForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<JSONObject> groups = new ArrayList<>();
@@ -864,7 +864,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(GroupsForm form, BindException errors) throws Exception
+        public ApiResponse execute(GroupsForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             Map<String, Set<String>> categoryToSubjectMap = new HashMap<>();
@@ -1387,7 +1387,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         @Override
-        public Object execute(UpdateParticipantGroupForm form, BindException errors) throws Exception
+        public Object execute(UpdateParticipantGroupForm form, BindException errors)
         {
             HttpSession session = getViewContext().getSession();
             if (session == null)

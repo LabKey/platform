@@ -3709,7 +3709,7 @@ public class StudyManager
                DatasetDefinition def,
                DataLoader loader,
                Map<String, String> columnMap)
-            throws ServletException, IOException
+            throws IOException
     {
         TableInfo tinfo = def.getTableInfo(user, false);
 
@@ -4893,7 +4893,7 @@ public class StudyManager
         }
 
         @Override
-        public void categoryDeleted(User user, ViewCategory category) throws Exception
+        public void categoryDeleted(User user, ViewCategory category)
         {
             for (DatasetDefinition def : getDatasetsForCategory(category))
             {
@@ -4904,10 +4904,11 @@ public class StudyManager
         }
 
         @Override
-        public void categoryCreated(User user, ViewCategory category) throws Exception {}
+        public void categoryCreated(User user, ViewCategory category)
+        {}
 
         @Override
-        public void categoryUpdated(User user, ViewCategory category) throws Exception
+        public void categoryUpdated(User user, ViewCategory category)
         {
             Container c = ContainerManager.getForId(category.getContainerId());
             if (null != c)
@@ -6016,7 +6017,7 @@ public class StudyManager
         List<VisitImpl> _visits = new ArrayList<>();
 
         @Test
-        public void test() throws Throwable
+        public void test()
         {
             try
             {

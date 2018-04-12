@@ -57,15 +57,15 @@ public interface AssayImporterService extends DomainImporterService
     /**
      * Returns the protocol specific import wizard action to import the uploaded file
      */
-    String getImportURL(GWTProtocol protocol, String directoryPath, String file) throws GWTImportException;
-    String getDesignerURL(GWTProtocol protocol, String directoryPath, String file) throws GWTImportException;
+    String getImportURL(GWTProtocol protocol, String directoryPath, String file);
+    String getDesignerURL(GWTProtocol protocol, String directoryPath, String file);
 
     /**
      * Returns the base columns from the data domain template. These columns can be used
      * to map columns from the uploaded file.
      * The assay instance does not yet exist when this method is called by the client.
      */
-    List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws GWTImportException;
+    List<GWTPropertyDescriptor> getBaseColumns(String providerName);
 
-    List<Map<String, String>> getAssayLocations() throws GWTImportException;
+    List<Map<String, String>> getAssayLocations();
 }

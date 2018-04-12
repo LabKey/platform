@@ -323,7 +323,7 @@ public class ChangeSummary
     }
 
     public void sendUpdateEmail(Container container, User user, String comment, ActionURL detailsURL, String change,
-                                List<AttachmentFile> attachments) throws ServletException
+                                List<AttachmentFile> attachments)
     {
         // Skip the email if no comment and no public fields have changed, #17304
         String fieldChanges = getTextChanges();

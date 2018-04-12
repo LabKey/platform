@@ -73,7 +73,7 @@ public class MothershipReportTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testTopLevelItems() throws Exception
+    public void testTopLevelItems()
     {
         // TODO: Test others
 
@@ -86,7 +86,7 @@ public class MothershipReportTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testJsonMetrics() throws Exception
+    public void testJsonMetrics()
     {
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
         assertTextPresent("jsonMetrics",

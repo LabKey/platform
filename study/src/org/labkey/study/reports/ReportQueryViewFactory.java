@@ -119,7 +119,7 @@ public class ReportQueryViewFactory
         return false;   // user is OK, don't check permissions
     }
 
-    private static StudyQuerySchema getStudyQuerySchema(ContainerUser context, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor) throws ServletException
+    private static StudyQuerySchema getStudyQuerySchema(ContainerUser context, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor)
     {
         if (perm != ReadPermission.class)
             throw new IllegalArgumentException("only PERM_READ supported");

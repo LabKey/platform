@@ -1571,7 +1571,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         private static final String _testDirName = "/_jUnitAttachment";
 
         @Test
-        public void testDirectories() throws IOException, SQLException
+        public void testDirectories() throws IOException
         {
             User user = TestContext.get().getUser();
             assertNotNull("Should have access to a user", user);

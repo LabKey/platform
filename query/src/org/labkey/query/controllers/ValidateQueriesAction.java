@@ -40,7 +40,7 @@ import org.springframework.validation.BindException;
 public class ValidateQueriesAction extends ApiAction
 {
     @Override
-    public ApiResponse execute(Object o, BindException errors) throws Exception
+    public ApiResponse execute(Object o, BindException errors)
     {
         ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
         validator.visitTop(DefaultSchema.get(getUser(), getContainer()), null);

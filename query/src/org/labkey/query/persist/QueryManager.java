@@ -845,7 +845,7 @@ public class QueryManager
      * column names or case errors (which cause problems for case-sensitive js)
      */
     public boolean validateQueryViews(SchemaKey schemaPath, String queryName, User user, Container container,
-                                          @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws SQLException, QueryParseException
+                                          @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws QueryParseException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
         if (null == schema)

@@ -125,7 +125,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
         }
 
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
             initializeDataMaps(ctx);

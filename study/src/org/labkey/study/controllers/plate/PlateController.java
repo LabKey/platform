@@ -89,7 +89,7 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(new ActionURL(PlateTemplateListAction.class, getContainer()));
         }
@@ -118,7 +118,7 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
         {
             setHelpTopic(new HelpTopic("editPlateTemplate"));
             List<? extends PlateTemplate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
@@ -135,7 +135,7 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DesignerServiceAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             PlateDataServiceImpl service = new PlateDataServiceImpl(getViewContext());
             service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
@@ -166,7 +166,7 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PlateDetailsAction extends SimpleViewAction<RowIdForm>
     {
-        public ModelAndView getView(RowIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(RowIdForm form, BindException errors)
         {
             Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
             if (plate == null)
@@ -216,7 +216,7 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class DesignerAction extends SimpleViewAction<DesignerForm>
     {
-        public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
+        public ModelAndView getView(DesignerForm form, BindException errors)
         {
             Map<String, String> properties = new HashMap<>();
             if (form.getTemplateName() != null)
@@ -262,7 +262,7 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class DeleteAction extends SimpleViewAction<NameForm>
     {
-        public ModelAndView getView(NameForm form, BindException errors) throws Exception
+        public ModelAndView getView(NameForm form, BindException errors)
         {
             List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplates(getContainer());
             if (templates.size() > 1)
@@ -354,7 +354,7 @@ public class PlateController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(CopyForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CopyForm form, boolean reshow, BindException errors)
         {
             if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
                 return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));

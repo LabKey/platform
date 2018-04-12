@@ -358,7 +358,7 @@ public class ChartReportView extends AbstractReportView
         public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
         {
             return new ChartReportDescriptor.LegendItemLabelGenerator() {
-                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception
+                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName)
                 {
                     TableInfo table = getTable(context, descriptor);
                     if (table != null)

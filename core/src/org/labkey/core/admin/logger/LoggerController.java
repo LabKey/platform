@@ -152,7 +152,7 @@ public class LoggerController extends SpringActionController
     public class ListAction extends ApiAction<ListFilter>
     {
         @Override
-        public SimpleResponse<Collection<LoggerLevel>> execute(ListFilter filter, BindException errors) throws Exception
+        public SimpleResponse<Collection<LoggerLevel>> execute(ListFilter filter, BindException errors)
         {
             Level filterLevel = filter.getLevel() != null ? Level.toLevel(filter.getLevel()) : null;
 
@@ -181,7 +181,7 @@ public class LoggerController extends SpringActionController
     public class ResetAction extends ApiAction<Object>
     {
         @Override
-        public SimpleResponse execute(Object o, BindException errors) throws Exception
+        public SimpleResponse execute(Object o, BindException errors)
         {
             LogManager.resetConfiguration();
             URL url = getClass().getResource("/log4j.xml");
@@ -201,7 +201,7 @@ public class LoggerController extends SpringActionController
         }
 
         @Override
-        public SimpleResponse<LoggerLevel> execute(LoggerLevel loggerLevel, BindException errors) throws Exception
+        public SimpleResponse<LoggerLevel> execute(LoggerLevel loggerLevel, BindException errors)
         {
             Logger logger = LogManager.getLogger(loggerLevel.name);
             if (logger == null)
@@ -229,13 +229,13 @@ public class LoggerController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/logger/manage.jsp", null, errors);
         }
 
         @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             return false;
         }

@@ -35,13 +35,13 @@ public class InstallSettingsAction extends FormViewAction<FileSettingsForm>
     }
 
     @Override
-    public ModelAndView getView(FileSettingsForm fileSettingsForm, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(FileSettingsForm fileSettingsForm, boolean reshow, BindException errors)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean handlePost(FileSettingsForm fileSettingsForm, BindException errors) throws Exception
+    public boolean handlePost(FileSettingsForm fileSettingsForm, BindException errors)
     {
         throw new UnsupportedOperationException();
     }

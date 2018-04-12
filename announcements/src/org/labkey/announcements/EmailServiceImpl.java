@@ -353,13 +353,13 @@ public class EmailServiceImpl implements EmailService
         }
 
         @Test
-        public void testNonExistentFileAttachments() throws MessagingException, IOException
+        public void testNonExistentFileAttachments() throws IOException
         {
             testAttachmentExceptions(NON_EXISTENT_ATTACHMENT_NAME);
         }
 
         @Test
-        public void testDirectoryAttachment() throws MessagingException, IOException
+        public void testDirectoryAttachment() throws IOException
         {
             testAttachmentExceptions(FAKE_DIRECTORY_NAME);
         }

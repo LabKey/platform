@@ -130,7 +130,7 @@ public class DataIntegrationController extends SpringActionController
         private String _displayName;
 
         @Override
-        public ModelAndView getView(TransformViewForm form, BindException errors) throws Exception
+        public ModelAndView getView(TransformViewForm form, BindException errors)
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);

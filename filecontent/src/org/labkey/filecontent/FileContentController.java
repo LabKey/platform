@@ -320,7 +320,7 @@ public class FileContentController extends SpringActionController
                         WebPartView webPart = new WebPartView(_resource.getName())
                         {
                             @Override
-                            protected void renderView(Object model, PrintWriter out) throws Exception
+                            protected void renderView(Object model, PrintWriter out)
                             {
                                 renderResourceContents(out, _resource);
                             }
@@ -535,7 +535,7 @@ public class FileContentController extends SpringActionController
        {
        }
 
-       public boolean handlePost(FileContentForm fileContentForm, BindException errors) throws Exception
+       public boolean handlePost(FileContentForm fileContentForm, BindException errors)
        {
            return false;
        }
@@ -786,7 +786,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public abstract class FileTreeNodeAction extends ApiAction<NodeForm>
     {
-        protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception;
+        protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors);
 
         @Override
         public final Object execute(NodeForm nodeForm, BindException errors) throws Exception
@@ -1336,7 +1336,7 @@ public class FileContentController extends SpringActionController
     public class GetCustomProperties extends ApiAction<CustomPropertiesForm>
     {
         @Override
-        public ApiResponse execute(CustomPropertiesForm form, BindException errors) throws Exception
+        public ApiResponse execute(CustomPropertiesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             FileContentService service = FileContentService.get();

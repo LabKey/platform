@@ -241,7 +241,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 //        return row;
     }
 
-    private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException, SQLException
+    private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
     {
         String columnName = _dataset.getStudy().getSubjectColumnName();
         Object participant = row.get(columnName);

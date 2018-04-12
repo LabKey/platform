@@ -91,7 +91,7 @@ public class StudyDesignController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class ManageAssayScheduleAction extends SimpleViewAction<AssayScheduleForm>
     {
-        public ModelAndView getView(AssayScheduleForm form, BindException errors) throws Exception
+        public ModelAndView getView(AssayScheduleForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySchedule.jsp", form);
         }
@@ -123,7 +123,7 @@ public class StudyDesignController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class ManageStudyProductsAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", form);
         }
@@ -155,7 +155,7 @@ public class StudyDesignController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class ManageTreatmentsAction extends SimpleViewAction<ManageTreatmentsBean>
     {
-        public ModelAndView getView(ManageTreatmentsBean form, BindException errors) throws Exception
+        public ModelAndView getView(ManageTreatmentsBean form, BindException errors)
         {
             // if the singleTable param is not explicitly set, do a container check
             if (getViewContext().getRequest().getParameter("singleTable") == null)
@@ -187,7 +187,7 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(GetStudyProductsForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetStudyProductsForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -263,7 +263,7 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(GetStudyTreatmentsForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetStudyTreatmentsForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -365,7 +365,7 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             StudyTreatmentSchedule treatmentSchedule = new StudyTreatmentSchedule(getContainer());
@@ -813,7 +813,7 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(VisitForm form, BindException errors) throws Exception
+        public ApiResponse execute(VisitForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -835,7 +835,7 @@ public class StudyDesignController extends BaseStudyController
     public class UpdateAssayPlanAction extends MutatingApiAction<AssayPlanForm>
     {
         @Override
-        public ApiResponse execute(AssayPlanForm form, BindException errors) throws Exception
+        public ApiResponse execute(AssayPlanForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 

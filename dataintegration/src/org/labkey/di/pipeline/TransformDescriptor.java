@@ -133,7 +133,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final FilterStrategy.Factory _defaultFactory;
     private final ArrayList<StepMeta> _stepMetaDatas;
 
-    TransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
+    TransformDescriptor(String id, String name, String moduleName)
     {
         this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false, null, null, null, null);
     }
@@ -141,7 +141,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     TransformDescriptor(String id, EtlType etlXml, String moduleName, Long interval,
                         CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                         Map<ParameterDescription, Object> declaredVariables, boolean gatedByStep,
-                        Map<String, String> pipelineParameters, Map<ParameterDescription, Object> constants) throws XmlException, IOException
+                        Map<String, String> pipelineParameters, Map<ParameterDescription, Object> constants)
     {
         this(id, etlXml.getName(), etlXml.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas,
                 declaredVariables, etlXml.getLoadReferencedFiles(), gatedByStep, etlXml.getStandalone(),

@@ -523,7 +523,7 @@ public class TreatmentManager
             throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
     }
 
-    public void deleteAssaySpecimen(Container container, User user, int rowId) throws Exception
+    public void deleteAssaySpecimen(Container container, User user, int rowId)
     {
         // first delete any usages of the AssaySpecimenId in the AssaySpecimenVisit table
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -536,7 +536,7 @@ public class TreatmentManager
         Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter);
     }
 
-    public void deleteAssaySpecimenVisit(Container container, User user, int rowId) throws Exception
+    public void deleteAssaySpecimenVisit(Container container, User user, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
@@ -767,7 +767,7 @@ public class TreatmentManager
             assertEquals(_treatments.size(), 2);
         }
 
-        private void addProductsForTreatment(int treatmentId) throws SQLException
+        private void addProductsForTreatment(int treatmentId)
         {
             TableInfo treatmentProductTable = _schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
             if (treatmentProductTable != null)
@@ -814,7 +814,7 @@ public class TreatmentManager
                 addAntigenToProduct(product.getRowId());
         }
 
-        private void addAntigenToProduct(int productId) throws SQLException
+        private void addAntigenToProduct(int productId)
         {
             TableInfo productAntigenTable = _schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
             if (productAntigenTable != null)
@@ -828,7 +828,7 @@ public class TreatmentManager
             verifyStudyProductAntigens(productId, 1);
         }
 
-        private void populateLookupTables() throws SQLException
+        private void populateLookupTables()
         {
             String name, label;
 
@@ -890,7 +890,7 @@ public class TreatmentManager
             }
         }
 
-        private void createStudy() throws SQLException
+        private void createStudy()
         {
             _context = TestContext.get();
             Container junit = JunitUtil.getTestContainer();

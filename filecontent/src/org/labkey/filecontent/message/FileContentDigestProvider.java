@@ -81,7 +81,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     }
 
     @Override
-    public void sendDigestForAllContainers(Date start, Date end) throws Exception
+    public void sendDigestForAllContainers(Date start, Date end)
     {
         Set<Container> containers = new HashSet<>();
 

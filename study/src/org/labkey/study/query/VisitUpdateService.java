@@ -39,19 +39,19 @@ public class VisitUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException
     {
         return insertUpdate(user, container, row);
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws ValidationException
     {
         return insertUpdate(user, container, row);
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
     {
         throw new UnsupportedOperationException();
     }

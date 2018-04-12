@@ -67,7 +67,7 @@ public class SharedStudyController extends BaseStudyController
     public class StudyFilterAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new StudyFilterWebPart();
         }
@@ -187,7 +187,7 @@ public class SharedStudyController extends BaseStudyController
         }
 
         @Override
-        public Object execute(SharedStudyContainerFilterForm form, BindException errors) throws Exception
+        public Object execute(SharedStudyContainerFilterForm form, BindException errors)
         {
             String key = DataspaceQuerySchema.SHARED_STUDY_CONTAINER_FILTER_KEY + getContainer().getProject().getRowId();
             if (isPost())

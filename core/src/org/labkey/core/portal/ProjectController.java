@@ -244,7 +244,7 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class StartAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
 
@@ -394,7 +394,7 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class HomeAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(beginURL());
         }
@@ -502,7 +502,7 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomizePortletForm form, BindException errors)
         {
             if (null != form.getPageId())
                 Portal.hidePage(getContainer(), form.getPageId());
@@ -549,7 +549,7 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomizePortletForm form, BindException errors)
         {
             if (null != form.getPageId())
                 Portal.deletePage(getContainer(), form.getPageId());
@@ -585,7 +585,7 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(getSuccessURL(movePortletForm));
         }
 
-        public boolean handlePost(MovePortletForm form, BindException errors) throws Exception
+        public boolean handlePost(MovePortletForm form, BindException errors)
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
             return handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), form.getDirection());
@@ -623,7 +623,7 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
-        public boolean handlePost(AddWebPartForm form, BindException errors) throws Exception
+        public boolean handlePost(AddWebPartForm form, BindException errors)
         {
             _desc = Portal.getPortalPart(form.getName());
             if (null == _desc)
@@ -713,7 +713,7 @@ public class ProjectController extends SpringActionController
     public class DeleteWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
-        public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
+        public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors)
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), customizePortletForm.getWebPartId());
             if (webPart != null && handleDeleteWebPart(getContainer(), webPart.getPageId(), webPart.getIndex()))
@@ -728,7 +728,7 @@ public class ProjectController extends SpringActionController
     public class ToggleWebPartFrameAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
-        public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
+        public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors)
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), customizePortletForm.getWebPartId());
             if (webPart != null && handleToggleWebPartFrame(getContainer(), webPart.getPageId(), webPart.getIndex()))
@@ -744,7 +744,7 @@ public class ProjectController extends SpringActionController
     public class MoveWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
-        public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors) throws Exception
+        public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors)
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), movePortletForm.getWebPartId());
             if (webPart != null && handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), movePortletForm.getDirection()))
@@ -759,7 +759,7 @@ public class ProjectController extends SpringActionController
     public class GetWebPartsAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
-        public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors) throws Exception
+        public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors)
         {
             return getWebPartLayoutApiResponse(movePortletForm.getPageId());
         }
@@ -902,7 +902,7 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
-        public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomizePortletForm form, BindException errors)
         {
             String pageId = form.getPageId();
             int index = form.getIndex();
@@ -931,7 +931,7 @@ public class ProjectController extends SpringActionController
     @RequiresSiteAdmin()
     public class PurgeAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             int rows = Portal.purge();
             return new HtmlView("deleted " + rows + " portlets<br>");
@@ -1028,7 +1028,7 @@ public class ProjectController extends SpringActionController
     public class CustomizeWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
-        public ApiResponse execute(CustomizePortletApiForm form, BindException errors) throws Exception
+        public ApiResponse execute(CustomizePortletApiForm form, BindException errors)
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
 
@@ -1056,7 +1056,7 @@ public class ProjectController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors)
         {
             // lookup the webpart by webpartId OR pageId/index
             if (form.getWebPartId() > 0)
@@ -1085,7 +1085,7 @@ public class ProjectController extends SpringActionController
             return v;
         }
 
-        public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomizePortletForm form, BindException errors)
         {
             // lookup the webpart by webpartId OR pageId/index
             Portal.WebPart webPart;
@@ -1180,7 +1180,7 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public static class ExpandCollapseAction extends SimpleViewAction<CollapseExpandForm>
     {
-        public ModelAndView getView(CollapseExpandForm form, BindException errors) throws Exception
+        public ModelAndView getView(CollapseExpandForm form, BindException errors)
         {
             NavTreeManager.expandCollapsePath(getViewContext(), form.getTreeId(), form.getPath(), form.isCollapse());
             return null;
@@ -1272,7 +1272,7 @@ public class ProjectController extends SpringActionController
             setUnauthorizedType(UnauthorizedException.Type.sendUnauthorized);
         }
 
-        public ApiResponse execute(GetWebPartForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetWebPartForm form, BindException errors)
         {
             HttpServletRequest request = getViewContext().getRequest();
             String qs = request.getQueryString();
@@ -1339,7 +1339,7 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(GetWebPartForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetWebPartForm form, BindException errors)
         {
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(_webPartName);
             Portal.WebPart part = factory.createWebPart();
@@ -1445,7 +1445,7 @@ public class ProjectController extends SpringActionController
         int _requestedDepth;
         boolean _includeEffectivePermissions = true;
 
-        public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetContainersForm form, BindException errors)
         {
             _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
             _includeEffectivePermissions = form.isIncludeEffectivePermissions();
@@ -1652,7 +1652,7 @@ public class ProjectController extends SpringActionController
     public class SetWebPartPermissionsAction extends ApiAction<WebPartPermissionsForm>
     {
         @Override
-        public ApiResponse execute(WebPartPermissionsForm form, BindException errors) throws Exception
+        public ApiResponse execute(WebPartPermissionsForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());

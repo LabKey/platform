@@ -54,7 +54,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
         return null;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException, SQLException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
         List<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
         Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = StudyManager.getInstance().getVisitTagMapMap(study);

@@ -113,7 +113,7 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageCohortsAction extends FormViewAction<ManageCohortsForm>
     {
-        public ModelAndView getView(ManageCohortsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageCohortsForm form, boolean reshow, BindException errors)
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), HttpView.currentContext().getUser());
 
@@ -145,7 +145,7 @@ public class CohortController extends BaseStudyController
 
         public void validateCommand(ManageCohortsForm target, Errors errors) {}
 
-        public boolean handlePost(ManageCohortsForm form, BindException errors) throws Exception
+        public boolean handlePost(ManageCohortsForm form, BindException errors)
         {
             StudyImpl study = getStudyThrowIfNull();
 
@@ -286,7 +286,7 @@ public class CohortController extends BaseStudyController
             return new CohortTable(schema);
         }
 
-        public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors)
         {
             TableInfo table = getTableInfo();
 
@@ -354,7 +354,7 @@ public class CohortController extends BaseStudyController
 
         public void validateCommand(EditCohortForm form, Errors errors) {}
 
-        public boolean handlePost(EditCohortForm form, BindException errors) throws Exception
+        public boolean handlePost(EditCohortForm form, BindException errors)
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
 

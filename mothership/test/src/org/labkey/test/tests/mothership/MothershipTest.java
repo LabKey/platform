@@ -126,7 +126,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testCreateIssue() throws Exception
+    public void testCreateIssue()
     {
         IssuesHelper issuesHelper = new IssuesHelper(this);
         Integer highestIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
@@ -157,7 +157,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testAssignException() throws Exception
+    public void testAssignException()
     {
         Integer stackTraceId = ensureUnassignedException();
 
@@ -180,7 +180,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testIgnoreExceptionFromDataRegion() throws Exception
+    public void testIgnoreExceptionFromDataRegion()
     {
         Integer stackTraceId = ensureUnassignedException();
 
@@ -195,7 +195,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testCreateIssueForAssignedException() throws Exception
+    public void testCreateIssueForAssignedException()
     {
         Integer stackTraceId = ensureUnassignedException();
 
@@ -212,14 +212,14 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testCombiningIdenticalExceptions() throws Exception
+    public void testCombiningIdenticalExceptions()
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.illegalState, ExceptionActions.illegalState);
         assertEquals("Should group identical exceptions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
     @Test @Ignore("These don't actually get grouped")
-    public void testCombiningSimilarExceptions() throws Exception
+    public void testCombiningSimilarExceptions()
     {
         List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
         actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
@@ -230,7 +230,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testNotCombiningDifferentExceptionTypes() throws Exception
+    public void testNotCombiningDifferentExceptionTypes()
     {
         List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
         actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
@@ -241,14 +241,14 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testNotCombiningFromDifferentActions() throws Exception
+    public void testNotCombiningFromDifferentActions()
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
     @Test
-    public void testReports() throws Exception
+    public void testReports()
     {
         final ReportsPage reportsPage = ReportsPage.beginAt(this);
         final List<BodyWebPart> bodyWebParts = new PortalHelper(getDriver()).getBodyWebParts();
@@ -263,7 +263,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testErrorCode() throws Exception
+    public void testErrorCode()
     {
         checkErrors();
         ExceptionActions exception = ExceptionActions.illegalState;
@@ -278,7 +278,7 @@ public class MothershipTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testNoErrorCodeWithReportingDisabled() throws Exception
+    public void testNoErrorCodeWithReportingDisabled()
     {
         _mothershipHelper.disableExceptionReporting();
         checkErrors();

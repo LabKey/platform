@@ -622,7 +622,7 @@ public class XarExpander extends AbstractXarImporter
 
     public void expandSteps(ExperimentLogEntryType[] steps,
                             XarContext context,
-                            ExperimentRunType xbRun) throws SQLException, ExperimentException
+                            ExperimentRunType xbRun) throws ExperimentException
     {
         FileResolver resolver = new FileResolver(_xarSource.getRoot());
         for (ExperimentLogEntryType step : steps)

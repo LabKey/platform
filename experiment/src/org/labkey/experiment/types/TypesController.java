@@ -98,7 +98,7 @@ public class TypesController extends SpringActionController
 
         public BeginAction(ViewContext c){setViewContext(c);}
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             JspView jspView = new JspView("/org/labkey/experiment/types/begin.jsp");
             jspView.setTitle("Type Administration");
@@ -136,7 +136,7 @@ public class TypesController extends SpringActionController
     public static class RepairAction extends FormViewAction<RepairForm>
     {
         @Override
-        public ModelAndView getView(RepairForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RepairForm form, boolean reshow, BindException errors)
         {
             validateCommand(form, errors);
             StorageProvisioner.ProvisioningReport report = StorageProvisioner.getProvisioningReport(form.getDomainUri());
@@ -186,7 +186,7 @@ public class TypesController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(ImportVocabularyForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ImportVocabularyForm form, boolean reshow, BindException errors)
         {
             HttpView view = new JspView<>("/org/labkey/experiment/types/importVocabulary.jsp",form);
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -249,7 +249,7 @@ public class TypesController extends SpringActionController
 
         public TypesAction(ViewContext c){setViewContext(c);}
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Collection<DomainDescriptor> types = OntologyManager.getDomainDescriptors(getContainer());
             TypeBean bean = new TypeBean();
@@ -305,7 +305,7 @@ public class TypesController extends SpringActionController
         public DomainDescriptor dd;
         public List<PropertyDescriptor> properties = Collections.emptyList();
 
-        public ModelAndView getView(TypeForm form, BindException errors) throws Exception
+        public ModelAndView getView(TypeForm form, BindException errors)
         {
             // UNDONE: verify container against Types table when we have a Types table
             typeName = StringUtils.trimToNull(form.getType());
@@ -342,7 +342,7 @@ public class TypesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class FindConceptsAction extends SimpleViewAction<SearchForm>
     {
-        public ModelAndView getView(SearchForm form, BindException errors) throws Exception
+        public ModelAndView getView(SearchForm form, BindException errors)
         {
             DbSchema expSchema = ExperimentService.get().getSchema();
             String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();

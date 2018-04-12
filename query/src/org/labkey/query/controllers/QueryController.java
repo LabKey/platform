@@ -245,7 +245,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors)
         {
             remoteConnectionForm.setConnectionKind(RemoteConnections.CONNECTION_KIND_QUERY);
             if (!errors.hasErrors())
@@ -263,7 +263,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors)
         {
             return RemoteConnections.createOrEditRemoteConnection(remoteConnectionForm, getContainer(), errors);
         }
@@ -292,13 +292,13 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/confirmDeleteConnection.jsp", remoteConnectionForm, errors);
         }
 
         @Override
-        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors)
         {
             remoteConnectionForm.setConnectionKind(RemoteConnections.CONNECTION_KIND_QUERY);
             return RemoteConnections.deleteRemoteConnection(remoteConnectionForm, getContainer());
@@ -328,7 +328,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors)
         {
             String name = remoteConnectionForm.getConnectionName();
             String schemaName = "core"; // test Schema Name
@@ -360,7 +360,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors)
         {
             return true;
         }
@@ -551,7 +551,7 @@ public class QueryController extends SpringActionController
     public class DataSourceAdminAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
@@ -696,7 +696,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BrowseAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/browse.jsp", null);
         }
@@ -720,7 +720,7 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
             JspView view = new JspView<>("/org/labkey/query/view/browse.jsp", form);
             view.setFrame(WebPartView.FrameType.NONE);
@@ -744,7 +744,7 @@ public class QueryController extends SpringActionController
             _form = form;
         }
 
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
             _form = form;
             return new JspView<>("/org/labkey/query/view/browse.jsp", form);
@@ -799,7 +799,7 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, "QueryName is required");
         }
 
-        public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors)
         {
             if (form.getSchema() == null)
             {
@@ -822,7 +822,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/newQuery.jsp", form, errors);
         }
 
-        public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
+        public boolean handlePost(NewQueryForm form, BindException errors)
         {
             if (form.getSchema() == null)
             {
@@ -937,7 +937,7 @@ public class QueryController extends SpringActionController
 
 
         @Override
-        public ModelAndView getView(SourceForm form, BindException errors) throws Exception
+        public ModelAndView getView(SourceForm form, BindException errors)
         {
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
             if (null == _queryDef)
@@ -1064,7 +1064,7 @@ public class QueryController extends SpringActionController
 
 
         @Override
-        public ApiResponse execute(SourceForm form, BindException errors) throws Exception
+        public ApiResponse execute(SourceForm form, BindException errors)
         {
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
             if (null == _queryDef)
@@ -1492,7 +1492,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)    // This is called "export" but it doesn't export any data
     public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
-        public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExportScriptForm form, BindException errors)
         {
             ensureQueryExists(form);
 
@@ -1764,7 +1764,7 @@ public class QueryController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(QueryForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, boolean reshow, BindException errors)
         {
             ensureQueryExists(form);
             _form = form;
@@ -1778,7 +1778,7 @@ public class QueryController extends SpringActionController
             return new GWTView(MetadataEditor.class, props);
         }
 
-        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        public boolean handlePost(QueryForm form, BindException errors)
         {
             return false;
         }
@@ -1981,7 +1981,7 @@ public class QueryController extends SpringActionController
     public class SaveQueryViewsAction extends ApiAction<SimpleApiJsonForm>
     {
         @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
             if (json == null)
@@ -2070,7 +2070,7 @@ public class QueryController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(PropertiesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(PropertiesForm form, boolean reshow, BindException errors)
         {
             // assertQueryExists requires that it be well-formed
             // assertQueryExists(form);
@@ -2285,7 +2285,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class DetailsQueryRowAction extends UserSchemaAction
     {
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
@@ -2355,7 +2355,7 @@ public class QueryController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             return false;
         }
@@ -2385,7 +2385,7 @@ public class QueryController extends SpringActionController
 
         Map<String,Object> insertedRow = null;
 
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             InsertView view = new InsertView(tableForm, errors);
             view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
@@ -2447,7 +2447,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public static class UpdateQueryRowAction extends UserSchemaAction
     {
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             ButtonBar bb = createSubmitCancelButtonBar(tableForm);
             UpdateView view = new UpdateView(tableForm, errors);
@@ -2624,7 +2624,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class SelectRowsAction extends ApiAction<APIQueryForm>
     {
-        public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
+        public ApiResponse execute(APIQueryForm form, BindException errors)
         {
             ensureQueryExists(form);
 
@@ -2817,7 +2817,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
-        public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
+        public ApiResponse execute(ExecuteSqlForm form, BindException errors)
         {
             if (form.getSchema() == null)
             {
@@ -3108,7 +3108,7 @@ public class QueryController extends SpringActionController
                 _colFieldKey = fieldKeys.get(0);
         }
 
-        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        public ApiResponse execute(QueryForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             QueryView view = QueryView.create(form, errors);
@@ -3829,7 +3829,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ApiTestAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/query/view/apitest.jsp");
         }
@@ -3854,7 +3854,7 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
            setHelpTopic(new HelpTopic("externalSchemas"));
            return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
@@ -3892,7 +3892,7 @@ public class QueryController extends SpringActionController
         public void validateCommand(ResetRemoteConnectionsForm target, Errors errors) {}
 
         @Override
-        public boolean handlePost(ResetRemoteConnectionsForm form, BindException errors) throws Exception
+        public boolean handlePost(ResetRemoteConnectionsForm form, BindException errors)
         {
             if (form.isReset())
             {
@@ -3908,7 +3908,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ResetRemoteConnectionsForm queryForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ResetRemoteConnectionsForm queryForm, boolean reshow, BindException errors)
         {
             Map<String, String> connectionMap;
             try
@@ -3987,7 +3987,7 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
-        public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors)
         {
             setHelpTopic(new HelpTopic("filterSchema"));
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
@@ -4002,7 +4002,7 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
-        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors)
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
             return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
@@ -4421,7 +4421,7 @@ public class QueryController extends SpringActionController
     public class GetTablesAction extends ApiAction<GetTablesForm>
     {
         @Override
-        public ApiResponse execute(GetTablesForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetTablesForm form, BindException errors)
         {
             List<Map<String, Object>> rows = new LinkedList<>();
             List<String> tableNames = new ArrayList<>();
@@ -4488,7 +4488,7 @@ public class QueryController extends SpringActionController
     public class SchemaTemplateAction extends ApiAction<SchemaTemplateForm>
     {
         @Override
-        public ApiResponse execute(SchemaTemplateForm form, BindException errors) throws Exception
+        public ApiResponse execute(SchemaTemplateForm form, BindException errors)
         {
             String name = form.getName();
             if (name == null)
@@ -4509,7 +4509,7 @@ public class QueryController extends SpringActionController
     public class SchemaTemplatesAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             Container c = getContainer();
             QueryServiceImpl svc = QueryServiceImpl.get();
@@ -4625,7 +4625,7 @@ public class QueryController extends SpringActionController
             throw new UnauthorizedException();
         }
 
-        public ApiResponse execute(DeleteViewForm form, BindException errors) throws Exception
+        public ApiResponse execute(DeleteViewForm form, BindException errors)
         {
             CustomView view = form.getCustomView();
             if (view == null)
@@ -4733,7 +4733,7 @@ public class QueryController extends SpringActionController
     public class SaveSessionViewAction extends ApiAction<SaveSessionViewForm>
     {
         @Override
-        public ApiResponse execute(SaveSessionViewForm form, BindException errors) throws Exception
+        public ApiResponse execute(SaveSessionViewForm form, BindException errors)
         {
             CustomView view = form.getCustomView();
             if (view == null)
@@ -4890,7 +4890,7 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
         }
@@ -4991,12 +4991,12 @@ public class QueryController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/internalNewView.jsp", form, errors);
         }
 
-        public boolean handlePost(InternalNewViewForm form, BindException errors) throws Exception
+        public boolean handlePost(InternalNewViewForm form, BindException errors)
         {
             if (form.ff_share)
             {
@@ -5069,7 +5069,7 @@ public class QueryController extends SpringActionController
             super(SelectForm.class);
         }
 
-        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        public ApiResponse execute(final SelectForm form, BindException errors)
         {
             DataRegionSelection.clearAll(getViewContext(), form.getKey());
             return new DataRegionSelection.SelectionResponse(0);
@@ -5119,7 +5119,7 @@ public class QueryController extends SpringActionController
             super(SelectForm.class);
         }
 
-        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        public ApiResponse execute(final SelectForm form, BindException errors)
         {
             Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), true, false);
             return new ApiSimpleResponse("selected", selected);
@@ -5135,7 +5135,7 @@ public class QueryController extends SpringActionController
             super(SetCheckForm.class);
         }
 
-        public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
+        public ApiResponse execute(final SetCheckForm form, BindException errors)
         {
             String[] ids = form.getId(getViewContext().getRequest());
             List<String> selection = new ArrayList<>();
@@ -5219,7 +5219,7 @@ public class QueryController extends SpringActionController
     @ApiVersion(12.3)
     public class GetSchemasAction extends ApiAction<GetSchemasForm>
     {
-        public ApiResponse execute(GetSchemasForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetSchemasForm form, BindException errors)
         {
             final Container container = getContainer();
             final User user = getUser();
@@ -5333,7 +5333,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public class GetQueriesAction extends ApiAction<GetQueriesForm>
     {
-        public ApiResponse execute(GetQueriesForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetQueriesForm form, BindException errors)
         {
             if (null == StringUtils.trimToNull(form.getSchemaName()))
                 throw new IllegalArgumentException("You must supply a value for the 'schemaName' parameter!");
@@ -5502,7 +5502,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public class GetQueryViewsAction extends ApiAction<GetQueryViewsForm>
     {
-        public ApiResponse execute(GetQueryViewsForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetQueryViewsForm form, BindException errors)
         {
             if (null == StringUtils.trimToNull(form.getSchemaName()))
                 throw new IllegalArgumentException("You must pass a value for the 'schemaName' parameter!");
@@ -5572,7 +5572,7 @@ public class QueryController extends SpringActionController
     @RequiresNoPermission
     public class GetServerDateAction extends ApiAction
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             return new ApiSimpleResponse("date", new Date());
         }
@@ -5629,7 +5629,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SaveApiTestAction extends ApiAction<SaveApiTestForm>
     {
-        public ApiResponse execute(SaveApiTestForm form, BindException errors) throws Exception
+        public ApiResponse execute(SaveApiTestForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -5677,7 +5677,7 @@ public class QueryController extends SpringActionController
     private abstract class ParseAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             List<QueryParseException> qpe = new ArrayList<>();
             String expr = getViewContext().getRequest().getParameter("q");
@@ -5920,7 +5920,7 @@ public class QueryController extends SpringActionController
     public class AuditHistoryAction extends SimpleViewAction<QueryForm>
     {
         @Override
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
             return QueryUpdateAuditProvider.createHistoryQueryView(getViewContext(), form, errors);
         }
@@ -5936,7 +5936,7 @@ public class QueryController extends SpringActionController
     public class AuditDetailsAction extends SimpleViewAction<QueryDetailsForm>
     {
         @Override
-        public ModelAndView getView(QueryDetailsForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryDetailsForm form, BindException errors)
         {
             return QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(), form, errors);
         }
@@ -5967,7 +5967,7 @@ public class QueryController extends SpringActionController
     public class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
     {
         @Override
-        public ModelAndView getView(AuditChangesForm form, BindException errors) throws Exception
+        public ModelAndView getView(AuditChangesForm form, BindException errors)
         {
             int auditRowId = form.getAuditRowId();
             String comment = null;
@@ -6059,7 +6059,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ExportTablesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExportTablesForm form, boolean reshow, BindException errors)
         {
             // When exporting the zip to the browser, the base action will attempt to reshow the view since we returned
             // null as the success URL; returning null here causes the base action to stop pestering the action.
@@ -6146,7 +6146,7 @@ public class QueryController extends SpringActionController
     public class SaveNamedSetAction extends ApiAction<NamedSetForm>
     {
         @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
+        public Object execute(NamedSetForm namedSetForm, BindException errors)
         {
             QueryService.get().saveNamedSet(namedSetForm.getSetName(), namedSetForm.parseSetList());
             return new ApiSimpleResponse("success", true);
@@ -6189,7 +6189,7 @@ public class QueryController extends SpringActionController
     {
 
         @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
+        public Object execute(NamedSetForm namedSetForm, BindException errors)
         {
             QueryService.get().deleteNamedSet(namedSetForm.getSetName());
             return new ApiSimpleResponse("success", true);
@@ -6272,7 +6272,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(GenerateSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(GenerateSchemaForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/generateSchema.jsp", form, errors);
         }
@@ -6358,7 +6358,7 @@ public class QueryController extends SpringActionController
     {
 
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             // NOTE: copy pasta from initSources()
             Collection<Map<String, Object>> sourcesAndSchemas = new LinkedList<>();
@@ -6387,7 +6387,7 @@ public class QueryController extends SpringActionController
     public class TestSQLAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
             getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));

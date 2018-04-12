@@ -160,7 +160,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body) throws Exception
+    public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body)
     {
         IssueListDef def = IssueManager.getIssueListDef(container, issueDefName);
         if (def == null)

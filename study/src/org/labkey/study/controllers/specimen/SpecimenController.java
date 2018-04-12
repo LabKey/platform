@@ -237,7 +237,7 @@ public class SpecimenController extends BaseStudyController
     public class OverviewAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors)
         {
             if (null == StudyService.get().getStudy(getContainer()))
                 return new HtmlView("This folder does not contain a study.");
@@ -701,7 +701,7 @@ public class SpecimenController extends BaseStudyController
     public class SampleEventsRedirectAction extends SimpleViewAction<SampleEventForm>
     {
         @Override
-        public ModelAndView getView(SampleEventForm form, BindException errors) throws Exception
+        public ModelAndView getView(SampleEventForm form, BindException errors)
         {
             if (form.getId() != null && form.getTargetStudy() != null)
             {
@@ -727,7 +727,7 @@ public class SpecimenController extends BaseStudyController
     {
         private boolean _showingSelectedSamples;
 
-        public ModelAndView getView(ViewEventForm viewEventForm, BindException errors) throws Exception
+        public ModelAndView getView(ViewEventForm viewEventForm, BindException errors)
         {
             if (null == StudyManager.getInstance().getStudy(getContainer()))
             {
@@ -1375,7 +1375,7 @@ public class SpecimenController extends BaseStudyController
         {
         }
 
-        public ModelAndView getView(ManageRequestStatusForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageRequestStatusForm form, boolean reshow, BindException errors)
         {
             _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             if (_specimenRequest == null)
@@ -1983,7 +1983,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(RequestSpecimensPermission.class)
     public class ExtendedSpecimenRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
-        public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateSampleRequestForm form, BindException errors)
         {
             VBox vbox = new VBox();
 
@@ -2069,7 +2069,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(InsertPermission.class)
     public class ShowAddToSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
-        public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateSampleRequestForm form, BindException errors)
         {
             if (!SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
                 requiresManageSpecimens();
@@ -2300,7 +2300,7 @@ public class SpecimenController extends BaseStudyController
         {
         }
 
-        public ModelAndView getView(ManageRequirementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageRequirementForm form, boolean reshow, BindException errors)
         {
             _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
@@ -2390,7 +2390,7 @@ public class SpecimenController extends BaseStudyController
     public class RequestHistoryAction extends SimpleViewAction<IdForm>
     {
         private int _requestId;
-        public ModelAndView getView(IdForm form, BindException errors) throws Exception
+        public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
             HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", new ActionURL(ManageRequestAction.class,getContainer()).addParameter("id",form.getId())));
@@ -2511,7 +2511,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class SpecimenRequestConfigRequired extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/study/view/specimen/configurationRequired.jsp");
         }
@@ -2577,14 +2577,14 @@ public class SpecimenController extends BaseStudyController
         {
         }
 
-        public ModelAndView getView(DefaultRequirementsForm defaultRequirementsForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DefaultRequirementsForm defaultRequirementsForm, boolean reshow, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(true);
             return new JspView<>("/org/labkey/study/view/specimen/manageDefaultReqs.jsp",
                 new ManageReqsBean(getUser(), getContainer()));
         }
 
-        public boolean handlePost(DefaultRequirementsForm form, BindException errors) throws Exception
+        public boolean handlePost(DefaultRequirementsForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(true);
             createDefaultRequirement(form.getOriginatorActor(), form.getOriginatorDescription(), SpecimenRequestRequirementType.ORIGINATING_SITE);
@@ -3012,7 +3012,7 @@ public class SpecimenController extends BaseStudyController
     {
         private int _requestId;
         private LabSpecimenListsBean.Type _type;
-        public ModelAndView getView(LabSpecimenListsForm form, BindException errors) throws Exception
+        public ModelAndView getView(LabSpecimenListsForm form, BindException errors)
         {
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null  || form.getListType() == null)
@@ -3167,7 +3167,7 @@ public class SpecimenController extends BaseStudyController
             super(beanClass);
         }
 
-        public ModelAndView getView(FormType specimenVisitReportForm, BindException errors) throws Exception
+        public ModelAndView getView(FormType specimenVisitReportForm, BindException errors)
         {
             _form = specimenVisitReportForm;
             if (specimenVisitReportForm.isExcelExport())
@@ -3717,7 +3717,7 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors)
         {
             List<Vial> selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
 
@@ -3849,7 +3849,7 @@ public class SpecimenController extends BaseStudyController
     public class ImportSpecimenData extends SimpleViewAction<PipelineForm>
     {
         private String[] _filePaths = null;
-        public ModelAndView getView(PipelineForm form, BindException bindErrors) throws Exception
+        public ModelAndView getView(PipelineForm form, BindException bindErrors)
         {
             List<File> dataFiles = form.getValidatedFiles(getContainer());
             List<SpecimenArchive> archives = new ArrayList<>();
@@ -4104,7 +4104,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ShowManageRepositorySettingsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/specimen/manageRepositorySettings.jsp", SpecimenManager.getInstance().getRepositorySettings(getContainer()));
         }
@@ -4122,7 +4122,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ManageStudyPermission.class)
     public class ManageRepositorySettingsAction extends SimpleViewAction<ManageRepositorySettingsForm>
     {
-        public ModelAndView getView(ManageRepositorySettingsForm form, BindException errors) throws Exception
+        public ModelAndView getView(ManageRepositorySettingsForm form, BindException errors)
         {
             RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
             settings.setSimple(form.isSimple());
@@ -4184,7 +4184,7 @@ public class SpecimenController extends BaseStudyController
             super("manageActorOrder", "Manage Actor Order", "specimenRequest");
         }
 
-        public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
+        public boolean handlePost(BulkEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
 
@@ -4233,7 +4233,7 @@ public class SpecimenController extends BaseStudyController
         {
         }
 
-        public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Form form, boolean reshow, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
             return new JspView<>("/org/labkey/study/view/specimen/" + _jsp + ".jsp", getStudyRedirectIfNull());
@@ -4267,7 +4267,7 @@ public class SpecimenController extends BaseStudyController
             super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
         }
 
-        public boolean handlePost(ActorEditForm form, BindException errors) throws Exception
+        public boolean handlePost(ActorEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
 
@@ -4348,7 +4348,7 @@ public class SpecimenController extends BaseStudyController
             super("manageStatusOrder", "Manage Status Order", "specimenRequest");
         }
 
-        public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
+        public boolean handlePost(BulkEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
 
@@ -4397,7 +4397,7 @@ public class SpecimenController extends BaseStudyController
             super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
         }
 
-        public boolean handlePost(StatusEditForm form, BindException errors) throws Exception
+        public boolean handlePost(StatusEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
 
@@ -4808,7 +4808,7 @@ public class SpecimenController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/specimen/manageNotifications.jsp", settings, errors);
         }
 
-        public boolean handlePost(RequestNotificationSettings settings, BindException errors) throws Exception
+        public boolean handlePost(RequestNotificationSettings settings, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
 
@@ -4870,7 +4870,7 @@ public class SpecimenController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/specimen/manageDisplay.jsp", settings);
         }
 
-        public boolean handlePost(DisplaySettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(DisplaySettingsForm form, BindException errors)
         {
             DisplaySettings settings = form.getBean();
             SpecimenManager.getInstance().saveDisplaySettings(getContainer(), settings);
@@ -4904,7 +4904,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class GetSpecimenExcelAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
@@ -5047,7 +5047,7 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
             SecurityType securityType = study.getSecurityType();
@@ -5072,7 +5072,7 @@ public class SpecimenController extends BaseStudyController
             return view;
         }
 
-        public boolean handlePost(ManageCommentsForm form, BindException errors) throws Exception
+        public boolean handlePost(ManageCommentsForm form, BindException errors)
         {
             if (null == getStudy())
                 throw new IllegalStateException("No study found.");
@@ -5179,7 +5179,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class CopyParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
     {
-        public ModelAndView getView(final ParticipantCommentForm form, BindException errors) throws Exception
+        public ModelAndView getView(final ParticipantCommentForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
             DatasetDefinition def;
@@ -5327,7 +5327,7 @@ public class SpecimenController extends BaseStudyController
     public class UpdateRequestabilityRulesAction extends ApiAction<UpdateRequestabilityRulesForm>
     {
         @Override
-        public ApiResponse execute(UpdateRequestabilityRulesForm form, BindException errors) throws Exception
+        public ApiResponse execute(UpdateRequestabilityRulesForm form, BindException errors)
         {
             final List<RequestabilityManager.RequestableRule> rules = new ArrayList<>();
             for (int i = 0; i < form.getRuleType().length; i++)
@@ -5346,7 +5346,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ManageRequestSettingsPermission.class)
     public class ConfigureRequestabilityRulesAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
             return new JspView("/org/labkey/study/view/specimen/configRequestabilityRules.jsp");
@@ -5616,7 +5616,7 @@ public class SpecimenController extends BaseStudyController
     public class CompleteSpecimenAction extends ApiAction<CompleteSpecimenForm>
     {
         @Override
-        public ApiResponse execute(CompleteSpecimenForm form, BindException errors) throws Exception
+        public ApiResponse execute(CompleteSpecimenForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -5673,7 +5673,7 @@ public class SpecimenController extends BaseStudyController
     public class SaveSpecimenWebPartSettingsAction extends ApiAction<SpecimenWebPartForm>
     {
         @Override
-        public ApiResponse execute(SpecimenWebPartForm form, BindException errors) throws Exception
+        public ApiResponse execute(SpecimenWebPartForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Container container = getContainer();
@@ -5734,7 +5734,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(EditSpecimenDataPermission.class)
     public static class UpdateSpecimenQueryRowAction extends UserSchemaAction
     {
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             // Don't allow GlobalUniqueId to be edited
             TableInfo tableInfo = tableForm.getTable();
@@ -5772,7 +5772,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(EditSpecimenDataPermission.class)
     public static class InsertSpecimenQueryRowAction extends UserSchemaAction
     {
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             TableInfo tableInfo = tableForm.getTable();
             ColumnInfo vialComments = tableInfo.getColumn("VialComments");
@@ -5820,7 +5820,7 @@ public class SpecimenController extends BaseStudyController
     {
         private DesignerForm _form;
 
-        public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
+        public ModelAndView getView(DesignerForm form, BindException errors)
         {
             _form = form;
             Map<String, String> properties = new HashMap<>();
@@ -5859,7 +5859,7 @@ public class SpecimenController extends BaseStudyController
     public class PivotAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/specimen/pivot.jsp");
         }

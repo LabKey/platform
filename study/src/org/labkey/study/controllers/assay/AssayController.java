@@ -184,7 +184,7 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends BaseAssayAction<ProtocolIdForm>
     {
-        public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolIdForm o, BindException errors)
         {
             setHelpTopic(new HelpTopic("adminAssays"));
             return AssayService.get().createAssayListView(getViewContext(), false, errors);
@@ -245,7 +245,7 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class AssayListAction extends ApiAction<AssayListForm>
     {
-        public ApiResponse execute(AssayListForm form, BindException errors) throws Exception
+        public ApiResponse execute(AssayListForm form, BindException errors)
         {
             Container c = getContainer();
             HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
@@ -419,7 +419,7 @@ public class AssayController extends SpringActionController
     {
         private ExpProtocol _protocol;
 
-        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
             _protocol = form.getProtocol(false);
 
@@ -465,7 +465,7 @@ public class AssayController extends SpringActionController
     public class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
     {
         ExpProtocol _protocol;
-        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
             _protocol = form.getProtocol();
             throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
@@ -484,7 +484,7 @@ public class AssayController extends SpringActionController
         boolean _hasCustomView = false;
 
         @Override
-        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
             _protocol = form.getProtocol();
             AssayProvider provider = form.getProvider();
@@ -558,7 +558,7 @@ public class AssayController extends SpringActionController
         {
         }
 
-        public boolean handlePost(CreateAssayForm form, BindException errors) throws Exception
+        public boolean handlePost(CreateAssayForm form, BindException errors)
         {
             if (form.getProviderName() == null || PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
             {
@@ -576,7 +576,7 @@ public class AssayController extends SpringActionController
             return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(createIn, form.getProviderName(), returnURL);
         }
 
-        public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors)
         {
             ChooseAssayBean bean = new ChooseAssayBean();
             bean.returnURL = form.getReturnActionURL();
@@ -605,7 +605,7 @@ public class AssayController extends SpringActionController
     public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
-        public ModelAndView getView(PublishHistoryForm form, BindException errors) throws Exception
+        public ModelAndView getView(PublishHistoryForm form, BindException errors)
         {
             ContainerFilter containerFilter = ContainerFilter.CURRENT;
             if (form.getContainerFilterName() != null)
@@ -799,7 +799,7 @@ public class AssayController extends SpringActionController
         private ExpProtocol _protocol;
 
         @Override
-        public ModelAndView getView(AssayRunUploadForm form, BindException errors) throws Exception
+        public ModelAndView getView(AssayRunUploadForm form, BindException errors)
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 throw new NotFoundException("Pipeline root must be configured before uploading assay files");
@@ -1137,7 +1137,7 @@ public class AssayController extends SpringActionController
         private ExpProtocol _protocol;
 
         @Override
-        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
             _protocol = form.getProtocol();
 
@@ -1250,7 +1250,7 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(SetResultFlagForm form, BindException errors) throws Exception
+        public ApiResponse execute(SetResultFlagForm form, BindException errors)
         {
             form.setContainer(getContainer());
             ExpProtocol protocol = form.getProtocol();

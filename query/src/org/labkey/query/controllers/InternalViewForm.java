@@ -29,7 +29,7 @@ public class InternalViewForm extends ViewForm
     private int _customViewId;
     private CstmView _view;
 
-    public CstmView getViewAndCheckPermission() throws Exception
+    public CstmView getViewAndCheckPermission()
     {
         if (_view != null)
             return _view;

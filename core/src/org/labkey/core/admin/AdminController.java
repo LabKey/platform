@@ -359,7 +359,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowAdminAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean(getUser()));
         }
@@ -413,7 +413,7 @@ public class AdminController extends SpringActionController
             return appendAdminNavTrail(root, "Module Errors", this.getClass());
         }
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/core/admin/moduleErrors.jsp");
         }
@@ -668,7 +668,7 @@ public class AdminController extends SpringActionController
     @IgnoresAllocationTracking
     public class MaintenanceAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             if (!getUser().isInSiteAdminGroup())
             {
@@ -739,7 +739,7 @@ public class AdminController extends SpringActionController
     public class StartupStatusAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             JSONObject result = new JSONObject();
             result.put("startupComplete", ModuleLoader.getInstance().isStartupComplete());
@@ -754,7 +754,7 @@ public class AdminController extends SpringActionController
     public class GetPendingRequestCountAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             JSONObject result = new JSONObject();
             result.put("pendingRequestCount", ViewServlet.getPendingRequestCount() - 1 /* Exclude this request */);
@@ -766,7 +766,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetModulesAction extends ApiAction<GetModulesForm>
     {
-        public ApiResponse execute(GetModulesForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetModulesForm form, BindException errors)
         {
             Container c = ContainerManager.getForPath(getContainer().getPath());
 
@@ -813,7 +813,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     public class ContainerIdAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
 //            getPageConfig().setTemplate(Template.None);
@@ -1284,7 +1284,7 @@ public class AdminController extends SpringActionController
     @CSRF
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
-        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
         {
             if (form.isUpgradeInProgress())
                 getPageConfig().setTemplate(Template.Dialog);
@@ -1460,7 +1460,7 @@ public class AdminController extends SpringActionController
     public class SiteValidationAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp");
         }
@@ -2249,7 +2249,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowThreadsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             // Log to labkey.log as well as showing through the browser
             DebugInfoDumper.dumpThreads(3);
@@ -2306,7 +2306,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteSettingsForm>
     {
-        public ModelAndView getView(SiteSettingsForm form, BindException errors) throws Exception
+        public ModelAndView getView(SiteSettingsForm form, BindException errors)
         {
             NetworkDrive testDrive = new NetworkDrive();
             testDrive.setPassword(form.getNetworkDrivePassword());
@@ -2427,7 +2427,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ActionsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new ActionsTabStrip();
         }
@@ -2486,7 +2486,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
-        public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueriesForm form, BindException errors)
         {
             String buttonHTML = "";
             if (getUser().hasRootAdminPermission())
@@ -2532,7 +2532,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class QueryStackTracesAction extends SimpleViewAction<QueryForm>
     {
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
             return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), AdminController::getExecutionPlanURL);
         }
@@ -2559,7 +2559,7 @@ public class AdminController extends SpringActionController
     {
         private int _hashCode;
 
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, BindException errors)
         {
             _hashCode = form.getSqlHashCode();
             return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode());
@@ -2628,7 +2628,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
-        public ModelAndView getView(MemForm form, BindException errors) throws Exception
+        public ModelAndView getView(MemForm form, BindException errors)
         {
             if (form.isClearCaches())
             {
@@ -2776,7 +2776,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class EnvironmentVariablesAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/properties.jsp", System.getenv());
         }
@@ -2790,7 +2790,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class SystemPropertiesAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<Map<String, String>>("/org/labkey/core/admin/properties.jsp", new HashMap(System.getProperties()));
         }
@@ -2853,14 +2853,14 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ConfigureSystemMaintenanceForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ConfigureSystemMaintenanceForm form, boolean reshow, BindException errors)
         {
             SystemMaintenanceProperties prop = SystemMaintenance.getProperties();
             return new JspView<>("/org/labkey/core/admin/systemMaintenance.jsp", prop, errors);
         }
 
         @Override
-        public boolean handlePost(ConfigureSystemMaintenanceForm form, BindException errors) throws Exception
+        public boolean handlePost(ConfigureSystemMaintenanceForm form, BindException errors)
         {
             SystemMaintenance.setTimeDisabled(!form.isEnableSystemMaintenance());
             SystemMaintenance.setProperties(form.getEnable(), form.getMaintenanceTime());
@@ -2933,7 +2933,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(SystemMaintenanceForm form, BindException errors) throws Exception
+        public boolean handlePost(SystemMaintenanceForm form, BindException errors)
         {
             String jobGuid = new SystemMaintenanceJob(form.getTaskName(), getUser()).call();
 
@@ -2960,7 +2960,7 @@ public class AdminController extends SpringActionController
     public class AttachmentsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return AttachmentService.get().getAdminView(getViewContext().getActionURL());
         }
@@ -2977,7 +2977,7 @@ public class AdminController extends SpringActionController
     public class FindAttachmentParentsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return AttachmentService.get().getFindAttachmentParentsView();
         }
@@ -3021,7 +3021,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class MemTrackerAction extends SimpleViewAction<MemForm>
     {
-        public ModelAndView getView(MemForm form, BindException errors) throws Exception
+        public ModelAndView getView(MemForm form, BindException errors)
         {
             Set<Object> objectsToIgnore = MemTracker.getInstance().beforeReport();
 
@@ -3452,7 +3452,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DefineWebThemesAction extends SimpleViewAction<WebThemeForm>
     {
-        public ModelAndView getView(WebThemeForm form, BindException errors) throws Exception
+        public ModelAndView getView(WebThemeForm form, BindException errors)
         {
             if (form.isUpgradeInProgress())
             {
@@ -3474,7 +3474,7 @@ public class AdminController extends SpringActionController
 
     private abstract class AbstractWebThemeAction extends SimpleRedirectAction<WebThemeForm>
     {
-        protected abstract void handleTheme(WebThemeForm form, ActionURL redirectURL) throws Exception;
+        protected abstract void handleTheme(WebThemeForm form, ActionURL redirectURL);
 
         public ActionURL getRedirectURL(WebThemeForm form) throws Exception
         {
@@ -3757,7 +3757,7 @@ public class AdminController extends SpringActionController
     public class ModuleStatusAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             ModuleLoader loader = ModuleLoader.getInstance();
 
@@ -3921,7 +3921,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(NewInstallSiteSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(NewInstallSiteSettingsForm form, boolean reshow, BindException errors)
         {
             if (!reshow)
             {
@@ -3962,7 +3962,7 @@ public class AdminController extends SpringActionController
     public class InstallCompleteAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             JspView view = new JspView("/org/labkey/core/admin/installComplete.jsp");
 
@@ -4004,7 +4004,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class DbCheckerAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/checkDatabase.jsp", new DataCheckForm());
         }
@@ -4213,7 +4213,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(MissingValuesForm form, BindException errors) throws Exception
+        public boolean handlePost(MissingValuesForm form, BindException errors)
         {
             if (form.isInheritMvIndicators())
             {
@@ -4828,7 +4828,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(FolderSettingsForm form, BindException errors)
         {
             Container c = getContainer();
             WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
@@ -4929,7 +4929,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(FolderTypeForm form, BindException errors) throws Exception
+        public boolean handlePost(FolderTypeForm form, BindException errors)
         {
             Container container = getContainer();
             if (container.isRoot())
@@ -5726,7 +5726,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ConceptsForm form, BindException errors) throws Exception
+        public boolean handlePost(ConceptsForm form, BindException errors)
         {
             Lookup lookup = new Lookup(ContainerManager.getForId(form.getContainerId()), form.getSchemaName(), form.getQueryName());
             ConceptURIProperties.setLookup(getContainer(), form.getConceptURI(), lookup);
@@ -5743,12 +5743,12 @@ public class AdminController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(FolderAliasesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(FolderAliasesForm form, boolean reshow, BindException errors)
         {
             return new JspView<ViewContext>("/org/labkey/core/admin/folderAliases.jsp");
         }
 
-        public boolean handlePost(FolderAliasesForm form, BindException errors) throws Exception
+        public boolean handlePost(FolderAliasesForm form, BindException errors)
         {
             List<String> aliases = new ArrayList<>();
             if (form.getAliases() != null)
@@ -5819,14 +5819,14 @@ public class AdminController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors)
         {
             JspView<CustomEmailForm> result = new JspView<>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
             result.setTitle("Email Template");
             return result;
         }
 
-        public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomEmailForm form, BindException errors)
         {
             if (form.getTemplateClass() != null)
             {
@@ -6121,12 +6121,12 @@ public class AdminController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/renameFolder.jsp", form, errors);
         }
 
-        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
@@ -6216,7 +6216,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowMoveFolderTreeAction extends SimpleViewAction<ManageFoldersForm>
     {
-        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        public ModelAndView getView(ManageFoldersForm form, BindException errors)
         {
             return new MoveFolderTreeView(form, errors);
         }
@@ -6241,7 +6241,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class MoveFolderAction extends SimpleViewAction<ManageFoldersForm>
     {
-        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        public ModelAndView getView(ManageFoldersForm form, BindException errors)
         {
             Container c = getContainer();
             Container newParent =  ContainerManager.getForPath(form.getTarget());
@@ -6316,7 +6316,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ConfirmProjectMoveAction extends SimpleViewAction<ManageFoldersForm>
     {
-        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
+        public ModelAndView getView(ManageFoldersForm form, BindException errors)
         {
             getPageConfig().setTemplate(Template.Dialog);
             return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
@@ -6338,7 +6338,7 @@ public class AdminController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
 
@@ -6513,7 +6513,7 @@ public class AdminController extends SpringActionController
         }
 
 
-        public ModelAndView getView(SetFolderPermissionsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SetFolderPermissionsForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
 
@@ -6530,7 +6530,7 @@ public class AdminController extends SpringActionController
 
         }
 
-        public boolean handlePost(SetFolderPermissionsForm form, BindException errors) throws Exception
+        public boolean handlePost(SetFolderPermissionsForm form, BindException errors)
         {
             Container c = getContainer();
             String permissionType = form.getPermissionType();
@@ -6682,7 +6682,7 @@ public class AdminController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
             Container c = getContainer();
@@ -6700,7 +6700,7 @@ public class AdminController extends SpringActionController
 
         }
 
-        public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(ProjectSettingsForm form, BindException errors)
         {
             Container c = getContainer();
             String folderRootPath = StringUtils.trimToNull(form.getFolderRootPath());
@@ -6769,13 +6769,13 @@ public class AdminController extends SpringActionController
                 errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
         }
 
-        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(Template.Dialog);
             return new JspView<>("/org/labkey/core/admin/deleteFolder.jsp", form);
         }
 
-        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
             Container c = getContainer();
 
@@ -6828,12 +6828,12 @@ public class AdminController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(FolderReorderForm folderReorderForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(FolderReorderForm folderReorderForm, boolean reshow, BindException errors)
         {
             return new JspView<ViewContext>("/org/labkey/core/admin/reorderFolders.jsp");
         }
 
-        public boolean handlePost(FolderReorderForm form, BindException errors) throws Exception
+        public boolean handlePost(FolderReorderForm form, BindException errors)
         {
             return ReorderFolders(form, errors);
         }
@@ -6857,7 +6857,7 @@ public class AdminController extends SpringActionController
     public class ReorderFoldersApiAction extends MutatingApiAction<FolderReorderForm>
     {
         @Override
-        public ApiResponse execute(FolderReorderForm form, BindException errors) throws Exception
+        public ApiResponse execute(FolderReorderForm form, BindException errors)
         {
             return new ApiSimpleResponse("success", ReorderFolders(form, errors));
         }
@@ -6925,7 +6925,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class RevertFolderAction extends ApiAction<RevertFolderForm>
     {
-        public ApiResponse execute(RevertFolderForm form, BindException errors) throws Exception
+        public ApiResponse execute(RevertFolderForm form, BindException errors)
         {
             boolean success = false;
             Container revertContainer = ContainerManager.getForPath(form.getContainerPath());
@@ -7061,7 +7061,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors)
         {
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
@@ -7186,7 +7186,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             int eventId = 0;
             try
@@ -7232,7 +7232,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             long requestId = 0;
             try
@@ -7290,7 +7290,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().setTemplate(Template.Print);
             return new JspView("/org/labkey/core/admin/memTrackerViewer.jsp");
@@ -7315,7 +7315,7 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
-        public boolean handlePost(LoggingForm form, BindException errors) throws Exception
+        public boolean handlePost(LoggingForm form, BindException errors)
         {
             boolean on = SessionAppender.isLogging(getViewContext().getRequest());
             if (form.logging != on)
@@ -7333,7 +7333,7 @@ public class AdminController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(LoggingForm o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(LoggingForm o, boolean reshow, BindException errors)
         {
             SessionAppender.setLoggingForSession(getViewContext().getRequest(), true);
             getPageConfig().setTemplate(Template.Print);
@@ -7395,7 +7395,7 @@ public class AdminController extends SpringActionController
     public class LogAction extends SimpleViewAction<LogForm>
     {
         @Override
-        public ModelAndView getView(LogForm logForm, BindException errors) throws Exception
+        public ModelAndView getView(LogForm logForm, BindException errors)
         {
             // Could use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
             // \n to newlines to allow them at the beginning or end of the message as well.
@@ -7523,7 +7523,7 @@ public class AdminController extends SpringActionController
     public class ModulesAction extends SimpleViewAction<ModulesForm>
     {
         @Override
-        public ModelAndView getView(ModulesForm form, BindException errors) throws Exception
+        public ModelAndView getView(ModulesForm form, BindException errors)
         {
             ModuleLoader ml = ModuleLoader.getInstance();
             boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
@@ -7761,7 +7761,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ModuleForm form, BindException errors) throws Exception
+        public boolean handlePost(ModuleForm form, BindException errors)
         {
             ModuleLoader.getInstance().removeModule(form.getModuleContext());
 
@@ -7805,7 +7805,7 @@ public class AdminController extends SpringActionController
     public class ExperimentalFeatureAction extends ApiAction<ExperimentalFeaturesForm>
     {
         @Override
-        public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors) throws Exception
+        public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors)
         {
             String feature = StringUtils.trimToNull(form.getFeature());
             if (feature == null)
@@ -7835,7 +7835,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Object form, boolean reshow, BindException errors)
         {
             JspView view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
             view.setFrame(WebPartView.FrameType.NONE);
@@ -7843,7 +7843,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(Object form, BindException errors) throws Exception
+        public boolean handlePost(Object form, BindException errors)
         {
             throw new UnsupportedOperationException("Nope");
         }
@@ -7894,13 +7894,13 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Object form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", new FolderTypesBean(FolderTypeManager.get().getAllFolderTypes(), FolderTypeManager.get().getEnabledFolderTypes()));
         }
 
         @Override
-        public boolean handlePost(Object form, BindException errors) throws Exception
+        public boolean handlePost(Object form, BindException errors)
         {
             List<FolderType> enabledFolderTypes = new ArrayList<>();
             for (FolderType folderType : FolderTypeManager.get().getAllFolderTypes())
@@ -7931,7 +7931,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeMenuAction extends ApiAction<CustomizeMenuForm>
     {
-        public ApiResponse execute(CustomizeMenuForm form, BindException errors) throws Exception
+        public ApiResponse execute(CustomizeMenuForm form, BindException errors)
         {
             if (null != form.getUrl())
             {
@@ -8088,7 +8088,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(TabActionForm form, BindException errors) throws Exception
+        public ApiResponse execute(TabActionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -8196,7 +8196,7 @@ public class AdminController extends SpringActionController
     public class MoveTabAction extends ApiAction<MoveTabForm>
     {
         @Override
-        public ApiResponse execute(MoveTabForm form, BindException errors) throws Exception
+        public ApiResponse execute(MoveTabForm form, BindException errors)
         {
             final Map<String, Object> properties = new HashMap<>();
             Container tabContainer = getContainer().getContainerFor(Container.DataType.tabs);
@@ -8382,7 +8382,7 @@ public class AdminController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(TabActionForm form, BindException errors) throws Exception
+        public ApiResponse execute(TabActionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             validateCommand(form, errors);
@@ -8408,7 +8408,7 @@ public class AdminController extends SpringActionController
     public class ClearDeletedTabFoldersAction extends ApiAction<DeletedFoldersForm>
     {
         @Override
-        public ApiResponse execute(DeletedFoldersForm form, BindException errors) throws Exception
+        public ApiResponse execute(DeletedFoldersForm form, BindException errors)
         {
             Container container = ContainerManager.getForPath(form.getContainerPath());
             for (String tabName : form.getResurrectFolders())
@@ -8513,7 +8513,7 @@ public class AdminController extends SpringActionController
         public void validateCommand(ShortURLForm target, Errors errors) {}
 
         @Override
-        public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors)
         {
             form.setSavedShortURLs(ShortURLService.get().getAllShortURLs());
             JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
@@ -8625,7 +8625,7 @@ public class AdminController extends SpringActionController
     public class LogClientExceptionAction extends MutatingApiAction<ExceptionForm>
     {
         @Override
-        public Object execute(ExceptionForm form, BindException errors) throws Exception
+        public Object execute(ExceptionForm form, BindException errors)
         {
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
             {
@@ -8770,7 +8770,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             List<String> urls = new ArrayList<>(1000);
 
@@ -8896,7 +8896,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public Object execute(ValueForm valueForm, BindException errors) throws Exception
+        public Object execute(ValueForm valueForm, BindException errors)
         {
             if (!AppProps.getInstance().isDevMode())
                 throw new UnsupportedOperationException("only allowed in dev mode");

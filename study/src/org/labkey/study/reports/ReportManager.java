@@ -295,8 +295,8 @@ public class ReportManager implements DatasetManager.DatasetListener
     public interface ReportView extends Report
     {
         void init(ViewContext context);
-        void deleteView(ViewContext context) throws Exception;
-        void saveView(ViewContext context) throws Exception;
+        void deleteView(ViewContext context);
+        void saveView(ViewContext context);
 
         Integer getShowWithDataset();
         void setShowWithDataset(Integer dataset);

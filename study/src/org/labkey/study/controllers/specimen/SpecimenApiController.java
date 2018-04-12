@@ -201,7 +201,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetRepositoriesAction extends ApiAction<SpecimenApiForm>
     {
-        public ApiResponse execute(SpecimenApiForm form, BindException errors) throws Exception
+        public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             final List<Map<String, Object>> repositories = new ArrayList<>();
             for (LocationImpl location : StudyManager.getInstance().getSites(getContainer()))
@@ -219,7 +219,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetOpenRequestsAction extends ApiAction<GetRequestsForm>
     {
-        public ApiResponse execute(GetRequestsForm requestsForm, BindException errors) throws Exception
+        public ApiResponse execute(GetRequestsForm requestsForm, BindException errors)
         {
             Container container = requestsForm.getViewContext().getContainer();
             User user = requestsForm.getViewContext().getUser();
@@ -252,7 +252,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetRequestAction extends ApiAction<RequestIdForm>
     {
-        public ApiResponse execute(RequestIdForm requestIdForm, BindException errors) throws Exception
+        public ApiResponse execute(RequestIdForm requestIdForm, BindException errors)
         {
             SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
             final Map<String, Object> response = new HashMap<>();
@@ -295,7 +295,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetProvidingLocations extends ApiAction<GetProvidingLocationsForm>
     {
-        public ApiResponse execute(GetProvidingLocationsForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
             Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
@@ -313,7 +313,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetVialsByRowIdAction extends ApiAction<GetVialsByRowIdForm>
     {
-        public ApiResponse execute(GetVialsByRowIdForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetVialsByRowIdForm form, BindException errors)
         {
             Container container = form.getViewContext().getContainer();
             final Map<String, Object> response = new HashMap<>();
@@ -605,7 +605,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(11.2)
     public class GetVialTypeSummaryAction extends ApiAction<SpecimenApiForm>
     {
-        public ApiResponse execute(SpecimenApiForm form, BindException errors) throws Exception
+        public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             Container container = form.getViewContext().getContainer();
             SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUser());
@@ -631,7 +631,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(13.1)
     public class GetSpecimenWebPartGroupsAction extends ApiAction<SpecimenApiForm>
     {
-        public ApiResponse execute(SpecimenApiForm form, BindException errors) throws Exception
+        public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             // Build a JSON response with up to 2 groupings, each with up to 3 levels
             // VALUE -->

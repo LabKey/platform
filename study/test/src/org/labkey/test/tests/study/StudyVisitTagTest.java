@@ -124,7 +124,7 @@ public class StudyVisitTagTest extends StudyBaseTest
     }
 
     @Override
-    protected void doVerifySteps() throws Exception
+    protected void doVerifySteps()
     {
         final List<String> VISIT_TAG_NAMES = Arrays.asList("day0", "finalvaccination", "finalvisit", "firstvaccination", "notsingleuse", "peakimmunogenicity");
         final List<String> VISIT_TAG_CAPTIONS = Arrays.asList("Day 0 (meaning varies)", "Final Vaccination", "Final visit", "First Vaccination", "Not Single Use Tag", "Predicted peak immunogenicity visit");

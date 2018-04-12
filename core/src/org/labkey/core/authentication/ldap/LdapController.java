@@ -66,7 +66,7 @@ public class LdapController extends SpringActionController
     @CSRF
     public class ConfigureAction extends FormViewAction<Config>
     {
-        public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Config form, boolean reshow, BindException errors)
         {
             form.setSASL(LdapAuthenticationManager.useSASL());
             return new JspView<>("/org/labkey/core/authentication/ldap/configure.jsp", form, errors);
@@ -96,7 +96,7 @@ public class LdapController extends SpringActionController
             }
         }
 
-        public boolean handlePost(Config config, BindException errors) throws Exception
+        public boolean handlePost(Config config, BindException errors)
         {
             LdapAuthenticationManager.saveProperties(config);
             return true;
@@ -181,7 +181,7 @@ public class LdapController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(TestLdapForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(TestLdapForm form, boolean reshow, BindException errors)
         {
             if (!reshow)
                 form.setSASL(LdapAuthenticationManager.useSASL());
@@ -194,7 +194,7 @@ public class LdapController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(TestLdapForm form, BindException errors) throws Exception
+        public boolean handlePost(TestLdapForm form, BindException errors)
         {
             try
             {

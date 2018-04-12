@@ -48,5 +48,5 @@ public interface ListEditorService extends LookupService
     public List<String> getListNames(); // names in use already
     public static final int MAX_NAME_LENGTH = 64;
     public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws Exception;
-    public GWTDomain getDomainDescriptor(GWTList list) throws Exception;
+    public GWTDomain getDomainDescriptor(GWTList list);
 }

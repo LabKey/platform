@@ -729,7 +729,7 @@ public class AnnouncementsController extends SpringActionController
         private URLHelper _returnURL;
         protected HttpView _attachmentErrorView;
 
-        protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors) throws Exception;
+        protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors);
 
         public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {

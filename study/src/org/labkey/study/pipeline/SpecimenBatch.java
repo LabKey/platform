@@ -50,7 +50,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
 
     public static final FileType ARCHIVE_FILE_TYPE = new FileType(".specimens");
 
-    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge) throws SQLException
+    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge)
     {
         super(info, definitionFile, root);
         _isMerge = merge;

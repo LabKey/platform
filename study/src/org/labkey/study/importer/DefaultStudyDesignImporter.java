@@ -441,7 +441,7 @@ public class DefaultStudyDesignImporter
         }
 
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
         {
             initializeData();
             List<Map<String, Object>> newRows = new ArrayList<>();

@@ -100,7 +100,7 @@ public class SimpleQueryTransformStep extends TransformTask
         return sourceScope;
     }
 
-    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException, PipelineJobException
+    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws PipelineJobException
     {
         boolean validationResult = validate(meta, c, u, log);
         if (!validationResult)

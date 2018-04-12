@@ -51,7 +51,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
         super(FileSettingsForm.class);
     }
 
-    public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors)
     {
         if (form.isUpgrade())
             getPageConfig().setTemplate(PageConfig.Template.Dialog);

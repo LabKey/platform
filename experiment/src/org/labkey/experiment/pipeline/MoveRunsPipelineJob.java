@@ -36,7 +36,7 @@ public class MoveRunsPipelineJob extends PipelineJob
     private final int[] _runIds;
     private Container _sourceContainer;
 
-    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds, PipeRoot root) throws IOException
+    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds, PipeRoot root)
     {
         super(ExperimentPipelineProvider.NAME, info, root);
         _runIds = runIds;

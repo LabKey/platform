@@ -885,7 +885,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public String getCustomViewNameFromEntityId(Container container, String entityId) throws SQLException
+    public String getCustomViewNameFromEntityId(Container container, String entityId)
     {
         CstmView view = QueryManager.get().getCustomView(container, entityId);
         return view != null ? view.getName() : null;

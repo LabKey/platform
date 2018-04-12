@@ -269,7 +269,7 @@ public class CoreController extends SpringActionController
     public class ProjectsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Portal.WebPart config = new Portal.WebPart();
             config.setIndex(1);
@@ -623,7 +623,7 @@ public class CoreController extends SpringActionController
     public class CreateContainerAction extends ApiAction<SimpleApiJsonForm>
     {
         @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
             if (json == null)
@@ -699,7 +699,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
             if (target.requiresAdminToDelete())
             {
@@ -840,7 +840,7 @@ public class CoreController extends SpringActionController
     public class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookBean>
     {
         @Override
-        public ModelAndView getView(CreateWorkbookBean bean, BindException errors) throws Exception
+        public ModelAndView getView(CreateWorkbookBean bean, BindException errors)
         {
             if (bean.getTitle() == null)
             {
@@ -913,7 +913,7 @@ public class CoreController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class MoveWorkbooksAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container parentContainer = getContainer();
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
@@ -1233,7 +1233,7 @@ public class CoreController extends SpringActionController
     public class GetContainerTreeRootInfoAction extends ApiAction<Object>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -1323,7 +1323,7 @@ public class CoreController extends SpringActionController
     public class GetFolderTypesAction extends ApiAction<Object>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             Map<String, Object> folderTypes = new HashMap<>();
             for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes())
@@ -1367,7 +1367,7 @@ public class CoreController extends SpringActionController
     public class GetModulePropertiesAction extends ApiAction<ModulePropertiesForm>
     {
         @Override
-        public ApiResponse execute(ModulePropertiesForm form, BindException errors) throws Exception
+        public ApiResponse execute(ModulePropertiesForm form, BindException errors)
         {
             JSONObject ret = new JSONObject();
 
@@ -1507,7 +1507,7 @@ public class CoreController extends SpringActionController
     public class SaveModulePropertiesAction extends ApiAction<SaveModulePropertiesForm>
     {
         @Override
-        public ApiResponse execute(SaveModulePropertiesForm form, BindException errors) throws Exception
+        public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
         {
             ViewContext ctx = getViewContext();
             JSONObject formData = form.getJsonObject();
@@ -1586,7 +1586,7 @@ public class CoreController extends SpringActionController
     public class GetContainerInfoAction extends ApiAction<ContainerInfoForm>
     {
         @Override
-        public ApiResponse execute(ContainerInfoForm form, BindException errors) throws Exception
+        public ApiResponse execute(ContainerInfoForm form, BindException errors)
         {
             // Provide information about container, specifically an array of child tab folders that were deleted
             Container container = form.getContainerPath() != null ? ContainerManager.getForPath(form.getContainerPath()) : getContainer();
@@ -1635,7 +1635,7 @@ public class CoreController extends SpringActionController
     public class GetRegisteredFolderWritersAction extends ApiAction<FolderWriterForm>
     {
         @Override
-        public ApiResponse execute(FolderWriterForm form, BindException errors) throws Exception
+        public ApiResponse execute(FolderWriterForm form, BindException errors)
         {
             FolderSerializationRegistry registry = FolderSerializationRegistry.get();
             if (null == registry)
@@ -1886,7 +1886,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public Object execute(LoadLibraryForm form, BindException errors) throws Exception
+        public Object execute(LoadLibraryForm form, BindException errors)
         {
             String[] requestLibraries = form.getLibrary();
 
@@ -1929,7 +1929,7 @@ public class CoreController extends SpringActionController
     public class StyleGuideAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/view/styleGuide.jsp", o, errors);
         }

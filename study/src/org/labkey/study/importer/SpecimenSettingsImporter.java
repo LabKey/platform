@@ -312,7 +312,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importDefaultRequirements(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importDefaultRequirements(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = xmlSettings.getDefaultRequirements();
         if (xmlDefRequirements != null)
@@ -502,7 +502,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestabilityRules(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importRequestabilityRules(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen requestability rules");
         SpecimenSettingsType.RequestabilityRules xmlRules = xmlSettings.getRequestabilityRules();

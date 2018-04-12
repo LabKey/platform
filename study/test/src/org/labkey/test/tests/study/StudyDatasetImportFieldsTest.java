@@ -65,7 +65,7 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
     }
 
     @Override
-    protected void doVerifySteps() throws Exception
+    protected void doVerifySteps()
     {
         clickButton("Create Study");
         waitForText(FOLDER_NAME + " Study");

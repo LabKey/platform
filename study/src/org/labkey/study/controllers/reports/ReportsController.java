@@ -163,7 +163,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class DeleteReportAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             String reportIdParam = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
@@ -193,7 +193,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteCustomQueryAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             String viewName = getRequest().getParameter("reportView");
             String defName = getRequest().getParameter("defName");
@@ -225,7 +225,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class EnrollmentReportAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudyRedirectIfNull(), true);
 
@@ -285,7 +285,7 @@ public class ReportsController extends BaseStudyController
         {
         }
 
-        public boolean handlePost(ColumnPickerForm columnPickerForm, BindException errors) throws Exception
+        public boolean handlePost(ColumnPickerForm columnPickerForm, BindException errors)
         {
             return true;
         }
@@ -313,7 +313,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ExternalReportAction extends FormViewAction<ExternalReportForm>
     {
-        public ModelAndView getView(ExternalReportForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExternalReportForm form, boolean reshow, BindException errors)
         {
             ExternalReport extReport = form.getBean();
             JspView<ExternalReportBean> designer = new JspView<>("/org/labkey/study/view/externalReportDesigner.jsp", new ExternalReportBean(getViewContext(), extReport, "Dataset"));
@@ -331,7 +331,7 @@ public class ReportsController extends BaseStudyController
         {
         }
 
-        public boolean handlePost(ExternalReportForm externalReportForm, BindException errors) throws Exception
+        public boolean handlePost(ExternalReportForm externalReportForm, BindException errors)
         {
             return true;
         }
@@ -398,7 +398,7 @@ public class ReportsController extends BaseStudyController
      */
     public class SaveReportAction extends SimpleViewAction<SaveReportForm>
     {
-        public ModelAndView getView(SaveReportForm form, BindException errors) throws Exception
+        public ModelAndView getView(SaveReportForm form, BindException errors)
         {
             Report report = form.getReport(getViewContext());
             if (report != null)
@@ -451,7 +451,7 @@ public class ReportsController extends BaseStudyController
     {
         int _savedReportId = -1;
 
-        public ModelAndView getView(SaveReportViewForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SaveReportViewForm form, boolean reshow, BindException errors)
         {
             form.setErrors(errors);
             if (form.getReport(getViewContext()) != null)
@@ -471,7 +471,7 @@ public class ReportsController extends BaseStudyController
                         "'. Please specify a different name.");
         }
 
-        public boolean handlePost(SaveReportViewForm form, BindException errors) throws Exception
+        public boolean handlePost(SaveReportViewForm form, BindException errors)
         {
             Report report = form.getReport(getViewContext());
             if (report != null)
@@ -676,7 +676,7 @@ public class ReportsController extends BaseStudyController
             return colMap;
         }
 
-        public boolean handlePost(CrosstabDesignBean crosstabDesignBean, BindException errors) throws Exception
+        public boolean handlePost(CrosstabDesignBean crosstabDesignBean, BindException errors)
         {
             return false;
         }
@@ -734,7 +734,7 @@ public class ReportsController extends BaseStudyController
     public class ExportExcelConfigureAction extends SimpleViewAction
     {
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             setHelpTopic(new HelpTopic("exportExcel"));
 
@@ -784,7 +784,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>
     {
-        public ModelAndView getView(QueryReportForm form, BindException errors) throws Exception
+        public ModelAndView getView(QueryReportForm form, BindException errors)
         {
             setHelpTopic(new HelpTopic("datasetViews"));
             return new JspView<>("/org/labkey/study/view/createQueryReport.jsp",
@@ -801,7 +801,7 @@ public class ReportsController extends BaseStudyController
     public class CreateCrosstabReportAction extends SimpleViewAction
     {
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             setHelpTopic(new HelpTopic("crosstabReports"));
             return new JspView<>("/org/labkey/study/view/createCrosstabReport.jsp",
@@ -1367,7 +1367,7 @@ public class ReportsController extends BaseStudyController
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
         int _datasetId = 0;
-        public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
+        public ModelAndView getView(ChartDesignerBean form, BindException errors)
         {
             ViewContext context = getViewContext();
             if (StringUtils.isEmpty(form.getSchemaName()))
@@ -1678,7 +1678,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class ParticipantReportAction extends SimpleViewAction<ParticipantReportForm>
     {
-        public ModelAndView getView(ParticipantReportForm form, BindException errors) throws Exception
+        public ModelAndView getView(ParticipantReportForm form, BindException errors)
         {
             form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
             form.setExpanded(!(getViewContext().get("reportWebPart") != null));
@@ -1776,7 +1776,7 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(ParticipantReportForm form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantReportForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
@@ -1935,7 +1935,7 @@ public class ReportsController extends BaseStudyController
         private String _actionName = "Create ";
 
         @Override
-        public ModelAndView getView(ProgressReportForm form, BindException errors) throws Exception
+        public ModelAndView getView(ProgressReportForm form, BindException errors)
         {
             if (form.getReportId() != null)
                 _actionName = "Edit ";
@@ -1957,7 +1957,7 @@ public class ReportsController extends BaseStudyController
     public class SaveAssayProgressReportAction extends MutatingApiAction<ProgressReportForm>
     {
         @Override
-        public ApiResponse execute(ProgressReportForm form, BindException errors) throws Exception
+        public ApiResponse execute(ProgressReportForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             String key = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), null);
@@ -2078,7 +2078,7 @@ public class ReportsController extends BaseStudyController
     public class GetAssayReportDataAction extends ApiAction<ProgressReportForm>
     {
         @Override
-        public ApiResponse execute(ProgressReportForm form, BindException errors) throws Exception
+        public ApiResponse execute(ProgressReportForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             ReportIdentifier reportIdentifier = form.getReportId();

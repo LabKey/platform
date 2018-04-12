@@ -99,7 +99,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     private PortalHelper _portalHelper;
 
     @BeforeClass
-    public static void doSetup() throws Exception
+    public static void doSetup()
     {
         StudyProtocolDesignerTest initTest = (StudyProtocolDesignerTest)getCurrentTest();
 

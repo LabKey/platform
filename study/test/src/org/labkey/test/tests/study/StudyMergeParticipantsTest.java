@@ -186,7 +186,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
     }
 
     @Override
-    public void runApiTests() throws Exception
+    public void runApiTests()
     {
         // No API tests (yet... ever?)
     }

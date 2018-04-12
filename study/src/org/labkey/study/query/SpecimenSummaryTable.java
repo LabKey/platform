@@ -239,7 +239,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         private Map<String, String> _commentCache;
 
-        private void addComments(Container container, Set<String> hashes, Map<String, List<SpecimenComment>> hashToComments) throws SQLException
+        private void addComments(Container container, Set<String> hashes, Map<String, List<SpecimenComment>> hashToComments)
         {
             SpecimenComment[] comments = SpecimenManager.getInstance().getSpecimenCommentForSpecimens(container, hashes);
             for (SpecimenComment comment : comments)

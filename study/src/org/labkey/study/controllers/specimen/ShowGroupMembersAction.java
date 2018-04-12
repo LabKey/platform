@@ -54,7 +54,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     {
     }
 
-    public ModelAndView getView(UpdateGroupForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(UpdateGroupForm form, boolean reshow, BindException errors)
     {
         SpecimenRequestActor actor = getActor(form);
         LocationImpl location = getLocation(form);

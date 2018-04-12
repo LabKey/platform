@@ -157,7 +157,7 @@ public class DesignerController extends SpringActionController
     public class BeginAction extends SimpleViewAction
     {
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new StudyDesignsWebPart(getViewContext(), false);
         }
@@ -174,7 +174,7 @@ public class DesignerController extends SpringActionController
 
         public void validateCommand(Object target, Errors errors) {}
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             Set<String> selectedRows = DataRegionSelection.getSelected(getViewContext(), true);
             for (String row : selectedRows)

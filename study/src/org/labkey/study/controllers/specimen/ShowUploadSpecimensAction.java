@@ -59,7 +59,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             errors.reject(SpringActionController.ERROR_MSG, "Please supply data to upload");
     }
 
-    public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors)
     {
         Container container = getContainer();
         RepositorySettings settings =  SpecimenManager.getInstance().getRepositorySettings(container);
@@ -288,7 +288,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     @RequiresPermission(AdminPermission.class)
     public static class ImportCompleteAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
             ActionURL samplesLink = new ActionURL(SpecimenController.BeginAction.class, getContainer());

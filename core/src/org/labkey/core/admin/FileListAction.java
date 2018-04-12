@@ -33,7 +33,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class FileListAction extends SimpleViewAction
 {
     @Override
-    public ModelAndView getView(Object o, BindException errors) throws Exception
+    public ModelAndView getView(Object o, BindException errors)
     {
         ViewContext context = getViewContext();
         QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.FILES_TABLE_NAME);

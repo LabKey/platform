@@ -205,7 +205,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             super(cc, name, null);
         }
 
-        _Dimension(CachedCube cc, RolapCubeDef.DimensionDef ddef) throws OlapException
+        _Dimension(CachedCube cc, RolapCubeDef.DimensionDef ddef)
         {
             this(cc, ddef.getName());
         }
@@ -251,7 +251,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
 
-        _Hierarchy(CachedCube cc, _Dimension dimension, RolapCubeDef.HierarchyDef h) throws OlapException
+        _Hierarchy(CachedCube cc, _Dimension dimension, RolapCubeDef.HierarchyDef h)
         {
             this(cc, dimension, h.getName());
         }
@@ -338,7 +338,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
 
-        _Level(CachedCube cc, _Hierarchy h, RolapCubeDef.LevelDef l, int depth) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, RolapCubeDef.LevelDef l, int depth)
         {
             this(cc, h, l.getName(), depth);
         }
@@ -677,7 +677,7 @@ public class CachedCube extends MetadataElementBase implements Cube
 
     public static class _NotNullMember extends _Member
     {
-        _NotNullMember(CachedCube cc, _Level level, _Member parent, boolean isLeaf) throws OlapException
+        _NotNullMember(CachedCube cc, _Level level, _Member parent, boolean isLeaf)
         {
             super(cc, level, parent, "#notnull", isLeaf);
         }
@@ -704,7 +704,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             memberType = Type.MEASURE;
         }
 
-        _Measure(CachedCube cc, _Level l, String name) throws OlapException
+        _Measure(CachedCube cc, _Level l, String name)
         {
             super(cc, l, null, name, true);
             memberType = Type.MEASURE;
@@ -959,7 +959,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         final JdbcType type;
         final Map<Object,_Member> impl;
 
-        public static KeyMap create(JdbcType type, Collection<Member> members) throws OlapException
+        public static KeyMap create(JdbcType type, Collection<Member> members)
         {
             Map<Object,_Member> map;
 

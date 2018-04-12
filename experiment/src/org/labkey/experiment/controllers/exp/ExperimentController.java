@@ -304,7 +304,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class) @ActionNames("showRunGroups, showExperiments")
     public class ShowRunGroupsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             RunGroupWebPart webPart = new RunGroupWebPart(getViewContext(), false);
             webPart.setFrame(WebPartView.FrameType.NONE);
@@ -461,7 +461,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ListMaterialSourcesAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             SampleSetWebPart view = new SampleSetWebPart(false, getViewContext());
             view.setFrame(WebPartView.FrameType.NONE);
@@ -482,7 +482,7 @@ public class ExperimentController extends SpringActionController
     {
         private ExpSampleSetImpl _source;
 
-        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
             _source = ExperimentServiceImpl.get().getSampleSet(form.getRowId());
             if (_source == null && form.getLsid() != null)
@@ -664,7 +664,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowAllMaterialsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Materials", ExpSchema.TableType.Materials.toString());
@@ -876,7 +876,7 @@ public class ExperimentController extends SpringActionController
     public class ListDataClassAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             DataClassWebPart view = new DataClassWebPart(false, getViewContext(), null);
             view.setFrame(WebPartView.FrameType.NONE);
@@ -913,7 +913,7 @@ public class ExperimentController extends SpringActionController
         private ExpDataClassImpl _dataClass;
 
         @Override
-        public ModelAndView getView(DataClassForm form, BindException errors) throws Exception
+        public ModelAndView getView(DataClassForm form, BindException errors)
         {
             if (form.getName() != null)
             {
@@ -1007,7 +1007,7 @@ public class ExperimentController extends SpringActionController
             DataRegionSelection.clearAll(getViewContext(), selectionKey);
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpDataClass> dataClasses = getDataClasses(deleteForm);
 
@@ -1093,7 +1093,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(InsertDataClassForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(InsertDataClassForm form, boolean reshow, BindException errors)
         {
             Set<String> messages = new HashSet<>();
             Set<String> templates = new TreeSet<>();
@@ -1333,7 +1333,7 @@ public class ExperimentController extends SpringActionController
     {
         private ExpRunImpl _experimentRun;
 
-        public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExperimentRunForm form, BindException errors)
         {
             _experimentRun = form.lookupRun();
             ensureCorrectContainer(getContainer(), _experimentRun, getViewContext());
@@ -1452,7 +1452,7 @@ public class ExperimentController extends SpringActionController
             throw new UnsupportedOperationException();
         }
 
-        public ModelAndView getView(ToggleRunExperimentMembershipForm form, BindException errors) throws Exception
+        public ModelAndView getView(ToggleRunExperimentMembershipForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
             // Check if the user has permission to update this run
@@ -2241,7 +2241,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ConvertHtmlToExcelForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ConvertHtmlToExcelForm form, boolean reshow, BindException errors)
         {
             String html =
                     "<form method=POST><textarea name=\"htmlFragment\" cols=100 rows=40>" +
@@ -2323,7 +2323,7 @@ public class ExperimentController extends SpringActionController
         private ExpProtocolApplicationImpl _app;
         private ExpRun _run;
 
-        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
             _app = ExperimentServiceImpl.get().getExpProtocolApplication(form.getRowId());
             if (_app == null)
@@ -2373,7 +2373,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowProtocolGridAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new ProtocolWebPart(false, getViewContext());
         }
@@ -2389,7 +2389,7 @@ public class ExperimentController extends SpringActionController
     {
         private ExpProtocol _protocol;
 
-        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
             _protocol = ExperimentService.get().getExpProtocol(form.getRowId());
             if (_protocol == null)
@@ -2438,7 +2438,7 @@ public class ExperimentController extends SpringActionController
         private ExpProtocol _parentProtocol;
         private ProtocolActionStepDetail _actionStep;
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL url = getViewContext().getActionURL();
 
@@ -2611,7 +2611,7 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpRun> runs = new ArrayList<>();
             for (int runId : deleteForm.getIds(false))
@@ -2745,7 +2745,7 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
             List<ExpProtocol> protocols = getProtocols(deleteForm);
@@ -2832,7 +2832,7 @@ public class ExperimentController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpMaterial> materials = getMaterials(deleteForm, false);
             List<ExpRun> runs = getRuns(materials);
@@ -2934,7 +2934,7 @@ public class ExperimentController extends SpringActionController
             return datas.stream().map(d -> CaseInsensitiveHashMap.<Object>of("rowId", d.getRowId())).collect(Collectors.toList());
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, false);
@@ -2986,7 +2986,7 @@ public class ExperimentController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpExperiment> experiments = lookupExperiments(deleteForm);
 
@@ -3070,7 +3070,7 @@ public class ExperimentController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
             ExpSampleSet defaultSampleSet = ExperimentService.get().ensureDefaultSampleSet();
@@ -3134,7 +3134,7 @@ public class ExperimentController extends SpringActionController
     {
         private ExpSampleSet _sampleSet;
 
-        public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
+        public ModelAndView getView(MaterialSourceForm form, BindException errors)
         {
             try
             {
@@ -3243,7 +3243,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
-        public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
+        public ModelAndView getView(MaterialSourceForm form, BindException errors)
         {
             return new InsertView(getMaterialSourceRegion(getViewContext(), false), form, errors);
         }
@@ -3313,7 +3313,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(UploadMaterialSetForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(UploadMaterialSetForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
         }
@@ -3450,7 +3450,7 @@ public class ExperimentController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
@@ -4203,7 +4203,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ResolveLSIDAction extends SimpleViewAction<LsidForm>
     {
-        public ModelAndView getView(LsidForm form, BindException errors) throws Exception
+        public ModelAndView getView(LsidForm form, BindException errors)
         {
             String message = "";
             if (!PageFlowUtil.empty(form.getLsid()))
@@ -4364,7 +4364,7 @@ public class ExperimentController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(DeriveMaterialForm form, BindException errors) throws Exception
+        public ModelAndView getView(DeriveMaterialForm form, BindException errors)
         {
             if (!_materials.get(0).getContainer().equals(getContainer()))
             {
@@ -4500,7 +4500,7 @@ public class ExperimentController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(DeriveMaterialForm form, BindException errors) throws Exception
+        public ModelAndView getView(DeriveMaterialForm form, BindException errors)
         {
             Container c = getContainer();
 
@@ -5292,7 +5292,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class MoveRunsLocationAction extends SimpleViewAction<MoveRunsForm>
     {
-        public ModelAndView getView(MoveRunsForm form, BindException errors) throws Exception
+        public ModelAndView getView(MoveRunsForm form, BindException errors)
         {
             ActionURL moveURL = new ActionURL(MoveRunsAction.class, getContainer());
             PipelineRootContainerTree ct = new PipelineRootContainerTree(getUser(), moveURL)
@@ -5453,7 +5453,7 @@ public class ExperimentController extends SpringActionController
     public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
         private ExperimentRunForm _form;
-        public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExperimentRunForm form, BindException errors)
         {
             _form = form;
             return new GraphMoreGrid(getContainer(), errors, getViewContext().getActionURL());

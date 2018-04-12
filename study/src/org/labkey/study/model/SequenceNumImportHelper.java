@@ -90,7 +90,7 @@ public class SequenceNumImportHelper
         return new Callable<Object>()
         {
             @Override
-            public Object call() throws Exception
+            public Object call()
             {
                 Object seq = null==sequenceIndex ? null : it.get(sequenceIndex);
                 Object d = null==dateIndex ? null : it.get(dateIndex);

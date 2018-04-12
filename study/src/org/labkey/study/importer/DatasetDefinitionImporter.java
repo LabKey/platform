@@ -59,7 +59,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
     public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
-    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, XmlException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;

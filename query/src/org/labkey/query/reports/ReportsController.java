@@ -372,7 +372,7 @@ public class ReportsController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {
-        public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
+        public ModelAndView getView(ChartDesignerBean form, BindException errors)
         {
             Map<String, String> props = new HashMap<>();
             for (Pair<String, String> param : form.getParameters())
@@ -510,7 +510,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DeleteReportAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             String reportId = getViewContext().getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
             String forwardUrl = getViewContext().getRequest().getParameter(ReportUtil.FORWARD_URL);
@@ -538,7 +538,7 @@ public class ReportsController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureReportsAndScriptsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/query/reports/view/configReportsAndScripts.jsp");
         }
@@ -554,7 +554,7 @@ public class ReportsController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesSummaryAction extends ApiAction
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             List<Map<String, Object>> views = new ArrayList<>();
 
@@ -655,7 +655,7 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(LabKeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
+        public ApiResponse execute(LabKeyScriptEngineManager.EngineDefinition def, BindException errors)
         {
             LabKeyScriptEngineManager.saveDefinition(def);
 
@@ -667,7 +667,7 @@ public class ReportsController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesDeleteAction extends ApiAction<LabKeyScriptEngineManager.EngineDefinition>
     {
-        public ApiResponse execute(LabKeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
+        public ApiResponse execute(LabKeyScriptEngineManager.EngineDefinition def, BindException errors)
         {
             LabKeyScriptEngineManager.deleteDefinition(def);
             return new ApiSimpleResponse("success", true);
@@ -1112,7 +1112,7 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public boolean handlePost(ScriptReportBean form, BindException errors) throws Exception
+        public boolean handlePost(ScriptReportBean form, BindException errors)
         {
             return true;
         }
@@ -1311,7 +1311,7 @@ public class ReportsController extends SpringActionController
         List<User> _validRecipients = new ArrayList<>();
 
         @Override
-        public ModelAndView getView(ShareReportForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ShareReportForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/query/reports/view/shareReport.jsp", form, errors);
         }
@@ -1993,7 +1993,7 @@ public class ReportsController extends SpringActionController
         }
 
 
-        abstract protected R initializeReportForSave(F form) throws Exception;
+        abstract protected R initializeReportForSave(F form);
 
         protected void afterReportSave(F form, R report) throws Exception
         {
@@ -2632,7 +2632,7 @@ public class ReportsController extends SpringActionController
             return action.getView(null, errors);
         }
 
-        public boolean handlePost(ReportDesignBean form, BindException errors) throws Exception
+        public boolean handlePost(ReportDesignBean form, BindException errors)
         {
             _report.getDescriptor().setReportName(_newReportName);
             ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
@@ -2654,7 +2654,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ReportSectionsAction extends ApiAction
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             ReportIdentifier reportId = ReportService.get().getReportIdentifier((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()));
@@ -2804,7 +2804,7 @@ public class ReportsController extends SpringActionController
     {
         String _reportName;
 
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        public ModelAndView getView(ReportDesignBean form, BindException errors)
         {
             ReportIdentifier id = form.getReportId();
 
@@ -3531,7 +3531,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetCategoriesAction extends ApiAction<BrowseDataForm>
     {
-        public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
+        public ApiResponse execute(BrowseDataForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> categoryList = new ArrayList<>();
@@ -3655,7 +3655,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class SaveCategoriesAction extends MutatingApiAction<CategoriesForm>
     {
-        public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
+        public ApiResponse execute(CategoriesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             DbScope scope = QueryManager.get().getDbSchema().getScope();
@@ -3692,7 +3692,7 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(CategoriesForm form, BindException errors) throws Exception
+        public ApiResponse execute(CategoriesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             DbScope scope = QueryManager.get().getDbSchema().getScope();
@@ -3935,7 +3935,7 @@ public class ReportsController extends SpringActionController
     public class GetReportAction extends ApiAction<ReportForm>
     {
         @Override
-        public ApiResponse execute(ReportForm form, BindException errors) throws Exception
+        public ApiResponse execute(ReportForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Report report = null;
@@ -3957,7 +3957,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ManageNotificationsAction extends SimpleViewAction<NotificationsForm>
     {
-        public ModelAndView getView(NotificationsForm form, BindException errors) throws Exception
+        public ModelAndView getView(NotificationsForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/query/reports/view/manageNotifications.jsp", form, errors);
         }
@@ -4004,7 +4004,7 @@ public class ReportsController extends SpringActionController
     public class SaveCategoryNotificationsAction extends MutatingApiAction<SaveCategoryNotificationsForm>
     {
         @Override
-        public ApiResponse execute(SaveCategoryNotificationsForm form, BindException errors) throws Exception
+        public ApiResponse execute(SaveCategoryNotificationsForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             ReportContentEmailManager.setSubscriptionSet(getContainer(), getUser(), form.getSubscriptionSet());
@@ -4089,7 +4089,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UpdateReportDisplayOrderAction extends ApiAction<ReportsForm>
     {
-        public ApiResponse execute(ReportsForm form, BindException errors) throws Exception
+        public ApiResponse execute(ReportsForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             DbScope scope = QueryManager.get().getDbSchema().getScope();

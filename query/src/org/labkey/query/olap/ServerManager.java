@@ -546,7 +546,7 @@ public class ServerManager
      * This is to support XmlaServlet, don't hang on to this for more than one request.  If you need to hold on
      * longer we need a different interface
      */
-    public static MondrianServer getMondrianServer(Container c, User u) throws SQLException
+    public static MondrianServer getMondrianServer(Container c, User u)
     {
         ServerReferenceCount ref = ServerManager.getServer(c, u);
         try

@@ -325,7 +325,7 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
-    public PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException
+    public PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, ValidationException
     {
         PipeRoot root = PipelineService.get().findPipelineRoot(container);
         SpecimenReloadJob job = new SpecimenReloadJob(new ViewBackgroundInfo(container, user, url), root, transform.getName());

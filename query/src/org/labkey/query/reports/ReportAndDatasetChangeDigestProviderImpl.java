@@ -62,7 +62,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
     }
 
     @Override
-    public void sendDigestForAllContainers(Date start, Date end) throws Exception
+    public void sendDigestForAllContainers(Date start, Date end)
     {
         Map<String, Map<Integer, List<NotificationInfo>>> allProvidersInfoMap = null;
         for (NotificationInfoProvider provider : _notificationInfoProviders)

@@ -383,7 +383,7 @@ public class PipeRootImpl implements PipeRoot
         return new File(root, PipelineService.UNZIP_DIR);
     }
 
-    public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException
+    public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException
     {
         File importDir = getImportDirectory();
 

@@ -305,7 +305,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException
+    public void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots)
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");

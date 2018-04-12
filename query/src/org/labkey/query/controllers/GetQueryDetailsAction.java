@@ -82,7 +82,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 {
     private static final Logger LOG = Logger.getLogger(GetQueryDetailsAction.class);
 
-    public ApiResponse execute(Form form, BindException errors) throws Exception
+    public ApiResponse execute(Form form, BindException errors)
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
 

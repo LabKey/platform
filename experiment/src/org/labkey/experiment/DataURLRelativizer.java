@@ -41,7 +41,7 @@ public enum DataURLRelativizer
         {
             return new URLRewriter()
             {
-                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun experimentRun, User user) throws ExperimentException
+                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun experimentRun, User user)
                 {
                     if (path == null)
                         return null;

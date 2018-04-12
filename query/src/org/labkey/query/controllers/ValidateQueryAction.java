@@ -77,7 +77,7 @@ public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQ
     }
 
 
-    public ApiResponse execute(ValidateQueryForm form, BindException errors) throws Exception
+    public ApiResponse execute(ValidateQueryForm form, BindException errors)
     {
         ApiSimpleResponse response = new ApiSimpleResponse();
         List<QueryParseException> parseErrors = new ArrayList<>();

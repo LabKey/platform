@@ -143,7 +143,7 @@ public class RRF_Reader
         }
 
         @Override
-        protected void finalize() throws Throwable
+        protected void finalize()
         {
             close();
         }
@@ -244,7 +244,7 @@ public class RRF_Reader
         }
 
         @Override
-        protected void finalize() throws Throwable
+        protected void finalize()
         {
             close();
         }
@@ -305,7 +305,7 @@ public class RRF_Reader
         }
 
         @Override
-        protected void finalize() throws Throwable
+        protected void finalize()
         {
             close();
         }

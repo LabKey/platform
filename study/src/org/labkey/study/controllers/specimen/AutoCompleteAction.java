@@ -45,7 +45,7 @@ import java.util.List;
 public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoCompletionForm>
 {
     @Override
-    public ApiResponse execute(AutoCompletionForm form, BindException errors) throws Exception
+    public ApiResponse execute(AutoCompletionForm form, BindException errors)
     {
         Container container = getContainer();
         String column;

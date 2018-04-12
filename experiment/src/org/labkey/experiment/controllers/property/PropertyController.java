@@ -109,7 +109,7 @@ public class PropertyController extends SpringActionController
     {
         private Domain _domain;
 
-        public ModelAndView getView(DomainForm form, BindException errors) throws Exception
+        public ModelAndView getView(DomainForm form, BindException errors)
         {
             // Try to get existing domain from form.
             _domain = form.getDomain();
@@ -745,7 +745,7 @@ public class PropertyController extends SpringActionController
     public class CompareWithTemplateAction extends SimpleViewAction<DomainForm>
     {
         @Override
-        public ModelAndView getView(DomainForm form, BindException errors) throws Exception
+        public ModelAndView getView(DomainForm form, BindException errors)
         {
             // NOTE could use just domainId or domainURI, but SaveDomain expects schema and query
             String schema = form.getSchemaName();

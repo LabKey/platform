@@ -39,7 +39,7 @@ public class DatasetBatch extends StudyBatch implements Serializable, DatasetJob
     private VirtualFile _datasetsDirectory;
     private String _datasetsFileName;
 
-    public DatasetBatch(ViewBackgroundInfo info, VirtualFile datasetsDirectory, String datasetsFileName, PipeRoot root) throws SQLException
+    public DatasetBatch(ViewBackgroundInfo info, VirtualFile datasetsDirectory, String datasetsFileName, PipeRoot root)
     {
         // TODO, convert StudyBatch to use virtual files instead of passing it a definitionFile
         super(info, null, root);

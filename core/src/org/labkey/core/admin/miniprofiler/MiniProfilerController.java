@@ -90,7 +90,7 @@ public class MiniProfilerController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(MiniProfilerSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(MiniProfilerSettingsForm form, boolean reshow, BindException errors)
         {
             MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings();
 
@@ -100,7 +100,7 @@ public class MiniProfilerController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(MiniProfilerSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(MiniProfilerSettingsForm form, BindException errors)
         {
             MiniProfiler.Settings settings = form.getBean();
             MiniProfiler.saveSettings(settings);
@@ -133,7 +133,7 @@ public class MiniProfilerController extends SpringActionController
         }
 
         @Override
-        public Object execute(MiniProfiler.Settings settings, BindException errors) throws Exception
+        public Object execute(MiniProfiler.Settings settings, BindException errors)
         {
             String msg = null;
             if (isDelete())
@@ -169,7 +169,7 @@ public class MiniProfilerController extends SpringActionController
     public class EnabledAction extends ApiAction<EnabledForm>
     {
         @Override
-        public Object execute(EnabledForm form, BindException errors) throws Exception
+        public Object execute(EnabledForm form, BindException errors)
         {
             boolean enabled;
             if (isPost())
@@ -223,7 +223,7 @@ public class MiniProfilerController extends SpringActionController
     public class ReportAction extends MutatingApiAction<ReportForm>
     {
         @Override
-        public Object execute(ReportForm form, BindException errors) throws Exception
+        public Object execute(ReportForm form, BindException errors)
         {
             if (!MiniProfiler.isEnabled(getViewContext()))
                 throw new UnauthorizedException();
@@ -245,7 +245,7 @@ public class MiniProfilerController extends SpringActionController
     public class RecentRequestsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             if (!MiniProfiler.isEnabled(getViewContext()))
                 throw new UnauthorizedException();

@@ -32,7 +32,7 @@ import java.util.List;
 */
 public interface SpecimenService extends LookupService
 {
-    List<GWTDomain<GWTPropertyDescriptor>> getDomainDescriptors() throws SerializableException;
+    List<GWTDomain<GWTPropertyDescriptor>> getDomainDescriptors();
 
     List<String> updateDomainDescriptors(
             GWTDomain<GWTPropertyDescriptor> updateEvent,

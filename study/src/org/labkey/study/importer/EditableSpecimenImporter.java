@@ -60,7 +60,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         process(rows, merge, null);
     }
 
-    public void process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    public void process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws IOException, ValidationException
     {
         if (null == logger)
             logger = Logger.getLogger(getClass());

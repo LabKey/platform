@@ -192,7 +192,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         }
     }
 
-    private void writeDefaultRequirements(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx) throws SQLException
+    private void writeDefaultRequirements(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
     {
         SpecimenController.ManageReqsBean defRequirments = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = null;

@@ -171,7 +171,7 @@ public class AssayProgressReport extends AbstractReport
     }
 
     @Override
-    public HttpView renderReport(ViewContext context) throws Exception
+    public HttpView renderReport(ViewContext context)
     {
         BindException errors = new NullSafeBindException(this, "form");
         return new JspView<>("/org/labkey/study/view/renderAssayProgressReport.jsp", new AssayReportBean(getReportId(), getAssayReportData(context, errors)), errors);

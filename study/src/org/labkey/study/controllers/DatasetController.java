@@ -115,7 +115,7 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
     {
-        public ModelAndView getView(DatasetAuditHistoryForm form, BindException errors) throws Exception
+        public ModelAndView getView(DatasetAuditHistoryForm form, BindException errors)
         {
             int auditRowId = form.getAuditRowId();
             String comment = null;
@@ -219,7 +219,7 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class BulkDatasetDeleteAction extends FormViewAction<DatasetDeleteForm>
     {
-        public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "bulkDatasetDelete.jsp", form, errors);
         }
@@ -232,7 +232,7 @@ public class DatasetController extends BaseStudyController
 
         public void validateCommand(DatasetDeleteForm target, Errors errors) {}
 
-        public boolean handlePost(DatasetDeleteForm form, BindException errors) throws Exception
+        public boolean handlePost(DatasetDeleteForm form, BindException errors)
         {
             int[] datasetIds = form.getDatasetIds();
             int countDeleted = 0;
@@ -276,7 +276,7 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DefineAndImportDatasetAction extends SimpleViewAction<DatasetIdForm>
     {
-        public ModelAndView getView(DatasetIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(DatasetIdForm form, BindException errors)
         {
             Map<String,String> props = new HashMap<>();
 

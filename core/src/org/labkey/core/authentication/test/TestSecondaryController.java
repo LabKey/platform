@@ -80,7 +80,7 @@ public class TestSecondaryController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(TestSecondaryForm form, boolean reshow, BindException errors)
         {
             if (!getUser().isGuest())
                 return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), null, getUser()));
@@ -99,7 +99,7 @@ public class TestSecondaryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(TestSecondaryForm form, BindException errors) throws Exception
+        public boolean handlePost(TestSecondaryForm form, BindException errors)
         {
             if (form.isValid())
             {

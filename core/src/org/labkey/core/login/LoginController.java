@@ -391,7 +391,7 @@ public class LoginController extends SpringActionController
     @CSRF
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
-        public ModelAndView getView(RegisterForm form, BindException errors) throws Exception
+        public ModelAndView getView(RegisterForm form, BindException errors)
         {
             if (!AuthenticationManager.isRegistrationEnabled())
                 throw new NotFoundException("Registration is not enabled");
@@ -548,7 +548,7 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LoginAction extends SimpleViewAction<LoginForm>
     {
-        public ModelAndView getView(LoginForm form, BindException errors) throws Exception
+        public ModelAndView getView(LoginForm form, BindException errors)
         {
             // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
             // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
@@ -586,7 +586,7 @@ public class LoginController extends SpringActionController
     public class LoginApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
-        public Object execute(LoginForm form, BindException errors) throws Exception
+        public Object execute(LoginForm form, BindException errors)
         {
             HttpServletRequest request = getViewContext().getRequest();
 
@@ -948,7 +948,7 @@ public class LoginController extends SpringActionController
     public class AcceptTermsOfUseApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
-        public Object execute(AgreeToTermsForm form, BindException errors) throws Exception
+        public Object execute(AgreeToTermsForm form, BindException errors)
         {
             Project project = getTermsOfUseProject(form);
             if (!form.isApprovedTermsOfUse())
@@ -983,7 +983,7 @@ public class LoginController extends SpringActionController
     public class GetTermsOfUseApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
-        public Object execute(AgreeToTermsForm form, BindException errors) throws Exception
+        public Object execute(AgreeToTermsForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             WikiTermsOfUseProvider.TermsOfUse tou = WikiTermsOfUseProvider.getTermsOfUse(getTermsOfUseProject(form));
@@ -999,7 +999,7 @@ public class LoginController extends SpringActionController
     public class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
-        public Object execute(LoginForm form, BindException errors) throws Exception
+        public Object execute(LoginForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             URLHelper returnURL = form.getReturnURLHelper();
@@ -1020,7 +1020,7 @@ public class LoginController extends SpringActionController
     public class GetRegistrationConfigApiAction extends ApiAction
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("enabled", AuthenticationManager.isRegistrationEnabled());
@@ -1035,7 +1035,7 @@ public class LoginController extends SpringActionController
     public class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
-        public Object execute(AgreeToTermsForm form, BindException errors) throws Exception
+        public Object execute(AgreeToTermsForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             boolean isGuest = getUser().isGuest();
@@ -1191,7 +1191,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(AgreeToTermsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AgreeToTermsForm form, boolean reshow, BindException errors)
         {
             // Consider: replace with a getCustomAgreeToTermsView() that reads a custom agreeToTerms.html file
             AgreeToTermsView view = new AgreeToTermsView(form, errors);
@@ -1206,7 +1206,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(AgreeToTermsForm form, BindException errors) throws Exception
+        public boolean handlePost(AgreeToTermsForm form, BindException errors)
         {
             Project project = getTermsOfUseProject(form);
 
@@ -1431,7 +1431,7 @@ public class LoginController extends SpringActionController
     public class LogoutApiAction extends MutatingApiAction
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             return new ApiSimpleResponse("success", deauthenticate(getUser(), getViewContext()));
         }
@@ -1460,7 +1460,7 @@ public class LoginController extends SpringActionController
     public class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
         @Override
-        public ModelAndView getView(SsoRedirectForm form, BindException errors) throws Exception
+        public ModelAndView getView(SsoRedirectForm form, BindException errors)
         {
             // If logged in then redirect immediately
             if (!getUser().isGuest())
@@ -1657,7 +1657,7 @@ public class LoginController extends SpringActionController
         protected abstract void verify(SetPasswordForm form, ValidEmail email, Errors errors);
         protected abstract String getMessage(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs(SetPasswordForm form);
-        protected abstract void afterPasswordSet(BindException errors, User user) throws SQLException;
+        protected abstract void afterPasswordSet(BindException errors, User user);
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
@@ -2125,7 +2125,7 @@ public class LoginController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
@@ -2352,7 +2352,7 @@ public class LoginController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
         }
@@ -2469,7 +2469,7 @@ public class LoginController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureDbLoginAction extends FormViewAction<Config>
     {
-        public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Config form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/login/configureDbLogin.jsp", form);
         }
@@ -2485,7 +2485,7 @@ public class LoginController extends SpringActionController
         {
         }
 
-        public boolean handlePost(Config form, BindException errors) throws Exception
+        public boolean handlePost(Config form, BindException errors)
         {
             DbLoginManager.saveProperties(form);
             return true;
@@ -2502,7 +2502,7 @@ public class LoginController extends SpringActionController
     public static class WhoAmIAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             User user = getUser();
             ApiSimpleResponse res = new ApiSimpleResponse();
@@ -2568,7 +2568,7 @@ public class LoginController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors)
         {
             _provider = AuthenticationManager.getSSOProvider(form.getProvider());
 
@@ -2578,7 +2578,7 @@ public class LoginController extends SpringActionController
             return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(_provider, reshow), errors);
         }
 
-        public boolean handlePost(AuthLogoForm form, BindException errors) throws Exception
+        public boolean handlePost(AuthLogoForm form, BindException errors)
         {
             Map<String, MultipartFile> fileMap = getFileMap();
 

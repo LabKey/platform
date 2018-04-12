@@ -67,7 +67,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException, QueryUpdateServiceException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -118,15 +118,8 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException, QueryUpdateServiceException
     {
-        try
-        {
-            return updateRow(user, container, row, null);
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return updateRow(user, container, row, null);
     }
 }

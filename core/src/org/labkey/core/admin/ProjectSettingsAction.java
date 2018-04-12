@@ -114,7 +114,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         }
     }
 
-    public ModelAndView getView(AdminController.ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(AdminController.ProjectSettingsForm form, boolean reshow, BindException errors)
     {
         Container c = getContainer();
         validateContainer(c);

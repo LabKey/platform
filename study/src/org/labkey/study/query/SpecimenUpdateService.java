@@ -413,7 +413,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, ValidationException, SQLException
     {
         long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
         Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);

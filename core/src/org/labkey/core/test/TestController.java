@@ -70,7 +70,7 @@ public class TestController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestController.class);
 
-    public TestController() throws Exception
+    public TestController()
     {
         setActionResolver(_actionResolver);
     }
@@ -89,7 +89,7 @@ public class TestController extends SpringActionController
     public class TestAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             // Add code here
 
@@ -113,7 +113,7 @@ public class TestController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<Object>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new ActionListView();
         }
@@ -134,7 +134,7 @@ public class TestController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class LeakAction extends SimpleViewAction<Object>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             ViewContext ctx = getViewContext();
             LEAKED_VIEW_CONTEXTS.add(ctx);
@@ -154,7 +154,7 @@ public class TestController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ClearLeaksAction extends SimpleViewAction<Object>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             int count = LEAKED_VIEW_CONTEXTS.size();
             LEAKED_VIEW_CONTEXTS.clear();
@@ -170,7 +170,7 @@ public class TestController extends SpringActionController
 
     public class ActionListView extends HttpView
     {
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());
             descriptors.sort(Comparator.comparing(ActionDescriptor::getPrimaryName));
@@ -197,13 +197,13 @@ public class TestController extends SpringActionController
             form.validate(errors);
         }
 
-        public ModelAndView getView(SimpleForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SimpleForm form, boolean reshow, BindException errors)
         {
             form.encType = _enctype;
             return jspView("form.jsp", form, errors);
         }
 
-        public boolean handlePost(SimpleForm simpleForm, BindException errors) throws Exception
+        public boolean handlePost(SimpleForm simpleForm, BindException errors)
         {
             return false;
         }
@@ -228,13 +228,13 @@ public class TestController extends SpringActionController
             target.validate(errors);
         }
 
-        public ModelAndView getView(SimpleForm simpleForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SimpleForm simpleForm, boolean reshow, BindException errors)
         {
             ModelAndView mv = jspView("tags.jsp", simpleForm, errors);
             return mv;
         }
 
-        public boolean handlePost(SimpleForm simpleForm, BindException errors) throws Exception
+        public boolean handlePost(SimpleForm simpleForm, BindException errors)
         {
             return false;
         }
@@ -259,7 +259,7 @@ public class TestController extends SpringActionController
             _enctype ="multipart/form-data";
         }
 
-        public boolean handlePost(SimpleForm simpleForm, BindException errors) throws Exception
+        public boolean handlePost(SimpleForm simpleForm, BindException errors)
         {
             return false;
         }
@@ -280,7 +280,7 @@ public class TestController extends SpringActionController
             }
         }
 
-        public ModelAndView getView(ComplexForm complexForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ComplexForm complexForm, boolean reshow, BindException errors)
         {
             if (complexForm.getBeans().size() == 0)
             {
@@ -293,7 +293,7 @@ public class TestController extends SpringActionController
             return jspView("complex.jsp", complexForm, errors);
         }
 
-        public boolean handlePost(ComplexForm complexForm, BindException errors) throws Exception
+        public boolean handlePost(ComplexForm complexForm, BindException errors)
         {
             return false;
         }
@@ -492,7 +492,7 @@ public class TestController extends SpringActionController
     @CSRF @RequiresNoPermission
     public class CSRFAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new HtmlView("SUCCESS - CSRF");
         }
@@ -513,7 +513,7 @@ public class TestController extends SpringActionController
             _action = action;
         }
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new HtmlView("SUCCESS you can " + _action);
         }
@@ -611,7 +611,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class NpeAction extends SimpleViewAction<ExceptionForm>
     {
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             NullPointerException npe;
             if (null == form.getMessage())
@@ -632,7 +632,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class NpeOtherAction extends SimpleViewAction<ExceptionForm>
     {
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             NullPointerException npe;
             if (null == form.getMessage())
@@ -684,7 +684,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class IllegalStateAction extends SimpleViewAction<ExceptionForm>
     {
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             IllegalStateException ise;
             if (null == form.getMessage())
@@ -705,7 +705,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class ConfigurationExceptionAction extends SimpleViewAction<Object>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             throw new ConfigurationException("You have a configuration problem.", "What will make things better is if you stop visiting this action.");
         }
@@ -720,7 +720,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class NotFoundAction extends SimpleViewAction<ExceptionForm>
     {
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             if (null == form.getMessage())
                 throw new NotFoundException();
@@ -738,7 +738,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class UnauthorizedAction extends SimpleViewAction<ExceptionForm>
     {
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             if (null == form.getMessage())
                 throw new UnauthorizedException();
@@ -756,7 +756,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class HtmlViewAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             String title = getViewContext().getActionURL().getParameter("title");
             return new HtmlView(title, "This is my HTML");
@@ -772,7 +772,7 @@ public class TestController extends SpringActionController
     public class ButtonAction extends SimpleViewAction<ButtonForm>
     {
         @Override
-        public ModelAndView getView(ButtonForm form, BindException errors) throws Exception
+        public ModelAndView getView(ButtonForm form, BindException errors)
         {
             if (isPost())
             {

@@ -168,7 +168,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     }
 
     @Override
-    protected void doVerifySteps() throws Exception
+    protected void doVerifySteps()
     {
         clickFolder(getFolderName());
         log("Reload study with the dataset files in xlsx, tsv and xls format but have same content as original study import");

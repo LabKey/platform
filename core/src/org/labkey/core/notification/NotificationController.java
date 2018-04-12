@@ -105,7 +105,7 @@ public class NotificationController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(RowIdsForm form, BindException errors) throws Exception
+        public ApiResponse execute(RowIdsForm form, BindException errors)
         {
             int totalUpdated = 0;
 
@@ -144,7 +144,7 @@ public class NotificationController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(RowIdsForm form, BindException errors) throws Exception
+        public ApiResponse execute(RowIdsForm form, BindException errors)
         {
             int totalDeleted = 0;
 
@@ -212,7 +212,7 @@ public class NotificationController extends SpringActionController
     public class UserNotificationsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/notification/userNotifications.jsp", o);
         }
@@ -228,7 +228,7 @@ public class NotificationController extends SpringActionController
     public class GetUserNotificationsAction extends ApiAction<Object>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             NotificationService service = NotificationService.get();
 
@@ -253,7 +253,7 @@ public class NotificationController extends SpringActionController
     public class GetUserNotificationsForPanelAction extends ApiAction<Object>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("notifications", PageFlowUtil.getNotificationJson(getUser()));

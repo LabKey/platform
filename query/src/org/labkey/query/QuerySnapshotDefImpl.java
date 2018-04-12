@@ -294,7 +294,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getOptionsId();
     }
 
-    public void save(User user) throws Exception
+    public void save(User user)
     {
         if (!_dirty)
             return;

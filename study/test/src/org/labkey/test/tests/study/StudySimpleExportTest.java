@@ -84,7 +84,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     protected void doCreateSteps(){}
 
     @BeforeClass
-    public static void doSetup() throws Exception
+    public static void doSetup()
     {
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 

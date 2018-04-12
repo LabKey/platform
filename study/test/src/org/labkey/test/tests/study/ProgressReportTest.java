@@ -134,7 +134,7 @@ public class ProgressReportTest extends ReportTest
     }
 
     @Override
-    protected void doVerifySteps() throws Exception
+    protected void doVerifySteps()
     {
         progressReportBasicTest();
         progressReportExportTest();

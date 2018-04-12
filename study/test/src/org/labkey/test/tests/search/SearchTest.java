@@ -206,7 +206,7 @@ public abstract class SearchTest extends StudyTest
 
     }
 
-    public void runApiTests() throws Exception
+    public void runApiTests()
     {
         /* No API tests */
     }
@@ -385,7 +385,7 @@ public abstract class SearchTest extends StudyTest
     }
 
     @Override @Ignore
-    public void testSteps() throws Exception
+    public void testSteps()
     {
         // Mask parent test
     }

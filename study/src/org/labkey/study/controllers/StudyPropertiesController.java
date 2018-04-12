@@ -64,7 +64,7 @@ public class StudyPropertiesController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateAction extends FormViewAction<StudyProperties>
     {
-        public ModelAndView getView(StudyProperties studyPropertiesForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(StudyProperties studyPropertiesForm, boolean reshow, BindException errors)
         {
             StudyPropertiesTable table = getTableInfo();
 
@@ -98,7 +98,7 @@ public class StudyPropertiesController extends BaseStudyController
 
         public void validateCommand(StudyProperties target, Errors errors) {}
 
-        public boolean handlePost(StudyProperties studyPropertiesForm, BindException errors) throws Exception
+        public boolean handlePost(StudyProperties studyPropertiesForm, BindException errors)
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
 

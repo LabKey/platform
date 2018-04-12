@@ -41,7 +41,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     {
     }
 
-    public ModelAndView getView(SearchForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(SearchForm form, boolean reshow, BindException errors)
     {
         _study = StudyManager.getInstance().getStudy(getContainer());
         if (null == _study)
@@ -58,7 +58,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         return new JspView<>("/org/labkey/study/view/specimen/search.jsp", bean);
     }
 
-    public boolean handlePost(SearchForm form, BindException errors) throws Exception
+    public boolean handlePost(SearchForm form, BindException errors)
     {
         return true;
     }

@@ -46,7 +46,7 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
     private String _reloadSourceName;
     private BindException _errors;
 
-    public StudyReloadSourceJob(ViewBackgroundInfo info, PipeRoot root, String reloadSourceName) throws SQLException
+    public StudyReloadSourceJob(ViewBackgroundInfo info, PipeRoot root, String reloadSourceName)
     {
         super(info, null, root);
         _reloadSourceName = reloadSourceName;

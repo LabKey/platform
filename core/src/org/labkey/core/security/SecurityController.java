@@ -321,7 +321,7 @@ public class SecurityController extends SpringActionController
     @RequiresNoPermission
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             if (null == getContainer() || getContainer().isRoot())
             {
@@ -341,7 +341,7 @@ public class SecurityController extends SpringActionController
     @ActionNames("permissions,project")
     public class PermissionsAction extends SimpleViewAction<PermissionsForm>
     {
-        public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
+        public ModelAndView getView(PermissionsForm form, BindException errors)
         {
             String resource = getContainer().getId();
             ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : form.getReturnActionURL();
@@ -457,7 +457,7 @@ public class SecurityController extends SpringActionController
     {
         public void validateCommand(GroupForm form, Errors errors) {}
 
-        public boolean handlePost(GroupForm form, BindException errors) throws Exception
+        public boolean handlePost(GroupForm form, BindException errors)
         {
             try
             {
@@ -901,7 +901,7 @@ public class SecurityController extends SpringActionController
     {
         private Group _group;
 
-        public ModelAndView getView(GroupForm form, BindException errors) throws Exception
+        public ModelAndView getView(GroupForm form, BindException errors)
         {
             _group = form.getGroupFor(getContainer());
             if (null == _group)
@@ -961,7 +961,7 @@ public class SecurityController extends SpringActionController
     public class CompleteMemberAction extends ApiAction<CompleteMemberForm>
     {
         @Override
-        public ApiResponse execute(CompleteMemberForm form, BindException errors) throws Exception
+        public ApiResponse execute(CompleteMemberForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -1018,7 +1018,7 @@ public class SecurityController extends SpringActionController
     public class CompleteUserReadAction extends ApiAction<CompleteUserForm>
     {
         @Override
-        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
+        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
@@ -1105,7 +1105,7 @@ public class SecurityController extends SpringActionController
     {
         private Group _requestedGroup;
 
-        public ModelAndView getView(GroupAccessForm form, BindException errors) throws Exception
+        public ModelAndView getView(GroupAccessForm form, BindException errors)
         {
             _requestedGroup = form.getGroupFor(getContainer());
 
@@ -1182,7 +1182,7 @@ public class SecurityController extends SpringActionController
 
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             ViewContext ctx = getViewContext();
             Container c = getContainer();
@@ -1344,7 +1344,7 @@ public class SecurityController extends SpringActionController
     @CSRF
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
-        public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors)
         {
             return new JspView<Object>("/org/labkey/core/security/addUsers.jsp", form, errors);
         }
@@ -1823,7 +1823,7 @@ public class SecurityController extends SpringActionController
     public class FolderAccessAction extends SimpleViewAction<FolderAccessForm>
     {
         @Override
-        public ModelAndView getView(FolderAccessForm form, BindException errors) throws Exception
+        public ModelAndView getView(FolderAccessForm form, BindException errors)
         {
             VBox view = new VBox();
             form.setShowCaption("show all users");
@@ -1942,7 +1942,7 @@ public class SecurityController extends SpringActionController
     public class ApiKeyAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             if (!PopupUserView.allowApiKeyPage(getUser()))
                 throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
@@ -1978,7 +1978,7 @@ public class SecurityController extends SpringActionController
     public class CreateApiKeyAction extends MutatingApiAction<CreateApiKeyForm>
     {
         @Override
-        public Object execute(CreateApiKeyForm form, BindException errors) throws Exception
+        public Object execute(CreateApiKeyForm form, BindException errors)
         {
             final String apiKey;
 

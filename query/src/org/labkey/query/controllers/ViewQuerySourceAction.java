@@ -42,7 +42,7 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
 {
     private QueryForm _form = null;
     
-    public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+    public ModelAndView getView(QueryForm form, BindException errors)
     {
         _form = form;
         QueryDefinition qdef = form.getQueryDef();

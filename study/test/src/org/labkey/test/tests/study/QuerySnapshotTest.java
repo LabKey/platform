@@ -143,7 +143,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     }
 
     @Test
-    public void testDatasetSnapshot() throws Exception
+    public void testDatasetSnapshot()
     {
         // create a snapshot from a dataset
         log("create a snapshot from a dataset");
@@ -176,7 +176,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     }
 
     @Test
-    public void testCustomView() throws Exception
+    public void testCustomView()
     {
         // snapshot over a custom view
         // test automatic updates by altering the source dataset
@@ -210,7 +210,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     }
 
     @Test
-    public void testCustomQuery() throws Exception
+    public void testCustomQuery()
     {
         // snapshot over a custom query
         log("create a snapshot over a custom query");
@@ -258,7 +258,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     }
 
     @Test
-    public void testCrossFolderSnapshot() throws Exception
+    public void testCrossFolderSnapshot()
     {
         // create a custom query for a cross study scenario
         goToProjectHome();
@@ -320,7 +320,7 @@ public class QuerySnapshotTest extends StudyBaseTest
     private static final String CALC_COL_QUERY_SNAPSHOT = "CalculatedColumnQuery Snapshot";
 
     @Test
-    public void testArbitraryCustomQuery() throws Exception
+    public void testArbitraryCustomQuery()
     {
         // snapshot over a custom query with calculated columns : issue #31255
         log("create a snapshot over a custom query with calculated columns");

@@ -77,7 +77,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             HttpView junitView = new HttpView()
             {
@@ -368,7 +368,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public static class Testlist extends ApiAction
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             Map<String, List<Class>> testCases = JunitManager.getTestCases();
 

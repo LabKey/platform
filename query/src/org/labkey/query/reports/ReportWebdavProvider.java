@@ -201,7 +201,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
         // You can't actually delete this file, however, some clients do delete instead of overwrite,
         // so pretend we deleted it.
-        public boolean delete(User user) throws IOException
+        public boolean delete(User user)
         {
             if (user != null && !canDelete(user,true))
                 return false;

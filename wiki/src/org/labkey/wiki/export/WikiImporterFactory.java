@@ -159,7 +159,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
+        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), name);
             List<String> existingAttachmentNames = new ArrayList<>();

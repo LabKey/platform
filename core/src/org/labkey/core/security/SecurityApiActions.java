@@ -120,7 +120,7 @@ public class SecurityApiActions
     @RequiresLogin
     public static class GetGroupPermsAction extends ApiAction<GetGroupPermsForm>
     {
-        public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetGroupPermsForm form, BindException errors)
         {
             Container container = getContainer();
 
@@ -395,7 +395,7 @@ public class SecurityApiActions
     @RequiresPermission(ReadPermission.class)
     public static class GetGroupsForCurrentUserAction extends ApiAction
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             List<Map<String, Object>> groupInfos = new ArrayList<>();
             //include both project and global groups
@@ -418,7 +418,7 @@ public class SecurityApiActions
     @IgnoresTermsOfUse
     public static class EnsureLoginAction extends ApiAction
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             User user = getUser();
             Container container = getContainer();
@@ -445,7 +445,7 @@ public class SecurityApiActions
     {
         private Set<Permission> _allPermissions = new HashSet<>();
 
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ArrayList<Map<String, Object>> rolesProps = new ArrayList<>();
 
@@ -540,7 +540,7 @@ public class SecurityApiActions
         private boolean _includeSubfolders = false;
         private boolean _includePermissions = false;
 
-        public ApiResponse execute(GetSecurableResourcesForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetSecurableResourcesForm form, BindException errors)
         {
             _includeSubfolders = form.isIncludeSubfolders();
             _includePermissions = form.isIncludeEffectivePermissions();
@@ -626,7 +626,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class GetPolicyAction extends ApiAction<PolicyIdForm>
     {
-        public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
+        public ApiResponse execute(PolicyIdForm form, BindException errors)
         {
             if (null == form.getResourceId())
                 throw new IllegalArgumentException("You must supply a resourceId parameter!");
@@ -719,7 +719,7 @@ public class SecurityApiActions
             Removed
         }
 
-        public ApiResponse execute(SavePolicyForm form, BindException errors) throws Exception
+        public ApiResponse execute(SavePolicyForm form, BindException errors)
         {
             Container container = getContainer();
             User user = getUser();
@@ -891,7 +891,7 @@ public class SecurityApiActions
     @CSRF
     public static class DeletePolicyAction extends MutatingApiAction<PolicyIdForm>
     {
-        public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
+        public ApiResponse execute(PolicyIdForm form, BindException errors)
         {
             Container container = getContainer();
             User user = getUser();
@@ -1138,7 +1138,7 @@ public class SecurityApiActions
     @CSRF
     public static class CreateGroupAction extends MutatingApiAction<NameForm>
     {
-        public ApiResponse execute(NameForm form, BindException errors) throws Exception
+        public ApiResponse execute(NameForm form, BindException errors)
         {
             Container container = getContainer();
             if (!container.isRoot() && !container.isProject())
@@ -1226,7 +1226,7 @@ public class SecurityApiActions
         }
 
         @Override
-        public ApiResponse execute(GroupForm form, BindException errors) throws Exception
+        public ApiResponse execute(GroupForm form, BindException errors)
         {
             Container container = getContainer();
             if (!container.isRoot() && !container.isProject())
@@ -1670,7 +1670,7 @@ public class SecurityApiActions
     @CSRF
     public static class DeleteGroupAction extends MutatingApiAction<IdForm>
     {
-        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        public ApiResponse execute(IdForm form, BindException errors)
         {
             if (form.getId() < 0)
                 throw new IllegalArgumentException("You must specify an id parameter!");
@@ -1772,7 +1772,7 @@ public class SecurityApiActions
             return group;
         }
 
-        public ModelAndView getView(RenameForm form, BindException errors) throws Exception
+        public ModelAndView getView(RenameForm form, BindException errors)
         {
             group = getGroup(form);
             if (null == group)
@@ -1798,7 +1798,7 @@ public class SecurityApiActions
         }
         
 
-        public ApiResponse execute(RenameForm form, BindException errors) throws Exception
+        public ApiResponse execute(RenameForm form, BindException errors)
         {
             if (form.getId() < 0)
                 throw new IllegalArgumentException("You must specify an id parameter!");
@@ -1901,7 +1901,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class AddGroupMemberAction extends BaseGroupMemberAction
     {
-        public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
+        public ApiResponse execute(GroupMemberForm form, BindException errors)
         {
             Group group = getGroup(form);
 
@@ -1928,7 +1928,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class RemoveGroupMemberAction extends BaseGroupMemberAction
     {
-        public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
+        public ApiResponse execute(GroupMemberForm form, BindException errors)
         {
             Group group = getGroup(form);
 
@@ -2084,7 +2084,7 @@ public class SecurityApiActions
     public static class ListProjectGroupsAction extends ApiAction<ListGroupsForm>
     {
         @Override
-        public ApiResponse execute(ListGroupsForm form, BindException errors) throws Exception
+        public ApiResponse execute(ListGroupsForm form, BindException errors)
         {
             boolean includeSiteGroups = form.getIncludeSiteGroups();
             List<Group> groups = SecurityManager.getGroups(getContainer(), includeSiteGroups);

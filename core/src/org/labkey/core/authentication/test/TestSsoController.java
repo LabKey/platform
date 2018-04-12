@@ -47,7 +47,7 @@ public class TestSsoController extends SpringActionController
     public class TestSsoAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/core/authentication/test/testSso.jsp", null, errors);

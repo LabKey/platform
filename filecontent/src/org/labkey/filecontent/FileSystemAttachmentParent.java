@@ -85,7 +85,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         return c.getId();
     }
 
-    public File getFileSystemDirectory() throws MissingRootDirectoryException
+    public File getFileSystemDirectory()
     {
         Path path = getFileSystemDirectoryPath();
         FileContentServiceImpl.throwIfPathNotFile(path);

@@ -382,7 +382,7 @@ public class OlapController extends SpringActionController
         protected abstract DataView createView(CustomOlapDescriptorForm form, Errors errors);
 
         @Override
-        public ModelAndView getView(CustomOlapDescriptorForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomOlapDescriptorForm form, boolean reshow, BindException errors)
         {
             DataView view = createView(form, errors);
             //view.setInitialValues();
@@ -1032,7 +1032,7 @@ public class OlapController extends SpringActionController
     public class TestMdxAction extends SimpleViewAction<OlapForm>
     {
         @Override
-        public ModelAndView getView(OlapForm form, BindException errors) throws Exception
+        public ModelAndView getView(OlapForm form, BindException errors)
         {
             OlapSchemaDescriptor d = null;
             if (StringUtils.isNotEmpty(form.getConfigId()))
@@ -1058,7 +1058,7 @@ public class OlapController extends SpringActionController
     public class TestJsonAction extends SimpleViewAction<OlapForm>
     {
         @Override
-        public ModelAndView getView(OlapForm form, BindException errors) throws Exception
+        public ModelAndView getView(OlapForm form, BindException errors)
         {
             OlapSchemaDescriptor d = null;
             if (StringUtils.isNotEmpty(form.getConfigId()))
@@ -1303,7 +1303,7 @@ public class OlapController extends SpringActionController
     public class ListAppsAction extends ApiAction<Object>
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             List<Map<String, String>> appContexts = new ArrayList<>();
             for (String name : getSinglePageAppContexts(getContainer()))
@@ -1420,7 +1420,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public Object execute(InsertUpdateAppForm form, BindException errors) throws Exception
+        public Object execute(InsertUpdateAppForm form, BindException errors)
         {
             updateSinglePageAppContext(getContainer(), form.getContextName(), form.getDefaults(), form.getValues());
             return getSinglePageAppContext(getContainer(), form.getContextName());
@@ -1438,7 +1438,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public Object execute(AppForm form, BindException errors) throws Exception
+        public Object execute(AppForm form, BindException errors)
         {
             deleteSinglePageAppContexts(getContainer(), form.getContextName());
             return Collections.singletonMap("success", true);
@@ -1449,7 +1449,7 @@ public class OlapController extends SpringActionController
     public class ManageAppsAction extends SimpleViewAction<ManageAppForm>
     {
         @Override
-        public ModelAndView getView(ManageAppForm form, BindException errors) throws Exception
+        public ModelAndView getView(ManageAppForm form, BindException errors)
         {
             Map<String, String> activeAppConfig = getActiveAppConfig(getContainer());
             if (activeAppConfig != null && !activeAppConfig.isEmpty())
@@ -1477,7 +1477,7 @@ public class OlapController extends SpringActionController
         String _contextName;
 
         @Override
-        public ModelAndView getView(AppForm form, BindException errors) throws Exception
+        public ModelAndView getView(AppForm form, BindException errors)
         {
             _contextName = StringUtils.trimToNull(form.getContextName());
 
@@ -1511,7 +1511,7 @@ public class OlapController extends SpringActionController
     public class SetActiveAppConfigAction extends MutatingApiAction<AppForm>
     {
         @Override
-        public Object execute(AppForm form, BindException errors) throws Exception
+        public Object execute(AppForm form, BindException errors)
         {
             PropertyManager.PropertyMap activeAppConfig = PropertyManager.getWritableProperties(getContainer(), APP_ACTIVE_CONFIG_CATEGORY, true);
             activeAppConfig.put("configId", form.getConfigId());
@@ -1531,7 +1531,7 @@ public class OlapController extends SpringActionController
     public class GetActiveAppConfigAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("config", getActiveAppConfig(getContainer()));

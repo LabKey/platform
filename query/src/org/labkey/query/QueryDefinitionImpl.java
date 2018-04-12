@@ -161,7 +161,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _containerFilter;
     }
 
-    public void delete(User user) throws SQLException
+    public void delete(User user)
     {
         delete(user, true);
     }
@@ -653,7 +653,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return save(user, container, true);
     }
 
-    public Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException
+    public Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
     {
         setDefinitionContainer(container);
         if (!_dirty)

@@ -229,7 +229,7 @@ public class Olap4JCachedCubeFactory
     }
 
 
-    static void orderMembers(_Hierarchy h) throws OlapException
+    static void orderMembers(_Hierarchy h)
     {
         for (Level L : h.getLevels())
         {

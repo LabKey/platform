@@ -1978,8 +1978,8 @@ public class DavController extends SpringActionController
 
     interface ResourceWriter
     {
-        void beginResponse(WebdavResponse response) throws Exception;
-        void endResponse() throws Exception;
+        void beginResponse(WebdavResponse response);
+        void endResponse();
 
         void writeProperty(String propertyName, Object propertyValue);
 
@@ -4586,7 +4586,7 @@ public class DavController extends SpringActionController
     public class LastErrorAction extends ApiAction
     {
         @Override
-        public Object execute(Object o, BindException bindErrors) throws Exception
+        public Object execute(Object o, BindException bindErrors)
         {
             Path key = getErrorCacheKey();
 
@@ -4607,7 +4607,7 @@ public class DavController extends SpringActionController
     }
 
     /** allow html listing of this resource */
-    private boolean allowHtmlListing(Path path) throws DavException
+    private boolean allowHtmlListing(Path path)
     {
         // ask the resolver to answer this
         WebdavResolver.LookupResult result = resolvePathResult(path,false);
@@ -5333,7 +5333,7 @@ public class DavController extends SpringActionController
         return resolvePath(path,false);
     }
 
-    @Nullable WebdavResource resolvePath(Path path, boolean reload) throws DavException
+    @Nullable WebdavResource resolvePath(Path path, boolean reload)
     {
         WebdavResolver.LookupResult result = resolvePathResult(path, reload);
         return null==result ? null : result.resource;

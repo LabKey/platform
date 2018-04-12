@@ -143,9 +143,9 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     }
 
 
-    private static SqlDialect getEarliestSqlDialect() throws ServletException
+    private static SqlDialect getEarliestSqlDialect()
     {
-        return  SqlDialectManager.getFromDriverClassname("TEST", "net.sourceforge.jtds.jdbc.Driver");
+        return SqlDialectManager.getFromDriverClassname("TEST", "net.sourceforge.jtds.jdbc.Driver");
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -228,14 +228,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    try
-                    {
-                        return getEarliestSqlDialect();
-                    }
-                    catch (ServletException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    return getEarliestSqlDialect();
                 }
 
                 @NotNull

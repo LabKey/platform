@@ -745,7 +745,7 @@ public class RequestabilityManager
         }
     }
 
-    public void setDefaultRules(Container container, User user) throws SQLException
+    public void setDefaultRules(Container container, User user)
     {
         List<RequestableRule> rules = new ArrayList<>();
         rules.add(new RepositoryRule(container));

@@ -1435,7 +1435,7 @@ public class IssueManager
         return def.save(user);
     }
 
-    public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
+    public static void deleteIssueListDef(int rowId, Container c, User user)
     {
         IssueListDef def = getIssueListDef(c, rowId);
         if (def == null)
@@ -1716,7 +1716,7 @@ public class IssueManager
         }
 
         @Test
-        public void testIssues() throws SQLException, BatchValidationException
+        public void testIssues()
         {
             TestContext context = TestContext.get();
 

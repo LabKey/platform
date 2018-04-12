@@ -395,7 +395,7 @@ public class UserController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(new UserUrlsImpl().getSiteUsersURL());
         }
@@ -448,7 +448,7 @@ public class UserController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, null == form.getRedirUrl() ? null : new ActionURL(form.getRedirUrl()));
             if (null != form.getUserId())
@@ -545,7 +545,7 @@ public class UserController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
             String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
             DeleteUsersBean bean = new DeleteUsersBean();
@@ -802,7 +802,7 @@ public class UserController extends SpringActionController
             requiresProjectAdminOrBetter();
         }
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
             if (schema != null)
@@ -916,7 +916,7 @@ public class UserController extends SpringActionController
         Integer _pkVal;
         PropertyValue _deletedAttachments;
 
-        public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors)
         {
             User user = getUser();
             _userId = user.getUserId();
@@ -1464,7 +1464,7 @@ public class UserController extends SpringActionController
     {
         private int _detailsUserId;
 
-        public ModelAndView getView(UserQueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(UserQueryForm form, BindException errors)
         {
             User user = getUser();
             int userId = user.getUserId();
@@ -2441,7 +2441,7 @@ public class UserController extends SpringActionController
         protected static final String PROP_USER_ID = "userId";
         protected static final String PROP_USER_NAME = "displayName";
 
-        public ApiResponse execute(GetUsersForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetUsersForm form, BindException errors)
         {
             Container container = getContainer();
             User currentUser = getUser();
@@ -2569,7 +2569,7 @@ public class UserController extends SpringActionController
     public class GetImpersonationUsersAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object object, BindException errors) throws Exception
+        public ApiResponse execute(Object object, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -2621,7 +2621,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(FORM form, BindException errors) throws Exception
+        public ApiResponse execute(FORM form, BindException errors)
         {
             String error = impersonate(form);
 
@@ -2676,7 +2676,7 @@ public class UserController extends SpringActionController
     public class GetImpersonationGroupsAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object object, BindException errors) throws Exception
+        public ApiResponse execute(Object object, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Collection<Group> groups = GroupImpersonationContextFactory.getValidImpersonationGroups(getContainer(), getUser());
@@ -2755,7 +2755,7 @@ public class UserController extends SpringActionController
     public class GetImpersonationRolesAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object object, BindException errors) throws Exception
+        public ApiResponse execute(Object object, BindException errors)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
             Set<Role> impersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();

@@ -30,7 +30,7 @@ import java.util.List;
  */
 public interface VisitMapReader
 {
-    @NotNull List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws VisitMapParseException, IOException;
+    @NotNull List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType);
     @NotNull List<StudyManager.VisitAlias> getVisitImportAliases();
-    @NotNull List<VisitTag> getVisitTags() throws VisitMapParseException, IOException;
+    @NotNull List<VisitTag> getVisitTags();
 }

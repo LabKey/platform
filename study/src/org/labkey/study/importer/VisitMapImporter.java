@@ -102,7 +102,7 @@ public class VisitMapImporter
         _ensureDatasets = ensureDatasets;
     }
 
-    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
+    public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws ValidationException
     {
         if (content == null)
         {
@@ -122,7 +122,7 @@ public class VisitMapImporter
         }
     }
 
-    public boolean process(User user, StudyImpl study, VirtualFile file, String name, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
+    public boolean process(User user, StudyImpl study, VirtualFile file, String name, Format format, List<String> errors, Logger logger) throws IOException, ValidationException
     {
         if (file == null)
         {
@@ -141,7 +141,7 @@ public class VisitMapImporter
         }
     }
 
-    private boolean _process(User user, StudyImpl study, VisitMapReader reader, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
+    private boolean _process(User user, StudyImpl study, VisitMapReader reader, List<String> errors, Logger logger) throws ValidationException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
@@ -153,22 +153,9 @@ public class VisitMapImporter
         List<StudyManager.VisitAlias> aliases;
         List<VisitTag> visitTags;
 
-        try
-        {
-            records = reader.getVisitMapRecords(study.getTimepointType());
-            aliases = reader.getVisitImportAliases();
-            visitTags = reader.getVisitTags();
-        }
-        catch (VisitMapParseException x)
-        {
-            errors.add("Unable to parse the visit map format: " + x.getMessage());
-            return false;
-        }
-        catch (IOException x)
-        {
-            errors.add("IOException while parsing visit map: " + x.getMessage());
-            return false;
-        }
+        records = reader.getVisitMapRecords(study.getTimepointType());
+        aliases = reader.getVisitImportAliases();
+        visitTags = reader.getVisitTags();
 
         verifyDistinctSequenceNums(records);
 
@@ -209,12 +196,12 @@ public class VisitMapImporter
         }
     }
 
-    private void saveImportAliases(User user, Study study, List<StudyManager.VisitAlias> aliases) throws ValidationException, IOException
+    private void saveImportAliases(User user, Study study, List<StudyManager.VisitAlias> aliases) throws ValidationException
     {
         StudyManager.getInstance().importVisitAliases(study, user, aliases);
     }
 
-    private void saveVisits(User user, StudyImpl study, List<VisitMapRecord> records) throws SQLException
+    private void saveVisits(User user, StudyImpl study, List<VisitMapRecord> records)
     {
         StudyManager studyManager = StudyManager.getInstance();
         VisitManager visitManager = studyManager.getVisitManager(study);
@@ -302,7 +289,7 @@ public class VisitMapImporter
     }
 
 
-    private void saveVisitMap(User user, Study study, List<VisitMapRecord> records) throws SQLException
+    private void saveVisitMap(User user, Study study, List<VisitMapRecord> records)
     {
         // NOTE: the only visit map setting for now is REQUIRED/OPTIONAL so...
         Container container = study.getContainer();
@@ -354,7 +341,7 @@ public class VisitMapImporter
     }
 
 
-    private void saveDatasets(User user, Study study, List<VisitMapRecord> records) throws SQLException
+    private void saveDatasets(User user, Study study, List<VisitMapRecord> records)
     {
         List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
         Set<Integer> existingSet = new HashSet<>();

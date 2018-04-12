@@ -102,7 +102,7 @@ public class SqlScriptController extends SpringActionController
     public class GetModuleStatusAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             JSONObject result = new JSONObject();
             JSONArray modulesJSON = new JSONArray();
@@ -1142,7 +1142,7 @@ public class SqlScriptController extends SpringActionController
     public class ReorderAllScriptsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new HttpView()
             {
