@@ -2173,8 +2173,8 @@ public class OntologyManager
 
         sql.addAll(
                 typeURI,
-                // If we're in the root, just double-up the shared project's id
-                c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId(),
+                // protect against null project, just double-up shared project
+                c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
                 _sharedContainer.getProject().getId()
         );
         result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
