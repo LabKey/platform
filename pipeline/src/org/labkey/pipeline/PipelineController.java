@@ -636,7 +636,8 @@ public class PipelineController extends SpringActionController
         FileContentService svc = FileContentService.get();
         List<GWTPropertyDescriptor> properties = new ArrayList<>();
 
-        switch (config) {
+        switch (config)
+        {
             case useCustom:
                 String uri = svc.getDomainURI(container, config);
                 GWTDomain domain = DomainUtil.getDomainDescriptor(getUser(), uri, container);
@@ -651,15 +652,6 @@ public class PipelineController extends SpringActionController
                 }
                 break;
             case useDefault:
-/*
-                GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-
-                prop.setLabel("Description");
-                prop.setName("description");
-                prop.setRangeURI("String");
-
-                properties.add(prop);
-*/
                 break;
             case useParent:
                 while (container != container.getProject())
@@ -674,6 +666,7 @@ public class PipelineController extends SpringActionController
                 cfg = cfg != FilesAdminOptions.fileConfig.useParent ? cfg : FilesAdminOptions.fileConfig.useDefault;
                 return getFileProperties(container, cfg);
         }
+
         return properties;
     }
 
