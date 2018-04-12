@@ -12,17 +12,36 @@ if (!LABKEY.DataRegions) {
     //
     // CONSTANTS
     //
-    var ALL_FILTERS_SKIP_PREFIX = '.~';
-    var COLUMNS_PREFIX = '.columns';
+    var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var DEFAULT_TIMEOUT = 30000;
     var PARAM_PREFIX = '.param.';
-    var REPORTID_PREFIX = '.reportId';
-    var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
-    var OFFSET_PREFIX = '.offset';
-    var MAX_ROWS_PREFIX = '.maxRows', SHOW_ROWS_PREFIX = '.showRows';
+    var SORT_ASC = '+';
+    var SORT_DESC = '-';
+
+    //
+    // URL PREFIXES
+    //
+    var ALL_FILTERS_SKIP_PREFIX = '.~';
+    var COLUMNS_PREFIX = '.columns';
     var CONTAINER_FILTER_NAME = '.containerFilterName';
-    var CUSTOM_VIEW_PANELID = '~~customizeView~~';
+    var MAX_ROWS_PREFIX = '.maxRows';
+    var OFFSET_PREFIX = '.offset';
+    var REPORTID_PREFIX = '.reportId';
+    var SORT_PREFIX = '.sort';
+    var SHOW_ROWS_PREFIX = '.showRows';
     var VIEWNAME_PREFIX = '.viewName';
+
+    // 33536: These prefixes should match the URL parameter key exactly
+    var EXACT_MATCH_PREFIXES = [
+        COLUMNS_PREFIX,
+        CONTAINER_FILTER_NAME,
+        MAX_ROWS_PREFIX,
+        OFFSET_PREFIX,
+        REPORTID_PREFIX,
+        SORT_PREFIX,
+        SHOW_ROWS_PREFIX,
+        VIEWNAME_PREFIX
+    ];
 
     var VALID_LISTENERS = [
         /**
@@ -745,7 +764,7 @@ if (!LABKEY.DataRegions) {
         var skips = [], me = this;
 
         $.each(_getParameters(this), function(i, param) {
-            if (param[0].indexOf(me.name + '.') == 0 && param[0].indexOf(filterMatch) > -1) {
+            if (param[0].indexOf(me.name + '.') === 0 && param[0].indexOf(filterMatch) > -1) {
                 skips.push(param[0]);
             }
         });
@@ -1061,7 +1080,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#clearSelected to clear all selected items for this DataRegion.
      */
     LABKEY.DataRegion.prototype.setSelected = function(config) {
-        if (!config || !LABKEY.Utils.isArray(config.ids) || config.ids.length == 0) {
+        if (!config || !LABKEY.Utils.isArray(config.ids) || config.ids.length === 0) {
             return;
         }
 
@@ -1116,7 +1135,7 @@ if (!LABKEY.DataRegions) {
         var param = null;
 
         $.each(_getParameters(this), function(i, pair) {
-            if (pair.length > 0 && pair[0] == paramName) {
+            if (pair.length > 0 && pair[0] === paramName) {
                 param = pair.length > 1 ? pair[1] : '';
                 return false;
             }
@@ -2937,12 +2956,16 @@ if (!LABKEY.DataRegions) {
                 var pairs = qString.split('&'), p, key,
                     LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
 
+                var exactMatches = EXACT_MATCH_PREFIXES.map(function(prefix) {
+                    return region.name + prefix;
+                });
+
                 $.each(pairs, function(i, pair) {
                     p = pair.split('=', 2);
                     key = p[0] = decodeURIComponent(p[0]);
                     lastIdx = key.indexOf(LAST);
 
-                    if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
+                    if (lastIdx > -1 && lastIdx === (key.length - LAST.length)) {
                         return;
                     }
                     else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
@@ -2956,20 +2979,28 @@ if (!LABKEY.DataRegions) {
                             if (LABKEY.Utils.isString(skipPrefix)) {
 
                                 // Special prefix that should remove all filters, but no other parameters
-                                if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) == (skipPrefix.length - 2)) {
+                                if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) === (skipPrefix.length - 2)) {
                                     if (key.indexOf('~') > 0) {
                                         stop = true;
                                         return false;
                                     }
                                 }
-                                else if (key.indexOf(skipPrefix) == 0) {
-                                    // only skip filters, parameters, and sorts
-                                    if (key == skipPrefix ||
-                                            key.indexOf('~') > 0 ||
-                                            key.indexOf(PARAM_PREFIX) > 0 ||
-                                            key == (skipPrefix + 'sort')) {
-                                        stop = true;
-                                        return false;
+                                else {
+                                    if (exactMatches.indexOf(skipPrefix) > -1) {
+                                        if (key === skipPrefix) {
+                                            stop = true;
+                                            return false;
+                                        }
+                                    }
+                                    else if (key.indexOf(skipPrefix) === 0) {
+                                        // only skip filters, parameters, and sorts
+                                        if (key === skipPrefix ||
+                                                key.indexOf('~') > 0 ||
+                                                key.indexOf(PARAM_PREFIX) > 0 ||
+                                                key === (skipPrefix + 'sort')) {
+                                            stop = true;
+                                            return false;
+                                        }
                                     }
                                 }
                             }
@@ -3008,11 +3039,11 @@ if (!LABKEY.DataRegions) {
                 $.each(sortParam.split(','), function(i, sort) {
                     fieldKey = sort;
                     dir = SORT_ASC;
-                    if (sort.charAt(0) == SORT_DESC) {
+                    if (sort.charAt(0) === SORT_DESC) {
                         fieldKey = fieldKey.substring(1);
                         dir = SORT_DESC;
                     }
-                    else if (sort.charAt(0) == SORT_ASC) {
+                    else if (sort.charAt(0) === SORT_ASC) {
                         fieldKey = fieldKey.substring(1);
                     }
                     userSort.push({fieldKey: fieldKey, dir: dir});
