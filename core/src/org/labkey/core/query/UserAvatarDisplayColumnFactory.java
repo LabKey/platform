@@ -91,7 +91,7 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             }
 
             @Override
-            protected InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException
+            protected InputStream getFileContents(RenderContext ctx, Object value)
             {
                 return null;
             }

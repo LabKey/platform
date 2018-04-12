@@ -3875,7 +3875,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void moveContainer(Container c, Container oldParent, Container newParent) throws ExperimentException
+    public void moveContainer(Container c, Container oldParent, Container newParent)
     {
         if (null == c)
             return;
@@ -4688,7 +4688,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new TableSelector(getTinfoProtocolApplicationParameter(), filter, null).getArrayList(ProtocolApplicationParameter.class);
     }
 
-    public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence) throws XarFormatException
+    public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence)
     {
         String cmdSql = "SELECT * FROM exp.ProtocolActionStepDetailsView "
                 + " WHERE ParentProtocolLSID = ? "
@@ -4824,7 +4824,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void insertProtocolPredecessor(User user, int actionRowId, int predecessorRowId) throws SQLException
+    public void insertProtocolPredecessor(User user, int actionRowId, int predecessorRowId)
     {
         Map<String, Object> mValsPredecessor = new HashMap<>();
         mValsPredecessor.put("ActionId", actionRowId);
@@ -4851,7 +4851,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /** @return all the Data objects from this run */
     private List<ExpData> ensureSimpleExperimentRunParameters(Collection<ExpMaterial> inputMaterials,
                                                      Collection<ExpData> inputDatas, Collection<ExpMaterial> outputMaterials,
-                                                     Collection<ExpData> outputDatas, Collection<ExpData> transformedDatas, User user) throws SQLException
+                                                     Collection<ExpData> outputDatas, Collection<ExpData> transformedDatas, User user)
     {
         // Save all the input and output objects to make sure they've been inserted
         saveAll(inputMaterials, user);
@@ -4893,148 +4893,141 @@ public class ExperimentServiceImpl implements ExperimentService
         User user = info.getUser();
         XarContext context = new XarContext("Simple Run Creation", run.getContainer(), user);
 
-        try
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(XAR_IMPORT_LOCK))
         {
-            try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(XAR_IMPORT_LOCK))
+            if (run.getContainer() == null)
             {
-                if (run.getContainer() == null)
+                run.setContainer(info.getContainer());
+            }
+            run.save(user);
+            insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
+
+            // add any transformed data to the outputDatas collection
+            for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
+                outputDatas.put(entry.getKey(), entry.getValue());
+
+            ExpProtocolImpl parentProtocol = run.getProtocol();
+
+            List<ProtocolAction> actions = getProtocolActions(parentProtocol.getRowId());
+            if (actions.size() != 3)
+            {
+                throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+            }
+            ProtocolAction action1 = actions.get(0);
+            assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
+            assert action1.getChildProtocolId() == parentProtocol.getRowId();
+
+            context.addSubstitution("ExperimentRun.RowId", Integer.toString(run.getRowId()));
+
+            Date date = new Date();
+
+            ProtocolAction action2 = actions.get(1);
+            assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
+            ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
+
+            ProtocolAction action3 = actions.get(2);
+            assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
+            ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
+            assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
+
+            ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+            ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+            ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+
+            for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
+            {
+                if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getSequence())
                 {
-                    run.setContainer(info.getContainer());
+                    protApp1 = existingProtApp;
                 }
-                run.save(user);
-                insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
-
-                // add any transformed data to the outputDatas collection
-                for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
-                    outputDatas.put(entry.getKey(), entry.getValue());
-
-                ExpProtocolImpl parentProtocol = run.getProtocol();
-
-                List<ProtocolAction> actions = getProtocolActions(parentProtocol.getRowId());
-                if (actions.size() != 3)
+                else if (existingProtApp.getProtocol().equals(protocol2))
                 {
-                    throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
-                }
-                ProtocolAction action1 = actions.get(0);
-                assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
-                assert action1.getChildProtocolId() == parentProtocol.getRowId();
-
-                context.addSubstitution("ExperimentRun.RowId", Integer.toString(run.getRowId()));
-
-                Date date = new Date();
-
-                ProtocolAction action2 = actions.get(1);
-                assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
-                ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
-
-                ProtocolAction action3 = actions.get(2);
-                assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
-                ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
-                assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
-
-                ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-                ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-                ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-
-                for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
-                {
-                    if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getSequence())
+                    if (existingProtApp.getActionSequence() == SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE)
                     {
-                        protApp1 = existingProtApp;
+                        existingProtApp.delete(user);
                     }
-                    else if (existingProtApp.getProtocol().equals(protocol2))
+                    else if (existingProtApp.getActionSequence() == action2.getSequence())
                     {
-                        if (existingProtApp.getActionSequence() == SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE)
-                        {
-                            existingProtApp.delete(user);
-                        }
-                        else if (existingProtApp.getActionSequence() == action2.getSequence())
-                        {
-                            protApp2 = existingProtApp;
-                        }
-                        else
-                        {
-                            throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
-                        }
-                    }
-                    else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getSequence())
-                    {
-                        protApp3 = existingProtApp;
+                        protApp2 = existingProtApp;
                     }
                     else
                     {
                         throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
                     }
                 }
-
-                initializeProtocolApplication(protApp1, date, action1, run, parentProtocol, context);
-                protApp1.save(user);
-                addDataInputs(inputDatas, protApp1._object, user);
-                addMaterialInputs(inputMaterials, protApp1._object, user);
-
-                initializeProtocolApplication(protApp2, date, action2, run, protocol2, context);
-                protApp2.save(user);
-                addDataInputs(inputDatas, protApp2._object, user);
-                addMaterialInputs(inputMaterials, protApp2._object, user);
-
-                for (ExpMaterial outputMaterial : outputMaterials.keySet())
+                else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getSequence())
                 {
-                    if (outputMaterial.getSourceApplication() != null)
-                    {
-                        throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another protocol application");
-                    }
-                    if (outputMaterial.getRun() != null)
-                    {
-                        throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
-                    }
-                    outputMaterial.setSourceApplication(protApp2);
-                    outputMaterial.setRun(run);
-                    Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
+                    protApp3 = existingProtApp;
                 }
-
-                for (ExpData outputData : outputDatas.keySet())
+                else
                 {
-                    ExpRun existingRun = outputData.getRun();
-                    if (existingRun != null && !existingRun.equals(run))
-                    {
-                        throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
-                    }
-                    ExpProtocolApplication existingProtApp = outputData.getSourceApplication();
-                    if (existingProtApp != null && !existingProtApp.equals(protApp2))
-                    {
-                        throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
-                    }
-                    outputData.setSourceApplication(protApp2);
-                    outputData.setRun(run);
-                    Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
+                    throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
                 }
-
-                initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
-                protApp3.save(user);
-                addDataInputs(outputDatas, protApp3._object, user);
-                addMaterialInputs(outputMaterials, protApp3._object, user);
-
-                transaction.commit();
             }
 
-            if (loadDataFiles)
+            initializeProtocolApplication(protApp1, date, action1, run, parentProtocol, context);
+            protApp1.save(user);
+            addDataInputs(inputDatas, protApp1._object, user);
+            addMaterialInputs(inputMaterials, protApp1._object, user);
+
+            initializeProtocolApplication(protApp2, date, action2, run, protocol2, context);
+            protApp2.save(user);
+            addDataInputs(inputDatas, protApp2._object, user);
+            addMaterialInputs(inputMaterials, protApp2._object, user);
+
+            for (ExpMaterial outputMaterial : outputMaterials.keySet())
             {
-                for (ExpData insertedData : insertedDatas)
+                if (outputMaterial.getSourceApplication() != null)
                 {
-                    insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
+                    throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another protocol application");
                 }
+                if (outputMaterial.getRun() != null)
+                {
+                    throw new IllegalArgumentException("Output material " + outputMaterial.getName() + " is already marked as being created by another run");
+                }
+                outputMaterial.setSourceApplication(protApp2);
+                outputMaterial.setRun(run);
+                Table.update(user, getTinfoMaterial(), ((ExpMaterialImpl)outputMaterial)._object, outputMaterial.getRowId());
             }
 
-            run.clearCache();
+            for (ExpData outputData : outputDatas.keySet())
+            {
+                ExpRun existingRun = outputData.getRun();
+                if (existingRun != null && !existingRun.equals(run))
+                {
+                    throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
+                }
+                ExpProtocolApplication existingProtApp = outputData.getSourceApplication();
+                if (existingProtApp != null && !existingProtApp.equals(protApp2))
+                {
+                    throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
+                }
+                outputData.setSourceApplication(protApp2);
+                outputData.setRun(run);
+                Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
+            }
 
-            syncRunEdges(run);
+            initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
+            protApp3.save(user);
+            addDataInputs(outputDatas, protApp3._object, user);
+            addMaterialInputs(outputMaterials, protApp3._object, user);
 
-            return run;
+            transaction.commit();
         }
-        catch (SQLException e)
+
+        if (loadDataFiles)
         {
-            throw new RuntimeSQLException(e);
+            for (ExpData insertedData : insertedDatas)
+            {
+                insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
+            }
         }
+
+        run.clearCache();
+
+        syncRunEdges(run);
+
+        return run;
     }
 
     private ExpProtocolApplication initializeProtocolApplication(ExpProtocolApplication protApp, Date activityDate, ProtocolAction action, ExpRun run, ExpProtocol parentProtocol, XarContext context ) throws XarFormatException
@@ -5881,7 +5874,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, ProtocolApplication protApp1, User user)
-            throws SQLException
     {
         Set<MaterialInput> existingInputs = new HashSet<>(getMaterialInputsForApplication(protApp1.getRowId()));
 
@@ -5900,7 +5892,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     private void addDataInputs(Map<ExpData, String> inputDatas, ProtocolApplication protApp1, User user)
-            throws SQLException
     {
         Set<DataInput> existingInputs = new HashSet<>(getDataInputsForApplication(protApp1.getRowId()));
 
@@ -5919,7 +5910,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     private void syncInputs(User user, Set<? extends AbstractRunInput> existingInputs, Set<? extends AbstractRunInput> desiredInputs, FieldKey keyName, TableInfo table)
-            throws SQLException
     {
         Set<AbstractRunInput> inputsToDelete = new HashSet<>(existingInputs);
         inputsToDelete.removeAll(desiredInputs);
@@ -6039,10 +6029,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
             return getExpProtocol(baseProtocol.getRowId());
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
     }
 
     /**
@@ -6085,7 +6071,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * Helper to insert ProtocolActions during the Protocol insertion process. Use {@link ExperimentServiceImpl#insertProtocol(ExpProtocol, List, Map, User)}
      */
-    private ProtocolAction insertProtocolAction(Protocol parent, Protocol child, int actionSequence, User user) throws SQLException
+    private ProtocolAction insertProtocolAction(Protocol parent, Protocol child, int actionSequence, User user)
     {
         ProtocolAction action = new ProtocolAction();
         action.setParentProtocolId(parent.getRowId());
@@ -6198,10 +6184,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
             transaction.commit();
             return wrappedProtocol;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
     }
 

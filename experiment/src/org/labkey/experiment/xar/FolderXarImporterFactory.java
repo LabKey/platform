@@ -149,7 +149,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
@@ -174,7 +174,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             _importContext = ctx;
         }
 
-        public void init() throws IOException, ImportException
+        public void init()
         {
             if (_xarDir == null)
             {

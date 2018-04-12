@@ -50,7 +50,7 @@ public class DatasetWriter implements InternalStudyWriter
         return StudyArchiveDataTypes.CRF_DATASETS;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, ImportException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws IOException, ImportException
     {
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Datasets datasetsXml = studyXml.addNewDatasets();

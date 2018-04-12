@@ -925,7 +925,7 @@ public abstract class Method
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
                 @Override
-                public Object call() throws Exception
+                public Object call()
                 {
                     User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                     return null == user ? null : user.getUserId();
@@ -959,7 +959,7 @@ public abstract class Method
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
                 @Override
-                public Object call() throws Exception
+                public Object call()
                 {
                     User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                     if (null == user)

@@ -152,7 +152,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         }
 
         @Override
-        protected Integer keyFromMap(Map<String, Object> map) throws InvalidKeyException
+        protected Integer keyFromMap(Map<String, Object> map)
         {
             Object rowId = map.get("RowId");
             if (rowId != null)
@@ -172,28 +172,28 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         }
 
         @Override
-        protected AnnouncementModel get(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException
+        protected AnnouncementModel get(User user, Container container, Integer key) throws QueryUpdateServiceException
         {
             ensureNotSecure();
             return AnnouncementManager.getAnnouncement(container, key);
         }
 
         @Override
-        protected AnnouncementModel insert(User user, Container container, AnnouncementModel bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException
+        protected AnnouncementModel insert(User user, Container container, AnnouncementModel bean) throws QueryUpdateServiceException
         {
             ensureNotSecure();
             try
             {
                 return AnnouncementManager.insertAnnouncement(container, user, bean, Collections.emptyList());
             }
-            catch (IOException | MessagingException e)
+            catch (IOException e)
             {
                 throw new QueryUpdateServiceException(e);
             }
         }
 
         @Override
-        protected AnnouncementModel update(User user, Container container, AnnouncementModel bean, Integer oldKey) throws ValidationException, QueryUpdateServiceException, SQLException
+        protected AnnouncementModel update(User user, Container container, AnnouncementModel bean, Integer oldKey) throws QueryUpdateServiceException
         {
             ensureNotSecure();
             try
@@ -216,7 +216,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         }
 
         @Override
-        protected void delete(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException
+        protected void delete(User user, Container container, Integer key) throws QueryUpdateServiceException
         {
             ensureNotSecure();
             AnnouncementManager.deleteAnnouncement(container, key.intValue());

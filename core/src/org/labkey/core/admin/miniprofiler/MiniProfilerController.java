@@ -157,7 +157,7 @@ public class MiniProfilerController extends SpringActionController
     public class ResetAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
+        public URLHelper getRedirectURL(Object o)
         {
             MiniProfiler.resetSettings();
             return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();

@@ -94,7 +94,7 @@ public class SecurityController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class);
 
-    public SecurityController() throws Exception
+    public SecurityController()
     {
         setActionResolver(_actionResolver);
     }
@@ -191,7 +191,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ExportSecurityPolicyAction extends ExportAction<Object>
     {
-        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(Object form, HttpServletResponse response, BindException errors)
         {
             try
             {
@@ -463,7 +463,7 @@ public class SecurityController extends SpringActionController
             return tabs;
         }
 
-        public HttpView getTabView(String tabId) throws Exception
+        public HttpView getTabView(String tabId)
         {
             if (TAB_STUDY.equals(tabId))
             {
@@ -788,7 +788,7 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, PrintWriter out)
         {
             ActionURL urlStudy = new ActionURL(BeginAction.class, getViewContext().getContainer());
             out.print("<p>Permissions for datasets in a Study are managed separately.<br/>");

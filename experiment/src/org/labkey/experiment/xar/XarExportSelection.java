@@ -102,7 +102,7 @@ public class XarExportSelection implements Serializable
         _roles.addAll(Arrays.asList(roles));
     }
 
-    public void addContent(XarExporter exporter) throws SQLException, ExperimentException
+    public void addContent(XarExporter exporter) throws ExperimentException
     {
         for (int expId : _expIds)
         {

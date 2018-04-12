@@ -378,7 +378,7 @@ public class XarReader extends AbstractXarImporter
         return dp;
     }
 
-    private ExpSampleSetImpl loadSampleSet(SampleSetType sampleSet) throws XarFormatException, SQLException
+    private ExpSampleSetImpl loadSampleSet(SampleSetType sampleSet) throws XarFormatException
     {
         String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
         ExpSampleSetImpl existingMaterialSource = ExperimentServiceImpl.get().getSampleSet(lsid);
@@ -443,7 +443,7 @@ public class XarReader extends AbstractXarImporter
         return materialSource;
     }
 
-    private Domain loadDomain(DomainDescriptorType xDomain) throws SQLException, ExperimentException
+    private Domain loadDomain(DomainDescriptorType xDomain) throws ExperimentException
     {
         Pair<Domain, Map<DomainProperty, Object>> loaded = PropertyService.get().createDomain(getContainer(), getRootContext(), xDomain);
         Domain domain = loaded.getKey();
@@ -1046,7 +1046,7 @@ public class XarReader extends AbstractXarImporter
 
     private void updateSourceInfo(ProtocolOutput output, Integer sourceApplicationId,
                                   Integer runId, XarContext context, TableInfo tableInfo)
-            throws XarFormatException, SQLException
+            throws XarFormatException
     {
         String description = output.getClass().getSimpleName();
         String lsid = output.getLSID();
@@ -1227,7 +1227,7 @@ public class XarReader extends AbstractXarImporter
     }
 
     private void loadProtocolApplicationParameters(SimpleValueCollectionType xbParams,
-                                                   int protAppId) throws SQLException
+                                                   int protAppId)
     {
         TableInfo tiValueTable = ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter();
         for (SimpleValueType simple : xbParams.getSimpleValArray())
@@ -1441,7 +1441,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void loadProtocol(ProtocolBaseType p) throws SQLException, ExperimentException
+    private void loadProtocol(ProtocolBaseType p) throws ExperimentException
     {
         String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
         ExpProtocolImpl existingProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
@@ -1480,7 +1480,7 @@ public class XarReader extends AbstractXarImporter
         _xarSource.addProtocol(new ExpProtocolImpl(protocol));
     }
 
-    private void loadActionSet(ProtocolActionSetType actionSet) throws SQLException, XarFormatException
+    private void loadActionSet(ProtocolActionSetType actionSet) throws XarFormatException
     {
         TableInfo tiAction = ExperimentServiceImpl.get().getTinfoProtocolAction();
 
@@ -1597,7 +1597,7 @@ public class XarReader extends AbstractXarImporter
         return s == null ? null : s.trim();
     }
 
-    private Protocol readProtocol(ProtocolBaseType p) throws XarFormatException, SQLException
+    private Protocol readProtocol(ProtocolBaseType p) throws XarFormatException
     {
         Protocol protocol = new Protocol();
         protocol.setLSID(LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol"));

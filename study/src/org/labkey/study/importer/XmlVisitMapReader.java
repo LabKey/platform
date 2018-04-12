@@ -86,7 +86,7 @@ public class XmlVisitMapReader implements VisitMapReader
 
     @Override
     @NotNull
-    public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws VisitMapParseException
+    public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType)
     {
         VisitMapDocument.VisitMap.Visit[] visitsXml = _visitMapXml.getVisitArray();
         List<VisitMapRecord> visits = new ArrayList<>(visitsXml.length);
@@ -148,7 +148,7 @@ public class XmlVisitMapReader implements VisitMapReader
 
     @Override
     @NotNull
-    public List<VisitTag> getVisitTags() throws VisitMapParseException
+    public List<VisitTag> getVisitTags()
     {
         VisitMapDocument.VisitMap.VisitTag[] visitTagsXml = _visitMapXml.getVisitTagArray();
         List<VisitTag> visitTags = new ArrayList<>(visitTagsXml.length);

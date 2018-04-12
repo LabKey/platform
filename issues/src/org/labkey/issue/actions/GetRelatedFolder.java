@@ -38,7 +38,7 @@ import java.util.Map;
 public class GetRelatedFolder extends ApiAction<IssuesController.IssuesForm>
 {
     @Override
-    public Object execute(IssuesController.IssuesForm form, BindException errors) throws Exception
+    public Object execute(IssuesController.IssuesForm form, BindException errors)
     {
         ApiSimpleResponse response = new ApiSimpleResponse();
         LinkedList<Map<String, String>> containers = new LinkedList<>();

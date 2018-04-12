@@ -350,7 +350,7 @@ public class FileResolver implements Replacer
         return names.get(0);
     }
 
-    public void advance() throws XarFormatException
+    public void advance()
     {
         advanceMap(_unusedFileNames, _fileNamesToAdvance);
         advanceMap(_unusedFileNameVariations, _fileNameVariationsToAdvance);

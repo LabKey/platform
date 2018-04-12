@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
@@ -75,6 +76,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.study.importer.RequestabilityManager.InvalidRuleException;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
 import org.labkey.study.model.AdditiveType;
@@ -312,7 +314,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         new TableSelector(tableInfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
         {
             @Override
-            public void exec(Map<String, Object> map) throws SQLException
+            public void exec(Map<String, Object> map)
             {
                 specimenEvents.add(new SpecimenEvent(container, map));
             }
@@ -544,7 +546,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return _requestHelper.get(c, rowId);
     }
 
-    public SpecimenRequest createRequest(User user, SpecimenRequest request, boolean createEvent) throws SQLException, AttachmentService.DuplicateFilenameException
+    public SpecimenRequest createRequest(User user, SpecimenRequest request, boolean createEvent) throws DuplicateFilenameException
     {
         request = _requestHelper.create(user, request);
         if (createEvent)
@@ -552,7 +554,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return request;
     }
 
-    public void updateRequest(User user, SpecimenRequest request) throws SQLException, RequestabilityManager.InvalidRuleException
+    public void updateRequest(User user, SpecimenRequest request) throws InvalidRuleException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -573,7 +575,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     /**
      * Update the lockedInRequest and available field states for the set of specimens.
      */
-    private void updateSpecimenStatus(List<Vial> vials, User user, boolean lockedInRequest) throws SQLException, RequestabilityManager.InvalidRuleException
+    private void updateSpecimenStatus(List<Vial> vials, User user, boolean lockedInRequest) throws InvalidRuleException
     {
         for (Vial vial : vials)
         {
@@ -706,7 +708,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         updateVialCounts(container, user, null);
     }
 
-    private void updateRequestabilityAndCounts(List<Vial> vials, User user) throws RequestabilityManager.InvalidRuleException
+    private void updateRequestabilityAndCounts(List<Vial> vials, User user) throws InvalidRuleException
     {
         if (vials.size() == 0)
             return;
@@ -733,24 +735,24 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return request.getRequirements();
     }
 
-    public void deleteRequestRequirement(User user, SpecimenRequestRequirement requirement) throws AttachmentService.DuplicateFilenameException
+    public void deleteRequestRequirement(User user, SpecimenRequestRequirement requirement) throws DuplicateFilenameException
     {
         deleteRequestRequirement(user, requirement, true);
     }
 
-    public void deleteRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent) throws AttachmentService.DuplicateFilenameException
+    public void deleteRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent) throws DuplicateFilenameException
     {
         if (createEvent)
             createRequestEvent(user, requirement, RequestEventType.REQUIREMENT_REMOVED, requirement.getRequirementSummary(), null);
         requirement.delete();
     }
 
-    public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent) throws AttachmentService.DuplicateFilenameException
+    public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent) throws DuplicateFilenameException
     {
         createRequestRequirement(user, requirement, createEvent, false);
     }
 
-    public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent, boolean force) throws AttachmentService.DuplicateFilenameException
+    public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent, boolean force) throws DuplicateFilenameException
     {
         SpecimenRequest request = getRequest(requirement.getContainer(), requirement.getRequestId());
         SpecimenRequestRequirement newRequirement = _requirementProvider.createRequirement(user, request, requirement, force);
@@ -796,7 +798,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
             {
                 @Override
-                public void exec(Map<String, Object> map) throws SQLException
+                public void exec(Map<String, Object> map)
                 {
                     additiveTypes.add(new AdditiveType(container, map));
                 }
@@ -826,7 +828,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
             {
                 @Override
-                public void exec(Map<String, Object> map) throws SQLException
+                public void exec(Map<String, Object> map)
                 {
                     derivativeTypes.add(new DerivativeType(container, map));
                 }
@@ -856,7 +858,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
             {
                 @Override
-                public void exec(Map<String, Object> map) throws SQLException
+                public void exec(Map<String, Object> map)
                 {
                     primaryTypes.add(new PrimaryType(container, map));
                 }
@@ -980,17 +982,17 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public SpecimenRequestEvent createRequestEvent(User user, SpecimenRequestRequirement requirement, RequestEventType type, String comments, List<AttachmentFile> attachments) throws AttachmentService.DuplicateFilenameException
+    public SpecimenRequestEvent createRequestEvent(User user, SpecimenRequestRequirement requirement, RequestEventType type, String comments, List<AttachmentFile> attachments) throws DuplicateFilenameException
     {
         return createRequestEvent(user, requirement.getContainer(), requirement.getRequestId(), requirement.getRowId(), type, comments, attachments);
     }
 
-    public SpecimenRequestEvent createRequestEvent(User user, SpecimenRequest request, RequestEventType type, String comments, List<AttachmentFile> attachments) throws AttachmentService.DuplicateFilenameException
+    public SpecimenRequestEvent createRequestEvent(User user, SpecimenRequest request, RequestEventType type, String comments, List<AttachmentFile> attachments) throws DuplicateFilenameException
     {
         return createRequestEvent(user, request.getContainer(), request.getRowId(), -1, type, comments, attachments);
     }
 
-    private SpecimenRequestEvent createRequestEvent(User user, Container container, int requestId, int requirementId, RequestEventType type, String comments, List<AttachmentFile> attachments) throws AttachmentService.DuplicateFilenameException
+    private SpecimenRequestEvent createRequestEvent(User user, Container container, int requestId, int requirementId, RequestEventType type, String comments, List<AttachmentFile> attachments) throws DuplicateFilenameException
     {
         SpecimenRequestEvent event = new SpecimenRequestEvent();
         event.setEntryType(type.getDisplayText());
@@ -1006,7 +1008,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         {
             AttachmentService.get().addAttachments(event, attachments, user);
         }
-        catch (AttachmentService.DuplicateFilenameException e)
+        catch (DuplicateFilenameException e)
         {
             // UI should (minimally) catch and display these errors nicely
             throw e;
@@ -1060,7 +1062,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEachMap(new ForEachBlock<Map<String, Object>>()
         {
             @Override
-            public void exec(Map<String, Object> map) throws SQLException
+            public void exec(Map<String, Object> map)
             {
                 vials.add(new Vial(container, map));
             }
@@ -1262,7 +1264,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         public void setDefaultSiteValue(Container container, int locationId, String value) throws SQLException
         {
-            try {
+            try
+            {
                 assert locationId > 0 : "Invalid site id: " + locationId;
                 if (!isRememberSiteValue())
                     throw new UnsupportedOperationException("Only those inputs configured to remember site values can set a site default.");
@@ -1420,8 +1423,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private static final ReentrantLock REQUEST_ADDITION_LOCK = new ReentrantLock();
     public void createRequestSampleMapping(User user, SpecimenRequest request, List<Vial> vials, boolean createEvents, boolean createRequirements)
-            throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException,
-                   SpecimenRequestException
+            throws InvalidRuleException, DuplicateFilenameException, SpecimenRequestException
     {
         if (vials == null || vials.size() == 0)
             return;
@@ -1511,7 +1513,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return vials;
     }
 
-    public void deleteRequest(User user, SpecimenRequest request) throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
+    public void deleteRequest(User user, SpecimenRequest request) throws InvalidRuleException, DuplicateFilenameException
     {
         DbScope scope = _requestHelper.getTableInfo().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -1535,7 +1537,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     }
 
     public void deleteRequestSampleMappings(User user, SpecimenRequest request, List<Long> vialIds, boolean createEvents)
-            throws SQLException, RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
+            throws InvalidRuleException, DuplicateFilenameException
     {
         if (vialIds == null || vialIds.size() == 0)
             return;
@@ -1569,12 +1571,12 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public @NotNull List<Integer> getRequestIdsForSpecimen(Vial vial) throws SQLException
+    public @NotNull List<Integer> getRequestIdsForSpecimen(Vial vial)
     {
         return getRequestIdsForSpecimen(vial, false);
     }
 
-    public @NotNull List<Integer> getRequestIdsForSpecimen(Vial vial, boolean lockingRequestsOnly) throws SQLException
+    public @NotNull List<Integer> getRequestIdsForSpecimen(Vial vial, boolean lockingRequestsOnly)
     {
         if (vial == null)
             return Collections.emptyList();
@@ -1792,7 +1794,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return newDistinctValues;
     }
 */
-    public void deleteMissingSpecimens(SpecimenRequest specimenRequest) throws SQLException
+    public void deleteMissingSpecimens(SpecimenRequest specimenRequest)
     {
         List<String> missingSpecimens = getMissingSpecimens(specimenRequest);
         if (missingSpecimens.isEmpty())
@@ -1823,7 +1825,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public List<String> getMissingSpecimens(SpecimenRequest specimenRequest) throws SQLException
+    public List<String> getMissingSpecimens(SpecimenRequest specimenRequest)
     {
         Container container = specimenRequest.getContainer();
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
@@ -1891,7 +1893,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return map;
     }
 
-    public int getSampleCountForVisit(VisitImpl visit) throws SQLException
+    public int getSampleCountForVisit(VisitImpl visit)
     {
         Container container = visit.getContainer();
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
@@ -2009,7 +2011,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return sql;
     }
 
-    public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches) throws SQLException
+    public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches)
     {
         Container container = vial.getContainer();
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
@@ -2219,7 +2221,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantGroups, SpecimenTypeLevel level) throws SQLException
+    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantGroups, SpecimenTypeLevel level)
     {
         return getSpecimenSummaryByVisitType(container, user, null, includeParticipantGroups, level);
     }
@@ -2413,15 +2415,14 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
 
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
-            boolean includeParticipantGroups, SpecimenTypeLevel level) throws SQLException
+            boolean includeParticipantGroups, SpecimenTypeLevel level)
     {
         return getSpecimenSummaryByVisitType(container, user, specimenDetailFilter, includeParticipantGroups, level, null);
     }
 
 
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
-        boolean includeParticipantGroups, SpecimenTypeLevel level,
-        CustomView baseView) throws SQLException
+        boolean includeParticipantGroups, SpecimenTypeLevel level, CustomView baseView)
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2613,7 +2614,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     }
 
     public Collection<SummaryByVisitParticipant> getParticipantSummaryByVisitType(Container container, User user,
-                                SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType) throws SQLException
+                                SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType)
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2664,7 +2665,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     }
 
 
-    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantGroups, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly) throws SQLException
+    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantGroups, SpecimenTypeLevel level, CustomView baseView, boolean completeRequestsOnly)
     {
         if (specimenDetailFilter == null)
         {
@@ -2759,7 +2760,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private static final int GET_COMMENT_BATCH_SIZE = 1000;
 
-    public Map<Vial, SpecimenComment> getSpecimenComments(List<Vial> vials) throws SQLException
+    public Map<Vial, SpecimenComment> getSpecimenComments(List<Vial> vials)
     {
         if (vials == null || vials.size() == 0)
             return Collections.emptyMap();
@@ -2786,7 +2787,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(new Selector.ForEachBlock<SpecimenComment>()
             {
                 @Override
-                public void exec(SpecimenComment comment) throws SQLException
+                public void exec(SpecimenComment comment)
                 {
                     Vial vial = idToVial.get(comment.getGlobalUniqueId());
                     result.put(vial, comment);
@@ -2799,7 +2800,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return result;
     }
 
-    public SpecimenComment getSpecimenCommentForVial(Container container, String globalUniqueId) throws SQLException
+    public SpecimenComment getSpecimenCommentForVial(Container container, String globalUniqueId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("GlobalUniqueId"), globalUniqueId);
@@ -2807,17 +2808,17 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
     }
 
-    public SpecimenComment getSpecimenCommentForVial(Vial vial) throws SQLException
+    public SpecimenComment getSpecimenCommentForVial(Vial vial)
     {
         return getSpecimenCommentForVial(vial.getContainer(), vial.getGlobalUniqueId());
     }
 
-    public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash) throws SQLException
+    public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash)
     {
         return getSpecimenCommentForSpecimens(container, Collections.singleton(specimenHash));
     }
 
-    public SpecimenComment[] getSpecimenCommentForSpecimens(Container container, Collection<String> specimenHashes) throws SQLException
+    public SpecimenComment[] getSpecimenCommentForSpecimens(Container container, Collection<String> specimenHashes)
     {
         SimpleFilter hashFilter = SimpleFilter.createContainerFilter(container);
         hashFilter.addInClause(FieldKey.fromParts("SpecimenHash"), specimenHashes);
@@ -2866,7 +2867,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         AuditLogService.get().addEvent(user, event);
     }
 
-    public SpecimenComment setSpecimenComment(User user, Vial vial, String commentText, boolean qualityControlFlag, boolean qualityControlFlagForced) throws SQLException
+    public SpecimenComment setSpecimenComment(User user, Vial vial, String commentText, boolean qualityControlFlag, boolean qualityControlFlagForced)
     {
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
         DbScope scope = commentTable.getSchema().getScope();
@@ -2916,7 +2917,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     }
 
     private void setSummaryParticipantGroups(String sql, Object[] paramArray, final Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
-                                           SummaryByVisitType[] summaries, final String ptidColumnName, final String visitValueColumnName) throws SQLException
+                                           SummaryByVisitType[] summaries, final String ptidColumnName, final String visitValueColumnName)
     {
         SQLFragment fragment = new SQLFragment(sql);
         fragment.addAll(paramArray);

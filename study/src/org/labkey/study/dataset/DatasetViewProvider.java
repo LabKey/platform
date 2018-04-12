@@ -85,7 +85,7 @@ public class DatasetViewProvider implements DataViewProvider
 
 
     @Override
-    public List<DataViewInfo> getViews(ViewContext context) throws Exception
+    public List<DataViewInfo> getViews(ViewContext context)
     {
         List<DataViewInfo> datasets = new ArrayList<>();
         Container container = context.getContainer();
@@ -269,7 +269,7 @@ public class DatasetViewProvider implements DataViewProvider
         }
 
         @Override
-        public void deleteView(Container container, User user, String id) throws ValidationException
+        public void deleteView(Container container, User user, String id)
         {
             throw new UnsupportedOperationException();
         }

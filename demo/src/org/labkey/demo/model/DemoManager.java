@@ -45,7 +45,7 @@ public class DemoManager
         return _instance;
     }
 
-    public void deleteAllData(Container c) throws SQLException
+    public void deleteAllData(Container c)
     {
         // delete all people when the container is deleted:
         Filter containerFilter = SimpleFilter.createContainerFilter(c);
@@ -58,7 +58,7 @@ public class DemoManager
         return getPeople(containerFilter);
     }
 
-    public void deletePerson(Container c, int rowId) throws SQLException
+    public void deletePerson(Container c, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
@@ -81,13 +81,13 @@ public class DemoManager
         return new TableSelector(DemoSchema.getInstance().getTableInfoPerson(), filter, new Sort("RowId")).getArray(Person.class);
     }
 
-    public Person insertPerson(Container c, User user, Person person) throws SQLException
+    public Person insertPerson(Container c, User user, Person person)
     {
         person.setContainer(c.getId());
         return Table.insert(user, DemoSchema.getInstance().getTableInfoPerson(), person);
     }
 
-    public Person updatePerson(Container c, User user, Person person, Object ts) throws SQLException
+    public Person updatePerson(Container c, User user, Person person, Object ts)
     {
         if (person.getRowId() == null)
             throw new IllegalStateException("Can't update a row with a null rowId");

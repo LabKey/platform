@@ -2093,7 +2093,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return new DatabaseMetaDataWrapper(md)
         {
             @Override
-            public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException
+            public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             {
                 SQLFragment sql = new SQLFragment(ALL_TABLES_SQL);
                 sql.add(catalog);
@@ -2109,7 +2109,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             }
 
             @Override
-            public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
+            public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
             {
                 SQLFragment sql = new SQLFragment(ALL_TABLE_COLUMNS_SQL);
                 // Intentionally ignoring the 'catalog'; within the sp_columns proc we're bypassing, it's only used as a check that it is the same as the db_name

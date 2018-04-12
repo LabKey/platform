@@ -152,27 +152,21 @@ public abstract class BaseStudyController extends SpringActionController
 
     public static NavTree _appendManageStudy(NavTree root, Container container, User user)
     {
-        try
-        {
-            appendRootNavTrail(root, container, user);
+        appendRootNavTrail(root, container, user);
 
-            if (container.hasPermission(user, ManageStudyPermission.class))
-                root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container));
-        }
-        catch (ServletException e)
-        {
-        }
+        if (container.hasPermission(user, ManageStudyPermission.class))
+            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container));
         return root;
     }
 
     @NotNull
-    protected Study appendRootNavTrail(NavTree root) throws ServletException
+    protected Study appendRootNavTrail(NavTree root)
     {
         return appendRootNavTrail(root, getContainer(), getUser());
     }
 
     @NotNull
-    public static Study appendRootNavTrail(NavTree root, Container container, User user) throws ServletException
+    public static Study appendRootNavTrail(NavTree root, Container container, User user)
     {
         Study study = getStudyRedirectIfNull(container);
         ActionURL rootURL;
@@ -198,13 +192,7 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root)
     {
-        try
-        {
-            appendRootNavTrail(root);
-        }
-        catch (ServletException ignored)
-        {
-        }
+        appendRootNavTrail(root);
         return root;
     }
 
@@ -215,14 +203,8 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter, String qcStateSetFormValue)
     {
-        try
-        {
-            Study study = appendRootNavTrail(root);
-            _appendDataset(root, study, datasetId, visitId, cohortFilter, qcStateSetFormValue);
-        }
-        catch (ServletException e)
-        {
-        }
+        Study study = appendRootNavTrail(root);
+        _appendDataset(root, study, datasetId, visitId, cohortFilter, qcStateSetFormValue);
         return root;
     }
 

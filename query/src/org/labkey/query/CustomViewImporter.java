@@ -50,7 +50,7 @@ public class CustomViewImporter implements FolderImporter
         return getDataType().toLowerCase();
     }
 
-    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, ImportException
     {
         if (isValidForImportArchive(ctx))
         {
@@ -68,7 +68,7 @@ public class CustomViewImporter implements FolderImporter
     }
 
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
         return Collections.emptyList();
     }

@@ -148,7 +148,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
             return super.deleteRow(user, container, oldRowMap);
         }
 
-        private void validateValues(Map<String, Object> row) throws ValidationException
+        private void validateValues(Map<String, Object> row)
         {
             // TODO: add validation that the same key value doesn't already exist at the project level
         }

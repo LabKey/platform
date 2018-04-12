@@ -77,7 +77,7 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteCohortAction extends SimpleRedirectAction<CohortIdForm>
     {
-        public ActionURL getRedirectURL(CohortIdForm form) throws Exception
+        public ActionURL getRedirectURL(CohortIdForm form)
         {
             CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getRowId());
             if (cohort != null && !cohort.isInUse())
@@ -97,7 +97,7 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteUnusedCohortsAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object form) throws Exception
+        public ActionURL getRedirectURL(Object form)
         {
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             for (CohortImpl cohort : cohorts)

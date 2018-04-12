@@ -32,13 +32,6 @@ public class DemoContainerListener extends ContainerManager.AbstractContainerLis
 {
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            DemoManager.getInstance().deleteAllData(c);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        DemoManager.getInstance().deleteAllData(c);
     }
 }

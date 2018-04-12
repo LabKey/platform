@@ -454,7 +454,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     /**
      * Render column label only
      */
-    public String renderLabel(String label) throws IOException
+    public String renderLabel(String label)
     {
         final StringBuilder sb = new StringBuilder();
         if (label != null)

@@ -571,7 +571,7 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("AtRepository = ?", Boolean.FALSE);
             if (vials != null && vials.size() > 0)
@@ -613,7 +613,7 @@ public class RequestabilityManager
             return RuleType.ADMIN_OVERRIDE;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("Requestable IS NOT NULL");
             if (vials != null && vials.size() > 0)
@@ -635,7 +635,7 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("LockedInRequest = ?", Boolean.TRUE);
             if (vials != null && vials.size() > 0)
@@ -664,7 +664,7 @@ public class RequestabilityManager
         }
 
         @Override
-        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
             if (null == tableInfoVial)
@@ -725,7 +725,7 @@ public class RequestabilityManager
         return rules;
     }
 
-    public void saveRules(Container container, User user, List<RequestableRule> rules) throws SQLException
+    public void saveRules(Container container, User user, List<RequestableRule> rules)
     {
         TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
         DbScope scope = StudySchema.getInstance().getSchema().getScope();

@@ -268,7 +268,7 @@ public class IssueListDef extends Entity
     }
 
     private void ensureDomainProperties(Domain domain, AbstractIssuesListDefDomainKind domainKind, Collection<PropertyStorageSpec> requiredProps,
-                                        Set<PropertyStorageSpec.ForeignKey> foreignKeys) throws ExperimentException
+                                        Set<PropertyStorageSpec.ForeignKey> foreignKeys)
     {
         String typeUri = domain.getTypeURI();
         Map<String, PropertyStorageSpec.ForeignKey> foreignKeyMap = new CaseInsensitiveHashMap<>();

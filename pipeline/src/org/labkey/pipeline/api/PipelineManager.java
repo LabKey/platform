@@ -131,7 +131,7 @@ public class PipelineManager
     }
 
     static public void setPipelineRoot(User user, Container container, URI[] roots, String type,
-                                       boolean searchable) throws SQLException
+                                       boolean searchable)
     {
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;

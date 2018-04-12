@@ -662,7 +662,7 @@ public class SpecimenUtils
         return Collections.emptySet();
     }
 
-    public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses) throws ServletException
+    public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
         if (!SpecimenManager.getInstance().isSampleRequestEnabled(getContainer(), checkExistingStatuses))
             throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));

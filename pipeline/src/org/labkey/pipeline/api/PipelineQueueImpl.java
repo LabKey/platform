@@ -276,7 +276,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
     {
         AtomicInteger _counter;
 
-        TestJob(Container c, AtomicInteger counter) throws SQLException
+        TestJob(Container c, AtomicInteger counter)
         {
             super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));
             _counter = counter;

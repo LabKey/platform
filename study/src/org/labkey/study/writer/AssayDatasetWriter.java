@@ -34,7 +34,7 @@ class AssayDatasetWriter implements InternalStudyWriter
         return StudyArchiveDataTypes.ASSAY_DATASETS;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf)
     {
     }
 }

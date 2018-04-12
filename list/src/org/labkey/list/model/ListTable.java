@@ -586,13 +586,13 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    public Parameter.ParameterMap deleteStatement(Connection conn)
     {
         throw new UnsupportedOperationException();
     }

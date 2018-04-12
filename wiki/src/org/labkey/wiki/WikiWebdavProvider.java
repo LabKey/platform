@@ -282,7 +282,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public long copyFrom(User user, FileStream in) throws IOException
+        public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException();
         }
@@ -521,14 +521,14 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
-        public FileStream getFileStream(User user) throws IOException
+        public FileStream getFileStream(User user)
         {
             byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new FileStream.ByteArrayFileStream(buf);
         }
 
 
-        public InputStream getInputStream(User user) throws IOException
+        public InputStream getInputStream(User user)
         {
             byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new ByteArrayInputStream(buf);

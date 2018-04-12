@@ -99,7 +99,7 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
+        public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }

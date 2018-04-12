@@ -60,7 +60,7 @@ public class Sas92Dialect extends SasDialect
         }
 
         @Override
-        public boolean isAutoIncrement() throws SQLException
+        public boolean isAutoIncrement()
         {
             return false;
         }
@@ -73,7 +73,7 @@ public class Sas92Dialect extends SasDialect
         }
 
         @Override
-        public String getDescription() throws SQLException
+        public String getDescription()
         {
             return null;
         }

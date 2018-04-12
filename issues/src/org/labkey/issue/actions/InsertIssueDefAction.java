@@ -48,7 +48,7 @@ public class InsertIssueDefAction extends UserSchemaAction
 {
     private List<Map<String, Object>> _results;
 
-    public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
     {
         InsertView view = new InsertView(tableForm, errors)
         {

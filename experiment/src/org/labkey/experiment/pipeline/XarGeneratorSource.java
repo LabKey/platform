@@ -35,12 +35,12 @@ public class XarGeneratorSource extends AbstractFileXarSource
         _xmlFile = xarFile;
     }
 
-    public ExperimentArchiveDocument getDocument() throws XmlException, IOException
+    public ExperimentArchiveDocument getDocument()
     {
         throw new UnsupportedOperationException();
     }
 
-    public File getLogFile() throws IOException
+    public File getLogFile()
     {
         throw new UnsupportedOperationException();
     }

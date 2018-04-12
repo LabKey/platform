@@ -137,7 +137,7 @@ public class RRF_Reader
             return null==line ? null : StringUtils.splitPreserveAllTokens(line,'|');
         }
 
-        public void close() throws IOException
+        public void close()
         {
             closeQuietly(_in);
         }
@@ -238,7 +238,7 @@ public class RRF_Reader
             }
         }
 
-        public void close() throws IOException
+        public void close()
         {
             closeQuietly(_in);
         }
@@ -294,7 +294,7 @@ public class RRF_Reader
             throw new UnsupportedOperationException();
         }
 
-        public void close() throws IOException
+        public void close()
         {
             while (null != _current)
             {
@@ -388,7 +388,7 @@ public class RRF_Reader
             throw new UnsupportedOperationException();
         }
 
-        public void close() throws IOException
+        public void close()
         {
             if (_names instanceof Closeable)
                 closeQuietly((Closeable)_names);

@@ -95,7 +95,7 @@ public class CustomViewWriter extends BaseFolderWriter
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws ImportException
+    private VirtualFile ensureViewDirectory(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
     {
         if (null == _viewDir)
         {

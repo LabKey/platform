@@ -1820,7 +1820,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
         }
 
-        private void index(String docId, String title, String body, Map<String, Object> props) throws InterruptedException
+        private void index(String docId, String title, String body, Map<String, Object> props)
         {
             props.put(PROPERTY.categories.toString(), _category.getName());
             props.put(PROPERTY.title.toString(), title);

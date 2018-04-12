@@ -462,7 +462,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         }
 
         @Test
-        public void verifyMarkAsRead() throws Exception
+        public void verifyMarkAsRead()
         {
             // no records updated when we give it a mis-matching objectId
             int count = _service.markAsRead(_container, _user, "objectId0", Collections.singletonList("type1"), _user.getUserId());
@@ -476,7 +476,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         }
 
         @Test
-        public void verifyRemove() throws Exception
+        public void verifyRemove()
         {
             // no records removed when we give it a mis-matching objectId
             int count = _service.removeNotifications(_container, "objectId0", Collections.singletonList("type2"), _user.getUserId());

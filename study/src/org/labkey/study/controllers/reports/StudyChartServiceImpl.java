@@ -182,7 +182,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
                     "'. Please specify a different name.");
     }
 
-    private String getReportKey(ReportDescriptor descriptor) throws ServletException
+    private String getReportKey(ReportDescriptor descriptor)
     {
         int showWithDataset = NumberUtils.toInt(descriptor.getProperty("showWithDataset"));
         if (showWithDataset != 0)

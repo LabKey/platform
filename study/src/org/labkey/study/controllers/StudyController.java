@@ -687,7 +687,7 @@ public class StudyController extends BaseStudyController
             return root.addChild("Study Query Report");
         }
 
-        protected Report getReport(QueryReportForm form) throws Exception
+        protected Report getReport(QueryReportForm form)
         {
             if (_report == null)
             {
@@ -707,7 +707,7 @@ public class StudyController extends BaseStudyController
             super();
         }
 
-        protected Report getReport(QueryReportForm form) throws Exception
+        protected Report getReport(QueryReportForm form)
         {
             if (_report == null)
             {
@@ -799,7 +799,7 @@ public class StudyController extends BaseStudyController
             super(DatasetFilterForm.class);
         }
 
-        private DatasetDefinition getDatasetDefinition() throws ServletException
+        private DatasetDefinition getDatasetDefinition()
         {
             if (null == _def)
             {
@@ -1016,14 +1016,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            try
-            {
-                return _appendNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
-            }
-            catch (ServletException x)
-            {
-                return root;
-            }
+            return _appendNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
         }
     }
 
@@ -1352,7 +1345,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static StudyImpl createStudy(@Nullable StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
+    public static StudyImpl createStudy(@Nullable StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException
     {
         if (null == study)
         {
@@ -1504,7 +1497,7 @@ public class StudyController extends BaseStudyController
     public class ManageStudyPropertiesAction extends FormApiAction<TableViewForm>
     {
         @Override
-        protected TableViewForm getCommand(HttpServletRequest request) throws Exception
+        protected TableViewForm getCommand(HttpServletRequest request)
         {
             User user = getUser();
             UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
@@ -1621,7 +1614,7 @@ public class StudyController extends BaseStudyController
             return root;
         }
 
-        private String _jspName(Study study) throws ServletException
+        private String _jspName(Study study)
         {
             assert study.getTimepointType() != TimepointType.CONTINUOUS;
             return study.getTimepointType() == TimepointType.DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
@@ -1761,7 +1754,7 @@ public class StudyController extends BaseStudyController
     public class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
     {
         @Override
-        public ModelAndView getConfirmView(LocationForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(LocationForm form, BindException errors)
         {
             List<String> temp = new ArrayList<>();
             for (Container c : getContainers(form))
@@ -2099,7 +2092,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ModelAndView getConfirmView(IdForm idForm, BindException errors) throws Exception
+        public ModelAndView getConfirmView(IdForm idForm, BindException errors)
         {
             StudyImpl study = getStudyThrowIfNull();
 
@@ -2476,7 +2469,7 @@ public class StudyController extends BaseStudyController
 
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -2995,7 +2988,7 @@ public class StudyController extends BaseStudyController
      * the cached list of participants.
      */
     private void setColumnURL(final ActionURL url, final QueryView queryView,
-                              final UserSchema querySchema, final Dataset def) throws ServletException
+                              final UserSchema querySchema, final Dataset def)
     {
         List<DisplayColumn> columns;
         try
@@ -3613,7 +3606,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteQCStateAction extends RedirectAction<DeleteQCStateForm>
     {
-        public boolean doAction(DeleteQCStateForm form, BindException errors) throws Exception
+        public boolean doAction(DeleteQCStateForm form, BindException errors)
         {
             if (form.isAll())
             {
@@ -3844,7 +3837,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ResetPipelineAction extends SimpleRedirectAction<ResetPipelinePathForm>
     {
-        public ActionURL getRedirectURL(ResetPipelinePathForm form) throws Exception
+        public ActionURL getRedirectURL(ResetPipelinePathForm form)
         {
             Container c = getContainer();
 
@@ -3868,7 +3861,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DefaultDatasetReportAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             ViewContext context = getViewContext();
             int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
@@ -4166,7 +4159,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
-        public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
+        public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
             File studyFile = form.getValidatedSingleFile(c);
@@ -4200,7 +4193,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(DeletePermission.class)
     public class PurgeDatasetAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             ViewContext context = getViewContext();
             int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
@@ -4314,7 +4307,7 @@ public class StudyController extends BaseStudyController
             return order;
         }
 
-        private Map<Integer, Integer> getVisitIdToZeroMap(List<VisitImpl> visits) throws ServletException
+        private Map<Integer, Integer> getVisitIdToZeroMap(List<VisitImpl> visits)
         {
             Map<Integer, Integer> order = new HashMap<>();
             for (VisitImpl visit : visits)
@@ -5156,7 +5149,7 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
-        private void deletePreviousDatasetDefinition(StudySnapshotForm form) throws SQLException
+        private void deletePreviousDatasetDefinition(StudySnapshotForm form)
         {
             if (form.getSnapshotDatasetId() != -1)
             {
@@ -6011,7 +6004,7 @@ public class StudyController extends BaseStudyController
             _report = report;
         }
 
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
             {
@@ -6032,7 +6025,7 @@ public class StudyController extends BaseStudyController
             return TYPE;
         }
 
-        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor) throws Exception
+        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor)
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty(DatasetDefinition.DATASETKEY));
             final Study study = StudyManager.getInstance().getStudy(context.getContainer());
@@ -6064,7 +6057,7 @@ public class StudyController extends BaseStudyController
         public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
         {
             return new ChartReportDescriptor.LegendItemLabelGenerator() {
-                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception
+                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName)
                 {
                     TableInfo table = getTable(context, descriptor);
                     if (table != null)
@@ -6105,7 +6098,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             Container c = getViewContext().getContainer();
             User user = getViewContext().getUser();
@@ -6578,7 +6571,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public boolean doAction(DatasetDetailRedirectForm datasetDetailRedirectForm, BindException errors) throws Exception
+        public boolean doAction(DatasetDetailRedirectForm datasetDetailRedirectForm, BindException errors)
         {
             return true;
         }
@@ -6880,7 +6873,7 @@ public class StudyController extends BaseStudyController
     public class ClearVisitAliasesAction extends ConfirmAction
     {
         @Override
-        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        public ModelAndView getConfirmView(Object o, BindException errors)
         {
             return new HtmlView("Are you sure you want to delete the visit import custom mapping for this study?");
         }

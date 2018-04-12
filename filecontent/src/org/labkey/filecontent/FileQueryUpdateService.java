@@ -101,7 +101,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws QueryUpdateServiceException, SQLException
     {
         Filter filter = getQueryFilter(container, keys);
         Set<FieldKey> queryColumns = getQueryColumns(container);
@@ -276,7 +276,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException
     {
         return _setRow(user, container, row, false);
     }
@@ -460,7 +460,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws ValidationException
     {
         return _setRow(user, container, row, true);
     }

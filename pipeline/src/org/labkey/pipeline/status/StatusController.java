@@ -102,7 +102,7 @@ public class StatusController extends SpringActionController
         return p;
     }
 
-    public Container getContainerCheckAdmin() throws ServletException
+    public Container getContainerCheckAdmin()
     {
         Container c = getContainer();
         if (c == null || c.isRoot())
@@ -119,7 +119,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             return urlShowList(getContainer(), false);
         }
@@ -150,7 +150,7 @@ public class StatusController extends SpringActionController
             return form.getReturnActionURL(urlShowList(getContainer(), true));
         }
 
-        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             Container c = getContainerCheckAdmin();
 
@@ -245,7 +245,7 @@ public class StatusController extends SpringActionController
             // Direct posts do nothing
         }
 
-        public boolean handlePost(ReturnUrlWithErrorForm o, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlWithErrorForm o, BindException errors)
         {
             return true;    // Direct posts do nothing
         }
@@ -381,7 +381,7 @@ public class StatusController extends SpringActionController
             // Do nothing on post
         }
 
-        public boolean handlePost(RowIdForm rowIdForm, BindException errors) throws Exception
+        public boolean handlePost(RowIdForm rowIdForm, BindException errors)
         {
             return true;  // Do nothing on post
         }
@@ -418,7 +418,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowDataAction extends SimpleRedirectAction<RowIdForm>
     {
-        public ActionURL getRedirectURL(RowIdForm form) throws Exception
+        public ActionURL getRedirectURL(RowIdForm form)
         {
             Container c = getContainerCheckAdmin();
 
@@ -440,7 +440,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowFolderAction extends SimpleRedirectAction<RowIdForm>
     {
-        public ActionURL getRedirectURL(RowIdForm form) throws Exception
+        public ActionURL getRedirectURL(RowIdForm form)
         {
             Container c = getContainerCheckAdmin();
 
@@ -469,7 +469,7 @@ public class StatusController extends SpringActionController
         {
         }
 
-        public boolean handlePost(ProviderActionForm form, BindException errors) throws Exception
+        public boolean handlePost(ProviderActionForm form, BindException errors)
         {
             // Never a post, since buttons user anchor.
             return true;
@@ -796,13 +796,13 @@ public class StatusController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ConfirmDeleteStatusForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ConfirmDeleteStatusForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/pipeline/status/deleteStatus.jsp", form, errors);
         }
 
         @Override
-        public boolean handlePost(ConfirmDeleteStatusForm form, BindException errors) throws Exception
+        public boolean handlePost(ConfirmDeleteStatusForm form, BindException errors)
         {
             if (!form.isConfirm())
                 return false;
@@ -845,7 +845,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class CompleteStatusAction extends PerformStatusActionBase
     {
-        public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
+        public void handleSelect(SelectStatusForm form)
         {
             completeStatus(getUser(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
         }
@@ -855,7 +855,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
     {
-        public ModelAndView getView(RowIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(RowIdForm form, BindException errors)
         {
             DataRegion rgn = new DataRegion();
 
@@ -896,7 +896,7 @@ public class StatusController extends SpringActionController
         {
         }
 
-        public boolean handlePost(EscalateMessageForm form, BindException errors) throws Exception
+        public boolean handlePost(EscalateMessageForm form, BindException errors)
         {
             String recipients = "";
             try
@@ -1170,7 +1170,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ForceRefreshAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             PipelineServiceImpl.get().refreshLocalJobs();
             throw new RedirectException(new ActionURL(ShowListAction.class, ContainerManager.getRoot()));

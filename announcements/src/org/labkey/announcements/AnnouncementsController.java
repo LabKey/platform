@@ -164,7 +164,7 @@ public class AnnouncementsController extends SpringActionController
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AnnouncementsController.class, SendMessageAction.class);
 
-    public AnnouncementsController() throws Exception
+    public AnnouncementsController()
     {
         setActionResolver(_actionResolver);
     }
@@ -232,7 +232,7 @@ public class AnnouncementsController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Settings settings = getSettings();
             boolean displayAll = getActionURL().getController().equalsIgnoreCase("announcements");
@@ -264,7 +264,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ListAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             AnnouncementListView view = new AnnouncementListView(getViewContext());
             view.setFrame(WebPartView.FrameType.PORTAL);
@@ -292,7 +292,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteThreadsAction extends RedirectAction
     {
-        public boolean doAction(Object o, BindException errors) throws Exception
+        public boolean doAction(Object o, BindException errors)
         {
             if (!getPermissions().allowDeleteAnyThread())
             {
@@ -355,7 +355,7 @@ public class AnnouncementsController extends SpringActionController
             return form.getReturnURLHelper();
         }
 
-        public boolean handlePost(AnnouncementDeleteForm form, BindException errors) throws Exception
+        public boolean handlePost(AnnouncementDeleteForm form, BindException errors)
         {
             Permissions perm = getPermissions();
             Container c = getContainer();
@@ -453,7 +453,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresLogin @ActionNames("removeFromMemberList, confirmRemove")
     public class RemoveFromMemberListAction extends ConfirmAction<MemberListRemovalForm>
     {
-        public ModelAndView getConfirmView(MemberListRemovalForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(MemberListRemovalForm form, BindException errors)
         {
             AnnouncementModel thread = validateAndGetThread(form, errors);
 
@@ -480,7 +480,7 @@ public class AnnouncementsController extends SpringActionController
             return getBeginURL(getContainer());
         }
 
-        public boolean handlePost(MemberListRemovalForm form, BindException errors) throws Exception
+        public boolean handlePost(MemberListRemovalForm form, BindException errors)
         {
             if (form.getUserId() != getUser().getUserId())
             {
@@ -607,7 +607,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public Object execute(AttachmentForm form, BindException errors) throws Exception
+        public Object execute(AttachmentForm form, BindException errors)
         {
             AnnouncementModel ann = getAnnouncement(form);
             verifyPermissions(ann);
@@ -668,7 +668,7 @@ public class AnnouncementsController extends SpringActionController
             return form.getReturnURLHelper();
         }
 
-        public ModelAndView getView(Settings form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Settings form, boolean reshow, BindException errors)
         {
             CustomizeBean bean = new CustomizeBean();
 
@@ -685,7 +685,7 @@ public class AnnouncementsController extends SpringActionController
             return new JspView<>("/org/labkey/announcements/customize.jsp", bean);
         }
 
-        public boolean handlePost(Settings form, BindException errors) throws Exception
+        public boolean handlePost(Settings form, BindException errors)
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
 
@@ -715,7 +715,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private boolean hasEditorPerm(int groupId) throws ServletException
+    private boolean hasEditorPerm(int groupId)
     {
         Role editorRole = RoleManager.getRole(EditorRole.class);
         Group group = SecurityManager.getGroup(groupId);
@@ -747,7 +747,7 @@ public class AnnouncementsController extends SpringActionController
             form.validate(errors);
         }
 
-        public boolean handlePost(AnnouncementForm form, BindException errors) throws Exception
+        public boolean handlePost(AnnouncementForm form, BindException errors)
         {
             if (!getPermissions().allowInsert())
             {
@@ -850,7 +850,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
             Settings settings = getSettings(c);
@@ -898,7 +898,7 @@ public class AnnouncementsController extends SpringActionController
             return super.bindParameters(m);
         }
 
-        public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             Permissions perm = getPermissions();
             AnnouncementModel parent = null;
@@ -999,7 +999,7 @@ public class AnnouncementsController extends SpringActionController
     public class CompleteUserAction extends ApiAction<AjaxCompletionForm>
     {
         @Override
-        public ApiResponse execute(AjaxCompletionForm form, BindException errors) throws Exception
+        public ApiResponse execute(AjaxCompletionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -1216,7 +1216,7 @@ public class AnnouncementsController extends SpringActionController
             throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
-        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             AnnouncementModel ann = form.selectAnnouncement();
             if (null == ann)
@@ -1234,7 +1234,7 @@ public class AnnouncementsController extends SpringActionController
             return new AnnouncementUpdateView(form, ann, errors);
         }
 
-        public boolean handlePost(AnnouncementForm form, BindException errors) throws Exception
+        public boolean handlePost(AnnouncementForm form, BindException errors)
         {
             AnnouncementModel ann = form.selectAnnouncement();
 
@@ -1399,7 +1399,7 @@ public class AnnouncementsController extends SpringActionController
             super.checkPermissions();
         }
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
 
@@ -1456,7 +1456,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresSiteAdmin
     public class PurgeAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             int rows = ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), null);
             return new HtmlView("deleted " + rows + " pages<br>");
@@ -1490,7 +1490,7 @@ public class AnnouncementsController extends SpringActionController
             return null;  // Reshow the page with success message
         }
 
-        public ModelAndView getView(EmailOptionsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(EmailOptionsForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
 
@@ -1522,7 +1522,7 @@ public class AnnouncementsController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(EmailOptionsForm form, BindException errors) throws Exception
+        public boolean handlePost(EmailOptionsForm form, BindException errors)
         {
             int emailOption = form.getResetFolderDefault() ? -1 : form.getEmailOption(errors);
             AnnouncementManager.saveEmailPreference(getUser(), getContainer(), emailOption, form.getSrcIdentifier());
@@ -1576,7 +1576,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)  // TODO: Seems to be unused... delete?
     public class SetDefaultEmailOptionsAction extends RedirectAction<EmailDefaultSettingsForm>
     {
-        public boolean doAction(EmailDefaultSettingsForm form, BindException errors) throws Exception
+        public boolean doAction(EmailDefaultSettingsForm form, BindException errors)
         {
             //save the default settings
             AnnouncementManager.saveDefaultEmailOption(getContainer(), form.getDefaultEmailOption());
@@ -1594,7 +1594,7 @@ public class AnnouncementsController extends SpringActionController
     public class SetEmailDefault extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
-        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
+        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -1622,7 +1622,7 @@ public class AnnouncementsController extends SpringActionController
     public class SetBulkEmailOptions extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
-        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
+        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             MessageConfigService.ConfigTypeProvider provider = form.getProvider();
@@ -1686,7 +1686,7 @@ public class AnnouncementsController extends SpringActionController
     public class GetEmailOptions extends ApiAction<NotifyOptionsForm>
     {
         @Override
-        public ApiResponse execute(NotifyOptionsForm form, BindException errors) throws Exception
+        public ApiResponse execute(NotifyOptionsForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -1719,7 +1719,7 @@ public class AnnouncementsController extends SpringActionController
     public class SendDailyDigestAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
+        public URLHelper getRedirectURL(Object o)
         {
             Thread digestThread = new Thread(){
                 @Override
@@ -2526,7 +2526,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class AnnouncementListView extends AnnouncementListWebPart
     {
-        public AnnouncementListView(ViewContext ctx) throws ServletException
+        public AnnouncementListView(ViewContext ctx)
         {
             super(ctx, true, false);
         }
@@ -2583,19 +2583,19 @@ public class AnnouncementsController extends SpringActionController
             super("/org/labkey/announcements/announcementThread.jsp", new ThreadViewBean());
         }
 
-        public ThreadView(Container c, URLHelper currentURL, User user, String rowId, String entityId) throws ServletException
+        public ThreadView(Container c, URLHelper currentURL, User user, String rowId, String entityId)
         {
             this();
             init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false);
         }
 
-        public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm) throws ServletException
+        public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm)
         {
             this();
             init(c, ann, url, perm, true, false);
         }
         
-        public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print) throws ServletException
+        public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print)
         {
             this();
             AnnouncementModel ann = findThread(c, (String)form.get("rowId"), (String)form.get("entityId"));
@@ -2603,7 +2603,6 @@ public class AnnouncementsController extends SpringActionController
         }
 
         protected void init(Container c, AnnouncementModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
-                throws ServletException
         {
             if (null == c || !perm.allowRead(ann))
             {
@@ -2774,7 +2773,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(SubscriptionBean bean, BindException errors) throws Exception
+        public boolean doAction(SubscriptionBean bean, BindException errors)
         {
             String id = bean.getThreadId();
             if (id == null)
@@ -2896,7 +2895,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ModeratorReviewForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ModeratorReviewForm form, boolean reshow, BindException errors)
         {
             UserSchema schema = new AnnouncementSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);

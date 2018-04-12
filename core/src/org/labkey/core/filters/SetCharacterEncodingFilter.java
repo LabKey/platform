@@ -125,7 +125,7 @@ public class SetCharacterEncodingFilter implements Filter
      *
      * @param filterConfig The filter configuration object
      */
-    public void init(FilterConfig filterConfig) throws ServletException
+    public void init(FilterConfig filterConfig)
     {
 
         this.filterConfig = filterConfig;

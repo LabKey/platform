@@ -120,7 +120,7 @@ public class ExportExcelReport extends RedirectReport
 
 
     public void runExportToExcel(ViewContext context, StudyImpl study, User user, BindException errors)
-            throws IOException, ServletException, SQLException
+            throws IOException, SQLException
     {
         // TODO: wire up the security
         boolean checkUserPermissions = true;//mustCheckDatasetPermissions(user, ACL.PERM_READ);

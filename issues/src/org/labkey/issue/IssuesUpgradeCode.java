@@ -148,7 +148,7 @@ public class IssuesUpgradeCode implements UpgradeCode
      * to the hard tables instead of using the query update service to avoid double writing to the legacy
      * issues table.
      */
-    void populateProvisionedTable(Container c, User user, ObjectFactory<LegacyIssue> factory, IssueMigrationPlan plan) throws SQLException
+    void populateProvisionedTable(Container c, User user, ObjectFactory<LegacyIssue> factory, IssueMigrationPlan plan)
     {
         IssueListDef issueListDef = IssueManager.getIssueListDef(c, plan.getIssueDefName());
         if (issueListDef != null)
@@ -201,7 +201,7 @@ public class IssuesUpgradeCode implements UpgradeCode
         }
     }
 
-    void migrateCustomViews(Container c, User user, IssueMigrationPlan plan) throws SQLException
+    void migrateCustomViews(Container c, User user, IssueMigrationPlan plan)
     {
         // only need to change for non-default issue def names
         TableInfo tinfoCustomView = DbSchema.get("query", DbSchemaType.Module).getTable("CustomView");
@@ -937,7 +937,7 @@ public class IssuesUpgradeCode implements UpgradeCode
      * Copy createdBy, modifiedBy, and modified fields from the legacy issues.issues table
      * to the new provisioned tables.
      */
-    void copySpecialFields(IssueListDef issueListDef, User user) throws SQLException
+    void copySpecialFields(IssueListDef issueListDef, User user)
     {
         if (issueListDef != null)
         {

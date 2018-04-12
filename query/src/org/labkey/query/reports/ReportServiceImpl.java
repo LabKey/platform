@@ -245,7 +245,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         DatabaseReportCache.uncache(c);
     }
 
-    public Report createFromQueryString(String queryString) throws Exception
+    public Report createFromQueryString(String queryString)
     {
         for (Pair<String, String> param : PageFlowUtil.fromQueryString(queryString))
         {
@@ -735,7 +735,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override @Nullable
-    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException
+    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, XmlValidationException
     {
         Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml);
         if (report != null)
@@ -910,7 +910,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
 
         @Override
-        public void categoryDeleted(User user, ViewCategory category) throws Exception
+        public void categoryDeleted(User user, ViewCategory category)
         {
             for (Report report : getDatabaseReportsForCategory(category))
             {
@@ -923,10 +923,12 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
 
         @Override
-        public void categoryCreated(User user, ViewCategory category) throws Exception {}
+        public void categoryCreated(User user, ViewCategory category)
+        {}
 
         @Override
-        public void categoryUpdated(User user, ViewCategory category) throws Exception {}
+        public void categoryUpdated(User user, ViewCategory category)
+        {}
 
         private Collection<Report> getDatabaseReportsForCategory(ViewCategory category)
         {

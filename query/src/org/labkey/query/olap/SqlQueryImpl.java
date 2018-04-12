@@ -45,7 +45,7 @@ public class SqlQueryImpl
     }
 
 
-    public String generateSQL() throws BindException
+    public String generateSQL()
     {
         throw new UnsupportedOperationException("Not implemented yet, need more metadata!");
     }

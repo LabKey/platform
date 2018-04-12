@@ -1046,7 +1046,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page) throws Exception
+    private HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page)
     {
         String email = form.getEmail();
 
@@ -1105,7 +1105,7 @@ public class LoginController extends SpringActionController
         return vBox;
     }
 
-    private WebPartView getLoginView(BindException errors) throws Exception
+    private WebPartView getLoginView(BindException errors)
     {
         // Get the login page specified by controller-action in the Look and Feel Settings
         // This is placed in showLogin() instead of the getLoginURL() to ensure that the logic above
@@ -1285,7 +1285,7 @@ public class LoginController extends SpringActionController
 
 
     @Nullable
-    private Project getTermsOfUseProject(AgreeToTermsForm form) throws ServletException
+    private Project getTermsOfUseProject(AgreeToTermsForm form)
     {
         if (null != form.getTermsOfUseType() && (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE))
             return null;
@@ -1294,7 +1294,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    private boolean isTermsOfUseApproved(AgreeToTermsForm form) throws ServletException, URISyntaxException
+    private boolean isTermsOfUseApproved(AgreeToTermsForm form)
     {
         Project termsProject = getTermsOfUseProject(form);
         return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(termsProject) || WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), termsProject);
@@ -1418,7 +1418,7 @@ public class LoginController extends SpringActionController
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
 
-        public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
+        public boolean doAction(ReturnUrlForm form, BindException errors)
         {
             return deauthenticate(getUser(), getViewContext());
         }
@@ -1736,7 +1736,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getSuccessView(SetPasswordForm form) throws Exception
+        public ModelAndView getSuccessView(SetPasswordForm form)
         {
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
             AuthenticationManager.AuthenticationResult result = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
@@ -1827,7 +1827,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected void afterPasswordSet(BindException errors, User user) throws SQLException
+        protected void afterPasswordSet(BindException errors, User user)
         {
             // Put it here to get ordering right... "Added to the system" gets logged before first login
             UserManager.addToUserHistory(user, "Added to the system via the initial user page.");
@@ -2374,7 +2374,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(AuthParameterForm parameterForm, BindException errors) throws Exception
+        public boolean doAction(AuthParameterForm parameterForm, BindException errors)
         {
             AuthenticationManager.setAuthConfigProperty(getUser(), parameterForm.getParameter(), parameterForm.isEnabled());
             return true;
@@ -2415,7 +2415,7 @@ public class LoginController extends SpringActionController
             return getUrls().getConfigureURL();
         }
 
-        public boolean doAction(ProviderForm form, BindException errors) throws Exception
+        public boolean doAction(ProviderForm form, BindException errors)
         {
             AuthenticationManager.enableProvider(form.getProvider(), getUser());
             return true;
@@ -2430,7 +2430,7 @@ public class LoginController extends SpringActionController
             return getUrls().getConfigureURL();
         }
 
-        public boolean doAction(ProviderForm form, BindException errors) throws Exception
+        public boolean doAction(ProviderForm form, BindException errors)
         {
             AuthenticationManager.disableProvider(form.getProvider(), getUser());
             return true;
@@ -2608,7 +2608,7 @@ public class LoginController extends SpringActionController
         }
 
         // Returns true if a new logo is saved
-        private boolean handleLogo(String providerName, Map<String, MultipartFile> fileMap, String prefix) throws IOException, SQLException, ServletException
+        private boolean handleLogo(String providerName, Map<String, MultipartFile> fileMap, String prefix) throws IOException, ServletException
         {
             MultipartFile file = fileMap.get(prefix + "file");
 
@@ -2625,7 +2625,7 @@ public class LoginController extends SpringActionController
         }
 
         // Returns true if a logo is deleted
-        public boolean deleteLogos(AuthLogoForm form) throws SQLException
+        public boolean deleteLogos(AuthLogoForm form)
         {
             String[] deletedLogos = form.getDeletedLogos();
 

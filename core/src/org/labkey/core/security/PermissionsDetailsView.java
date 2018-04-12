@@ -126,7 +126,7 @@ public class PermissionsDetailsView extends WebPartView
 
 
     @Override
-    public void renderView(Object model, PrintWriter out) throws IOException, ServletException
+    public void renderView(Object model, PrintWriter out) throws ServletException
     {
         SecurityPolicy policy = _c.getPolicy();
 

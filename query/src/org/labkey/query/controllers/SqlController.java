@@ -51,7 +51,7 @@ public class SqlController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SqlController.class);
 
-    public SqlController() throws Exception
+    public SqlController()
     {
         setActionResolver(_actionResolver);
     }
@@ -210,7 +210,7 @@ public class SqlController extends SpringActionController
     }
 
 
-    void writeResults_text(PrintWriter out, Results rs, String sep, String eol) throws IOException, SQLException
+    void writeResults_text(PrintWriter out, Results rs, String sep, String eol) throws SQLException
     {
         final int count = rs.getMetaData().getColumnCount();
         final boolean serializeDateAsNumber=false;
@@ -323,7 +323,7 @@ public class SqlController extends SpringActionController
      * implementation is generating strings inside out.write().  So this is probably not much different from a GC
      * perspective.
      */
-    void writeResults_compact(PrintWriter out, Results rs, String sep, String eol) throws IOException, SQLException
+    void writeResults_compact(PrintWriter out, Results rs, String sep, String eol) throws SQLException
     {
         final int count = rs.getMetaData().getColumnCount();
         final boolean serializeDateAsNumber=false;

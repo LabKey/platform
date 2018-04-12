@@ -299,7 +299,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     }
 
     // Get the inputs and roles of the first action in the job sequence
-    private Map<?, String> getInputs(PipelineJob job) throws PipelineJobException
+    private Map<?, String> getInputs(PipelineJob job)
     {
         RecordedActionSet actionSet = job.getActionSet();
         List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());

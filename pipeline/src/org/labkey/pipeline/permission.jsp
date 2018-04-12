@@ -118,7 +118,7 @@ function toggleEnableFTP(checkbox)
 
 
 <%!
-    String writeOptions(Pair[] options, Role role) throws IOException
+    String writeOptions(Pair[] options, Role role)
     {
         StringBuilder out = new StringBuilder();
         boolean selected = false;

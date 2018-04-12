@@ -89,17 +89,17 @@ public class VisitTag
         }
 
         @Override
-        public ArrayList<VisitTag> handleArrayList(ResultSet rs) throws SQLException
+        public ArrayList<VisitTag> handleArrayList(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }
 
-        public VisitTag[] handleArray(ResultSet rs) throws SQLException
+        public VisitTag[] handleArray(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }
 
-        public VisitTag handle(ResultSet rs) throws SQLException
+        public VisitTag handle(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }

@@ -78,7 +78,7 @@ public class FileEmailConfig extends AbstractConfigTypeProvider
     }
 
     @Override
-    public boolean handlePost(ViewContext context, BindException errors) throws Exception
+    public boolean handlePost(ViewContext context, BindException errors)
     {
         return false;
     }

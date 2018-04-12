@@ -2227,10 +2227,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
             return null;
         }
-        catch (SQLException sqlx)
-        {
-            throw new RuntimeSQLException(sqlx);
-        }
         catch (UnexpectedException unex)
         {
             errors.addRowError(new ValidationException(unex.getMessage()));
@@ -2238,7 +2234,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
-    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, StringBuilder sbIn, final Map<String, Object[]> uriMap) throws SQLException
+    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, StringBuilder sbIn, final Map<String, Object[]> uriMap)
     {
         // duplicate keys found that should be deleted
         final Set<String> deleteSet = new HashSet<>();
@@ -2257,7 +2253,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         new TableSelector(tinfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
         {
             @Override
-            public void exec(Map<String, Object> orig) throws SQLException
+            public void exec(Map<String, Object> orig)
             {
                 String lsid = (String) orig.get("LSID");
                 String uniq = demographic ? (String)orig.get("ParticipantID"): lsid;
@@ -2437,7 +2433,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
 
     @Override
-    public void afterPropertiesSet() throws Exception
+    public void afterPropertiesSet()
     {
         if (null == _isShared)
         {
@@ -2690,7 +2686,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public static class TestCleanupOrphanedDatasetDomains extends Assert
     {
         @Test
-        public void test() throws Exception
+        public void test()
         {
             cleanupOrphanedDatasetDomains();
         }

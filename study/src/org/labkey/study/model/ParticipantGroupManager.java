@@ -511,10 +511,6 @@ public class ParticipantGroupManager
             }
             return ret;
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
     public ParticipantCategoryImpl setParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
@@ -553,13 +549,9 @@ public class ParticipantGroupManager
             }
             return ret;
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
-    private ParticipantCategoryImpl _saveParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws SQLException, ValidationException
+    private ParticipantCategoryImpl _saveParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
     {
         ParticipantCategoryImpl ret;
         List<ValidationError> errors = new ArrayList<>();
@@ -668,7 +660,7 @@ public class ParticipantGroupManager
             TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
             ts.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
                 @Override
-                public void exec(Map<String, Object> m) throws SQLException
+                public void exec(Map<String, Object> m)
                 {
                     participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container"));
                 }
@@ -726,7 +718,7 @@ public class ParticipantGroupManager
     }
 
 
-    public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException
+    public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         ParticipantGroup ret;
@@ -988,7 +980,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void updateListTypeDef(Container c, User user, ParticipantCategoryImpl def, boolean update, String[] participants, String filters, String description) throws SQLException, ValidationException
+    private void updateListTypeDef(Container c, User user, ParticipantCategoryImpl def, boolean update, String[] participants, String filters, String description) throws ValidationException
     {
         assert !def.isNew() : "The participant category has not been created yet";
 

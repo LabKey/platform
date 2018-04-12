@@ -111,7 +111,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
         }
     }
 
-    public void closeInputStream() throws IOException
+    public void closeInputStream()
     {
         IOUtils.closeQuietly(_is);
         _is = null;

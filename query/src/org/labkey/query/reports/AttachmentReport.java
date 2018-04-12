@@ -295,7 +295,7 @@ public class AttachmentReport extends BaseRedirectReport
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report)
             {
                 return null;
             }

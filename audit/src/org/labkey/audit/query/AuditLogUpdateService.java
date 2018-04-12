@@ -48,7 +48,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("RowId"), keys.get("RowId"));
@@ -58,7 +58,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException
     {
         ClientApiAuditProvider.ClientApiAuditEvent event = new ClientApiAuditProvider.ClientApiAuditEvent(container.getId(), getString(row, "Comment"));
         if (row.get("EventType") != null)
@@ -88,17 +88,10 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
             event.setInt3(intKey3.intValue());
         }
         event = AuditLogService.get().addEvent(user, event);
-        try
-        {
-            Map<String, Object> keys = new HashMap<>();
-            keys.put("RowId", event.getRowId());
-            keys.put("EventType", event.getEventType());
-            return getRow(user, container, keys);
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new QueryUpdateServiceException(e);
-        }
+        Map<String, Object> keys = new HashMap<>();
+        keys.put("RowId", event.getRowId());
+        keys.put("EventType", event.getEventType());
+        return getRow(user, container, keys);
     }
 
     private String getString(Map<String, Object> row, String propertyName)
@@ -119,7 +112,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
     {
         throw new UnsupportedOperationException("Audit records aren't editable");
     }

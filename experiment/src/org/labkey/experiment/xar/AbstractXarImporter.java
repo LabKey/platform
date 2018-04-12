@@ -53,7 +53,7 @@ public abstract class AbstractXarImporter
         }
     }
 
-    protected void checkMaterialCpasType(String declaredType) throws XarFormatException
+    protected void checkMaterialCpasType(String declaredType)
     {
         if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
         {

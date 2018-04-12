@@ -120,7 +120,7 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
     }
 
     @Override
-    public File getSpecimenArchive() throws ImportException, SQLException
+    public File getSpecimenArchive() throws ImportException
     {
         return _ctx.getSpecimenArchive(_root);
     }

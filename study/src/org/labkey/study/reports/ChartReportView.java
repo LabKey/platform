@@ -165,11 +165,12 @@ public class ChartReportView extends AbstractReportView
         return super.getRunReportURL(context);
     }
 
-    public void deleteView(ViewContext context) throws SQLException
+    public void deleteView(ViewContext context)
     {
     }
 
-    public void saveView(ViewContext context) throws Exception {
+    public void saveView(ViewContext context)
+    {
     }
 
     public void beforeSave(ContainerUser context)
@@ -320,7 +321,7 @@ public class ChartReportView extends AbstractReportView
             return TYPE;
         }
 
-        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor) throws Exception
+        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor)
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
             final Study study = StudyService.get().getStudy(context.getContainer());

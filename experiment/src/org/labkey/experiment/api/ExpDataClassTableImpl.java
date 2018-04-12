@@ -184,7 +184,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         }
 
         @Override
-        protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
+        protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
         {
             Integer rowId = (Integer)keys[0];
             if (rowId == null)

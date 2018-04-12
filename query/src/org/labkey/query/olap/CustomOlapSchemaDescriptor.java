@@ -63,7 +63,7 @@ public class CustomOlapSchemaDescriptor extends OlapSchemaDescriptor
     }
 
     @Override
-    protected InputStream getInputStream() throws IOException
+    protected InputStream getInputStream()
     {
         return IOUtils.toInputStream(getDefinition());
     }

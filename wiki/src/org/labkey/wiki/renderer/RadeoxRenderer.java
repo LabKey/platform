@@ -348,7 +348,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
 
         @Override
-        public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
+        public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException
         {
             // Ignore text within {comment}....{comment}
         }

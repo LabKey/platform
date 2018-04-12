@@ -109,7 +109,7 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
     public abstract String getLsid();
 
     // This is not up to current standards... but at least we're using the domain to get the PropertyURIs now...
-    public void savePropertyBag(Map<String, Object> props) throws SQLException, ValidationException
+    public void savePropertyBag(Map<String, Object> props) throws ValidationException
     {
         Container container = getContainer();
         String ownerLsid = getLsid();

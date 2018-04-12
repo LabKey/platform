@@ -207,7 +207,7 @@ public class ListController extends SpringActionController
     public class BeginAction extends SimpleViewAction<QueryForm>
     {
         @Override
-        public ModelAndView getView(QueryForm queryForm, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm queryForm, BindException errors)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), ListManagerSchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ListManagerSchema.LIST_MANAGER);
@@ -234,7 +234,7 @@ public class ListController extends SpringActionController
     public class ShowListDefinitionAction extends SimpleRedirectAction<ListDefinitionForm>
     {
         @Override
-        public ActionURL getRedirectURL(ListDefinitionForm listDefinitionForm) throws Exception
+        public ActionURL getRedirectURL(ListDefinitionForm listDefinitionForm)
         {
             if (listDefinitionForm.getListId() == null)
             {
@@ -250,7 +250,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = null;
 
@@ -335,12 +335,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
-        public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
+        public boolean handlePost(ListDefinitionForm form, BindException errors)
         {
             for(int i = 0; i < _listIDs.size(); i++)
             {
@@ -376,7 +376,7 @@ public class ListController extends SpringActionController
         private ListDefinition _list;
         private String _title;
 
-        public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(ListQueryForm form, BindException errors)
         {
             _list = form.getList();
             if (null == _list)
@@ -412,7 +412,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors)
         {
             ListDefinition list = form.getList(); // throws NotFoundException
 
@@ -429,7 +429,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
+        public boolean handlePost(ListDefinitionForm form, BindException errors)
         {
             return true;
         }
@@ -580,7 +580,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
+        public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = form.getList();
             TableInfo table = _list.getTable(getUser(), getContainer());
@@ -711,7 +711,7 @@ public class ListController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ResolveAction extends SimpleRedirectAction<ListDefinitionForm>
     {
-        public ActionURL getRedirectURL(ListDefinitionForm form) throws Exception
+        public ActionURL getRedirectURL(ListDefinitionForm form)
         {
             ListDefinition list = form.getList();
             ListItem item = list.getListItemForEntityId(getViewContext().getActionURL().getParameter("entityId"), getUser()); // TODO: Use proper form, validate
@@ -774,7 +774,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(ListQueryForm form, BindException errors)
         {
             _list = form.getList();
             if (_list != null)
@@ -832,7 +832,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
             int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
@@ -965,7 +965,7 @@ public class ListController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/list/view/importLists.jsp", null, errors);
         }
@@ -1013,7 +1013,7 @@ public class ListController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BrowseListsAction extends ApiAction<Object>
     {
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 

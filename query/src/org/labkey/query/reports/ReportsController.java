@@ -357,7 +357,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public ReportsController() throws Exception
+    public ReportsController()
     {
         super();
         setActionResolver(_actionResolver);
@@ -479,7 +479,7 @@ public class ReportsController extends SpringActionController
             throw new ServletException("Unable to render the specified chart");
         }
 
-        private ChartDesignerBean verifyBean(ChartDesignerBean form) throws Exception
+        private ChartDesignerBean verifyBean(ChartDesignerBean form)
         {
             // a saved report
             if (null != form.getReportId())
@@ -1462,7 +1462,7 @@ public class ReportsController extends SpringActionController
             _report = report;
         }
 
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             if (_report != null)
             {
@@ -1617,7 +1617,7 @@ public class ReportsController extends SpringActionController
             return createResponse(form, report, errors);
         }
 
-        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors) throws Exception
+        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
@@ -1642,7 +1642,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors) throws Exception
+        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Pair<String, String> externalEditor = report.startExternalEditor(getViewContext(), form.getScript(), errors);
@@ -2378,7 +2378,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected LinkReport initializeReportForSave(LinkReportForm form) throws Exception
+        protected LinkReport initializeReportForSave(LinkReportForm form)
         {
             LinkReport report;
 
@@ -2712,7 +2712,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, PrintWriter out)
         {
             if (_report instanceof ChartReport)
             {
@@ -2754,7 +2754,7 @@ public class ReportsController extends SpringActionController
     public class ThumbnailAction extends BaseThumbnailAction<ThumbnailForm>
     {
         @Override
-        public ThumbnailProvider getProvider(ThumbnailForm form) throws Exception
+        public ThumbnailProvider getProvider(ThumbnailForm form)
         {
             return form.getReportId().getReport(getViewContext());
         }
@@ -4052,7 +4052,7 @@ public class ReportsController extends SpringActionController
     public class SendDailyDigestAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
+        public URLHelper getRedirectURL(Object o)
         {
             // Spawn a new thread so the digest creation doesn't have the Spring Action context available.
             Thread digestThread = new Thread() {

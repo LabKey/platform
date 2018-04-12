@@ -896,7 +896,7 @@ public class PipelineServiceImpl implements PipelineService
          * Verify pipeline root and file root default values at the project level
          */
         @Test
-        public void testPipelineRootDefaultsInProject() throws Exception
+        public void testPipelineRootDefaultsInProject()
         {
             // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
             if (ContainerManager.getForPath(PROJECT_NAME) != null)
@@ -927,7 +927,7 @@ public class PipelineServiceImpl implements PipelineService
          * and points to the customized file root location.
          */
         @Test
-        public void testPipelineRootWithCustomizedFileRootInProject() throws Exception
+        public void testPipelineRootWithCustomizedFileRootInProject()
         {
             // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
             if (ContainerManager.getForPath(PROJECT_NAME) != null)
@@ -997,7 +997,7 @@ public class PipelineServiceImpl implements PipelineService
          * same location as the subfolder file root.
          */
         @Test
-        public void testSubfolderWhenCustomizedFileRootInProject() throws Exception
+        public void testSubfolderWhenCustomizedFileRootInProject()
         {
             // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
             if (ContainerManager.getForPath(PROJECT_NAME) != null)

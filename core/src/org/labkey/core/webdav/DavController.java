@@ -688,7 +688,7 @@ public class DavController extends SpringActionController
             this.allowDuringUpgrade = allow;
         }
 
-        public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
+        public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
         {
             clearLastError();
 
@@ -1257,7 +1257,7 @@ public class DavController extends SpringActionController
                     PropfindAction action = new PropfindAction()
                     {
                         @Override
-                        protected InputStream getInputStream() throws IOException
+                        protected InputStream getInputStream()
                         {
                             return new ByteArrayInputStream(new byte[0]);
                         }
@@ -2732,7 +2732,7 @@ public class DavController extends SpringActionController
             extraProps = new HashMap<>();
         }
 
-        public void beginResponse(WebdavResponse response) throws Exception
+        public void beginResponse(WebdavResponse response)
         {
             response.setContentType("application/json; charset=UTF-8");
             json.object();
@@ -2740,7 +2740,7 @@ public class DavController extends SpringActionController
             json.array();
         }
 
-        public void endResponse() throws Exception
+        public void endResponse()
         {
             json.endArray();
 
@@ -3061,11 +3061,11 @@ public class DavController extends SpringActionController
                     {
                         return _size;
                     }
-                    public InputStream openInputStream() throws IOException
+                    public InputStream openInputStream()
                     {
                         return is;
                     }
-                    public void closeInputStream() throws IOException
+                    public void closeInputStream()
                     {
                         /* */
                     }
@@ -4288,7 +4288,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        WebdavStatus doMethod() throws IOException, DavException
+        WebdavStatus doMethod() throws DavException
         {
             if (isStaticContent(getResourcePath()))
             {
@@ -4707,7 +4707,7 @@ public class DavController extends SpringActionController
     }
 */
 
-    WebdavResource getGzipResource(WebdavResource r) throws DavException, IOException
+    WebdavResource getGzipResource(WebdavResource r)
     {
         // kinda hacky, but good enough for now
         assert isStaticContent(r.getPath());
@@ -5339,7 +5339,7 @@ public class DavController extends SpringActionController
         return null==result ? null : result.resource;
     }
 
-    @Nullable WebdavResolver.LookupResult resolvePathResult(Path path, boolean reload) throws DavException
+    @Nullable WebdavResolver.LookupResult resolvePathResult(Path path, boolean reload)
     {
         WebdavResolver.LookupResult result = reload ? null : resourceCache.get(path);
 
@@ -5386,7 +5386,6 @@ public class DavController extends SpringActionController
      *         processing is stopped
      */
     private boolean checkIfMatch(WebdavResource resource)
-            throws DavException
     {
         String headerValue = getRequest().getHeader("If-Match");
         if (headerValue != null)
@@ -5426,7 +5425,6 @@ public class DavController extends SpringActionController
      *         processing is stopped
      */
     private boolean checkIfModifiedSince(WebdavResource resource)
-            throws DavException
     {
         try
         {

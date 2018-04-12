@@ -88,17 +88,17 @@ public class VisitTagMapEntry
         }
 
         @Override
-        public ArrayList<VisitTagMapEntry> handleArrayList(ResultSet rs) throws SQLException
+        public ArrayList<VisitTagMapEntry> handleArrayList(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }
 
-        public VisitTagMapEntry[] handleArray(ResultSet rs) throws SQLException
+        public VisitTagMapEntry[] handleArray(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }
 
-        public VisitTagMapEntry handle(ResultSet rs) throws SQLException
+        public VisitTagMapEntry handle(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }

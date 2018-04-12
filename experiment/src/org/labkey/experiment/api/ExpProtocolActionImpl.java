@@ -107,7 +107,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         return ret;
     }
 
-    public void addSuccessor(User user, ExpProtocolAction successor) throws Exception
+    public void addSuccessor(User user, ExpProtocolAction successor)
     {
         Map<String, Integer> map = new HashMap<>();
         map.put("PredecessorId", getRowId());

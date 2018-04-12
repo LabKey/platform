@@ -239,7 +239,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container c, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container c, Map<String, Object> keys) throws InvalidKeyException
         {
             Integer rowId = (Integer)keys.get("rowId");
             String name = keys.get("label") != null ? nameFromLabel((String)keys.get("label")) : (String)keys.get("name");
@@ -259,7 +259,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
 
         @Override
-        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws ValidationException
         {
             String label = (String)row.get("label");
             if (StringUtils.isBlank(label))
@@ -291,7 +291,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
 
         @Override
-        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
         {
             throw new UnsupportedOperationException("Update not supported.");
         }

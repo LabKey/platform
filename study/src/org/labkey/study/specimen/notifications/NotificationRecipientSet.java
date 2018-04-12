@@ -31,7 +31,7 @@ public class NotificationRecipientSet
     private boolean[] _addressInactiveBits;
     private int _countInactiveEmailAddresses = 0;
 
-    public NotificationRecipientSet(Address[] addresses) throws ValidEmail.InvalidEmailException
+    public NotificationRecipientSet(Address[] addresses)
     {
         _addresses = new String[addresses.length];
         _addressInactiveBits = new boolean[addresses.length];   // all false by default

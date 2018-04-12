@@ -36,7 +36,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class UpgradeIssuesAction extends SimpleViewAction<Object>
 {
     @Override
-    public ModelAndView getView(Object o, BindException errors) throws Exception
+    public ModelAndView getView(Object o, BindException errors)
     {
         Module module = ModuleLoader.getInstance().getModule(IssuesModule.NAME);
         IssuesUpgradeCode upgradeCode = new IssuesUpgradeCode();

@@ -53,7 +53,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
     @Override
     @SuppressWarnings("unchecked")
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws QueryUpdateServiceException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -118,7 +118,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException, QueryUpdateServiceException, SQLException
     {
         try
         {

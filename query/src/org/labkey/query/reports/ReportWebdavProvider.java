@@ -176,7 +176,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return new ByteArrayInputStream(buf);
         }
 
-        public long copyFrom(User user, FileStream in) throws IOException
+        public long copyFrom(User user, FileStream in)
         {
 /*
             ByteArrayOutputStream buf = new ByteArrayOutputStream();

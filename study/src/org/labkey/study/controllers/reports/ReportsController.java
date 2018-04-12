@@ -125,7 +125,7 @@ public class ReportsController extends BaseStudyController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
 
-    public ReportsController() throws Exception
+    public ReportsController()
     {
         super();
         setActionResolver(_actionResolver);
@@ -352,7 +352,7 @@ public class ReportsController extends BaseStudyController
     {
         private ExternalReport extReport;
 
-        public ExternalReportBean(ViewContext context, ExternalReport extReport, String queryName) throws ServletException
+        public ExternalReportBean(ViewContext context, ExternalReport extReport, String queryName)
         {
             super(context, queryName);
             this.extReport = extReport;
@@ -435,7 +435,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    private ModelAndView getDatasetForward(int reportId, Integer dataset) throws Exception
+    private ModelAndView getDatasetForward(int reportId, Integer dataset)
     {
         ActionURL url = getViewContext().cloneActionURL();
         url.setAction(StudyController.DatasetReportAction.class);
@@ -655,7 +655,7 @@ public class ReportsController extends BaseStudyController
             return v;
         }
 
-        private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form) throws ServletException
+        private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
             Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<>();
@@ -1017,7 +1017,7 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             out.write("<form method='post' name='saveReport' action='");
             out.write(PageFlowUtil.filter(new ActionURL(SaveReportViewAction.class, getViewContext().getContainer())));
@@ -1483,7 +1483,7 @@ public class ReportsController extends BaseStudyController
         protected Report _report;
         protected Dataset _def;
 
-        protected Report getReport(RReportBean form) throws Exception
+        protected Report getReport(RReportBean form)
         {
             String reportIdParam = form.getViewContext().getActionURL().getParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
@@ -1791,7 +1791,7 @@ public class ReportsController extends BaseStudyController
             return response;
         }
 
-        private Report getParticipantReport(ParticipantReportForm form) throws Exception
+        private Report getParticipantReport(ParticipantReportForm form)
         {
             Report report;
 
@@ -1972,7 +1972,7 @@ public class ReportsController extends BaseStudyController
             return response;
         }
 
-        private Report getReport(ProgressReportForm form) throws Exception
+        private Report getReport(ProgressReportForm form)
         {
             Report report;
 

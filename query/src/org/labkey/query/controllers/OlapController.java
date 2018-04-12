@@ -519,7 +519,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getConfirmView(CustomOlapDescriptorForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(CustomOlapDescriptorForm form, BindException errors)
         {
             return new HtmlView("Are you sure you want do delete the custom olap definition '" + PageFlowUtil.filter(form.getBean().getName()) + "'?");
         }

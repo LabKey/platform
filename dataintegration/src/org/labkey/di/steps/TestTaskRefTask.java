@@ -37,7 +37,7 @@ public class TestTaskRefTask extends TaskRefTaskImpl
     }
 
     @Override
-    public RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException
+    public RecordedActionSet run(@NotNull PipelineJob job)
     {
         settings.put(Setting.setting1.name(), "test");
         job.getLogger().info("Log from test task");

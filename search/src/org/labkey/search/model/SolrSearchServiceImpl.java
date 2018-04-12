@@ -38,7 +38,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     private static final Logger _log = Logger.getLogger(SolrSearchServiceImpl.class);
 
     @Override
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit)
     {
         return null;
     }

@@ -199,7 +199,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }

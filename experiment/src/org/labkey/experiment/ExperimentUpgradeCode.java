@@ -53,7 +53,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static final Logger LOG = Logger.getLogger(ExperimentUpgradeCode.class);
 
     /** Called from exp-16.31-16.32.sql */
-    public static void cleanupQuotedAliases(ModuleContext context) throws Exception
+    public static void cleanupQuotedAliases(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
@@ -144,7 +144,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /** Called from exp-17.23-17.24.sql */
-    public static void saveMvIndicatorStorageNames(ModuleContext context) throws Exception
+    public static void saveMvIndicatorStorageNames(ModuleContext context)
     {
         if (context.isNewInstall())
             return;

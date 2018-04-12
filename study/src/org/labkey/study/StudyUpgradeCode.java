@@ -103,7 +103,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
     // Invoked by study-16.20-16.30.sql
     @SuppressWarnings({"UnusedDeclaration"})
-    public void updatePKAndContainer(final ModuleContext context) throws Exception
+    public void updatePKAndContainer(final ModuleContext context)
     {
         if (!context.isNewInstall())
         {
@@ -184,7 +184,7 @@ public class StudyUpgradeCode implements UpgradeCode
      * Invoked by study-16.20-16.30.sql
      */
     @SuppressWarnings({"UnusedDeclaration"})
-    public void populateDoseAndRoute(final ModuleContext context) throws Exception
+    public void populateDoseAndRoute(final ModuleContext context)
     {
         if (!context.isNewInstall())
         {
@@ -224,7 +224,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
     // Invoked by study-16.20-16.30.sql
     @SuppressWarnings({"UnusedDeclaration"})
-    public void updateDateIndex(final ModuleContext context) throws Exception
+    public void updateDateIndex(final ModuleContext context)
     {
         if (!context.isNewInstall())
         {
@@ -327,7 +327,7 @@ public class StudyUpgradeCode implements UpgradeCode
 
     // Invoked by study-17.21-17.22.sql
     @SuppressWarnings({"UnusedDeclaration"})
-    public void moveQCStateToCore(final ModuleContext context) throws Exception
+    public void moveQCStateToCore(final ModuleContext context)
     {
         SQLFragment sqlFrag;
         String sql;

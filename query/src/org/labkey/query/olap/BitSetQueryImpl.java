@@ -558,7 +558,7 @@ public class BitSetQueryImpl
 
         @NotNull
         @Override
-        Collection<Member> getCollection() throws OlapException
+        Collection<Member> getCollection()
         {
             throw new UnsupportedOperationException();
         }
@@ -1366,7 +1366,7 @@ public class BitSetQueryImpl
     //   * one count(distinct) measure at intersections
     //
 
-    public CellSet executeQuery() throws BindException,SQLException
+    public CellSet executeQuery() throws SQLException
     {
 
         Result countFilterExpr=null, whereFilterExpr=null, rowsExpr=null, columnsExpr=null;
@@ -1795,7 +1795,7 @@ public class BitSetQueryImpl
         }
 
 
-        ResultSet execute(User user, String query) throws SQLException
+        ResultSet execute(User user, String query)
         {
             logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
@@ -2388,13 +2388,13 @@ public class BitSetQueryImpl
         }
 
         @Override
-        public NamedList<? extends Member> getChildMembers() throws OlapException
+        public NamedList<? extends Member> getChildMembers()
         {
             return null;
         }
 
         @Override
-        public int getChildMemberCount() throws OlapException
+        public int getChildMemberCount()
         {
             return 0;
         }
@@ -2472,19 +2472,19 @@ public class BitSetQueryImpl
         }
 
         @Override
-        public Object getPropertyValue(Property property) throws OlapException
+        public Object getPropertyValue(Property property)
         {
             return null;
         }
 
         @Override
-        public String getPropertyFormattedValue(Property property) throws OlapException
+        public String getPropertyFormattedValue(Property property)
         {
             return null;
         }
 
         @Override
-        public void setProperty(Property property, Object o) throws OlapException
+        public void setProperty(Property property, Object o)
         {
 
         }

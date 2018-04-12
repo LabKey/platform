@@ -154,7 +154,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                                 Map<ParameterDescription, Object> declaredVariables,
                                 boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope, boolean allowMultipleQueuing,
                                 Map<String, String> pipelineParameters, Map<ParameterDescription, Object> constants,
-                                String transactSourceSchema, String transactTargetSchema) throws XmlException, IOException
+                                String transactSourceSchema, String transactTargetSchema)
     {
         _id = id;
         _name = name;
@@ -814,7 +814,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             return job;
         }
 
-        private void verifyEtl(TransformPipelineJob transformJob, boolean isSuccess) throws Exception
+        private void verifyEtl(TransformPipelineJob transformJob, boolean isSuccess)
         {
             TransformRun transformRun = verifyTransformRun(transformJob, isSuccess);
             if (isSuccess)

@@ -220,15 +220,14 @@ public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = Logger.getLogger(ExperimentController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
-
-    public static final String GUEST_DIRECTORY_NAME = "guest";
+    private static final String GUEST_DIRECTORY_NAME = "guest";
 
     public ExperimentController()
     {
         setActionResolver(_actionResolver);
     }
 
-    public static void ensureCorrectContainer(Container requestContainer, ExpObject object, ViewContext viewContext) throws ServletException
+    public static void ensureCorrectContainer(Container requestContainer, ExpObject object, ViewContext viewContext)
     {
         Container objectContainer = object.getContainer();
         if (!requestContainer.equals(objectContainer))
@@ -447,7 +446,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected ExperimentRunListView createQueryView(ExpObjectForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected ExperimentRunListView createQueryView(ExpObjectForm form, BindException errors, boolean forExport, String dataRegion)
         {
             return createViews(form, errors).first;
         }
@@ -986,7 +985,7 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpDataClass> dataClasses = getDataClasses(deleteForm);
             if (!ensureCorrectContainer(dataClasses))
@@ -1225,7 +1224,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(ConceptURIForm form, BindException errors) throws Exception
+        public Object execute(ConceptURIForm form, BindException errors)
         {
             ConceptURIProperties.removeLookup(getContainer(), form.getConceptURI());
             return new ApiSimpleResponse("success", true);
@@ -1640,7 +1639,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowDataAction extends AbstractDataAction
     {
-        public ModelAndView getDataView(DataForm form, BindException errors) throws Exception
+        public ModelAndView getDataView(DataForm form, BindException errors)
         {
             ExpRun run = _data.getRun();
             ExpProtocol sourceProtocol = _data.getSourceProtocol();
@@ -1758,7 +1757,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(DataFileForm form, BindException errors) throws Exception
+        public ApiResponse execute(DataFileForm form, BindException errors)
         {
             File dataFile = _data.getFile();
             Container dataContainer = _data.getContainer();
@@ -2255,7 +2254,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ConvertHtmlToExcelForm form, BindException errors) throws Exception
+        public boolean handlePost(ConvertHtmlToExcelForm form, BindException errors)
         {
             ActionURL url = getViewContext().getActionURL();
             String base = url.getBaseServerURI();
@@ -2645,7 +2644,7 @@ public class ExperimentController extends SpringActionController
             return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException
+        protected void deleteObjects(DeleteForm deleteForm)
         {
             ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
         }
@@ -2670,7 +2669,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
-        public ApiResponse execute(DeleteRunForm form, BindException errors) throws Exception
+        public ApiResponse execute(DeleteRunForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
             if (run == null)
@@ -2793,7 +2792,7 @@ public class ExperimentController extends SpringActionController
             return protocols;
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException
+        protected void deleteObjects(DeleteForm deleteForm)
         {
             for (ExpProtocol protocol : getProtocols(deleteForm))
             {
@@ -2817,7 +2816,7 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpMaterial> materials = getMaterials(deleteForm, true);
 
@@ -2841,7 +2840,6 @@ public class ExperimentController extends SpringActionController
         }
 
         private List<ExpRun> getRuns(List<ExpMaterial> materials)
-                throws SQLException
         {
             // We don't actually delete runs that use the materials - we just disconnect the material from the run
             // In some cases (such as flow) this is required. In others, it's not as sensible
@@ -2948,7 +2946,6 @@ public class ExperimentController extends SpringActionController
         }
 
         private List<ExpRun> getRuns(List<ExpData> datas)
-                throws SQLException
         {
             List<ExpRun> runsToDelete = new ArrayList<>();
             List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingDatas(datas);
@@ -2981,7 +2978,7 @@ public class ExperimentController extends SpringActionController
             super();
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm)
         {
             for (ExpExperiment exp : lookupExperiments(deleteForm))
             {
@@ -3048,7 +3045,7 @@ public class ExperimentController extends SpringActionController
             return super.appendNavTrail(root);
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
             if (!ensureCorrectContainer(sampleSets))
@@ -3179,7 +3176,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private DataRegion getMaterialSourceRegion(ViewContext model, boolean detailsView) throws Exception
+    private DataRegion getMaterialSourceRegion(ViewContext model, boolean detailsView)
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
 
@@ -3218,7 +3215,7 @@ public class ExperimentController extends SpringActionController
     {
         private final ExpSampleSet _activeSampleSet;
 
-        public ActiveSampleSetColumn(Container c) throws SQLException
+        public ActiveSampleSetColumn(Container c)
         {
             _activeSampleSet = ExperimentService.get().lookupActiveSampleSet(c);
             setCaption("Active");
@@ -3267,7 +3264,7 @@ public class ExperimentController extends SpringActionController
         {
         }
 
-        public boolean handlePost(MaterialSourceForm form, BindException errors) throws Exception
+        public boolean handlePost(MaterialSourceForm form, BindException errors)
         {
             _source = form.getBean();
             ExpSampleSet oldSampleSet = ExperimentService.get().getSampleSet(_source.getLSID());
@@ -3322,7 +3319,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(UploadMaterialSetForm form, BindException errors) throws Exception
+        public boolean handlePost(UploadMaterialSetForm form, BindException errors)
         {
             try
             {
@@ -3391,7 +3388,7 @@ public class ExperimentController extends SpringActionController
         {
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             String rowId = null;
             if (getViewContext().getRequest().getParameter("rowid") != null)
@@ -3817,7 +3814,7 @@ public class ExperimentController extends SpringActionController
     }
 
     private ActionURL exportXAR(XarExportSelection selection, String lsidRelativizerName, String exportTypeName, String fileName)
-            throws SQLException, ExperimentException, ServletException, IOException, PipelineValidationException
+            throws ExperimentException, IOException, PipelineValidationException
     {
         final LSIDRelativizer lsidRelativizer;
         final XarExportType exportType;
@@ -4124,7 +4121,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private void addSelectedRunsToExperiment(ExpExperiment exp) throws SQLException
+    private void addSelectedRunsToExperiment(ExpExperiment exp)
     {
         Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
         List<ExpRun> runs = new ArrayList<>();
@@ -4147,7 +4144,7 @@ public class ExperimentController extends SpringActionController
         {
         }
 
-        public boolean handlePost(ExperimentRunListForm form, BindException errors) throws Exception
+        public boolean handlePost(ExperimentRunListForm form, BindException errors)
         {
             addSelectedRunsToExperiment(form.lookupExperiment());
             return true;
@@ -4166,7 +4163,7 @@ public class ExperimentController extends SpringActionController
         {
         }
 
-        public boolean handlePost(ExperimentRunListForm form, BindException errors) throws Exception
+        public boolean handlePost(ExperimentRunListForm form, BindException errors)
         {
             ExpExperiment exp = form.lookupExperiment();
             if (exp == null || !exp.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -5064,7 +5061,6 @@ public class ExperimentController extends SpringActionController
             }
 
             public Pair<List<Map<String, Object>>, List<String>> prepareRows()
-                    throws ExperimentException
             {
                 List<Map<String, Object>> rows = new ArrayList<>();
                 List<String> roles = new ArrayList<>();
@@ -5103,7 +5099,7 @@ public class ExperimentController extends SpringActionController
 
             protected abstract List<T> getExpObject(List<Map<String, Object>> insertedRows);
 
-            public Map<T, String> createOutputs() throws ExperimentException, BatchValidationException, DuplicateKeyException, SQLException, QueryUpdateServiceException
+            public Map<T, String> createOutputs() throws BatchValidationException, DuplicateKeyException, SQLException, QueryUpdateServiceException
             {
                 Pair<List<Map<String, Object>>, List<String>> pair = prepareRows();
                 List<Map<String, Object>> rows = pair.first;
@@ -5341,7 +5337,7 @@ public class ExperimentController extends SpringActionController
         {
         }
 
-        public boolean handlePost(MoveRunsForm form, BindException errors) throws Exception
+        public boolean handlePost(MoveRunsForm form, BindException errors)
         {
             _targetContainer = ContainerManager.getForId(form.getTargetContainerId());
             if (_targetContainer == null || !_targetContainer.hasPermission(getUser(), InsertPermission.class))
@@ -5917,7 +5913,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(ExpLineageOptions options, BindException errors) throws Exception
+        public Object execute(ExpLineageOptions options, BindException errors)
         {
             ExpLineage lineage = ExperimentService.get().getLineage(_output, options);
             return new ApiSimpleResponse(lineage.toJSON());

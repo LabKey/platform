@@ -62,12 +62,12 @@ public class CachedCube extends MetadataElementBase implements Cube
     final _NamedList<_Dimension,Dimension> dimensions = new _NamedList<>();
 
     /* TODO redo compute hash code */
-    CachedCube(Cube c) throws SQLException
+    CachedCube(Cube c)
     {
         super(null, c, null);
     }
 
-    CachedCube(String name) throws SQLException
+    CachedCube(String name)
     {
         super(null, name, null);
     }
@@ -171,13 +171,13 @@ public class CachedCube extends MetadataElementBase implements Cube
     }
 
     @Override
-    public Member lookupMember(List<IdentifierSegment> identifierSegments) throws OlapException
+    public Member lookupMember(List<IdentifierSegment> identifierSegments)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<Member> lookupMembers(Set<Member.TreeOp> treeOps, List<IdentifierSegment> identifierSegments) throws OlapException
+    public List<Member> lookupMembers(Set<Member.TreeOp> treeOps, List<IdentifierSegment> identifierSegments)
     {
         throw new UnsupportedOperationException();
     }
@@ -195,12 +195,12 @@ public class CachedCube extends MetadataElementBase implements Cube
         _Hierarchy defaultHierarchy;
         Type dimensionType;
 
-        _Dimension(CachedCube cc, Dimension d) throws OlapException
+        _Dimension(CachedCube cc, Dimension d)
         {
             super(cc, d, null);
         }
 
-        _Dimension(CachedCube cc, String name) throws OlapException
+        _Dimension(CachedCube cc, String name)
         {
             super(cc, name, null);
         }
@@ -217,7 +217,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         @Override
-        public Type getDimensionType() throws OlapException
+        public Type getDimensionType()
         {
             return dimensionType;
         }
@@ -237,14 +237,14 @@ public class CachedCube extends MetadataElementBase implements Cube
         _Member defaultMember;
 
 
-        _Hierarchy(CachedCube cc, _Dimension dimension, Hierarchy h) throws OlapException
+        _Hierarchy(CachedCube cc, _Dimension dimension, Hierarchy h)
         {
             super(cc, h, null);
             this.dimension = dimension;
         }
 
 
-        _Hierarchy(CachedCube cc, _Dimension dimension, String name) throws OlapException
+        _Hierarchy(CachedCube cc, _Dimension dimension, String name)
         {
             super(cc, dimension.getName().equals(name) ? name : dimension.getName() + "." + name, null);
             this.dimension = dimension;
@@ -276,7 +276,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         @Override
-        public Member getDefaultMember() throws OlapException
+        public Member getDefaultMember()
         {
             return defaultMember;
         }
@@ -302,7 +302,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         // temporary pointer, used in olap4j loading
         Level orig;
 
-        _Level(CachedCube cc, _Hierarchy h, Level l) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, Level l)
         {
             super(cc, l, null);
 
@@ -314,7 +314,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         // Type == ALL
-        _Level(CachedCube cc, _Hierarchy h, Type t) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, Type t)
         {
             super(cc, "(All)", h);
             if (t != Type.ALL)
@@ -327,7 +327,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
 
-        _Level(CachedCube cc, _Hierarchy h, String name, int depth) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, String name, int depth)
         {
             super(cc, name, h);
             this.depth = depth;
@@ -397,7 +397,7 @@ public class CachedCube extends MetadataElementBase implements Cube
          * @throws org.olap4j.OlapException
          */
         @Override
-        public NamedList<Member> getMembers() throws OlapException
+        public NamedList<Member> getMembers()
         {
             return members.recast();
         }
@@ -405,14 +405,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         @Override
         public int getCardinality()
         {
-            try
-            {
-                return getMembers().size();
-            }
-            catch (OlapException x)
-            {
-                throw new RuntimeException(x);
-            }
+            return getMembers().size();
         }
     }
 
@@ -439,7 +432,7 @@ public class CachedCube extends MetadataElementBase implements Cube
 
 
         // Type == ALL
-        _Member(CachedCube cc, _Level level, Member.Type type) throws OlapException
+        _Member(CachedCube cc, _Level level, Member.Type type)
         {
             super(cc, "(All)", level.hierarchy);
             if (type != Member.Type.ALL)
@@ -452,7 +445,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
 
-        public _Member(CachedCube cc, _Level level, _Member parent, String name, boolean isLeaf) throws OlapException
+        public _Member(CachedCube cc, _Level level, _Member parent, String name, boolean isLeaf)
         {
             super(cc, name, level.depth<2 ? level.hierarchy : parent);
             this.level = level;
@@ -500,7 +493,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
 
-        public Object getKeyValue() throws OlapException
+        public Object getKeyValue()
         {
             if (null == _properties)
             {
@@ -523,7 +516,6 @@ public class CachedCube extends MetadataElementBase implements Cube
 
         @Override
         public NamedList<? extends Member> getChildMembers()
-                throws OlapException
         {
             if (null == childMembers)
                 return emptyMemberList;
@@ -546,7 +538,7 @@ public class CachedCube extends MetadataElementBase implements Cube
 
 
         @Override
-        public int getChildMemberCount() throws OlapException
+        public int getChildMemberCount()
         {
             return childMembers.size();
         }
@@ -624,7 +616,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         @Override
-        public Object getPropertyValue(Property property) throws OlapException
+        public Object getPropertyValue(Property property)
         {
             if (null == _properties)
                 return null;
@@ -635,7 +627,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         @Override
-        public String getPropertyFormattedValue(Property property) throws OlapException
+        public String getPropertyFormattedValue(Property property)
         {
             if (null == _properties)
                 return null;
@@ -646,7 +638,7 @@ public class CachedCube extends MetadataElementBase implements Cube
         }
 
         @Override
-        public void setProperty(Property property, Object o) throws OlapException
+        public void setProperty(Property property, Object o)
         {
             throw new UnsupportedOperationException();
         }
@@ -1007,7 +999,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             return new KeyMap(type, map);
         }
 
-        private KeyMap(JdbcType type, Map<Object,_Member> map) throws OlapException
+        private KeyMap(JdbcType type, Map<Object,_Member> map)
         {
             this.type = type;
             this.impl = map;

@@ -224,7 +224,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    public ProjectController() throws Exception
+    public ProjectController()
     {
         super();
         setActionResolver(_actionResolver);
@@ -420,7 +420,7 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(Object o, BindException errors) throws Exception
+        public boolean doAction(Object o, BindException errors)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
             Path path = Path.decode(p);
@@ -1764,7 +1764,7 @@ public class ProjectController extends SpringActionController
     public class TogglePageAdminModeAction extends org.labkey.api.action.RedirectAction<ReturnUrlForm>
     {
         @Override
-        public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
+        public boolean doAction(ReturnUrlForm form, BindException errors)
         {
             HttpSession session = getViewContext().getSession();
             if (session != null)

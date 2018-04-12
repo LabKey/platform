@@ -428,7 +428,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    private String getUniqueName(Container container, String originalName) throws SQLException
+    private String getUniqueName(Container container, String originalName)
     {
         Set<String> existing = new HashSet<>();
         for (PlateTemplate template : PlateService.get().getPlateTemplates(container))

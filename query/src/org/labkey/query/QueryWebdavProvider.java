@@ -212,8 +212,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return "W/\"" + sql.length() + "-" + sql.hashCode() + "\"";
 		}
 
-		public InputStream getInputStream(User user) throws IOException
-		{
+		public InputStream getInputStream(User user)
+        {
 			String sql = StringUtils.trimToEmpty(_q.getSql());
 			return new ByteArrayInputStream(sql.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
 		}
@@ -233,8 +233,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return getContentLength();
 		}
 
-		public long getContentLength() throws IOException
-		{
+		public long getContentLength()
+        {
 			String sql = StringUtils.trimToEmpty(_q.getSql());
 			return sql.getBytes(StringUtilsLabKey.DEFAULT_CHARSET).length;
 		}

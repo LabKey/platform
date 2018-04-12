@@ -452,7 +452,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
+    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser)
     {
         SearchService ss = SearchService.get();
         for (AttachmentParent parent : parents)
@@ -1017,7 +1017,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     }
 
                     // slight hack here to get the size cheaply
-                    public int available() throws IOException
+                    public int available()
                     {
                         return size;
                     }
@@ -1314,7 +1314,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         @Override
-        public boolean delete(User user) throws IOException
+        public boolean delete(User user)
         {
             if (user != null && !canDelete(user, true, null))
                 return false;
@@ -1746,7 +1746,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             }
         }
 
-        private void testFileAttachmentFiles(File file1, File file2, User user) throws IOException, SQLException
+        private void testFileAttachmentFiles(File file1, File file2, User user) throws IOException
         {
             AttachmentFile aFile1 = new FileAttachmentFile(file1);
             AttachmentFile aFile2 = new FileAttachmentFile(file2);

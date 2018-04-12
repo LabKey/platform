@@ -71,7 +71,7 @@ public class CubeMaintenanceTask extends TaskRefTaskImpl
         refresh
                 {
                     @Override
-                    protected void doIt(User u, Map<Setting, String> settings, Set<Container> containers, Logger logger) throws PipelineJobException
+                    protected void doIt(User u, Map<Setting, String> settings, Set<Container> containers, Logger logger)
                     {
                         for (Container c : containers)
                             refreshCube(c, settings.get(Setting.cube), logger);

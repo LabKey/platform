@@ -66,7 +66,7 @@ public class TruncateTransformStep extends SimpleQueryTransformStep
 
     /** NOTE we could override doWork(), but just overriding executeCopy() is pretty surgical, even if though there is not "copy" happening */
     @Override
-    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException, PipelineJobException
+    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws PipelineJobException
     {
         boolean validationResult = validate(meta, c, u, log);
         if (!validationResult)

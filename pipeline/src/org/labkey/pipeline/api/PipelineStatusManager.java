@@ -526,7 +526,7 @@ public class PipelineStatusManager
         return filter;
     }
 
-    public static void completeStatus(User user, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
+    public static void completeStatus(User user, Collection<Integer> rowIds)
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))

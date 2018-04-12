@@ -50,7 +50,7 @@ public class InternalViewForm extends ViewForm
         _customViewId = id;
     }
 
-    public static void checkEdit(ViewContext context, CstmView view) throws Exception
+    public static void checkEdit(ViewContext context, CstmView view)
     {
         if (view == null)
         {

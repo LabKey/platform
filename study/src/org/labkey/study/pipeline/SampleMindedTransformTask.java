@@ -725,7 +725,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         }
 
         @Test
-        public void testLabLookup() throws IOException
+        public void testLabLookup()
         {
             Map<String, Integer> labs = new HashMap<>();
             labs.put("TestLabA", 501);

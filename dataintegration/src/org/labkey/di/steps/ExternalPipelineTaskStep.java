@@ -38,7 +38,7 @@ public class ExternalPipelineTaskStep extends TransformTask
     }
 
     @Override
-    public void doWork(RecordedAction action) throws PipelineJobException
+    public void doWork(RecordedAction action)
     {
         throw new UnsupportedOperationException();
     }

@@ -311,7 +311,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ApiAction<GetForm>
     {
-        public ApiResponse execute(GetForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetForm form, BindException errors)
         {
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
@@ -323,7 +323,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class SaveDomainAction extends ApiAction<SimpleApiJsonForm>
     {
-        public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
+        public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors)
         {
             JSONObject jsonObj = getForm.getJsonObject();
             String schema = jsonObj.getString("schemaName");
@@ -347,7 +347,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DeleteDomainAction extends ApiAction<GetForm>
     {
-        public Object execute(GetForm form, BindException errors) throws Exception
+        public Object execute(GetForm form, BindException errors)
         {
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();

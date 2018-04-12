@@ -163,7 +163,6 @@ public class CustomViewUtil
     }
 
     public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView, Map<FieldKey, Map<String, Object>> columnMetadata)
-            throws ServletException
     {
         //build a query view.  XXX: is this necessary?  Old version used queryView.getDisplayColumns() to get cols in the default view
         QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, queryName, viewName);

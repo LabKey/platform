@@ -106,7 +106,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
         }
     }
 
-    private void sendDigest(Container container, Map<Integer, List<NotificationInfo>> reportInfosByCategory) throws Exception
+    private void sendDigest(Container container, Map<Integer, List<NotificationInfo>> reportInfosByCategory)
     {
         if (null == reportInfosByCategory)
             return;
@@ -162,7 +162,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
         }
     }
 
-    private EmailMessage createDigestMessage(EmailService ems, ReportAndDatasetDigestBean form) throws Exception
+    private EmailMessage createDigestMessage(EmailService ems, ReportAndDatasetDigestBean form)
     {
         ReportAndDatasetChangeDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(ReportAndDatasetChangeDigestEmailTemplate.class);
         template.init(form.getContainer(), form.getReports());

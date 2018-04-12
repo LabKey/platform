@@ -112,7 +112,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     public class CreateSurveyTemplateAction extends ApiAction<SurveyTemplateForm>
     {
         @Override
-        public ApiResponse execute(SurveyTemplateForm form, BindException errors) throws Exception
+        public ApiResponse execute(SurveyTemplateForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -157,7 +157,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         private String _title = null;
 
         @Override
-        public ModelAndView getView(SurveyForm form, BindException errors) throws Exception
+        public ModelAndView getView(SurveyForm form, BindException errors)
         {
             if (form.getRowId() == null && form.getSurveyDesignId() == null)
             {
@@ -215,7 +215,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         private String _title = "Create Survey Design";
 
         @Override
-        public ModelAndView getView(SurveyDesignForm form,BindException errors) throws Exception
+        public ModelAndView getView(SurveyDesignForm form,BindException errors)
         {
             if (form.getRowId() != 0)
             {
@@ -475,7 +475,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     public class GetSurveyTemplateAction extends ApiAction<SurveyDesignForm>
     {
         @Override
-        public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
+        public ApiResponse execute(SurveyDesignForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             SurveyDesign survey = getSurveyDesign(form);
@@ -717,7 +717,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     public class GetSurveyResponseAction extends ApiAction<SurveyForm>
     {
         @Override
-        public ApiResponse execute(SurveyForm form, BindException errors) throws Exception
+        public ApiResponse execute(SurveyForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Survey survey = getSurvey(form);
@@ -908,7 +908,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
 
         @Override
-        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        public boolean handlePost(QueryForm form, BindException errors)
         {
             _returnURL = form.getReturnActionURL();
 
@@ -945,7 +945,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
 
         @Override
-        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        public boolean handlePost(QueryForm form, BindException errors)
         {
             _returnURL = form.getReturnActionURL();
 
@@ -975,7 +975,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     public class GetValidDesignQueries extends ApiAction<QueryForm>
     {
         @Override
-        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        public ApiResponse execute(QueryForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> queries = new ArrayList<>();

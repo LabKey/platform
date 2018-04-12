@@ -58,24 +58,24 @@ public class NoopWritableIndex implements WritableIndexManager
     }
 
     @Override
-    public IndexSearcher getSearcher() throws IOException
+    public IndexSearcher getSearcher()
     {
         throw new SearchMisconfiguredException();
     }
 
     @Override
-    public void releaseSearcher(IndexSearcher searcher) throws IOException
+    public void releaseSearcher(IndexSearcher searcher)
     {
     }
 
     @Override
-    public void deleteQuery(Query query) throws IOException
+    public void deleteQuery(Query query)
     {
         log("delete documents from the search index");
     }
 
     @Override
-    public void index(String documentId, Document doc) throws IOException
+    public void index(String documentId, Document doc)
     {
         log("index documents for search");
     }
@@ -86,7 +86,7 @@ public class NoopWritableIndex implements WritableIndexManager
     }
 
     @Override
-    public void close() throws IOException, InterruptedException
+    public void close()
     {
     }
 

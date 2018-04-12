@@ -166,7 +166,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         delete(user, true);
     }
 
-    public void delete(User user, boolean fireChangeEvent) throws SQLException
+    public void delete(User user, boolean fireChangeEvent)
     {
         if (!canEdit(user))
         {

@@ -96,7 +96,7 @@ public class ExpDataClassDataTestCase
     Container c;
 
     @Before
-    public void setUp() throws Exception
+    public void setUp()
     {
         // NOTE: We need to use a project to create the DataClass so we can insert rows into sub-folders
         c = ContainerManager.getForPath("_testDataClass");
@@ -106,7 +106,7 @@ public class ExpDataClassDataTestCase
     }
 
     @After
-    public void tearDown() throws Exception
+    public void tearDown()
     {
         //ContainerManager.deleteAll(c, TestContext.get().getUser());
     }

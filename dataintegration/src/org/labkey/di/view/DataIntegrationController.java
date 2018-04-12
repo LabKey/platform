@@ -92,7 +92,7 @@ public class DataIntegrationController extends SpringActionController
     public class BeginAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             JspView<Object> result = new JspView<>(DataIntegrationController.class, "transformConfiguration.jsp", null);
             result.setTitle("ETL Configurations");
@@ -111,7 +111,7 @@ public class DataIntegrationController extends SpringActionController
     public class viewJobsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new ProcessJobsView(getUser(), getContainer());
         }
@@ -171,7 +171,7 @@ public class DataIntegrationController extends SpringActionController
     public class viewTransformDetailsAction extends viewTransformHistoryAction
     {
         @Override
-        public ModelAndView getView(TransformViewForm form, BindException errors) throws Exception
+        public ModelAndView getView(TransformViewForm form, BindException errors)
         {
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
@@ -347,7 +347,7 @@ public class DataIntegrationController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception
+        public ApiResponse execute(TransformConfigurationForm form, BindException errors)
         {
             ViewContext context = getViewContext();
             boolean shouldStartStop = false;

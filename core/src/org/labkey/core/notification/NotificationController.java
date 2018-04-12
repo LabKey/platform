@@ -85,7 +85,7 @@ public class NotificationController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(NotificationForm form, BindException errors) throws Exception
+        public boolean doAction(NotificationForm form, BindException errors)
         {
             NotificationService.get().markAsRead(getUser(), form.getRowid());
             return true;

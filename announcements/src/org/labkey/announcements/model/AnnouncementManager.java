@@ -225,12 +225,12 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException, MessagingException
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException
     {
         return insertAnnouncement(c, user, insert, files, true);
     }
 
-    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files, boolean sendEmailNotifications) throws IOException, MessagingException
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files, boolean sendEmailNotifications) throws IOException
     {
         // If no srcIdentifier is set and this is a parent message, set its source to the container
         if (insert.getDiscussionSrcIdentifier() == null && insert.getParent() == null)
@@ -587,7 +587,7 @@ public class AnnouncementManager
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
-    public static void saveMessageBoardSettings(Container c, Settings settings) throws IllegalAccessException, InvocationTargetException
+    public static void saveMessageBoardSettings(Container c, Settings settings)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
@@ -822,7 +822,7 @@ public class AnnouncementManager
 
     public static class TestCase extends Assert
     {
-        private void purgeAnnouncements(Container c, boolean verifyEmpty) throws SQLException
+        private void purgeAnnouncements(Container c, boolean verifyEmpty)
         {
             String deleteDocuments = "DELETE FROM " + _core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?)";
             int docs = new SqlExecutor(_comm.getSchema()).execute(deleteDocuments, c, c);

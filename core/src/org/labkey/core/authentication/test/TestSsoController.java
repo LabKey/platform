@@ -37,7 +37,7 @@ public class TestSsoController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestSsoController.class);
 
-    public TestSsoController() throws Exception
+    public TestSsoController()
     {
         setActionResolver(_actionResolver);
     }

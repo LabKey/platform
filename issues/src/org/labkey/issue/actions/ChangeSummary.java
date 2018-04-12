@@ -408,7 +408,7 @@ public class ChangeSummary
      */
     @Nullable
     private static Notification createNotification(User notifyUser, MailHelper.MultipartMessage m, String linkText,
-                                                   String linkURL, String id, String type) throws IOException, MessagingException
+                                                   String linkURL, String id, String type) throws MessagingException
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
             return null;
@@ -428,7 +428,7 @@ public class ChangeSummary
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private static Set<User> getUsersToEmail(Container c, User user, Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
+    private static Set<User> getUsersToEmail(Container c, User user, Issue issue, Issue prevIssue, Class<? extends Controller> action)
     {
         final Set<User> emailUsers = new HashSet<>();
         int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());

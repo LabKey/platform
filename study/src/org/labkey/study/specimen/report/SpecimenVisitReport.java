@@ -41,17 +41,19 @@ import java.util.*;
  */
 public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellData>
 {
+    private final List<VisitImpl> _visits;
+    protected final SimpleFilter _filter;
+    private final SpecimenVisitReportParameters _parameters;
+    protected final Container _container;
+
+    private final boolean _viewParticipantCount;
+    private final boolean _viewVolume;
+    private final boolean _viewPtidList;
+    private final boolean _viewVialCount;
+    private final String _title;
+
     private Collection<Row> _rows;
-    protected String _title;
-    private List<VisitImpl> _visits;
     private List<VisitImpl> _nonEmptyVisits;
-    protected Container _container;
-    protected SimpleFilter _filter;
-    private SpecimenVisitReportParameters _parameters;
-    private boolean _viewVialCount = false;
-    private boolean _viewParticipantCount = false;
-    private boolean _viewVolume = false;
-    private boolean _viewPtidList = false;
     private Map<Integer, Integer> _nonEmptyColumns = new HashMap<>();
 
     public SpecimenVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)

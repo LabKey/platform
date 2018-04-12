@@ -98,7 +98,7 @@ public class PipeRootImpl implements PipeRoot
 
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
-    public PipeRootImpl() throws URISyntaxException
+    public PipeRootImpl()
     {
         _entityId = null;
         _searchable = false;

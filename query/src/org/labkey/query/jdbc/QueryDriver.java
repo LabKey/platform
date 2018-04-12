@@ -108,13 +108,13 @@ public class QueryDriver implements Driver
 
 
     @Override
-    public boolean acceptsURL(String s) throws SQLException
+    public boolean acceptsURL(String s)
     {
         return s.startsWith("jdbc:labkey:query:");
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String s, Properties properties) throws SQLException
+    public DriverPropertyInfo[] getPropertyInfo(String s, Properties properties)
     {
         return new DriverPropertyInfo[0];
     }

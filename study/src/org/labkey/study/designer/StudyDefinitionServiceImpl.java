@@ -96,16 +96,6 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             result.setErrorMessage(se.getMessage());
             return result;
         }
-        catch (SQLException x)
-        {
-            _log.error(x);
-            ExceptionUtil.logExceptionToMothership(getThreadLocalRequest(), x);
-            GWTStudyDesignVersion result = new GWTStudyDesignVersion();
-            result.setSaveSuccessful(false);
-            result.setErrorMessage("Save failed: " + x.getMessage());
-            return result;
-        }
-
     }
 
     public GWTStudyDefinition getBlank()
@@ -280,7 +270,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         return studyDefinition;
     }
 
-    private void syncStudyCohorts(GWTStudyDefinition studyDefinition) throws SQLException
+    private void syncStudyCohorts(GWTStudyDefinition studyDefinition)
     {
         // first we create study cohorts for any "new" groups/cohorts
         createCohorts(studyDefinition);

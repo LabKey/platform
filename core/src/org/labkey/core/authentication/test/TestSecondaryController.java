@@ -44,7 +44,7 @@ public class TestSecondaryController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestSecondaryController.class);
 
-    public TestSecondaryController() throws Exception
+    public TestSecondaryController()
     {
         setActionResolver(_actionResolver);
     }

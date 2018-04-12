@@ -129,7 +129,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         return AuditLogService.get().getAuditEvents(container, user, FileSystemAuditProvider.EVENT_TYPE, filter, sort);
     }
 
-    private void sendDigest(Container c, Date min, Date max) throws Exception
+    private void sendDigest(Container c, Date min, Date max)
     {
         List<FileSystemAuditProvider.FileSystemAuditEvent> events = getAuditEvents(c, min, max);
         Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> recordMap = new LinkedHashMap<>();
@@ -197,7 +197,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         }
     }
 
-    private @NotNull Collection<User> getUsersToEmail(Container c) throws Exception
+    private @NotNull Collection<User> getUsersToEmail(Container c)
     {
         List<User> users = new ArrayList<>();
         String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());

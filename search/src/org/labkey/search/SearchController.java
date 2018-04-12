@@ -87,7 +87,7 @@ public class SearchController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SearchController.class);
 
-    public SearchController() throws Exception
+    public SearchController()
     {
         setActionResolver(_actionResolver);
     }
@@ -118,7 +118,7 @@ public class SearchController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             return getSearchURL();
         }
@@ -240,7 +240,7 @@ public class SearchController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AdminForm form, boolean reshow, BindException errors)
         {
             SearchService ss = SearchService.get();
 
@@ -282,7 +282,7 @@ public class SearchController extends SpringActionController
             return vbox;
         }
 
-        public boolean handlePost(AdminForm form, BindException errors) throws Exception
+        public boolean handlePost(AdminForm form, BindException errors)
         {
             SearchService ss = SearchService.get();
             if (null == ss)
@@ -348,7 +348,7 @@ public class SearchController extends SpringActionController
     public class IndexContentsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/search/view/exportContents.jsp");
         }
@@ -431,7 +431,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class CancelAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             // SimpleRedirectAction doesn't take a form
             SearchService ss = SearchService.get();
@@ -465,7 +465,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class CrawlAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             // SimpleRedirectAction doesn't take a form
             SearchService ss = SearchService.get();
@@ -543,7 +543,7 @@ public class SearchController extends SpringActionController
     public class JsonAction extends ApiAction<SearchForm>
     {
         @Override
-        public ApiResponse execute(SearchForm form, BindException errors) throws Exception
+        public ApiResponse execute(SearchForm form, BindException errors)
         {
             SearchService ss = SearchService.get();
             if (null == ss)
@@ -620,9 +620,9 @@ public class SearchController extends SpringActionController
     public class TestJson extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView(SearchController.class, "view/testJson.jsp", null, null);
+            return new JspView<>(SearchController.class, "view/testJson.jsp", null, null);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -721,7 +721,7 @@ public class SearchController extends SpringActionController
         private SearchScope _scope = null;
         private SearchForm _form = null;
 
-        public ModelAndView getView(SearchForm form, BindException errors) throws Exception
+        public ModelAndView getView(SearchForm form, BindException errors)
         {
             _category = form.getCategory();
             _scope = form.getSearchScope();
@@ -798,7 +798,7 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(SearchForm searchForm, BindException errors) throws Exception
+        public boolean handlePost(SearchForm searchForm, BindException errors)
         {
             audit(searchForm);
             return true;
@@ -1071,7 +1071,7 @@ public class SearchController extends SpringActionController
     public class SearchSettingsAction extends FolderManagementViewPostAction<SearchSettingsForm>
     {
         @Override
-        protected HttpView getTabView(SearchSettingsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(SearchSettingsForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/search/view/fullTextSearch.jsp", form, errors);
         }
@@ -1082,7 +1082,7 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(SearchSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(SearchSettingsForm form, BindException errors)
         {
             Container container = getContainer();
             if (container.isRoot())

@@ -43,7 +43,7 @@ public class DummyTaskFactory extends AbstractTaskFactory
     }
 
     @Override
-    public TaskFactory cloneAndConfigure(TaskFactorySettings settings) throws CloneNotSupportedException
+    public TaskFactory cloneAndConfigure(TaskFactorySettings settings)
     {
         return this;
     }

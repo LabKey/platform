@@ -96,15 +96,6 @@ public class RRF_Loader extends Job
             o.put("done",true);
             _pollStatus.setJson(o);
         }
-        catch (SQLException x)
-        {
-            Logger.getLogger(RRF_Loader.class).debug(x.getMessage(),x);
-            JSONObject o = new JSONObject();
-            o.put("done",true);
-            o.put("status","failed");
-            o.put("message", x.getMessage());
-            _pollStatus.setJson(o);
-        }
         catch (InterruptedException x)
         {
             JSONObject o = new JSONObject();
@@ -115,8 +106,7 @@ public class RRF_Loader extends Job
     }
 
 
-
-    private void loadSqlTables() throws SQLException
+    private void loadSqlTables()
     {
         String drop = _umls.getSqlDialect().execute(_umls, "dropIndexes", "");
         new SqlExecutor(_umls).execute(drop);

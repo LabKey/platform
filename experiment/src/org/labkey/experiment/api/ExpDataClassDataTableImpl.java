@@ -498,19 +498,19 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    public Parameter.ParameterMap insertStatement(Connection conn, User user)
     {
         return null;
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
     {
         return null;
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    public Parameter.ParameterMap deleteStatement(Connection conn)
     {
         return null;
     }
@@ -1132,7 +1132,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
         }
 
         @Override
-        protected Map<String, Object> _select(Container container, Object[] keys) throws SQLException, ConversionException
+        protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
         {
             TableInfo d = getDbTable();
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
@@ -1235,7 +1235,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
         }
 
         @Override
-        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException
         {
             try
             {

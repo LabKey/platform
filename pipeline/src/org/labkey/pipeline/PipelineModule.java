@@ -146,7 +146,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             new BaseWebPartFactory(ProtocolManagementWebPart.getName())
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new ProtocolManagementWebPart(portalCtx);
                 }

@@ -97,7 +97,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    private List<Map<String, Object>> getSpecimenListResponse(List<Vial> vials) throws SQLException
+    private List<Map<String, Object>> getSpecimenListResponse(List<Vial> vials)
     {
         List<Map<String, Object>> response = new ArrayList<>();
         for (Vial vial : vials)
@@ -142,7 +142,7 @@ public class SpecimenApiController extends BaseStudyController
         return response;
     }
 
-    private Map<String, Object> getRequestResponse(ViewContext context, SpecimenRequest request) throws SQLException
+    private Map<String, Object> getRequestResponse(ViewContext context, SpecimenRequest request)
     {
         Map<String, Object> map = new HashMap<>();
         map.put("requestId", request.getRowId());
@@ -189,7 +189,7 @@ public class SpecimenApiController extends BaseStudyController
         return locationMap;
     }
 
-    private List<Map<String, Object>> getRequestListResponse(ViewContext context, List<SpecimenRequest> requests) throws SQLException
+    private List<Map<String, Object>> getRequestListResponse(ViewContext context, List<SpecimenRequest> requests)
     {
         List<Map<String, Object>> response = new ArrayList<>();
         for (SpecimenRequest request : requests)
@@ -397,7 +397,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    private SpecimenRequest getRequest(User user, Container container, int rowId, boolean checkOwnership, boolean checkEditability) throws SQLException
+    private SpecimenRequest getRequest(User user, Container container, int rowId, boolean checkOwnership, boolean checkEditability)
     {
         SpecimenRequest request = SpecimenManager.getInstance().getRequest(container, rowId);
         boolean admin = container.hasPermission(user, RequestSpecimensPermission.class);
@@ -453,7 +453,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    private Vial getVial(String vialId, String idType) throws SQLException
+    private Vial getVial(String vialId, String idType)
     {
         Vial vial;
         if (VialRequestForm.IdTypes.GlobalUniqueId.name().equals(idType))

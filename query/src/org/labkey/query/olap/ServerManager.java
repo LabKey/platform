@@ -234,7 +234,7 @@ public class ServerManager
      * (Unless we create a cached cube)
      */
     private static Cube getCachedCubeMondrian(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
-        throws SQLException, IOException
+        throws SQLException
     {
         Cube cube = null;
         if (StringUtils.isEmpty(cubeName))
@@ -323,7 +323,7 @@ public class ServerManager
      * TODO: Investigate getting down to one MondrianServer instance
      */
 
-    private static ServerReferenceCount getServer(Container c, User user) throws SQLException
+    private static ServerReferenceCount getServer(Container c, User user)
     {
         ViewServlet.checkShuttingDown();
 

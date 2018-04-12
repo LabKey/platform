@@ -59,7 +59,7 @@ public class SchemaXmlReader implements SchemaReader
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
     List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
 
-    public SchemaXmlReader(final StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
+    public SchemaXmlReader(final StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, ImportException
     {
         TablesDocument tablesDoc;
 
@@ -122,7 +122,7 @@ public class SchemaXmlReader implements SchemaReader
             ImportTypesHelper helper = new ImportTypesHelper(tableXml, NAME_KEY, datasetName)
             {
                 @Override
-                protected boolean acceptColumn(String columnName, ColumnType columnXml) throws Exception
+                protected boolean acceptColumn(String columnName, ColumnType columnXml)
                 {
                     // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
                     // as a marker to indicate which dataset column should be tagged as the visit date column during import:

@@ -53,7 +53,7 @@ public class SchemaTsvReader implements SchemaReader
     private List<ImportTypesHelper.Builder> _propertyBuilders = new ArrayList<>();
 
 
-    private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetDefinitionImporter.DatasetImportProperties> extraImportProps, BindException errors) throws IOException
+    private SchemaTsvReader(Study study, TabLoader loader, String labelColumn, String typeNameColumn, String typeIdColumn, Map<String, DatasetDefinitionImporter.DatasetImportProperties> extraImportProps, BindException errors)
     {
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();

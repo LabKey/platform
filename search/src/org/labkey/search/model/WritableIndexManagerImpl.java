@@ -210,7 +210,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
 
     @Override
-    public void close() throws IOException, InterruptedException
+    public void close() throws IOException
     {
         synchronized (_writerLock)
         {

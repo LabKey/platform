@@ -1315,7 +1315,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         TestContext _context = null;
 
         //        @BeforeClass
-        public void createStudy() throws SQLException
+        public void createStudy()
         {
             _context = TestContext.get();
             Container junit = JunitUtil.getTestContainer();

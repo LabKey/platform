@@ -56,7 +56,7 @@ public class TestTask extends TransformTask
     }
 
     // test action that adds 3 inserted, 2 modified, and 1 deleted row(s)
-    public void doWork(RecordedAction action)  throws PipelineJobException
+    public void doWork(RecordedAction action)
     {
         VariableMap map = getVariableMap();
         String s = (String) map.get(FailStep);

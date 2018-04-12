@@ -150,7 +150,7 @@ public class ConceptName  // MRCONSO
             }
 
             @Override
-            public ConceptName[] handleArray(ResultSet rs) throws SQLException
+            public ConceptName[] handleArray(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArray(ConceptName.class);
             }

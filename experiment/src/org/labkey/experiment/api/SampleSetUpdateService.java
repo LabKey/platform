@@ -215,7 +215,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     private Map<String, Object> getMaterialMap(Integer rowId, String lsid)
-            throws QueryUpdateServiceException, SQLException
+            throws QueryUpdateServiceException
     {
         Filter filter;
         if (rowId != null)
@@ -230,7 +230,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws QueryUpdateServiceException
     {
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
@@ -242,7 +242,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+            throws QueryUpdateServiceException
     {
         try
         {
@@ -276,7 +276,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         DataIterator iterator = rows.getDataIterator(getDataIteratorContext(errors, InsertOption.MERGE, configParameters));
         List<Map<String, Object>> maps = iterator.stream().collect(Collectors.toList());
@@ -296,7 +296,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+    protected int truncateRows(User user, Container container)
     {
         List<ExpMaterialImpl> samples = _ss.getSamples(container);
         for (ExpMaterialImpl sample : samples)
@@ -308,7 +308,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+            throws BatchValidationException, QueryUpdateServiceException
     {
         try
         {
@@ -332,7 +332,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws QueryUpdateServiceException
     {
         List<Integer> ids = new LinkedList<>();
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
@@ -369,19 +369,19 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     /* don't need to implement these since we override insertRows() etc. */
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
     {
         throw new IllegalStateException();
     }
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
     {
         throw new IllegalStateException();
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
     {
         throw new IllegalStateException();
     }

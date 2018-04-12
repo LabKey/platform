@@ -256,7 +256,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     /**
      * Returns a map of all primary types
      */
-    protected Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container) throws SQLException
+    protected Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container)
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();

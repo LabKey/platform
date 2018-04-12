@@ -166,7 +166,7 @@ public class IssuesController extends SpringActionController
             DeleteIssueListAction.class,
             RepairIssueLookupsAction.class);
 
-    public IssuesController() throws Exception
+    public IssuesController()
     {
         setActionResolver(_actionResolver);
     }
@@ -266,7 +266,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             if (IssueManager.getIssueListDefs(getContainer()).size() > 1)
             {
@@ -309,7 +309,7 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(IssuesController.ListForm form, BindException errors) throws Exception
+        public ModelAndView getView(IssuesController.ListForm form, BindException errors)
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             if (issueDefName == null)
@@ -416,7 +416,7 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors)
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
@@ -465,7 +465,7 @@ public class IssuesController extends SpringActionController
     public class DetailsListAction extends AbstractIssueAction
     {
         @Override
-        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors)
         {
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), form.getIssueDefName());
             HttpView view;
@@ -525,7 +525,7 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(IssuesController.IssuesForm form, BindException errors) throws Exception
+        public boolean handlePost(IssuesController.IssuesForm form, BindException errors)
         {
             return true;
         }
@@ -549,7 +549,7 @@ public class IssuesController extends SpringActionController
     public class InsertAction extends AbstractIssueAction
     {
         @Override
-        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors)
         {
             _issue = reshow ? form.getBean() : new Issue();
             _issue.setIssueDefName(form.getIssueDefName() != null ? form.getIssueDefName() : IssueManager.getDefaultIssueListDefName(getContainer()));
@@ -1138,7 +1138,7 @@ public class IssuesController extends SpringActionController
         /**
          * Throw an exception if user does not have permission to update issue
          */
-        protected void requiresUpdatePermission(User user, Issue issue) throws ServletException
+        protected void requiresUpdatePermission(User user, Issue issue)
         {
             if (!hasUpdatePermission(user, issue))
             {
@@ -1395,7 +1395,7 @@ public class IssuesController extends SpringActionController
             // Verifies that IssueId, EntityId, and Container are all correct
             final Comment comment = ts.getObject(Comment.class);
             if (comment == null)
-                throw new NotFoundException("Issue comment not found");
+                throw new NotFoundException("Comment not found");
 
             // I don't see a good way to select the Container column (which is in the Issues table, not Comments) above,
             // so push it in here. The Comment select already verified that c is the correct container.
@@ -1606,7 +1606,7 @@ public class IssuesController extends SpringActionController
     {
         String _message = null;
 
-        public ModelAndView getView(EmailPrefsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(EmailPrefsForm form, boolean reshow, BindException errors)
         {
             if (getUser().isGuest())
             {
@@ -1652,7 +1652,7 @@ public class IssuesController extends SpringActionController
     public class GetMoveDestinationAction extends ApiAction<IssuesController.IssuesForm>
     {
         @Override
-        public ApiResponse execute(IssuesController.IssuesForm form, BindException errors) throws Exception
+        public ApiResponse execute(IssuesController.IssuesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Collection<Map<String, String>> containers = new LinkedList<>();
@@ -1673,7 +1673,7 @@ public class IssuesController extends SpringActionController
     public class GetContainersAction extends ApiAction
     {
         @Override
-        public ApiResponse execute(Object object, BindException errors) throws Exception
+        public ApiResponse execute(Object object, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Collection<Map<String, Object>> responseContainers = new LinkedList<>();
@@ -1741,7 +1741,7 @@ public class IssuesController extends SpringActionController
     {
 
         @Override
-        public ApiResponse execute(MoveIssueForm form, BindException errors) throws Exception
+        public ApiResponse execute(MoveIssueForm form, BindException errors)
         {
             try
             {
@@ -1763,7 +1763,7 @@ public class IssuesController extends SpringActionController
     public class AdminAction extends SimpleViewAction<AdminForm>
     {
         @Override
-        public ModelAndView getView(IssuesController.AdminForm adminForm, BindException errors) throws Exception
+        public ModelAndView getView(IssuesController.AdminForm adminForm, BindException errors)
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
@@ -1859,7 +1859,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class PurgeAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             if (!getUser().hasRootAdminPermission())   // GLOBAL
             {
@@ -1879,7 +1879,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class JumpToIssueAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             String issueId = (String)getProperty("issueId");
             if (issueId != null)
@@ -2077,7 +2077,7 @@ public class IssuesController extends SpringActionController
     public class SearchAction extends SimpleRedirectAction<SearchForm>
     {
         @Override
-        public URLHelper getRedirectURL(SearchForm form) throws Exception
+        public URLHelper getRedirectURL(SearchForm form)
         {
             return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
         }
@@ -2088,7 +2088,7 @@ public class IssuesController extends SpringActionController
     public class GetIssueAction extends ApiAction<IssueIdForm>
     {
         @Override
-        public ApiResponse execute(IssueIdForm issueIdForm, BindException errors) throws Exception
+        public ApiResponse execute(IssueIdForm issueIdForm, BindException errors)
         {
             User user = getUser();
             Issue issue = getIssue(issueIdForm.getIssueId(), false);

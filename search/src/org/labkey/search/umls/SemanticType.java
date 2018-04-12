@@ -109,13 +109,13 @@ public class SemanticType // MRSTY
             }
 
             @Override
-            public ArrayList<SemanticType> handleArrayList(ResultSet rs) throws SQLException
+            public ArrayList<SemanticType> handleArrayList(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArrayList(SemanticType.class);
             }
 
             @Override
-            public SemanticType[] handleArray(ResultSet rs) throws SQLException
+            public SemanticType[] handleArray(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArray(SemanticType.class);
             }

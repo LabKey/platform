@@ -63,7 +63,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
         {
             AnnouncementManager.insertAnnouncement(c, u, insert, files, sendEmailNotification);
         }
-        catch (MessagingException | IOException e)
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }

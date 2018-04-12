@@ -84,7 +84,7 @@ public class TypesController extends SpringActionController
 {
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(TypesController.class);
 
-    public TypesController() throws Exception
+    public TypesController()
     {
         setActionResolver(_actionResolver);
     }
@@ -156,7 +156,7 @@ public class TypesController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(RepairForm form, BindException errors) throws Exception
+        public boolean handlePost(RepairForm form, BindException errors)
         {
             return StorageProvisioner.repairDomain(form.domain.getContainer(), form.getDomainUri(), errors);
         }

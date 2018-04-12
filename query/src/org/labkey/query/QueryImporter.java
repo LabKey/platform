@@ -71,7 +71,7 @@ public class QueryImporter implements FolderImporter
         return FolderArchiveDataTypes.QUERIES.toLowerCase();
     }
 
-    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
         {
@@ -228,7 +228,7 @@ public class QueryImporter implements FolderImporter
     }
 
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
         List<PipelineJobWarning> warnings = new ArrayList<>();
 

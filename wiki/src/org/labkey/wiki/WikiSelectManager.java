@@ -248,7 +248,7 @@ public class WikiSelectManager
     // TODO: Use VersionCache for other versions (not just latest) and for list of versions
 
     // TODO: Use cache!!  Switch to an array of versions, and use the cache to retrieve each one
-    public static WikiVersion getVersion(Wiki wiki, int version) throws SQLException
+    public static WikiVersion getVersion(Wiki wiki, int version)
     {
         if (null == wiki.getEntityId())
             return null;

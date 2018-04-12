@@ -33,7 +33,7 @@ public class QueryBrowserWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         JspView view = new JspView("/org/labkey/query/view/browse.jsp");
         view.setTitle(NAME);

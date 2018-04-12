@@ -364,7 +364,7 @@ public class EmailServiceImpl implements EmailService
             testAttachmentExceptions(FAKE_DIRECTORY_NAME);
         }
 
-        private void testAttachmentExceptions(String name) throws MessagingException, IOException
+        private void testAttachmentExceptions(String name) throws IOException
         {
             EmailMessage msg = getBaseMessage();
             File studySampleData = JunitUtil.getSampleData(null, "study");

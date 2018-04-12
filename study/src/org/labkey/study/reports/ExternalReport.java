@@ -271,10 +271,6 @@ public class ExternalReport extends AbstractReport
         {
             throw new RuntimeSQLException(e);
         }
-        catch (ServletException e)
-        {
-            throw new RuntimeException(e);
-        }
         finally
         {
             if (null != dataFile && dataFile.exists())
@@ -287,7 +283,7 @@ public class ExternalReport extends AbstractReport
         }
     }
 
-    protected StudyQuerySchema getStudyQuerySchema(User user, Class<? extends Permission> perm, ViewContext context) throws ServletException
+    protected StudyQuerySchema getStudyQuerySchema(User user, Class<? extends Permission> perm, ViewContext context)
     {
         if (perm != ReadPermission.class)
             throw new IllegalArgumentException("only ReadPermission supported");
@@ -366,7 +362,7 @@ public class ExternalReport extends AbstractReport
         File file;
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             out.write("<pre>");
             out.write(PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(file)));

@@ -79,7 +79,7 @@ public class PlateManager implements PlateService
     {
         registerPlateTypeHandler(new AbstractPlateTypeHandler()
         {
-            public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException
+            public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount)
             {
                 return PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
             }

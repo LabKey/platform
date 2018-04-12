@@ -148,7 +148,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
     @Override
-    public Integer getSPID(Connection result) throws SQLException
+    public Integer getSPID(Connection result)
     {
         return 0;  // TODO: Implement?
     }
@@ -170,13 +170,13 @@ public abstract class SasDialect extends SimpleSqlDialect
     // SAS has no database name, so override both getDatabaseName() methods and return null.
 
     @Override
-    public String getDatabaseName(String dsName, DataSource ds) throws ServletException
+    public String getDatabaseName(String dsName, DataSource ds)
     {
         return null;
     }
 
     @Override
-    public String getDatabaseName(String url) throws ServletException
+    public String getDatabaseName(String url)
     {
         return null;
     }
@@ -390,7 +390,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         }
 
         @Override
-        public boolean isClosed() throws SQLException
+        public boolean isClosed()
         {
             return _closed;
         }

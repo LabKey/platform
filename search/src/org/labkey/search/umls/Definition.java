@@ -113,13 +113,13 @@ public class Definition // MRDEF
             }
 
             @Override
-            public ArrayList<Definition> handleArrayList(ResultSet rs) throws SQLException
+            public ArrayList<Definition> handleArrayList(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArrayList(Definition.class);
             }
 
             @Override
-            public Definition[] handleArray(ResultSet rs) throws SQLException
+            public Definition[] handleArray(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArray(Definition.class);
             }

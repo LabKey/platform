@@ -180,7 +180,7 @@ public class FileLinkFileListener implements FileListener
 
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
             @Override
-            public void exec(Map<String, Object> row) throws SQLException
+            public void exec(Map<String, Object> row)
             {
                 // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
                 DbSchema schema = DbSchema.get(row.get("StorageSchemaName").toString());

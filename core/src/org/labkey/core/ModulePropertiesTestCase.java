@@ -81,7 +81,7 @@ public class ModulePropertiesTestCase extends Assert
      * a container, coalesce backwards to the first parent container where the value is set).
      */
     @Test
-    public void testModuleProperties() throws Exception
+    public void testModuleProperties()
     {
         if (ContainerManager.getForPath(PROJECT_NAME) != null)
         {
@@ -129,7 +129,7 @@ public class ModulePropertiesTestCase extends Assert
      * Test that the Look And Feel settings can be configured from startup properties
      */
     @Test
-    public void testStartupPropertiesForLookAndFeel() throws Exception
+    public void testStartupPropertiesForLookAndFeel()
     {
         // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
         prepareTestStartupProperties();
@@ -155,7 +155,7 @@ public class ModulePropertiesTestCase extends Assert
      * Test that the Site Settings can be configured from startup properties
      */
     @Test
-    public void testStartupPropertiesForSiteSettings() throws Exception
+    public void testStartupPropertiesForSiteSettings()
     {
         // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
         prepareTestStartupProperties();

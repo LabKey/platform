@@ -74,7 +74,7 @@ public class PipelineJobToJMSMessage extends AbstractEventAwareTransformer
         return _transformerToJMS;
     }
 
-    protected void setJmsProperties(PipelineJob job, Message msg) throws JMSException, IOException, SQLException
+    protected void setJmsProperties(PipelineJob job, Message msg)
     {
         setJmsProperty(msg, PipelineJob.LABKEY_JOBTYPE_PROPERTY, job.getClass().getName());
         setJmsProperty(msg, PipelineJob.LABKEY_JOBID_PROPERTY, job.getJobGUID());

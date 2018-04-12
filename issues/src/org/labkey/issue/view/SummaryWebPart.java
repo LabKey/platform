@@ -63,14 +63,7 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
         bean.issueDefName = issueDefName;
         bean.insertURL = new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
 
-        try
-        {
-            IssueListDef issueListDef = IssueManager.getIssueListDef(getViewContext().getContainer(), issueDefName);
-            bean.bugs = IssueManager.getSummary(c, u, issueListDef);
-        }
-        catch (SQLException x)
-        {
-            setVisible(false);
-        }
+        IssueListDef issueListDef = IssueManager.getIssueListDef(getViewContext().getContainer(), issueDefName);
+        bean.bugs = IssueManager.getSummary(c, u, issueListDef);
     }
 }

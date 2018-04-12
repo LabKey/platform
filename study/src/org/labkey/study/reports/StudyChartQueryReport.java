@@ -64,7 +64,7 @@ public class StudyChartQueryReport extends ChartQueryReport
         return super.getRunReportURL(context);
     }
 
-    public HttpView getRunReportView(ViewContext context) throws Exception
+    public HttpView getRunReportView(ViewContext context)
     {
         return new StudyRunChartReportView(this);
     }

@@ -43,7 +43,7 @@ public class TransformQuartzJobRunner implements Job
 
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException
+    public void execute(JobExecutionContext context)
     {
         ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context);
         ScheduledPipelineJobContext infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);

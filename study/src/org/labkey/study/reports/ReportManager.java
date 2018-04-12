@@ -85,7 +85,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         DatasetManager.addDatasetListener(this);
     }
 
-    public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, Dataset def) throws Exception
+    public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, Dataset def)
     {
         List<Pair<String, String>> labels = new ArrayList<>();
         String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
@@ -126,17 +126,17 @@ public class ReportManager implements DatasetManager.DatasetListener
         return labels;
     }
 
-    public Report getReport(Container c, int reportId) throws Exception
+    public Report getReport(Container c, int reportId)
     {
         return ReportService.get().getReport(c, reportId);
     }
     
-    public void deleteReport(ViewContext context, Report report) throws Exception
+    public void deleteReport(ViewContext context, Report report)
     {
         ReportService.get().deleteReport(context, report);
     }
 
-    public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
+    public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         DatasetDefinition def = study.getDataset(datasetId);

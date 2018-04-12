@@ -72,7 +72,7 @@ public class PlateTable extends BasePlateTable
         new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(new Selector.ForEachBlock<PropertyDescriptor>()
         {
             @Override
-            public void exec(PropertyDescriptor pd) throws SQLException
+            public void exec(PropertyDescriptor pd)
             {
                 if (pd.getPropertyType() == PropertyType.DOUBLE)
                     pd.setFormat("0.##");

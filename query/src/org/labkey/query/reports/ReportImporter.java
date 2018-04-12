@@ -100,7 +100,7 @@ public class ReportImporter implements FolderImporter
     }
 
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
         // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
         // fire the query change listeners for older archives to fix-up these dataset label references

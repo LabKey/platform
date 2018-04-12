@@ -52,7 +52,7 @@ public final class DatasetNotificationInfoProvider extends NotificationInfoProvi
         selector.forEach(new Selector.ForEachBlock<DatasetDB>()
         {
             @Override
-            public void exec(DatasetDB report) throws SQLException
+            public void exec(DatasetDB report)
             {
                 String containerId = report.getContainer();
                 if (!notificationInfoMap.containsKey(containerId))

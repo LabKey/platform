@@ -2110,7 +2110,7 @@ public class QueryServiceImpl implements QueryService
 
 
     @Override
-    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException
+    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached)
     {
         Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);

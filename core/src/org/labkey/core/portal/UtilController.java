@@ -44,7 +44,7 @@ public class UtilController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(UtilController.class);
     private static final Logger _log = Logger.getLogger(ProjectController.class);
 
-    public UtilController() throws Exception
+    public UtilController()
     {
         super();
         setActionResolver(_actionResolver);

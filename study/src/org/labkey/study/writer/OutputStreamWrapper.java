@@ -89,7 +89,7 @@ public class OutputStreamWrapper extends OutputStream
     }
 
     @Override
-    protected void finalize() throws Throwable
+    protected void finalize()
     {
     }
 }

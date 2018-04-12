@@ -412,7 +412,7 @@ public class IssuesQuerySchema extends UserSchema
         }
 
         @Override
-        public boolean serialize(VirtualFile dir) throws IOException
+        public boolean serialize(VirtualFile dir)
         {
             return true;
         }

@@ -200,7 +200,7 @@ public class DatasetController extends BaseStudyController
 
         private class NoRecordView extends HttpView
         {
-            protected void renderInternal(Object model, PrintWriter out) throws Exception
+            protected void renderInternal(Object model, PrintWriter out)
             {
                 out.write("<p>No current record found</p>");
             }

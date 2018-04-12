@@ -50,7 +50,7 @@ public class ResetSchemaMetadata extends TaskRefTaskImpl
     }
 
     @Override
-    public RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException
+    public RecordedActionSet run(@NotNull PipelineJob job)
     {
         job.info("Resetting metadata for schema " + settings.get(SCHEMA));
         DbScope.getLabKeyScope().invalidateSchema(settings.get(SCHEMA), DbSchemaType.All);

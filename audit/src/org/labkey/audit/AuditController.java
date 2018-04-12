@@ -51,9 +51,9 @@ import java.util.Date;
  */
 public class AuditController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AuditController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AuditController.class);
 
-    public AuditController() throws Exception
+    public AuditController()
     {
         super();
         setActionResolver(_actionResolver);
@@ -77,7 +77,7 @@ public class AuditController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(Object o, BindException errors) throws Exception
+        public boolean doAction(Object o, BindException errors)
         {
             return true;
         }
@@ -105,7 +105,7 @@ public class AuditController extends SpringActionController
             return view;
         }
 
-        protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion)
         {
             String selected = form.getView();
 
@@ -166,7 +166,7 @@ public class AuditController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowSiteSettingsAuditDetailsAction extends SimpleViewAction<SiteSettingsAuditDetailsForm>
     {
-        public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors) throws Exception
+        public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors)
         {
             if (null == form.getId() || form.getId().intValue() < 0)
                 throw new NotFoundException("The audit log details key was not provided!");

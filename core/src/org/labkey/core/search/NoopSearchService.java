@@ -133,12 +133,12 @@ public class NoopSearchService implements SearchService
             return false;
         }
 
-        public IndexTask get() throws InterruptedException, ExecutionException
+        public IndexTask get()
         {
             return null;
         }
 
-        public IndexTask get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+        public IndexTask get(long timeout, @NotNull TimeUnit unit)
         {
             return null;
         }
@@ -240,7 +240,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit)
     {
         return null;
     }
@@ -285,7 +285,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void waitForIdle() throws InterruptedException
+    public void waitForIdle()
     {
     }
 

@@ -82,7 +82,7 @@ public class XarExpander extends AbstractXarImporter
 
     private void processLogStep(ExperimentLogEntryType step,
                                 XarContext parentContext,
-                                ExperimentRunType xbRun, FileResolver resolver) throws SQLException, ExperimentException
+                                ExperimentRunType xbRun, FileResolver resolver) throws ExperimentException
     {
         XarContext context = new XarContext(parentContext);
 
@@ -118,7 +118,7 @@ public class XarExpander extends AbstractXarImporter
     }
 
     private void handleInputsFromOutputs(ProtocolBean pbStep, ExperimentLogEntryType step, XarContext context, ExperimentRunType xbRun, FileResolver fileResolver)
-            throws SQLException, ExperimentException
+            throws ExperimentException
     {
         int maxInputMaterialsPerInstance = 0;
         int instanceCnt = 0;
@@ -220,7 +220,7 @@ public class XarExpander extends AbstractXarImporter
     }
 
     private void handleExplicitInstances(InstanceDetailsType[] instances, XarContext context, ProtocolBean pbStep, ExperimentLogEntryType step, ExperimentRunType xbRun, FileResolver fileResolver)
-            throws SQLException, ExperimentException
+            throws ExperimentException
     {
         fileResolver.reset();
         for (int i = 0; i < instances.length; i++)
@@ -233,7 +233,7 @@ public class XarExpander extends AbstractXarImporter
     }
 
     private void handleStartNode(ExperimentLogEntryType step, XarContext context, ProtocolBean pbStep, ExperimentRunType xbRun, FileResolver fileResolver)
-            throws SQLException, ExperimentException
+            throws ExperimentException
     {
         InstanceDetailsType details = null;
         ExperimentLogEntryType.ApplicationInstanceCollection instanceCollection = step.getApplicationInstanceCollection();
@@ -280,7 +280,7 @@ public class XarExpander extends AbstractXarImporter
                                        XarContext parentContext,
                                        ExperimentLogEntryType step,
                                        InstanceDetailsType details,
-                                       ExperimentRunType xbRun, FileResolver fileResolver) throws SQLException, ExperimentException
+                                       ExperimentRunType xbRun, FileResolver fileResolver) throws ExperimentException
     {
         XarContext context = new XarContext(parentContext);
 
@@ -634,7 +634,7 @@ public class XarExpander extends AbstractXarImporter
         }
     }
 
-    private List<String> getMaterialOutputs(String protocolStepLSID) throws SQLException
+    private List<String> getMaterialOutputs(String protocolStepLSID)
     {
         return getOutputs(protocolStepLSID, _materialOutputs);
     }
@@ -654,7 +654,7 @@ public class XarExpander extends AbstractXarImporter
         return result;
     }
 
-    private List<String> getDataOutputs(String protocolStepLSID) throws SQLException
+    private List<String> getDataOutputs(String protocolStepLSID)
     {
         return getOutputs(protocolStepLSID, _dataOutputs);
     }
@@ -690,7 +690,7 @@ public class XarExpander extends AbstractXarImporter
 
         private Map<String, Object> _properties;
 
-        ProtocolBean(ProtocolActionStepDetail stepProtocol) throws SQLException
+        ProtocolBean(ProtocolActionStepDetail stepProtocol)
         {
             loadProtocolElementProperties(stepProtocol);
 

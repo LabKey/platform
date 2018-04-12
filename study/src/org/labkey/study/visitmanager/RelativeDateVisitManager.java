@@ -276,7 +276,7 @@ public class RelativeDateVisitManager extends VisitManager
         new SqlSelector(schema, sql).forEach(new ForEachBlock<Integer>()
         {
             @Override
-            public void exec(Integer day) throws SQLException
+            public void exec(Integer day)
             {
                 double seqNum = null != day ? day : 0;
                 StudyManager.getInstance().ensureVisit(getStudy(), user, seqNum, null, true);

@@ -74,7 +74,7 @@ public class SavePaths implements DavCrawler.SavePaths
     // FOLDER/RESOURCES
     //
 
-    private boolean _update(Path path, @Nullable java.util.Date last, @Nullable java.util.Date next) throws SQLException
+    private boolean _update(Path path, @Nullable java.util.Date last, @Nullable java.util.Date next)
     {
         String pathStr = toPathString(path);
         if (null == last) last = nullDate;

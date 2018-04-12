@@ -1054,7 +1054,7 @@ public class SqlScriptController extends SpringActionController
             return getScriptView(provider.getScript(null, _filename));
         }
 
-        protected ModelAndView getScriptView(SqlScript script) throws ServletException, IOException
+        protected ModelAndView getScriptView(SqlScript script) throws IOException
         {
             return new ScriptView(script);
         }
@@ -1081,7 +1081,7 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        protected void renderInternal(SqlScript script, PrintWriter out) throws Exception
+        protected void renderInternal(SqlScript script, PrintWriter out)
         {
             // First, review contents for errors
             script.getContents();

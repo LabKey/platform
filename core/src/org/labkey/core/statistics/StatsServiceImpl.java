@@ -62,7 +62,7 @@ public class StatsServiceImpl implements StatsService
         private static final int TEST_DATA_SIZE = 100;
 
         @Test
-        public void TestStats() throws Exception
+        public void TestStats()
         {
             double[] testData = new double[TEST_DATA_SIZE];
             RandomDataImpl generator = new RandomDataImpl();

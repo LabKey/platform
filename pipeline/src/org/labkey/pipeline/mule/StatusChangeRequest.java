@@ -43,7 +43,7 @@ public class StatusChangeRequest implements Serializable, StatusRequest
         _hostName = hostName;
     }
 
-    public void performRequest() throws SQLException
+    public void performRequest()
     {
         PipelineStatusFileImpl file = PipelineStatusManager.getJobStatusFile(_jobId);
         // Make sure that the job hasn't moved on to another task already

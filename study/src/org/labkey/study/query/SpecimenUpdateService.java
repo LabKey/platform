@@ -89,7 +89,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+            throws BatchValidationException, SQLException
     {
         if (!hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
@@ -179,7 +179,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     @Override
     @SuppressWarnings("unchecked")
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException
     {
         Map<String, Object> row = new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class);
         Map<String, Object> result = new HashMap<>();
@@ -194,7 +194,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+            throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -278,7 +278,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws ValidationException, SQLException
     {
         Study study = StudyManager.getInstance().getStudy(container);
         if (null == study)

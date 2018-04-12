@@ -380,7 +380,7 @@ public class StudyDesignManager
 
     public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate,
                                          String subjectNounSingular, String subjectNounPlural, String subjectColumnName, StudyDesignInfo info,
-                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws XmlException, IOException, ServletException, ValidationException
+                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws IOException, ValidationException
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)

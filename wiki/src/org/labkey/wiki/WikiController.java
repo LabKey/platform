@@ -336,7 +336,7 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(getUrl());
         }
@@ -390,7 +390,7 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getConfirmView(WikiNameForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(WikiNameForm form, BindException errors)
         {
             _wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (null == _wiki)
@@ -485,7 +485,7 @@ public class WikiController extends SpringActionController
             _wiki = wiki;
         }
 
-        public ModelAndView getView(WikiManageForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(WikiManageForm form, boolean reshow, BindException errors)
         {
             String name = form.getName();
 
@@ -527,7 +527,7 @@ public class WikiController extends SpringActionController
         }
 
 
-        public boolean handlePost(WikiManageForm form, BindException errors) throws Exception
+        public boolean handlePost(WikiManageForm form, BindException errors)
         {
             String originalName = form.getOriginalName();
             String newName = form.getName();
@@ -681,7 +681,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PrintAllAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
@@ -705,7 +705,7 @@ public class WikiController extends SpringActionController
     {
         private Wiki _rootWiki;
 
-        public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
+        public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             Container c = getContainer();
 
@@ -750,7 +750,7 @@ public class WikiController extends SpringActionController
     {
         private String _name;
 
-        public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
+        public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             Container c = getContainer();
             _name = form.getName();
@@ -778,7 +778,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PrintAllRawAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
@@ -882,7 +882,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private Container getSourceContainer(String source) throws ServletException
+    private Container getSourceContainer(String source)
     {
         Container cSource;
         if (source == null)
@@ -924,7 +924,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CopyWikiAction extends FormViewAction<CopyWikiForm>
     {
-        public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors)
         {
             return null;
         }
@@ -1049,7 +1049,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CopyWikiLocationAction extends SimpleViewAction<CopyWikiForm>
     {
-        public ModelAndView getView(CopyWikiForm form, BindException errors) throws Exception
+        public ModelAndView getView(CopyWikiForm form, BindException errors)
         {
             //get projects and folders for which user has admin permissions
             Container c = getContainer();
@@ -1132,7 +1132,7 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
-        public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
+        public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             String name = null != form.getName() ? form.getName().trim() : null;
             //if there's no name parameter, find default page and reload with parameter.
@@ -1239,7 +1239,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title) throws ServletException
+    private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title)
     {
         DiscussionService service = DiscussionService.get();
         return service.getDiscussionArea(getViewContext(), objectId, pageURL, title, true, false);
@@ -1272,7 +1272,7 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
-        public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
+        public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             String name = null != form.getName() ? form.getName().trim() : null;
             int version = form.getVersion();
@@ -1502,7 +1502,7 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
-        public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
+        public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             String wikiname = form.getName();
             if (wikiname == null)
@@ -1570,12 +1570,12 @@ public class WikiController extends SpringActionController
         Wiki _wiki;
         WikiVersion _wikiversion;
 
-        public ModelAndView getView(WikiNameForm wikiNameForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(WikiNameForm wikiNameForm, boolean reshow, BindException errors)
         {
             return null;
         }
 
-        public boolean handlePost(WikiNameForm form, BindException errors) throws Exception
+        public boolean handlePost(WikiNameForm form, BindException errors)
         {
             String wikiName = form.getName();
             int version = form.getVersion();
@@ -1615,7 +1615,7 @@ public class WikiController extends SpringActionController
     @RequiresSiteAdmin
     public class PurgeAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             int rows = getWikiManager().purge();
             return new HtmlView("deleted " + rows + " pages<br>");
@@ -1890,7 +1890,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetPagesAction extends ApiAction<ContainerForm>
     {
-        public ApiResponse execute(ContainerForm form, BindException errors) throws Exception
+        public ApiResponse execute(ContainerForm form, BindException errors)
         {
             if (null == form.getId() || form.getId().length() == 0)
                 throw new IllegalArgumentException("The id parameter must be set to a valid container id!");
@@ -2007,7 +2007,7 @@ public class WikiController extends SpringActionController
         private WikiVersion _wikiVer = null;
         private Wiki _wiki = null;
 
-        public ModelAndView getView(EditWikiForm form, BindException errors) throws Exception
+        public ModelAndView getView(EditWikiForm form, BindException errors)
         {
             //get the wiki
             Wiki wiki = null;
@@ -2374,7 +2374,7 @@ public class WikiController extends SpringActionController
             return wikiProps;
         }
 
-        private ApiResponse updateWiki(SaveWikiForm form) throws Exception
+        private ApiResponse updateWiki(SaveWikiForm form)
         {
             if (null == form.getEntityId())
                 throw new IllegalArgumentException("The entityId parameter must be supplied.");
@@ -2468,7 +2468,7 @@ public class WikiController extends SpringActionController
             setContentTypeOverride("text/html");
         }
 
-        public ApiResponse execute(AttachFilesForm form, BindException errors) throws Exception
+        public ApiResponse execute(AttachFilesForm form, BindException errors)
         {
             if (null == form.getEntityId() || form.getEntityId().length() == 0)
                 throw new IllegalArgumentException("The entityId parameter is required!");
@@ -2637,7 +2637,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetWikiTocAction extends ApiAction<GetWikiTocForm>
     {
-        public ApiResponse execute(GetWikiTocForm form, BindException errors) throws Exception
+        public ApiResponse execute(GetWikiTocForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -2783,7 +2783,7 @@ public class WikiController extends SpringActionController
         public static final String CAT_EDITOR_PREFERENCE = "editorPreference";
         public static final String PROP_USE_VISUAL_EDITOR = "useVisualEditor";
 
-        public ApiResponse execute(SetEditorPreferenceForm form, BindException errors) throws Exception
+        public ApiResponse execute(SetEditorPreferenceForm form, BindException errors)
         {
             //save user's editor preference
             PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(
@@ -2834,7 +2834,7 @@ public class WikiController extends SpringActionController
     public class BackLinksAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
             MultiValuedMap<String, Wiki> mmap = new ArrayListValuedHashMap<>();

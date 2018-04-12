@@ -274,7 +274,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             throw new IllegalArgumentException("QuerySnapshotDefinition cannot be null");
     }
 
-    private Results getResults(ViewContext context, QueryView view, QuerySnapshotDefinition qsDef, DatasetDefinition def) throws SQLException
+    private Results getResults(ViewContext context, QueryView view, QuerySnapshotDefinition qsDef, DatasetDefinition def)
     {
         TableInfo tinfo = view.getTable();
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
@@ -548,7 +548,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return ret;
     }
 
-    public HttpView createAuditView(QuerySnapshotForm form) throws Exception
+    public HttpView createAuditView(QuerySnapshotForm form)
     {
         ViewContext context = form.getViewContext();
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName(), form.getSnapshotName());
@@ -614,17 +614,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     }
 
     @Override
-    public void categoryDeleted(User user, ParticipantCategoryImpl category) throws Exception
+    public void categoryDeleted(User user, ParticipantCategoryImpl category)
     {
     }
 
     @Override
-    public void categoryCreated(User user, ParticipantCategoryImpl category) throws Exception
+    public void categoryCreated(User user, ParticipantCategoryImpl category)
     {
     }
 
     @Override
-    public void categoryUpdated(User user, ParticipantCategoryImpl category) throws Exception
+    public void categoryUpdated(User user, ParticipantCategoryImpl category)
     {
         LOG.debug("Category updated notification on participant category : " + category.getLabel());
 

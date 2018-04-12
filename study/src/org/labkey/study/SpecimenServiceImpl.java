@@ -161,7 +161,7 @@ public class SpecimenServiceImpl implements SpecimenService
         }
     }
 
-    public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId) throws SQLException
+    public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId)
     {
         Vial match = SpecimenManager.getInstance().getVial(studyContainer, user, sampleId);
         if (match != null)
@@ -170,7 +170,7 @@ public class SpecimenServiceImpl implements SpecimenService
             return new StudyParticipantVisit(studyContainer, sampleId, null, null, null);
     }
 
-    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date) throws SQLException
+    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date)
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
@@ -189,7 +189,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
     }
 
-    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException
+    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit)
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
@@ -217,7 +217,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return url.getLocalURIString() + "&prefix=";
     }
 
-    public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException
+    public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
         if (null == tableInfoSpecimen)
@@ -243,7 +243,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return sampleInfo;
     }
 
-    public Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException
+    public Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
         if (null == tableInfoSpecimen)
@@ -274,7 +274,7 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
-    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
+    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
     {
         // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);

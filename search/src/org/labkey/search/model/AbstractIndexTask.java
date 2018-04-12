@@ -190,7 +190,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    public SearchService.IndexTask get() throws InterruptedException, ExecutionException
+    public SearchService.IndexTask get() throws InterruptedException
     {
         synchronized (_completeEvent)
         {
@@ -201,7 +201,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
-    public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+    public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException
     {
         synchronized (_completeEvent)
         {

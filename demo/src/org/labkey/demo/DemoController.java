@@ -89,7 +89,7 @@ public class DemoController extends SpringActionController
     public class BeginAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             GridView gridView = new GridView(getDataRegion(), errors);
             gridView.setSort(new Sort("LastName"));
@@ -128,24 +128,16 @@ public class DemoController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(Person person, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(Person person, boolean reshow, BindException errors)
         {
             return new InsertView(getDataRegion(), errors);
         }
 
         @Override
-        public boolean handlePost(Person person, BindException errors) throws Exception
+        public boolean handlePost(Person person, BindException errors)
         {
-            try
-            {
-                DemoManager.getInstance().insertPerson(getContainer(), getUser(), person);
-                return true;
-            }
-            catch (SQLException x)
-            {
-                errors.addError(new ObjectError("main", null, null, "Insert failed: " + x.getMessage()));
-                return false;
-            }
+            DemoManager.getInstance().insertPerson(getContainer(), getUser(), person);
+            return true;
 
         }
 
@@ -176,7 +168,7 @@ public class DemoController extends SpringActionController
     {
         private Person _person = null;
         
-        public boolean handlePost(PersonForm form, BindException errors) throws Exception
+        public boolean handlePost(PersonForm form, BindException errors)
         {
             // Pass in timestamp for optimistic concurrency
             Object ts = null; // ((Map)form.getOldValues()).get("_ts");
@@ -258,13 +250,13 @@ public class DemoController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors)
         {
             List<Person> people = Arrays.asList(DemoManager.getInstance().getPeople(getContainer()));
             return new JspView<>("/org/labkey/demo/view/bulkUpdate.jsp", people, errors);
         }
 
-        public boolean handlePost(BulkUpdateForm form, BindException errors) throws Exception
+        public boolean handlePost(BulkUpdateForm form, BindException errors)
         {
             int[] rowIds = form.getRowId();
             String[] firstNames = form.getFirstName();
@@ -320,12 +312,12 @@ public class DemoController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteAction extends FormViewAction
     {
-        public HttpView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public HttpView getView(Object o, boolean reshow, BindException errors)
         {
             throw new RedirectException(getSuccessURL(o));
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             Set<Integer> personIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
             for (Integer userId : personIds)
@@ -691,7 +683,7 @@ public class DemoController extends SpringActionController
             return super.handleRequest();
         }
 
-        public ModelAndView getView(BindActionBean form, BindException errors) throws Exception
+        public ModelAndView getView(BindActionBean form, BindException errors)
         {
             return new JspView<>("/org/labkey/demo/view/bindTest.jsp", form, errors);
         }
@@ -714,7 +706,7 @@ public class DemoController extends SpringActionController
     public class ConvertXlsToJsonAction extends ApiAction
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             Map<String, MultipartFile> files = getFileMap();
             JSONObject json = new JSONObject();

@@ -107,7 +107,7 @@ public class ReportQueryViewFactory
      * false if no permission checking is required.  and throws if
      * user does not have permission.
      */
-    private static boolean mustCheckDatasetPermissions(User user, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor) throws ServletException
+    private static boolean mustCheckDatasetPermissions(User user, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor)
     {
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(descriptor, false);
         if (policy.isEmpty())

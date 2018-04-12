@@ -107,7 +107,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
     }
 
     @NotNull
-    private RemoteExecutionEngine getEngine(PipelineJob job) throws ClassNotFoundException
+    private RemoteExecutionEngine getEngine(PipelineJob job)
     {
         TaskFactory taskFactory = PipelineJobService.get().getTaskFactory(job.getActiveTaskId());
         if (taskFactory == null)

@@ -726,7 +726,7 @@ public class AssayController extends SpringActionController
             }
         }
 
-        protected String getResponse(Map<String, Pair<File, String>> files, AssayFileUploadForm form) throws UploadException
+        protected String getResponse(Map<String, Pair<File, String>> files, AssayFileUploadForm form)
         {
             JSONObject fullMap = new JSONObject();
             for (Map.Entry<String, Pair<File, String>> entry : files.entrySet())
@@ -1244,7 +1244,7 @@ public class AssayController extends SpringActionController
     public class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
     {
         @Override
-        protected SetResultFlagForm getCommand(HttpServletRequest request) throws Exception
+        protected SetResultFlagForm getCommand(HttpServletRequest request)
         {
             return new SetResultFlagForm();
         }

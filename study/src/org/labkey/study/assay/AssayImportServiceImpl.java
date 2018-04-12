@@ -219,7 +219,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public String cancelImport(String jobId) throws GWTImportException
+    public String cancelImport(String jobId)
     {
         return null;
     }
@@ -272,7 +272,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public String getImportURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws GWTImportException
+    public String getImportURL(GWTProtocol gwtProtocol, String directoryPath, String file)
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
         List<File> files = ImportAction.getFiles(getContainer(), directoryPath, new String[]{file});
@@ -286,7 +286,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public String getDesignerURL(GWTProtocol gwtProtocol, String directoryPath, String file) throws GWTImportException
+    public String getDesignerURL(GWTProtocol gwtProtocol, String directoryPath, String file)
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
         List<File> files = ImportAction.getFiles(getContainer(), directoryPath, new String[]{file});
@@ -362,7 +362,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         protocol.setObjectProperties(props);
     }
 
-    public String getImportURL(String providerName, String directoryPath, String assayName) throws GWTImportException
+    public String getImportURL(String providerName, String directoryPath, String assayName)
     {
         List<ExpProtocol> assays = AssayService.get().getAssayProtocols(getContainer());
         ExpProtocol assayProtocol = null;
@@ -384,7 +384,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public List<GWTPropertyDescriptor> getBaseColumns(String providerName) throws GWTImportException
+    public List<GWTPropertyDescriptor> getBaseColumns(String providerName)
     {
         AssayProvider provider = AssayService.get().getProvider(providerName);
         List<GWTPropertyDescriptor> baseColumns = new ArrayList<>();
@@ -409,7 +409,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     }
 
     @Override
-    public List<Map<String, String>> getAssayLocations() throws GWTImportException
+    public List<Map<String, String>> getAssayLocations()
     {
         List<Map<String, String>> locations = new ArrayList<>();
         boolean isDefault = true;

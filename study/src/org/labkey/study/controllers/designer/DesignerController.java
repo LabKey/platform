@@ -193,7 +193,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CancelWizardAction extends SimpleRedirectAction<CreateRepositoryForm>
     {
-        public ActionURL getRedirectURL(CreateRepositoryForm form) throws Exception
+        public ActionURL getRedirectURL(CreateRepositoryForm form)
         {
             setParticipants(null);
             setSpecimens(null);
@@ -319,7 +319,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class GetParticipantExcelAction extends ExportAction<CreateRepositoryForm>
     {
-        public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors)
         {
             List<Map<String,Object>> participantGroup = new ArrayList<>();
             int participantNum = 1;
@@ -403,7 +403,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
     {
-        public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors)
         {
             //Search for a template in all folders up to root.
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), TimepointType.DATE, "Subject");
@@ -498,7 +498,7 @@ public class DesignerController extends SpringActionController
     }
 
 
-    private void validateStep(CreateRepositoryForm form, StudyDesignInfo info) throws Exception
+    private void validateStep(CreateRepositoryForm form, StudyDesignInfo info)
     {
         if (null == info)
             throw new NotFoundException("Couldn't find study with id " + form.getStudyId());
@@ -537,7 +537,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    private void pickFolder(CreateRepositoryForm form) throws Exception
+    private void pickFolder(CreateRepositoryForm form)
     {
         String folderName = StringUtils.trimToNull(form.getFolderName());
         Container container = getContainer();
@@ -564,7 +564,7 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    private void showParticipants(CreateRepositoryForm form) throws IOException, SQLException
+    private void showParticipants(CreateRepositoryForm form) throws IOException
     {
         if (null != form.getParticipantTSV())
         {
@@ -577,7 +577,7 @@ public class DesignerController extends SpringActionController
 
     @SuppressWarnings("unchecked")
     private void uploadParticipants(CreateRepositoryForm form)
-            throws SQLException, IOException
+            throws IOException
     {
         //Parse and validate uploaded participant info
         if (null == StringUtils.trimToNull(form.getParticipantTSV()))

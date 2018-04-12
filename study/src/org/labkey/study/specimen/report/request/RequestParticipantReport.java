@@ -16,6 +16,7 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.study.SpecimenManager;
+import org.labkey.study.SpecimenManager.RequestSummaryByVisitType;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.model.VisitImpl;
@@ -33,9 +34,10 @@ import java.sql.SQLException;
  * User: brittp
  * Created: Feb 5, 2008 2:17:53 PM
  */
-public class RequestParticipantReport extends SpecimenVisitReport<SpecimenManager.RequestSummaryByVisitType>
+public class RequestParticipantReport extends SpecimenVisitReport<RequestSummaryByVisitType>
 {
-    private boolean _completeRequestsOnly;
+    private final boolean _completeRequestsOnly;
+
     public RequestParticipantReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
     {
         super(titlePrefix, visits, filter, parameters);
@@ -44,40 +46,33 @@ public class RequestParticipantReport extends SpecimenVisitReport<SpecimenManage
 
     public Collection<Row> createRows()
     {
-        try
+        SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
+        RequestSummaryByVisitType[] countSummary =
+                SpecimenManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter,
+                        isViewPtidList(), level, getBaseCustomView(), _completeRequestsOnly);
+        Map<String, Row> rows = new TreeMap<>();
+        for (RequestSummaryByVisitType count : countSummary)
         {
-            SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
-            SpecimenManager.RequestSummaryByVisitType[] countSummary =
-                    SpecimenManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter,
-                            isViewPtidList(), level, getBaseCustomView(), _completeRequestsOnly);
-            Map<String, Row> rows = new TreeMap<>();
-            for (SpecimenManager.RequestSummaryByVisitType count : countSummary)
+            String key = count.getSiteLabel() + "/" + count.getPrimaryType() + "/" +
+                    (count.getDerivative() != null ? count.getDerivative() : "All") + "/" +
+                    (count.getAdditive() != null ? count.getAdditive() : "All");
+            Row row = rows.get(key);
+            if (row == null)
             {
-                String key = count.getSiteLabel() + "/" + count.getPrimaryType() + "/" +
-                        (count.getDerivative() != null ? count.getDerivative() : "All") + "/" +
-                        (count.getAdditive() != null ? count.getAdditive() : "All");
-                Row row = rows.get(key);
-                if (row == null)
-                {
-                    String[] typeHierarchy = level.getTitleHierarchy(count);
-                    String[] titleHierarchy = new String[typeHierarchy.length + 1];
-                    titleHierarchy[0] = count.getSiteLabel();
-                    System.arraycopy(typeHierarchy, 0, titleHierarchy, 1, typeHierarchy.length);
-                    row = new Row(titleHierarchy);
-                    rows.put(key, row);
-                }
-                setVisitAsNonEmpty(count.getVisit());
-                row.add(count);
+                String[] typeHierarchy = level.getTitleHierarchy(count);
+                String[] titleHierarchy = new String[typeHierarchy.length + 1];
+                titleHierarchy[0] = count.getSiteLabel();
+                System.arraycopy(typeHierarchy, 0, titleHierarchy, 1, typeHierarchy.length);
+                row = new Row(titleHierarchy);
+                rows.put(key, row);
             }
-            return rows.values();
+            setVisitAsNonEmpty(count.getVisit());
+            row.add(count);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return rows.values();
     }
 
-    protected String[] getCellExcelText(VisitImpl visit, SpecimenManager.RequestSummaryByVisitType summary)
+    protected String[] getCellExcelText(VisitImpl visit, RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -93,7 +88,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SpecimenManage
         return new String[] { summaryString.toString() };
     }
 
-    protected String getCellHtml(VisitImpl visit, SpecimenManager.RequestSummaryByVisitType summary)
+    protected String getCellHtml(VisitImpl visit, RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
@@ -113,7 +108,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<SpecimenManage
         return buildCellHtml(visit, summary, linkHtml);
     }
 
-    protected String getFilterQueryString(VisitImpl visit, SpecimenManager.RequestSummaryByVisitType summary)
+    protected String getFilterQueryString(VisitImpl visit, RequestSummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 (_completeRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedBySite : SpecimenQueryView.PARAMS.showRequestedBySite)

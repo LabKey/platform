@@ -1186,7 +1186,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetLogoAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             deleteExistingLogo(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();

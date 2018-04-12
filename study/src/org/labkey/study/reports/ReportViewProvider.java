@@ -97,7 +97,7 @@ public class ReportViewProvider implements DataViewProvider
     }
 
     @Override
-    public List<DataViewInfo> getViews(ViewContext context) throws Exception
+    public List<DataViewInfo> getViews(ViewContext context)
     {
         Container container = context.getContainer();
         User user = context.getUser();

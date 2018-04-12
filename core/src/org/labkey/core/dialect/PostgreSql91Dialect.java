@@ -762,7 +762,7 @@ abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void prepareConnection(Connection conn) throws SQLException
+    public void prepareConnection(Connection conn)
     {
     }
 
@@ -1467,7 +1467,7 @@ abstract class PostgreSql91Dialect extends SqlDialect
                 private Map<String, String> _types = null;
 
                 @Override
-                public void exec(ResultSet rs) throws SQLException, StopIteratingException
+                public void exec(ResultSet rs) throws SQLException
                 {
                     if (null == _types)
                         _types = new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type").getValueMap();

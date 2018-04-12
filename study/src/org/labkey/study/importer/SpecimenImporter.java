@@ -1292,7 +1292,7 @@ public class SpecimenImporter
     }
 
     public void process(VirtualFile specimensDir, boolean merge, StudyImportContext ctx, @Nullable PipelineJob job, boolean syncParticipantVisit)
-            throws SQLException, IOException, ValidationException
+            throws IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());
 
@@ -1461,7 +1461,7 @@ public class SpecimenImporter
         }
     }
 
-    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws IOException, ValidationException
+    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws ValidationException
     {
         setStatus(GENERAL_JOB_STATUS_MSG + " (populate tables)");
         _iTimer.setPhase(ImportPhases.DeleteOldData);
@@ -1814,7 +1814,7 @@ public class SpecimenImporter
         new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(new Selector.ForEachBlock<SpecimenComment>()
         {
             @Override
-            public void exec(SpecimenComment comment) throws SQLException
+            public void exec(SpecimenComment comment)
             {
                 qcCommentMap.put(comment.getGlobalUniqueId(), comment);
             }
@@ -2387,7 +2387,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimens(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws IOException, ValidationException
+    private void populateSpecimens(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws ValidationException
     {
         String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
@@ -2864,7 +2864,7 @@ public class SpecimenImporter
                 }
 
                 @Override
-                public Object getValue(Map<String, Object> row) throws ValidationException
+                public Object getValue(Map<String, Object> row)
                 {
                     Object uniqueid = row.get(GLOBAL_UNIQUE_ID_TSV_COL);
                     if (null == uniqueid)
@@ -3739,7 +3739,7 @@ public class SpecimenImporter
         private static final String TABLE = "SpecimenImporterTest";
 
         @Before
-        public void createTable() throws SQLException
+        public void createTable()
         {
             List<ColumnInfo> columns = new ArrayList<>();
             columns.add(new ColumnInfo("Container",JdbcType.GUID, 0, false));
@@ -3757,14 +3757,14 @@ public class SpecimenImporter
 
 
         @After
-        public void dropTable() throws SQLException
+        public void dropTable()
         {
             if (null != _simpleTable)
                 _simpleTable.delete();
         }
 
 
-        private TableResultSet selectValues() throws SQLException
+        private TableResultSet selectValues()
         {
             return new SqlSelector(_simpleTable.getSchema(), "SELECT Container,id,s,i,entityid FROM " + _simpleTable + " ORDER BY id").getResultSet();
         }
@@ -3935,7 +3935,7 @@ public class SpecimenImporter
 
 
         @Test
-        public void tempTableConsistencyTest() throws Exception
+        public void tempTableConsistencyTest()
         {
             Container c = JunitUtil.getTestContainer();
             DbSchema schema = StudySchema.getInstance().getSchema();

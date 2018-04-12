@@ -122,15 +122,8 @@ public class DiscussionServiceImpl implements DiscussionService
 
     public WebPartView getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
     {
-        try
-        {
-            // NOTE: don't pass in AnnouncementModel, it came from getBareAnnouncements()
-            return new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
-        }
-        catch (ServletException x)
-        {
-            return new HtmlView(x.toString());
-        }
+        // NOTE: don't pass in AnnouncementModel, it came from getBareAnnouncements()
+        return new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
     }
 
 

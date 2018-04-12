@@ -52,7 +52,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
     }
 
     @Override
-    public List<DataViewInfo> getViews(ViewContext context) throws Exception
+    public List<DataViewInfo> getViews(ViewContext context)
     {
         List<DataViewInfo> dataViews = new ArrayList<>();
         Container ctxContainer = context.getContainer();

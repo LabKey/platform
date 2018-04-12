@@ -61,7 +61,7 @@ public class Qube
     Level _keyLevel;
 
 
-    public Qube(OlapConnection connection, Cube cube, Level keyLevel) throws OlapException
+    public Qube(OlapConnection connection, Cube cube, Level keyLevel)
     {
         _cube = cube;
         _keyLevel = keyLevel;

@@ -1146,7 +1146,7 @@ public class UploadSamplesHelper
             _reusedMaterialLSIDs = reusedMaterialLSIDs;
         }
 
-        public String beforeImportObject(Map<String, Object> map) throws SQLException
+        public String beforeImportObject(Map<String, Object> map)
         {
             String name = (String)map.get("Name");
             assert name != null : "Name should have been generated";
@@ -1175,7 +1175,7 @@ public class UploadSamplesHelper
             return lsid;
         }
 
-        public void afterBatchInsert(int rowCount) throws SQLException
+        public void afterBatchInsert(int rowCount)
         {
             List<ExpMaterial> materials = new ArrayList<>();
             for (int i = _currentRow; i < rowCount; i++)
@@ -1191,7 +1191,7 @@ public class UploadSamplesHelper
         }
 
 
-        public void updateStatistics(int currentRow) throws SQLException
+        public void updateStatistics(int currentRow)
         {
         }
     }

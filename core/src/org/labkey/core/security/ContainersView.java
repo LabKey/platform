@@ -57,7 +57,7 @@ public class ContainersView extends WebPartView
         _c = c;
     }
 
-    public void renderView(Object model, PrintWriter out) throws IOException, ServletException
+    public void renderView(Object model, PrintWriter out)
     {
         ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(_c);
         PermissionsContainerTree ct = new PermissionsContainerTree(_c.getPath(), getViewContext().getUser(), url);

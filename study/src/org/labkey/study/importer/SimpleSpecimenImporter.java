@@ -321,7 +321,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             new TableSelector(table, PageFlowUtil.set(dbRowIdCol, dbIdCol, dbLabelCol), filter, new Sort("RowId")).forEachMap(new ForEachBlock<Map<String, Object>>()
             {
                 @Override
-                public void exec(Map<String, Object> map) throws SQLException
+                public void exec(Map<String, Object> map)
                 {
                     Integer id = (Integer)map.get(dbIdCol);
                     if (id == null)

@@ -45,7 +45,7 @@ public class PortalJUnitTest extends Assert
     private static final String _testDirName = "/_jUnitPortal";
 
     @Test
-    public void testPortal() throws SQLException
+    public void testPortal()
     {
         User user = TestContext.get().getUser();
         assertTrue(null != user);

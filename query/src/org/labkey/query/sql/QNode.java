@@ -418,7 +418,7 @@ abstract public class QNode implements Cloneable
 
 
         @Test
-        public void testType() throws Exception
+        public void testType()
         {
             test("CONVERT(now(),SQL_DATE)", JdbcType.DATE);
             test("CAST(now() AS DATE)", JdbcType.DATE);
@@ -429,7 +429,7 @@ abstract public class QNode implements Cloneable
 
 
         @Test
-        public void testEquals() throws SQLException, ServletException
+        public void testEquals()
         {
             // identifiers case insensitive
             test("a");

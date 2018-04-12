@@ -100,14 +100,14 @@ public class FileImporter implements FolderImporter<XmlObject>
 
     @NotNull
     @Override
-    public Collection<PipelineJobWarning> postProcess(ImportContext<XmlObject> ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext<XmlObject> ctx, VirtualFile root)
     {
         return Collections.emptyList();
     }
 
     @Nullable
     @Override
-    public Map<String, Boolean> getChildrenDataTypes(ImportContext ctx) throws ImportException
+    public Map<String, Boolean> getChildrenDataTypes(ImportContext ctx)
     {
         return null;
     }

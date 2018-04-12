@@ -126,7 +126,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
         {
             Pair<User, AnnouncementModel> targets = getTargets(keys, user);
             SimpleFilter filter = createFilter(targets);
@@ -141,7 +141,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, QueryUpdateServiceException
         {
             try
             {
@@ -175,7 +175,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException
         {
             Map<String, Object> existingRow = getRow(user, container, oldRow);
             if (existingRow != null)
@@ -192,7 +192,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException
         {
             Pair<User, AnnouncementModel> targets = getTargets(oldRow, user);
             Table.delete(getRealTable(), new SimpleFilter(FieldKey.fromParts("UserId"), targets.getKey().getUserId()).addCondition(FieldKey.fromParts("MessageId"), targets.getValue().getRowId()));

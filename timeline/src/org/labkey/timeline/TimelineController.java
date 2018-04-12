@@ -22,7 +22,7 @@ public class TimelineController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TimelineController.class);
 
-    public TimelineController() throws Exception
+    public TimelineController()
     {
         setActionResolver(_actionResolver);
     }

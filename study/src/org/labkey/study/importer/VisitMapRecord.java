@@ -254,17 +254,17 @@ class VisitMapRecord
         }
 
         @Override
-        public ArrayList<VisitMapRecord> handleArrayList(ResultSet rs) throws SQLException
+        public ArrayList<VisitMapRecord> handleArrayList(ResultSet rs)
         {
             throw new UnsupportedOperationException();
         }
 
-        public VisitMapRecord[] handleArray(ResultSet rs) throws SQLException
+        public VisitMapRecord[] handleArray(ResultSet rs)
         {
             throw new UnsupportedOperationException();
         }
 
-        public VisitMapRecord handle(ResultSet rs) throws SQLException
+        public VisitMapRecord handle(ResultSet rs)
         {
             throw new UnsupportedOperationException();
         }

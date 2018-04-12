@@ -53,7 +53,7 @@ public class UmlsController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new SpringActionController.DefaultActionResolver(UmlsController.class);
 
-    public UmlsController() throws Exception
+    public UmlsController()
     {
         setActionResolver(_actionResolver);
     }
@@ -144,7 +144,7 @@ public class UmlsController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ConceptForm conceptForm, BindException errors) throws Exception
+        public ModelAndView getView(ConceptForm conceptForm, BindException errors)
         {
             return new JspView<>(UmlsController.class, "concept.jsp", conceptForm, errors);
         }
@@ -171,7 +171,7 @@ public class UmlsController extends SpringActionController
                 errors.rejectValue(SpringActionController.ERROR_MSG, "path", "Path not found: " + form.getPath());
         }
 
-        public ModelAndView getView(PathForm o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(PathForm o, boolean reshow, BindException errors)
         {
             if (_key == null)
             {

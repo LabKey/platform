@@ -42,7 +42,7 @@ public class XarExportPipelineJob extends PipelineJob
     private XarExportSelection _selection;
     private final String _xarXmlFileName;
 
-    public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName) throws SQLException
+    public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName)
     {
         super(ExperimentPipelineProvider.NAME, info, root);
         _fileName = fileName;
@@ -86,7 +86,7 @@ public class XarExportPipelineJob extends PipelineJob
             getLogger().info("Export complete");
             setStatus(TaskStatus.complete);
         }
-        catch (RuntimeException | IOException | SQLException | ExperimentException e)
+        catch (RuntimeException | IOException | ExperimentException e)
         {
             logFailure(e);
         }

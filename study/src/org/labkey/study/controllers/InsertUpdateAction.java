@@ -70,7 +70,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -223,27 +222,23 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
     public NavTree appendNavTrail(NavTree root)
     {
-        try
+        Study study = getStudy();
+        Container container = getContainer();
+        ActionURL rootURL;
+        if (container.getFolderType().getDefaultModule() instanceof StudyModule)
         {
-            Study study = getStudy();
-            Container container = getContainer();
-            ActionURL rootURL;
-            if (container.getFolderType().getDefaultModule() instanceof StudyModule)
-            {
-                rootURL = container.getFolderType().getStartURL(container, getUser());
-            }
-            else
-            {
-                rootURL = new ActionURL(StudyController.BeginAction.class, container);
-            }
-            root.addChild(study.getLabel(), rootURL);
-            ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
-            grid.addParameter(DatasetDefinition.DATASETKEY, _ds.getDatasetId());
-            grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
-            root.addChild(_ds.getLabel(), grid);
-            appendExtraNavTrail(root);
+            rootURL = container.getFolderType().getStartURL(container, getUser());
         }
-        catch (ServletException e) {}
+        else
+        {
+            rootURL = new ActionURL(StudyController.BeginAction.class, container);
+        }
+        root.addChild(study.getLabel(), rootURL);
+        ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
+        grid.addParameter(DatasetDefinition.DATASETKEY, _ds.getDatasetId());
+        grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        root.addChild(_ds.getLabel(), grid);
+        appendExtraNavTrail(root);
         return root;
     }
 
@@ -367,7 +362,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         return url;
     }
 
-    protected StudyImpl getStudy() throws ServletException
+    protected StudyImpl getStudy()
     {
         if (null == _study)
             _study = BaseStudyController.getStudyRedirectIfNull(getContainer());
@@ -380,7 +375,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     }
 
 
-    TableInfo getQueryTable() throws ServletException
+    TableInfo getQueryTable()
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(getStudy(), getUser(), true);
         TableInfo datasetQueryTable= schema.getTable(_ds.getName());

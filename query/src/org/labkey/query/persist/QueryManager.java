@@ -152,7 +152,7 @@ public class QueryManager
         return snapshotDef;
     }
 
-    public QuerySnapshotDef update(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef) throws SQLException
+    public QuerySnapshotDef update(User user, QueryDef queryDef, QuerySnapshotDef snapshotDef)
     {
         if (queryDef != null && snapshotDef.getQueryTableName() == null)
             update(user, queryDef);
@@ -167,14 +167,14 @@ public class QueryManager
         return new TableSelector(getTableInfoQuerySnapshotDef()).getObject(id, QuerySnapshotDef.class);
     }
 
-    public CstmView getCustomView(Container container, int id) throws SQLException
+    public CstmView getCustomView(Container container, int id)
     {
         CstmView view = CustomViewCache.getCstmView(container, id);
         _log.debug(view);
         return view;
     }
 
-    public CstmView getCustomView(Container container, String entityId) throws SQLException
+    public CstmView getCustomView(Container container, String entityId)
     {
         CstmView view = CustomViewCache.getCstmViewByEntityId(container, entityId);
         _log.debug(view);
@@ -900,7 +900,7 @@ public class QueryManager
     }
 
     private void validateViewColumns(User user, Container container, CustomView v, String identifier, List<FieldKey> viewCols, TableInfo sourceTable,
-                                     @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws SQLException, QueryParseException
+                                     @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws QueryParseException
     {
         //verify columns match, accounting for case
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(sourceTable, viewCols);

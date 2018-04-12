@@ -143,7 +143,8 @@ public class VisualizationController extends SpringActionController
 {
     public static final String NAME = "visualization";
     public static final String FILTER_DATAREGION = "Dataset";
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
+
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
     private static final Logger _log = Logger.getLogger(VisualizationController.class);
 
     public static class VisualizationUrlsImpl implements VisualizationUrls
@@ -234,7 +235,7 @@ public class VisualizationController extends SpringActionController
     }
 
 
-    public VisualizationController() throws Exception
+    public VisualizationController()
     {
         super();
         setActionResolver(_actionResolver);
@@ -261,7 +262,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasureSetRequest> extends ApiAction<Form>
     {
-        public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
+        public ApiResponse execute(Form measureRequest, BindException errors)
         {
             VisualizationService vs = VisualizationService.get();
             Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = vs.getMeasures(getContainer(), getUser(), measureRequest);
@@ -286,7 +287,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ApiAction<Form>
     {
-        public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
+        public ApiResponse execute(Form measureRequest, BindException errors)
         {
             String key = getContainer().getId() + ":" + measureRequest.getCacheKey();
             ActivityService activityService = ActivityService.get();
@@ -316,7 +317,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ClearMeasuresCacheAction extends ApiAction<Object>
     {
-        public ApiResponse execute(Object measureRequest, BindException errors) throws Exception
+        public ApiResponse execute(Object measureRequest, BindException errors)
         {
             _getMeasuresCache.clear();
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -340,7 +341,7 @@ public class VisualizationController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(MeasureSetRequest measureRequest, BindException errors) throws Exception
+        public ApiResponse execute(MeasureSetRequest measureRequest, BindException errors)
         {
             VisualizationService vs = VisualizationService.get();
             Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = vs.getDimensions(getContainer(), getUser(), measureRequest);
@@ -357,7 +358,7 @@ public class VisualizationController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class GetDimensionValues extends GetMeasuresAction<DimensionValuesForm>
     {
-        public ApiResponse execute(DimensionValuesForm form, BindException errors) throws Exception
+        public ApiResponse execute(DimensionValuesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -446,7 +447,7 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -553,7 +554,7 @@ public class VisualizationController extends SpringActionController
             return response;
         }
 
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors) throws Exception
+        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
         {
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -588,7 +589,7 @@ public class VisualizationController extends SpringActionController
     public class TestGetDataAction extends SimpleViewAction<Void>
     {
         @Override
-        public ModelAndView getView(Void noform, BindException errors) throws Exception
+        public ModelAndView getView(Void noform, BindException errors)
         {
             return new JspView("/org/labkey/visualization/test/test.jsp");
         }
@@ -646,7 +647,7 @@ public class VisualizationController extends SpringActionController
         }
 
 
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors) throws Exception
+        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
         {
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -681,7 +682,7 @@ public class VisualizationController extends SpringActionController
     public class cdsTestGetDataAction extends SimpleViewAction<Void>
     {
         @Override
-        public ModelAndView getView(Void noform, BindException errors) throws Exception
+        public ModelAndView getView(Void noform, BindException errors)
         {
             return new JspView("/org/labkey/visualization/test/test.jsp");
         }
@@ -1303,7 +1304,7 @@ public class VisualizationController extends SpringActionController
             return response;
         }
 
-        private Report getGenericReport(ChartWizardReportForm form) throws Exception
+        private Report getGenericReport(ChartWizardReportForm form)
         {
             Report report;
 
@@ -1355,7 +1356,7 @@ public class VisualizationController extends SpringActionController
     public class GetGenericReportColumnsAction extends ApiAction<ColumnListForm>
     {
         @Override
-        public ApiResponse execute(ColumnListForm form, BindException errors) throws Exception
+        public ApiResponse execute(ColumnListForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             HashSet<String> baseColumns = new HashSet<>();

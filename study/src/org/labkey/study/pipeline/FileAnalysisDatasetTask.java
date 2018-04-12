@@ -44,13 +44,13 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
     }
 
     @Override
-    protected String getDatasetsFileName() throws ImportException
+    protected String getDatasetsFileName()
     {
         return ".datasets";
     }
 
     @Override
-    protected VirtualFile getDatasetsDirectory() throws ImportException
+    protected VirtualFile getDatasetsDirectory()
     {
         FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
         File dataDir = jobSupport.getDataDirectory();

@@ -67,7 +67,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         _process(rows, merge, logger);
     }
 
-    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws IOException, ValidationException
     {
         if (merge)
         {
@@ -109,7 +109,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         fileNameMap.put(type, new IteratorSpecimenImportFile(specimenRows, strategy, type));
     }
 
-    public List<Map<String, Object>> mapColumnNamesToTsvColumnNames(List<Map<String, Object>> rows) throws IOException
+    public List<Map<String, Object>> mapColumnNamesToTsvColumnNames(List<Map<String, Object>> rows)
     {
         List<Map<String, Object>> newRows = new ArrayList<>();
 

@@ -62,7 +62,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
     // Parses the whole visit map again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;

@@ -76,7 +76,7 @@ public class ViewCategoryImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
+    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root)
     {
         try
         {

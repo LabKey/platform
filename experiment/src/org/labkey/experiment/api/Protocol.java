@@ -265,7 +265,7 @@ public class Protocol extends IdentifiableEntity
         _contactId = contactId;
     }
 
-    public List<Difference> diff(Protocol other) throws SQLException
+    public List<Difference> diff(Protocol other)
     {
         List<Difference> result = new ArrayList<>();
         diff(_applicationType, other._applicationType, "Application Type", result);

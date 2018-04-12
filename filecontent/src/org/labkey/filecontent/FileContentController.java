@@ -347,7 +347,7 @@ public class FileContentController extends SpringActionController
             }
         }
 
-        private void renderResourceContents(PrintWriter out, WebdavResource resource) throws IOException
+        private void renderResourceContents(PrintWriter out, WebdavResource resource)
         {
             StringBuilder contents = new StringBuilder();
             String line;
@@ -420,7 +420,7 @@ public class FileContentController extends SpringActionController
    @RequiresPermission(ReadPermission.class)
    public class FrameAction extends SimpleViewAction<SrcForm>
    {
-       public ModelAndView getView(SrcForm srcForm, BindException errors) throws Exception
+       public ModelAndView getView(SrcForm srcForm, BindException errors)
        {
            String src = srcForm.getSrc();
            return new IFrameView(src);
@@ -445,7 +445,7 @@ public class FileContentController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(FileContentForm form, BindException errors) throws Exception
+        public ModelAndView getView(FileContentForm form, BindException errors)
         {
             FilesWebPart part = new FilesWebPart(getContainer(), form.getFileSetName(), form.getFileRootName());
 
@@ -498,7 +498,7 @@ public class FileContentController extends SpringActionController
    @RequiresPermission(AdminOperationsPermission.class)
    public class ShowAdminAction extends FormViewAction<FileContentForm>
    {
-       public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors) throws Exception
+       public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors)
        {
            FileContentService service = FileContentService.get();
 
@@ -560,7 +560,7 @@ public class FileContentController extends SpringActionController
        public static final int MAX_NAME_LENGTH = 80;
        public static final int MAX_PATH_LENGTH = 255;
 
-       public boolean handlePost(FileContentForm form, BindException errors) throws Exception
+       public boolean handlePost(FileContentForm form, BindException errors)
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
            String path = StringUtils.trimToNull(form.getPath());
@@ -608,7 +608,7 @@ public class FileContentController extends SpringActionController
    @CSRF
    public class DeleteAttachmentDirectoryAction extends ShowAdminAction
    {
-       public boolean handlePost(FileContentForm form, BindException errors) throws Exception
+       public boolean handlePost(FileContentForm form, BindException errors)
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
            FileContentService service = FileContentService.get();
@@ -689,7 +689,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class FileContentSummaryAction extends FileTreeNodeAction
     {
-        public Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception
+        public Set<Map<String, Object>> getChildren(NodeForm form, BindException errors)
         {
             Container c = ContainerManager.getForId(form.getNode());
             if (c == null)
@@ -725,7 +725,7 @@ public class FileContentController extends SpringActionController
     {
         private static final String NODE_LABEL = "file web part";
 
-        protected Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception
+        protected Set<Map<String, Object>> getChildren(NodeForm form, BindException errors)
         {
             Container c = ContainerManager.getForId(form.getNode());
             if (c == null)
@@ -823,7 +823,7 @@ public class FileContentController extends SpringActionController
     public class DesignerAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
             String uri = svc.getDomainURI(getContainer());
@@ -1089,7 +1089,7 @@ public class FileContentController extends SpringActionController
             return ret;
         }
 
-        public ApiResponse execute(CustomFilePropsForm form, BindException errors) throws Exception
+        public ApiResponse execute(CustomFilePropsForm form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
             ExpData data = svc.getDataObject(_resource, getContainer());
@@ -1145,7 +1145,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetFileOptionsAction extends MutatingApiAction<ResetType>
     {
-        public ApiResponse execute(ResetType form, BindException errors) throws Exception
+        public ApiResponse execute(ResetType form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
@@ -1174,7 +1174,7 @@ public class FileContentController extends SpringActionController
     public class GetEmailPrefAction extends ApiAction<Object>
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
@@ -1196,7 +1196,7 @@ public class FileContentController extends SpringActionController
     public class GetFileRootsAction extends ApiAction<Object>
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
@@ -1241,7 +1241,7 @@ public class FileContentController extends SpringActionController
     public class SetEmailPrefAction extends MutatingApiAction<EmailPrefForm>
     {
         @Override
-        public ApiResponse execute(EmailPrefForm form, BindException errors) throws Exception
+        public ApiResponse execute(EmailPrefForm form, BindException errors)
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
 
@@ -1257,7 +1257,7 @@ public class FileContentController extends SpringActionController
     public class SetDefaultEmailPrefAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
-        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
+        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
             StringBuilder message = new StringBuilder("The current default has been updated to: ");
@@ -1283,7 +1283,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowFilesHistoryAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
 
@@ -1305,7 +1305,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class FileEmailPreferenceAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/filecontent/view/configureEmail.jsp");
         }

@@ -28,7 +28,7 @@ import java.sql.SQLException;
 */
 public class ProtocolParametersView extends JspView
 {
-    public ProtocolParametersView(ExpProtocol protocol) throws SQLException
+    public ProtocolParametersView(ExpProtocol protocol)
     {
         super("/org/labkey/experiment/Parameters.jsp", protocol.getProtocolParameters());
         setTitle("Protocol Parameters");

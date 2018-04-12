@@ -89,19 +89,19 @@ public class MapArrayExcelWriter extends ExcelWriter
 
         //NOTE: Methods beyond here are unimplemented, just abstract in base class!
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
         @Override
-        public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderDetailsCellContents(RenderContext ctx, Writer out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
         @Override
-        public void renderTitle(RenderContext ctx, Writer out) throws IOException
+        public void renderTitle(RenderContext ctx, Writer out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
@@ -125,13 +125,13 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
+        public void renderFilterOnClick(RenderContext ctx, Writer out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
         @Override
-        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+        public void renderInputHtml(RenderContext ctx, Writer out, Object value)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
@@ -167,7 +167,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void render(RenderContext ctx, Writer out) throws IOException
+        public void render(RenderContext ctx, Writer out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

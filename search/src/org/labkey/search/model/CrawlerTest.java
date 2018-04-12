@@ -50,7 +50,7 @@ public class CrawlerTest extends Assert
 {
 
     @Test
-    public void test() throws Exception
+    public void test()
     {
         DavCrawler cr = new DavCrawler();
         cr.setResolver(new TestResolver(ModuleLoader.getInstance().getCoreModule().getExplodedPath()));

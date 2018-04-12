@@ -194,7 +194,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
     }
 
     @Override
-    public boolean isParticipant(PipelineJob job) throws IOException
+    public boolean isParticipant(PipelineJob job)
     {
         return true;
     }
@@ -206,7 +206,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
     }
 
     @Override
-    public List<String> toArgs(CommandTask task) throws IOException
+    public List<String> toArgs(CommandTask task)
     {
         throw new IllegalStateException();
     }

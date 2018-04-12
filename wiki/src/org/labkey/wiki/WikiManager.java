@@ -28,6 +28,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
@@ -166,8 +167,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files)
-            throws SQLException, IOException
+    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files) throws IOException
     {
         DbScope scope = comm.getSchema().getScope();
 
@@ -442,7 +442,7 @@ public class WikiManager implements WikiService
     //copies a single wiki page
     public Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<String> destPageNames,
                           Map<Integer, Integer> pageIdMap, boolean isCopyingHistory)
-            throws SQLException, IOException
+            throws IOException
     {
         //create new wiki page
         String srcName = srcPage.getName();
@@ -551,7 +551,7 @@ public class WikiManager implements WikiService
             {
                 attsvc.addAttachments(parent, files, user);
             }
-            catch (AttachmentService.DuplicateFilenameException e)
+            catch (DuplicateFilenameException e)
             {
                 //since this is now being called ajax style with just the files, we don't
                 //really need to generate an error in this case. Just add a warning
@@ -811,10 +811,6 @@ public class WikiManager implements WikiService
         {
             insertWiki(user, c, wiki, wikiversion, null);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         catch (IOException e)
         {
             throw new RuntimeException(e);
@@ -982,7 +978,7 @@ public class WikiManager implements WikiService
         }
 
 
-        private void purgePages(Container c, boolean verifyEmpty) throws SQLException
+        private void purgePages(Container c, boolean verifyEmpty)
         {
             SqlExecutor executor = new SqlExecutor(_m.comm.getSchema());
 
@@ -1009,13 +1005,12 @@ public class WikiManager implements WikiService
 
 
         @Test
-        public void testWiki()
-                throws IOException, SQLException, ServletException, AttachmentService.DuplicateFilenameException
+        public void testWiki() throws IOException, SQLException, DuplicateFilenameException
         {
             TestContext context = TestContext.get();
 
             User user = context.getUser();
-            assertTrue("login before running this test", null != user);
+            assertNotNull("login before running this test", user);
             assertFalse("login before running this test", user.isGuest());
 
             Container c = JunitUtil.getTestContainer();

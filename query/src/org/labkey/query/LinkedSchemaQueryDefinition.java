@@ -109,19 +109,19 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container) throws SQLException
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container)
     {
         throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
-    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent) throws SQLException
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
     {
         throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
-    public void delete(User user) throws SQLException
+    public void delete(User user)
     {
         throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }

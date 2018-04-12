@@ -107,7 +107,7 @@ public class AnalysisController extends SpringActionController
     {
         private TaskPipeline _taskPipeline;
 
-        public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors) throws Exception
+        public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors)
         {
             try
             {
@@ -360,7 +360,7 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ProtocolManagementForm form, BindException errors) throws Exception
+        public boolean handlePost(ProtocolManagementForm form, BindException errors)
         {
             try
             {
@@ -464,7 +464,7 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ProtocolDetailsForm form, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolDetailsForm form, BindException errors)
         {
             _protocolName = form.getName();
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -565,7 +565,7 @@ public class AnalysisController extends SpringActionController
     public class InternalListTasksAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/pipeline/analysis/internalListTasks.jsp", null, errors);
         }
@@ -584,7 +584,7 @@ public class AnalysisController extends SpringActionController
     public class InternalListPipelinesAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/pipeline/analysis/internalListPipelines.jsp", null, errors);
         }

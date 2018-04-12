@@ -15,21 +15,21 @@
  */
 package org.labkey.study.specimen.report;
 
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.Formats;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.text.DecimalFormat;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
 import java.util.TreeMap;
-import java.util.Iterator;
-import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -44,36 +44,28 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SpecimenManager
 
     public Collection<Row> createRows()
     {
-        try
+        SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
+        SpecimenManager.SummaryByVisitType[] countSummary =
+                SpecimenManager.getInstance().getSpecimenSummaryByVisitType(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
+        Map<String, Row> rows = new TreeMap<>();
+        for (SpecimenManager.SummaryByVisitType count : countSummary)
         {
-            SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
-            SpecimenManager.SummaryByVisitType[] countSummary =
-                    SpecimenManager.getInstance().getSpecimenSummaryByVisitType(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
-            Map<String, Row> rows = new TreeMap<>();
-            for (SpecimenManager.SummaryByVisitType count : countSummary)
+            String key = count.getPrimaryType() + "/" +
+                    (count.getDerivative() != null ? count.getDerivative() : "All") + "/" +
+                    (count.getAdditive() != null ? count.getAdditive() : "All");
+            Row row = rows.get(key);
+            if (row == null)
             {
-                String key = count.getPrimaryType() + "/" +
-                        (count.getDerivative() != null ? count.getDerivative() : "All") + "/" +
-                        (count.getAdditive() != null ? count.getAdditive() : "All");
-                Row row = rows.get(key);
-                if (row == null)
-                {
-                    String[] titleHierarchy = level.getTitleHierarchy(count);
-                    row = new Row(titleHierarchy);
-                    rows.put(key, row);
-                }
-                setVisitAsNonEmpty(count.getVisit());
-                row.add(count);
+                String[] titleHierarchy = level.getTitleHierarchy(count);
+                row = new Row(titleHierarchy);
+                rows.put(key, row);
             }
-            return rows.values();
+            setVisitAsNonEmpty(count.getVisit());
+            row.add(count);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return rows.values();
     }
 
-    DecimalFormat format = new DecimalFormat("0.00");
     private String getCellSummaryText(SpecimenManager.SummaryByVisitType summary)
     {
         StringBuilder summaryString = new StringBuilder();
@@ -90,7 +82,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SpecimenManager
             if (summaryString.length() > 0)
                 summaryString.append("/");
             //summaryString.append(summary.getTotalVolume());
-            summaryString.append(format.format(summary.getTotalVolume()));
+            summaryString.append(Formats.f2.format(summary.getTotalVolume()));
         }
         return summaryString.toString();
     }

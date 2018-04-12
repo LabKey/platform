@@ -134,13 +134,13 @@ public class Related
             }
 
             @Override
-            public ArrayList<Related> handleArrayList(ResultSet rs) throws SQLException
+            public ArrayList<Related> handleArrayList(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArrayList(Related.class);
             }
 
             @Override
-            public Related[] handleArray(ResultSet rs) throws SQLException
+            public Related[] handleArray(ResultSet rs)
             {
                 return new ResultSetSelector(UmlsSchema.getScope(), rs).getArray(Related.class);
             }

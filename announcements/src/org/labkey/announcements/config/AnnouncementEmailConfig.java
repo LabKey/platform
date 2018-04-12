@@ -67,7 +67,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
     }
 
     @Override
-    public boolean handlePost(ViewContext context, BindException errors) throws Exception
+    public boolean handlePost(ViewContext context, BindException errors)
     {
         Object selectedOption = context.get("selectedEmailOption");
         // Only supports container-level subscriptions for this bulk UI

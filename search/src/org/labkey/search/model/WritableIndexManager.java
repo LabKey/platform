@@ -45,7 +45,7 @@ public interface WritableIndexManager
 
     void commit();
 
-    void close() throws IOException, InterruptedException;
+    void close() throws IOException;
 
     Map<String, String> getIndexFormatProperties();
 

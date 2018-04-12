@@ -137,7 +137,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
         {
             Filter filter;
 
@@ -195,13 +195,13 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws ValidationException
         {
             String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
             Container workbook = null;
@@ -320,19 +320,19 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    public Parameter.ParameterMap insertStatement(Connection conn, User user)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    public Parameter.ParameterMap deleteStatement(Connection conn)
     {
         throw new UnsupportedOperationException();
     }

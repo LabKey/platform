@@ -306,7 +306,7 @@ public class SpecimenController extends BaseStudyController
         return url;
     }
 
-    private Set<String> getSelectionLsids() throws ServletException
+    private Set<String> getSelectionLsids()
     {
         // save the selected set of participantdataset lsids in the session; this is the only obvious way
         // to let the user apply subsequent filters and switch back and forth between vial and specimen view
@@ -374,7 +374,7 @@ public class SpecimenController extends BaseStudyController
             return new VBox(header, view);
         }
 
-        private ParticipantDataset[] getFilterPds() throws ServletException, SQLException
+        private ParticipantDataset[] getFilterPds()
         {
             if (_filterPds == null)
             {
@@ -384,7 +384,7 @@ public class SpecimenController extends BaseStudyController
             return _filterPds;
         }
 
-        protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
         {
             _vialView = form.isShowVials();
             Set<String> lsids = getSelectionLsids();
@@ -431,7 +431,7 @@ public class SpecimenController extends BaseStudyController
             super(SampleViewTypeForm.class);
         }
 
-        protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
         {
             StudyImpl study = getStudyThrowIfNull();
 
@@ -472,7 +472,7 @@ public class SpecimenController extends BaseStudyController
         private Integer _selectedRequest;
         private Set<Pair<String, String>> _filteredPtidVisits;
 
-        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view) throws ServletException
+        public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
         {
             this(context, view, Collections.emptySet());
         }
@@ -997,7 +997,7 @@ public class SpecimenController extends BaseStudyController
         private Location[] _providingLocations;
         private String _returnUrl;
 
-        public ManageRequestBean(ViewContext context, SpecimenRequest specimenRequest, boolean forExport, Boolean submissionResult, String returnUrl) throws SQLException, ServletException
+        public ManageRequestBean(ViewContext context, SpecimenRequest specimenRequest, boolean forExport, Boolean submissionResult, String returnUrl)
         {
             super(context, SpecimenManager.getInstance().getRequestVials(specimenRequest), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
@@ -1233,7 +1233,7 @@ public class SpecimenController extends BaseStudyController
             return _view;
         }
 
-        public List<SpecimenRequestStatus> getStauses() throws SQLException
+        public List<SpecimenRequestStatus> getStauses()
         {
             return SpecimenManager.getInstance().getRequestStatuses(_context.getContainer(), _context.getUser());
         }
@@ -1643,7 +1643,7 @@ public class SpecimenController extends BaseStudyController
             _sampleIds = sampleIds;
         }
 
-        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SQLException,SpecimenUtils.AmbiguousLocationException
+        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SpecimenUtils.AmbiguousLocationException
         {
             // first check for explicitly listed specimen row ids (this is the case when posting the final
             // specimen request form):
@@ -1928,7 +1928,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private ModelAndView getCreateSampleRequestView(CreateSampleRequestForm form, BindException errors) throws SQLException, ServletException
+    private ModelAndView getCreateSampleRequestView(CreateSampleRequestForm form, BindException errors) throws SQLException
     {
         getUtils().ensureSpecimenRequestsConfigured(true);
         
@@ -2012,7 +2012,7 @@ public class SpecimenController extends BaseStudyController
         private SpecimenRequestQueryView _requestsGrid;
         private List<Location> _providingLocations;
 
-        public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens) throws ServletException
+        public AddToExistingRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens)
         {
             super(context, requestedSpecimens.getVials(), false, false, false, true);
 
@@ -2058,7 +2058,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    protected void requiresManageSpecimens() throws ServletException
+    protected void requiresManageSpecimens()
     {
         if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
         {
@@ -2214,7 +2214,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ManageRequestsPermission.class)
     public class DeleteMissingRequestSpecimensAction extends RedirectAction<IdForm>
     {
-        public boolean doAction(IdForm form, BindException errors) throws Exception
+        public boolean doAction(IdForm form, BindException errors)
         {
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null)
@@ -2530,7 +2530,7 @@ public class SpecimenController extends BaseStudyController
         private SpecimenRequestRequirement[] _originatorRequirements;
         private SpecimenRequestActor[] _actors;
 
-        public ManageReqsBean(User user, Container container) throws SQLException
+        public ManageReqsBean(User user, Container container)
         {
             RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> provider =
                     SpecimenManager.getInstance().getRequirementsProvider();
@@ -3576,41 +3576,34 @@ public class SpecimenController extends BaseStudyController
         private final boolean _mixedFlagState;
         private final Map<String, Map<String, Long>> _participantVisitMap;
 
-        public UpdateSpecimenCommentsBean(ViewContext context, List<Vial> vials, String referrer) throws ServletException
+        public UpdateSpecimenCommentsBean(ViewContext context, List<Vial> vials, String referrer)
         {
             super(context, vials, false, false, true, true);
             _referrer = referrer;
-            try
+            Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
+            boolean mixedComments = false;
+            boolean mixedFlagState = false;
+            SpecimenComment prevComment = currentComments.get(vials.get(0));
+
+            for (int i = 1; i < vials.size() && (!mixedFlagState || !mixedComments); i++)
             {
-                Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
-                boolean mixedComments = false;
-                boolean mixedFlagState = false;
-                SpecimenComment prevComment = currentComments.get(vials.get(0));
+                SpecimenComment comment = currentComments.get(vials.get(i));
 
-                for (int i = 1; i < vials.size() && (!mixedFlagState || !mixedComments); i++)
-                {
-                    SpecimenComment comment = currentComments.get(vials.get(i));
-
-                    // a missing comment indicates a 'false' for history conflict:
-                    boolean currentFlagState = comment != null && comment.isQualityControlFlag();
-                    boolean previousFlagState = prevComment != null && prevComment.isQualityControlFlag();
-                    mixedFlagState = mixedFlagState || currentFlagState != previousFlagState;
-                    String currentCommentString = comment != null ? comment.getComment() : null;
-                    String previousCommentString = prevComment != null ? prevComment.getComment() : null;
-                    mixedComments = mixedComments || !Objects.equals(previousCommentString, currentCommentString);
-                    prevComment = comment;
-                }
-
-                _currentComment = !mixedComments && prevComment != null ? prevComment.getComment() : null;
-                _currentFlagState = mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
-                _mixedComments = mixedComments;
-                _mixedFlagState = mixedFlagState;
-                _participantVisitMap = generateParticipantVisitMap(vials, BaseStudyController.getStudyRedirectIfNull(context.getContainer()));
+                // a missing comment indicates a 'false' for history conflict:
+                boolean currentFlagState = comment != null && comment.isQualityControlFlag();
+                boolean previousFlagState = prevComment != null && prevComment.isQualityControlFlag();
+                mixedFlagState = mixedFlagState || currentFlagState != previousFlagState;
+                String currentCommentString = comment != null ? comment.getComment() : null;
+                String previousCommentString = prevComment != null ? prevComment.getComment() : null;
+                mixedComments = mixedComments || !Objects.equals(previousCommentString, currentCommentString);
+                prevComment = comment;
             }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+
+            _currentComment = !mixedComments && prevComment != null ? prevComment.getComment() : null;
+            _currentFlagState = mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
+            _mixedComments = mixedComments;
+            _mixedFlagState = mixedFlagState;
+            _participantVisitMap = generateParticipantVisitMap(vials, BaseStudyController.getStudyRedirectIfNull(context.getContainer()));
         }
 
         protected Map<String, Map<String, Long>> generateParticipantVisitMap(List<Vial> vials, Study study)
@@ -3688,7 +3681,7 @@ public class SpecimenController extends BaseStudyController
             return new ActionURL(updateSpecimenCommentsForm.getReferrer());
         }
 
-        public boolean doAction(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors) throws Exception
+        public boolean doAction(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors)
         {
             List<Vial> selectedVials = getUtils().getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
             if (selectedVials != null)
@@ -4257,7 +4250,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private Map<Integer, SpecimenRequestActor> getIdToRequestActorMap(Container container) throws SQLException
+    private Map<Integer, SpecimenRequestActor> getIdToRequestActorMap(Container container)
     {
         SpecimenRequestActor[] actors = SpecimenManager.getInstance().getRequirementsProvider().getActors(container);
         Map<Integer, SpecimenRequestActor> idToStatus = new HashMap<>();
@@ -4377,7 +4370,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private void updateRequestStatusOrder(Container container, int[] rowIds, boolean fixedRowIncluded) throws SQLException
+    private void updateRequestStatusOrder(Container container, int[] rowIds, boolean fixedRowIncluded)
     {
         // get a map of id to status objects before starting our updates; this prevents us from
         // blowing then repopulating the cache with each update:
@@ -4534,7 +4527,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container) throws SQLException
+    private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container)
     {
         List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(container, getUser());
         Map<Integer, SpecimenRequestStatus> idToStatus = new HashMap<>();
@@ -4551,7 +4544,7 @@ public class SpecimenController extends BaseStudyController
             return new ActionURL(ManageActorsAction.class, getContainer());
         }
 
-        public boolean doAction(IdForm form, BindException errors) throws Exception
+        public boolean doAction(IdForm form, BindException errors)
         {
             SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
             if (actor != null)
@@ -4569,7 +4562,7 @@ public class SpecimenController extends BaseStudyController
             return new ActionURL(ManageStatusesAction.class, getContainer());
         }
 
-        public boolean doAction(IdForm form, BindException errors) throws Exception
+        public boolean doAction(IdForm form, BindException errors)
         {
             List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
             SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(getContainer(), form.getId());
@@ -5550,10 +5543,6 @@ public class SpecimenController extends BaseStudyController
                         errorList.add("Duplicate Ids found.");
                     }
                 }
-                catch (SQLException e)
-                {
-                    errorList.add(e.getMessage());
-                }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
                     errorList.add("The request could not be created because a requestability rule is configured incorrectly. " +
@@ -5644,7 +5633,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private List<AjaxCompletion> getAjaxCompletions(Study study) throws SQLException
+    private List<AjaxCompletion> getAjaxCompletions(Study study)
     {
         List<AjaxCompletion> completions = new ArrayList<>();
         String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";

@@ -134,7 +134,7 @@ public class XarExporter
         _archive = _document.addNewExperimentArchive();
     }
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws SQLException, ExperimentException
+    public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
     {
         this(lsidRelativizer, selection.createURLRewriter(), user);
         _log = log;
@@ -453,7 +453,7 @@ public class XarExporter
         }
     }
 
-    private void addSampleSet(String cpasType) throws ExperimentException
+    private void addSampleSet(String cpasType)
     {
         if (_sampleSetLSIDs.contains(cpasType))
         {
@@ -464,7 +464,7 @@ public class XarExporter
         addSampleSet(sampleSet);
     }
 
-    public void addSampleSet(ExpSampleSet sampleSet) throws ExperimentException
+    public void addSampleSet(ExpSampleSet sampleSet)
     {
         if (sampleSet == null)
         {
@@ -511,7 +511,7 @@ public class XarExporter
         return name;
     }
 
-    private void queueDomain(Domain domain) throws ExperimentException
+    private void queueDomain(Domain domain)
     {
         // Save them up so that we are sure they are written out in the proper order
         _domainsToAdd.put(domain.getTypeId(), domain);
@@ -1065,7 +1065,7 @@ public class XarExporter
         }
     }
 
-    public void write(OutputStream out) throws IOException, ExperimentException
+    public void write(OutputStream out) throws IOException
     {
         try (ZipOutputStream zOut = new ZipOutputStream(out))
         {

@@ -295,7 +295,7 @@ public class IssueManager
         return false;
     }
 
-    public static void saveIssue(User user, Container container, Issue issue) throws SQLException, BatchValidationException
+    public static void saveIssue(User user, Container container, Issue issue)
     {
         if (issue.getAssignedTo() == null)
             issue.setAssignedTo(0);
@@ -359,7 +359,7 @@ public class IssueManager
         }
     }
 
-    protected static void saveComments(User user, Issue issue) throws SQLException
+    protected static void saveComments(User user, Issue issue)
     {
         Collection<Issue.Comment> comments = issue._added;
         if (null == comments)
@@ -379,7 +379,7 @@ public class IssueManager
         issue._added = null;
     }
 
-    protected static void saveRelatedIssues(User user, Issue issue) throws SQLException
+    protected static void saveRelatedIssues(User user, Issue issue)
     {
         Collection<Integer> rels = issue.getRelatedIssues();
 
@@ -397,7 +397,7 @@ public class IssueManager
     }
 
 
-    public static Map<ColumnTypeEnum, String> getAllDefaults(Container container) throws SQLException
+    public static Map<ColumnTypeEnum, String> getAllDefaults(Container container)
     {
         final Map<ColumnTypeEnum, String> defaults = new HashMap<>();
         SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("Default"), true);
@@ -577,7 +577,7 @@ public class IssueManager
     }
 
 
-    public static Collection<Map<String, Object>> getSummary(Container c, User user, @Nullable IssueListDef issueListDef) throws SQLException
+    public static Collection<Map<String, Object>> getSummary(Container c, User user, @Nullable IssueListDef issueListDef)
     {
         if (issueListDef != null)
         {
@@ -1115,7 +1115,7 @@ public class IssueManager
     }
 
 
-    public static String purge() throws SQLException
+    public static String purge()
     {
         String message = "";
 
@@ -1444,7 +1444,7 @@ public class IssueManager
         _deleteIssueListDef(def, c, user);
     }
 
-    private static void _deleteIssueListDef(IssueListDef def, Container c, User user) throws DomainNotFoundException
+    private static void _deleteIssueListDef(IssueListDef def, Container c, User user)
     {
         Domain d = def.getDomain(user);
         if (d == null)
@@ -1673,12 +1673,12 @@ public class IssueManager
             return getFileStream(user).openInputStream();
         }
 
-        public long copyFrom(User user, FileStream in) throws IOException
+        public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException();
         }
 
-        public long getContentLength() throws IOException
+        public long getContentLength()
         {
             throw new UnsupportedOperationException();
         }
@@ -1716,7 +1716,7 @@ public class IssueManager
         }
 
         @Test
-        public void testIssues() throws IOException, SQLException, ServletException, BatchValidationException
+        public void testIssues() throws SQLException, BatchValidationException
         {
             TestContext context = TestContext.get();
 
@@ -1837,7 +1837,7 @@ public class IssueManager
         }
 
         @Test
-        public void testEmailHiding() throws IOException, SQLException, ServletException
+        public void testEmailHiding()
         {
             Container fakeRoot = ContainerManager.createFakeContainer(null, null);
 

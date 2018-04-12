@@ -166,7 +166,7 @@ public class MenuViewFactory
         {
             WebPartView view = new WebPartView(title) {
                 @Override
-                protected void renderView(Object model, PrintWriter out) throws Exception
+                protected void renderView(Object model, PrintWriter out)
                 {
                     out.write("<table><tr><td style='vertical-align:top;padding:4px;white-space:pre;'>");
                     out.write("No schema or query selected.");
@@ -220,7 +220,7 @@ public class MenuViewFactory
 
         WebPartView view = new WebPartView(title) {
             @Override
-            protected void renderView(Object model, PrintWriter out) throws Exception
+            protected void renderView(Object model, PrintWriter out)
             {
                 final String filterFolderName = form.getFolderTypes();
                 StringExpression expr = null;

@@ -362,7 +362,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         return root;
     }
 
-    private void handleLogoFile(MultipartFile file, Container c) throws ServletException, SQLException, IOException
+    private void handleLogoFile(MultipartFile file, Container c) throws ServletException, IOException
     {
         User user = getUser();
 
@@ -384,7 +384,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
     }
 
 
-    private void handleIconFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException
+    private void handleIconFile(MultipartFile file, Container c) throws IOException, ServletException
     {
         User user = getUser();
 
@@ -401,7 +401,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         AttachmentCache.clearFavIconCache();
     }
 
-    private void handleCustomStylesheetFile(MultipartFile file, Container c) throws SQLException, IOException, ServletException
+    private void handleCustomStylesheetFile(MultipartFile file, Container c) throws IOException
     {
         User user = getUser();
 

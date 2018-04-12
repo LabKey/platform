@@ -653,7 +653,7 @@ public class UserController extends SpringActionController
             super(ShowUsersForm.class);
         }
 
-        protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
             QuerySettings settings = schema.getSettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
@@ -711,7 +711,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors) throws Exception
+        protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors)
         {
             VBox users = new VBox();
             users.setTitle("Users");
@@ -846,7 +846,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(Object form, BindException errors) throws Exception
+        public boolean doAction(Object form, BindException errors)
         {
             String domainURI = UsersDomainKind.getDomainURI(CoreQuerySchema.NAME, CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
@@ -1413,7 +1413,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        protected QueryView createQueryView(UserAccessForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        protected QueryView createQueryView(UserAccessForm form, BindException errors, boolean forExport, String dataRegion)
         {
             if (getContainer().isRoot())
             {
@@ -2220,7 +2220,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    private static SecurityMessage getRequestEmailMessage(String currentEmailAddress, String requestedEmailAddress) throws Exception
+    private static SecurityMessage getRequestEmailMessage(String currentEmailAddress, String requestedEmailAddress)
     {
         SecurityMessage sm = new SecurityMessage();
         RequestAddressEmailTemplate et = EmailTemplateService.get().getEmailTemplate(RequestAddressEmailTemplate.class);

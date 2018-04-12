@@ -1166,7 +1166,7 @@ public class QueryController extends SpringActionController
 
 
         @Override
-        public ModelAndView getConfirmView(SourceForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(SourceForm form, BindException errors)
         {
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
 
@@ -1405,7 +1405,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out) throws Exception
+        protected void renderView(Object model, PrintWriter out)
         {
             StringBuilder sb = new StringBuilder("<table>\n");
 
@@ -3401,7 +3401,7 @@ public class QueryController extends SpringActionController
         importRows(InsertPermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
+                    throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
                 DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.get(0).keySet(), rows);
@@ -3414,7 +3414,7 @@ public class QueryController extends SpringActionController
         update(UpdatePermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, null, extraContext);
                 return qus.getRows(user, container, updatedRows);
@@ -3423,7 +3423,7 @@ public class QueryController extends SpringActionController
         updateChangingKeys(UpdatePermission.class)
         {
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
                 List<Map<String, Object>> newRows = new ArrayList<>();
                 List<Map<String, Object>> oldKeys = new ArrayList<>();
@@ -3454,7 +3454,7 @@ public class QueryController extends SpringActionController
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
-                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
                 return qus.deleteRows(user, container, rows, null, extraContext);
             }
@@ -3486,7 +3486,7 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
-        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws IOException, BatchValidationException, SQLException, DuplicateKeyException, InvalidKeyException, QueryUpdateServiceException
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws IOException, BatchValidationException, SQLException, InvalidKeyException, QueryUpdateServiceException
         {
             JSONObject response = new JSONObject();
             Container container = getContainer();
@@ -4571,7 +4571,7 @@ public class QueryController extends SpringActionController
     public class ReloadAllUserSchemas extends SimpleRedirectAction
     {
         @Override
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             QueryManager.get().reloadAllExternalSchemas(getContainer());
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "ALL");
@@ -4620,7 +4620,7 @@ public class QueryController extends SpringActionController
     public class DeleteViewAction extends ApiAction<DeleteViewForm>
     {
         @Override
-        protected ModelAndView handleGet() throws Exception
+        protected ModelAndView handleGet()
         {
             throw new UnauthorizedException();
         }
@@ -4907,7 +4907,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class InternalDeleteView extends ConfirmAction<InternalViewForm>
     {
-        public ModelAndView getConfirmView(InternalViewForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(InternalViewForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/internalDeleteView.jsp", form, errors);
         }
@@ -5867,7 +5867,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(QueryExportAuditForm form, BindException errors) throws Exception
+        public boolean doAction(QueryExportAuditForm form, BindException errors)
         {
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
@@ -5995,7 +5995,7 @@ public class QueryController extends SpringActionController
 
         private class NoRecordView extends HttpView
         {
-            protected void renderInternal(Object model, PrintWriter out) throws Exception
+            protected void renderInternal(Object model, PrintWriter out)
             {
                 out.write("<p>No current record found</p>");
             }
@@ -6178,7 +6178,7 @@ public class QueryController extends SpringActionController
             this.setList = setList;
         }
 
-        public List<String> parseSetList() throws IOException
+        public List<String> parseSetList()
         {
             return Arrays.asList(setList);
         }

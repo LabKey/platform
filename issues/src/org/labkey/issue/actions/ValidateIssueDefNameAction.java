@@ -33,7 +33,7 @@ import org.springframework.validation.BindException;
 public class ValidateIssueDefNameAction extends ApiAction<ValidateIssueDefNameAction.IssueDefForm>
 {
     @Override
-    public ApiResponse execute(IssueDefForm form, BindException errors) throws Exception
+    public ApiResponse execute(IssueDefForm form, BindException errors)
     {
         ApiSimpleResponse response = new ApiSimpleResponse();
         response.put("success", true);

@@ -539,7 +539,7 @@ public class DatasetQueryView extends StudyQueryView
         return PHI.NotPHI;
     }
 
-    private boolean hasSourceLsids() throws SQLException
+    private boolean hasSourceLsids()
     {
         TableInfo datasetTable = getTable();
         SimpleFilter sourceLsidFilter = new SimpleFilter();

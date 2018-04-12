@@ -83,7 +83,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private boolean _cleanupOnStartup;
         private String _transferToDirOnFailure = null;
 
-        public void afterPropertiesSet() throws Exception
+        public void afterPropertiesSet()
         {
             if (_tempDirectory == null)
             {

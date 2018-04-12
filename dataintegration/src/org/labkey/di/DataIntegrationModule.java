@@ -150,7 +150,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerLis
     @SuppressWarnings("UnusedDeclaration")
     public static class TransFormsWebPart extends JspView<Object>
     {
-        public TransFormsWebPart(ViewContext portalCtx) throws Exception
+        public TransFormsWebPart(ViewContext portalCtx)
         {
             this(portalCtx.getContainer());
         }

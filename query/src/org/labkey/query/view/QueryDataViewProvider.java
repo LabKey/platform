@@ -68,13 +68,13 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
         }
 
         @Override
-        public void validateProperties(Container container, User user, String id, Map<String, Object> props) throws ValidationException
+        public void validateProperties(Container container, User user, String id, Map<String, Object> props)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception
+        public void updateProperties(ViewContext context, String id, Map<String, Object> props)
         {
             throw new UnsupportedOperationException();
         }
@@ -88,22 +88,15 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
         @Override
         public void deleteView(Container container, User user, String id) throws ValidationException
         {
-            try
+            CstmView view = QueryManager.get().getCustomView(container, id);
+            if (view != null)
             {
-                CstmView view = QueryManager.get().getCustomView(container, id);
-                if (view != null)
+                if (view.isShared())
                 {
-                    if (view.isShared())
-                    {
-                        if (!container.hasPermission(user, EditSharedViewPermission.class))
-                            throw new ValidationException("The specified view is shared, you must be in the Editor role to be allowed to delete a shared view.");
-                    }
-                    QueryManager.get().delete(view);
+                    if (!container.hasPermission(user, EditSharedViewPermission.class))
+                        throw new ValidationException("The specified view is shared, you must be in the Editor role to be allowed to delete a shared view.");
                 }
-            }
-            catch (SQLException e)
-            {
-                throw new ValidationException(e.getMessage());
+                QueryManager.get().delete(view);
             }
         }
     }

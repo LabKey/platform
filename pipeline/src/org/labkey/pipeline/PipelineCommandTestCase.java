@@ -58,7 +58,7 @@ public class PipelineCommandTestCase extends Assert
     }
 
     @Test
-    public void testSubstitution() throws Exception
+    public void testSubstitution()
     {
         SubstitutionWithSwitch sws = new SubstitutionWithSwitch();
         UnixSwitchFormat switchFormat = new UnixNewSwitchFormat();
@@ -74,7 +74,7 @@ public class PipelineCommandTestCase extends Assert
     }
 
     @Test
-    public void testNullSubstitution() throws Exception
+    public void testNullSubstitution()
     {
         SubstitutionWithSwitch sws = new SubstitutionWithSwitch();
         UnixSwitchFormat switchFormat = new UnixNewSwitchFormat();

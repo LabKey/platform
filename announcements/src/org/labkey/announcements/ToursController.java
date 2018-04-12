@@ -45,7 +45,7 @@ public class ToursController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ToursController.class);
 
-    public ToursController() throws Exception
+    public ToursController()
     {
         setActionResolver(_actionResolver);
     }
@@ -56,7 +56,7 @@ public class ToursController extends SpringActionController
     public class BeginAction extends SimpleViewAction<QueryForm>
     {
         @Override
-        public ModelAndView getView(QueryForm queryForm, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm queryForm, BindException errors)
         {
             queryForm.setSchemaName(AnnouncementSchema.SCHEMA_NAME);
             queryForm.setQueryName(AnnouncementSchema.TOURS_TABLE_NAME);
@@ -89,7 +89,7 @@ public class ToursController extends SpringActionController
     public class EditTourAction extends SimpleViewAction<EditTourForm>
     {
         @Override
-        public ModelAndView getView(EditTourForm editTourForm, BindException errors) throws Exception
+        public ModelAndView getView(EditTourForm editTourForm, BindException errors)
         {
             TourModel model;
             if (null != editTourForm.getRowid())
@@ -156,7 +156,7 @@ public class ToursController extends SpringActionController
         }
 
         @Override
-        public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        public Object execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -171,7 +171,7 @@ public class ToursController extends SpringActionController
     {
 
         @Override
-        public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        public Object execute(SimpleApiJsonForm form, BindException errors)
         {
             JSONObject json = form.getJsonObject();
             ApiSimpleResponse response = new ApiSimpleResponse();

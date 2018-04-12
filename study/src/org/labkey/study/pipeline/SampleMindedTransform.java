@@ -61,7 +61,7 @@ public class SampleMindedTransform implements SpecimenTransform
     }
 
     @Override
-    public void postTransform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException
+    public void postTransform(@Nullable PipelineJob job, File input, File outputArchive)
     {
         String filename = input.getName();
         String base = FileUtil.getBaseName(filename);
@@ -88,7 +88,7 @@ public class SampleMindedTransform implements SpecimenTransform
     }
 
     @Override
-    public void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException
+    public void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive)
     {
         throw new UnsupportedOperationException();
     }

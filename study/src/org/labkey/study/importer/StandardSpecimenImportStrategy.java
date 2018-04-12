@@ -55,7 +55,7 @@ class StandardSpecimenImportStrategy implements SpecimenImportStrategy
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
     }
 }

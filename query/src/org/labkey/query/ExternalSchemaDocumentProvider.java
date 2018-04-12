@@ -165,7 +165,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
     }
 
 
-    public void indexDeleted() throws SQLException
+    public void indexDeleted()
     {
     }
 }

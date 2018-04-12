@@ -296,7 +296,7 @@ public class PipelineController extends SpringActionController
             errors.rejectValue(getFormField().toString(), ERROR_MSG, message);
         }
 
-        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             setHelpTopic(getHelpTopic("pipelineSetup"));
 
@@ -397,7 +397,7 @@ public class PipelineController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
+        public ModelAndView getView(PathForm pathForm, BindException errors)
         {
             Path path = null;
             if (pathForm.getPath() != null)
@@ -486,7 +486,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ActionsAction extends ApiAction<PipelineActionsForm>
     {
-        public ApiResponse execute(PipelineActionsForm form, BindException errors) throws Exception
+        public ApiResponse execute(PipelineActionsForm form, BindException errors)
         {
             Container c = getContainer();
 
@@ -572,7 +572,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UpdatePipelineActionConfigAction extends MutatingApiAction<SaveOptionsForm>
     {
-        public ApiResponse execute(SaveOptionsForm form, BindException errors) throws Exception
+        public ApiResponse execute(SaveOptionsForm form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
@@ -685,7 +685,7 @@ public class PipelineController extends SpringActionController
             return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
 
-        public boolean doAction(PermissionForm form, BindException errors) throws Exception
+        public boolean doAction(PermissionForm form, BindException errors)
         {
             Container c = getContainer();
             PipeRoot pipeRoot = getPipelineRoot(c);
@@ -733,7 +733,7 @@ public class PipelineController extends SpringActionController
     {
         private List<Integer> groups = new FormArrayList<Integer>(Integer.class)
         {
-            protected Integer newInstance() throws IllegalAccessException, InstantiationException
+            protected Integer newInstance()
             {
                 return Integer.valueOf(Integer.MIN_VALUE);
             }
@@ -804,7 +804,7 @@ public class PipelineController extends SpringActionController
         {
         }
 
-        public boolean handlePost(EmailNotificationForm form, BindException errors) throws Exception
+        public boolean handlePost(EmailNotificationForm form, BindException errors)
         {
             if (!form.getNotifyOnSuccess())
             {
@@ -1036,7 +1036,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetEmailNotificationAction extends SimpleRedirectAction
     {
-        public ActionURL getRedirectURL(Object o) throws Exception
+        public ActionURL getRedirectURL(Object o)
         {
             PipelineEmailPreferences.get().deleteAll(getContainer());
 
@@ -1073,7 +1073,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class StatusAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             // Job data is only available from the mini-pipeline.
             if (PipelineService.get().isEnterprisePipeline())
@@ -1110,7 +1110,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class CancelJobAction extends SimpleRedirectAction<StatusController.RowIdForm>
     {
-        public ActionURL getRedirectURL(StatusController.RowIdForm form) throws Exception
+        public ActionURL getRedirectURL(StatusController.RowIdForm form)
         {
             try
             {
@@ -1124,7 +1124,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    protected Container getJobDataContainer() throws Exception
+    protected Container getJobDataContainer()
     {
         if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class) &&
                 getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null)
@@ -1196,7 +1196,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineContainerAction extends ApiAction
     {
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
@@ -1209,7 +1209,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ImportFolderFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
-        public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
+        public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
             File folderFile = form.getValidatedSingleFile(c);
@@ -1330,7 +1330,7 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(StartFolderImportForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(StartFolderImportForm form, boolean reshow, BindException errors)
         {
             if (form.isAsStudy())
                 _navTrail = "Import Study";

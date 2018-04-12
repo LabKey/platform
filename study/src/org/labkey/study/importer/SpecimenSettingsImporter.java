@@ -178,7 +178,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
 
 
 
-    private void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.getRequestStatuses();
         if (xmlRequestStatuses != null)
@@ -475,7 +475,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importNotifications(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importNotifications(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen notification settings");
         SpecimenSettingsType.Notifications xmlNotifications = xmlSettings.getNotifications();

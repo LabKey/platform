@@ -1048,7 +1048,7 @@ public class TransformManager implements DataIntegrationService
                 }
 
                 @Override
-                public PipelineJob getPipelineJob(ScheduledPipelineJobContext context) throws PipelineJobException
+                public PipelineJob getPipelineJob(ScheduledPipelineJobContext context)
                 {
                     return null;
                 }

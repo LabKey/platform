@@ -123,7 +123,7 @@ public class ExpGeneratorHelper
         return data;
     }
 
-    static private ExpData addData(PipelineJob job, Map<URI, ExpData> datas, URI originalURI) throws PipelineJobException
+    static private ExpData addData(PipelineJob job, Map<URI, ExpData> datas, URI originalURI)
     {
         Container c = job.getContainer();
 

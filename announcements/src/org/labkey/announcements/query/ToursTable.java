@@ -186,7 +186,7 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         }
 
         @Override
-        protected Integer keyFromMap(Map<String, Object> map) throws InvalidKeyException
+        protected Integer keyFromMap(Map<String, Object> map)
         {
             Object rowId = map.get("RowId");
             if (rowId != null)
@@ -206,25 +206,25 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         }
 
         @Override
-        protected TourModel get(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException
+        protected TourModel get(User user, Container container, Integer key)
         {
             return TourManager.getTour(container, key);
         }
 
         @Override
-        protected TourModel insert(User user, Container container, TourModel bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException
+        protected TourModel insert(User user, Container container, TourModel bean)
         {
             return TourManager.insertTour(container, user, bean);
         }
 
         @Override
-        protected TourModel update(User user, Container container, TourModel bean, Integer oldKey) throws ValidationException, QueryUpdateServiceException, SQLException
+        protected TourModel update(User user, Container container, TourModel bean, Integer oldKey)
         {
             return TourManager.updateTour(user, bean);
         }
 
         @Override
-        protected void delete(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException
+        protected void delete(User user, Container container, Integer key)
         {
             TourManager.deleteTour(container, key.intValue());
         }

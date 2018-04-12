@@ -86,7 +86,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException
     {
         String lsid = keyFromMap(keys);
         return _dataset.getDatasetRow(user, lsid);
@@ -220,7 +220,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         throw new IllegalStateException();
 //        List<String> errors = new ArrayList<String>();
@@ -428,7 +427,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected int truncateRows(User user, Container container)
-        throws QueryUpdateServiceException
     {
        return _dataset.deleteRows(user, (Date) null);
     }

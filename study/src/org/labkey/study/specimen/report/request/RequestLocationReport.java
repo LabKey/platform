@@ -30,8 +30,8 @@ import java.util.List;
  */
 public class RequestLocationReport extends SpecimenTypeVisitReport
 {
-    private int _locationId;
-    private boolean _completeRequestsOnly;
+    private final int _locationId;
+    private final boolean _completeRequestsOnly;
 
     public RequestLocationReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, List<VisitImpl> visits, int locationId, boolean completeRequestsOnly)
     {

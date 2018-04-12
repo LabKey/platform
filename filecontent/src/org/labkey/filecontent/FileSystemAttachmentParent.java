@@ -92,7 +92,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
         return path.toFile();
     }
 
-    public Path getFileSystemDirectoryPath() throws MissingRootDirectoryException
+    public Path getFileSystemDirectoryPath()
     {
         FileContentService svc = FileContentService.get();
         if (null == svc)

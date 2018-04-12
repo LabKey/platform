@@ -71,7 +71,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         beforeUpdate(u);
     }
 
-    public void open(Container c, User u) throws SQLException
+    public void open(Container c, User u)
     {
         if (0 == getCreatedBy()) // TODO: Check for brand new issue (vs. reopen)?  What if guest opens issue?
         {

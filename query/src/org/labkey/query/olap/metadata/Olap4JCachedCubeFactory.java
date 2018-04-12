@@ -254,7 +254,7 @@ public class Olap4JCachedCubeFactory
     }
 
 
-    static void orderChildMembers(_NamedList<_Member, Member> list) throws OlapException
+    static void orderChildMembers(_NamedList<_Member, Member> list)
     {
         for (_Member m : list)
             if (null != m.childMembers)

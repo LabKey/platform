@@ -152,7 +152,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                     }
 
                     @Override
-                    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+                    public void renderTitle(RenderContext ctx, Writer out)
                     {
                         // no title
                     }

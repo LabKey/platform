@@ -82,7 +82,7 @@ public class JunitController extends SpringActionController
             HttpView junitView = new HttpView()
             {
                 @Override
-                public void renderInternal(Object model, PrintWriter out) throws Exception
+                public void renderInternal(Object model, PrintWriter out)
                 {
                     Map<String, List<Class>> testCases = JunitManager.getTestCases();
 
@@ -611,7 +611,7 @@ public class JunitController extends SpringActionController
 
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
         @Override
-        public void renderInternal(Object model, PrintWriter out) throws Exception
+        public void renderInternal(Object model, PrintWriter out)
         {
             if (0 == _failureCount)
                 out.print("<br><h2>SUCCESS</h2>");

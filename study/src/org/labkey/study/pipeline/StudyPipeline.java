@@ -67,42 +67,35 @@ public class StudyPipeline extends PipelineProvider
         if (study == null)
             return;
 
-        try
-        {
-            File[] files = directory.listFiles(new FileEntryFilter() {
-                public boolean accept(File f)
-                {
-                    return f.getName().endsWith(".dataset");
-                }
-            });
-
-            handleDatasetFiles(context, study, directory, files, includeAll);
-
-            files = directory.listFiles(new FileEntryFilter()
+        File[] files = directory.listFiles(new FileEntryFilter() {
+            public boolean accept(File f)
             {
-                public boolean accept(File f)
-                {
-                    if (SpecimenBatch.ARCHIVE_FILE_TYPE.isType(f))
-                        return true;
-                    else
-                    {
-                        for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(context.getContainer()))
-                        {
-                            if (transform.getFileType().isType(f))
-                                return true;
-                        }
-                    }
-                    return false;
-                }
-            });
+                return f.getName().endsWith(".dataset");
+            }
+        });
 
-            String actionId = createActionId(SpecimenController.ImportSpecimenData.class, "Import Specimen Data");
-            addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import Specimen Data", directory, files, true, false, includeAll);
-        }
-        catch (IOException e)
+        handleDatasetFiles(context, study, directory, files, includeAll);
+
+        files = directory.listFiles(new FileEntryFilter()
         {
-            throw new UnexpectedException(e);
-        }
+            public boolean accept(File f)
+            {
+                if (SpecimenBatch.ARCHIVE_FILE_TYPE.isType(f))
+                    return true;
+                else
+                {
+                    for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(context.getContainer()))
+                    {
+                        if (transform.getFileType().isType(f))
+                            return true;
+                    }
+                }
+                return false;
+            }
+        });
+
+        String actionId = createActionId(SpecimenController.ImportSpecimenData.class, "Import Specimen Data");
+        addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import Specimen Data", directory, files, true, false, includeAll);
     }
 
 
@@ -123,7 +116,7 @@ public class StudyPipeline extends PipelineProvider
         return new File(path + "." + "_" + study.getContainer().getRowId() + ".lock");
     }
 
-    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files, boolean includeAll) throws IOException
+    private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files, boolean includeAll)
     {
         List<File> lockFiles = new ArrayList<>();
         List<File> datasetFiles = new ArrayList<>();

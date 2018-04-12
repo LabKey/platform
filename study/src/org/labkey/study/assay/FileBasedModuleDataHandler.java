@@ -60,7 +60,7 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
+    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context)
     {
     }
 }

@@ -53,7 +53,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, SQLException
+            throws InvalidKeyException, ValidationException
     {
         int rowId = keyFromMap(oldRow);
         CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
@@ -71,7 +71,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
     @Override
     @SuppressWarnings("unchecked")
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
@@ -82,7 +82,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws ValidationException, QueryUpdateServiceException, SQLException
     {
         Study study = StudyManager.getInstance().getStudy(container);
         CohortImpl cohort = new CohortImpl();

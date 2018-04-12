@@ -114,7 +114,7 @@ public class ReportsWebPart extends WebPartView
     }
 
 
-    private Report getReport(Map<String, String> props) throws Exception
+    private Report getReport(Map<String, String> props)
     {
         Report report = null;
 

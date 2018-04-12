@@ -281,7 +281,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
             indexVisitDate = it.addColumn(new ColumnInfo("Date", JdbcType.TIMESTAMP), new Callable()
             {
                 @Override
-                public Object call() throws Exception
+                public Object call()
                 {
                     return start;
                 }
@@ -693,7 +693,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
             }
 
             @Override
-            public Object call() throws Exception
+            public Object call()
             {
                 StringBuilder sb = new StringBuilder(getURNPrefix());
                 assert null != indexPtidOutput || hasErrors();
@@ -725,7 +725,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         class ParticipantSequenceNumColumn implements Callable
         {
             @Override
-            public Object call() throws Exception
+            public Object call()
             {
                 assert null != indexPtidOutput || hasErrors();
                 String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
@@ -737,7 +737,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         class ParticipantSequenceNumKeyColumn implements Callable
         {
             @Override
-            public Object call() throws Exception
+            public Object call()
             {
                 assert (null != indexPtidOutput && null != indexKeyPropertyOutput) || hasErrors();
                 String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
@@ -766,7 +766,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
             }
 
             @Override
-            public Object call() throws Exception
+            public Object call()
             {
                 Object currentStateObj = _indexInputQCState < 1 ? null : getInput().get(_indexInputQCState);
                 String currentStateLabel = null == currentStateObj ? null : currentStateObj.toString();

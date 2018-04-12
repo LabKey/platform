@@ -1131,7 +1131,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             return vs;
         }
 
-        String getSQL(VisDataRequest q) throws SQLGenerationException, SQLException
+        String getSQL(VisDataRequest q) throws SQLGenerationException
         {
             VisualizationSQLGenerator gen = getVSQL(q);
             UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
@@ -1232,13 +1232,13 @@ public class VisualizationSQLGenerator implements HasViewContext
 
 
         @Test
-        public void testFilterQuery() throws Exception
+        public void testFilterQuery()
         {
 
         }
 
         @Test
-        public void testFilterURL() throws Exception
+        public void testFilterURL()
         {
 
         }

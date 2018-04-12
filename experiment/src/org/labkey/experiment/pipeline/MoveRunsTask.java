@@ -64,7 +64,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
     }
 
     @NotNull
-    public RecordedActionSet run() throws PipelineJobException
+    public RecordedActionSet run()
     {
         MoveRunsPipelineJob job = (MoveRunsPipelineJob)getJob();
 
@@ -95,7 +95,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         return new RecordedActionSet();
     }
 
-    private void moveRun(MoveRunsPipelineJob job, ExpRunImpl experimentRun) throws SQLException, ExperimentException, IOException
+    private void moveRun(MoveRunsPipelineJob job, ExpRunImpl experimentRun) throws ExperimentException, IOException
     {
         XarExporter exporter = new XarExporter(LSIDRelativizer.PARTIAL_FOLDER_RELATIVE, DataURLRelativizer.ORIGINAL_FILE_LOCATION.createURLRewriter(), getJob().getUser());
         exporter.addExperimentRun(experimentRun);
@@ -187,7 +187,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             _uploadTime = DateUtil.formatDateTime(job.getContainer());
         }
 
-        public ExperimentArchiveDocument getDocument() throws XmlException, IOException
+        public ExperimentArchiveDocument getDocument() throws XmlException
         {
             ExperimentArchiveDocument doc = ExperimentArchiveDocument.Factory.parse(_xml, XmlBeansUtil.getDefaultParseOptions());
             ExperimentArchiveType ea = doc.getExperimentArchive();
@@ -218,7 +218,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             return true;
         }
 
-        public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
+        public String canonicalizeDataFileURL(String dataFileURL)
         {
             URI uri = FileUtil.createUri(dataFileURL);
             Path dataFilePath;
@@ -233,7 +233,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             return FileUtil.getAbsoluteCaseSensitivePathString(_sourceContainer, dataFilePath.toUri());
         }
 
-        public File getLogFile() throws IOException
+        public File getLogFile()
         {
             return _logFile;
         }

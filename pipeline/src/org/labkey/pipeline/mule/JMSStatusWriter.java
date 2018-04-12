@@ -77,7 +77,7 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
         return true;
     }
 
-    public void ensureError(PipelineJob job) throws Exception
+    public void ensureError(PipelineJob job)
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }

@@ -431,7 +431,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         return errors;
     }
 
-    public GWTDomain getDomainDescriptor(GWTList list) throws SQLException
+    public GWTDomain getDomainDescriptor(GWTList list)
     {
         ListDef def = ListManager.get().getList(getContainer(), list.getListId());
         if (null == def)

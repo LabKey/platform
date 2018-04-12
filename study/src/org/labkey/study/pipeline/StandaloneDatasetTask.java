@@ -40,13 +40,13 @@ public class StandaloneDatasetTask extends AbstractDatasetImportTask<StandaloneD
     }
 
     @Override
-    protected String getDatasetsFileName() throws ImportException
+    protected String getDatasetsFileName()
     {
         return getJob().getJobSupport(DatasetJobSupport.class).getDatasetsFileName();
     }
 
     @Override
-    protected VirtualFile getDatasetsDirectory() throws ImportException
+    protected VirtualFile getDatasetsDirectory()
     {
         return getJob().getJobSupport(DatasetJobSupport.class).getDatasetsDirectory();
     }

@@ -55,7 +55,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
     }
 
     @Override
-    public ModelAndView getView(DeleteIssueListForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(DeleteIssueListForm form, boolean reshow, BindException errors)
     {
         if (!getContainer().getProject().hasPermission(getUser(), AdminPermission.class))
             throw new UnauthorizedException("You must be at least a project admin to be able to delete an issue list.");

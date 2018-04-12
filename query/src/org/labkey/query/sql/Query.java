@@ -924,7 +924,7 @@ public class Query
             setScrollable(true);
         }
 
-        public String[][] getFirstNLines(int n) throws IOException
+        public String[][] getFirstNLines(int n)
         {
             return data;
         }
@@ -953,7 +953,7 @@ public class Query
                 throw new UnsupportedOperationException();
             }
 
-            public void close() throws IOException
+            public void close()
             {
             }
         }
@@ -1521,7 +1521,7 @@ public class Query
         private QuerySchema lists;
 
         @Before
-        public void setUp() throws Exception
+        public void setUp()
         {
             // if this fails, it probably means a previous test cleared them, which is unexpected
             assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.USER));
@@ -1610,7 +1610,7 @@ public class Query
 
 
 		@After
-        public void tearDown() throws Exception
+        public void tearDown()
         {
 //            _tearDown();
         }
@@ -1651,7 +1651,7 @@ public class Query
 
 
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-        CachedResultSet resultset(String sql, @Nullable Container container) throws Exception
+        CachedResultSet resultset(String sql, @Nullable Container container)
         {
             QuerySchema schema = lists;
             if (null != container)
@@ -1919,7 +1919,7 @@ public class Query
         }
 
 
-        private void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns) throws Exception
+        private void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns)
         {
             QuerySchema schema = lists;
             if (null != container)
@@ -1930,7 +1930,7 @@ public class Query
             {
                 mockSelect(schema, sql, null, true, expectedInvolvedColumns);
             }
-            catch (QueryParseException | SQLException x)
+            catch (QueryParseException x)
             {
                 fail(x.getMessage() + "\n" + sql);
             }
@@ -1938,7 +1938,7 @@ public class Query
 
 
         private void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
-                                  boolean strictColumnList, List<String> expectedColumns) throws SQLException
+                                  boolean strictColumnList, List<String> expectedColumns)
         {
             Query q = new Query(schema);
             q.setStrictColumnList(strictColumnList);

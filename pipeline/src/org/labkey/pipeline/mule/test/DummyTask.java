@@ -33,7 +33,7 @@ public class DummyTask extends PipelineJob.Task
 
     @NotNull
     @Override
-    public RecordedActionSet run() throws PipelineJobException
+    public RecordedActionSet run()
     {
         return new RecordedActionSet();
     }

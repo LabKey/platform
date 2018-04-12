@@ -16,6 +16,7 @@
 package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.util.DemoMode;
+import org.labkey.study.SpecimenManager.SummaryByVisitParticipant;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SpecimenManager;
@@ -35,9 +36,10 @@ import java.sql.SQLException;
  * User: brittp
  * Created: Jan 29, 2008 4:52:26 PM
  */
-public class ParticipantVisitReport extends SpecimenVisitReport<SpecimenManager.SummaryByVisitParticipant>
+public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitParticipant>
 {
-    boolean _showCohorts;
+    private final boolean _showCohorts;
+
     public ParticipantVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
@@ -46,40 +48,33 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SpecimenManager.
 
     public Collection<Row> createRows()
     {
-        try
+        CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
+        Collection<SummaryByVisitParticipant> countSummary =
+                SpecimenManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
+        Map<String, Row> rows = new TreeMap<>();
+        for (SummaryByVisitParticipant count : countSummary)
         {
-            CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-            Collection<SpecimenManager.SummaryByVisitParticipant> countSummary =
-                    SpecimenManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
-            Map<String, Row> rows = new TreeMap<>();
-            for (SpecimenManager.SummaryByVisitParticipant count : countSummary)
+            String cohort = _showCohorts ? count.getCohort() : "[cohort blinded]";
+            if (cohort == null || cohort.length() == 0)
+                cohort = "[No cohort assigned]";
+            String key = cohort + "/" + count.getParticipantId();
+            Row row = rows.get(key);
+            if (row == null)
             {
-                String cohort = _showCohorts ? count.getCohort() : "[cohort blinded]";
-                if (cohort == null || cohort.length() == 0)
-                    cohort = "[No cohort assigned]";
-                String key = cohort + "/" + count.getParticipantId();
-                Row row = rows.get(key);
-                if (row == null)
-                {
-                    String ptid = count.getParticipantId();
-                    SpecimenReportTitle ptidTitle = new SpecimenReportTitle(ptid, DemoMode.id(ptid, getContainer(), getUser()));
-                    SpecimenReportTitle[] titleHierarchy;
-                    if (_showCohorts)
-                        titleHierarchy = new SpecimenReportTitle[] {new SpecimenReportTitle(cohort), ptidTitle};
-                    else
-                        titleHierarchy = new SpecimenReportTitle[] {ptidTitle};
-                    row = new Row(titleHierarchy);
-                    rows.put(key, row);
-                }
-                setVisitAsNonEmpty(count.getVisit());
-                row.add(count);
+                String ptid = count.getParticipantId();
+                SpecimenReportTitle ptidTitle = new SpecimenReportTitle(ptid, DemoMode.id(ptid, getContainer(), getUser()));
+                SpecimenReportTitle[] titleHierarchy;
+                if (_showCohorts)
+                    titleHierarchy = new SpecimenReportTitle[] {new SpecimenReportTitle(cohort), ptidTitle};
+                else
+                    titleHierarchy = new SpecimenReportTitle[] {ptidTitle};
+                row = new Row(titleHierarchy);
+                rows.put(key, row);
             }
-            return rows.values();
+            setVisitAsNonEmpty(count.getVisit());
+            row.add(count);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return rows.values();
     }
 
     public int getLabelDepth()
@@ -87,7 +82,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SpecimenManager.
         return _showCohorts ? 2 : 1;
     }
 
-    protected String[] getCellExcelText(VisitImpl visit, SpecimenManager.SummaryByVisitParticipant summary)
+    protected String[] getCellExcelText(VisitImpl visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -104,7 +99,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SpecimenManager.
         return new String[] { summaryString.toString() };
     }
 
-    protected String getCellHtml(VisitImpl visit, SpecimenManager.SummaryByVisitParticipant summary)
+    protected String getCellHtml(VisitImpl visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

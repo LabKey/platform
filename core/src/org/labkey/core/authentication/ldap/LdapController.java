@@ -44,7 +44,7 @@ public class LdapController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(LdapController.class);
 
-    public LdapController() throws Exception
+    public LdapController()
     {
         super();
         setActionResolver(_actionResolver);

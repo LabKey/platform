@@ -645,7 +645,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException
+    public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException
     {
         try
         {
@@ -902,7 +902,7 @@ public class FileContentServiceImpl implements FileContentService
         return fileToMove.renameTo(newLocation);
     }
 
-    static void logFileAction(java.nio.file.Path directory, String fileName, FileAction action, User user) throws IOException
+    static void logFileAction(java.nio.file.Path directory, String fileName, FileAction action, User user)
     {
         try (BufferedWriter fw = Files.newBufferedWriter(directory.resolve(UPLOAD_LOG), StandardOpenOption.APPEND, StandardOpenOption.CREATE))
         {
@@ -1458,7 +1458,7 @@ public class FileContentServiceImpl implements FileContentService
         private Map<Container, File> _expectedPaths;
 
         @Test
-        public void fileRootsTest() throws Exception
+        public void fileRootsTest()
         {
             //pre-clean
             cleanup();
@@ -1591,7 +1591,7 @@ public class FileContentServiceImpl implements FileContentService
         }
 
         @Test
-        public void testWorkbooksAndTabs() throws Exception
+        public void testWorkbooksAndTabs()
         {
             //pre-clean
             cleanup();

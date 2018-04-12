@@ -272,7 +272,6 @@ public class SecurityController extends SpringActionController
     }
 
     private static void ensureGroupInContainer(Group group, Container c)
-            throws ServletException
     {
         if (group.getContainer() == null)
         {
@@ -291,7 +290,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    private static void ensureGroupInContainer(String group, Container c) throws ServletException
+    private static void ensureGroupInContainer(String group, Container c)
     {
         if (group.startsWith("/"))
             group = group.substring(1);
@@ -406,7 +405,7 @@ public class SecurityController extends SpringActionController
         }
 
         // validates that group is visible from container c
-        public Group getGroupFor(Container c) throws ServletException
+        public Group getGroupFor(Container c)
         {
             if (id == Integer.MIN_VALUE)
             {
@@ -484,7 +483,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private ModelAndView renderContainerPermissions(Group expandedGroup, BindException errors, List<String> messages, boolean wizard) throws Exception
+    private ModelAndView renderContainerPermissions(Group expandedGroup, BindException errors, List<String> messages, boolean wizard)
     {
         Container c = getContainer();
         Container project = c.getProject();
@@ -858,7 +857,7 @@ public class SecurityController extends SpringActionController
         return root;
     }
 
-    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages) throws ServletException
+    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages)
     {
         // validate that group is in the current project!
         Container c = getContainer();
@@ -1427,7 +1426,7 @@ public class SecurityController extends SpringActionController
             return false;
         }
 
-        private void clonePermissions(User clone, ValidEmail userEmail) throws ServletException
+        private void clonePermissions(User clone, ValidEmail userEmail)
         {
             // clone this user's permissions
             final User user = UserManager.getUser(userEmail);

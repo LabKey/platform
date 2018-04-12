@@ -311,7 +311,7 @@ public class DefaultStudyDesignImporter
         }
 
         @Override
-        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows) throws ImportException
+        public void createTransformInfo(StudyImportContext ctx, List<Map<String, Object>> origRows, List<Map<String, Object>> insertedRows)
         {
             Map<String, Map<String, Object>> rowMap = new CaseInsensitiveHashMap<>();
             for (Map<String, Object> row: origRows)

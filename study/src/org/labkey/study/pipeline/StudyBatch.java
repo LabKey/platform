@@ -38,7 +38,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
 {
     protected File _definitionFile;
 
-    public StudyBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root) throws SQLException
+    public StudyBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root)
     {
         super("Study", info, root);
         _definitionFile = definitionFile;

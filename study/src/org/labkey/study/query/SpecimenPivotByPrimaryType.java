@@ -38,43 +38,37 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
-        try {
-            Container container = getContainer();
-            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
-            Map<Integer, NameLabelPair> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
-            
-            for (ColumnInfo col : getRealTable().getColumns())
+        Container container = getContainer();
+        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
+        Map<Integer, NameLabelPair> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
+
+        for (ColumnInfo col : getRealTable().getColumns())
+        {
+            // look for the primary/derivative pivot encoding
+            String parts[] = col.getName().split(AGGREGATE_DELIM);
+
+            if (parts != null && parts.length == 2)
             {
-                // look for the primary/derivative pivot encoding
-                String parts[] = col.getName().split(AGGREGATE_DELIM);
+                int primaryId = NumberUtils.toInt(parts[0]);
 
-                if (parts != null && parts.length == 2)
+                if (primaryTypeMap.containsKey(primaryId))
                 {
-                    int primaryId = NumberUtils.toInt(parts[0]);
+                    wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, primaryTypeMap.get(primaryId),
+                            new NameLabelPair(parts[1], parts[1]));
+                }
+                else if (allPrimaryTypes.containsKey(primaryId))
+                {
+                    ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
+                            new NameLabelPair(parts[1], parts[1]));
 
-                    if (primaryTypeMap.containsKey(primaryId))
-                    {
-                        wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, primaryTypeMap.get(primaryId),
-                                new NameLabelPair(parts[1], parts[1]));
-                    }
-                    else if (allPrimaryTypes.containsKey(primaryId))
-                    {
-                        ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
-                                new NameLabelPair(parts[1], parts[1]));
-
-                        wrappedCol.setHidden(true);
-                    }
+                    wrappedCol.setHidden(true);
                 }
             }
-
-            setDefaultVisibleColumns(getDefaultVisibleColumns());
-
-            addWrapColumn(_rootTable.getColumn("Container"));
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+
+        setDefaultVisibleColumns(getDefaultVisibleColumns());
+
+        addWrapColumn(_rootTable.getColumn("Container"));
     }
 
     /*

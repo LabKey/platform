@@ -45,13 +45,13 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine<DummyRe
     private int _cancelCount = 0;
 
     @Override
-    public void submitJob(@NotNull PipelineJob job) throws PipelineJobException
+    public void submitJob(@NotNull PipelineJob job)
     {
         _submitCount++;
     }
 
     @Override
-    public void updateStatusForJobs(@NotNull Collection<String> jobIds) throws PipelineJobException
+    public void updateStatusForJobs(@NotNull Collection<String> jobIds)
     {
         for (Object jobId : jobIds)
         {
@@ -67,7 +67,7 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine<DummyRe
     }
 
     @Override
-    public void cancelJob(@NotNull String jobId) throws PipelineJobException
+    public void cancelJob(@NotNull String jobId)
     {
         _cancelCount++;
         PipelineStatusFileImpl file = PipelineStatusManager.getJobStatusFile(jobId);

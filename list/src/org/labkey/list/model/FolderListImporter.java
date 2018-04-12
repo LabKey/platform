@@ -72,7 +72,7 @@ public class FolderListImporter implements FolderImporter
     }
 
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
         return Collections.emptyList();
     }

@@ -35,19 +35,19 @@ public class DummyWebdavResource extends AbstractWebdavResource
     }
 
     @Override
-    public InputStream getInputStream(User user) throws IOException
+    public InputStream getInputStream(User user)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long copyFrom(User user, FileStream in) throws IOException
+    public long copyFrom(User user, FileStream in)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long getContentLength() throws IOException
+    public long getContentLength()
     {
         throw new UnsupportedOperationException();
     }
