@@ -98,6 +98,7 @@ public class PageConfig
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
+    private boolean _includePostParameters = false;
 
     public PageConfig()
     {
@@ -262,6 +263,15 @@ public class PageConfig
         _appBar = appBar;
     }
 
+    public boolean shouldIncludePostParameters()
+    {
+        return _includePostParameters;
+    }
+
+    public void setIncludePostParameters(boolean includePostParameters)
+    {
+        _includePostParameters = includePostParameters;
+    }
 
     public void addMetaTag(String name, String value)
     {

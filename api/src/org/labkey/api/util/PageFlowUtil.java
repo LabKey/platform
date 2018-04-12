@@ -1545,17 +1545,19 @@ public class PageFlowUtil
 
     public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
     {
-        return getStandardIncludes(context, resources, false);
+        return _getStandardIncludes(context, resources, false, false);
     }
 
 
-    public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
+    public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
-        return getStandardIncludes(context, resources, true);
+        return _getStandardIncludes(context, resources, true, includePostParameters);
     }
 
 
-    private static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
+    private static String _getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources,
+            boolean includeDefaultResources, boolean includePostParameters)
+
     {
         if (resources == null)
             resources = new LinkedHashSet<>();
@@ -1572,7 +1574,7 @@ public class PageFlowUtil
             }
         }
 
-        StringBuilder sb = new StringBuilder(getIncludes(context, resources, includeDefaultResources));
+        StringBuilder sb = new StringBuilder(getIncludes(context, resources, includeDefaultResources, includePostParameters));
 
         if (currentId != -1)
         {
@@ -1604,7 +1606,8 @@ public class PageFlowUtil
         return sb;
     }
 
-    private static String getIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
+    private static String getIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> extraResources,
+            boolean includeDefaultResources, boolean includePostParameters)
     {
         Container c = context.getContainer();
 
@@ -1634,7 +1637,7 @@ public class PageFlowUtil
             resources.addAll(extraResources);
 
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(context, resources));
+        sb.append(getLabkeyJS(context, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
         sb.append(getJavaScriptIncludes(c, resources));
 
@@ -1833,7 +1836,7 @@ public class PageFlowUtil
     }
 
 
-    public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
+    public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -1848,7 +1851,7 @@ public class PageFlowUtil
         }
 
         sb.append("<script type=\"text/javascript\">\n");
-        sb.append("LABKEY.init(").append(jsInitObject(context, resources)).append(");\n");
+        sb.append("LABKEY.init(").append(jsInitObject(context, resources, includePostParameters)).append(");\n");
         sb.append("</script>\n");
 
         return sb.toString();
@@ -1980,10 +1983,10 @@ public class PageFlowUtil
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
         ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, new LinkedHashSet<>());
+        return jsInitObject(context, new LinkedHashSet<>(), false);
     }
 
-    public static JSONObject jsInitObject(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
+    public static JSONObject jsInitObject(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         AppProps appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
@@ -2061,7 +2064,7 @@ public class PageFlowUtil
         json.put("versionString", appProps.getLabKeyVersionString());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-            json.put("notifications", getNotificationJson(user));
+        json.put("notifications", getNotificationJson(user));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2069,7 +2072,7 @@ public class PageFlowUtil
         if (request != null)
         {
             json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
-            if ("post".equalsIgnoreCase(request.getMethod()))
+            if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
                 json.put("postParameters", request.getParameterMap());
             String tok = CSRFUtil.getExpectedToken(request, null);
             if (null != tok)

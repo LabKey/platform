@@ -80,7 +80,7 @@ class ErrorView extends HttpView
         // some reasonable styles.
         if (!_startupFailure)
         {
-            out.println(PageFlowUtil.getStandardIncludes(getViewContext(), null));
+            out.println(PageFlowUtil.getStandardIncludes(getViewContext(), null, false));
 
             c = getViewContext().getContainer();
         }

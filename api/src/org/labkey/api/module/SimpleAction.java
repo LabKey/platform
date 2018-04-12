@@ -94,6 +94,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         if (null != _exception)
             throw _exception;
 
+        getPageConfig().setIncludePostParameters(true);
+
         //override page template if view requests
         if (null != _view.getPageTemplate())
             getPageConfig().setTemplate(_view.getPageTemplate());
