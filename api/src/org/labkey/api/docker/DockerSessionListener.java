@@ -27,11 +27,11 @@ import javax.servlet.http.HttpSessionBindingListener;
  * User: tgaluhn
  * Date: 6/13/2016
  */
-public class DockerContainerSessionListener implements HttpSessionBindingListener //TODO rename to DockerSessionListener on git branch merge
+public class DockerSessionListener implements HttpSessionBindingListener
 {
     private final String _containerId;
 
-    public DockerContainerSessionListener(@NotNull String containerId)
+    public DockerSessionListener(@NotNull String containerId)
     {
         _containerId = containerId;
     }
@@ -49,7 +49,7 @@ public class DockerContainerSessionListener implements HttpSessionBindingListene
 
         try
         {
-            ServiceRegistry.get(DockerContainerService.class).stop(_containerId);
+            ServiceRegistry.get(DockerService.class).stop(_containerId);
         }
         catch (Exception ex)
         {

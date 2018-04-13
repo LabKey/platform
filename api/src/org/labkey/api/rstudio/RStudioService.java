@@ -134,7 +134,6 @@ public interface RStudioService
 
     default HttpView getExportToRStudioView(QueryView.TextExportOptionsBean textBean)
     {
-//        return null;  //TODO on git merge, uncomment and remove rstudioExport.jsp from core
-        return new JspView<>("/org/labkey/api/query/rstudioExport.jsp", textBean);
+        return null;
     }
 }

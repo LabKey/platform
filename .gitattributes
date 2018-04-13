@@ -571,8 +571,8 @@ api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
 api/src/org/labkey/api/di/TaskRefTask.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
 api/src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
-api/src/org/labkey/api/docker/DockerContainerService.java -text
-api/src/org/labkey/api/docker/DockerContainerSessionListener.java -text
+api/src/org/labkey/api/docker/DockerService.java -text
+api/src/org/labkey/api/docker/DockerSessionListener.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
@@ -1020,7 +1020,6 @@ api/src/org/labkey/api/query/ViewOptions.java -text
 api/src/org/labkey/api/query/createExportScript.jsp -text
 api/src/org/labkey/api/query/excelExportOptions.jsp -text
 api/src/org/labkey/api/query/import.jsp -text
-api/src/org/labkey/api/query/rstudioExport.jsp -text
 api/src/org/labkey/api/query/scriptExportOptions.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text

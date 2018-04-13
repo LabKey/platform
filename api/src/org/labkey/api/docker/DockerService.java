@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Result;
 import org.labkey.api.view.UnauthorizedException;
@@ -44,9 +45,19 @@ import java.util.Set;
  * This is a low-level wrapper for docker it's not responsible for security or mapping users to containers, etc.
  * Just starting and stopping containers.
  */
-public interface DockerContainerService //TODO rename to DockerService on git branch merge
+public interface DockerService
 {
     String VOLUME_PREFIX = "lk_volume_";
+
+    static DockerService get()
+    {
+        return ServiceRegistry.get().getService(DockerService.class);
+    }
+
+    static void setInstance(DockerService impl)
+    {
+        ServiceRegistry.get().registerService(DockerService.class, impl);
+    }
 
     class DockerConfig
     {
@@ -427,7 +438,7 @@ public interface DockerContainerService //TODO rename to DockerService on git br
             }
             catch (Exception e)
             {
-                Logger.getLogger(DockerContainerService.class).error(e.getMessage());
+                Logger.getLogger(DockerService.class).error(e.getMessage());
             }
             throw new UnauthorizedException("User does not have a home directory");
         }
