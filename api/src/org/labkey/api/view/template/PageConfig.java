@@ -265,7 +265,7 @@ public class PageConfig
 
     public boolean shouldIncludePostParameters()
     {
-        return _includePostParameters;
+        return true;//_includePostParameters; // Functional revert of 57607: Ommitting POST parameters broke pipeline import in several places
     }
 
     public void setIncludePostParameters(boolean includePostParameters)
