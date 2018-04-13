@@ -54,17 +54,20 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -88,10 +91,12 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class PropertyController extends SpringActionController
 {
@@ -354,6 +359,48 @@ public class PropertyController extends SpringActionController
 
             deleteDomain(schemaName, queryName, getContainer(), getUser());
             return success("Domain deleted");
+        }
+    }
+
+    /**
+     * Infer the fields from the uploaded file and return the array of fields in a format that can
+     * be used in the CreateDomainAction.
+     */
+    @CSRF
+    @RequiresPermission(ReadPermission.class)
+    public class InferDomainAction extends ApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Map<String, MultipartFile> fileMap = getFileMap();
+
+            if (fileMap.size() == 1)
+            {
+                Optional<MultipartFile> opt = fileMap.values().stream().findAny();
+                MultipartFile file = opt.isPresent() ? opt.get() : null;
+                List<GWTPropertyDescriptor> fields = new ArrayList<>();
+
+                if (file != null)
+                {
+                    DataLoader loader = DataLoader.get().createLoader(file, true, null, null);
+                    List<ColumnDescriptor> columns = Arrays.asList(loader.getColumns());
+                    for (ColumnDescriptor col : columns)
+                    {
+                        GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
+                        prop.setContainer(getContainer().getId());
+                        prop.setMvEnabled(col.isMvEnabled());
+
+                        fields.add(prop);
+                    }
+                }
+                response.putBeanList("fields", fields);
+            }
+            return response;
         }
     }
 
