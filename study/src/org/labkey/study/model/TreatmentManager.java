@@ -746,7 +746,7 @@ public class TreatmentManager
             verifyTreatmentVisitMapRecords(_cohorts.size() * _visits.size() * _treatments.size());
         }
 
-        private void populateTreatments() throws SQLException
+        private void populateTreatments()
         {
             TableInfo treatmentTable = _schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
             if (treatmentTable != null)
@@ -786,7 +786,7 @@ public class TreatmentManager
             verifyTreatmentProductMapRecords(treatmentId, _products.size());
         }
 
-        private void populateStudyProducts() throws SQLException
+        private void populateStudyProducts()
         {
             TableInfo productTable = _schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
             if (productTable != null)

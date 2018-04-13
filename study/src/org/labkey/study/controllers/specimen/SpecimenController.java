@@ -3964,7 +3964,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    public static void submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException, SQLException
+    public static void submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException
     {
         if (null == f || !f.exists() || !f.isFile())
             throw new NotFoundException();

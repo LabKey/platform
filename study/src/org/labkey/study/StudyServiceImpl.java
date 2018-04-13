@@ -1112,7 +1112,7 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource reloadSource, @Nullable ActionURL url) throws SQLException
+    public PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource reloadSource, @Nullable ActionURL url)
     {
         PipeRoot root = PipelineService.get().findPipelineRoot(container);
         StudyReloadSourceJob job = new StudyReloadSourceJob(new ViewBackgroundInfo(container, user, url), root, reloadSource.getName());

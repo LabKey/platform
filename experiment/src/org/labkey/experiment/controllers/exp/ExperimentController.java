@@ -4630,7 +4630,6 @@ public class ExperimentController extends SpringActionController
         }
 
         private ModelAndView redirectError(DeriveMaterialForm form, BindException errors)
-                throws Exception
         {
             _action = new DescribeDerivedSamplesAction();
             _action.setViewContext(getViewContext());

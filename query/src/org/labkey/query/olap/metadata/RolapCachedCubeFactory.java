@@ -107,7 +107,7 @@ public class RolapCachedCubeFactory
     }
 
 
-    void generateMeasuresDimension(CachedCube cube) throws SQLException
+    void generateMeasuresDimension(CachedCube cube)
     {
         CachedCube._Dimension dMeasures = new CachedCube._Dimension(cube, "Measures");
         dMeasures.dimensionType = Dimension.Type.MEASURE;
@@ -265,7 +265,7 @@ public class RolapCachedCubeFactory
      * SORTING
      */
 
-    static void orderMembers(CachedCube._Hierarchy h) throws OlapException
+    static void orderMembers(CachedCube._Hierarchy h)
     {
         for (Level L : h.getLevels())
         {
@@ -296,7 +296,7 @@ public class RolapCachedCubeFactory
     }
 
 
-    static void orderChildMembers(CachedCube._NamedList<CachedCube._Member, Member> list) throws OlapException
+    static void orderChildMembers(CachedCube._NamedList<CachedCube._Member, Member> list)
     {
         for (CachedCube._Member m : list)
         {

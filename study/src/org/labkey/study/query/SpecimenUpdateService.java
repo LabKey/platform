@@ -89,7 +89,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws BatchValidationException, SQLException
+            throws BatchValidationException
     {
         if (!hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
@@ -150,7 +150,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, SQLException
+            throws InvalidKeyException, ValidationException
     {
         long rowId = keyFromMap(oldRow);
         Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
@@ -194,7 +194,6 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws SQLException
     {
         Study study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -278,7 +277,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-            throws ValidationException, SQLException
+            throws ValidationException
     {
         Study study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -413,7 +412,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, SQLException
+            throws InvalidKeyException, ValidationException
     {
         long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
         Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
@@ -495,7 +494,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     private void importSpecimens(EditableSpecimenImporter importer, List<Map<String, Object>> rows,
-                                 boolean merge) throws SQLException, IOException, ValidationException
+                                 boolean merge) throws IOException, ValidationException
     {
         rows = importer.mapColumnNamesToTsvColumnNames(rows);
         importer.process(rows, merge, _logger);

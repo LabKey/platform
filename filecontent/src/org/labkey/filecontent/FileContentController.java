@@ -789,7 +789,7 @@ public class FileContentController extends SpringActionController
         protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors);
 
         @Override
-        public final Object execute(NodeForm nodeForm, BindException errors) throws Exception
+        public final Object execute(NodeForm nodeForm, BindException errors)
         {
             return new ApiSimpleResponse(Collections.singletonMap("children", getChildren(nodeForm, errors)));
         }

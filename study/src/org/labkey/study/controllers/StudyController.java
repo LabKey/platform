@@ -1295,7 +1295,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "\"" + target.getSubjectNounPlural() + "\" is not a valid plural subject noun.");
         }
 
-        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
+        public boolean handlePost(StudyPropertiesForm form, BindException errors)
         {
             createStudy(getStudy(), getContainer(), getUser(), form);
             updateRepositorySettings(getContainer(), form.isSimpleRepository());
@@ -1332,7 +1332,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, target.getSubjectNounSingular() + " is not a valid subject noun.");
         }
 
-        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
+        public boolean handlePost(StudyPropertiesForm form, BindException errors)
         {
             createStudy(getStudy(), getContainer(), getUser(), form);
             updateRepositorySettings(getContainer(), form.isSimpleRepository());
@@ -1345,7 +1345,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static StudyImpl createStudy(@Nullable StudyImpl study, Container c, User user, StudyPropertiesForm form) throws SQLException
+    public static StudyImpl createStudy(@Nullable StudyImpl study, Container c, User user, StudyPropertiesForm form)
     {
         if (null == study)
         {
@@ -2479,15 +2479,7 @@ public class StudyController extends BaseStudyController
 
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
             Pair<List<String>, UploadLog> result;
-            try
-            {
-                result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
-            }
-            catch (ServletException x)
-            {
-                errors.addRowError(new ValidationException(x.getMessage()));
-                return -1;
-            }
+            result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
 
             if (!result.getKey().isEmpty())
             {

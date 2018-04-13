@@ -103,19 +103,13 @@ public class StudyQueryReport extends QueryReport
     @Override
     protected UserSchema getSchema(ViewContext context, String schemaName)
     {
-        try {
-            return ReportQueryViewFactory.getStudyQuerySchema(context, getDescriptor());
-        }
-        catch (ServletException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return ReportQueryViewFactory.getStudyQuerySchema(context, getDescriptor());
     }
 
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
         return new QueryReportDescriptor.QueryViewGenerator() {
-            public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+            public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor)
             {
                 ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
                         descriptor.getProperty(ReportDescriptor.Prop.queryName),

@@ -731,7 +731,7 @@ public class AnnouncementsController extends SpringActionController
 
         protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors);
 
-        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             if (null != _attachmentErrorView)
             {

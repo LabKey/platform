@@ -1017,7 +1017,7 @@ public class TransformManager implements DataIntegrationService
 
             final class TestTransformDescriptor extends TransformDescriptor
             {
-                private TestTransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
+                private TestTransformDescriptor(String id, String name, String moduleName)
                 {
                     super(id, name, moduleName);
                 }

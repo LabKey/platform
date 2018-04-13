@@ -24,7 +24,7 @@ import java.sql.SQLException;
  */
 public class StatusRequestHandler
 {
-    public void handleRequest(StatusRequest status) throws SQLException
+    public void handleRequest(StatusRequest status)
     {
         status.performRequest();
     }

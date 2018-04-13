@@ -90,7 +90,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 null
             );
         }
-        catch (IOException | ServletException e)
+        catch (IOException e)
         {
             throw UnexpectedException.wrap(e);
         }

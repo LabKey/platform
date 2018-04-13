@@ -648,7 +648,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Container, oldContainer, container));
     }
 
-    public Collection<QueryPropertyChange> save(User user, Container container) throws SQLException
+    public Collection<QueryPropertyChange> save(User user, Container container)
     {
         return save(user, container, true);
     }
@@ -1154,13 +1154,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             options.setViewFilterItemArray(filterItems.toArray(new org.labkey.data.xml.ViewOptions.ViewFilterItem[filterItems.size()]));
         }
 
-        public void save(User user) throws SQLException
+        public void save(User user)
         {
             setMetadataXml(_document.toString());
             QueryDefinitionImpl.this.save(user, getDefinitionContainer());
         }
 
-        public void delete(User user) throws SQLException
+        public void delete(User user)
         {
             _document.getTables().getTableArray()[0].unsetViewOptions();
             save(user);

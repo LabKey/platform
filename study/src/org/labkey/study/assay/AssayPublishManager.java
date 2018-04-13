@@ -696,7 +696,7 @@ public class AssayPublishManager implements AssayPublishService
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors) throws ServletException
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors)
     {
         DbScope scope = StudySchema.getInstance().getScope();
 

@@ -852,7 +852,7 @@ public class IssuesController extends SpringActionController
         private IssueListDef _issueListDef;
         private CustomColumnConfiguration _columnConfiguration;
 
-        public boolean handlePost(IssuesForm form, BindException errors) throws Exception
+        public boolean handlePost(IssuesForm form, BindException errors)
         {
             if (form.getSkipPost())
                 return false;

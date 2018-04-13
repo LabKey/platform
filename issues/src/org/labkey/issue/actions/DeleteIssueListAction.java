@@ -81,7 +81,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
     }
 
     @Override
-    public boolean handlePost(DeleteIssueListForm form, BindException errors) throws Exception
+    public boolean handlePost(DeleteIssueListForm form, BindException errors)
     {
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getTableInfoIssues().getSchema().getScope().ensureTransaction())
         {

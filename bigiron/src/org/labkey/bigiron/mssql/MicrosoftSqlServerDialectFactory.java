@@ -180,7 +180,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     public static class InlineProcedureTestCase extends Assert
     {
         @Test
-        public void testJavaUpgradeCode() throws ServletException
+        public void testJavaUpgradeCode()
         {
             String goodSql =
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal

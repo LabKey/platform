@@ -1867,7 +1867,7 @@ public class IssueManager
         }
 
         @AfterClass
-        public static void tearDown() throws Exception
+        public static void tearDown()
         {
             Container c = JunitUtil.getTestContainer();
             IssueListDef issueListDef = IssueManager.getIssueListDef(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME);

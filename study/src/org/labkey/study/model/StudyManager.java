@@ -3776,7 +3776,7 @@ public class StudyManager
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           List<String> errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
-            throws IOException, ServletException
+            throws IOException
     {
         parseData(user, def, loader, columnMap);
 
@@ -3795,7 +3795,7 @@ public class StudyManager
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey)
-            throws IOException, ServletException
+            throws IOException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
@@ -3814,7 +3814,7 @@ public class StudyManager
                                           DataIteratorContext context,
                                           DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           QCState defaultQCState, StudyImportContext studyImportContext)
-            throws IOException, ServletException
+            throws IOException
     {
         parseData(user, def, loader, columnMap);
         Logger logger = null != context.getConfigParameters()

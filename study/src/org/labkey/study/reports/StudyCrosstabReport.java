@@ -45,7 +45,7 @@ public class StudyCrosstabReport extends CrosstabReport
     }
 
     @Override
-    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
     {
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());

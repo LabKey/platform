@@ -55,7 +55,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         _insert = insert;
     }
 
-    public void process(List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
+    public void process(List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
     {
         process(rows, merge, null);
     }

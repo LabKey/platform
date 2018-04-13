@@ -357,7 +357,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException
     {
         // Update will delete old and insert, so covering aliases, like insert, is needed
         aliasColumns(_columnMapping, row);
@@ -415,7 +415,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException
+            throws InvalidKeyException, QueryUpdateServiceException, ValidationException
     {
         // Make sure we've found the original participant before doing the delete
         String participant = getParticipant(oldRow, user, container);

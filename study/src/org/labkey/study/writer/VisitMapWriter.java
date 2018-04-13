@@ -35,7 +35,7 @@ public class VisitMapWriter implements InternalStudyWriter
         return StudyArchiveDataTypes.VISIT_MAP;
     }
 
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException, SQLException
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return;

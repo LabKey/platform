@@ -58,7 +58,7 @@ public class VisitImporter implements InternalStudyImporter
         _ensureDatasets = ensureDatasets;
     }
 
-    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
+    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, ImportException, ValidationException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;

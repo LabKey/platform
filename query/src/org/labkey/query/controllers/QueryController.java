@@ -4912,7 +4912,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/internalDeleteView.jsp", form, errors);
         }
 
-        public boolean handlePost(InternalViewForm form, BindException errors) throws Exception
+        public boolean handlePost(InternalViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
             QueryManager.get().delete(view);
@@ -4937,7 +4937,7 @@ public class QueryController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
             form.ff_inherit = QueryManager.get().canInherit(view.getFlags());
@@ -4947,7 +4947,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/internalSourceView.jsp", form, errors);
         }
 
-        public boolean handlePost(InternalSourceViewForm form, BindException errors) throws Exception
+        public boolean handlePost(InternalSourceViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
             int flags = view.getFlags();
@@ -5788,7 +5788,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public class ValidateQueryMetadataAction extends ApiAction<QueryForm>
     {
-        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        public ApiResponse execute(QueryForm form, BindException errors)
         {
             UserSchema schema = form.getSchema();
 

@@ -67,7 +67,7 @@ public class ReportQueryViewFactory
     private ReportQueryViewFactory(){}
 
     public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor,
-                                                    String queryName, String viewName) throws Exception
+                                                    String queryName, String viewName)
     {
         StudyQuerySchema schema = getStudyQuerySchema(context, ReadPermission.class, descriptor);
 
@@ -131,7 +131,7 @@ public class ReportQueryViewFactory
         return null;
     }
 
-    public static StudyQuerySchema getStudyQuerySchema(ContainerUser context, ReportDescriptor descriptor) throws ServletException
+    public static StudyQuerySchema getStudyQuerySchema(ContainerUser context, ReportDescriptor descriptor)
     {
         return getStudyQuerySchema(context, ReadPermission.class, descriptor);
     }

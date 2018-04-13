@@ -3476,7 +3476,7 @@ public class AdminController extends SpringActionController
     {
         protected abstract void handleTheme(WebThemeForm form, ActionURL redirectURL);
 
-        public ActionURL getRedirectURL(WebThemeForm form) throws Exception
+        public ActionURL getRedirectURL(WebThemeForm form)
         {
             ActionURL redirectURL = new AdminUrlsImpl().getProjectSettingsURL(getContainer());
             handleTheme(form, redirectURL);

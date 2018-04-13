@@ -1178,7 +1178,7 @@ public class OlapController extends SpringActionController
 
     MondrianServer _server = null;
 
-    MondrianServer getServer() throws SQLException
+    MondrianServer getServer()
     {
         if (null == _server)
         {

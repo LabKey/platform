@@ -255,7 +255,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         }
 
-        private Map<String, String> getCommentCache(final RenderContext ctx, String lineSeparator) throws SQLException
+        private Map<String, String> getCommentCache(final RenderContext ctx, String lineSeparator)
         {
             if (_commentCache == null)
             {
@@ -329,7 +329,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             return builder.toString();
         }
 
-        private String getCommentText(RenderContext ctx, String specimenHash, String lineSeparator) throws SQLException
+        private String getCommentText(RenderContext ctx, String specimenHash, String lineSeparator)
         {
             Map<String, String> commentCache = getCommentCache(ctx, lineSeparator);
             if (commentCache != null)

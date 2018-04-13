@@ -487,7 +487,7 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class HidePortalPageAction extends FormViewAction<CustomizePortletForm>
     {
-        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors)
         {
             // UNDONE: this is used as a link, fix to make POST
             handlePost(form, errors);
@@ -526,7 +526,7 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeletePortalPageAction extends FormViewAction<CustomizePortletForm>
     {
-        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors)
         {
             handlePost(form, errors);
             URLHelper successURL = getSuccessURL(form);
@@ -578,7 +578,7 @@ public class ProjectController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(MovePortletForm movePortletForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(MovePortletForm movePortletForm, boolean reshow, BindException errors)
         {
             // UNDONE: this seems to be used a link, fix to make POST
             handlePost(movePortletForm, errors);
@@ -613,7 +613,7 @@ public class ProjectController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(AddWebPartForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(AddWebPartForm form, boolean reshow, BindException errors)
         {
             // UNDONE: this seems to be used a link, fix to make POST
             handlePost(form, errors);
@@ -892,7 +892,7 @@ public class ProjectController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(CustomizePortletForm customizePortletForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CustomizePortletForm customizePortletForm, boolean reshow, BindException errors)
         {
             // UNDONE: this seems to be used a link, fix to make POST
             handlePost(customizePortletForm, errors);

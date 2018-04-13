@@ -39,12 +39,12 @@ public class StudyChartQueryReport extends ChartQueryReport
         return TYPE;
     }
 
-    public HttpView renderDataView(ViewContext context) throws Exception
+    public HttpView renderDataView(ViewContext context)
     {
         return createQueryView(context, getDescriptor());
     }
 
-    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
     {
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());

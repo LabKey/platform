@@ -40,7 +40,7 @@ import java.sql.SQLException;
 */
 public class DatasetImportUtils
 {
-    public static void submitStudyBatch(Study study, VirtualFile datasetsDirectory, String datasetsFileName, Container c, User user, ActionURL url, PipeRoot root) throws IOException, DatasetLockExistsException, SQLException
+    public static void submitStudyBatch(Study study, VirtualFile datasetsDirectory, String datasetsFileName, Container c, User user, ActionURL url, PipeRoot root) throws IOException, DatasetLockExistsException
     {
         if (null == datasetsDirectory || null == datasetsFileName)
         {

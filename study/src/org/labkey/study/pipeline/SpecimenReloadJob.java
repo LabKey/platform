@@ -37,7 +37,7 @@ public class SpecimenReloadJob extends SpecimenBatch implements Serializable, Sp
     private String _transformName;
     private SpecimenTransform.ExternalImportConfig _importConfig;
 
-    public SpecimenReloadJob(ViewBackgroundInfo info, PipeRoot root, String transformName) throws SQLException
+    public SpecimenReloadJob(ViewBackgroundInfo info, PipeRoot root, String transformName)
     {
         super(info, null, root, false);
 
