@@ -35,12 +35,15 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -60,7 +63,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.WriteableAppProps;
@@ -69,7 +71,6 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -81,7 +82,6 @@ import java.beans.PropertyChangeEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -421,8 +421,8 @@ public class FileContentServiceImpl implements FileContentService
 
     private void _setFileRoot(@NotNull Container c, @Nullable String absolutePath)
     {
-        if (c.isWorkbookOrTab())
-            throw new IllegalArgumentException("File roots cannot be set of workbooks or tabs");
+        if (!c.isContainerFor(ContainerType.DataType.fileRoot))
+            throw new IllegalArgumentException("File roots cannot be set for containers of type " + c.getContainerType().getName());
         
         FileRoot root = FileRootManager.get().getFileRoot(c);
         root.setEnabled(true);
@@ -451,7 +451,7 @@ public class FileContentServiceImpl implements FileContentService
         if (container == null || container.isRoot())
             throw new IllegalArgumentException("Disabling either a null project or the root project is not allowed.");
 
-        Container effective = getEffectiveContainer(container);
+        Container effective = container.getContainerFor(ContainerType.DataType.fileRoot);
         if (effective != null)
         {
             FileRoot root = FileRootManager.get().getFileRoot(effective);
@@ -468,7 +468,7 @@ public class FileContentServiceImpl implements FileContentService
     @Override
     public boolean isFileRootDisabled(Container c)
     {
-        Container effective = getEffectiveContainer(c);
+        Container effective = c.getContainerFor(ContainerType.DataType.fileRoot);
         if (null == effective)
             return false;
 
@@ -482,7 +482,7 @@ public class FileContentServiceImpl implements FileContentService
         if (c == null)
             return true;
         
-        Container effective = getEffectiveContainer(c);
+        Container effective = c.getContainerFor(ContainerType.DataType.fileRoot);
         if (null == effective)
             return true;
 
@@ -490,15 +490,10 @@ public class FileContentServiceImpl implements FileContentService
         return root.isUseDefault() || StringUtils.isEmpty(root.getPath());
     }
 
-    private Container getEffectiveContainer(Container c)
-    {
-        return c.isWorkbookOrTab() ? c.getParent() : c;
-    }
-
     @Override
     public void setIsUseDefaultRoot(Container c, boolean useDefaultRoot)
     {
-        Container effective = getEffectiveContainer(c);
+        Container effective = c.getContainerFor(ContainerType.DataType.fileRoot);
         if (effective != null)
         {
             FileRoot root = FileRootManager.get().getFileRoot(effective);
@@ -1601,11 +1596,11 @@ public class FileContentServiceImpl implements FileContentService
 
             Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
 
-            Container workbook = ContainerManager.createContainer(project1, null, null, null, Container.TYPE.workbook, TestContext.get().getUser());
+            Container workbook = ContainerManager.createContainer(project1, null, null, null, WorkbookContainerType.NAME, TestContext.get().getUser());
             File expectedWorkbookRoot = new File(svc.getFileRoot(project1), workbook.getName());
             assertPathsEqual("Workbook has incorrect file root", expectedWorkbookRoot, svc.getFileRoot(workbook));
 
-            Container tab = ContainerManager.createContainer(project1, "tab", null, null, Container.TYPE.tab, TestContext.get().getUser());
+            Container tab = ContainerManager.createContainer(project1, "tab", null, null, TabContainerType.NAME, TestContext.get().getUser());
             File expectedTabRoot = new File(svc.getFileRoot(project1), tab.getName());
             assertPathsEqual("Folder tab has incorrect file root", expectedTabRoot, svc.getFileRoot(tab));
         }

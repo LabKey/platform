@@ -53,6 +53,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -1678,7 +1679,7 @@ public class IssuesController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             Collection<Map<String, Object>> responseContainers = new LinkedList<>();
             Container root = ContainerManager.getRoot();
-            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, Container.TYPE.normal);
+            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, NormalContainerType.NAME);
 
             // remove current container
             allContainers.remove(getContainer());

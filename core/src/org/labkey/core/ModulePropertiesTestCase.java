@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
@@ -88,7 +89,7 @@ public class ModulePropertiesTestCase extends Assert
             ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
         }
 
-        _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+        _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
         _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
 
         Map<String, ModuleProperty> props = _module.getModuleProperties();

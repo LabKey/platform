@@ -87,7 +87,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -643,7 +642,7 @@ public class FileContentController extends SpringActionController
         private String _node;
         private String _rootContainer;
         private boolean _showOverridesOnly = false;
-        private boolean _excludeWorkbooksAndTabs = false;
+        private boolean _excludeNotInFolderNav = false;
 
         public String getNode()
         {
@@ -675,14 +674,14 @@ public class FileContentController extends SpringActionController
             _showOverridesOnly = showOverridesOnly;
         }
 
-        public boolean isExcludeWorkbooksAndTabs()
+        public boolean isExcludeNotInFolderNav()
         {
-            return _excludeWorkbooksAndTabs;
+            return _excludeNotInFolderNav;
         }
 
-        public void setExcludeWorkbooksAndTabs(boolean excludeWorkbooksAndTabs)
+        public void setExcludeNotInFolderNav(boolean excludeNotInFolderNav)
         {
-            _excludeWorkbooksAndTabs = excludeWorkbooksAndTabs;
+            _excludeNotInFolderNav = excludeNotInFolderNav;
         }
     }
 
@@ -703,7 +702,7 @@ public class FileContentController extends SpringActionController
 
             for (Container child : c.getChildren())
             {
-                if (form.isExcludeWorkbooksAndTabs() && child.isWorkbookOrTab())
+                if (form.isExcludeNotInFolderNav() && !child.isInFolderNav())
                     continue;
 
                 Map<String, Object> node = new HashMap<>();

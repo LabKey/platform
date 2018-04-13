@@ -33,6 +33,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -47,7 +48,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -468,7 +468,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 // XXX: Where to get user?
                 User user = getUserSchema().getUser();
 
-                _currentContainer = ContainerManager.createContainer(parent, name, title, description, Container.TYPE.workbook, user);
+                _currentContainer = ContainerManager.createContainer(parent, name, title, description, WorkbookContainerType.NAME, user);
 
                 // folderType (optional, defaults to workbook)
                 String folderTypeName = getInputString(_folderTypeInputCol);
@@ -498,8 +498,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                     return null;
                 }
 
-                // parent must be normal (not workbook or container tab)
-                if (Container.TYPE.normal != parentContainer.getType())
+                if (parentContainer.canHaveChildren())
                 {
                     addFieldError("container", "Parent container must be a normal container!");
                     return null;
@@ -569,8 +568,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 if (parentContainer == null)
                     throw new Exception("Container was missing or not found");
 
-                // parent must be normal (not workbook or container tab)
-                if (Container.TYPE.normal != parentContainer.getType())
+                if (parentContainer.canHaveChildren())
                     throw new Exception("Parent container must be a normal container!");
 
                 return parentContainer.getEntityId();
@@ -628,7 +626,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
 
 
             // type
-            it.addConstantColumn("type", JdbcType.VARCHAR, Container.TYPE.workbook);
+            it.addConstantColumn("type", JdbcType.VARCHAR, WorkbookContainerType.NAME);
 
 
             // UNDONE: folder type column

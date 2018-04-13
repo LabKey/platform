@@ -16,7 +16,6 @@
 package org.labkey.core.admin.importer;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
@@ -25,6 +24,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.SecurityManager;
@@ -36,7 +36,6 @@ import org.labkey.folder.xml.SubfolderType;
 import org.labkey.folder.xml.SubfoldersDocument;
 
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -125,7 +124,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
                         {
                             String title = folderXml.getFolder().getTitle();
                             String description = folderXml.getFolder().getDescription();
-                            Container.TYPE cType = folderXml.getFolder().isSetType() ? Container.TYPE.typeFromString(folderXml.getFolder().getType()) : Container.TYPE.normal;
+                            String cType = folderXml.getFolder().isSetType() ? folderXml.getFolder().getType() : NormalContainerType.NAME;
                             childContainer = ContainerManager.createContainer(ctx.getContainer(), subfolderName, title, description, cType, ctx.getUser());
 
                             // set the child container to inherit permissions from the parent by default

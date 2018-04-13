@@ -26,7 +26,6 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.view.ActionURL;
@@ -109,7 +108,7 @@ public class PageTemplate extends JspView<PageConfig>
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)
     {
         AppBar appBar;
-        if (context.getContainer().isWorkbookOrTab())
+        if (!context.getContainer().isInFolderNav())
         {
             ViewContext parentContext = new ViewContext(context);
             parentContext.setContainer(context.getContainer().getParent());

@@ -60,25 +60,8 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.PHI;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -123,7 +106,6 @@ import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -6427,7 +6409,7 @@ public class AdminController extends SpringActionController
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // create the new target container
-                        c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, null, null, NormalContainerType.NAME, getUser());
 
                         // import objects into the target folder
                         XmlObject folderXml = vf.getXmlBean("folder.xml");
@@ -6461,7 +6443,7 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, ((form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle()), null, Container.TYPE.normal, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, ((form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle()), null, NormalContainerType.NAME, getUser());
                         c.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
@@ -8028,7 +8010,7 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
-            Container tabContainer = getContainer().getContainerFor(Container.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
             if(tabContainer.getFolderType() == FolderType.NONE)
             {
                 errors.reject(ERROR_MSG, "Cannot add tabs to custom folder types.");
@@ -8099,7 +8081,7 @@ public class AdminController extends SpringActionController
                 return response;
             }
 
-            Container container = getContainer().getContainerFor(Container.DataType.tabs);
+            Container container = getContainer().getContainerFor(ContainerType.DataType.tabs);
             String name = form.getTabName();
             String caption = form.getTabName();
 
@@ -8133,7 +8115,7 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer().getContainerFor(Container.DataType.tabs), true));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer().getContainerFor(ContainerType.DataType.tabs), true));
 
             if (form.getTabPageId() == null)
             {
@@ -8149,7 +8131,7 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(TabActionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Container tabContainer = getContainer().getContainerFor(Container.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
 
             validateCommand(form, errors);
             if (errors.hasErrors())
@@ -8199,7 +8181,7 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(MoveTabForm form, BindException errors)
         {
             final Map<String, Object> properties = new HashMap<>();
-            Container tabContainer = getContainer().getContainerFor(Container.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
             Portal.PortalPage tab = pages.get(form.getPageId());
 
@@ -8320,7 +8302,7 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
-            Container tabContainer = getContainer().getContainerFor(Container.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
 
             if (tabContainer.getFolderType() == FolderType.NONE)
             {
@@ -8392,7 +8374,7 @@ public class AdminController extends SpringActionController
                 return response;
             }
 
-            Container container = getContainer().getContainerFor(Container.DataType.tabs);
+            Container container = getContainer().getContainerFor(ContainerType.DataType.tabs);
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
             Portal.PortalPage page = pages.get(form.getTabPageId());
             page.setCaption(form.getTabName());

@@ -30,6 +30,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -57,7 +58,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.TestContext;
@@ -89,7 +89,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -903,7 +902,7 @@ public class PipelineServiceImpl implements PipelineService
             {
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
 
             // obtain the pipeline root
             PipeRoot pipelineRootSetting = PipelineService.get().getPipelineRootSetting(_project);
@@ -934,7 +933,7 @@ public class PipelineServiceImpl implements PipelineService
             {
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
 
             // customize the file root to point to a new location off the site root
             FileContentService fileService = FileContentService.get();
@@ -966,7 +965,7 @@ public class PipelineServiceImpl implements PipelineService
             {
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
 
             // customize the file root to point to a new location off the site root
             FileContentService fileService = FileContentService.get();
@@ -1004,7 +1003,7 @@ public class PipelineServiceImpl implements PipelineService
             {
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
 
             // customize the file root to point to a new location off the site root
             FileContentService fileService = FileContentService.get();
@@ -1048,7 +1047,7 @@ public class PipelineServiceImpl implements PipelineService
             {
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
 
             // customize the file root to point to a new location off the site root
             FileContentService fileService = FileContentService.get();

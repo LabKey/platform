@@ -29,7 +29,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -50,12 +49,16 @@ import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
@@ -113,9 +116,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.FileSystemFile;
@@ -633,9 +634,18 @@ public class CoreController extends SpringActionController
             String name = StringUtils.trimToNull(json.getString("name"));
             String title = StringUtils.trimToNull(json.getString("title"));
             String description = StringUtils.trimToNull(json.getString("description"));
-            boolean workbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+            String typeName = StringUtils.trimToNull(json.getString("type"));
+            boolean isWorkbook = false;
+            if (typeName == null)
+            {
+                isWorkbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+                typeName = isWorkbook ? WorkbookContainerType.NAME : NormalContainerType.NAME;
+            }
+            ContainerType type = ContainerTypeRegistry.get().getType(typeName);
+            if (type == null)
+                throw new ApiUsageException("Unknown container type: " + typeName);
 
-            if (!workbook)
+            if (type.requiresAdminToCreate())
             {
                 if (!getContainer().hasPermission(getUser(), AdminPermission.class))
                 {
@@ -651,7 +661,7 @@ public class CoreController extends SpringActionController
             try
             {
                 String folderTypeName = json.getString("folderType");
-                if (folderTypeName == null && workbook)
+                if (folderTypeName == null && isWorkbook)
                 {
                     folderTypeName = WorkbookFolderType.NAME;
                 }
@@ -667,7 +677,7 @@ public class CoreController extends SpringActionController
                     throw new UnauthorizedException("The folder type requires a restricted module for which you do not have permission.");
                 }
 
-                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, (workbook ? Container.TYPE.workbook : Container.TYPE.normal), getUser());
+                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
                 if (folderType != null)
                 {
                     newContainer.setFolderType(folderType, getUser());

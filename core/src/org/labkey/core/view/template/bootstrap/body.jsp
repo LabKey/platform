@@ -17,12 +17,12 @@
 --%>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page import="org.labkey.api.view.template.AppBar" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -107,9 +107,9 @@
                     <span class="lk-body-title-folder-outer">
                         <i class="fa fa-folder-o"></i>
                         <%-- Note: pageConfig.getAppBar() returns a URL pointing to the current non-workbook container (i.e. parent if current container is a workbook) --%>
-                        <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>"><%= h(getContainer().getTitleFolder().getTitle()) %></a>
+                        <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>"><%= h(getContainer().getTitleFor(ContainerType.TitleContext.parentInNav)) %></a>
                         <% if (!getContainer().isInFolderNav()) { %>
-                         / <a class="lk-body-title-folder" href="<%= h(getContainer().getStartURL(getUser()))%>"><%= h(getContainer().getChildTitle()) %></a>
+                         / <a class="lk-body-title-folder" href="<%= h(getContainer().getStartURL(getUser()))%>"><%= h(getContainer().getTitleFor(ContainerType.TitleContext.childInNav)) %></a>
                         <% } %>
                     </span>
                 <% } %>

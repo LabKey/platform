@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ShowRows;
@@ -188,12 +189,12 @@ public class MenuViewFactory
         {
             if (form.isIncludeAllDescendants())
             {
-                containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, Container.TYPE.normal);
+                containersTemp = ContainerManager.getAllChildren(rootFolder, user, ReadPermission.class, NormalContainerType.NAME);
                 containersTemp.remove(rootFolder);      // getAllChildren adds root, which we don't want
             }
             else
             {
-                containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, Container.TYPE.normal);
+                containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class, NormalContainerType.NAME);
     //            containersTemp.add(rootFolder);      // Don't add root folder; later we may add a checkbox to allow it to be added, if so, check root's permissions
             }
         }

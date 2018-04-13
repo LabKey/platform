@@ -28,6 +28,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
@@ -381,7 +382,7 @@ public class AssayManager implements AssayService
         return PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
             // Build up a set of containers so that we can query them all at once
-            Set<Container> containers = c.getContainersFor(Container.DataType.assayProtocols);
+            Set<Container> containers = c.getContainersFor(ContainerType.DataType.assayProtocols);
             containers.add(ContainerManager.getSharedContainer());
 
             List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
@@ -553,7 +554,7 @@ public class AssayManager implements AssayService
                 {
                     containers.remove(currentContainer);
                     ActionURL url = provider.getImportURL(currentContainer, protocol);
-                    uploadButton.addMenuItem("Current " + currentContainer.getContainerNoun(true) + " (" + currentContainer.getImportTitle() + ")", url);
+                    uploadButton.addMenuItem("Current " + currentContainer.getContainerNoun(true) + " (" + currentContainer.getTitleFor(ContainerType.TitleContext.importTarget) + ")", url);
                 }
                 for (Container container : containers)
                 {
@@ -765,7 +766,7 @@ public class AssayManager implements AssayService
                 containers.add(new Pair<>(project, String.format("%s (%s)", "Project", project.getName())));
         }
 
-        container = container.getContainerFor(Container.DataType.assays);
+        container = container.getContainerFor(ContainerType.DataType.assays);
 
         // current folder
         if (container != null && container.hasPermission(user, DesignAssayPermission.class))

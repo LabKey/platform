@@ -15,19 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.ContainerType" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -78,7 +79,7 @@
                 {
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                String title = containers.get(size - 1).getChildTitle();
+                String title = containers.get(size - 1).getTitleFor(ContainerType.TitleContext.childInNav);
                 %><span style="color: black;"><%=h(title)%></span><%
             }
             else
@@ -92,7 +93,7 @@
                 {
                     %><%=getTrailLink(containers.get(p), user)%><%
                 }
-                String title = containers.get(size - 1).getChildTitle();
+                String title = containers.get(size - 1).getTitleFor(ContainerType.TitleContext.childInNav);
                 %><span style="color: black;"><%=h(title)%></span><%
             }
         %>

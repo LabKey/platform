@@ -335,6 +335,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
         WarningService.setInstance(new WarningServiceImpl());
 
+        try
+        {
+            ContainerTypeRegistry.get().register("normal", new NormalContainerType());
+            ContainerTypeRegistry.get().register("tab", new TabContainerType());
+            ContainerTypeRegistry.get().register("workbook", new WorkbookContainerType());
+        }
+        catch (Exception e)
+        {
+            throw new UnexpectedException(e);
+        }
+
         WarningService.get().register(new CoreWarningProvider());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());

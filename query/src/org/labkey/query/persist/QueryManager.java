@@ -25,6 +25,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.FilterInfo;
@@ -213,9 +214,9 @@ public class QueryManager
         List<CstmView> views = new ArrayList<>();
 
         getCstmViewsInContainer(views, container, schemaName, queryName, owner, false, sharedOnly);
-        if (!container.isContainerFor(Container.DataType.customQueryViews))
+        if (!container.isContainerFor(ContainerType.DataType.customQueryViews))
         {
-            getCstmViewsInContainer(views, container.getContainerFor(Container.DataType.customQueryViews), schemaName, queryName, owner, false, sharedOnly);
+            getCstmViewsInContainer(views, container.getContainerFor(ContainerType.DataType.customQueryViews), schemaName, queryName, owner, false, sharedOnly);
         }
 
         if (!inheritable)

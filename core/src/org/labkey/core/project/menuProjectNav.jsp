@@ -15,16 +15,17 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.labkey.api.view.PopupFolderNavView" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.ContainerType" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.view.PopupFolderNavView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -39,7 +40,7 @@
     // Only show the nav trail if you are at least one level into the nav tree (i.e. not at project)
     if (size > 1)
     {
-        String title = containers.get(size - 1).getChildTitle();
+        String title = containers.get(size - 1).getTitleFor(ContainerType.TitleContext.childInNav);
 
         if (c.isProject() && c.equals(ContainerManager.getHomeContainer()))
             title = "Home";

@@ -131,7 +131,7 @@
                 fields: ['name', 'path', 'default', 'browseURL', 'configureURL'],
                 proxy: {
                     type: 'ajax',
-                    extraParams: {excludeWorkbooksAndTabs: true},
+                    extraParams: {excludeNotInFolderNav: true},
                     url: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container)
                 },
                 folderSort: true,

@@ -19,6 +19,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -86,7 +87,7 @@ public class SecurityAccessView extends VBox
         for (Container child : _containerTree.get(parent))
         {
             // Skip containers that don't have directly assigned permissions (they inherit from their parent)
-            if (!child.isContainerFor(Container.DataType.permissions))
+            if (!child.isContainerFor(ContainerType.DataType.permissions))
                 continue;
 
             SecurityPolicy policy = child.getPolicy();

@@ -19,6 +19,7 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -179,7 +180,7 @@ public class IssueServiceAction extends GWTServiceAction
         {
             List<Map<String, String>> containers = new ArrayList<>();
             Container root = ContainerManager.getRoot();
-            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, Container.TYPE.normal);
+            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, NormalContainerType.NAME);
 
             // remove current container
             allContainers.remove(getContainer());
