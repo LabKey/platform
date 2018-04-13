@@ -21,8 +21,8 @@ import org.apache.xmlbeans.XmlOptions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.pipeline.PipelineActionConfig;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.ActionLink;
@@ -108,7 +108,7 @@ public class FilesAdminOptions
                 if (pipeOptions.getFilePropertiesConfig() != null)
                     _fileConfig = fileConfig.valueOf(pipeOptions.getFilePropertiesConfig());
 
-                _inheritedTbarConfig = pipeOptions.getInheritedTbarConfig() || !getContainer().isContainerFor(Container.DataType.fileAdmin);
+                _inheritedTbarConfig = pipeOptions.getInheritedTbarConfig() || !getContainer().isContainerFor(ContainerType.DataType.fileAdmin);
 
                 ActionOptions actionOptions = pipeOptions.getActionConfig();
                 if (actionOptions != null)
@@ -231,7 +231,7 @@ public class FilesAdminOptions
     public List<FilesTbarBtnOption> getEffectiveTbarConfig()
     {
         Collection<FilesTbarBtnOption> configs;
-        if (getContainer().isContainerFor(Container.DataType.fileAdmin) && (!_inheritedTbarConfig || getContainer().isProject() || getContainer().isRoot()))
+        if (getContainer().isContainerFor(ContainerType.DataType.fileAdmin) && (!_inheritedTbarConfig || getContainer().isProject() || getContainer().isRoot()))
         {
             configs = _tbarConfig.values();
         }

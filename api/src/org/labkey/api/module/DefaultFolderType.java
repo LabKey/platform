@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
@@ -424,7 +425,7 @@ public class DefaultFolderType implements FolderType
         String controllerName = context.getActionURL().getController();
         Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
         startPage.setSelected(currentModule == getDefaultModule());
-        return new AppBar(context.getContainer().getAppBarTitle(), context.getContainer().getStartURL(context.getUser()), startPage);
+        return new AppBar(context.getContainer().getTitleFor(ContainerType.TitleContext.appBar), context.getContainer().getStartURL(context.getUser()), startPage);
     }
 
     @Override

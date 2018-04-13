@@ -164,7 +164,7 @@ public class PropertyManager
     {
         Container curContainer = c;
 
-        while (curContainer != null && !curContainer.isContainerFor(Container.DataType.properties))
+        while (curContainer != null && !curContainer.isContainerFor(ContainerType.DataType.properties))
             curContainer = curContainer.getParent();
 
         String value;

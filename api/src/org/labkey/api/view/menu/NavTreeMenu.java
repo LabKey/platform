@@ -149,12 +149,12 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     {
         Container c = context.getContainer();
         ActionURL currentUrl = context.getActionURL();
-        if (c.isWorkbookOrTab())
+        if (!c.isInFolderNav())
         {
             currentUrl = currentUrl.clone();
             currentUrl.setPath(currentUrl.getParsedPath().getParent());
         }
-        if (c.isWorkbookOrTab())
+        if (!c.isInFolderNav())
             c = c.getParent();
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         String pattern = startURL.getLocalURIString();

@@ -23,6 +23,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
@@ -111,9 +112,9 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     }
 
     @Override
-    public boolean includeWorkbooks()
+    public Set<String> getIncludedChildTypes()
     {
-        return false;
+        return Collections.emptySet();
     }
 
     @Override
@@ -131,7 +132,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             for (GUID guid : _containerIds)
             {
                 Container c = ContainerManager.getForId(guid);
-                if (null != c && c.isContainerFor(Container.DataType.dataspace) && c.hasPermission(_user, perm, roles))
+                if (null != c && c.isContainerFor(ContainerType.DataType.dataspace) && c.hasPermission(_user, perm, roles))
                     allowedContainers.add(guid);
             }
         }

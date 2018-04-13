@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
@@ -219,7 +220,9 @@ public class ExperimentRunListView extends QueryView
             if (!protocols.isEmpty())
             {
                 MenuButton addRunsButton;
-                if (c.getFolderType().getForceAssayUploadIntoWorkbooks() && c.isContainerFor(Container.DataType.assays))
+
+                if (!c.isContainerFor(ContainerType.DataType.assays))
+                // the folder type may indicate that assays should be uploaded into a different container (a workbook)
                 {
                     addRunsButton = new MenuButton("Upload Assay Runs"){
                         public void render(RenderContext ctx, Writer out) throws IOException
@@ -243,7 +246,7 @@ public class ExperimentRunListView extends QueryView
                     if (provider != null)
                     {
                         NavTree btn;
-                        if (c.getFolderType().getForceAssayUploadIntoWorkbooks() && c.isContainerFor(Container.DataType.assays))
+                        if (!c.isContainerFor(ContainerType.DataType.assays))
                         {
                             btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
                             btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +

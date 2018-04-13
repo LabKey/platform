@@ -77,17 +77,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.data.Container.DataType.assayProtocols;
-import static org.labkey.api.data.Container.DataType.inventory;
-import static org.labkey.api.data.Container.DataType.sharedDataTable;
 
 
 /**
@@ -98,7 +93,7 @@ import static org.labkey.api.data.Container.DataType.sharedDataTable;
  *
  * CONSIDER: extend {@link org.labkey.api.data.Entity}
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue, ContainerType
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
 {
     private GUID _id;
     private Path _path;
@@ -106,7 +101,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private int _createdBy;
     private int _rowId; //Unique for this installation
 
-    /** Used to arbitrarily reorder siblings within a container. */
+    /**
+     * Used to arbitrarily reorder siblings within a container.
+     */
     private int _sortOrder;
     private String _description;
 
@@ -116,57 +113,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
 
-    /**
-     * An enumeration of the different types of data relevant to a container that may be stored in a different container
-     * in its hierarchy, usually depending on the type of container.
-     */
-    public enum DataType
-    {
-        assayLocationFilter,
-        assayProtocols,
-        assays,
-        customQueryViews,
-        dataspace,
-        domainDefinitions,
-        fileAdmin,
-        folderManagement,
-        inventory,
-        navVisibility,
-        permissions,
-        pipelineRoot,
-        properties,
-        protocol,
-        sharedDataTable,
-        tabs,
-        userSchema,
-    }
-
-    public enum TYPE
-    {
-        normal,
-        workbook,
-        tab;
-
-        private static EnumSet<TYPE> typeSet = EnumSet.allOf(TYPE.class);
-
-        public static TYPE typeFromString(String s)
-        {
-            if (null != s)
-            {
-                if (s.equalsIgnoreCase("workbook")) return workbook;
-                if (s.equalsIgnoreCase("tab")) return tab;
-            }
-            return normal;
-        }
-
-        public static EnumSet<TYPE> asSet()
-        {
-            return typeSet;
-        }
-    }
-
-    //is this container a workbook, tab or normal?
-    private TYPE _type;
+    private ContainerType _containerType;
 
     // include in results from searches outside this container?
     private final boolean _searchable;
@@ -186,12 +133,21 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _created = created;
         _createdBy = createdBy;
         _searchable = searchable;
+        // default to normal container type until told otherwise
+        _containerType = ContainerTypeRegistry.get().getType(NormalContainerType.NAME);
     }
 
 
     public Container getContainer(Map context)
     {
         return this;
+    }
+
+    // BEGIN Container Type forwarding methods
+
+    public Boolean canHaveChildren()
+    {
+        return _containerType.canHaveChildren();
     }
 
     public Boolean includeForImportExport(ImportContext context)
@@ -201,7 +157,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         // tab - always
         // normal - if context says to
         // workbook - never
-        return isContainerTab() || (context.isIncludeSubfolders() && !isWorkbook());
+        return _containerType.includeForImportExport(context);
+    }
+
+    public Boolean shouldRemoveFromPortal()
+    {
+        return _containerType.shouldRemoveFromPortal();
     }
 
     public Boolean includePropertiesAsChild(boolean includeTabs)
@@ -209,161 +170,83 @@ public class Container implements Serializable, Comparable<Container>, Securable
         // workbook - never
         // normal - always
         // tab - if flagged
-        return !isWorkbook() && (includeTabs || !isContainerTab());
+        return _containerType.includePropertiesAsChild(includeTabs);
     }
 
-    public Boolean shouldRemoveFromPortal()
+    public Boolean isInFolderNav()
     {
-        return isContainerTab();
+        return _containerType.isInFolderNav();
+    }
+
+
+    public Boolean isConvertibleToTab()
+    {
+        return _containerType.isConvertibleToTab();
+    }
+
+    public Boolean canDeleteFromContainer(Container container)
+    {
+        return _containerType.canDeleteFromContainer(this, container);
+    }
+
+    public Boolean canUpdateFromContainer(Container container)
+    {
+        return _containerType.canUpdateFromContainer(this, container);
+    }
+
+    public Boolean canAdminFolder()
+    {
+        return _containerType.canAdminFolder();
+    }
+
+    public Boolean requiresAdminToDelete()
+    {
+        return _containerType.requiresAdminToDelete();
     }
 
     public Boolean isDuplicatedInContainerFilter()
     {
         // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
         // automatically because we always add them via the SQL that we generate
-        return isWorkbook();
+        return _containerType.isDuplicatedInContainerFilter();
+   }
+
+    public Boolean parentDataIsRelevant(ContainerType.DataType dataType)
+    {
+        return _containerType.parentDataIsRelevant(dataType);
     }
 
-    public Boolean isContainerFor(DataType dataType)
+    public String getTitleFor(ContainerType.TitleContext context)
     {
-        switch (dataType)
+        return _containerType.getTitleFor(context, this);
+    }
+
+    public Boolean isContainerFor(ContainerType.DataType dataType)
+    {
+        if (dataType == ContainerType.DataType.assays)
         {
-            case assayProtocols:
-                return true;
-            case folderManagement:
-                return !isContainerTab();
-            case inventory:
-            case sharedDataTable:
-                return true;
-            case tabs:
-                return !isContainerTab() && !isWorkbook();
-            default:
-                return !isWorkbook();
+            // the folder type may indicate that assays should be uploaded to workbooks
+            return !getFolderType().getForceAssayUploadIntoWorkbooks() && isWorkbook();
         }
+        return _containerType.isContainerFor(dataType);
     }
 
-    public Container getContainerFor(DataType dataType)
+    public Container getContainerFor(ContainerType.DataType dataType)
     {
-        switch (dataType)
-        {
-            case assays:
-                Container container = this;
-                // for workbooks, use the parent folder as the current folder (unless it happens to be the project)
-                if (isWorkbook())
-                {
-                    container = this.getParent();
-                    if (container != null && container.isProject())
-                        container = null;
-                }
-                return container;
-            case assayProtocols:
-                return this;
-            case dataspace:
-            case folderManagement:
-                return isContainerTab() ? this.getParent() : this;
-            case inventory:
-            case sharedDataTable:
-                return this;
-            case tabs:
-                return (isContainerTab() || isWorkbook()) ? this.getParent() : this;
-            default:
-                return isWorkbook() ? this.getParent() : this;
-        }
+        return _containerType.getContainerFor(dataType, this);
     }
 
-    public Set<Container> getContainersFor(DataType dataType)
+    public Set<Container> getContainersFor(ContainerType.DataType dataType)
     {
-        Set<Container> containers = new HashSet<>();
-
-        if (dataType == assayProtocols)
-        {
-            containers.add(this);
-            Container project = this.getProject();
-            if (project != null)
-            {
-                containers.add(project);
-            }
-            if (this.isWorkbook())
-            {
-                containers.add(this.getParent());
-            }
-        }
-        else if (dataType == sharedDataTable)
-        {
-            containers.add(ContainerManager.getSharedContainer());
-            if (isWorkbook())
-            {
-                containers.add(this.getParent());
-            }
-        }
-        return containers;
+        return _containerType.getContainersFor(dataType, this);
     }
 
-    public Boolean isInFolderNav()
-    {
-        return !isWorkbook() && !isContainerTab();
-    }
-
-    public Boolean parentDataIsRelevant(DataType dataType)
-    {
-        return dataType == inventory && isWorkbook();
-    }
-
-    public Boolean isConvertibleToTab()
-    {
-        return !isWorkbook();
-    }
-
-    public Boolean canDeleteFromContainer(Container container)
-    {
-        return isWorkbook() && this.getParent().equals(container);
-    }
-
-    public Boolean canUpdateFromContainer(Container container)
-    {
-        return isWorkbook() && this.getParent().equals(container);
-    }
-
-    public Boolean canAdminFolder()
-    {
-        return !isWorkbook();
-    }
-
-    public Boolean requiresAdminToDelete()
-    {
-        return !isWorkbook();
-    }
+    // END Container Type forwarding methods
 
     @NotNull
     public String getName()
     {
         return _path.getName();
-    }
-
-    /**
-     * Returns the folder title for normal folders, or the name (i.e. number) for workbooks
-     */
-    public String getChildTitle(){
-        return isWorkbook() ? getName() : getTitle();
-    }
-
-    public String getImportTitle()
-    {
-        return isWorkbook() ? getTitle() : getPath();
-    }
-
-    public String getAppBarTitle()
-    {
-        return isWorkbook() ? getTitle() : getName();
-    }
-
-    /**
-     * Returns the container whose title is to be displayed next to the folder icon in the PageTemplate
-     */
-    @NotNull
-    public Container getTitleFolder()
-    {
-        return isWorkbook() && getParent() != null ? getParent() : this;
     }
 
     @NotNull
@@ -407,7 +290,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public String getPath()
     {
-        return _path.toString("/","");
+        return _path.toString("/", "");
     }
 
 
@@ -423,7 +306,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public String getEncodedPath()
     {
-        return _path.encode("/","/");
+        return _path.encode("/", "/");
     }
 
 
@@ -469,6 +352,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     /**
      * Get the project Container or null if isRoot().
+     *
      * @return The project Container or null if isRoot().
      */
     public @Nullable Container getProject()
@@ -498,7 +382,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (user instanceof User && isForbiddenProject((User)user))
+        if (user instanceof User && isForbiddenProject((User) user))
             return false;
         return getPolicy().hasPermission(logMsg, user, perm);
     }
@@ -506,7 +390,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (user instanceof User && isForbiddenProject((User)user))
+        if (user instanceof User && isForbiddenProject((User) user))
             return false;
         return getPolicy().hasPermission(user, perm);
     }
@@ -514,7 +398,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        if (user instanceof User && isForbiddenProject((User)user))
+        if (user instanceof User && isForbiddenProject((User) user))
             return false;
         return getPolicy().hasPermission(logMsg, user, perm, contextualRoles);
     }
@@ -522,7 +406,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        if (user instanceof User && isForbiddenProject((User)user))
+        if (user instanceof User && isForbiddenProject((User) user))
             return false;
         return getPolicy().hasPermission(user, perm, contextualRoles);
     }
@@ -575,7 +459,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean shouldDisplay(User user)
     {
-        if (isWorkbookOrTab())
+        if (!isInFolderNav())
             return false;
 
         String name = _path.getName();
@@ -593,33 +477,49 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
+    /**
+     * Should use property check in the ContainerType interface instead of this expclit check
+     * @return indication of whether this is a container tab or not.
+     */
+    public boolean isContainerTab()
+    {
+        return _containerType instanceof TabContainerType;
+    }
+
+    /* Use property checks in the ContainerType interface instead of this explicit check */
     public boolean isWorkbook()
     {
-        return _type == TYPE.workbook;
+        return _containerType instanceof WorkbookContainerType;
     }
 
+    /* Use property checks in the ContainerType interface instead of this explicit check */
     public boolean isWorkbookOrTab()
     {
-        return TYPE.workbook == _type || TYPE.tab == _type;
+        return _containerType instanceof WorkbookContainerType || _containerType instanceof TabContainerType;
     }
 
-    Boolean hasWorkbookChildren = null;
+    Map<String, Boolean> typesOfChildren = new HashMap<>();
 
-    public synchronized boolean hasWorkbookChildren()
+    public synchronized boolean hasChildrenOfType(String type)
     {
-        if (null == hasWorkbookChildren)
+        if (null == typesOfChildren.get(type))
         {
-            hasWorkbookChildren = false;
+            typesOfChildren.put(type, false);
             for (Container ch : getChildren())
             {
-                if (ch.isWorkbook())
+                if (ch.getContainerType().getName().equalsIgnoreCase(type))
                 {
-                    hasWorkbookChildren = true;
+                    typesOfChildren.put(type, true);
                     break;
                 }
             }
         }
-        return hasWorkbookChildren;
+        return typesOfChildren.get(type);
+    }
+
+    public synchronized boolean hasChildrenOfAnyType(Set<String> types)
+    {
+        return types.stream().anyMatch(this::hasChildrenOfType);
     }
 
     public boolean isSearchable()
@@ -1011,9 +911,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         requiredModules.add(ModuleLoader.getInstance().getModule("API"));
         requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
 
-        for(Container child: getChildren())
+        for (Container child: getChildren())
         {
-            if(child.isWorkbook())
+            if (child.isWorkbook())
             {
                 requiredModules.addAll(child.getFolderType().getActiveModules());
             }
@@ -1424,25 +1324,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return containerProps;
     }
 
-    public boolean isContainerTab()
-    {
-        return _type == TYPE.tab;
-    }
-
-    public TYPE getType()
-    {
-        return _type;
-    }
-
     @JsonIgnore
-    public void setType(TYPE type)
+    public ContainerType getContainerType()
     {
-        _type = type;
+        return _containerType;
+    }
+
+    public String getType()
+    {
+        return _containerType.getName();
     }
 
     public void setType(String typeString)
     {
-        _type = TYPE.typeFromString(typeString);
+        _containerType = ContainerTypeRegistry.get().getType(typeString);
+        if (_containerType == null)
+            throw new IllegalArgumentException("Unknown container type: " + typeString);
     }
 
     public static class ContainerException extends Exception
@@ -1577,7 +1474,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public String getContainerNoun(boolean titleCase)
     {
-        String noun = isProject() ? "project" : isWorkbook() ? "workbook" : "folder";
+        String noun = _containerType.getContainerNoun(this);
         if (titleCase)
         {
             return noun.substring(0, 1).toUpperCase() + noun.substring(1);

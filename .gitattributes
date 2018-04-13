@@ -279,6 +279,7 @@ api/src/org/labkey/api/data/ContainerService.java -text
 api/src/org/labkey/api/data/ContainerServiceImpl.java -text
 api/src/org/labkey/api/data/ContainerTable.java -text
 api/src/org/labkey/api/data/ContainerType.java -text
+api/src/org/labkey/api/data/ContainerTypeRegistry.java -text
 api/src/org/labkey/api/data/ContextAction.java -text
 api/src/org/labkey/api/data/CoreSchema.java -text
 api/src/org/labkey/api/data/CrosstabAxis.java -text
@@ -362,6 +363,7 @@ api/src/org/labkey/api/data/NestableDataRegion.java -text
 api/src/org/labkey/api/data/NestableQueryView.java -text
 api/src/org/labkey/api/data/NestedRenderContext.java -text
 api/src/org/labkey/api/data/NonSqlExecutingSelector.java -text
+api/src/org/labkey/api/data/NormalContainerType.java -text
 api/src/org/labkey/api/data/NormalPropertyStore.java -text
 api/src/org/labkey/api/data/NullColumnInfo.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
@@ -428,6 +430,7 @@ api/src/org/labkey/api/data/TSVColumnWriter.java -text
 api/src/org/labkey/api/data/TSVGridWriter.java -text
 api/src/org/labkey/api/data/TSVMapWriter.java -text
 api/src/org/labkey/api/data/TSVWriter.java -text
+api/src/org/labkey/api/data/TabContainerType.java -text
 api/src/org/labkey/api/data/TableChange.java -text
 api/src/org/labkey/api/data/TableCustomizer.java -text
 api/src/org/labkey/api/data/TableInfo.java -text
@@ -454,6 +457,7 @@ api/src/org/labkey/api/data/UserDefinedButtonConfig.java -text
 api/src/org/labkey/api/data/UserSchemaCustomizer.java -text
 api/src/org/labkey/api/data/VirtualTable.java -text
 api/src/org/labkey/api/data/WhitespacePreservingDisplayColumnFactory.java -text
+api/src/org/labkey/api/data/WorkbookContainerType.java -text
 api/src/org/labkey/api/data/WrappedColumn.java -text
 api/src/org/labkey/api/data/bigiron/AbstractClrInstallationManager.java -text
 api/src/org/labkey/api/data/bigiron/ClrAssemblyManager.java -text

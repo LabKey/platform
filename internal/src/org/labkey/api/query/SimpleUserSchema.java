@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
@@ -396,7 +397,7 @@ public class SimpleUserSchema extends UserSchema
         protected Container getDomainContainer()
         {
             Container c = getContainer();
-            return c == null ? null : c.getContainerFor(Container.DataType.domainDefinitions);
+            return c == null ? null : c.getContainerFor(ContainerType.DataType.domainDefinitions);
         }
 
         @Override

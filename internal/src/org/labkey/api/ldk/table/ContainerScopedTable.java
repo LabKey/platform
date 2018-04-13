@@ -25,6 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.SimpleFilter;
@@ -321,7 +322,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                 return exists;
             }
 
-            Container target = c.getContainerFor(Container.DataType.userSchema);
+            Container target = c.getContainerFor(ContainerType.DataType.userSchema);
             SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_pseudoPk), key, CompareType.EQUAL);
             filter.addClause(ContainerFilter.CURRENT.createFilterClause(_rootTable.getSchema(), getContainerFieldKey(), target));
             TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_pseudoPk), filter, null);

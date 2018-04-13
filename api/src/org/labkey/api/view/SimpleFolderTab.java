@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TabContainerType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.SimpleFolderType;
@@ -221,7 +222,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
             {
                 if (!ContainerManager.hasContainerTabBeenDeleted(parent, getName(), parent.getFolderType().getName()))
                 {
-                    container = ContainerManager.createContainer(parent, getName(), null, null, Container.TYPE.tab, user);
+                    container = ContainerManager.createContainer(parent, getName(), null, null, TabContainerType.NAME, user);
                     FolderType folderType = getFolderType();
                     if (null != folderType)
                         container.setFolderType(folderType, user);

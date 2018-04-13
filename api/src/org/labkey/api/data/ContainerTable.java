@@ -144,11 +144,19 @@ public class ContainerTable extends FilteredTable<UserSchema>
         typeCol.setReadOnly(true);
         typeCol.setUserEditable(false);
 
-        SQLFragment containerTypeSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN 'workbook' " +
-            "WHEN "+ExprColumn.STR_TABLE_ALIAS+".Type = 'tab' THEN 'tab' " +
-            "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
-            "WHEN "+ExprColumn.STR_TABLE_ALIAS+".parent = ? THEN 'project' " +
-            "ELSE 'folder' END");
+        SQLFragment containerTypeSQL = new SQLFragment("CASE ");
+        for (String cType : ContainerTypeRegistry.get().getTypeNames())
+        {
+            // Skip over normal containers.  They become either 'project' or 'folder' below.
+            if (cType.equalsIgnoreCase(NormalContainerType.NAME))
+                continue;
+            containerTypeSQL = containerTypeSQL.
+                    append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".Type = '").append(cType).append("' THEN '").append(cType).append( "' ");
+        }
+        containerTypeSQL = containerTypeSQL.append(
+                    "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
+                    "WHEN "+ExprColumn.STR_TABLE_ALIAS+".parent = ? THEN 'project' " +
+                    "ELSE 'folder' END");
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);

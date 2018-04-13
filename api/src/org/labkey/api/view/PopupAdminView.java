@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -58,9 +59,9 @@ public class PopupAdminView extends PopupMenuView
     {
         Container c = context.getContainer();
         // If current context is a container tab, use the parent container to build this menu
-        if (!c.isContainerFor(Container.DataType.folderManagement))
+        if (!c.isContainerFor(ContainerType.DataType.folderManagement))
         {
-            c = c.getContainerFor(Container.DataType.folderManagement);
+            c = c.getContainerFor(ContainerType.DataType.folderManagement);
             context.setContainer(c);
         }
 
@@ -108,9 +109,9 @@ public class PopupAdminView extends PopupMenuView
     public static NavTree createNavTree(final ViewContext context)
     {
         Container c = context.getContainer();
-        if (!c.isContainerFor(Container.DataType.folderManagement))
+        if (!c.isContainerFor(ContainerType.DataType.folderManagement))
         {
-            c = c.getContainerFor(Container.DataType.folderManagement);
+            c = c.getContainerFor(ContainerType.DataType.folderManagement);
             context.setContainer(c);
         }
 

@@ -20,6 +20,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TabContainerType;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.SubfolderType;
@@ -97,9 +99,9 @@ public class SubfolderWriter extends BaseFolderWriter
             Container c1 = ContainerManager.createFakeContainer("subfolder", fakeRoot);
             Container c2 = ContainerManager.createFakeContainer("nestedsubfolder", c1);
             Container c3 = ContainerManager.createFakeContainer("containertab", fakeRoot);
-            c3.setType(Container.TYPE.tab);
+            c3.setType(TabContainerType.NAME);
             Container c4 = ContainerManager.createFakeContainer("workbook", fakeRoot);
-            c4.setType(Container.TYPE.workbook);
+            c4.setType(WorkbookContainerType.NAME);
 
             List<Container> childList = Arrays.asList(c1, c2, c3, c4);
             FolderExportContext fec = new FolderExportContext(null, fakeRoot, null, null, null);

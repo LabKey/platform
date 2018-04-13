@@ -20,6 +20,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
@@ -119,7 +120,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     {
         try
         {
-            XarContext xc = getXarContext(schemaName, tableName, c.getContainerFor(Container.DataType.domainDefinitions), u);
+            XarContext xc = getXarContext(schemaName, tableName, c.getContainerFor(ContainerType.DataType.domainDefinitions), u);
             return LsidUtils.resolveLsidFromTemplate(SimpleModule.DOMAIN_LSID_TEMPLATE, xc, SimpleModule.DOMAIN_NAMESPACE_PREFIX_TEMPLATE);
         }
         catch (XarFormatException xfe)
@@ -189,7 +190,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        if (!containerUser.getContainer().isContainerFor(Container.DataType.domainDefinitions))
+        if (!containerUser.getContainer().isContainerFor(ContainerType.DataType.domainDefinitions))
             return null;
 
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), true, true, true);
@@ -198,13 +199,13 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
-        return super.urlCreateDefinition(schemaName, queryName, container.getContainerFor(Container.DataType.domainDefinitions), user);
+        return super.urlCreateDefinition(schemaName, queryName, container.getContainerFor(ContainerType.DataType.domainDefinitions), user);
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class) && container.isContainerFor(Container.DataType.domainDefinitions);
+        return container.hasPermission(user, AdminPermission.class) && container.isContainerFor(ContainerType.DataType.domainDefinitions);
     }
 
     @Override

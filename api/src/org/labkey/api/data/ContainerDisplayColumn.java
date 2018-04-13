@@ -223,12 +223,12 @@ public class ContainerDisplayColumn extends DataColumn
                 ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
             }
 
-            Container project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, Container.TYPE.normal, _user);
+            Container project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
             Container subFolder1 = ContainerManager.createContainer(project, "subfolder1");
             Container subFolder2 = ContainerManager.createContainer(subFolder1, "subfolder2");
 
             //create and delete containers to give audit events
-            Container workbook1 = ContainerManager.createContainer(subFolder2, "Workbook1", "Workbook1", "", Container.TYPE.workbook, _user);
+            Container workbook1 = ContainerManager.createContainer(subFolder2, "Workbook1", "Workbook1", "", WorkbookContainerType.NAME, _user);
             assertTrue(ContainerManager.delete(workbook1, _user));
             ContainerManager.deleteAll(subFolder2, _user);
 

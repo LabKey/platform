@@ -17,8 +17,8 @@
 package org.labkey.api.study.actions;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -120,7 +120,7 @@ public class ProtocolIdForm extends ViewForm
             if (protocol == null || (validateContainer && !protocol.getContainer().equals(getContainer()) &&
                                                           !protocol.getContainer().equals(getContainer().getProject()) &&
                                                           !protocol.getContainer().equals(ContainerManager.getSharedContainer()) &&
-                                                          !protocol.getContainer().equals(getContainer().getContainerFor(Container.DataType.protocol))))
+                                                          !protocol.getContainer().equals(getContainer().getContainerFor(ContainerType.DataType.protocol))))
             {
                 if (protocol != null && protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {

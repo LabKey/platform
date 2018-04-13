@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -56,9 +57,12 @@ public abstract class ContainerFilter
     @Nullable
     public abstract Collection<GUID> getIds(Container currentContainer);
 
-    public boolean includeWorkbooks()
+    /**
+     * @return The set of container types to be included based on their parent container's id
+     */
+    public Set<String> getIncludedChildTypes()
     {
-        return true;
+        return Collections.singleton(WorkbookContainerType.NAME);
     }
 
     public boolean useCTE()
@@ -164,13 +168,13 @@ public abstract class ContainerFilter
         SecurityLogger.indent("ContainerFilter");
         Collection<GUID> ids = getIds(container);
         SecurityLogger.outdent();
-        return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls,includeWorkbooks());
+        return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, boolean includeWorkbooks)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, Set<String> includedTypes)
     {
-        SQLFragment f = _getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includeWorkbooks);
+        SQLFragment f = _getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includedTypes);
         if (_log.isTraceEnabled())
         {
             SQLFragment comment = new SQLFragment(f);
@@ -180,7 +184,7 @@ public abstract class ContainerFilter
         return f;
     }
 
-    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, boolean includeWorkbooks)
+    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, @NotNull Set<String> includedChildTypes)
     {
         if (ids == null)
         {
@@ -206,7 +210,7 @@ public abstract class ContainerFilter
             Container first = ContainerManager.getForId(ids.iterator().next());
             if (null == first)
                 return new SQLFragment("1 = 0");
-            if (!first.hasWorkbookChildren() || !includeWorkbooks)
+            if (includedChildTypes.isEmpty() || !first.hasChildrenOfAnyType(includedChildTypes))
                 return new SQLFragment(containerColumnSQL).append("=").append(first);
         }
 
@@ -235,7 +239,7 @@ public abstract class ContainerFilter
 
         SQLFragment select = new SQLFragment();
 
-        if (includeWorkbooks)
+        if (!includedChildTypes.isEmpty())
         {
             select.append("SELECT c.EntityId FROM ");
             select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
@@ -246,11 +250,11 @@ public abstract class ContainerFilter
             select.append(list);
             select.append(") as _containerids_ (Id) ");
             // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-            select.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = '");
-            select.append(Container.TYPE.workbook.toString());
-            select.append("')");
+            select.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type IN ('");
+            select.append(StringUtils.join(includedChildTypes, "','"));
+            select.append("') )");
         }
-        else if (ids.size() < 10 || !useCTE())
+        else if (ids.size() < 10 || ! useCTE())
         {
             SQLFragment result = new SQLFragment(containerColumnSQL);
             result.append(" IN (").append(list).append(")");
@@ -455,7 +459,7 @@ public abstract class ContainerFilter
             SecurityLogger.indent("ContainerFilter");
             Collection<GUID> ids = getIds(container, permission, roles);
             SecurityLogger.outdent();
-            return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includeWorkbooks());
+            return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
         // each ContainerFilterWithUser subclass should override
@@ -665,9 +669,9 @@ public abstract class ContainerFilter
             {
                 return null;
             }
-            if (!currentContainer.isContainerFor(Container.DataType.assayLocationFilter) && currentContainer.getContainerFor(Container.DataType.assayLocationFilter).hasPermission(_user, perm, roles))
+            if (!currentContainer.isContainerFor(ContainerType.DataType.assayLocationFilter) && currentContainer.getContainerFor(ContainerType.DataType.assayLocationFilter).hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getContainerFor(Container.DataType.assayLocationFilter).getEntityId());
+                result.add(currentContainer.getContainerFor(ContainerType.DataType.assayLocationFilter).getEntityId());
             }
             return result;
         }

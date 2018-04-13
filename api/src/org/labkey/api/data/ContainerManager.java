@@ -89,7 +89,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -202,13 +201,21 @@ public class ContainerManager
     // TODO: Handle root creation here?
     public static Container createContainer(Container parent, String name)
     {
-        return createContainer(parent, name, null, null, Container.TYPE.normal, null);
+        return createContainer(parent, name, null, null, NormalContainerType.NAME, null);
     }
 
     public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
 
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, Container.TYPE type, User user)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user)
+    {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("type", type);
+        return createContainer(parent, name, title, description, user, properties);
+
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
 //        if (CORE.getSchema().getScope().isTransactionActive())
@@ -216,12 +223,14 @@ public class ContainerManager
 
         int sortOrder;
 
-        if (Container.TYPE.workbook == type)
-        {
-            //parent must be normal
-            if (Container.TYPE.normal != parent.getType())
-                throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
+        String type = (String) properties.get("type");
+        ContainerType cType = ContainerTypeRegistry.get().getType(type);
+        if (cType == null)
+            throw new IllegalArgumentException("Unknown container type: " + type);
 
+        // TODO move this to ContainerType?
+        if (cType instanceof WorkbookContainerType)
+        {
             sortOrder = DbSequenceManager.get(parent, WORKBOOK_DBSEQUENCE_NAME).next();
 
             if (name == null)
@@ -235,9 +244,8 @@ public class ContainerManager
             sortOrder = getNewChildSortOrder(parent);
         }
 
-        //parent must be normal (not workbook or container tab)
-        if (Container.TYPE.normal != parent.getType())
-            throw new IllegalArgumentException("Parent of a container must not be a container tab or workbook!");
+        if (!parent.canHaveChildren())
+            throw new IllegalArgumentException("Parent of a container must not be a " + parent.getContainerType().getName());
 
         StringBuilder error = new StringBuilder();
         if (!Container.isLegalName(name, parent.isRoot(), error))
@@ -282,7 +290,7 @@ public class ContainerManager
         }
 
         //workbooks inherit perms from their parent so don't create a policy if this is a workbook     TODO; and container tabs???
-        if (Container.TYPE.normal == type)
+        if (cType.isContainerFor(ContainerType.DataType.permissions))
             SecurityManager.setAdminOnlyPermissions(c);
 
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
@@ -351,7 +359,7 @@ public class ContainerManager
                     try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction(DATABASE_QUERY_LOCK))
                     {
                         for (Container container : containersBecomingTabs)
-                            updateType(container, Container.TYPE.tab.toString(), user);
+                            updateType(container, TabContainerType.NAME, user);
 
                         transaction.commit();
                     }
@@ -615,7 +623,7 @@ public class ContainerManager
                 c = ensureContainer(parentPath, user);
                 if (null == c)
                     return null;
-                c = createContainer(c, path.getName(), null, null, Container.TYPE.normal, user);
+                c = createContainer(c, path.getName(), null, null, NormalContainerType.NAME, user);
             }
         }
         return c;
@@ -724,24 +732,24 @@ public class ContainerManager
     // Default is to include all types of children, as seems only appropriate
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getChildren(parent, u, perm, null, Container.TYPE.asSet());
+        return getChildren(parent, u, perm, null, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
     {
-        return getChildren(parent, u, perm, roles, Container.TYPE.asSet());
+        return getChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Container.TYPE typeIncluded)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, String typeIncluded)
     {
-        return getChildren(parent, u, perm, null, EnumSet.of(typeIncluded));
+        return getChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, EnumSet<Container.TYPE> includedTypes)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> includedTypes)
     {
         List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
-            if (includedTypes.contains(child.getType()) && child.hasPermission(u, perm, roles))
+            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, roles))
                 children.add(child);
 
         return children;
@@ -749,33 +757,33 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u)
     {
-        return getAllChildren(parent, u, ReadPermission.class, null, Container.TYPE.asSet());
+        return getAllChildren(parent, u, ReadPermission.class, null, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getAllChildren(parent, u, perm, null, Container.TYPE.asSet());
+        return getAllChildren(parent, u, perm, null,  ContainerTypeRegistry.get().getTypeNames());
     }
 
-    // Default is to include all types of children, as seems only appropriate
+    // Default is to include all types of children
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
     {
-        return getAllChildren(parent, u, perm, roles, Container.TYPE.asSet());
+        return getAllChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
     }
 
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm,  Container.TYPE typeIncluded)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm,  String typeIncluded)
     {
-        return getAllChildren(parent, u, perm, null, EnumSet.of(typeIncluded));
+        return getAllChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, EnumSet<Container.TYPE> typesIncluded)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> typesIncluded)
     {
         Set<Container> allChildren = getAllChildren(parent);
         List<Container> result = new ArrayList<>(allChildren.size());
 
         for (Container container : allChildren)
         {
-            if (typesIncluded.contains(container.getType()) && container.hasPermission(u, perm, roles))
+            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, roles))
             {
                 result.add(container);
             }
@@ -815,7 +823,7 @@ public class ContainerManager
 
     private static Map<String, Container> getChildrenMap(Container parent)
     {
-        if (parent.getType() != Container.TYPE.normal)
+        if (!parent.canHaveChildren())
         {
             // Optimization to avoid database query (important because some installs have tens of thousands of
             // workbooks) when the container is a workbook, which is not allowed to have children
@@ -1144,7 +1152,7 @@ public class ContainerManager
 
             for (Container f : folders)
             {
-                if (f.isWorkbookOrTab())
+                if (!f.isInFolderNav())
                     continue;
 
                 boolean hasPolicyRead = f.getPolicy().hasPermission(user, ReadPermission.class);

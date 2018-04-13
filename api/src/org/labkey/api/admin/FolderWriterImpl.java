@@ -19,7 +19,6 @@ package org.labkey.api.admin;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -98,7 +97,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         folderXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
         folderXml.setLabel(c.getName());
 
-        folderXml.setType(c.getType().name());
+        folderXml.setType(c.getContainerType().getName());
         if (c.getTitle() != null)
             folderXml.setTitle(c.getTitle());
         if (c.getDescription() != null)

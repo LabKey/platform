@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldk.table.QueryCache;
 import org.labkey.api.security.User;
@@ -84,7 +85,7 @@ abstract public class AbstractNavItem implements NavItem
     @Override
     public boolean isVisible(Container c, User u)
     {
-        Container targetContainer = c.getContainerFor(Container.DataType.navVisibility);
+        Container targetContainer = c.getContainerFor(ContainerType.DataType.navVisibility);
         if (getDataProvider() != null && getDataProvider().getOwningModule() != null)
         {
             if (!targetContainer.getActiveModules().contains(getDataProvider().getOwningModule()))
