@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
@@ -175,7 +176,10 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
             url.setAction(ReportsController.DesignChartAction.class);
 
-            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View (deprecated)", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
+            {
+                designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View (deprecated)", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
+            }
 
             // r report
             if (ReportUtil.canCreateScript(context) && RReport.isEnabled())

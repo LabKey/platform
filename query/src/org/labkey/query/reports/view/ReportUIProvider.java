@@ -40,6 +40,7 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.URLHelper;
@@ -152,9 +153,12 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         if (study == null)
         {
-            // Study registers its own 'Chart View'
-            designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View (deprecated)", "XY and Time Charts",
-                    ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(ChartQueryReport.TYPE)));
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
+            {
+                // Study registers its own 'Chart View'
+                designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View (deprecated)", "XY and Time Charts",
+                        ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(ChartQueryReport.TYPE)));
+            }
         }
 
         boolean canCreateScript = ReportUtil.canCreateScript(context);
