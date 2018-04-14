@@ -30,11 +30,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.UnauthorizedException;
@@ -126,36 +128,18 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             if (columnInfo.getFk() != null)
             {
                 ForeignKey fk = columnInfo.getFk();
-                TableInfo lookupTarget = null;
-                try
+                Pair<Lookup, Boolean> lookup = createLookup(fk, getContainer());
+                if (lookup != null)
                 {
-                    lookupTarget = fk.getLookupTableInfo();
-                }
-                catch (QueryParseException ignored)
-                {
-                    // Be tolerant of problematic lookup targets
-                }
-                if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
-                {
-                    if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
-                    {
-                        gwtColumnInfo.setLookupSchema(lookupTarget.getPublicSchemaName());
-                        gwtColumnInfo.setLookupQuery(lookupTarget.getPublicName());
-                    }
+                    if (lookup.second)
+                        gwtColumnInfo.setLookupCustom(true);
                     else
                     {
-                        gwtColumnInfo.setLookupCustom(true);
+                        gwtColumnInfo.setLookupSchema(lookup.first.getSchemaName());
+                        gwtColumnInfo.setLookupQuery(lookup.first.getQueryName());
+                        if (lookup.first.getContainer() != null)
+                            gwtColumnInfo.setLookupContainer(lookup.first.getContainer().getPath());
                     }
-                }
-                else
-                {
-                    gwtColumnInfo.setLookupSchema(fk.getLookupSchemaName());
-                    gwtColumnInfo.setLookupQuery(fk.getLookupTableName());
-                }
-                // Set the lookup's container if it targets some other container
-                if (lookupTarget != null && lookupTarget.getUserSchema() != null && !lookupTarget.getUserSchema().getContainer().equals(getViewContext().getContainer()))
-                {
-                    gwtColumnInfo.setLookupContainer(lookupTarget.getUserSchema().getContainer().getPath());
                 }
             }
             List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
@@ -311,6 +295,51 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         gwtTableInfo.setMandatoryFieldNames(builtInColumnNames);
         gwtTableInfo.setFields(orderedPDs);
         return gwtTableInfo;
+    }
+
+    private Pair<Lookup, Boolean> createLookup(ForeignKey fk, Container currentContainer)
+    {
+        if (fk == null)
+            return null;
+
+        boolean custom = false;
+        Lookup lookup = new Lookup();
+
+        TableInfo lookupTarget = null;
+        try
+        {
+            lookupTarget = fk.getLookupTableInfo();
+        }
+        catch (QueryParseException ignored)
+        {
+            // Be tolerant of problematic lookup targets
+        }
+
+        if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
+        {
+            if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
+            {
+                lookup.setSchemaName(lookupTarget.getPublicSchemaName());
+                lookup.setQueryName(lookupTarget.getPublicName());
+            }
+            else
+            {
+                custom = true;
+            }
+        }
+        else
+        {
+            lookup.setSchemaName(fk.getLookupSchemaName());
+            lookup.setQueryName(fk.getLookupTableName());
+        }
+
+        // Set the lookup's container if it targets some other container
+        if (lookupTarget != null && lookupTarget.getUserSchema() != null && !lookupTarget.getUserSchema().getContainer().equals(currentContainer))
+        {
+            lookup.setContainer(lookupTarget.getUserSchema().getContainer());
+        }
+
+        return Pair.of(lookup, custom);
     }
 
     private List<GWTConditionalFormat> convertToGWT(List<ConditionalFormat> formats)
@@ -596,13 +625,13 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             // Set the FK
             if (!gwtColumnInfo.isLookupCustom() && gwtColumnInfo.getLookupQuery() != null && gwtColumnInfo.getLookupSchema() != null)
             {
-                ForeignKey rawFK = rawColumnInfo.getFk();
+                Pair<Lookup, Boolean> lookup = createLookup(rawColumnInfo.getFk(), getContainer());
+
                 // Check if it's the same FK, based on schema, query, and container
-                String rawTargetContainer = (rawFK == null || rawFK.getLookupContainer() == null) ? null : rawFK.getLookupContainer().getPath();
-                if (rawFK == null ||
-                    !gwtColumnInfo.getLookupSchema().equals(rawFK.getLookupSchemaName()) ||
-                    !Objects.equals(gwtColumnInfo.getLookupContainer(), rawTargetContainer) ||
-                    !gwtColumnInfo.getLookupQuery().equals(rawFK.getLookupTableName()))
+                if (lookup == null ||
+                    !gwtColumnInfo.getLookupSchema().equals(lookup.first.getSchemaName()) ||
+                    !gwtColumnInfo.getLookupQuery().equals(lookup.first.getQueryName()) ||
+                    !Objects.equals(gwtColumnInfo.getLookupContainer(), lookup.first.getContainer() != null ? lookup.first.getContainer().getPath() : null))
                 {
                     Container targetContainer = gwtColumnInfo.getLookupContainer() != null ? ContainerManager.getForPath(gwtColumnInfo.getLookupContainer()) : null;
                     UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), targetContainer == null ? getViewContext().getContainer() : targetContainer, gwtColumnInfo.getLookupSchema());
