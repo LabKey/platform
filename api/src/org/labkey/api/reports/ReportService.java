@@ -49,6 +49,7 @@ import java.util.List;
 public interface ReportService
 {
     String LINK_REPORT_TYPE = "ReportService.linkReport";
+    String EXPERIMENTAL_DEPRECATED_CHART_VIEW = "ExperimentalDeprecatedChartView";
 
     static ReportService get()
     {
