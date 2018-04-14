@@ -108,7 +108,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         {
             int count = createInitializedQueryView(form, errors, false, form.getExportRegion()).selectAll();
             ApiResponse resp = new ApiSimpleResponse("count", count);
-            ApiResponseWriter writer = ApiResponseWriter.Format.JSON.createWriter(getViewContext().getResponse(), null);
+            ApiResponseWriter writer = ApiResponseWriter.Format.JSON.createWriter(getViewContext().getResponse(), null, null);
             writer.write(resp);
 
             return null;

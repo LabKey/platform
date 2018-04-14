@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -96,29 +97,30 @@ public abstract class ApiResponseWriter implements AutoCloseable
         JSON
         {
             @Override
-            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
             {
-                return new ApiJsonWriter(response, contentTypeOverride, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
+                return new ApiJsonWriter(response, contentTypeOverride, objectMapper, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
             }
         },
         XML
         {
             @Override
-            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
             {
+                // TODO: Use Jackson for object -> XML serialization
                 return new ApiXmlWriter(response, contentTypeOverride);
             }
         },
         JSON_COMPACT
         {
             @Override
-            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
+            public ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException
             {
-                return new ApiJsonWriter(response, contentTypeOverride, false);
+                return new ApiJsonWriter(response, contentTypeOverride, objectMapper, false);
             }
         };
 
-        public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride) throws IOException;
+        public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException;
     }
 
     private final HttpServletResponse _response;

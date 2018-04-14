@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.JsonUtil;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -92,9 +93,7 @@ public class JsonTest extends Assert
     public void jsonOrgViaJackson() throws IOException
     {
         // Test serializing org.json JSON classes via Jackson
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JsonOrgModule());
-        mapper.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
+        ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER;
 
         final Date d = new GregorianCalendar(2011, 11, 3).getTime();
 

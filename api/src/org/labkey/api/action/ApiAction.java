@@ -32,6 +32,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
@@ -61,6 +62,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
     private Marshaller _marshaller = null;
+    private ObjectMapper _mapper;
 
     protected enum CommonParameters
     {
@@ -342,9 +344,33 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     }
 
 
+    protected final ObjectMapper getObjectMapper()
+    {
+        if (_mapper == null)
+            _mapper = createObjectMapper();
+        return _mapper;
+    }
+
+    /**
+     * Clone and configure the Jackson ObjectMapper for use in serialization/deserialization.
+     * If you need to perform custom configuration, override this method and create
+     * a copy of the <code>JsonUtil.DEFAULT_MAPPER</code>.
+     *
+     * Example:
+     * <pre>
+     *     ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
+     *     om.addMixin(GWTDomain.class, GWTDomainMixin.class);
+     *     return om;
+     * </pre>
+     */
+    protected ObjectMapper createObjectMapper()
+    {
+        return JsonUtil.DEFAULT_MAPPER;
+    }
+
     protected ObjectReader getObjectReader(Class c)
     {
-        return new ObjectMapper().reader(c);
+        return getObjectMapper().readerFor(c);
     }
 
 
@@ -495,7 +521,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     public ApiResponseWriter createResponseWriter() throws IOException
     {
         // Let the response format dictate how we write the response. Typically JSON, but not always.
-        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride());
+        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getObjectMapper());
         if (_marshaller == Marshaller.Jackson)
             writer.setSerializeViaJacksonAnnotations(true);
         return writer;

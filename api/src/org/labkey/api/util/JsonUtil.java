@@ -20,10 +20,13 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,6 +36,19 @@ import java.util.List;
  */
 public class JsonUtil
 {
+    // Default ObjectMapper configured for the common case.
+    // The ObjectMapper is threadsafe and can be shared across requests
+    // but shouldn't be mutated.  If you need to reconfigure the ObjectMapper,
+    // create a new instance by calling <code>ObjectMapper.copy()</code>.
+    public static final ObjectMapper DEFAULT_MAPPER;
+
+    static {
+        DEFAULT_MAPPER = new ObjectMapper();
+        // Allow org.json classes to be serialized by Jackson
+        DEFAULT_MAPPER.registerModule(new JsonOrgModule());
+        DEFAULT_MAPPER.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
+    }
+
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
     {
         if (p.getCurrentToken() != JsonToken.START_OBJECT)

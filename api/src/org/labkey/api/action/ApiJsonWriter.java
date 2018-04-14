@@ -18,15 +18,14 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import org.json.JSONArray;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.JsonUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -42,6 +41,7 @@ public class ApiJsonWriter extends ApiResponseWriter
     //per http://www.iana.org/assignments/media-types/application/
     public static final String CONTENT_TYPE_JSON = "application/json";
 
+    private ObjectMapper _mapper;
     private JsonGenerator jg = new JsonFactory().createGenerator(getWriter());
 
     public ApiJsonWriter(Writer out) throws IOException
@@ -58,10 +58,10 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public ApiJsonWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
     {
-        this(response, contentTypeOverride, true);
+        this(response, contentTypeOverride, null, true);
     }
 
-    public ApiJsonWriter(HttpServletResponse response, String contentTypeOverride, boolean prettyPrint) throws IOException
+    public ApiJsonWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper mapper, boolean prettyPrint) throws IOException
     {
         super(response);
         response.setContentType(null == contentTypeOverride ? CONTENT_TYPE_JSON : contentTypeOverride);
@@ -70,23 +70,39 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.useDefaultPrettyPrinter();
         }
+        _mapper = mapper;
         initGenerator();
     }
 
     private void initGenerator()
     {
-        jg.setCodec(createObjectMapper());  // makes the generator annotation aware
+        jg.setCodec(getObjectMapper());  // makes the generator annotation aware
         // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
         jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
     }
 
+    protected final ObjectMapper getObjectMapper()
+    {
+        if (_mapper == null)
+            _mapper = createObjectMapper();
+        return _mapper;
+    }
+
+    /**
+     * Clone and configure the Jackson ObjectMapper for use in serialization.
+     * If you need to perform custom configuration, override this method and create
+     * a copy of the <code>DEFAULT_MAPPER</code>.
+     *
+     * Example:
+     * <pre>
+     *     ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
+     *     om.addMixin(GWTDomain.class, GWTDomainMixin.class);
+     *     return om;
+     * </pre>
+     */
     protected ObjectMapper createObjectMapper()
     {
-        ObjectMapper mapper = new ObjectMapper();
-        // Allow org.json classes to be serialized by Jackson
-        mapper.registerModule(new JsonOrgModule());
-        mapper.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
-        return mapper;
+        return JsonUtil.DEFAULT_MAPPER;
     }
 
     @Override

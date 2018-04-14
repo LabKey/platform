@@ -780,9 +780,9 @@ public class ExceptionUtil
 
                 ApiResponseWriter writer;
                 if (isJSON)
-                    writer = ApiResponseWriter.Format.JSON.createWriter(response, null);
+                    writer = ApiResponseWriter.Format.JSON.createWriter(response, null, null);
                 else
-                    writer = ApiResponseWriter.Format.XML.createWriter(response, null);
+                    writer = ApiResponseWriter.Format.XML.createWriter(response, null, null);
 
                 errorResponse.render(writer);
                 writer.close();
