@@ -3613,12 +3613,12 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds) throws ExperimentException
+    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds)
     {
         deleteDataByRowIds(user, container, selectedDataIds, true);
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds, boolean deleteRunsUsingData) throws ExperimentException
+    public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds, boolean deleteRunsUsingData)
     {
         if (selectedDataIds.isEmpty())
             return;
@@ -3931,7 +3931,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return "LSID/" + lsid;
     }
 
-    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas) throws ExperimentException
+    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas)
     {
         try
         {
@@ -4273,7 +4273,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * Delete all exp.Data from the DataClass.  If container is not provided,
      * all rows from the DataClass will be deleted regardless of container.
      */
-    public int truncateDataClass(ExpDataClass dataClass, User user, @Nullable Container c) throws ExperimentException
+    public int truncateDataClass(ExpDataClass dataClass, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -6589,7 +6589,7 @@ public class ExperimentServiceImpl implements ExperimentService
             ExpMaterialRunInputImpl materialRunInput = (ExpMaterialRunInputImpl)materialRunInputs.get(0);
             assertEquals(sampleIn, materialRunInput.getMaterial());
             assertEquals("Sample Goo", materialRunInput.getRole());
-            assertTrue(materialRunInput.getLSIDNamespacePrefix().equals(MaterialInput.NAMESPACE));
+            assertEquals(materialRunInput.getLSIDNamespacePrefix(), MaterialInput.NAMESPACE);
             assertTrue(materialRunInput.getLSID().contains(":MaterialInput:" + sampleIn.getRowId() + "." + pa.getRowId()));
 
             ExpMaterialRunInputImpl x = impl.getMaterialInput(sampleIn.getRowId(), pa.getRowId());

@@ -615,8 +615,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             return new _DataIterator(user, cols, source, context, study);
         }
 
-        _DataIterator(User user, List<ColumnInfo> cols, DataIterator source, DataIteratorContext context, Study study)
-                throws BatchValidationException
+        _DataIterator(User user, List<ColumnInfo> cols, DataIterator source, DataIteratorContext context, Study study) throws BatchValidationException
         {
             super(cols);
 
@@ -638,7 +637,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 List<Map<String, Object>> outputRows = task.transformRows(inputRows);
 
                 int rownumber = 0;
-                for (Map<String,Object> row : outputRows)
+                for (Map<String, Object> row : outputRows)
                 {
                     rownumber++;
                     Object visit = row.get("visit_value");
@@ -659,10 +658,6 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 }
 
                 _rows = initRows(outputRows);
-            }
-            catch (IOException x)
-            {
-                context.getErrors().addRowError(new ValidationException(x.getMessage()));
             }
             catch (ValidationException e)
             {
@@ -776,7 +771,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
 
         @Test
-        public void testDeduplication() throws IOException
+        public void testDeduplication()
         {
             ArrayListMap<String,Object> template = new ArrayListMap<>();
 
@@ -812,21 +807,21 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             {{
                 oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
             }});
-            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+            assertNull(_task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
 
             row1.put("barcode", "");
             _context.checking(new Expectations()
             {{
                 oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
             }});
-            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+            assertNull(_task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
 
             row1.put("barcode", INVALID_SUFFIX);
             _context.checking(new Expectations()
             {{
                 oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
             }});
-            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+            assertNull(_task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
 
             row1.put("barcode", "4324329-invalid");
             Map<String, Object> outputRow = _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
@@ -842,7 +837,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             }});
 
             Map<String, Object> row1 = new ArrayListMap<>();
-            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+            assertNull(_task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
         }
 
         @Test
@@ -857,19 +852,19 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             row.put("activity", "Some Lab Receiving");
             Map<String, Object> outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
             assertEquals("Bad receiving handling", new Date(date), outputRow.get("lab_receipt_date"));
-            assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
-            assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
+            assertNull("Bad receiving handling", outputRow.get("ship_date"));
+            assertNull("Bad receiving handling", outputRow.get("processing_date"));
 
             row.put("activity", "Ship Specimens from Clinical Location");
             outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
-            assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
+            assertNull("Bad receiving handling", outputRow.get("lab_receipt_date"));
             assertEquals("Bad receiving handling", new Date(date), outputRow.get("ship_date"));
-            assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
+            assertNull("Bad receiving handling", outputRow.get("processing_date"));
 
             row.put("activity", "Aliquoting");
             outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
-            assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
-            assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
+            assertNull("Bad receiving handling", outputRow.get("lab_receipt_date"));
+            assertNull("Bad receiving handling", outputRow.get("ship_date"));
             assertEquals("Bad receiving handling", new Date(date), outputRow.get("processing_date"));
         }
 
@@ -887,11 +882,11 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             row1.put("collectiondate", "");
             row1.put("visitname", "Visit 01");
 
-            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+            assertNull(_task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
         }
 
         @Test
-        public void testPrimaryAndDerivatives() throws IOException
+        public void testPrimaryAndDerivatives()
         {
             ArrayListMap<String,Object> template = new ArrayListMap<>();
             List<Map<String, Object>> inputRows = new ArrayList<>();

@@ -2528,7 +2528,7 @@ public class StudyController extends BaseStudyController
         }
 
         @SuppressWarnings("unchecked")
-        public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
+        public boolean handlePost(BulkImportTypesForm form, BindException errors)
         {
             if (form.getLabelColumn() == null)
                 errors.reject(null, "Column containing dataset Label must be identified.");
@@ -6795,7 +6795,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public boolean handlePost(VisitAliasesForm form, BindException errors) throws Exception
+        public boolean handlePost(VisitAliasesForm form, BindException errors)
         {
             boolean hadCustomMapping = !StudyManager.getInstance().getCustomVisitImportMapping(getStudyThrowIfNull()).isEmpty();
 

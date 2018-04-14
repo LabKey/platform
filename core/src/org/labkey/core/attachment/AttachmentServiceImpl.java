@@ -821,14 +821,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         SqlSelector selector = new SqlSelector(DbScope.getLabKeyScope(), sql);
         ResultSet rs = selector.getResultSet();
 
-        try
-        {
-            return null != link ? new ResultSetView(rs, title, 1, link) : new ResultSetView(rs, title);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return null != link ? new ResultSetView(rs, title, 1, link) : new ResultSetView(rs, title);
     }
 
     public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
@@ -1650,7 +1643,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             File expectedFile2 = new File(relativeDir, UPLOAD_LOG);
 
             assertTrue(expectedFile1.exists());
-            assertTrue(new File(relativeDir, "file.txt").equals(expectedFile1));
+            assertEquals(new File(relativeDir, "file.txt"), expectedFile1);
             assertTrue(expectedFile2.exists());
 
 
@@ -1761,15 +1754,15 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
             service.addAttachments(root, Arrays.asList(aFile1, aFile2), user);
             attachments = service.getAttachments(root);
-            assertTrue((originalCount + 2) == attachments.size());
+            assertEquals((originalCount + 2), attachments.size());
 
             service.deleteAttachment(root, file1.getName(), user);
             attachments = service.getAttachments(root);
-            assertTrue((originalCount + 1) == attachments.size());
+            assertEquals((originalCount + 1), attachments.size());
 
             service.deleteAttachment(root, file2.getName(), user);
             attachments = service.getAttachments(root);
-            assertTrue(originalCount == attachments.size());
+            assertEquals(originalCount, attachments.size());
         }
     }
 }

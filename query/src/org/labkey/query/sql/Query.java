@@ -1111,7 +1111,7 @@ public class Query
             {
                 QueryTestCase.fail("should fail: " + _sql);
             }
-            catch (SQLException | QueryParseException x)
+            catch (QueryParseException x)
             {
                 // should fail with SQLException not runtime exception
             }

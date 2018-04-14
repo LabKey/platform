@@ -409,10 +409,6 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
             return rowCount;
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         catch (IOException e)
         {
             throw new RuntimeException(e);

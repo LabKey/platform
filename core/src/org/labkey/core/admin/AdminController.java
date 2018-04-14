@@ -944,17 +944,9 @@ public class AdminController extends SpringActionController
         {
             Map<String, Object> userHealth = new HashMap<>();
             ZonedDateTime now = ZonedDateTime.now();
-            try
-            {
-                int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
-                userHealth.put("RegisteredUsers", userCount);
-                overallStatus.put("HasUsers", userCount > 0);
-            }
-            catch (SQLException e)
-            {
-                LOG.error("HealthCheck: can't get user count", e);
-                overallStatus.put("HasUsers", false);  //TODO: not sure if this is best option...
-            }
+            int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
+            userHealth.put("RegisteredUsers", userCount);
+            overallStatus.put("HasUsers", userCount > 0);
             return userHealth;
         }
     }
@@ -4002,7 +3994,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class DoCheckAction extends SimpleViewAction<DataCheckForm>
     {
-        public ModelAndView getView(DataCheckForm form, BindException errors) throws Exception
+        public ModelAndView getView(DataCheckForm form, BindException errors)
         {
             ActionURL currentUrl = getViewContext().cloneActionURL();
             String fixRequested = currentUrl.getParameter("_fix");
@@ -5430,7 +5422,7 @@ public class AdminController extends SpringActionController
     public class NotificationsAction extends FolderManagementViewPostAction<NotificationsForm>
     {
         @Override
-        protected HttpView getTabView(NotificationsForm form, BindException errors) throws Exception
+        protected HttpView getTabView(NotificationsForm form, BindException errors)
         {
             final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
             DataRegionSelection.clearAll(getViewContext(), key);
@@ -7121,7 +7113,7 @@ public class AdminController extends SpringActionController
             return new HtmlView("Are you sure you want to drop and recreate all module views?");
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors)
         {
             ModuleLoader.getInstance().recreateViews();
             return true;

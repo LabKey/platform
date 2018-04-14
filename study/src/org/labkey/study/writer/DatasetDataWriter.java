@@ -145,7 +145,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         return false;
     }
 
-    private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws SQLException, IOException
+    private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws IOException
     {
         TSVGridWriter tsvWriter = new TSVGridWriter(rs);
         tsvWriter.setApplyFormats(false);

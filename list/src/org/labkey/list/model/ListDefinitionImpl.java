@@ -533,7 +533,7 @@ public class ListDefinitionImpl implements ListDefinition
 
 
     @Override
-    public int insertListItems(User user, Container container, List<ListItem> listItems) throws IOException
+    public int insertListItems(User user, Container container, List<ListItem> listItems)
     {
         BatchValidationException ve = new BatchValidationException();
 

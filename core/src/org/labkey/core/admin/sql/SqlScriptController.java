@@ -364,7 +364,7 @@ public class SqlScriptController extends SpringActionController
     public class ScriptsWithErrorsAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             ArrayList<SqlScript> scriptsWithErrors = new ArrayList<>();
             Map<SqlScript, String> errorMessages = new HashMap<>();
@@ -427,7 +427,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private static List<ScriptConsolidator> getConsolidators(double fromVersion, double toVersion, boolean includeSingleScripts) throws SqlScriptException
+    private static List<ScriptConsolidator> getConsolidators(double fromVersion, double toVersion, boolean includeSingleScripts)
     {
         List<Module> modules = ModuleLoader.getInstance().getModules();
         List<ScriptConsolidator> consolidators = new ArrayList<>();
@@ -473,7 +473,7 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
-        public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
+        public ModelAndView getView(ConsolidateForm form, BindException errors)
         {
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
@@ -610,7 +610,7 @@ public class SqlScriptController extends SpringActionController
         protected boolean _includeOriginatingScriptComments = true;
         private Collection<String> _errors = null;
 
-        private ScriptConsolidator(FileSqlScriptProvider provider, DbSchema schema, double targetFrom, double targetTo) throws SqlScriptException
+        private ScriptConsolidator(FileSqlScriptProvider provider, DbSchema schema, double targetFrom, double targetTo)
         {
             _provider = provider;
             _schema = schema;
@@ -796,7 +796,7 @@ public class SqlScriptController extends SpringActionController
         {
         }
 
-        public ModelAndView getView(ConsolidateForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ConsolidateForm form, boolean reshow, BindException errors)
         {
             _fromVersion = form.getFromVersion();
             _toVersion = form.getToVersion();
@@ -842,14 +842,14 @@ public class SqlScriptController extends SpringActionController
             return root;
         }
 
-        private ScriptConsolidator getConsolidator(ConsolidateForm form) throws SqlScriptException
+        private ScriptConsolidator getConsolidator(ConsolidateForm form)
         {
             Module module = ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
             return getConsolidator(provider, DbSchema.get(form.getSchema(), DbSchemaType.Module), form.getFromVersion(), form.getToVersion());
         }
 
-        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, DbSchema schema, double fromVersion, double toVersion)  throws SqlScriptException
+        protected ScriptConsolidator getConsolidator(FileSqlScriptProvider provider, DbSchema schema, double fromVersion, double toVersion)
         {
             return new ScriptConsolidator(provider, schema, fromVersion, toVersion);
         }
@@ -880,7 +880,7 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
-        public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
+        public ModelAndView getView(ConsolidateForm form, BindException errors)
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
@@ -1147,7 +1147,7 @@ public class SqlScriptController extends SpringActionController
             return new HttpView()
             {
                 @Override
-                protected void renderInternal(Object model, PrintWriter out) throws Exception
+                protected void renderInternal(Object model, PrintWriter out)
                 {
                     for (Module module : ModuleLoader.getInstance().getModules())
                     {
@@ -1230,7 +1230,7 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class UnreachableScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
-        public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
+        public ModelAndView getView(ConsolidateForm form, BindException errors)
         {
             List<Module> modules = ModuleLoader.getInstance().getModules();
             Set<SqlScript> unreachableScripts = new TreeSet<>((s1, s2) -> {

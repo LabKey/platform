@@ -56,7 +56,7 @@ public class IteratorSpecimenImportFile implements SpecimenImportFile
     }
 
     @Override
-    public DataLoader getDataLoader() throws IOException
+    public DataLoader getDataLoader()
     {
         return new MapLoader(_rows);
     }

@@ -34,7 +34,7 @@ import java.util.List;
 @RequiresPermission(ReadPermission.class)
 public class GetAssayBatchesAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
 {
-    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws SQLException
+    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors)
     {
         List<ExpExperiment> batches = new ArrayList<>();
         if (form.getJsonObject().has(AssayJSONConverter.BATCH_IDS))

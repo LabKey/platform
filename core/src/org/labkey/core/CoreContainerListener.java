@@ -54,22 +54,15 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 
     public void containerDeleted(Container c, User user)
     {
-        try
-        {
-            PropertyManager.purgeObjectProperties(c);
-            MvUtil.containerDeleted(c);
+        PropertyManager.purgeObjectProperties(c);
+        MvUtil.containerDeleted(c);
 
-            // Delete any rows in test.TestTable associated with this container
-            Table.delete(TestSchema.getInstance().getTableInfoTestTable(), SimpleFilter.createContainerFilter(c));
+        // Delete any rows in test.TestTable associated with this container
+        Table.delete(TestSchema.getInstance().getTableInfoTestTable(), SimpleFilter.createContainerFilter(c));
 
-            // Let containerManager delete ACLs, we want that to happen last
+        // Let containerManager delete ACLs, we want that to happen last
 
-            Portal.containerDeleted(c);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Portal.containerDeleted(c);
     }
 
     @Override

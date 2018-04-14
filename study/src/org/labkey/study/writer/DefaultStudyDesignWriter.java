@@ -56,7 +56,7 @@ import java.util.Set;
 public abstract class DefaultStudyDesignWriter
 {
     protected void writeTableData(StudyExportContext ctx, VirtualFile vf, Set<String> tableNames, StudyQuerySchema schema,
-                                  StudyQuerySchema projectSchema, @Nullable ContainerFilter containerFilter) throws SQLException, IOException
+                                  StudyQuerySchema projectSchema, @Nullable ContainerFilter containerFilter) throws IOException
     {
         for (String tableName : tableNames)
         {
@@ -66,7 +66,7 @@ public abstract class DefaultStudyDesignWriter
     }
 
     protected void writeTableData(StudyExportContext ctx, VirtualFile vf, TableInfo table, List<ColumnInfo> columns,
-                                @Nullable ContainerFilter containerFilter) throws SQLException, IOException
+                                @Nullable ContainerFilter containerFilter) throws IOException
     {
         // Write each table as a separate .tsv
         if (table != null)
@@ -89,7 +89,7 @@ public abstract class DefaultStudyDesignWriter
         return tableInfo.getName().toLowerCase() + ".tsv";
     }
 
-    protected void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws SQLException, IOException
+    protected void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws IOException
     {
         TSVGridWriter tsvWriter = new TSVGridWriter(rs);
         tsvWriter.setApplyFormats(false);

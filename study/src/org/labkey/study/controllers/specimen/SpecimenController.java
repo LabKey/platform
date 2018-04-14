@@ -1247,7 +1247,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class ViewRequestsAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             requiresLogin();
             SpecimenRequestQueryView grid = SpecimenRequestQueryView.createView(getViewContext());
@@ -5755,7 +5755,7 @@ public class SpecimenController extends BaseStudyController
             return view;
         }
 
-        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             doInsertUpdate(tableForm, errors, false);
             return 0 == errors.getErrorCount();
@@ -5788,7 +5788,7 @@ public class SpecimenController extends BaseStudyController
             return view;
         }
 
-        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             doInsertUpdate(tableForm, errors, true);
             return 0 == errors.getErrorCount();

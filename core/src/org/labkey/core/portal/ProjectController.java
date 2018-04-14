@@ -293,7 +293,7 @@ public class ProjectController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class BeginAction extends SimpleViewAction<PageForm>
     {
-        public ModelAndView getView(PageForm form, BindException errors) throws Exception
+        public ModelAndView getView(PageForm form, BindException errors)
         {
             Container c = getContainer();
             if (null == c)

@@ -35,7 +35,7 @@ import java.sql.SQLException;
 @RequiresPermission(ReadPermission.class)
 public class GetAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
 {
-    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws SQLException
+    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors)
     {
         ExpExperiment batch = null;
         if (form.getJsonObject().has(AssayJSONConverter.BATCH_ID))

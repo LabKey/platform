@@ -2392,7 +2392,7 @@ public class QueryController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             List<Map<String,Object>> list = doInsertUpdate(tableForm, errors, true);
             if (null != list && list.size() == 1)
@@ -4021,19 +4021,19 @@ public class QueryController extends SpringActionController
             return "Delete";
         }
 
-        public ModelAndView getConfirmView(F form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(F form, BindException errors)
         {
             form.refreshFromDb();
             return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
         }
 
-        public boolean handlePost(F form, BindException errors) throws Exception
+        public boolean handlePost(F form, BindException errors)
         {
             delete(form);
             return true;
         }
 
-        protected abstract void delete(F form) throws Exception;
+        protected abstract void delete(F form);
 
         public void validateCommand(F form, Errors errors)
         {
@@ -4053,7 +4053,7 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
-        protected void delete(LinkedSchemaForm form) throws Exception
+        protected void delete(LinkedSchemaForm form)
         {
             form.refreshFromDb();
             QueryManager.get().delete(form.getBean());
@@ -4068,7 +4068,7 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
-        protected void delete(ExternalSchemaForm form) throws Exception
+        protected void delete(ExternalSchemaForm form)
         {
             form.refreshFromDb();
             QueryManager.get().delete(form.getBean());
@@ -4089,7 +4089,7 @@ public class QueryController extends SpringActionController
 
         protected abstract T getCurrent(int externalSchemaId);
 
-        protected T getDef(F form, boolean reshow, BindException errors) throws Exception
+        protected T getDef(F form, boolean reshow, BindException errors)
         {
             T def;
             Container defContainer;
@@ -4166,7 +4166,7 @@ public class QueryController extends SpringActionController
             return QueryManager.get().getLinkedSchemaDef(getContainer(), externalId);
         }
 
-        public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors)
         {
             LinkedSchemaDef def = getDef(form, reshow, errors);
 
@@ -4188,7 +4188,7 @@ public class QueryController extends SpringActionController
             return QueryManager.get().getExternalSchemaDef(getContainer(), externalId);
         }
 
-        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors)
         {
             ExternalSchemaDef def = getDef(form, reshow, errors);
 
@@ -4536,7 +4536,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ReloadExternalSchemaAction extends SimpleViewAction<ExternalSchemaForm>
     {
-        public ModelAndView getView(ExternalSchemaForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExternalSchemaForm form, BindException errors)
         {
             form.refreshFromDb();
             ExternalSchemaDef def = form.getBean();

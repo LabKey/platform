@@ -825,7 +825,7 @@ public class LoginController extends SpringActionController
     public class ResetPasswordApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
-        public Object execute(LoginForm form, BindException errors) throws Exception
+        public Object execute(LoginForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -2144,7 +2144,7 @@ public class LoginController extends SpringActionController
             return view;
         }
 
-        public boolean handlePost(LoginForm form, BindException errors) throws Exception
+        public boolean handlePost(LoginForm form, BindException errors)
         {
             StringBuilder sbReset = new StringBuilder();
 

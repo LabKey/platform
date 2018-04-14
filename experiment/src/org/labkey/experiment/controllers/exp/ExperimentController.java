@@ -3542,7 +3542,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class ShowUpdateAction extends SimpleViewAction<ExperimentForm>
     {
-        public ModelAndView getView(ExperimentForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExperimentForm form, BindException errors)
         {
             form.refreshFromDb();
             Experiment exp = form.getBean();

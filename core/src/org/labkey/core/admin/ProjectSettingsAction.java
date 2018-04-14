@@ -442,7 +442,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             return tabs;
         }
 
-        public HttpView getTabView(String tabId) throws Exception
+        public HttpView getTabView(String tabId)
         {
             Container c = getViewContext().getContainer();
 

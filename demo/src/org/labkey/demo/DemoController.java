@@ -188,7 +188,7 @@ public class DemoController extends SpringActionController
             }
         }
 
-        public HttpView getView(PersonForm form, boolean reshow, BindException errors) throws Exception
+        public HttpView getView(PersonForm form, boolean reshow, BindException errors)
         {
             // handles case where handlePost wants to force reselect
             if (!reshow)

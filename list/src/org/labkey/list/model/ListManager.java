@@ -1150,7 +1150,7 @@ public class ListManager implements SearchService.DocumentProvider
             addListItem(c, list, PARENT_LIST_ITEM);
         }
 
-        private void addListItem(Container scopedContainer, ListDefinition scopedList, String value) throws Exception
+        private void addListItem(Container scopedContainer, ListDefinition scopedList, String value)
         {
             List<ListItem> lis = new ArrayList<>();
             ListItem li = scopedList.createListItem();
@@ -1177,11 +1177,11 @@ public class ListManager implements SearchService.DocumentProvider
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
             assertTrue("Test List not found in own container", lists.containsKey(LIST_NAME));
             ListItem li = lists.get(LIST_NAME).getListItem(1, u, c);
-            assertTrue("Item not found in own container", li.getProperty(dp).equals(PARENT_LIST_ITEM));
+            assertEquals("Item not found in own container", li.getProperty(dp), PARENT_LIST_ITEM);
         }
 
         @Test
-        public void testListServiceInWorkbook() throws Exception
+        public void testListServiceInWorkbook()
         {
             Container workbook1 = setupWorkbook(WORKBOOK1_NAME);
             Container workbook2 = setupWorkbook(WORKBOOK2_NAME);
@@ -1196,19 +1196,19 @@ public class ListManager implements SearchService.DocumentProvider
             return ContainerManager.createContainer(c, null, title, null, WorkbookContainerType.NAME, u);
         }
 
-        private void checkListItemScoping(Container wb1, Container wb2) throws Exception
+        private void checkListItemScoping(Container wb1, Container wb2)
         {
             ListDefinition wbList1 = ListService.get().getLists(wb1).get(LIST_NAME);
             ListDefinition wbList2 = ListService.get().getLists(wb2).get(LIST_NAME);
 
-            assertTrue("Lists available to each workbook are not the same", wbList1.toString().equals(wbList2.toString()));
+            assertEquals("Lists available to each workbook are not the same", wbList1.toString(), wbList2.toString());
             addListItem(wb1, wbList1, WORKBOOK1_LIST_ITEM);
             addListItem(wb2, wbList2, WORKBOOK2_LIST_ITEM);
 
             assertNull("Parent item visible in workbook", wbList1.getListItem(PARENT_LI_KEY, u, wb1));
             assertNull("Sibling workbook item visible in another workbook", wbList1.getListItem(WB2_LI_KEY, u, wb1));
-            assertTrue("Parent container can not see child workbook item", wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
-            assertTrue("Workbook can not see its own list item", wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp).equals(WORKBOOK1_LIST_ITEM));
+            assertEquals("Parent container can not see child workbook item", wbList1.getListItem(WB1_LI_KEY, u, c).getProperty(dp), WORKBOOK1_LIST_ITEM);
+            assertEquals("Workbook can not see its own list item", wbList1.getListItem(WB1_LI_KEY, u, wb1).getProperty(dp), WORKBOOK1_LIST_ITEM);
         }
     }
 }

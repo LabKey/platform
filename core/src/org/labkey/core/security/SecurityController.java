@@ -1000,7 +1000,7 @@ public class SecurityController extends SpringActionController
     public class CompleteUserAction extends ApiAction<CompleteUserForm>
     {
         @Override
-        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
+        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
@@ -1534,7 +1534,7 @@ public class SecurityController extends SpringActionController
 
     private abstract class AbstractEmailAction extends SimpleViewAction<EmailForm>
     {
-        protected abstract SecurityMessage createMessage(EmailForm form) throws Exception;
+        protected abstract SecurityMessage createMessage(EmailForm form);
 
         public ModelAndView getView(EmailForm form, BindException errors) throws Exception
         {
@@ -1578,7 +1578,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowRegistrationEmailAction extends AbstractEmailAction
     {
-        protected SecurityMessage createMessage(EmailForm form) throws Exception
+        protected SecurityMessage createMessage(EmailForm form)
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
             if (!getUser().hasRootPermission(UserManagementPermission.class))
@@ -1609,7 +1609,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(UserManagementPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
-        protected SecurityMessage createMessage(EmailForm form) throws Exception
+        protected SecurityMessage createMessage(EmailForm form)
         {
             return SecurityManager.getResetMessage(false);
         }
@@ -1622,7 +1622,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(UserManagementPermission.class)
     public class AdminResetPasswordAction extends SimpleViewAction<EmailForm>
     {
-        public ModelAndView getView(EmailForm form, BindException errors) throws Exception
+        public ModelAndView getView(EmailForm form, BindException errors)
         {
             //TODO: should combine this with SecurityApiController.AdminRotatePasswordAction, but need to simplify returned view
             User user = getUser();

@@ -516,7 +516,6 @@ public class TypesController extends SpringActionController
 
 
     public static CloseableIterator<Concept> readVocabularyTSV(String tsv)
-            throws Exception
     {
         TabLoader loader = new TabLoader(tsv);
         return new BeanIterator<>(loader.iterator(), Concept.class);

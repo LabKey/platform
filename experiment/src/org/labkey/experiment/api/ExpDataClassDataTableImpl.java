@@ -1092,7 +1092,6 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
 
         @Override
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
-                throws SQLException
         {
             // Temporary work around for Issue 26082 -- use INSERT instead of IMPORT
             return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
@@ -1108,13 +1107,12 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
 
         @Override
         public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-                throws SQLException
         {
             return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         }
 
         @Override
-        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
 
@@ -1235,16 +1233,9 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
         }
 
         @Override
-        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException
+        protected int truncateRows(User user, Container container)
         {
-            try
-            {
-                return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
-            }
-            catch (ExperimentException e)
-            {
-                throw new QueryUpdateServiceException(e);
-            }
+            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
         }
 
         private void removePreviousAttachments(User user, Container c, Map<String, Object> newRow, Map<String, Object> oldRow)

@@ -491,14 +491,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        try
-        {
-            svc.beforeDeleteData(user, getContainer(), datasToDelete);
-        }
-        catch (ExperimentException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        svc.beforeDeleteData(user, getContainer(), datasToDelete);
 
         deleteInputObjects(svc, dialect);
 

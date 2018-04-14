@@ -405,7 +405,7 @@ public class OlapController extends SpringActionController
             return view;
         }
 
-        protected abstract boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException;
+        protected abstract boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws SQLException;
 
         @Override
         public boolean handlePost(CustomOlapDescriptorForm form, BindException errors) throws Exception
@@ -441,7 +441,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
+        protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws SQLException
         {
             try
             {
@@ -480,7 +480,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
+        protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws SQLException
         {
             form.doUpdate();
             return true;
@@ -501,14 +501,7 @@ public class OlapController extends SpringActionController
         @Override
         public void validateCommand(CustomOlapDescriptorForm form, Errors errors)
         {
-            try
-            {
-                form.refreshFromDb();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            form.refreshFromDb();
 
             OlapDef def = form.getBean();
             if (def == null)
@@ -525,7 +518,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(CustomOlapDescriptorForm form, BindException errors) throws Exception
+        public boolean handlePost(CustomOlapDescriptorForm form, BindException errors)
         {
             form.doDelete();
 
@@ -559,7 +552,6 @@ public class OlapController extends SpringActionController
             _query = query;
         }
     }
-
 
 
     /*
@@ -1159,7 +1151,7 @@ public class OlapController extends SpringActionController
     }
 
 
-    OlapConnection _connection = null;
+    private OlapConnection _connection = null;
 
     @Nullable
     OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
@@ -1176,7 +1168,7 @@ public class OlapController extends SpringActionController
         return _connection;
     }
 
-    MondrianServer _server = null;
+    private MondrianServer _server = null;
 
     MondrianServer getServer()
     {

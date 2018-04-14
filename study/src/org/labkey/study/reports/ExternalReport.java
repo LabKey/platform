@@ -21,7 +21,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -48,14 +47,12 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
-import javax.servlet.ServletException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -267,10 +264,6 @@ public class ExternalReport extends AbstractReport
         {
             throw new RuntimeException("Could not create file.", e);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             if (null != dataFile && dataFile.exists())
@@ -359,31 +352,30 @@ public class ExternalReport extends AbstractReport
 
     public class InlineReportView extends HttpView
     {
-        File file;
+        private final File _file;
+
+        private InlineReportView(File file)
+        {
+            _file = file;
+        }
 
         @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             out.write("<pre>");
-            out.write(PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(file)));
+            out.write(PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(_file)));
             out.write("</pre>");
 
             if (recomputeWhen == RecomputeWhen.Always)
-                file.delete();
+                _file.delete();
         }
-
-        public InlineReportView(File file)
-        {
-            this.file = file;
-        }
-
     }
 
     public class TabReportView extends HttpView
     {
         private final File _file;
 
-        TabReportView(File file)
+        private TabReportView(File file)
         {
             _file = file;
         }

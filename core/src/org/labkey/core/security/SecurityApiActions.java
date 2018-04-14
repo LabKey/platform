@@ -51,6 +51,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -966,7 +967,7 @@ public class SecurityApiActions
                     if (UserManager.getUser(validEmail) == null)
                         errors.reject("email", "No such user: " + form.getEmail());
                 }
-                catch (ValidEmail.InvalidEmailException e)
+                catch (InvalidEmailException e)
                 {
                     errors.reject("email", "Invalid email: " + form.getEmail());
                 }
@@ -998,7 +999,7 @@ public class SecurityApiActions
             return savePolicyAction.execute(policyForm, errors);
         }
 
-        private UserPrincipal getUser(RoleAssignmentForm form) throws ValidEmail.InvalidEmailException
+        private UserPrincipal getUser(RoleAssignmentForm form) throws InvalidEmailException
         {
             if (null != form.getPrincipalId())
                 return SecurityManager.getPrincipal(form.getPrincipalId());
@@ -1390,7 +1391,7 @@ public class SecurityApiActions
                             UserManager.updateUser(status.getUser(), newUser);
                             principal = newUser;
                         }
-                        catch (SecurityManager.UserManagementException | SQLException | ValidEmail.InvalidEmailException  e)
+                        catch (SecurityManager.UserManagementException | InvalidEmailException  e)
                         {
 
                             memberErrors.put(member.getEmail(), e.getMessage());
@@ -1810,8 +1811,8 @@ public class SecurityApiActions
             String oldName = group.getName();
             try
             {
-                SecurityManager.renameGroup(group, form.getNewName().toString(), getUser());
-                group.setName(form.getNewName().toString());
+                SecurityManager.renameGroup(group, form.getNewName(), getUser());
+                group.setName(form.getNewName());
                 writeToAuditLog(group, oldName);
             }
             catch (IllegalArgumentException x)
@@ -2007,7 +2008,7 @@ public class SecurityApiActions
             {
                 email = new ValidEmail(form.getEmail().trim());
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 throw new IllegalArgumentException(e.getMessage());
             }
@@ -2058,14 +2059,14 @@ public class SecurityApiActions
                 else if (!getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
                     errors.rejectValue("Email", "Can not reset password for a Site Admin user");
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 errors.rejectValue("Email", "Invalid user email");
             }
         }
 
         @Override
-        public ApiSimpleResponse execute(SecurityController.EmailForm form, BindException errors) throws Exception
+        public ApiSimpleResponse execute(SecurityController.EmailForm form, BindException errors)
         {
             //TODO: should combine this with SecurityController.AdminResetPasswordAction, but need to simplify returned view
             SecurityManager.adminRotatePassword(form.getEmail(), errors, getContainer(), getUser());

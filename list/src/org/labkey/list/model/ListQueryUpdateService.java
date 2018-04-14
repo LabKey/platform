@@ -148,7 +148,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         for (Map<String, Object> row : rows)
         {
@@ -211,14 +210,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                 return 0;
             }
-            catch (SQLException x)
-            {
-                boolean isConstraint = RuntimeSQLException.isConstraintException(x);
-                if (isConstraint)
-                    errors.addRowError(new ValidationException(x.getMessage()));
-                else
-                    throw new RuntimeSQLException(x);
-            }
         }
 
         return 0;
@@ -227,7 +218,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     @Override
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
-                         @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+                         @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
@@ -235,7 +226,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
-                          Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+                          Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = super._importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);

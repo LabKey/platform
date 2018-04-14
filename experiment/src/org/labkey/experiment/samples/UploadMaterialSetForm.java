@@ -193,23 +193,17 @@ public class UploadMaterialSetForm extends ViewForm
         if (_loader == null)
         {
             TabLoader tabLoader = null;
-            try
-            {
-                // NOTE: consider raising runtime exception if both are null (and removing from try block?)
-                if (data != null)
-                    tabLoader = new TabLoader(data, true);
-                else if (tsvData != null)
-                    tabLoader = new TabLoader(tsvData, true);
-                tabLoader.setThrowOnErrors(true);
-            }
-            catch (IOException ioe)
-            {
-                _log.error(ioe);
-            }
+
+            // NOTE: consider raising runtime exception if both are null
+            if (data != null)
+                tabLoader = new TabLoader(data, true);
+            else if (tsvData != null)
+                tabLoader = new TabLoader(tsvData, true);
+            tabLoader.setThrowOnErrors(true);
 
             _loader = tabLoader;
-
         }
+
         return _loader;
     }
 

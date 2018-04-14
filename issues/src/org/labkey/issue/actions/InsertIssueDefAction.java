@@ -83,7 +83,7 @@ public class InsertIssueDefAction extends UserSchemaAction
         return view;
     }
 
-    public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+    public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
     {
         _results = doInsertUpdate(tableForm, errors, true);
         return 0 == errors.getErrorCount();

@@ -39,25 +39,19 @@ import java.util.List;
  */
 public class BaseStudyView<T> extends HttpView<T>
 {
-    Study _study;
-    StudyManager _studyManager;
-    DbSchema _schema;
-    TableInfo _tableVisitMap;
+    private final Study _study;
+    private final StudyManager _studyManager;
+    private final HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
+    private final HashMap<Integer, DatasetDefinition> _datasetMap = new HashMap<>();
+
+    private List<VisitImpl> _visits;            // display ordered
+    private List<DatasetDefinition> _datasetDefs;
 
     public BaseStudyView(Study study)
     {
         _study = study;
-
         _studyManager = StudyManager.getInstance();
-        _schema = StudySchema.getInstance().getSchema();
-        _tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
     }
-
-
-    private List<VisitImpl> _visits;            // display ordered
-    private HashMap<Integer, VisitImpl> _visitMap = new HashMap<>();
-    private List<DatasetDefinition> _datasetDefs;
-    private HashMap<Integer, DatasetDefinition> _datasetMap = new HashMap<>();
 
     protected List<VisitImpl> getVisits()
     {

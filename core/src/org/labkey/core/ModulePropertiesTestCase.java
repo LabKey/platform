@@ -69,7 +69,7 @@ public class ModulePropertiesTestCase extends Assert
     {
         TestContext ctx = TestContext.get();
         User loggedIn = ctx.getUser();
-        assertTrue("login before running this test", null != loggedIn);
+        assertNotNull("login before running this test", loggedIn);
         assertFalse("login before running this test", loggedIn.isGuest());
         _user = ctx.getUser().cloneUser();
 

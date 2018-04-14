@@ -249,7 +249,7 @@ public class SchemaTsvReader implements SchemaReader
         }
     }
 
-    public SchemaTsvReader(Study study, String tsv, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException
+    public SchemaTsvReader(Study study, String tsv, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors)
     {
         this(study, new TabLoader(tsv, true), labelColumn, typeNameColumn, typeIdColumn, null, errors);
     }

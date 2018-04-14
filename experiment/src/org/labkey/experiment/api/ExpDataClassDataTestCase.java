@@ -250,7 +250,7 @@ public class ExpDataClassDataTestCase
         Assert.assertEquals(1, dataClass.getDatas().size());
     }
 
-    private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, String expectedName, String expectedSubName) throws ExperimentException
+    private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, String expectedName, String expectedSubName)
     {
         int count;
         try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
@@ -545,8 +545,8 @@ public class ExpDataClassDataTestCase
         // verify that the lookup from the ConceptURI mapping is applied as a FK to the column
         TableInfo aaLookupTable = table.getColumn("aa").getFkTableInfo();
         Assert.assertNotNull(aaLookupTable);
-        Assert.assertTrue("lists".equals(aaLookupTable.getPublicSchemaName()));
-        Assert.assertTrue(listName.equals(aaLookupTable.getName()));
+        Assert.assertEquals("lists", aaLookupTable.getPublicSchemaName());
+        Assert.assertEquals(listName, aaLookupTable.getName());
         Assert.assertNull(table.getColumn("bb").getFkTableInfo());
 
         String expectedName = "TEST-1-20";
