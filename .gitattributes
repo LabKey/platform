@@ -1034,6 +1034,7 @@ experiment/src/org/labkey/experiment/controllers/exp/RunInputOutputBean.java -te
 experiment/src/org/labkey/experiment/controllers/exp/SampleSetServiceImpl.java -text
 experiment/src/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp -text
 experiment/src/org/labkey/experiment/controllers/property/DomainForm.java -text
+experiment/src/org/labkey/experiment/controllers/property/GWTDomainMixin.java -text
 experiment/src/org/labkey/experiment/controllers/property/PropertyController.java -text
 experiment/src/org/labkey/experiment/controllers/property/templateUpdate.jsp -text
 experiment/src/org/labkey/experiment/customizeRunWebPart.jsp -text

@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.controllers.property;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -29,6 +30,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -63,6 +65,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
@@ -107,6 +110,11 @@ public class PropertyController extends SpringActionController
     public PropertyController()
     {
         setActionResolver(_actionResolver);
+    }
+
+    static void configureObjectMapper(ObjectMapper om)
+    {
+        om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
     }
 
     @RequiresNoPermission
@@ -204,7 +212,7 @@ public class PropertyController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CreateDomainAction extends ApiAction<SimpleApiJsonForm>
+    public class CreateDomainAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
         {
@@ -290,11 +298,12 @@ public class PropertyController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             if (domain != null)
             {
-                resp = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+                Map<String, Object> map = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+                resp.putAll(map);
             }
             else if (domains != null)
             {
-                List<ApiSimpleResponse> resps = new ArrayList<>();
+                List<Map<String, Object>> resps = new ArrayList<>();
                 for (Domain d : domains)
                 {
                     resps.add(convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), d)));
@@ -313,22 +322,33 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ApiAction<GetForm>
     {
-        public ApiResponse execute(GetForm form, BindException errors)
+        @Override
+        protected ObjectMapper createObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper);
+            return mapper;
+        }
+
+        public Object execute(GetForm form, BindException errors)
         {
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
 
-            return convertDomainToApiResponse(getDomain(schemaName, queryName, getContainer(), getUser()));
+            GWTDomain domain = getDomain(schemaName, queryName, getContainer(), getUser());
+            //return success(domain);
+            return domain;
         }
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SaveDomainAction extends ApiAction<SimpleApiJsonForm>
+    public class SaveDomainAction extends MutatingApiAction<SimpleApiJsonForm>
     {
-        public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors)
+        public Object execute(SimpleApiJsonForm getForm, BindException errors)
         {
             JSONObject jsonObj = getForm.getJsonObject();
             String schema = jsonObj.getString("schemaName");
@@ -344,13 +364,13 @@ public class PropertyController extends SpringActionController
             for (String msg : updateErrors)
                 errors.reject(ERROR_MSG, msg);
 
-            return new ApiSimpleResponse();
+            return new ApiSimpleResponse("success", true);
         }
     }
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class DeleteDomainAction extends ApiAction<GetForm>
+    public class DeleteDomainAction extends MutatingApiAction<GetForm>
     {
         public Object execute(GetForm form, BindException errors)
         {
@@ -747,31 +767,27 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static ApiSimpleResponse convertDomainToApiResponse(@NotNull GWTDomain domain)
+    private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
-        ApiSimpleResponse response = new ApiSimpleResponse();
+        ObjectMapper om = new ObjectMapper();
+        configureObjectMapper(om);
         try
         {
-            response.putBean(domain, "domainId", "name", "domainURI", "description");
-            response.putBeanList("fields", domain.getFields());
+            return om.convertValue(domain, Map.class);
         }
         catch (Exception e)
         {
             throw UnexpectedException.wrap(e);
         }
-
-        return response;
     }
 
     public static String convertDomainToJson(@NotNull GWTDomain domain)
     {
-        ApiSimpleResponse response = new ApiSimpleResponse();
+        ObjectMapper om = new ObjectMapper();
+        configureObjectMapper(om);
         try
         {
-            response.putBean(domain, "domainId", "name", "domainURI", "description");
-            response.putBeanList("fields", domain.getFields());
-            return JSONObject.valueToString(response.getProperties());
+            return om.writeValueAsString(domain);
         }
         catch (Exception e)
         {
