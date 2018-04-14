@@ -2237,7 +2237,7 @@ public class PageFlowUtil
         }
 
         @Override
-        public void processingInstruction(String target, String data) throws SAXException
+        public void processingInstruction(String target, String data)
         {
             if (!_reported.contains("processingInstruction"))
             {
@@ -2247,7 +2247,7 @@ public class PageFlowUtil
         }
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
+        public void startElement(String uri, String localName, String qName, Attributes attributes)
         {
             String e = qName.toLowerCase();
             if ((e.startsWith("?") || e.startsWith("<") || _illegalElements.contains(e)) && !_reported.contains(e))
@@ -2306,18 +2306,18 @@ public class PageFlowUtil
         }
 
         @Override
-        public void warning(SAXParseException e) throws SAXException
+        public void warning(SAXParseException e)
         {
         }
 
         @Override
-        public void error(SAXParseException e) throws SAXException
+        public void error(SAXParseException e)
         {
             _errors.add(e.getMessage());
         }
 
         @Override
-        public void fatalError(SAXParseException e) throws SAXException
+        public void fatalError(SAXParseException e)
         {
             _errors.add(e.getMessage());
         }

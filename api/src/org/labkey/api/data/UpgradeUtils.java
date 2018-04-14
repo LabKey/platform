@@ -59,7 +59,7 @@ public class UpgradeUtils
      *      UNIQUE constraint, some don't.)
      * @throws SQLException
      */
-    public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, Sort sort, boolean caseSensitive, boolean ignoreNulls) throws SQLException
+    public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, Sort sort, boolean caseSensitive, boolean ignoreNulls)
     {
         LOG.info("Removing duplicate values from " + column.getParentTable().toString() + "." + column.getName());
 
@@ -82,7 +82,7 @@ public class UpgradeUtils
     }
 
 
-    private static void uniquifyValuesInGroup(ColumnInfo col, SimpleFilter filter, Sort sort, boolean caseSensitive) throws SQLException
+    private static void uniquifyValuesInGroup(ColumnInfo col, SimpleFilter filter, Sort sort, boolean caseSensitive)
     {
         TableInfo table = col.getParentTable();
         String columnName = col.getName();
@@ -144,7 +144,7 @@ public class UpgradeUtils
     }
 
 
-    private static List<SimpleFilter> getFiltersForGroupsWithDuplicateValues(final ColumnInfo column, @Nullable final ColumnInfo additionalGroupingColumn, boolean caseSensitive, final boolean ignoreNulls) throws SQLException
+    private static List<SimpleFilter> getFiltersForGroupsWithDuplicateValues(final ColumnInfo column, @Nullable final ColumnInfo additionalGroupingColumn, boolean caseSensitive, final boolean ignoreNulls)
     {
         TableInfo table = column.getParentTable();
         String selectColumns = "Container";
@@ -183,7 +183,7 @@ public class UpgradeUtils
         new SqlSelector(table.getSchema(), sql).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
         {
             @Override
-            public void exec(Map<String, Object> map) throws SQLException
+            public void exec(Map<String, Object> map)
             {
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), map.get("Container"));
 

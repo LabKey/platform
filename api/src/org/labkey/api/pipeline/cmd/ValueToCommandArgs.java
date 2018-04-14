@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public abstract class ValueToCommandArgs extends JobParamToCommandArgs
 {
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited)
     {
         return toArgs(getValue(task.getJob()));
     }

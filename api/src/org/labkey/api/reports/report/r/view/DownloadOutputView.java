@@ -61,7 +61,7 @@ public abstract class DownloadOutputView extends ROutputView
     }
 
     @Override
-    protected String renderInternalAsString(File file) throws Exception
+    protected String renderInternalAsString(File file)
     {
         String downloadUrl = null;
 
@@ -78,26 +78,16 @@ public abstract class DownloadOutputView extends ROutputView
     }
 
     @Override
-    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    protected void renderInternal(Object model, PrintWriter out)
     {
         for (File file : getFiles())
         {
-            String downloadUrl = null;
-            boolean errorWritten = false;
 
-            try
-            {
-                downloadUrl = renderInternalAsString(file);
-            }
-            catch (IOException e)
-            {
-                out.write(renderException(e));
-                errorWritten = true;
-            }
+            String downloadUrl = renderInternalAsString(file);
 
             // if we "failed" because the file doesn't exist then no
             // exception is thrown; just return immediately.
-            if (null == downloadUrl && !errorWritten)
+            if (null == downloadUrl)
                 return;
 
             out.write("<table class=\"labkey-output\">");

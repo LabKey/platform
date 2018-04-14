@@ -712,19 +712,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     private void populateWellData(ExpProtocol protocol, ExpRun run, User user) throws ExperimentException
     {
-        try
-        {
-            Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
-            new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
-                    wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
+        Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
+        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
 
-            populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen);
-        }
-        catch (SQLException e)
-        {
-            throw new ExperimentException(e);
-        }
+        populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen);
     }
 
     /**
@@ -734,7 +727,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      * @throws SQLException
      */
     public void populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
-                                 Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException, SQLException
+                                 Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen) throws ExperimentException
     {
         _populateWellData(protocol, run, user, cutoffs, wellgroupNameToNabSpecimen, true, true, Collections.emptyList(), Collections.emptyList());
     }
@@ -743,7 +736,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      * Recalculate dilution and well data using the updated well exclusions and return the calculated data
      * through the passed in collections.
      */
-    public void recalculateWellData(ExpProtocol protocol, ExpRun run, User user, List<Map<String, Object>> dilutionData, List<Map<String, Object>> wellData) throws ExperimentException, SQLException
+    public void recalculateWellData(ExpProtocol protocol, ExpRun run, User user, List<Map<String, Object>> dilutionData, List<Map<String, Object>> wellData) throws ExperimentException
     {
         Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
@@ -764,7 +757,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      */
     private void _populateWellData(ExpProtocol protocol, ExpRun run, User user, Map<Integer, String> cutoffs,
                                    Map<String, Pair<Integer, String>> wellgroupNameToNabSpecimen, boolean populatePlatesFromFile, boolean commitData,
-                                   List<Map<String, Object>> dilutionRows, List<Map<String, Object>> wellRows) throws ExperimentException, SQLException
+                                   List<Map<String, Object>> dilutionRows, List<Map<String, Object>> wellRows) throws ExperimentException
     {
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
         if (null == provider)
@@ -1009,7 +1002,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
      * @param dilutionDataRows list to store dilution data rows if commitData is set to false
      */
     private void insertDilutionData(User user, Map<String, Object> dilutionRow, WellGroup group, Map<WellData, Integer> wellDataToDilutionDataMap,
-                                    boolean commitData, List<Map<String, Object>> dilutionDataRows) throws SQLException
+                                    boolean commitData, List<Map<String, Object>> dilutionDataRows)
     {
         if (commitData)
         {

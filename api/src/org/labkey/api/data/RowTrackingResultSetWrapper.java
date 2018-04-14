@@ -40,7 +40,7 @@ public class RowTrackingResultSetWrapper extends ResultSetWrapper
     }
 
     @Override
-    public int getRow() throws SQLException
+    public int getRow()
     {
         return _currentRow;
     }

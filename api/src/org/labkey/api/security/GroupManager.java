@@ -99,15 +99,8 @@ public class GroupManager
     public static void bootstrapGroup(int userId, String name, PrincipalType type)
     {
         int gotUserId;
-        try
-        {
-            if ((gotUserId = createSystemGroup(userId, name, type)) != userId)
-                _log.warn(name + " group exists but has an unexpected UserId (is " + gotUserId + ", should be " + userId + ")");
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error setting up " + name + " group", e);
-        }
+        if ((gotUserId = createSystemGroup(userId, name, type)) != userId)
+            _log.warn(name + " group exists but has an unexpected UserId (is " + gotUserId + ", should be " + userId + ")");
     }
 
 
@@ -125,7 +118,7 @@ public class GroupManager
 
 
     // Create a group in the Principals table
-    private static int createSystemGroup(int userId, String name, PrincipalType type) throws SQLException
+    private static int createSystemGroup(int userId, String name, PrincipalType type)
     {
         // See if principal with the given name already exists
         Integer id = new SqlSelector(_core.getSchema(), "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?", name).getObject(Integer.class);
@@ -405,7 +398,7 @@ public class GroupManager
 
             TestContext context = TestContext.get();
             User loggedIn = context.getUser();
-            assertTrue("login before running this test", null != loggedIn);
+            assertNotNull("login before running this test", loggedIn);
             assertFalse("login before running this test", loggedIn.isGuest());
             _user = loggedIn.cloneUser();
 

@@ -202,7 +202,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     }
 
     @Override
-    protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue) throws IOException
+    protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue)
     {
         if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
         {

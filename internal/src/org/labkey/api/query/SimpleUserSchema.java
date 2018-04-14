@@ -547,7 +547,7 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+        public Parameter.ParameterMap deleteStatement(Connection conn)
         {
             throw new UnsupportedOperationException();
         }

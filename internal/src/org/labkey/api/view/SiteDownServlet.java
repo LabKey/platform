@@ -38,7 +38,7 @@ public class SiteDownServlet extends HttpServlet
         _message = config.getInitParameter("message");
     }
 
-    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {
         Writer writer = resp.getWriter();
         writer.write("<html><head><title>LabKey Server currently unavailable</title></head>\n");

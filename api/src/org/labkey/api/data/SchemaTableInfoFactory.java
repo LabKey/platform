@@ -23,5 +23,5 @@ import java.sql.SQLException;
 public interface SchemaTableInfoFactory
 {
     String getTableName();
-    SchemaTableInfo getSchemaTableInfo(DbSchema schema) throws SQLException;
+    SchemaTableInfo getSchemaTableInfo(DbSchema schema);
 }

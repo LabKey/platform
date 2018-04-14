@@ -113,8 +113,8 @@ public final class SAX2ScanHeaderHandler extends DefaultHandler
 	//
 
 	/** Start document. */
-	public void startDocument() throws SAXException
-	{
+	public void startDocument()
+    {
 		// Nothing to do
 	} // startDocument()
 
@@ -173,8 +173,7 @@ public final class SAX2ScanHeaderHandler extends DefaultHandler
 	} // startElement(String,String,StringAttributes)
 
 	public void endElement(String uri, String local, String raw)
-		throws SAXException
-	{
+    {
 		if (raw.equals("precursorMz"))
 		{
 			tmpScanHeader.setPrecursorMz(
@@ -187,8 +186,7 @@ public final class SAX2ScanHeaderHandler extends DefaultHandler
 
 	/** Characters. */
 	public void characters(char ch[], int start, int length)
-		throws SAXException
-	{
+    {
 		if (inPrecursorMZ)
 		{
 			precursorBuffer.append(ch, start, length);
@@ -197,15 +195,13 @@ public final class SAX2ScanHeaderHandler extends DefaultHandler
 
 	/** Ignorable whitespace. */
 	public void ignorableWhitespace(char ch[], int start, int length)
-		throws SAXException
-	{
+    {
 		// Do nothing
 	} // ignorableWhitespace(char[],int,int);
 
 	/** Processing instruction. */
 	public void processingInstruction(String target, String data)
-		throws SAXException
-	{
+    {
 		// Do nothing
 	} // processingInstruction(String,String)
 
@@ -214,22 +210,22 @@ public final class SAX2ScanHeaderHandler extends DefaultHandler
 	//
 
 	/** Warning. */
-	public void warning(SAXParseException ex) throws SAXException
-	{
+	public void warning(SAXParseException ex)
+    {
 		// Do nothing
 		//printError("Warning", ex);
 	} // warning(SAXParseException)
 
 	/** Error. */
-	public void error(SAXParseException ex) throws SAXException
-	{
+	public void error(SAXParseException ex)
+    {
 		// Do nothing
 		//printError("Error", ex);
 	} // error(SAXParseException)
 
 	/** Fatal error. */
-	public void fatalError(SAXParseException ex) throws SAXException
-	{
+	public void fatalError(SAXParseException ex)
+    {
 		// Do nothing
 		//printError("Fatal Error", ex);
 	} // fatalError(SAXParseException)

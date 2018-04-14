@@ -56,7 +56,7 @@ public abstract class AbstractResourceCollection extends AbstractResource
         return false;
     }
 
-    public InputStream getInputStream() throws IOException
+    public InputStream getInputStream()
     {
         throw new IllegalStateException("Can't read from a collection");
     }

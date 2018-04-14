@@ -185,7 +185,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         }
     }
 
-    public ModelAndView getView(PublishForm publishForm, BindException errors) throws Exception
+    public ModelAndView getView(PublishForm publishForm, BindException errors)
     {
         _protocol = publishForm.getProtocol();
         AssayProvider provider = publishForm.getProvider();

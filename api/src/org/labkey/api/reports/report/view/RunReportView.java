@@ -60,7 +60,7 @@ public abstract class RunReportView extends TabStripView
     }
 
 
-    protected void renderTitle(Object model, PrintWriter out) throws Exception
+    protected void renderTitle(Object model, PrintWriter out)
     {
         final Report report = getReport();
 
@@ -94,7 +94,8 @@ public abstract class RunReportView extends TabStripView
             sb.append("</table>");
             include(new HttpView() {
 
-                protected void renderInternal(Object model, PrintWriter out) throws Exception {
+                protected void renderInternal(Object model, PrintWriter out)
+                {
                     out.write("<table width=\"100%\"><tr class=\"labkey-wp-header\"><td align=\"left\">" + sb + "</td></tr><tr><td></td>&nbsp;</tr></table>");
                 }
             });

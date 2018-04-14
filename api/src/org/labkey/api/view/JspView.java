@@ -189,7 +189,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     }
 
 
-    public void include(ModelAndView mv) throws Exception
+    public void include(ModelAndView mv)
     {
         assert false : "jsp must use include(ModelAndView, Writer): " + _page.getClass().getName();
     }
@@ -200,7 +200,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     // CONSIDER: extends AbstractView
     //
 
-    protected void exposeModelAsRequestAttributes(Map model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void exposeModelAsRequestAttributes(Map model, HttpServletRequest request, HttpServletResponse response)
     {
         try
         {

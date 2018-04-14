@@ -37,7 +37,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     }
 
     @Override
-    public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
+    public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
     {
         BaseRemoteService service = createService();
         if (!"POST".equalsIgnoreCase(httpServletRequest.getMethod()))
@@ -70,7 +70,7 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     }
 
     @Override
-    public ModelAndView handleRequest() throws Exception
+    public ModelAndView handleRequest()
     {
         throw new UnsupportedOperationException();
     }

@@ -50,7 +50,7 @@ public class HttpPostRedirectView extends HttpView
     }
 
     @Override
-    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    protected void renderInternal(Object model, PrintWriter out)
     {
         out.println("<html>");
         out.println("<body onload='document.forms[\"form\"].submit()'>");

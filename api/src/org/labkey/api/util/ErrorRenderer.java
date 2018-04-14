@@ -71,7 +71,7 @@ public class ErrorRenderer
         out.println("</td></tr></table>");
     }
 
-    public void renderContent(PrintWriter out, HttpServletRequest request, @Nullable ButtonBarRenderer bbr) throws IOException, ServletException
+    public void renderContent(PrintWriter out, HttpServletRequest request, @Nullable ButtonBarRenderer bbr)
     {
         ViewContext context = HttpView.currentContext();
         User user = null != context ? context.getUser() : null;

@@ -38,7 +38,7 @@ import org.springframework.web.servlet.ModelAndView;
 @RequiresPermission(ReadPermission.class) //will check explicitly in code below
 public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
 {
-    public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
+    public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors)
     {
         ExpProtocol protocol;
         try

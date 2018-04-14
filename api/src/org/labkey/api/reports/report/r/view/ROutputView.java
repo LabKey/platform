@@ -126,7 +126,7 @@ public class ROutputView extends HttpView
         return null;
     }
 
-    protected void renderTitle(Object model, PrintWriter out) throws Exception
+    protected void renderTitle(Object model, PrintWriter out)
     {
         StringBuilder sb = new StringBuilder();
 

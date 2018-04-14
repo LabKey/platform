@@ -729,7 +729,7 @@ public class ViewServlet extends HttpServlet
         return true;
     }
 
-    private boolean validChars(URLHelper url) throws ServletException
+    private boolean validChars(URLHelper url)
     {
         Path path = url.getParsedPath();
         for (int i=0 ; i<path.size() ; i++)

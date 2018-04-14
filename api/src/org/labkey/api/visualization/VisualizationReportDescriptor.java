@@ -38,7 +38,7 @@ public class VisualizationReportDescriptor extends ReportDescriptor
         setProperty(Prop.json, json);
     }
 
-    public Map<String, Object> getReportProps() throws Exception
+    public Map<String, Object> getReportProps()
     {
         return null;
     }

@@ -46,7 +46,7 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
                                                    Collection<ExpMaterial> outputMaterials,
                                                    Collection<ExpData> outputDatas,
                                                    Container runContainer,
-                                                   Container targetStudyContainer, User user) throws IOException, ExperimentException
+                                                   Container targetStudyContainer, User user)
     {
         return new StudyParticipantVisitResolver(runContainer, targetStudyContainer, user);
     }

@@ -126,7 +126,6 @@ public class RhinoScriptEngine extends AbstractScriptEngine
         //construct object used to implement getInterface
         implementor = new InterfaceImplementor(this) {
                 protected Object convertResult(Method method, Object res)
-                                            throws ScriptException
                 {
                     Class desiredType = method.getReturnType();
                     if (desiredType == Void.TYPE) {
@@ -416,7 +415,8 @@ public class RhinoScriptEngine extends AbstractScriptEngine
         return result instanceof Undefined ? null : result;
     }
 
-    protected Reader preProcessScriptSource(Reader reader) throws ScriptException {
+    protected Reader preProcessScriptSource(Reader reader)
+    {
         return reader;
     }
 

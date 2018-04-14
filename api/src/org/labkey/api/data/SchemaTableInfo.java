@@ -828,13 +828,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext) throws BatchValidationException
+    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
 
     @Override
-    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext) throws ValidationException
+    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
@@ -932,7 +932,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
     {
         throw new UnsupportedOperationException();
     }

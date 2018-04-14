@@ -196,7 +196,7 @@ public class PopupMenu extends DisplayElement
     }
 
     @Deprecated
-    public void renderMenuScript(Writer out) throws IOException
+    public void renderMenuScript(Writer out)
     {
         /* No longer used after 17.3 UI update -- consider removal */
     }

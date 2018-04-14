@@ -66,7 +66,7 @@ public class FileResource extends AbstractResource
         return null;
     }
 
-    public long copyFrom(User user, FileStream in) throws IOException
+    public long copyFrom(User user, FileStream in)
     {
         throw new UnsupportedOperationException();
     }

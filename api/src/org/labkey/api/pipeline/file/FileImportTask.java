@@ -45,7 +45,7 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
 
     @NotNull
     @Override
-    public RecordedActionSet run() throws PipelineJobException
+    public RecordedActionSet run()
     {
         RecordedActionSet records = new RecordedActionSet();
         getJob().getJobSupport(FileAnalysisJobSupport.class).getInputFiles().forEach(file ->

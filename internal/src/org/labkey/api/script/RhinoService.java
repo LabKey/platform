@@ -238,7 +238,7 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
     }
 
     @Override
-    public ScriptReference compile(Module module, Path path) throws ScriptException
+    public ScriptReference compile(Module module, Path path)
     {
         return ScriptReferenceImpl.get(module, path);
     }
@@ -303,7 +303,7 @@ class ScriptReferenceImpl implements ScriptReference
     private ScriptContext _context; // context to eval and invoke in, not compile.
     private boolean _evaluated = false;
 
-    static ScriptReferenceImpl get(Module module, Path path) throws ScriptException
+    static ScriptReferenceImpl get(Module module, Path path)
     {
         CompiledScript script = SCRIPT_CACHE.getResourceMap(module).get(path);
 
@@ -312,7 +312,7 @@ class ScriptReferenceImpl implements ScriptReference
 
     // NB: At first glance, it might seem like we should cache ScriptReferenceImpl instances instead of CompiledScript instances,
     // however, because this class mutates internal state (_context and _evaluated) we need to construct them each time.
-    private ScriptReferenceImpl(Module module, Path path, RhinoEngine engine, CompiledScript script) throws ScriptException
+    private ScriptReferenceImpl(Module module, Path path, RhinoEngine engine, CompiledScript script)
     {
         _module = module;
         _path = path;
@@ -502,13 +502,13 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     }
 
     @Override
-    protected ModuleSource loadFromUri(URI uri, URI base, Object validator) throws IOException, URISyntaxException
+    protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
     {
         return load(uri.getPath(), validator);
     }
 
     @Override
-    protected ModuleSource loadFromPrivilegedLocations(String moduleId, Object validator) throws IOException
+    protected ModuleSource loadFromPrivilegedLocations(String moduleId, Object validator)
     {
         return load(moduleId + ".js", validator);
     }

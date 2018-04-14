@@ -468,7 +468,7 @@ public abstract class SpringModule extends DefaultModule
         }
 
         @Override
-        public <T extends Servlet> T createServlet(Class<T> aClass) throws ServletException
+        public <T extends Servlet> T createServlet(Class<T> aClass)
         {
             return null;
         }
@@ -504,7 +504,7 @@ public abstract class SpringModule extends DefaultModule
         }
 
         @Override
-        public <T extends Filter> T createFilter(Class<T> aClass) throws ServletException
+        public <T extends Filter> T createFilter(Class<T> aClass)
         {
             return null;
         }
@@ -564,7 +564,7 @@ public abstract class SpringModule extends DefaultModule
         }
 
         @Override
-        public <T extends EventListener> T createListener(Class<T> aClass) throws ServletException
+        public <T extends EventListener> T createListener(Class<T> aClass)
         {
             return null;
         }

@@ -78,7 +78,7 @@ public class TsvOutput extends AbstractParamReplacement
         return new TabReportView(this);
     }
 
-    public static TabLoader createTabLoader(File file) throws IOException
+    public static TabLoader createTabLoader(File file)
     {
         if (file != null && file.exists() && (file.length() > 0))
         {

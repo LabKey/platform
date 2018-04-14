@@ -59,7 +59,7 @@ public class TextOutput extends AbstractParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(File file)
     {
         TextOutputView view = new TextOutputView(this);
         String text = view.renderInternalAsString(file);
@@ -79,7 +79,7 @@ public class TextOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString(File file) throws Exception
+        protected String renderInternalAsString(File file)
         {
             if (exists(file))
                 return PageFlowUtil.getFileContentsAsString(file);
@@ -87,7 +87,7 @@ public class TextOutput extends AbstractParamReplacement
             return null;
         }
 
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             for (File file : getFiles())
             {

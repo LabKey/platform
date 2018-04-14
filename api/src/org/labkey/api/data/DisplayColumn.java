@@ -788,7 +788,7 @@ public abstract class DisplayColumn extends RenderColumn
         return false;
     }
 
-    private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort sort, boolean filtered) throws IOException
+    private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort sort, boolean filtered)
     {
         DataRegion rgn = ctx.getCurrentRegion();
         NavTree navtree = null;
@@ -930,7 +930,7 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public final void renderGridDataCell(RenderContext ctx, Writer out) throws IOException, SQLException
+    public final void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<td");
         if (_displayClass != null)

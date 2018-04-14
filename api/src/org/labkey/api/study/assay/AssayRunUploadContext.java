@@ -106,7 +106,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     }
 
     @NotNull
-    default Map<?, String> getInputMaterials() throws ExperimentException
+    default Map<?, String> getInputMaterials()
     {
         return emptyMap();
     }

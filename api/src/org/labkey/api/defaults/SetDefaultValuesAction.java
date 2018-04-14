@@ -299,7 +299,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
      * @param stringValue
      * @throws IOException
      */
-    protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue) throws IOException
+    protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue)
     {
         formDefaults.put(propName, stringValue);
     }

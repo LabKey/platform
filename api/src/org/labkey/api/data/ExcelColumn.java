@@ -788,7 +788,7 @@ public class ExcelColumn extends RenderColumn
     }
 
     // CONSIDER: Change RenderColumn to NOT extend DisplayElement
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, Writer out)
     {
         throw new UnsupportedOperationException();
     }

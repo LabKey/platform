@@ -141,7 +141,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         @Override
-        public String beforeImportObject(Map<String, Object> map) throws SQLException
+        public String beforeImportObject(Map<String, Object> map)
         {
             ColumnInfo objectUriCol = getObjectUriColumn();
 
@@ -157,12 +157,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         @Override
-        public void afterBatchInsert(int currentRow) throws SQLException
+        public void afterBatchInsert(int currentRow)
         {
         }
 
         @Override
-        public void updateStatistics(int currentRow) throws SQLException
+        public void updateStatistics(int currentRow)
         {
         }
     }

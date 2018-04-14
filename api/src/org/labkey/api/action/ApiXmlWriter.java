@@ -180,7 +180,7 @@ public class ApiXmlWriter extends ApiResponseWriter
     }
 
 
-    public void startResponse() throws IOException
+    public void startResponse()
     {
         assert _streamStack.size() == 0 : "called startResponse() after response was already started!";
         //we always return an object at the top level

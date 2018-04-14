@@ -75,14 +75,14 @@ public class TabLoader extends DataLoader
     public static class TsvFactory extends AbstractDataLoaderFactory
     {
         @NotNull @Override
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer)
         {
             return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
 
         /** A DataLoader created with this constructor does NOT close the reader */
         @NotNull @Override
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
         {
             return new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
         }
@@ -144,7 +144,7 @@ public class TabLoader extends DataLoader
         String lineTerminator="~@@~";
 
         @NotNull @Override
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer)
         {
             TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
             loader.setDelimiters(fieldTerminator, lineTerminator);
@@ -185,17 +185,17 @@ public class TabLoader extends DataLoader
     private Filter<Map<String, Object>> _mapFilter;
 
     // Infer whether there are headers
-    public TabLoader(File inputFile) throws IOException
+    public TabLoader(File inputFile)
     {
         this(inputFile, null);
     }
 
-    public TabLoader(File inputFile, Boolean hasColumnHeaders) throws IOException
+    public TabLoader(File inputFile, Boolean hasColumnHeaders)
     {
         this(inputFile, hasColumnHeaders, null);
     }
 
-    public TabLoader(final File inputFile, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    public TabLoader(final File inputFile, Boolean hasColumnHeaders, Container mvIndicatorContainer)
     {
         this(() -> {
             verifyFile(inputFile);
@@ -207,13 +207,13 @@ public class TabLoader extends DataLoader
     }
 
     // Infer whether there are headers
-    public TabLoader(CharSequence src) throws IOException
+    public TabLoader(CharSequence src)
     {
         this(src, null);
     }
 
     // This constructor doesn't support MV Indicators:
-    public TabLoader(final CharSequence src, Boolean hasColumnHeaders) throws IOException
+    public TabLoader(final CharSequence src, Boolean hasColumnHeaders)
     {
         this(() -> new BufferedReader(new CharSequenceReader(src)), hasColumnHeaders, null);
 
@@ -224,19 +224,19 @@ public class TabLoader extends DataLoader
     }
 
     /** A TabLoader created with this constructor does NOT close the reader */
-    public TabLoader(Reader reader, Boolean hasColumnHeaders) throws IOException
+    public TabLoader(Reader reader, Boolean hasColumnHeaders)
     {
         this(reader, hasColumnHeaders, null);
     }
     
     /** A TabLoader created with this constructor does NOT close the reader */
-    public TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer) throws IOException
+    public TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
     {
         this(reader, hasColumnHeaders, mvIndicatorContainer, false);
     }
 
     /** A TabLoader created with this constructor closes the reader only if closeOnComplete is true */
-    public TabLoader(final Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer, final boolean closeOnComplete) throws IOException
+    public TabLoader(final Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer, final boolean closeOnComplete)
     {
         this(new ReaderFactory()
         {
@@ -267,7 +267,7 @@ public class TabLoader extends DataLoader
     }
 
 
-    private TabLoader(ReaderFactory factory, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer) throws IOException
+    private TabLoader(ReaderFactory factory, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
     {
         super(mvIndicatorContainer);
 
@@ -380,7 +380,7 @@ public class TabLoader extends DataLoader
 
     Pattern _replaceDoubleQuotes = null;
 
-    private String[] readFields(BufferedReader r, @Nullable ColumnDescriptor[] columns) throws IOException
+    private String[] readFields(BufferedReader r, @Nullable ColumnDescriptor[] columns)
     {
         if (!_parseQuotes)
         {
@@ -684,7 +684,7 @@ public class TabLoader extends DataLoader
         }
 
         @Override
-        protected String[] readFields() throws IOException
+        protected String[] readFields()
         {
             return TabLoader.this.readFields(reader, _columns);
         }
@@ -890,7 +890,7 @@ public class TabLoader extends DataLoader
         }
 
         @Test
-        public void testUnescape() throws Exception
+        public void testUnescape()
         {
             final String data =
                     "A\tMulti-Line\tB\n" +
@@ -931,7 +931,7 @@ public class TabLoader extends DataLoader
         }
 
         @Test
-        public void testEmptyRow() throws Exception
+        public void testEmptyRow()
         {
             final String data =
                     "A\tB\n" +
@@ -983,7 +983,7 @@ public class TabLoader extends DataLoader
         }
 
         @Test
-        public void testParseQuotes() throws Exception
+        public void testParseQuotes()
         {
             final String data =
                     "Name\tMulti-Line\tAge\n" +

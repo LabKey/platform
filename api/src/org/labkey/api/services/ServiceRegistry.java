@@ -173,7 +173,7 @@ public class ServiceRegistry
         AbstractRefreshableWebApplicationContext ac = new AbstractRefreshableWebApplicationContext()
         {
             @Override
-            protected void loadBeanDefinitions(DefaultListableBeanFactory config) throws IOException, BeansException
+            protected void loadBeanDefinitions(DefaultListableBeanFactory config) throws BeansException
             {
                 for (_ServiceDef sd : _servicesByClass.values())
                 {

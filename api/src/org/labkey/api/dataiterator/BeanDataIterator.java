@@ -83,7 +83,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     }
 
     @Override
-    public boolean next() throws BatchValidationException
+    public boolean next()
     {
         return ++_currentRow < _rows.size();
     }
@@ -114,7 +114,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
     }
 

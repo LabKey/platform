@@ -150,13 +150,13 @@ public class DbSchema
     }
 
 
-    public Resource getSchemaResource() throws IOException
+    public Resource getSchemaResource()
     {
         return getSchemaResource(getResourcePrefix());
     }
 
 
-    public Resource getSchemaResource(String xmlFilePrefix) throws IOException
+    public Resource getSchemaResource(String xmlFilePrefix)
     {
         Resource r = _module.getModuleResource("/schemas/" + xmlFilePrefix + ".xml");
         return null != r && r.isFile() ? r : null;
@@ -214,7 +214,7 @@ public class DbSchema
             new TableMetaDataLoader(locator, ignoreTemp)
             {
                 @Override
-                protected void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException
+                protected void handleTable(String tableName, DatabaseTableType tableType, String description)
                 {
                     SchemaTableInfoFactory factory = new StandardSchemaTableInfoFactory(tableName, tableType, description);
                     schemaTableInfoFactoryMap.put(tableName, factory);
@@ -605,7 +605,7 @@ public class DbSchema
     public static class CachingTestCase extends Assert
     {
         @Test
-        public void testCaching() throws Exception
+        public void testCaching()
         {
             TestSchema test = TestSchema.getInstance();
             DbSchema testSchema = test.getSchema();
@@ -750,7 +750,7 @@ public class DbSchema
     public static class SchemaCasingTestCase extends Assert
     {
         @Test   // See #12210
-        public void testSchemaCasing() throws Exception
+        public void testSchemaCasing()
         {
             // If schema cache is case-sensitive then this should clear all capitalizations
             DbScope.getLabKeyScope().invalidateSchema("core", DbSchemaType.Module);
@@ -773,7 +773,7 @@ public class DbSchema
         }
     }
 
-    private static Integer checkContainerColumns(DbSchema curSchema, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
+    private static Integer checkContainerColumns(DbSchema curSchema, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId)
     {
         int row = rowId;
         SQLFragment sbSql = new SQLFragment();
@@ -841,7 +841,7 @@ public class DbSchema
         return row;
     }
 
-    public static String checkAllContainerCols(User user, boolean bfix) throws SQLException
+    public static String checkAllContainerCols(User user, boolean bfix)
     {
         List<Module> modules = ModuleLoader.getInstance().getModules();
         Integer lastRowId = 0;

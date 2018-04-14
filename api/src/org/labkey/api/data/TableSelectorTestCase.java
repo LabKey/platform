@@ -54,7 +54,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
     }
 
     @Test
-    public void testGetObject() throws SQLException
+    public void testGetObject()
     {
         TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers());
 
@@ -284,7 +284,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             selector.forEach(new Selector.ForEachBlock<K>()
             {
                 @Override
-                public void exec(K object) throws SQLException, StopIteratingException
+                public void exec(K object) throws StopIteratingException
                 {
                     testCount.increment();
 

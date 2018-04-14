@@ -57,7 +57,7 @@ class StringTestIterator extends AbstractDataIterator implements ScrollableDataI
     }
 
     @Override
-    public boolean next() throws BatchValidationException
+    public boolean next()
     {
         return ++row < data.size();
     }
@@ -71,7 +71,7 @@ class StringTestIterator extends AbstractDataIterator implements ScrollableDataI
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
     }
 

@@ -40,7 +40,6 @@ public interface Trigger
     default boolean canStream() { return false; }
 
     default void batchTrigger(TableInfo table, Container c, TableInfo.TriggerType event, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
-            throws BatchValidationException
     {
         if (before)
             init(table, c, event, errors, extraContext);

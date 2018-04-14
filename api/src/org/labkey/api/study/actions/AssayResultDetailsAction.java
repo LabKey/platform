@@ -45,7 +45,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     private ExpData _data;
     private Object _dataRowId;
 
-    public ModelAndView getView(DataDetailsForm form, BindException errors) throws Exception
+    public ModelAndView getView(DataDetailsForm form, BindException errors)
     {
         ViewContext context = getViewContext();
         _protocol = form.getProtocol();

@@ -336,7 +336,7 @@ public class SqlScriptExecutor
                     }
                 }
             }
-            catch (IOException|BatchValidationException|IllegalArgumentException x)
+            catch (IOException|IllegalArgumentException x)
             {
                 // This is an error on reading the file. It would be nice to know if a given line/column had a problem, but the loaders don't bubble that info up. (yet)
                 throw new RuntimeException("Error for table: " + fullTableName + " reading from data file: " + path, x);

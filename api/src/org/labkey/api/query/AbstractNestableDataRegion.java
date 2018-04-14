@@ -107,7 +107,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     }
 
     protected void renderNestedGrid(Writer out, RenderContext ctx, ResultSet nestedRS, int rowIndex)
-        throws IOException, SQLException
+        throws IOException
     {
         renderRowStart(rowIndex, out, ctx);
 

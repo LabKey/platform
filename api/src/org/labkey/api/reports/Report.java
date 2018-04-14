@@ -224,21 +224,21 @@ public interface Report extends AttachmentParent, ThumbnailProvider
          * Creates an image map with a standard tooltip, no urls are generated.
          * @param id - the image map id value.
          */
-        String generateImageMap(ViewContext context, String id) throws Exception;
+        String generateImageMap(ViewContext context, String id);
 
         /**
          * Creates an image map with a standard tooltip, and urls derived from the specified callback.
          * @param imageMapCallback - the name of a javascript function to be called in the url's for the
          * image map. Standard params will be used in the callback: (key, x, y).
          */
-        String generateImageMap(ViewContext context, String id, String imageMapCallback) throws Exception;
+        String generateImageMap(ViewContext context, String id, String imageMapCallback);
 
         /**
          * Creates an image map with a standard tooltip, and urls derived from the specified callback.
          * @param imageMapCallback - the name of a javascript function to be called in the url's for the
          * image map. Standard params plus the specified column names (if available) will be used in the callback.
          */
-        String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams) throws Exception;
+        String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams);
     }
 
     // implemented by reports that render images

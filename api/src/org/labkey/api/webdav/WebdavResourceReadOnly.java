@@ -141,19 +141,19 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
-    public long copyFrom(User user, FileStream in) throws IOException
+    public long copyFrom(User user, FileStream in)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long copyFrom(User user, WebdavResource r) throws IOException
+    public long copyFrom(User user, WebdavResource r)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void moveFrom(User user, WebdavResource r) throws IOException
+    public void moveFrom(User user, WebdavResource r)
     {
         throw new UnsupportedOperationException();
     }
@@ -300,7 +300,7 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
-    public boolean delete(User user) throws IOException
+    public boolean delete(User user)
     {
         throw new UnsupportedOperationException();
     }

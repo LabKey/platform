@@ -139,7 +139,7 @@ public class InputTag extends SimpleTagBase
         this.size = size;
     }
 
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         Input.InputBuilder input;
 

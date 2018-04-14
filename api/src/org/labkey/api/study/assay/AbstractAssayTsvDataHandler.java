@@ -501,7 +501,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * @return the set of materials that are inputs to this run
      */
     private Map<ExpMaterial, String> checkData(Container container, User user, ContainerFilterable dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
-            throws IOException, ValidationException, ExperimentException
+            throws ValidationException, ExperimentException
     {
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();

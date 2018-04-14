@@ -80,7 +80,7 @@ public class ImageOutput extends AbstractParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(File file)
     {
         ImgReportView view = new ImgReportView(this, canDeleteFile());
         String image = view.renderInternalAsString(file);
@@ -117,7 +117,7 @@ public class ImageOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString(File file) throws Exception
+        protected String renderInternalAsString(File file)
         {
             String imgUrl = null;
 
@@ -147,7 +147,7 @@ public class ImageOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             for (File file : getFiles())
             {

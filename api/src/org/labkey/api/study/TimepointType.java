@@ -27,7 +27,7 @@ public enum TimepointType
     DATE(false),
     CONTINUOUS(false);
 
-    private boolean _visitBased;
+    private final boolean _visitBased;
 
     private TimepointType(boolean visitBased)
     {

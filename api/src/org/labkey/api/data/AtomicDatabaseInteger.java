@@ -147,7 +147,7 @@ public class AtomicDatabaseInteger
         private Integer _rowId = null;
 
         @Before
-        public void setup() throws SQLException
+        public void setup()
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
@@ -166,7 +166,7 @@ public class AtomicDatabaseInteger
         }
 
         @Test
-        public void testBasicOperations() throws SQLException
+        public void testBasicOperations()
         {
             assertEquals(0, _adi.get());
 
@@ -191,7 +191,7 @@ public class AtomicDatabaseInteger
         }
 
         @Test
-        public void testPerformance() throws SQLException
+        public void testPerformance()
         {
             final int n = 1000;
             final long start = System.currentTimeMillis();
@@ -217,7 +217,7 @@ public class AtomicDatabaseInteger
         }
 
         @After
-        public void cleanup() throws SQLException
+        public void cleanup()
         {
             if (null != _rowId)
             {

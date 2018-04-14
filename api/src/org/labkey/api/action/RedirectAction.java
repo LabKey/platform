@@ -97,7 +97,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     }
 
     // Override to put up a fancier error page
-    public ModelAndView getErrorView(FORM form, BindException errors) throws Exception
+    public ModelAndView getErrorView(FORM form, BindException errors)
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
         return new SimpleErrorView(errors);

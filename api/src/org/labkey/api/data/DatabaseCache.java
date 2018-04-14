@@ -263,7 +263,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     {
         @SuppressWarnings({"StringEquality"})
         @Test
-        public void testDbCache() throws Exception
+        public void testDbCache()
         {
             MyScope scope = new MyScope();
 
@@ -394,19 +394,19 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            protected ConnectionWrapper _getConnection(Logger log) throws SQLException
+            protected ConnectionWrapper _getConnection(Logger log)
             {
                 return new ConnectionWrapper(null, null, null, log)
                 {
-                    public void setAutoCommit(boolean autoCommit) throws SQLException
+                    public void setAutoCommit(boolean autoCommit)
                     {
                     }
 
-                    public void commit() throws SQLException
+                    public void commit()
                     {
                     }
 
-                    public void rollback() throws SQLException
+                    public void rollback()
                     {
                     }
                 };

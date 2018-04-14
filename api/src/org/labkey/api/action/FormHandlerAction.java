@@ -29,7 +29,7 @@ import org.labkey.api.view.NavTree;
  */
 public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
 {
-    public final ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+    public final ModelAndView getView(FORM form, boolean reshow, BindException errors)
     {
         if (null == errors)
             errors = new NullSafeBindException(new Object(), "FakeObject");

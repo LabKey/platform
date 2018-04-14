@@ -38,7 +38,7 @@ public class OptionsTag extends SimpleTagBase
             return Objects.equals(test, _value);
     }
 
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         JspWriter out = getOut();
         if (_map != null)

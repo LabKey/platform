@@ -978,7 +978,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 new TableSelector(tableInfo, columnNames).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
                 {
                     @Override
-                    public void exec(Map<String, Object> row) throws SQLException
+                    public void exec(Map<String, Object> row)
                     {
                         Integer rowId = (Integer)row.get(lookupTablePkColumnName);
                         String name = (String)row.get(lookupColumnName);

@@ -387,7 +387,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _requiresSelection;
     }
 
-    private String renderDefaultScript(RenderContext ctx) throws IOException
+    private String renderDefaultScript(RenderContext ctx)
     {
         if (_requiresSelection)
         {

@@ -101,7 +101,7 @@ public class DilutionManager
         return getSchema().getTable(DILUTION_DATA_TABLE_NAME);
     }
 
-    public void deleteContainerData(Container container) throws SQLException
+    public void deleteContainerData(Container container)
     {
         // Remove rows from DilutionData and WellData
         SimpleFilter wellDataFilter = SimpleFilter.createContainerFilter(container);
@@ -122,20 +122,20 @@ public class DilutionManager
         PlateService.get().deleteAllPlateData(container);
     }
 
-    public int insertNabSpecimenRow(User user, Map<String, Object> fields) throws SQLException
+    public int insertNabSpecimenRow(User user, Map<String, Object> fields)
     {
         TableInfo tableInfo = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
         return (Integer)newFields.get("RowId");
     }
 
-    public void insertCutoffValueRow(User user, Map<String, Object> fields) throws SQLException
+    public void insertCutoffValueRow(User user, Map<String, Object> fields)
     {
         TableInfo tableInfo = getSchema().getTable(CUTOFF_VALUE_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
     }
 
-    public static int insertDilutionDataRow(User user, Map<String, Object> fields) throws SQLException
+    public static int insertDilutionDataRow(User user, Map<String, Object> fields)
     {
         TableInfo tableInfo = getSchema().getTable(DILUTION_DATA_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);
@@ -154,7 +154,7 @@ public class DilutionManager
         return new TableSelector(getSchema().getTable(DILUTION_DATA_TABLE_NAME), filter, null).getArrayList(DilutionDataRow.class);
     }
 
-    public static int insertWellDataRow(User user, Map<String, Object> fields) throws SQLException
+    public static int insertWellDataRow(User user, Map<String, Object> fields)
     {
         TableInfo tableInfo = getSchema().getTable(WELL_DATA_TABLE_NAME);
         Map<String, Object> newFields = Table.insert(user, tableInfo, fields);

@@ -51,7 +51,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     /**
      * @param forceSaveBatchProps whether we need to save the batch properties, or if it's already been handled
      */
-    public AssayUploadPipelineJob(AssayRunAsyncContext<ProviderType> context, ViewBackgroundInfo info, @NotNull ExpExperiment batch, boolean forceSaveBatchProps, PipeRoot root, File primaryFile) throws IOException, ExperimentException
+    public AssayUploadPipelineJob(AssayRunAsyncContext<ProviderType> context, ViewBackgroundInfo info, @NotNull ExpExperiment batch, boolean forceSaveBatchProps, PipeRoot root, File primaryFile)
     {
         super(context.getProvider().getName(), info, root);
         String baseName = primaryFile.getName();

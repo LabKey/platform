@@ -36,5 +36,5 @@ public abstract class AbstractView<ModelBean> implements View
     }
 
     /** would like to make this render(bean, out), one step at a time */
-    public abstract void render(ModelBean bean, HttpServletRequest request, HttpServletResponse response) throws java.lang.Exception;
+    public abstract void render(ModelBean bean, HttpServletRequest request, HttpServletResponse response);
 }

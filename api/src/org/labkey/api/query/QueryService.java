@@ -214,7 +214,7 @@ public interface QueryService
     @NotNull
     TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort);
 
-	default ResultSet select(QuerySchema schema, String sql) throws SQLException
+	default ResultSet select(QuerySchema schema, String sql)
     {
         return select(schema, sql, null, false, true);
     }

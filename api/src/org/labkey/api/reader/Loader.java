@@ -29,6 +29,6 @@ import java.util.Map;
 public interface Loader
 {
     ColumnDescriptor[] getColumns() throws IOException;
-    List<Map<String, Object>> load() throws IOException;
+    List<Map<String, Object>> load();
     CloseableIterator<Map<String, Object>> iterator();
 }

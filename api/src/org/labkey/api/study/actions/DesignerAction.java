@@ -63,7 +63,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     private DesignerForm _form;
     private ExpProtocol _protocol;
 
-    public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
+    public ModelAndView getView(DesignerForm form, BindException errors)
     {
         _form = form;
         try

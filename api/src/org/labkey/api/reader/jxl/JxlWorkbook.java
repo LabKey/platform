@@ -223,7 +223,7 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public void write(OutputStream stream) throws IOException
+    public void write(OutputStream stream)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -413,7 +413,7 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -467,7 +467,7 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public int addOlePackage(byte[] oleData, String label, String fileName, String command) throws IOException
+    public int addOlePackage(byte[] oleData, String label, String fileName, String command)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

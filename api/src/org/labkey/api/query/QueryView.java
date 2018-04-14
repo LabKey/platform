@@ -2295,12 +2295,12 @@ public class QueryView extends WebPartView<Object>
     }
 
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView) throws IOException
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView)
     {
         return getExcelTemplateWriter(respectView, Collections.emptyList());
     }
 
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols) throws IOException
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols)
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
@@ -2374,7 +2374,7 @@ public class QueryView extends WebPartView<Object>
         return getExcelTemplateWriter(fieldKeys);
     }
 
-    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys) throws IOException
+    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys)
     {
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);

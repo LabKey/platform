@@ -76,7 +76,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 
     public static final String ASSAY_IMPORT_FILE = "org.labkey.assay.importFile";
 
-    public ModelAndView getView(ImportForm form, BindException errors) throws Exception
+    public ModelAndView getView(ImportForm form, BindException errors)
     {
         _form = form;
         Map<String, String> properties = new HashMap<>();

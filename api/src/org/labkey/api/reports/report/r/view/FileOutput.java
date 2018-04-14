@@ -40,13 +40,13 @@ public class FileOutput extends DownloadParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected File getSubstitution(File directory)
     {
         return getSubstitution(directory, ".txt");
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(File file)
     {
         if (getReport() instanceof AttachmentParent)
             return renderAsScriptOutput(file, new FileoutReportView(this, getReport()),

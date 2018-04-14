@@ -1045,7 +1045,7 @@ public class Table
     }
 
 
-    public static void snapshot(TableInfo tinfo, String tableName) throws SQLException
+    public static void snapshot(TableInfo tinfo, String tableName)
     {
         SQLFragment sqlSelect = getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
@@ -1283,7 +1283,7 @@ public class Table
 
 
         @Test
-        public void testAggregates() throws SQLException
+        public void testAggregates()
         {
             TableInfo tinfo = CoreSchema.getInstance().getTableInfoContainers();
             List<Aggregate> aggregates = new LinkedList<>();
@@ -1597,7 +1597,7 @@ public class Table
         }
 
         @Override
-        public boolean next() throws BatchValidationException
+        public boolean next()
         {
             return ++currentRow < _data.length;
         }
@@ -1609,7 +1609,7 @@ public class Table
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
         }
     }
@@ -1618,7 +1618,7 @@ public class Table
     public static class DataIteratorTestCase extends Assert
     {
         @Test
-        public void test() throws Exception
+        public void test()
         {
             TableInfo testTable = TestSchema.getInstance().getTableInfoTestTable();
 

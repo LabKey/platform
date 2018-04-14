@@ -575,7 +575,7 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio) throws Exception
+    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio)
     {
         RScriptEngine rengine = (RScriptEngine) engine;
         String remotePath = rengine.getRemotePath(inputFile);
@@ -711,7 +711,7 @@ public class RReport extends ExternalScriptEngineReport
         throw new ScriptException("A script engine implementation was not found for the specified report");
     }
 
-    private void saveKnitrOutput(File knitrOutput, List<ParamReplacement> outputSubst) throws Exception
+    private void saveKnitrOutput(File knitrOutput, List<ParamReplacement> outputSubst)
     {
         KnitrOutput param = new KnitrOutput();
         param.setName("Knitr");
@@ -771,7 +771,7 @@ public class RReport extends ExternalScriptEngineReport
         return c;
     }
 
-    public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
+    public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean)
     {
         List<Report> scripts = new ArrayList<>();
 

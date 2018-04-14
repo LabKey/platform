@@ -37,17 +37,17 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
         _data = data;
     }
 
-    public String beforeImportObject(Map<String, Object> map) throws SQLException
+    public String beforeImportObject(Map<String, Object> map)
     {
         return _data.getLSID() + ".DataRow-" + _id++;
     }
 
-    public void afterBatchInsert(int currentRow) throws SQLException
+    public void afterBatchInsert(int currentRow)
     {
 
     }
 
-    public void updateStatistics(int currentRow) throws SQLException
+    public void updateStatistics(int currentRow)
     {
     }
 
@@ -58,7 +58,7 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
     }
 
     @Override
-    public void afterImportObject(Map<String, Object> map) throws SQLException
+    public void afterImportObject(Map<String, Object> map)
     {
     }
 }

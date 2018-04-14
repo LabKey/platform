@@ -96,7 +96,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     }
 
     @Override
-    protected void putValue(Map<String, Object> row, DisplayColumn dc) throws Exception
+    protected void putValue(Map<String, Object> row, DisplayColumn dc)
     {
         Object data = createColMap(dc);
 

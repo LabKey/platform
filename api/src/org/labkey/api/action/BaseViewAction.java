@@ -651,7 +651,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         _commandClass = commandClass;
     }
 
-    protected final Object createCommand() throws Exception
+    protected final Object createCommand()
     {
         return BeanUtils.instantiateClass(getCommandClass());
     }

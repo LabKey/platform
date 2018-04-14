@@ -227,14 +227,14 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** Whether the provider is capable of letting users edit existing result rows */
     boolean supportsEditableResults();
-    void setEditableResults(ExpProtocol protocol, boolean editable) throws ExperimentException;
+    void setEditableResults(ExpProtocol protocol, boolean editable);
     boolean isEditableResults(ExpProtocol protocol);
-    void setEditableRuns(ExpProtocol protocol, boolean editable) throws ExperimentException;
+    void setEditableRuns(ExpProtocol protocol, boolean editable);
     boolean isEditableRuns(ExpProtocol protocol);
 
     /** Whether the provider is capable of doing data import in the background using a pipeline job */
     boolean supportsBackgroundUpload();
-    void setBackgroundUpload(ExpProtocol protocol, boolean background) throws ExperimentException;
+    void setBackgroundUpload(ExpProtocol protocol, boolean background);
     boolean isBackgroundUpload(ExpProtocol protocol);
 
     /** What level of re run for assay data, if any, is supported */

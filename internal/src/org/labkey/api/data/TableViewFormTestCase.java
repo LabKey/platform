@@ -97,7 +97,7 @@ public class TableViewFormTestCase extends Assert
 
 
     @Test
-    public void testDbOperations() throws SQLException, ServletException
+    public void testDbOperations() throws SQLException
     {
         Container test = JunitUtil.getTestContainer();
         MutableSecurityPolicy policy = new MutableSecurityPolicy(test);

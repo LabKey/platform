@@ -1092,14 +1092,14 @@ public abstract class DatabaseMetaDataWrapper implements DatabaseMetaData
     }
 
     @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException
+    public <T> T unwrap(Class<T> iface)
     {
         //noinspection unchecked
         return isWrapperFor(iface) ? (T)_md : null;
     }
 
     @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
+    public boolean isWrapperFor(Class<?> iface)
     {
         return iface.isAssignableFrom(DatabaseMetaData.class);
     }

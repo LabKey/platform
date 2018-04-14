@@ -75,19 +75,9 @@ public abstract class SqlScriptManager
 
 
     // Returns all the scripts associated with schema that have not been run
-    public List<SqlScript> getNewScripts() throws SQLException
+    public List<SqlScript> getNewScripts()
     {
-        List<SqlScript> allScripts;
-
-        try
-        {
-            allScripts = _provider.getScripts(_schema);
-        }
-        catch(SqlScriptException e)
-        {
-            throw new RuntimeException(e);
-        }
-
+        List<SqlScript> allScripts = _provider.getScripts(_schema);
         List<SqlScript> newScripts = new ArrayList<>();
         Set<SqlScript> runScripts = getPreviouslyRunScripts();
 
@@ -99,7 +89,7 @@ public abstract class SqlScriptManager
     }
 
 
-    public List<SqlScript> getRecommendedScripts(double to) throws SQLException, SqlScriptException
+    public List<SqlScript> getRecommendedScripts(double to)
     {
         if (!_schema.getSqlDialect().canExecuteUpgradeScripts())
             return Collections.emptyList();
@@ -172,7 +162,7 @@ public abstract class SqlScriptManager
 
 
     // Return all sql scripts that have been run by this provider
-    public Set<SqlScript> getPreviouslyRunScripts() throws SQLException
+    public Set<SqlScript> getPreviouslyRunScripts()
     {
         Collection<String> runFilenames = getPreviouslyRunSqlScriptNames();
         Set<SqlScript> runScripts = new HashSet<>(runFilenames.size());
@@ -189,7 +179,7 @@ public abstract class SqlScriptManager
     }
 
 
-    public void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext, @Nullable Connection conn) throws SqlScriptException, SQLException
+    public void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext, @Nullable Connection conn) throws SqlScriptException
     {
         DbSchema schema = script.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
@@ -267,7 +257,7 @@ public abstract class SqlScriptManager
     }
 
 
-    public void insert(@Nullable User user, SqlScript script) throws SQLException
+    public void insert(@Nullable User user, SqlScript script)
     {
         SqlScriptBean ss = new SqlScriptBean(script.getProvider().getProviderName(), script.getDescription());
 
@@ -275,7 +265,7 @@ public abstract class SqlScriptManager
     }
 
 
-    public void update(@Nullable User user, SqlScript script) throws SQLException
+    public void update(@Nullable User user, SqlScript script)
     {
         Object[] pk = new Object[]{script.getProvider().getProviderName(), script.getDescription()};
 

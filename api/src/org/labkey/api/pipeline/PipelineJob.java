@@ -1076,7 +1076,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _errors += job._errors;
     }
 
-    public void store() throws IOException, NoSuchJobException
+    public void store() throws NoSuchJobException
     {
         PipelineJobService.get().getJobStore().storeJob(this);
     }
@@ -1716,7 +1716,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return super.get();
     }
 
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException
     {
         return get();
     }

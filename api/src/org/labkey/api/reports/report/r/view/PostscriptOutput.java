@@ -40,13 +40,13 @@ public class PostscriptOutput extends DownloadParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected File getSubstitution(File directory)
     {
         return getSubstitution(directory, ".ps");
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(File file)
     {
         if (getReport() instanceof AttachmentParent)
             return renderAsScriptOutput(file, new PostscriptReportView(this, getReport()),

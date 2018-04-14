@@ -881,7 +881,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         private ArrayListMap.FindMap<String> _findMap = null;
 
         @Override
-        public boolean next() throws BatchValidationException
+        public boolean next()
         {
             _row = null;
             boolean hasNext = _it.hasNext();
@@ -951,7 +951,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
             if (null != _it)
                 IOUtils.closeQuietly(_it);

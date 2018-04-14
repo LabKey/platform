@@ -177,7 +177,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public void versionUpdate(ModuleContext moduleContext) throws Exception
+    public void versionUpdate(ModuleContext moduleContext)
     {
     }
 
@@ -288,7 +288,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public InputStream getResourceStream(String filename) throws FileNotFoundException
+    public InputStream getResourceStream(String filename)
     {
         return null;
     }
@@ -372,7 +372,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException
+    public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url)
     {
     }
 

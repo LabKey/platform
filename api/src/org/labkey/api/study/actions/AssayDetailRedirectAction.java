@@ -49,7 +49,7 @@ public class AssayDetailRedirectAction extends SimpleRedirectAction<AssayDetailR
         }
     }
 
-    public ActionURL getRedirectURL(AssayDetailsForm form) throws Exception
+    public ActionURL getRedirectURL(AssayDetailsForm form)
     {
         if (form.getRunId() == null)
         {

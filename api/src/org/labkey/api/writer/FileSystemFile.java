@@ -195,7 +195,7 @@ public class FileSystemFile extends AbstractVirtualFile
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
         // no op
     }

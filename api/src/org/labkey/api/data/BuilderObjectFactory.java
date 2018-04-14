@@ -387,7 +387,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
     public static class TestCase extends Assert
     {
         @Test
-        public void fromMap() throws Exception
+        public void fromMap()
         {
             ObjectFactory<Foo> f = new BuilderObjectFactory<>(Foo.class, FooBuilder.class);
             Map<String, Object> m = PageFlowUtil.mapInsensitive("s", "ONE", "i", 1, "f", 1.0);
@@ -397,7 +397,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
             assertEquals(String.valueOf(1.0), String.valueOf(foo.getF()));
         }
         @Test
-        public void toMap() throws Exception
+        public void toMap()
         {
             Foo foo = new Foo("ONE", 1, 1.0);
             ObjectFactory<Foo> f = new BuilderObjectFactory<>(Foo.class, FooBuilder.class);

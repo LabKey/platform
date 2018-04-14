@@ -50,8 +50,8 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         return "/org/labkey/visualization/views/chartWizard.jsp";
     }
 
-    public Map<String, Object> getReportProps() throws Exception
-        {
+    public Map<String, Object> getReportProps()
+    {
             Map<String, Object> props = new HashMap<>();
             List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());
             if (propsList.size() > 0)

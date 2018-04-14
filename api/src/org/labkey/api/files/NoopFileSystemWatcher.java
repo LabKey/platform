@@ -28,7 +28,7 @@ public class NoopFileSystemWatcher implements FileSystemWatcher
 {
     @Override
     @SuppressWarnings("unchecked")
-    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException
+    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events)
     {
     }
 

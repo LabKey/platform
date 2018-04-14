@@ -66,7 +66,7 @@ public class KnitrOutput extends HtmlOutput
     }
 
     @Override
-    public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException
+    public @Nullable Thumbnail renderThumbnail(ViewContext context)
     {
         for (File file : getFiles())
         {

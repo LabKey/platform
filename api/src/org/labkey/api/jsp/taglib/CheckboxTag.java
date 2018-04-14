@@ -31,7 +31,7 @@ public class CheckboxTag extends SimpleTagBase
     protected Boolean _checked;
     protected Set _checkedSet;
 
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         JspWriter out = getOut();
         out.write("<input type=\"checkbox\" id=\"");

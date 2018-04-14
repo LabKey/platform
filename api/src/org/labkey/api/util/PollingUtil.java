@@ -210,11 +210,11 @@ public class PollingUtil
      */
     public static class PollingFilter implements javax.servlet.Filter
     {
-        public void init(FilterConfig filterConfig) throws ServletException
+        public void init(FilterConfig filterConfig)
         {
         }
 
-        public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
+        public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException
         {
             String servletPath = ((HttpServletRequest)request).getServletPath();    // decoded already, leading '/'
             if (servletPath.endsWith(".poll"))

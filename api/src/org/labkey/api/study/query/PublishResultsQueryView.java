@@ -93,16 +93,17 @@ import java.util.Set;
  */
 public class PublishResultsQueryView extends ResultsQueryView
 {
-    private SimpleFilter _filter;
-    private List<ActionButton> _buttons;
+    private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final DefaultValueSource _defaultValueSource;
     private final boolean _mismatched;
     private final TimepointType _timepointType;
-    private Map<Object, String> _reshowVisits;
-    private Map<Object, String> _reshowDates;
-    private Map<Object, String> _reshowPtids;
-    private Map<Object, String> _reshowTargetStudies;
+    private final Map<Object, String> _reshowVisits;
+    private final Map<Object, String> _reshowDates;
+    private final Map<Object, String> _reshowPtids;
+    private final Map<Object, String> _reshowTargetStudies;
+
+    private List<ActionButton> _buttons = null;
 
     public enum DefaultValueSource
     {
@@ -366,7 +367,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             _reshowTargetStudies = reshowTargetStudies;
         }
 
-        public ParticipantVisitResolver getResolver(RenderContext ctx) throws IOException
+        public ParticipantVisitResolver getResolver(RenderContext ctx)
         {
             Integer runId = (Integer)_runIdCol.getValue(ctx);
             if (runId != null && !_resolvers.containsKey(runId))
@@ -380,7 +381,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return _resolvers.get(runId);
         }
 
-        private ParticipantVisit resolve(RenderContext ctx) throws IOException
+        private ParticipantVisit resolve(RenderContext ctx)
         {
             ParticipantVisitResolver resolver = getResolver(ctx);
             if (resolver == null)
@@ -421,7 +422,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             }
         }
 
-        public Object getUserVisitId(RenderContext ctx) throws IOException
+        public Object getUserVisitId(RenderContext ctx)
         {
             if (_reshowVisits != null)
             {
@@ -437,7 +438,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return result;
         }
 
-        public String getUserParticipantId(RenderContext ctx) throws IOException
+        public String getUserParticipantId(RenderContext ctx)
         {
             if (_reshowPtids != null)
             {
@@ -454,7 +455,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return result;
         }
 
-        public Object getUserDate(RenderContext ctx) throws IOException
+        public Object getUserDate(RenderContext ctx)
         {
             if (_reshowDates != null)
             {
@@ -470,7 +471,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return DateUtil.formatDateISO8601(result);
         }
 
-        public Container getUserTargetStudy(RenderContext ctx) throws IOException
+        public Container getUserTargetStudy(RenderContext ctx)
         {
             Object result = null;
             if (_reshowTargetStudies != null)
@@ -718,7 +719,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 _resolverHelper.addQueryColumns(set);
         }
 
-        protected String getCompletionBase(RenderContext ctx) throws IOException
+        protected String getCompletionBase(RenderContext ctx)
         {
             return _completionBase;
         }
@@ -789,7 +790,6 @@ public class PublishResultsQueryView extends ResultsQueryView
     }
 
     private Container rowTargetStudy(ResolverHelper helper, RenderContext ctx)
-            throws IOException
     {
         return _targetStudyContainer != null ? _targetStudyContainer : helper.getUserTargetStudy(ctx);
     }
@@ -803,13 +803,13 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
 
         @Override
-        protected String getCompletionBase(RenderContext ctx) throws IOException
+        protected String getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
             return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
         }
 
-        protected Object calculateValue(RenderContext ctx) throws IOException
+        protected Object calculateValue(RenderContext ctx)
         {
             return _resolverHelper.getUserParticipantId(ctx);
         }
@@ -824,13 +824,13 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
 
         @Override
-        protected String getCompletionBase(RenderContext ctx) throws IOException
+        protected String getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
             return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.VisitId);
         }
 
-        protected Object calculateValue(RenderContext ctx) throws IOException
+        protected Object calculateValue(RenderContext ctx)
         {
             return _resolverHelper.getUserVisitId(ctx);
         }
@@ -844,7 +844,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                     true, completionBase, resolverHelper, dateCol);
         }
 
-        protected Object calculateValue(RenderContext ctx) throws IOException
+        protected Object calculateValue(RenderContext ctx)
         {
             return _resolverHelper.getUserDate(ctx);
         }
@@ -910,15 +910,8 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         protected Object calculateValue(RenderContext ctx)
         {
-            try
-            {
-                Container c = _resolverHelper.getUserTargetStudy(ctx);
-                return c == null ? null : c.getId();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+            Container c = _resolverHelper.getUserTargetStudy(ctx);
+            return c == null ? null : c.getId();
         }
     }
 

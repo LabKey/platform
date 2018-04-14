@@ -45,7 +45,7 @@ public class ImageServlet extends HttpServlet
         return cal;
     }
 
-    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    protected void service(HttpServletRequest request, HttpServletResponse response)
     {
         try
         {
@@ -94,7 +94,7 @@ public class ImageServlet extends HttpServlet
     }
 
 
-    protected void sendAuthLogo(String name, HttpServletResponse response) throws SQLException, IOException, ServletException
+    protected void sendAuthLogo(String name, HttpServletResponse response) throws IOException, ServletException
     {
         CacheableWriter writer = AttachmentCache.getAuthLogo(name);
 

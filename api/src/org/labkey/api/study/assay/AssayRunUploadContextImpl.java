@@ -147,7 +147,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _protocol;
     }
 
-    public Map<DomainProperty, String> getRunProperties() throws ExperimentException
+    public Map<DomainProperty, String> getRunProperties()
     {
         if (_runProperties == null)
         {
@@ -308,7 +308,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public void uploadComplete(ExpRun run) throws ExperimentException
+    public void uploadComplete(ExpRun run)
     {
         // no-op
     }

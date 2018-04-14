@@ -133,7 +133,7 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
         @Test
         // Our original CaseInsensitiveHashMap had a get() method that mutated state, which lead to thread safety issues in
         // multi-threaded usages. This test was developed to demonstrate and fix that problem.
-        public void multiThreadStressTest() throws InterruptedException, ExecutionException
+        public void multiThreadStressTest() throws InterruptedException
         {
             final int races = 1000;
             final int threads = 5;

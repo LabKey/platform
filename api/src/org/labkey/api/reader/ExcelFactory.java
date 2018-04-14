@@ -129,7 +129,7 @@ public class ExcelFactory
     /**
      * Contructs an in-memory Excel file from a JSON representation, as described in the LABKEY.Utils.convertToExcel JavaScript API
      */
-    public static Workbook createFromArray(JSONArray sheetsArray, ExcelWriter.ExcelDocumentType docType) throws IOException
+    public static Workbook createFromArray(JSONArray sheetsArray, ExcelWriter.ExcelDocumentType docType)
     {
         Workbook workbook = docType.createWorkbook();
 
@@ -389,12 +389,12 @@ public class ExcelFactory
     }
 
     /** Supports .xls (BIFF8 only) and .xlsx */
-    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended) throws IOException
+    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended)
     {
         return convertExcelToJSON(workbook, extended, -1);
     }
 
-    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows) throws IOException
+    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows)
     {
         JSONArray result = new JSONArray();
 
@@ -567,7 +567,7 @@ public class ExcelFactory
         private static final double DELTA = 1E-8;
 
         @Test
-        public void testCreateFromArray() throws IOException, InvalidFormatException
+        public void testCreateFromArray() throws IOException
         {
             /* Initialize stream */
             ByteArrayOutputStream os = new ByteArrayOutputStream();

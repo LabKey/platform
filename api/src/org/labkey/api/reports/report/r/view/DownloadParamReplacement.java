@@ -57,7 +57,7 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
         return file;
     }
 
-    protected ScriptOutput renderAsScriptOutput(File file, DownloadOutputView view, ScriptOutput.ScriptOutputType scriptOutputType) throws Exception
+    protected ScriptOutput renderAsScriptOutput(File file, DownloadOutputView view, ScriptOutput.ScriptOutputType scriptOutputType)
     {
         String downloadUrl  = view.renderInternalAsString(file);
 

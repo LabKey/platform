@@ -55,7 +55,7 @@ public class LogOutputStream extends ByteArrayOutputStream
     }
 
     @Override
-    public void write(@NotNull byte[] bytes) throws IOException
+    public void write(@NotNull byte[] bytes)
     {
         for (byte b : bytes)
             write(b);

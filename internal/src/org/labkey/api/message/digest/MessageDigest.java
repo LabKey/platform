@@ -148,7 +148,7 @@ public abstract class MessageDigest
         {
         }
 
-        public void execute(JobExecutionContext context) throws JobExecutionException
+        public void execute(JobExecutionContext context)
         {
             try
             {

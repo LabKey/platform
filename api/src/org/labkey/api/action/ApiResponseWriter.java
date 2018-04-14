@@ -130,7 +130,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         _writer = _response.getWriter();
     }
 
-    public ApiResponseWriter(Writer out) throws IOException
+    public ApiResponseWriter(Writer out)
     {
         _response = null;
         _writer = out;
@@ -282,7 +282,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         }
     }
 
-    public JSONObject getJSON(BatchValidationException e) throws IOException
+    public JSONObject getJSON(BatchValidationException e)
     {
         JSONObject obj = new JSONObject();
         JSONArray arr = new JSONArray();

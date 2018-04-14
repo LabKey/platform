@@ -290,7 +290,7 @@ public class DataIteratorUtil
     }
 
 
-    public static int copy(DataIteratorContext context, DataIterator from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    public static int copy(DataIteratorContext context, DataIterator from, TableInfo to, Container c, User user)
     {
         DataIteratorBuilder builder = new DataIteratorBuilder.Wrapper(from);
         return copy(context, builder, to, c, user);
@@ -298,7 +298,7 @@ public class DataIteratorUtil
 
     // NOTE: first consider if using QueryUpdateService is better
     // this is just a point-to-point copy _without_ triggers
-    public static int merge(DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    public static int merge(DataIteratorBuilder from, TableInfo to, Container c, User user) throws BatchValidationException
     {
         BatchValidationException errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
@@ -313,7 +313,7 @@ public class DataIteratorUtil
 
     // NOTE: first consider if using QueryUpdateService is better
     // this is just a point-to-point copy _without_ triggers
-    public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
+    public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user)
     {
         StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user, context);
         DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);

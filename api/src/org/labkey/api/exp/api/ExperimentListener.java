@@ -33,7 +33,7 @@ public interface ExperimentListener
     default void beforeExperimentDeleted(Container c, User user, ExpExperiment experiment)
     {}
 
-    default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols) throws ExperimentException
+    default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols)
     { }
 
     // called before the experiment run is created (and saved)
@@ -52,7 +52,7 @@ public interface ExperimentListener
     default void beforeRunDelete(ExpProtocol protocol, ExpRun run){}
 
     /** Called before deleting the datas. */
-    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data) throws ExperimentException
+    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data)
     { }
 
     /** Called after deleting the datas. */

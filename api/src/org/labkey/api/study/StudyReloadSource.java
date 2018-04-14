@@ -48,5 +48,5 @@ public interface StudyReloadSource
      * @param job the pipeline job that this reload task is running in, useful for adding logging information into.
      * @throws PipelineJobException
      */
-    void generateReloadSource(@Nullable PipelineJob job, Study study) throws PipelineJobException;
+    void generateReloadSource(@Nullable PipelineJob job, Study study);
 }

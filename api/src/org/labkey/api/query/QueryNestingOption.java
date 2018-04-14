@@ -133,7 +133,7 @@ public class QueryNestingOption
         DataRegion nestedRgn = new DataRegion()
         {
             @Override
-            protected void renderHeaderScript(RenderContext ctx, Writer out,  Map<String, String> messages, boolean showRecordSelectors) throws IOException
+            protected void renderHeaderScript(RenderContext ctx, Writer out,  Map<String, String> messages, boolean showRecordSelectors)
             {
                 // Issue 11405: customized grid does not work MS2 query based views.
                 // Nested DataRegions don't need to re-render the "new LABKEY.DataRegion(...)" script.

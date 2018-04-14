@@ -33,7 +33,8 @@ public class ScriptableMap extends NativeJavaObject {
 
     // Set up a custom constructor, for this class is somewhere between a host class and
     // a native wrapper, for which no standard constructor class exists
-    public static void init(Scriptable scope) throws NoSuchMethodException {
+    public static void init(Scriptable scope)
+    {
         BaseFunction ctor = new BaseFunction(scope, ScriptableObject.getFunctionPrototype(scope)) {
             @Override
             public Scriptable construct(Context cx, Scriptable scope, Object[] args) {

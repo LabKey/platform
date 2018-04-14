@@ -220,13 +220,13 @@ public class ZipFile extends AbstractVirtualFile
     }
 
     @Override
-    public XmlObject getXmlBean(String filename) throws IOException
+    public XmlObject getXmlBean(String filename)
     {
         throw new UnsupportedOperationException("The ZipFile class only supports write operations");
     }
 
     @Override
-    public InputStream getInputStream(String filename) throws IOException
+    public InputStream getInputStream(String filename)
     {
         throw new UnsupportedOperationException("The ZipFile class only supports write operations");
     }

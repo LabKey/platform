@@ -196,7 +196,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         private Container testContainer = null;
         
         @Test
-        public void testContainers() throws SQLException
+        public void testContainers()
         {
             TestContext context = TestContext.get();
             User guest = UserManager.getGuestUser();
@@ -293,7 +293,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
 
         @After
-        public void tearDown() throws Exception
+        public void tearDown()
         {
             if (null != testContainer)
             {

@@ -189,7 +189,7 @@ abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTa
         }
 
         @Override
-        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+        protected int truncateRows(User user, Container container)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_filterColumn), _filterValue, CompareType.EQUAL);
             return Table.delete(getDbTable(), filter);
@@ -280,7 +280,7 @@ abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTa
             it.addColumn(incrementCol, new Callable()
             {
                 @Override
-                public Object call() throws Exception
+                public Object call()
                 {
                     return _filterValue;
                 }
@@ -292,7 +292,7 @@ abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTa
             it.addColumn(valueCol, new Callable()
             {
                 @Override
-                public Object call() throws Exception
+                public Object call()
                 {
                     String value = (String)it.getInputColumnValue(inputColMap.get(_valueColumn));
                     if (value == null)

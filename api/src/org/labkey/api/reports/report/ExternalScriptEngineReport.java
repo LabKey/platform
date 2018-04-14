@@ -304,7 +304,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     /**
      * Searches for additional file artifacts
      */
-    protected void saveAdditionalFileOutput(List<ParamReplacement> outputSubst, @NotNull ContainerUser context) throws IOException
+    protected void saveAdditionalFileOutput(List<ParamReplacement> outputSubst, @NotNull ContainerUser context)
     {
         File reportDir = getReportDir(context.getContainer().getId());
         if (reportDir != null && reportDir.exists())

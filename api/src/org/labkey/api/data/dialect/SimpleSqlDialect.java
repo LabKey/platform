@@ -68,7 +68,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void prepareConnection(Connection conn) throws SQLException
+    public void prepareConnection(Connection conn)
     {
     }
 
@@ -161,7 +161,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
+    public @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
@@ -500,7 +500,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName)
     {
         throw new UnsupportedOperationException();
     }
@@ -512,13 +512,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters)
     {
         throw new UnsupportedOperationException();
     }

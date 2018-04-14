@@ -225,7 +225,7 @@ public class GroupedResultSet extends ResultSetImpl
             _rowOffset = super.getRow();  // Reset the row offset so getRow() returns index within the sub-resultset
         }
 
-        public void close() throws SQLException
+        public void close()
         {
             // Rely on the outer result set for closing
             _wasClosed = true;

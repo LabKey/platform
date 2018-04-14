@@ -200,7 +200,7 @@ public class AssayQCFlagColumn extends ExprColumn
     public static class TestCase extends Assert
     {
         @Test
-        public void testCollapseQCFlags() throws Exception
+        public void testCollapseQCFlags()
         {
             String expected;
 

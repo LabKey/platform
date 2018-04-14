@@ -35,7 +35,7 @@ public interface SurveyListener
      * @param survey
      * @throws Exception
      */
-    void surveyBeforeDelete(Container c, User user, Survey survey) throws Exception;
+    void surveyBeforeDelete(Container c, User user, Survey survey);
 
     /**
      * Invoked when a survey is deleted
@@ -44,7 +44,7 @@ public interface SurveyListener
      * @param survey
      * @throws Exception
      */
-    void surveyDeleted(Container c, User user, Survey survey) throws Exception;
+    void surveyDeleted(Container c, User user, Survey survey);
 
     /**
      * Invoked when a survey is created
@@ -52,7 +52,7 @@ public interface SurveyListener
      * @param rowData the data representing the new survey
      * @throws Exception
      */
-    void surveyCreated(Container c, User user, Survey survey, Map<String, Object> rowData) throws Exception;
+    void surveyCreated(Container c, User user, Survey survey, Map<String, Object> rowData);
 
     /**
      * Invoked when a survey is updated
@@ -61,7 +61,7 @@ public interface SurveyListener
      * @param rowData the row data after the update
      * @throws Exception
      */
-    void surveyUpdated(Container c, User user, Survey survey, @Nullable Map<String, Object> oldRow, Map<String, Object> rowData) throws Exception;
+    void surveyUpdated(Container c, User user, Survey survey, @Nullable Map<String, Object> oldRow, Map<String, Object> rowData);
 
     /**
      * Invoked before the responses associated with the specified survey are changed.
@@ -70,7 +70,7 @@ public interface SurveyListener
      * @param survey
      * @throws Exception
      */
-    void surveyResponsesBeforeUpdate(Container c, User user, Survey survey) throws Exception;
+    void surveyResponsesBeforeUpdate(Container c, User user, Survey survey);
 
     /**
      * Invoked when the responses associated with the specified survey are changed.
@@ -80,7 +80,7 @@ public interface SurveyListener
      * @param rowData the responses (survey answers) that have been modified.
      * @throws Exception
      */
-    void surveyResponsesUpdated(Container c, User user, Survey survey, Map<String, Object> rowData) throws Exception;
+    void surveyResponsesUpdated(Container c, User user, Survey survey, Map<String, Object> rowData);
 
     /**
      * Allow survey subclasses to define locked states

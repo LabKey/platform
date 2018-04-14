@@ -845,7 +845,7 @@ public class DbScope
 
     @NotNull
     // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
-    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException, IOException
+    protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException
     {
         LOG.debug("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
 
@@ -859,7 +859,7 @@ public class DbScope
         return schema;
     }
 
-    private void applyMetaDataXML(DbSchema schema, String schemaName) throws IOException
+    private void applyMetaDataXML(DbSchema schema, String schemaName)
     {
         // First try the canonical schema name (which could differ in casing from the requested name)
         Resource resource = schema.getSchemaResource();

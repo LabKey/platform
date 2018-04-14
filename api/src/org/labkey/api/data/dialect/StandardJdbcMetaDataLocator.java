@@ -55,7 +55,7 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
         return _scope;
     }
 
-    public Connection getConnection() throws SQLException
+    public Connection getConnection()
     {
         return _conn;
     }

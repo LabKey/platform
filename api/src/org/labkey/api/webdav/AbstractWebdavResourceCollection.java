@@ -70,12 +70,12 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
         return false;
     }
 
-    public InputStream getInputStream(User user) throws IOException
+    public InputStream getInputStream(User user)
     {
         throw new IllegalStateException("Can't read from a collection");
     }
 
-    public long copyFrom(User user, FileStream in) throws IOException
+    public long copyFrom(User user, FileStream in)
     {
         throw new IllegalStateException("Can't write to a collection");
     }

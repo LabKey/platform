@@ -97,7 +97,7 @@ public interface FileStream
         }
 
         @Override
-        protected void finalize() throws Throwable
+        protected void finalize()
         {
             assert in == null;
         }
@@ -154,7 +154,7 @@ public interface FileStream
         }
 
         @Override
-        protected void finalize() throws Throwable
+        protected void finalize()
         {
             assert in == null;
         }

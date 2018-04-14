@@ -43,7 +43,7 @@ public class TransactionFilter implements Filter
         }
     }
 
-    public void init(FilterConfig arg0) throws ServletException
+    public void init(FilterConfig arg0)
     {
     }
 } 

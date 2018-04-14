@@ -77,17 +77,17 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         return true;
     }
 
-    public InputStream getInputStream(User user) throws IOException
+    public InputStream getInputStream(User user)
     {
         return new ByteArrayInputStream(_body);
     }
 
-    public long copyFrom(User user, FileStream in) throws IOException
+    public long copyFrom(User user, FileStream in)
     {
         throw new UnsupportedOperationException();
     }
 
-    public long getContentLength() throws IOException
+    public long getContentLength()
     {
         return _body.length;
     }

@@ -36,7 +36,7 @@ public class CrosstabView extends WebPartView
     Crosstab _crosstab;
 
     @Override
-    protected void renderView(Object model, PrintWriter pw) throws Exception
+    protected void renderView(Object model, PrintWriter pw)
     {
         StringBuilder errStr = new StringBuilder();
         if (null == _crosstab.getStatField())

@@ -50,7 +50,7 @@ public class JdbcMetaDataSelector
         return handleResultSet(new ResultSetHandler<ResultSetImpl>()
         {
             @Override
-            public ResultSetImpl handle(ResultSet rs) throws SQLException
+            public ResultSetImpl handle(ResultSet rs)
             {
                 return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
             }

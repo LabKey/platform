@@ -50,7 +50,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         setDescriptorType(TYPE);
     }
 
-    public Map<String, Object> getReportProps() throws Exception
+    public Map<String, Object> getReportProps()
     {
         Map<String, Object> props = new HashMap<>();
         List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());

@@ -131,7 +131,7 @@ public class ViewWriter extends PrintWriter
     String strAMP = "&amp;";
 
     // output plain text into html stream
-    public void printText(String s) throws IOException
+    public void printText(String s)
     {
         if (null == s) return;
 

@@ -88,7 +88,7 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
     }
 
     @Override
-    public boolean next() throws BatchValidationException
+    public boolean next()
     {
         try
         {
@@ -137,7 +137,7 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
         ResultSetUtil.close(_rs);
         _rs = null;

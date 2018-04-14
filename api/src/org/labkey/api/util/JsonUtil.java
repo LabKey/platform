@@ -69,7 +69,7 @@ public class JsonUtil
         p.nextToken();
     }
 
-    public static boolean isArrayEnd(JsonParser p) throws IOException
+    public static boolean isArrayEnd(JsonParser p)
     {
         return p.getCurrentToken() == JsonToken.END_ARRAY;
     }

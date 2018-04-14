@@ -89,7 +89,7 @@ public abstract class AbstractFileXarSource extends XarSource
         return false;
     }
 
-    public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
+    public String canonicalizeDataFileURL(String dataFileURL)
     {
         Path xarDirectory = getRootPath();
         URI uri = FileUtil.createUri(dataFileURL);

@@ -26,7 +26,7 @@ import java.io.IOException;
 */
 public abstract class DataInputColumn extends PublishResultsQueryView.InputColumn
 {
-    protected ColumnInfo _requiredColumn;
+    protected final ColumnInfo _requiredColumn;
 
     public DataInputColumn(String caption, String formElementName, boolean editable, String completionBase, PublishResultsQueryView.ResolverHelper resolverHelper,
                            ColumnInfo requiredColumn)
@@ -35,19 +35,12 @@ public abstract class DataInputColumn extends PublishResultsQueryView.InputColum
         _requiredColumn = requiredColumn;
     }
 
-    protected abstract Object calculateValue(RenderContext ctx) throws IOException;
+    protected abstract Object calculateValue(RenderContext ctx);
 
     public Object getValue(RenderContext ctx)
     {
-        try
-        {
-            return calculateValue(ctx);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-//            if (_requiredColumn == null)
+        return calculateValue(ctx);
+        //            if (_requiredColumn == null)
 //                return null;
 //            return ctx.getRow().get(_requiredColumn.getAlias());
     }

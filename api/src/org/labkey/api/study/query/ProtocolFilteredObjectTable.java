@@ -28,7 +28,8 @@ import org.labkey.api.study.assay.AssaySchema;
 
 public class ProtocolFilteredObjectTable extends FilteredTable<AssaySchema>
 {
-    private String _protocolLsid;
+    private final String _protocolLsid;
+
     public ProtocolFilteredObjectTable(AssaySchema schema, String protocolLsid)
     {
         super(OntologyManager.getTinfoObject(), schema);

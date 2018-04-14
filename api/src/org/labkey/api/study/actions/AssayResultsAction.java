@@ -38,7 +38,7 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
 {
     private ExpProtocol _protocol;
 
-    public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+    public ModelAndView getView(ProtocolIdForm form, BindException errors)
     {
         ViewContext context = getViewContext();
         _protocol = form.getProtocol();

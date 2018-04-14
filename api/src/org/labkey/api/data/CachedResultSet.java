@@ -157,38 +157,38 @@ public class CachedResultSet implements ResultSet, TableResultSet
     // ResultSet
     //
 
-    public void setFetchDirection(int direction) throws SQLException
+    public void setFetchDirection(int direction)
     {
         //UNDONE: does this affect next()/prev() or not???
         _direction = direction == FETCH_REVERSE ? -1 : 1;
     }
 
-    public int getFetchDirection() throws SQLException
+    public int getFetchDirection()
     {
         return _direction == 1 ? FETCH_FORWARD : FETCH_REVERSE;
     }
 
-    public void setFetchSize(int rows) throws SQLException
+    public void setFetchSize(int rows)
     {
         _fetchSize = rows;
     }
 
-    public int getFetchSize() throws SQLException
+    public int getFetchSize()
     {
         return _fetchSize;
     }
 
-    public int getType() throws SQLException
+    public int getType()
     {
         return TYPE_SCROLL_INSENSITIVE;
     }
 
-    public int getConcurrency() throws SQLException
+    public int getConcurrency()
     {
         return CONCUR_READ_ONLY;
     }
 
-    public boolean next() throws SQLException
+    public boolean next()
     {
         return relative(_direction);
     }
@@ -198,7 +198,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         _wasClosed = true;
     }
 
-    public boolean wasNull() throws SQLException
+    public boolean wasNull()
     {
         return _lastObject == null;
     }
@@ -218,7 +218,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
     }
 
     @SuppressWarnings({"UNUSED_THROWS"})
-    private String _string(Object o) throws SQLException
+    private String _string(Object o)
     {
         if (null == o)
             return null;
@@ -535,7 +535,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return (SQLWarning) throwNYI();
     }
 
-    public void clearWarnings() throws SQLException
+    public void clearWarnings()
     {
     }
 
@@ -544,7 +544,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return (String) throwNYI();
     }
 
-    public ResultSetMetaData getMetaData() throws SQLException
+    public ResultSetMetaData getMetaData()
     {
         return _md;
     }
@@ -592,42 +592,42 @@ public class CachedResultSet implements ResultSet, TableResultSet
     }
 
 
-    public Reader getCharacterStream(int columnIndex) throws SQLException
+    public Reader getCharacterStream(int columnIndex)
     {
         return null;
     }
 
-    public Reader getCharacterStream(String columnName) throws SQLException
+    public Reader getCharacterStream(String columnName)
     {
         return null;
     }
 
-    public BigDecimal getBigDecimal(int columnIndex) throws SQLException
+    public BigDecimal getBigDecimal(int columnIndex)
     {
         return null;
     }
 
-    public BigDecimal getBigDecimal(String columnName) throws SQLException
+    public BigDecimal getBigDecimal(String columnName)
     {
         return null;
     }
 
-    public boolean isBeforeFirst() throws SQLException
+    public boolean isBeforeFirst()
     {
         return _row == -1;
     }
 
-    public boolean isAfterLast() throws SQLException
+    public boolean isAfterLast()
     {
         return _row == _rowMaps.size();
     }
 
-    public boolean isFirst() throws SQLException
+    public boolean isFirst()
     {
         return _rowMaps.size() > 0 && _row == 0;
     }
 
-    public boolean isLast() throws SQLException
+    public boolean isLast()
     {
         return _rowMaps.size() > 0 && _row == _rowMaps.size() - 1;
     }
@@ -664,23 +664,23 @@ public class CachedResultSet implements ResultSet, TableResultSet
         super.finalize();
     }
 
-    public boolean first() throws SQLException
+    public boolean first()
     {
         return absolute(1);
     }
 
-    public boolean last() throws SQLException
+    public boolean last()
     {
         return absolute(-1);
     }
 
-    public int getRow() throws SQLException
+    public int getRow()
     {
         // adjust to 1-based
         return _row >= 0 && _row < _rowMaps.size() ? _row + 1 : 0;
     }
 
-    public boolean absolute(int row) throws SQLException
+    public boolean absolute(int row)
     {
         if (row >= 0)
             beforeFirst();
@@ -689,28 +689,28 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return relative(row);
     }
 
-    public boolean relative(int rows) throws SQLException
+    public boolean relative(int rows)
     {
         _row = max(-1, min(_rowMaps.size(), _row + rows));
         return getRow() != 0;
     }
 
-    public boolean previous() throws SQLException
+    public boolean previous()
     {
         return relative(-1 * _direction);
     }
 
-    public boolean rowUpdated() throws SQLException
+    public boolean rowUpdated()
     {
         return false;
     }
 
-    public boolean rowInserted() throws SQLException
+    public boolean rowInserted()
     {
         return false;
     }
 
-    public boolean rowDeleted() throws SQLException
+    public boolean rowDeleted()
     {
         return false;
     }
@@ -940,7 +940,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         throwNYI();
     }
 
-    public Statement getStatement() throws SQLException
+    public Statement getStatement()
     {
         return null;   // C
     }
@@ -1157,264 +1157,264 @@ public class CachedResultSet implements ResultSet, TableResultSet
     // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should delegate to the wrapped resultset.
 
 
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
+    public boolean isWrapperFor(Class<?> iface)
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> T unwrap(Class<T> iface) throws SQLException
+    public <T> T unwrap(Class<T> iface)
     {
         throw new UnsupportedOperationException();
     }
 
-    public int getHoldability() throws SQLException
+    public int getHoldability()
     {
         throw new UnsupportedOperationException();
     }
 
-    public Reader getNCharacterStream(int columnIndex) throws SQLException
+    public Reader getNCharacterStream(int columnIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public Reader getNCharacterStream(String columnLabel) throws SQLException
+    public Reader getNCharacterStream(String columnLabel)
     {
         throw new UnsupportedOperationException();
     }
 
-    public NClob getNClob(int columnIndex) throws SQLException
+    public NClob getNClob(int columnIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public NClob getNClob(String columnLabel) throws SQLException
+    public NClob getNClob(String columnLabel)
     {
         throw new UnsupportedOperationException();
     }
 
-    public String getNString(int columnIndex) throws SQLException
+    public String getNString(int columnIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public String getNString(String columnLabel) throws SQLException
+    public String getNString(String columnLabel)
     {
         throw new UnsupportedOperationException();
     }
 
-    public RowId getRowId(int columnIndex) throws SQLException
+    public RowId getRowId(int columnIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public RowId getRowId(String columnLabel) throws SQLException
+    public RowId getRowId(String columnLabel)
     {
         throw new UnsupportedOperationException();
     }
 
-    public SQLXML getSQLXML(int columnIndex) throws SQLException
+    public SQLXML getSQLXML(int columnIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public SQLXML getSQLXML(String columnLabel) throws SQLException
+    public SQLXML getSQLXML(String columnLabel)
     {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isClosed() throws SQLException
+    public boolean isClosed()
     {
         return _wasClosed;
     }
 
-    public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException
+    public void updateAsciiStream(int columnIndex, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException
+    public void updateAsciiStream(int columnIndex, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException
+    public void updateAsciiStream(String columnLabel, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateAsciiStream(String columnLabel, InputStream x, long length) throws SQLException
+    public void updateAsciiStream(String columnLabel, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException
+    public void updateBinaryStream(int columnIndex, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException
+    public void updateBinaryStream(int columnIndex, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException
+    public void updateBinaryStream(String columnLabel, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBinaryStream(String columnLabel, InputStream x, long length) throws SQLException
+    public void updateBinaryStream(String columnLabel, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException
+    public void updateBlob(int columnIndex, InputStream inputStream)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException
+    public void updateBlob(int columnIndex, InputStream inputStream, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException
+    public void updateBlob(String columnLabel, InputStream inputStream)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException
+    public void updateBlob(String columnLabel, InputStream inputStream, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateCharacterStream(int columnIndex, Reader x) throws SQLException
+    public void updateCharacterStream(int columnIndex, Reader x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException
+    public void updateCharacterStream(int columnIndex, Reader x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException
+    public void updateCharacterStream(String columnLabel, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateCharacterStream(String columnLabel, Reader reader, long length) throws SQLException
+    public void updateCharacterStream(String columnLabel, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateClob(int columnIndex, Reader reader) throws SQLException
+    public void updateClob(int columnIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateClob(int columnIndex, Reader reader, long length) throws SQLException
+    public void updateClob(int columnIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateClob(String columnLabel, Reader reader) throws SQLException
+    public void updateClob(String columnLabel, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateClob(String columnLabel, Reader reader, long length) throws SQLException
+    public void updateClob(String columnLabel, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException
+    public void updateNCharacterStream(int columnIndex, Reader x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException
+    public void updateNCharacterStream(int columnIndex, Reader x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException
+    public void updateNCharacterStream(String columnLabel, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNCharacterStream(String columnLabel, Reader reader, long length) throws SQLException
+    public void updateNCharacterStream(String columnLabel, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNClob(int columnIndex, NClob nClob) throws SQLException
+    public void updateNClob(int columnIndex, NClob nClob)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNClob(int columnIndex, Reader reader) throws SQLException
+    public void updateNClob(int columnIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException
+    public void updateNClob(int columnIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNClob(String columnLabel, NClob nClob) throws SQLException
+    public void updateNClob(String columnLabel, NClob nClob)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNClob(String columnLabel, Reader reader) throws SQLException
+    public void updateNClob(String columnLabel, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException
+    public void updateNClob(String columnLabel, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNString(int columnIndex, String nString) throws SQLException
+    public void updateNString(int columnIndex, String nString)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateNString(String columnLabel, String nString) throws SQLException
+    public void updateNString(String columnLabel, String nString)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateRowId(int columnIndex, RowId x) throws SQLException
+    public void updateRowId(int columnIndex, RowId x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateRowId(String columnLabel, RowId x) throws SQLException
+    public void updateRowId(String columnLabel, RowId x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException
+    public void updateSQLXML(int columnIndex, SQLXML xmlObject)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException
+    public void updateSQLXML(String columnLabel, SQLXML xmlObject)
     {
         throw new UnsupportedOperationException();
     }
 
     // JDBC 4.1 methods below must be here so we compile on JDK 7; implement once we require JRE 7.
 
-    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException
+    public <T> T getObject(int columnIndex, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException
+    public <T> T getObject(String columnLabel, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }
@@ -1441,7 +1441,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         }
 
         @Override
-        public boolean next() throws BatchValidationException
+        public boolean next()
         {
             return false;
         }
@@ -1453,7 +1453,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
         }
 

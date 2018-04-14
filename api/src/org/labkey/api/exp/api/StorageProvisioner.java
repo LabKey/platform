@@ -757,7 +757,7 @@ public class StorageProvisioner
         }
 
         @Override
-        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
         {
             return _inner.updateStatement(conn, user, columns);
         }
@@ -1730,7 +1730,7 @@ renaming a property AND toggling mvindicator on in the same change.
 
 
         @Test
-        public void testProvisioningReport() throws Exception
+        public void testProvisioningReport()
         {
             ProvisioningReport report = StorageProvisioner.getProvisioningReport();
             Assert.assertNotNull(report);

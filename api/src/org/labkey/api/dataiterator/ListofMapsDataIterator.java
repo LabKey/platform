@@ -103,7 +103,7 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     }
 
     @Override
-    public boolean next() throws BatchValidationException
+    public boolean next()
     {
         return ++_currentRow < _rows.size();
     }
@@ -143,7 +143,7 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
     }
 

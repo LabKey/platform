@@ -54,7 +54,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public PrintWriter getPrintWriter(String path) throws IOException
+    public PrintWriter getPrintWriter(String path)
     {
         StringWriter writer = new StringWriter();
         _textDocMap.put(makeLegalName(path), writer);
@@ -63,7 +63,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public OutputStream getOutputStream(String filename) throws IOException
+    public OutputStream getOutputStream(String filename)
     {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         _byteDocMap.put(makeLegalName(filename), os);
@@ -72,7 +72,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public InputStream getInputStream(String filename) throws IOException
+    public InputStream getInputStream(String filename)
     {
         XmlObject doc = _docMap.get(makeLegalName(filename));
         if (doc != null)
@@ -95,13 +95,13 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public void saveXmlBean(String filename, XmlObject doc) throws IOException
+    public void saveXmlBean(String filename, XmlObject doc)
     {
         _docMap.put(makeLegalName(filename), doc);    // TODO: Shouldn't this validate before saving?  That would match the other VF impls
     }
 
     @Override
-    public VirtualFile createZipArchive(String name) throws IOException
+    public VirtualFile createZipArchive(String name)
     {
         return this;
     }
@@ -135,7 +135,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public XmlObject getXmlBean(String filename) throws IOException
+    public XmlObject getXmlBean(String filename)
     {
         return _docMap.get(makeLegalName(filename));
     }
@@ -176,7 +176,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
         // no op
     }

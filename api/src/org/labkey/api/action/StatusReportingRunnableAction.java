@@ -64,7 +64,7 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
     protected abstract K newStatusReportingRunnable();
 
     @Override
-    public ModelAndView getView(StatusReportingRunnableForm form, BindException errors) throws Exception
+    public ModelAndView getView(StatusReportingRunnableForm form, BindException errors)
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
@@ -92,7 +92,7 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
     }
 
     @Override
-    public ApiResponse execute(StatusReportingRunnableForm form, BindException errors) throws Exception
+    public ApiResponse execute(StatusReportingRunnableForm form, BindException errors)
     {
         K runnable = getRunnable();
 

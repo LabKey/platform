@@ -37,7 +37,7 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
 {
     private ExpProtocol _protocol;
 
-    public ModelAndView getView(AssayRunsAction.AssayRunsForm summaryForm, BindException errors) throws Exception
+    public ModelAndView getView(AssayRunsAction.AssayRunsForm summaryForm, BindException errors)
     {
         ViewContext context = getViewContext();
         if (summaryForm.getClearDataRegionSelectionKey() != null)

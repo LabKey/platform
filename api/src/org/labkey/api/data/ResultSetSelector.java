@@ -58,7 +58,7 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
     {
         return new ResultSetFactory() {
             @Override
-            public ResultSet getResultSet(Connection conn) throws SQLException
+            public ResultSet getResultSet(Connection conn)
             {
                 return _rs;
             }

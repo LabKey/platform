@@ -62,7 +62,7 @@ public class InputStreamAttachmentFile implements AttachmentFile
     }
     
     @Override
-    public long getSize() throws IOException
+    public long getSize()
     {
         return _bytes.length;
     }
@@ -92,7 +92,7 @@ public class InputStreamAttachmentFile implements AttachmentFile
     }
 
     @Override
-    public InputStream openInputStream() throws IOException
+    public InputStream openInputStream()
     {
         return _is;
     }

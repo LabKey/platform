@@ -65,7 +65,7 @@ public class RunListQueryView extends ExperimentRunListView
         _replacedRunFilter = ReplacedRunFilter.getFromURL(this, REPLACED_FIELD_KEY);
     }
 
-    protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response)
     {
         // No-op to avoid double-rendering header links
     }

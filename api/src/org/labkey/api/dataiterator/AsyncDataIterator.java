@@ -170,7 +170,7 @@ public class AsyncDataIterator implements DataIterator
 
 
     @Override
-    public boolean next() throws BatchValidationException
+    public boolean next()
     {
         Object[] row=null;
         if (_currentRow+1 >= _buffer.size())

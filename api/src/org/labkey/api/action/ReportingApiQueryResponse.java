@@ -117,7 +117,7 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
     }
 
     @Override
-    protected void putValue(Map<String, Object> row, DisplayColumn dc) throws Exception
+    protected void putValue(Map<String, Object> row, DisplayColumn dc)
     {
         // Splitting the individual row result into two objects- "data" and "links". "links" has the detail & update links.
 

@@ -100,14 +100,14 @@ public final class SAX2IndexHandler extends DefaultHandler
     //
 
     /** Start document. */
-    public void startDocument() throws SAXException
+    public void startDocument()
     {
         // Nothing to do
     } // startDocument()
 
     /** Start element. */
     public void startElement(String uri, String local, String raw,
-            Attributes attrs) throws SAXException
+            Attributes attrs)
     {
         if (raw.equals("indexOffset"))
         {
@@ -180,7 +180,6 @@ public final class SAX2IndexHandler extends DefaultHandler
 
     /** Characters. */
     public void characters(char ch[], int start, int length)
-            throws SAXException
     {
         if (foundIdxOffset || foundScanOffset)
         {
@@ -190,14 +189,12 @@ public final class SAX2IndexHandler extends DefaultHandler
 
     /** Ignorable whitespace. */
     public void ignorableWhitespace(char ch[], int start, int length)
-            throws SAXException
     {
         // Do nothing
     } // ignorableWhitespace(char[],int,int);
 
     /** Processing instruction. */
     public void processingInstruction(String target, String data)
-            throws SAXException
     {
         System.out.println("instr? " + target + " --- " + data);
         // Do nothing
@@ -208,21 +205,21 @@ public final class SAX2IndexHandler extends DefaultHandler
     //
 
     /** Warning. */
-    public void warning(SAXParseException ex) throws SAXException
+    public void warning(SAXParseException ex)
     {
         // Do nothing
         // printError("Warning", ex);
     } // warning(SAXParseException)
 
     /** Error. */
-    public void error(SAXParseException ex) throws SAXException
+    public void error(SAXParseException ex)
     {
         // Do nothing
         // printError("Error", ex);
     } // error(SAXParseException)
 
     /** Fatal error. */
-    public void fatalError(SAXParseException ex) throws SAXException
+    public void fatalError(SAXParseException ex)
     {
         // Do nothing
         // printError("Fatal Error", ex);

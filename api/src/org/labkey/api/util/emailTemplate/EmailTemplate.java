@@ -245,7 +245,7 @@ public abstract class EmailTemplate
         }
     }
 
-    protected boolean _validate(String text) throws Exception
+    protected boolean _validate(String text)
     {
         if (text != null)
         {

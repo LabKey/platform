@@ -48,7 +48,7 @@ public class PdfOutput extends DownloadParamReplacement
     }
 
     @Override
-    protected File getSubstitution(File directory) throws Exception
+    protected File getSubstitution(File directory)
     {
         return getSubstitution(directory, ".pdf");
     }
@@ -62,7 +62,7 @@ public class PdfOutput extends DownloadParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput(File file) throws Exception
+    public ScriptOutput renderAsScriptOutput(File file)
     {
         if (getReport() instanceof AttachmentParent)
             return renderAsScriptOutput(file, new PdfReportView(this, getReport()),

@@ -579,7 +579,7 @@ public class ActionURL extends URLHelper implements Cloneable
     public static class TestCase extends Assert
     {
         @Test
-        public void test() throws Exception
+        public void test()
         {
             String s;
 

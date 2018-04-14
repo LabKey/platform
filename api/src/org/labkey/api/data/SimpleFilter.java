@@ -1683,7 +1683,7 @@ public class SimpleFilter implements Filter
         private static final int IN_CLAUSE_SIZE = 5000;
 
         @Test
-        public void testLargeInClause() throws Exception
+        public void testLargeInClause()
         {
             User user = TestContext.get().getUser();
 

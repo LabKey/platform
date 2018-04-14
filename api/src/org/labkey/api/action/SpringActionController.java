@@ -229,7 +229,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return getViewContext().getUser();
     }
 
-    protected void requiresLogin() throws ServletException
+    protected void requiresLogin()
     {
         if (getUser().isGuest())
         {
@@ -277,7 +277,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    public View resolveViewName(String viewName, Locale locale) throws Exception
+    public View resolveViewName(String viewName, Locale locale)
     {
         if (null != _applicationContext)
         {

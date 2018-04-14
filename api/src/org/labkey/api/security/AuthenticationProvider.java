@@ -147,8 +147,7 @@ public interface AuthenticationProvider
          * @param user the user requesting password reset
          * @param isAdminCopy true for sending admin a copy of reset password email
          */
-        @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy) throws Exception;
-
+        @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
     interface SecondaryAuthenticationProvider extends AuthenticationProvider

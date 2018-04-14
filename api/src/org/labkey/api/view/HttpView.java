@@ -687,12 +687,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             super(response);
         }
 
-        public PrintWriter getWriter() throws IOException
+        public PrintWriter getWriter()
         {
             throw new IllegalStateException("Should not call getWriter() before render() is called.");
         }
 
-        public ServletOutputStream getOutputStream() throws IOException
+        public ServletOutputStream getOutputStream()
         {
             throw new IllegalStateException("Should not call getOutputStream() before render() is called.");
         }

@@ -130,7 +130,7 @@ public class PropertyManager
     }
 
 
-    public static void purgeObjectProperties(Container c) throws SQLException
+    public static void purgeObjectProperties(Container c)
     {
         STORE.deleteProperties(c);
         ENCRYPTED_STORE.deleteProperties(c);
@@ -649,7 +649,7 @@ public class PropertyManager
         }
 
         @Test
-        public void test() throws SQLException
+        public void test()
         {
             PropertyStore normal = getNormalStore();
             PropertyStore encrypted = getEncryptedStore();
@@ -833,7 +833,7 @@ public class PropertyManager
                 final StringBuilder sb = new StringBuilder(topMessage + ":\ncategory\tset\tobjectid\n");
                 selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
                     @Override
-                    public void exec(Map map) throws SQLException
+                    public void exec(Map map)
                     {
                         sb.append(map.get("category")).append("\t").append(map.get("set")).append("\t").append(map.get("objectid")).append("\n");
                     }

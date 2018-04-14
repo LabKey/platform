@@ -1017,7 +1017,7 @@ public abstract class SqlDialect
      * Drop a schema if it exists.
      * Throws an exception if schema exists, and could not be dropped. 
      */
-    public void dropSchema(DbSchema schema, String schemaName) throws SQLException
+    public void dropSchema(DbSchema schema, String schemaName)
     {
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
         new SqlExecutor(schema).execute(sql, "*", schemaName, "SCHEMA", null);

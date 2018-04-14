@@ -1140,7 +1140,7 @@ public class ExceptionUtil
         ServletOutputStream servletOutputStream = new ServletOutputStream()
         {
             @Override
-            public void write(int i) throws IOException
+            public void write(int i)
             {
                 os.write(i);
             }
@@ -1183,20 +1183,20 @@ public class ExceptionUtil
         }
 
         @Override
-        public void sendError(int i, String s) throws IOException
+        public void sendError(int i, String s)
         {
             status = i;
             message = s;
         }
 
         @Override
-        public void sendError(int i) throws IOException
+        public void sendError(int i)
         {
             status = i;
         }
 
         @Override
-        public void sendRedirect(String s) throws IOException
+        public void sendRedirect(String s)
         {
             redirect = s;
         }
@@ -1288,13 +1288,13 @@ public class ExceptionUtil
         }
 
         @Override
-        public ServletOutputStream getOutputStream() throws IOException
+        public ServletOutputStream getOutputStream()
         {
             return servletOutputStream;
         }
 
         @Override
-        public PrintWriter getWriter() throws IOException
+        public PrintWriter getWriter()
         {
             return printWriter;
         }
@@ -1329,7 +1329,7 @@ public class ExceptionUtil
         }
 
         @Override
-        public void flushBuffer() throws IOException
+        public void flushBuffer()
         {
         }
 

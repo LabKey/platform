@@ -86,7 +86,7 @@ public abstract class ScriptReport extends AbstractReport
     }
 
     // At the moment, only R reports support shared scripts
-    public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
+    public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean)
     {
         return Collections.emptyList();
     }

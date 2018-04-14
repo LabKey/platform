@@ -101,7 +101,7 @@ public class FolderManagement
     public static abstract class FolderManagementViewAction extends SimpleViewAction<Void> implements FolderManagementAction
     {
         @Override
-        public ModelAndView getView(Void form, BindException errors) throws Exception
+        public ModelAndView getView(Void form, BindException errors)
         {
             return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
             {

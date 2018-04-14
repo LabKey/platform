@@ -1196,7 +1196,7 @@ public class StringExpressionFactory
     public static class TestCase extends Assert
     {
         @Test
-        public void testSimple() throws ServletException
+        public void testSimple()
         {
             Map<Object,Object> m = new HashMap<>();
 

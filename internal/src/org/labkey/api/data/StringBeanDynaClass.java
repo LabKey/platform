@@ -114,7 +114,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
         return _beanClass;
     }
 
-    public DynaBean newInstance() throws IllegalAccessException, InstantiationException
+    public DynaBean newInstance()
     {
         return new BeanViewForm(_beanClass);
     }

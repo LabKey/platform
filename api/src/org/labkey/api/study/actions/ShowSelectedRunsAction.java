@@ -66,7 +66,7 @@ public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsActio
         return url;
     }
 
-    public boolean doAction(ShowSelectedForm form, BindException errors) throws Exception
+    public boolean doAction(ShowSelectedForm form, BindException errors)
     {
         return true;
     }

@@ -63,7 +63,7 @@ public class LinkTag extends SimpleTagBase
         _rel = rel;
     }
 
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         Map<String, String> properties = new HashMap<>();
         if (_rel != null)

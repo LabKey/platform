@@ -378,7 +378,7 @@ public class DbSequenceManager
 
         @Test
         // Simple test that create() responds gracefully if the sequence already exists. See #19673.
-        public void createTest() throws Throwable
+        public void createTest()
         {
             final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 

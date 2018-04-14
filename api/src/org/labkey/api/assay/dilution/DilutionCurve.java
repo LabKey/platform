@@ -39,15 +39,15 @@ public interface DilutionCurve
 
     CurveFit.Parameters getParameters() throws FitFailedException;
 
-    double getFitError() throws FitFailedException;
+    double getFitError();
 
     double getCutoffDilution(double percent) throws FitFailedException;
 
     double getInterpolatedCutoffDilution(double percent);
 
-    double getMinDilution() throws FitFailedException;
+    double getMinDilution();
 
-    double getMaxDilution() throws FitFailedException;
+    double getMaxDilution();
 
     double fitCurve(double x, CurveFit.Parameters curveParameters);
 

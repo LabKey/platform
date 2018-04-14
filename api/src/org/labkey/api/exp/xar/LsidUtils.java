@@ -209,7 +209,7 @@ public class LsidUtils
         private XarContext _context;
 
         @Before
-        public void setUp() throws Exception
+        public void setUp()
         {
             _context = new XarContext("TestCase", ContainerManager.createMockContainer(), UserManager.getGuestUser(), "localhost");
             _context.addSubstitution("Value1", "One");
@@ -240,7 +240,7 @@ public class LsidUtils
         }
 
         @Test
-        public void testInvalidSubstitution() throws XarFormatException
+        public void testInvalidSubstitution()
         {
             try
             {

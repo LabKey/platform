@@ -246,7 +246,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     public interface StatementHandler<T>
     {
-        T handle(PreparedStatement stmt, Connection conn) throws SQLException;
+        T handle(PreparedStatement stmt, Connection conn);
     }
 
     protected <T> T handleResultSet(ResultSetFactory factory, ResultSetHandler<T> handler)

@@ -156,17 +156,17 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         return new HtmlView("<img src='" + url.getLocalURIString() + "'>");
     }
 
-    public String generateImageMap(ViewContext context, String id) throws Exception
+    public String generateImageMap(ViewContext context, String id)
     {
         return generateImageMap(context, id, null, new String[0]);
     }
 
-    public String generateImageMap(ViewContext context, String id, String imageMapCallback) throws Exception
+    public String generateImageMap(ViewContext context, String id, String imageMapCallback)
     {
         return generateImageMap(context, id, imageMapCallback, new String[0]);
     }
 
-    public String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams) throws Exception
+    public String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams)
     {
         ChartRenderInfo renderInfo = new RenderInfo(imageMapCallback, callbackParams);
 

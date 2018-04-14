@@ -233,7 +233,7 @@ public class ReplacedRunFilter
         }
 
         @Test
-        public void testParseURL() throws URISyntaxException
+        public void testParseURL()
         {
             ReplacedRunFilter filter = ReplacedRunFilter.getFromURL(createMockView("AssayId Data.Run/Replaced~isnonblank", ""), FieldKey.fromParts("Run", "Replaced"));
             assertEquals(Type.ALL, filter.getType());

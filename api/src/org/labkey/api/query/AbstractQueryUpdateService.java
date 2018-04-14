@@ -154,7 +154,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
-    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
     {
         MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
         List<Map<String, Object>> list = new ArrayList<>();
@@ -190,7 +190,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
-            throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -302,7 +301,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
-                                                      DataIteratorContext context, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+                                                      DataIteratorContext context, Map<String, Object> extraScriptContext)
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -415,7 +414,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    private Map<String, Object> normalizeColumnNames(Map<String, Object> row) throws QueryUpdateServiceException
+    private Map<String, Object> normalizeColumnNames(Map<String, Object> row)
     {
         if(_columnImportMap == null)
         {

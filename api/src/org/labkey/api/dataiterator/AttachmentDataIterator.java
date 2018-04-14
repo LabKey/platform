@@ -80,7 +80,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
     }
 
     @Override
-    public boolean next() throws BatchValidationException
+    public boolean next()
     {
         ArrayList<AttachmentFile> attachmentFiles = null;
         try

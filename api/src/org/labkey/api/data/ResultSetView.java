@@ -30,12 +30,12 @@ public class ResultSetView extends WebPartView
     private final int _linkColumn;
     private final String _link;
 
-    public ResultSetView(ResultSet rs, String title) throws SQLException
+    public ResultSetView(ResultSet rs, String title)
     {
         this(rs, title, 0, null);
     }
 
-    public ResultSetView(ResultSet rs, String title, int linkColumn, String link) throws SQLException
+    public ResultSetView(ResultSet rs, String title, int linkColumn, String link)
     {
         super(title);
         _rs = rs;

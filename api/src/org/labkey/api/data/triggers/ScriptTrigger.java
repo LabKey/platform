@@ -77,7 +77,7 @@ import java.util.Map;
     @Override
     public void beforeInsert(TableInfo table, Container c,
                              @Nullable Map<String, Object> newRow,
-                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+                             ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, "beforeInsert", errors, extraContext, newRow);
     }
@@ -85,7 +85,7 @@ import java.util.Map;
     @Override
     public void beforeUpdate(TableInfo table, Container c,
                              @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
-                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+                             ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, "beforeUpdate", errors, extraContext, newRow, oldRow);
     }
@@ -93,7 +93,7 @@ import java.util.Map;
     @Override
     public void beforeDelete(TableInfo table, Container c,
                              @Nullable Map<String, Object> oldRow,
-                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+                             ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, "beforeDelete", errors, extraContext, oldRow);
     }
@@ -101,7 +101,7 @@ import java.util.Map;
     @Override
     public void afterInsert(TableInfo table, Container c,
                             @Nullable Map<String, Object> newRow,
-                            ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+                            ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, "afterInsert", errors, extraContext, newRow);
     }
@@ -109,7 +109,7 @@ import java.util.Map;
     @Override
     public void afterUpdate(TableInfo table, Container c,
                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
-                            ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+                            ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, "afterUpdate", errors, extraContext, newRow, oldRow);
     }
@@ -117,7 +117,7 @@ import java.util.Map;
     @Override
     public void afterDelete(TableInfo table, Container c,
                             @Nullable Map<String, Object> oldRow,
-                            ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+                            ValidationException errors, Map<String, Object> extraContext)
     {
         invokeTableScript(table, c, "afterDelete", errors, extraContext, oldRow);
     }

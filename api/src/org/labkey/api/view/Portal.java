@@ -1100,7 +1100,7 @@ public class Portal
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView) throws Exception
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView)
     {
         boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
         populatePortalView(context, id, template, printView, canCustomize, false, true);
@@ -1108,7 +1108,7 @@ public class Portal
 
 
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
-                          boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame) throws Exception
+                          boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame)
     {
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         List<WebPart> parts = getParts(context.getContainer(), id, context);

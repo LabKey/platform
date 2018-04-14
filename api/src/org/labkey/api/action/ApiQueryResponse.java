@@ -392,7 +392,7 @@ public class ApiQueryResponse implements ApiResponse
         return urlmdata;
     }
 
-    protected List<Map<String,Object>> getColumnModel() throws Exception
+    protected List<Map<String,Object>> getColumnModel()
     {
         ArrayList<Map<String,Object>> cols = new ArrayList<>();
         for (DisplayColumn dc : _displayColumns)
@@ -413,7 +413,7 @@ public class ApiQueryResponse implements ApiResponse
     }
 
 
-    protected Map<String,Object> getColModel(DisplayColumn dc) throws Exception
+    protected Map<String,Object> getColModel(DisplayColumn dc)
     {
         Map<String,Object> extGridColumn = new HashMap<>();
         ColumnInfo colInfo = dc.getColumnInfo();
@@ -490,7 +490,7 @@ public class ApiQueryResponse implements ApiResponse
         return complete;
     }
 
-    protected Map<String,Object> getRow() throws Exception
+    protected Map<String,Object> getRow()
     {
         Map<String,Object> row = new HashMap<>();
         for (DisplayColumn dc : _displayColumns)
@@ -510,7 +510,7 @@ public class ApiQueryResponse implements ApiResponse
         return dc.isQueryColumn() || (dc instanceof DetailsColumn && _includeDetailsColumn) || (dc instanceof UpdateColumn && _includeUpdateColumn);
     }
 
-    protected void putValue(Map<String,Object> row, DisplayColumn dc) throws Exception
+    protected void putValue(Map<String,Object> row, DisplayColumn dc)
     {
         Object value = getColumnValue(dc);
         String colName = getColumnName(dc);

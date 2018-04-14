@@ -71,14 +71,14 @@ public class ExperimentJSONConverter
     // Data properties
     public static final String DATA_CLASS = "dataClass";
 
-    public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
+    public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain)
     {
         JSONObject jsonObject = serializeStandardProperties(runGroup, domain.getProperties());
         jsonObject.put(COMMENT, runGroup.getComments());
         return jsonObject;
     }
 
-    public static JSONObject serializeRun(ExpRun run, Domain domain) throws SQLException
+    public static JSONObject serializeRun(ExpRun run, Domain domain)
     {
         JSONObject jsonObject = serializeStandardProperties(run, domain == null ? null : domain.getProperties());
         jsonObject.put(COMMENT, run.getComments());

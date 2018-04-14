@@ -166,7 +166,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return root;
     }
 
-    protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
+    protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert)
     {
         TableInfo table = form.getTable();
         if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))

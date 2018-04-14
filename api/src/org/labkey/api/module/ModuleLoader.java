@@ -236,7 +236,7 @@ public class ModuleLoader implements Filter
         return _instance;
     }
 
-    public void init(FilterConfig filterConfig) throws ServletException
+    public void init(FilterConfig filterConfig)
     {
         try
         {
@@ -870,7 +870,7 @@ public class ModuleLoader implements Filter
     }
 
     // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
-    private void initializeDataSources() throws ServletException
+    private void initializeDataSources()
     {
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
 
@@ -1081,7 +1081,7 @@ public class ModuleLoader implements Filter
 
                 manager.updateSchemaVersion(to);
             }
-            catch (SqlScriptException | SQLException e)
+            catch (SqlScriptException e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
@@ -1150,7 +1150,7 @@ public class ModuleLoader implements Filter
         _deferUsageReport = defer;
     }
 
-    private void runDropScripts() throws SqlScriptException, SQLException
+    private void runDropScripts()
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -1162,7 +1162,7 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private void runCreateScripts() throws SqlScriptException, SQLException
+    private void runCreateScripts()
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -1195,7 +1195,7 @@ public class ModuleLoader implements Filter
     }
 
     // Runs the drop and create scripts in every module
-    public void recreateViews() throws SqlScriptException, SQLException
+    public void recreateViews()
     {
         synchronized (UPGRADE_LOCK)
         {
@@ -1382,30 +1382,22 @@ public class ModuleLoader implements Filter
         DbScope scope = _core.getSchema().getScope();
         SqlDialect dialect = _core.getSqlDialect();
 
-        try
-        {
-            String moduleName = context.getName();
-            _log.info("Deleting module " + moduleName);
-            String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
+        String moduleName = context.getName();
+        _log.info("Deleting module " + moduleName);
+        String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
 
-            for (String schema : context.getSchemaList())
-            {
-                _log.info("Dropping schema " + schema);
-                new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
-                scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
-            }
-
-            Table.delete(getTableInfoModules(), context.getName());
-        }
-        catch (SQLException e)
+        for (String schema : context.getSchemaList())
         {
-            _log.error("Error attempting to delete module " + context.getName());
-            ExceptionUtil.logExceptionToMothership(null, e);
+            _log.info("Dropping schema " + schema);
+            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
+            scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
         }
+
+        Table.delete(getTableInfoModules(), context.getName());
     }
 
 
-    public void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade) throws Exception
+    public void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade)
     {
         synchronized(UPGRADE_LOCK)
         {

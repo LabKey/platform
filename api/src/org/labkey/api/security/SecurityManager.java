@@ -2437,7 +2437,7 @@ public class SecurityManager
 
 
         @Test
-        public void testACLS() throws NamingException
+        public void testACLS()
         {
             Container fakeRoot = ContainerManager.createFakeContainer(null, null);
 
@@ -2565,7 +2565,7 @@ public class SecurityManager
          * Test that a new group can be created with role specified by startup properties
          */
         @Test
-        public void testStartupPropertiesForGroupRoles() throws Exception
+        public void testStartupPropertiesForGroupRoles()
         {
             // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
             prepareTestStartupProperties();
@@ -2676,7 +2676,7 @@ public class SecurityManager
         return emails;
     }
 
-    public static SecurityMessage getRegistrationMessage(String mailPrefix, boolean isAdminCopy) throws Exception
+    public static SecurityMessage getRegistrationMessage(String mailPrefix, boolean isAdminCopy)
     {
         SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends RegistrationEmailTemplate> templateClass = isAdminCopy ? RegistrationAdminEmailTemplate.class : RegistrationEmailTemplate.class;
@@ -2688,12 +2688,12 @@ public class SecurityManager
         return sm;
     }
 
-    public static SecurityMessage getResetMessage(boolean isAdminCopy) throws Exception
+    public static SecurityMessage getResetMessage(boolean isAdminCopy)
     {
         return getResetMessage(isAdminCopy, null, null);
     }
 
-    public static SecurityMessage getResetMessage(boolean isAdminCopy, User user, String provider) throws Exception
+    public static SecurityMessage getResetMessage(boolean isAdminCopy, User user, String provider)
     {
         if (provider != null)
         {
@@ -2708,7 +2708,7 @@ public class SecurityManager
         return getDefaultResetMessage(isAdminCopy);
     }
 
-    private static SecurityMessage getDefaultResetMessage(boolean isAdminCopy) throws Exception
+    private static SecurityMessage getDefaultResetMessage(boolean isAdminCopy)
     {
         SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends PasswordResetEmailTemplate> templateClass = isAdminCopy ? PasswordResetAdminEmailTemplate.class : PasswordResetEmailTemplate.class;
@@ -3185,7 +3185,7 @@ public class SecurityManager
         return c.hasPermission(user, SeeFilePathsPermission.class) || user.hasRootPermission(SeeFilePathsPermission.class);
     }
 
-    public static void adminRotatePassword(String rawEmail, BindException errors, Container c, User user) throws Exception
+    public static void adminRotatePassword(String rawEmail, BindException errors, Container c, User user)
     {
         try
         {

@@ -276,7 +276,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         );
 
         @Test
-        public void validateTest() throws Exception
+        public void validateTest()
         {
         }
     }

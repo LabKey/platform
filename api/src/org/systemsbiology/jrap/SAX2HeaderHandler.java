@@ -72,14 +72,12 @@ public class SAX2HeaderHandler extends DefaultHandler
 	}
 
 	public void characters(char[] ch, int start, int length)
-			throws SAXException
-	{
+    {
 		// Do nothing
 	}
 
 	public void endElement(String uri, String localName, String qName)
-			throws SAXException
-	{
+    {
 		if (qName.equals("msInstrument")) msInstrumentMode = false;
 		if (qName.equals("dataProcessing")) dataProcessingMode = false;
 	}

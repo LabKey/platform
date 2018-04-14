@@ -58,7 +58,7 @@ public class AssayJSONConverter
     // Run properties
     public static final String DATA_ROWS = "dataRows";
 
-    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user) throws SQLException
+    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user)
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getBatchDomain(protocol));
 
@@ -72,7 +72,7 @@ public class AssayJSONConverter
         return jsonObject;
     }
 
-    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Integer... objectIds) throws SQLException
+    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, User user, Integer... objectIds)
     {
         Domain dataDomain = provider.getResultsDomain(protocol);
         List<FieldKey> fieldKeys = new ArrayList<>();
@@ -110,7 +110,7 @@ public class AssayJSONConverter
         return dataRows;
     }
 
-    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user) throws SQLException
+    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user)
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
 
@@ -135,7 +135,7 @@ public class AssayJSONConverter
         return jsonObject;
     }
 
-    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch, User user) throws SQLException
+    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch, User user)
     {
         JSONObject result = new JSONObject();
         result.put(ASSAY_ID, protocol.getRowId());
@@ -155,7 +155,7 @@ public class AssayJSONConverter
         return new ApiSimpleResponse(result);
     }
 
-    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, List<? extends ExpExperiment> batches, User user) throws SQLException
+    public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, List<? extends ExpExperiment> batches, User user)
     {
         JSONObject result = new JSONObject();
         result.put(ASSAY_ID, protocol.getRowId());

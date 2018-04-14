@@ -107,7 +107,7 @@ public class SimpleDisplayColumn extends DisplayColumn
             out.write(value.toString());
     }
 
-    public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
+    public void renderFilterOnClick(RenderContext ctx, Writer out)
     {
         throw new UnsupportedOperationException("Non Bound columns not filterable");
     }

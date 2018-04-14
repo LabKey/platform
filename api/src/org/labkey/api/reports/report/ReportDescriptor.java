@@ -681,7 +681,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return createFromXML(container, user, doc);
     }
 
-    private static ReportDescriptor createFromXML(Container container, User user, ReportDescriptorDocument doc) throws IOException, XmlValidationException
+    private static ReportDescriptor createFromXML(Container container, User user, ReportDescriptorDocument doc)
     {
         ReportDescriptorType d = doc.getReportDescriptor();
 
@@ -725,7 +725,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return null;
     }
 
-    public ReportDescriptorType setDescriptorFromXML(String xmlString) throws IOException, XmlException
+    public ReportDescriptorType setDescriptorFromXML(String xmlString) throws XmlException
     {
         ReportDescriptorType d;
 

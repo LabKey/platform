@@ -102,7 +102,7 @@ public class ConnectionWrapper implements java.sql.Connection
     /** For debugging issue 23044 */
     private static Method _transactionStateMethod;
 
-    public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log) throws SQLException
+    public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log)
     {
         _connection = conn;
         _scope = scope;
@@ -818,7 +818,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
 
     @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
+    public boolean isWrapperFor(Class<?> iface)
     {
         return iface.isAssignableFrom(_connection.getClass());
     }
@@ -831,7 +831,7 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException
+    public <T> T unwrap(Class<T> iface)
     {
         //noinspection unchecked
         return isWrapperFor(iface)?  (T)_connection : null;
@@ -856,91 +856,91 @@ public class ConnectionWrapper implements java.sql.Connection
     // TODO: Implement all of the following methods!
 
     @Override
-    public Blob createBlob() throws SQLException
+    public Blob createBlob()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Clob createClob() throws SQLException
+    public Clob createClob()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NClob createNClob() throws SQLException
+    public NClob createNClob()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public SQLXML createSQLXML() throws SQLException
+    public SQLXML createSQLXML()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Struct createStruct(String typeName, Object[] attributes) throws SQLException
+    public Struct createStruct(String typeName, Object[] attributes)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Properties getClientInfo() throws SQLException
+    public Properties getClientInfo()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String getClientInfo(String name) throws SQLException
+    public String getClientInfo(String name)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean isValid(int timeout) throws SQLException
+    public boolean isValid(int timeout)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setClientInfo(String name, String value) throws SQLClientInfoException
+    public void setClientInfo(String name, String value)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setClientInfo(Properties properties) throws SQLClientInfoException
+    public void setClientInfo(Properties properties)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setSchema(String schema) throws SQLException
+    public void setSchema(String schema)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String getSchema() throws SQLException
+    public String getSchema()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void abort(Executor executor) throws SQLException
+    public void abort(Executor executor)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException
+    public void setNetworkTimeout(Executor executor, int milliseconds)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int getNetworkTimeout() throws SQLException
+    public int getNetworkTimeout()
     {
         throw new UnsupportedOperationException();
     }

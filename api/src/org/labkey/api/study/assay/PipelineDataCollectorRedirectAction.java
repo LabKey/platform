@@ -47,7 +47,7 @@ import java.util.Map;
 @RequiresPermission(InsertPermission.class)
 public class PipelineDataCollectorRedirectAction extends SimpleViewAction<PipelineDataCollectorRedirectAction.UploadRedirectForm>
 {
-    public ModelAndView getView(UploadRedirectForm form, BindException errors) throws Exception
+    public ModelAndView getView(UploadRedirectForm form, BindException errors)
     {
         Container container = getContainer();
         // Can't trust the form's getPath() because it translates the empty string into null, and we

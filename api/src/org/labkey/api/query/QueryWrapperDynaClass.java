@@ -60,7 +60,7 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
     }
     
 
-    public DynaBean newInstance() throws IllegalAccessException, InstantiationException
+    public DynaBean newInstance()
     {
         throw new UnsupportedOperationException();
     }

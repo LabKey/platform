@@ -40,7 +40,7 @@ public class ScriptableErrors extends NativeJavaObject
     static final String CLASSNAME = "Errors";
     ValidationException errors;
 
-    public static void init(Scriptable scope) throws NoSuchMethodException
+    public static void init(Scriptable scope)
     {
         BaseFunction ctor = new BaseFunction(scope, ScriptableObject.getFunctionPrototype(scope))
         {

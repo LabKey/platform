@@ -80,7 +80,7 @@ public abstract class CodeOnlyModule extends DefaultModule
     }
 
     @Override
-    public final void versionUpdate(ModuleContext moduleContext) throws Exception
+    public final void versionUpdate(ModuleContext moduleContext)
     {
     }
 

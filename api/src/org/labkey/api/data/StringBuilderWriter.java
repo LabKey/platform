@@ -36,12 +36,12 @@ public class StringBuilderWriter extends Writer
         _builder.append(cbuf, off, len);
     }
 
-    public void close() throws IOException
+    public void close()
     {
         _closed = true;
     }
 
-    public void flush() throws IOException
+    public void flush()
     {
         // no-op
     }

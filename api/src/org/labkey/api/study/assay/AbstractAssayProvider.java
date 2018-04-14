@@ -1217,7 +1217,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void setEditableResults(ExpProtocol protocol, boolean editable) throws ExperimentException
+    public void setEditableResults(ExpProtocol protocol, boolean editable)
     {
         setBooleanProperty(protocol, EDITABLE_RESULTS_PROPERTY_SUFFIX, editable);
     }
@@ -1235,7 +1235,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void setEditableRuns(ExpProtocol protocol, boolean editable) throws ExperimentException
+    public void setEditableRuns(ExpProtocol protocol, boolean editable)
     {
         setBooleanProperty(protocol, EDITABLE_RUNS_PROPERTY_SUFFIX, editable);
     }
@@ -1259,7 +1259,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void setBackgroundUpload(ExpProtocol protocol, boolean background) throws ExperimentException
+    public void setBackgroundUpload(ExpProtocol protocol, boolean background)
     {
         setBooleanProperty(protocol, BACKGROUND_UPLOAD_PROPERTY_SUFFIX, background);
     }

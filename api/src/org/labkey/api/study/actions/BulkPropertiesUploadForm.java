@@ -93,22 +93,13 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
         if (_bulkProperties == null)
         {
             String tsv = getRawBulkProperties();
+            TabLoader loader = new TabLoader(tsv, true);
+            List<Map<String, Object>> maps = loader.load();
+            _bulkProperties = new ArrayList<>(maps.size());
 
-            try
+            for (Map<String, Object> map : maps)
             {
-                TabLoader loader = new TabLoader(tsv, true);
-                List<Map<String, Object>> maps = loader.load();
-                _bulkProperties = new ArrayList<>(maps.size());
-
-                for (Map<String, Object> map : maps)
-                {
-                    _bulkProperties.add(new CaseInsensitiveHashMap<>(map));
-                }
-            }
-            catch (IOException e)
-            {
-                // Shouldn't get this from an in-memory TSV parse
-                throw new ExperimentException(e);
+                _bulkProperties.add(new CaseInsensitiveHashMap<>(map));
             }
 
             Set<String> identifiers = new CaseInsensitiveHashSet();
@@ -221,5 +212,4 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
     }
 
     public abstract String getHelpPopupHTML();
-
 }

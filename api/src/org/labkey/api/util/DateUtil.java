@@ -1681,7 +1681,7 @@ Parse:
 
 
         @Test
-        public void testDateTimeCH() throws ParseException
+        public void testDateTimeCH()
         {
             long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
             long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();

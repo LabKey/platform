@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public class CsrfInputTag extends SimpleTagBase
 {
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         String csrf = CSRFUtil.getExpectedToken(this.getJspContext());
         getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + h(csrf) + "'>");

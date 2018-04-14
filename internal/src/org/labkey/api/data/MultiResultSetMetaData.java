@@ -67,7 +67,7 @@ public class MultiResultSetMetaData
         return pair.first.getColumnClassName(pair.second);
     }
 
-    public int getColumnCount() throws SQLException
+    public int getColumnCount()
     {
         return _columnCount;
     }

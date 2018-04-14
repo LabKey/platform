@@ -66,7 +66,7 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
         return _tinfo.getName();
     }
 
-    public DynaBean newInstance() throws IllegalAccessException, InstantiationException
+    public DynaBean newInstance()
     {
         return new TableViewForm(_tinfo);
     }

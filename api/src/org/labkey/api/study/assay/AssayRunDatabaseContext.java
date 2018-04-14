@@ -71,7 +71,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     }
 
     @Override
-    public Map<DomainProperty, String> getRunProperties() throws ExperimentException
+    public Map<DomainProperty, String> getRunProperties()
     {
         return getProperties(_provider.getRunDomain(_protocol), _run.getObjectProperties());
     }
@@ -217,7 +217,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     }
 
     @Override
-    public void uploadComplete(ExpRun run) throws ExperimentException
+    public void uploadComplete(ExpRun run)
     {
         // no-op
     }

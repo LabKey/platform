@@ -301,7 +301,7 @@ public class SQLFragment implements Appendable, CharSequence
 
 
     @Override
-    public SQLFragment append(CharSequence csq, int start, int end) throws IOException
+    public SQLFragment append(CharSequence csq, int start, int end)
     {
         append(csq.subSequence(start, end));
         return this;

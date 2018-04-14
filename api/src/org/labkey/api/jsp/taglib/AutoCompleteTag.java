@@ -75,7 +75,7 @@ public abstract class AutoCompleteTag extends SimpleTagBase
     }
 
     @Override
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
         StringBuilder sb = new StringBuilder();

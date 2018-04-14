@@ -515,7 +515,7 @@ public class UserManager
         return 0 == getActiveUserCount();
     }
 
-    public static int getUserCount(Date registeredBefore) throws SQLException
+    public static int getUserCount(Date registeredBefore)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Created"), registeredBefore, CompareType.LTE);
         return (int)new TableSelector(CORE.getTableInfoUsersData(), filter, null).getRowCount();
@@ -571,7 +571,7 @@ public class UserManager
     }
 
 
-    public static void updateUser(User currentUser, User toUpdate) throws SQLException
+    public static void updateUser(User currentUser, User toUpdate)
     {
         Map<String, Object> typedValues = new HashMap<>();
         typedValues.put("phone", PageFlowUtil.formatPhoneNo(toUpdate.getPhone()));
@@ -842,7 +842,7 @@ public class UserManager
     /**
      *  Get completions from list of all site users
      */
-    public static List<AjaxCompletion> getAjaxCompletions(User currentUser, Container c) throws SQLException
+    public static List<AjaxCompletion> getAjaxCompletions(User currentUser, Container c)
     {
         return getAjaxCompletions(getActiveUsers(), currentUser, c);
     }

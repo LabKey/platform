@@ -81,7 +81,7 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
             newURL.addParameter(parameterName, value);
     }
 
-    public boolean doAction(ShowSelectedForm form, BindException errors) throws Exception
+    public boolean doAction(ShowSelectedForm form, BindException errors)
     {
         return true;
     }

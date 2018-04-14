@@ -47,7 +47,7 @@ public class MapLoader extends DataLoader
     String[] headers;
     Object[][] data;
 
-    public MapLoader(List<Map<String, Object>> rows) throws IOException
+    public MapLoader(List<Map<String, Object>> rows)
     {
         convertToArrays(rows);
         _skipLines = rows.size() > 0 ? 1 : 0;
@@ -106,7 +106,7 @@ public class MapLoader extends DataLoader
     }
 
     @Override
-    public String[][] getFirstNLines(int n) throws IOException
+    public String[][] getFirstNLines(int n)
     {
         n = Math.min(n, data.length);
         String[][] firstLines = new String[n][];

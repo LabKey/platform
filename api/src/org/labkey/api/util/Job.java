@@ -76,7 +76,7 @@ public abstract class Job implements Future, Runnable
         return _task.get();
     }
 
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");
         return _task.get();

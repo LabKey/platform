@@ -140,12 +140,12 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return Long.MIN_VALUE;
         }
 
-        public InputStream getInputStream(User user) throws IOException
+        public InputStream getInputStream(User user)
         {
             return null;
         }
 
-        public long copyFrom(User user, FileStream in) throws IOException
+        public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException();
         }

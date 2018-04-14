@@ -1365,7 +1365,7 @@ public class OntologyManager
         }
     }
 
-    private static PropertyDescriptor ensurePropertyDescriptor(String propertyURI, PropertyType type, String name, Container container) throws SQLException
+    private static PropertyDescriptor ensurePropertyDescriptor(String propertyURI, PropertyType type, String name, Container container)
     {
         PropertyDescriptor pdNew = new PropertyDescriptor(propertyURI, type, name, container);
         return ensurePropertyDescriptor(pdNew);
@@ -2763,7 +2763,7 @@ public class OntologyManager
                     "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP1/Fa", "/_ontMgrTestP1");
         }
 
-        private void deleteMoveTestContainers() throws SQLException
+        private void deleteMoveTestContainers()
         {
             deleteContainers(TestContext.get().getUser(),
                     "/_ontMgrTestP2/Fc", "/_ontMgrTestP1/Fb",
@@ -3182,7 +3182,7 @@ public class OntologyManager
         return getExpSchema().getTable("ObjectPropertiesView");
     }
 
-    public static String doProjectColumnCheck(boolean bFix) throws SQLException
+    public static String doProjectColumnCheck(boolean bFix)
     {
         StringBuilder msgBuffer = new StringBuilder();
         String descriptorTable = getTinfoPropertyDescriptor().toString();
@@ -3198,7 +3198,7 @@ public class OntologyManager
         return msgBuffer.toString();
     }
 
-    private static void doProjectColumnCheck(final String descriptorTable, final String uriColumn, final String idColumn, final StringBuilder msgBuilder, final boolean bFix) throws SQLException
+    private static void doProjectColumnCheck(final String descriptorTable, final String uriColumn, final String idColumn, final StringBuilder msgBuilder, final boolean bFix)
     {
         // get all unique combos of Container, project
 
@@ -3219,19 +3219,11 @@ public class OntologyManager
                 {
                     if (bFix)
                     {
-                        try
-                        {
-                            fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
-                            msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
-                                    .append(descriptorTable).append(" in folder ")
-                                    .append(ContainerManager.getForId(containerId).getPath());
+                        fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
+                        msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
+                                .append(descriptorTable).append(" in folder ")
+                                .append(ContainerManager.getForId(containerId).getPath());
 
-                        }
-                        catch (SQLException se)
-                        {
-                            msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Failed to fix inconsistent project ids found for ")
-                                    .append(descriptorTable).append(" due to ").append(se.getMessage());
-                        }
                     }
                     else
                         msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Inconsistent project ids found for ")
@@ -3241,7 +3233,7 @@ public class OntologyManager
         });
     }
 
-    private static void fixProjectColumn(String descriptorTable, String uriColumn, String idColumn, Container container, String projectId, String newProjId) throws SQLException
+    private static void fixProjectColumn(String descriptorTable, String uriColumn, String idColumn, Container container, String projectId, String newProjId)
     {
         final SqlExecutor executor = new SqlExecutor(getExpSchema());
 

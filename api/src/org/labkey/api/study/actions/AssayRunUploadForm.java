@@ -525,7 +525,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
 
-    public void clearDefaultValues(Domain domain) throws ExperimentException
+    public void clearDefaultValues(Domain domain)
     {
         DefaultValueService.get().clearDefaultValues(getContainer(), domain, getUser());
     }

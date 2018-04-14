@@ -460,7 +460,7 @@ public class FileUtil
      * @param file input file
      * @return a List collection with the individual elements of the path in reverse order
      */
-    private static List<String> getPathList(File file) throws IOException
+    private static List<String> getPathList(File file)
     {
         List<String> parts = new ArrayList<>();
         while (file != null)

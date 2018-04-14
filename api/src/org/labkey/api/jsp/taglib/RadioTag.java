@@ -28,7 +28,7 @@ public class RadioTag extends SimpleTagBase
     protected Object _value;
     protected Object _currentValue;
 
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         JspWriter out = getOut();
         out.write("<input type=\"radio\" name=\"");

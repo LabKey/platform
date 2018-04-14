@@ -145,7 +145,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     }
 
     private void renderLinks(NavTree nav, int level, String pathToHere, String rootId,
-                             ViewContext context, PrintWriter out, boolean indentForExpansionGifs) throws URISyntaxException
+                             ViewContext context, PrintWriter out, boolean indentForExpansionGifs)
     {
         Container c = context.getContainer();
         ActionURL currentUrl = context.getActionURL();

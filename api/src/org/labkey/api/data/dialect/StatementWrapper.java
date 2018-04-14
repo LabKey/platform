@@ -2086,7 +2086,6 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     }
 
     public Connection getConnection()
-            throws SQLException
     {
         return _conn;
     }
@@ -2263,42 +2262,42 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     // TODO: These methods should be properly implemented via delegation.
 
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
+    public boolean isWrapperFor(Class<?> iface)
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> T unwrap(Class<T> iface) throws SQLException
+    public <T> T unwrap(Class<T> iface)
     {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isClosed() throws SQLException
+    public boolean isClosed()
     {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isPoolable() throws SQLException
+    public boolean isPoolable()
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setPoolable(boolean poolable) throws SQLException
+    public void setPoolable(boolean poolable)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException
+    public void setAsciiStream(int parameterIndex, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException
+    public void setAsciiStream(int parameterIndex, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException
+    public void setBinaryStream(int parameterIndex, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
@@ -2317,254 +2316,254 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
-    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException
+    public void setBlob(int parameterIndex, InputStream inputStream)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException
+    public void setBlob(int parameterIndex, InputStream inputStream, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException
+    public void setCharacterStream(int parameterIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException
+    public void setCharacterStream(int parameterIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setClob(int parameterIndex, Reader reader) throws SQLException
+    public void setClob(int parameterIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException
+    public void setClob(int parameterIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException
+    public void setNCharacterStream(int parameterIndex, Reader value)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException
+    public void setNCharacterStream(int parameterIndex, Reader value, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNClob(int parameterIndex, Reader reader) throws SQLException
+    public void setNClob(int parameterIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException
+    public void setNClob(int parameterIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNClob(int parameterIndex, NClob value) throws SQLException
+    public void setNClob(int parameterIndex, NClob value)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNString(int parameterIndex, String value) throws SQLException
+    public void setNString(int parameterIndex, String value)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setRowId(int parameterIndex, RowId x) throws SQLException
+    public void setRowId(int parameterIndex, RowId x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException
+    public void setSQLXML(int parameterIndex, SQLXML xmlObject)
     {
         throw new UnsupportedOperationException();
     }
 
-    public Reader getCharacterStream(int parameterIndex) throws SQLException
+    public Reader getCharacterStream(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public Reader getCharacterStream(String parameterName) throws SQLException
+    public Reader getCharacterStream(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
-    public Reader getNCharacterStream(int parameterIndex) throws SQLException
+    public Reader getNCharacterStream(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public Reader getNCharacterStream(String parameterName) throws SQLException
+    public Reader getNCharacterStream(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
-    public NClob getNClob(int parameterIndex) throws SQLException
+    public NClob getNClob(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public NClob getNClob(String parameterName) throws SQLException
+    public NClob getNClob(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
-    public String getNString(int parameterIndex) throws SQLException
+    public String getNString(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public String getNString(String parameterName) throws SQLException
+    public String getNString(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
-    public RowId getRowId(int parameterIndex) throws SQLException
+    public RowId getRowId(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public RowId getRowId(String parameterName) throws SQLException
+    public RowId getRowId(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
-    public SQLXML getSQLXML(int parameterIndex) throws SQLException
+    public SQLXML getSQLXML(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
-    public SQLXML getSQLXML(String parameterName) throws SQLException
+    public SQLXML getSQLXML(String parameterName)
     {
         throw new UnsupportedOperationException();
     }//--
 
-    public void setAsciiStream(String parameterName, InputStream x) throws SQLException
+    public void setAsciiStream(String parameterName, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException
+    public void setAsciiStream(String parameterName, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBinaryStream(String parameterName, InputStream x) throws SQLException
+    public void setBinaryStream(String parameterName, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBinaryStream(String parameterName, InputStream x, long length) throws SQLException
+    public void setBinaryStream(String parameterName, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBlob(String parameterName, InputStream inputStream) throws SQLException
+    public void setBlob(String parameterName, InputStream inputStream)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBlob(String parameterName, InputStream inputStream, long length) throws SQLException
+    public void setBlob(String parameterName, InputStream inputStream, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setBlob(String parameterName, Blob x) throws SQLException
+    public void setBlob(String parameterName, Blob x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setCharacterStream(String parameterName, Reader reader) throws SQLException
+    public void setCharacterStream(String parameterName, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setCharacterStream(String parameterName, Reader reader, long length) throws SQLException
+    public void setCharacterStream(String parameterName, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setClob(String parameterName, Reader reader) throws SQLException
+    public void setClob(String parameterName, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setClob(String parameterName, Reader reader, long length) throws SQLException
+    public void setClob(String parameterName, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setClob(String parameterName, Clob x) throws SQLException
+    public void setClob(String parameterName, Clob x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNCharacterStream(String parameterName, Reader value) throws SQLException
+    public void setNCharacterStream(String parameterName, Reader value)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNCharacterStream(String parameterName, Reader value, long length) throws SQLException
+    public void setNCharacterStream(String parameterName, Reader value, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNClob(String parameterName, Reader reader) throws SQLException
+    public void setNClob(String parameterName, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNClob(String parameterName, Reader reader, long length) throws SQLException
+    public void setNClob(String parameterName, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNClob(String parameterName, NClob value) throws SQLException
+    public void setNClob(String parameterName, NClob value)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setNString(String parameterName, String value) throws SQLException
+    public void setNString(String parameterName, String value)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setRowId(String parameterName, RowId x) throws SQLException
+    public void setRowId(String parameterName, RowId x)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void setSQLXML(String parameterName, SQLXML xmlObject) throws SQLException
+    public void setSQLXML(String parameterName, SQLXML xmlObject)
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException
+    public <T> T getObject(int parameterIndex, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }
 
     // JDBC 4.1 methods below must be here so we compile on JDK 7; implement once we require JRE 7.
 
-    public <T> T getObject(String parameterName, Class<T> type) throws SQLException
+    public <T> T getObject(String parameterName, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }
 
-    public void closeOnCompletion() throws SQLException
+    public void closeOnCompletion()
     {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isCloseOnCompletion() throws SQLException
+    public boolean isCloseOnCompletion()
     {
         throw new UnsupportedOperationException();
     }

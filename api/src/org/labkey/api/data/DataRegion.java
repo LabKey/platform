@@ -787,7 +787,7 @@ public class DataRegion extends DisplayElement
         // no extra query columns added by default
     }
 
-    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws SQLException, IOException
+    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
     {
         Results rs = ctx.getResults();
         assert rs != null;

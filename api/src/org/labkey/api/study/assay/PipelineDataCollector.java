@@ -56,7 +56,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return new HtmlView(getHTML(context));
     }
 
-    public String getHTML(ContextType context) throws ExperimentException
+    public String getHTML(ContextType context)
     {
         Map<String, File> files = getCurrentFilesForDisplay(context);
         if (files.isEmpty())
@@ -185,7 +185,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     // When importing via pipeline, the file is already on the server so return the path of that file
     @Nullable
     @Override
-    protected File getFilePath(ContextType context, @Nullable ExpRun run, File tempDirFile) throws ExperimentException
+    protected File getFilePath(ContextType context, @Nullable ExpRun run, File tempDirFile)
     {
         Map<String, File> files = getFileQueue(context).get(0);
         for (File file : files.values())
@@ -200,7 +200,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
     // Default case in AbstractTempDirDataCollector is to create a copy of the input file to the assayData directory.
     // We already have the input file on the server so don't need to make a copy.
     @Override
-    protected void handleTempFile(File tempDirFile, File assayDirFile) throws IOException
+    protected void handleTempFile(File tempDirFile, File assayDirFile)
     {
         // Do not move the file
     }

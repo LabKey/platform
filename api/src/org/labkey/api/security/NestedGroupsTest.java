@@ -100,7 +100,7 @@ public class NestedGroupsTest extends Assert
     }
 
     @Test
-    public void test() throws SQLException, InterruptedException, ValidEmail.InvalidEmailException, SecurityManager.UserManagementException
+    public void test() throws InterruptedException, SecurityManager.UserManagementException
     {
         final User user = TestContext.get().getUser();
 
@@ -306,7 +306,7 @@ public class NestedGroupsTest extends Assert
     }
 
     // Adding this principal should fail
-    private void failAddMember(@Nullable Group group, @Nullable UserPrincipal principal, String expectedMessage) throws SQLException
+    private void failAddMember(@Nullable Group group, @Nullable UserPrincipal principal, String expectedMessage)
     {
         Set<UserPrincipal> members = getMembers(group);
 

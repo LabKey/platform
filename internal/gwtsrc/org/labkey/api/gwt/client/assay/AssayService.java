@@ -43,7 +43,7 @@ public interface AssayService extends LookupService
      * @param update Edited domain
      * @return list of errors
      */
-    List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update) throws AssayException;
+    List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update);
 
     /** Get the list of containers with studies that are readable by the current user */
     List<GWTContainer> getStudyContainers();

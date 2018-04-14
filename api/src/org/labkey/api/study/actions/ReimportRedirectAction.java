@@ -75,7 +75,7 @@ public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
     }
 
     @Override
-    public boolean doAction(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
+    public boolean doAction(ProtocolIdForm protocolIdForm, BindException errors)
     {
         return true;
     }

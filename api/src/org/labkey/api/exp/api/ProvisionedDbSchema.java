@@ -69,7 +69,7 @@ public class ProvisionedDbSchema extends DbSchema
         }
 
         @Override
-        protected void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException
+        protected void handleTable(String tableName, DatabaseTableType tableType, String description)
         {
             SchemaTableInfoFactory factory = new StandardSchemaTableInfoFactory(tableName, tableType, description);
             _ti = factory.getSchemaTableInfo(_schema);

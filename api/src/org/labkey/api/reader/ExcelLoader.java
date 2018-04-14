@@ -89,7 +89,7 @@ public class ExcelLoader extends DataLoader
         }
 
         @NotNull @Override
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
         {
             return new ExcelLoader(is, hasColumnHeaders, mvIndicatorContainer);
         }
@@ -777,7 +777,7 @@ public class ExcelLoader extends DataLoader
            * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
            */
         public void startElement(String uri, String localName, String name,
-                                 Attributes attributes) throws SAXException
+                                 Attributes attributes)
         {
             debugIndent++;
             debugPrint("<" + name + ">");
@@ -843,7 +843,6 @@ public class ExcelLoader extends DataLoader
            * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
            */
         public void endElement(String uri, String localName, String name)
-                throws SAXException
         {
             Object thisValue = null;
 
@@ -941,7 +940,6 @@ public class ExcelLoader extends DataLoader
          * Originally was just "v"; extended for inlineStr also.
          */
         public void characters(char[] ch, int start, int length)
-                throws SAXException
         {
             debugPrint((vIsOpen?"+":" ") + "chars:" + new String(ch,start,length));
             if (vIsOpen)

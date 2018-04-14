@@ -65,7 +65,7 @@ public class SqlScriptRunner
 
 
     // Throws SQLException only if getRunScripts() fails -- script failures are handled more gracefully
-    public static void runScripts(Module module, @Nullable User user, List<SqlScript> scripts) throws SQLException, SqlScriptException
+    public static void runScripts(Module module, @Nullable User user, List<SqlScript> scripts) throws SqlScriptException
     {
         _log.info("Running " + scripts.toString());
 
@@ -152,7 +152,7 @@ public class SqlScriptRunner
     public interface SqlScriptProvider
     {
         @NotNull Collection<DbSchema> getSchemas();
-        @NotNull List<SqlScript> getScripts(@NotNull DbSchema schema) throws SqlScriptException;
+        @NotNull List<SqlScript> getScripts(@NotNull DbSchema schema);
         SqlScript getScript(DbSchema schema, String description);
         String getProviderName();
         @Nullable SqlScript getDropScript(DbSchema schema);

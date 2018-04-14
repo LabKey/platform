@@ -773,7 +773,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     /**
      * Add files that follow the general naming convention (same basename) as the primary file
      */
-    public void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, final File primaryFile) throws ExperimentException
+    public void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, final File primaryFile)
     {
         AssayDataType dataType = getProvider().getDataType();
         final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile);

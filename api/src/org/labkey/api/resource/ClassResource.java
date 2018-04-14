@@ -51,17 +51,17 @@ public class ClassResource extends AbstractResource
         return true;
     }
 
-    public InputStream getInputStream() throws IOException
+    public InputStream getInputStream()
     {
         return parent.getResourceClass().getResourceAsStream(getName());
     }
 
-    public long copyFrom(User user, FileStream in) throws IOException
+    public long copyFrom(User user, FileStream in)
     {
         throw new UnsupportedOperationException();
     }
 
-    public long getContentLength() throws IOException
+    public long getContentLength()
     {
         throw new UnsupportedOperationException();
     }

@@ -84,7 +84,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @Override
-    public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol) throws Exception
+    public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)
     {
     }
 
@@ -188,7 +188,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     }
 
     @Override
-    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException
+    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
         String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
@@ -304,7 +304,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
     }
 
-    private void handleStandardProperties(ViewContext context, JSONObject jsonObject, ExpObject object, List<? extends DomainProperty> dps) throws ValidationException, SQLException
+    private void handleStandardProperties(ViewContext context, JSONObject jsonObject, ExpObject object, List<? extends DomainProperty> dps) throws ValidationException
     {
         if (jsonObject.has(ExperimentJSONConverter.NAME))
         {

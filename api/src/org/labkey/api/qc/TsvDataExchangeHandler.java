@@ -642,7 +642,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         };
     }
 
-    protected List<Map<String, Object>> parseRunInfo(File runInfo) throws IOException
+    protected List<Map<String, Object>> parseRunInfo(File runInfo)
     {
         try (TabLoader loader = new TabLoader(runInfo, false))
         {

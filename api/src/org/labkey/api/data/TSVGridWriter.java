@@ -41,7 +41,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     private int _dataRowCount;
 
-    public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws SQLException, IOException
+    public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws IOException
     {
         this(ctx, tinfo, displayColumns, tinfo.getName());
     }
@@ -61,7 +61,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     }
 
 
-    public TSVGridWriter(Results results) throws SQLException
+    public TSVGridWriter(Results results)
     {
         _rs = results;
         _displayColumns = init(results.getFieldMap().values());

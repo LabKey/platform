@@ -39,7 +39,7 @@ public class ButtonTag extends SimpleTagBase
     String _target;
     Boolean _submit = true;
 
-    public void doTag() throws JspException, IOException
+    public void doTag() throws IOException
     {
         Map<String, String> attributes = new HashMap<>();
         Button.ButtonBuilder button = PageFlowUtil.button(_text).id(_id);

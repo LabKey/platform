@@ -145,27 +145,27 @@ public class HtmlWriter implements ExportWriter
         }
     }
 
-    protected void openPage() throws IOException
+    protected void openPage()
     {
         getWriter().write("<html><body>");
     }
 
-    protected void closePage() throws IOException
+    protected void closePage()
     {
         getWriter().write("</body></html>");
     }
 
-    protected void openResults() throws IOException
+    protected void openResults()
     {
         getWriter().write("<table>\n");
     }
 
-    protected void closeResults(PrintWriter out) throws IOException
+    protected void closeResults(PrintWriter out)
     {
         out.write("</table>\n");
     }
 
-    protected void writeHeaders() throws IOException
+    protected void writeHeaders()
     {
         PrintWriter out = getWriter();
         out.write(getOpenRow());
@@ -181,7 +181,7 @@ public class HtmlWriter implements ExportWriter
         out.write(getCloseRow());
     }
 
-    protected void writeRow() throws IOException, SQLException
+    protected void writeRow()
     {
         PrintWriter out = getWriter();
         RenderContext ctx = getRenderContext();

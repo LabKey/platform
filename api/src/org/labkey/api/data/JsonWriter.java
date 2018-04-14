@@ -368,7 +368,7 @@ public class JsonWriter
         return null;
     }
 
-    public static Map<String,Object> getColModel(DisplayColumn dc) throws Exception
+    public static Map<String,Object> getColModel(DisplayColumn dc)
     {
         Map<String,Object> extGridColumn = new HashMap<>();
         ColumnInfo colInfo = dc.getColumnInfo();

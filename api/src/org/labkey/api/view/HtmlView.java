@@ -79,7 +79,7 @@ public class HtmlView extends WebPartView
     }
 
     @Override
-    public void renderView(Object model, PrintWriter out) throws IOException, ServletException
+    public void renderView(Object model, PrintWriter out)
     {
         assert null == _contentType || getFrame() == FrameType.NONE || getFrame() == FrameType.NOT_HTML;
 

@@ -422,7 +422,6 @@ public class ResultsImpl implements Results, DataIterator
 
     @Override
     public <T> T unwrap(Class<T> tClass)
-            throws SQLException
     {
         if (tClass.isAssignableFrom(_rs.getClass()))
             return (T) _rs;
@@ -431,7 +430,6 @@ public class ResultsImpl implements Results, DataIterator
 
     @Override
     public boolean isWrapperFor(Class<?> aClass)
-            throws SQLException
     {
         return aClass.isAssignableFrom(_rs.getClass());
     }
@@ -1758,12 +1756,12 @@ public class ResultsImpl implements Results, DataIterator
 
     // JDBC 4.1 methods below must be here so we compile on JDK 7; should implement once we require JRE 7.
 
-    public <T> T getObject(int columnIndex, Class<T> type) throws SQLException
+    public <T> T getObject(int columnIndex, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> T getObject(String columnLabel, Class<T> type) throws SQLException
+    public <T> T getObject(String columnLabel, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }

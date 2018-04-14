@@ -152,7 +152,7 @@ public abstract class AbstractMatrixRunCreator <ProviderType extends AbstractAss
         }
     }
 
-    private File getPrimaryFile(AssayRunUploadContext context) throws IOException, ExperimentException
+    private File getPrimaryFile(AssayRunUploadContext context) throws ExperimentException
     {
         Map<String, File> files = context.getUploadedData();
         assert files.containsKey(AssayDataCollector.PRIMARY_FILE);

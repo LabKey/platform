@@ -754,7 +754,7 @@ public class LabKeyScriptEngineManager extends ScriptEngineManager
          * Test that Script Engine Definitions can be configured from startup properties
          */
         @Test
-        public void testStartupPropertiesForScriptEngineDefinition() throws Exception
+        public void testStartupPropertiesForScriptEngineDefinition()
         {
             // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
             prepareTestStartupProperties();

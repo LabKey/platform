@@ -47,7 +47,7 @@ public class RequiredValueCommandArg extends JobParamToCommandArgs
         _formatter = formatter;
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited)
     {
         return _formatter.toArgs(_value);
     }

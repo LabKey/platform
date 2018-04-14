@@ -118,7 +118,7 @@ public class WebPartCache
             new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(new Selector.ForEachBlock<WebPart>()
             {
                 @Override
-                public void exec(WebPart wp) throws SQLException
+                public void exec(WebPart wp)
                 {
                     Portal.PortalPage p = pages.get(wp.getPageId());
                     if (null != p)

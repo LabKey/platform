@@ -127,7 +127,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
 
-    public int size() throws SQLException
+    public int size()
     {
         if (resultset instanceof CachedRowSet)
             return ((CachedRowSet) resultset).size();

@@ -522,7 +522,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             return _is;
         }
 
-        public void closeInputStream() throws IOException
+        public void closeInputStream()
         {
             IOUtils.closeQuietly(_is);
         }

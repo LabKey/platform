@@ -54,109 +54,109 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
             addColumn(new ColumnMetaData(md, i));
     }
 
-    public int getColumnCount() throws SQLException
+    public int getColumnCount()
     {
         return _list.size() - 1;
     }
 
-    public boolean isAutoIncrement(int column) throws SQLException
+    public boolean isAutoIncrement(int column)
     {
         return _list.get(column).isAutoIncrement;
     }
 
-    public boolean isCaseSensitive(int column) throws SQLException
+    public boolean isCaseSensitive(int column)
     {
         return _list.get(column).isCaseSensitive;
     }
 
-    public boolean isSearchable(int column) throws SQLException
+    public boolean isSearchable(int column)
     {
         return _list.get(column).isSearchable;
     }
 
-    public boolean isCurrency(int column) throws SQLException
+    public boolean isCurrency(int column)
     {
         return _list.get(column).isCurrency;
     }
 
-    public int isNullable(int column) throws SQLException
+    public int isNullable(int column)
     {
         return _list.get(column).isNullable;
     }
 
-    public boolean isSigned(int column) throws SQLException
+    public boolean isSigned(int column)
     {
         return _list.get(column).isSigned;
     }
 
-    public int getColumnDisplaySize(int column) throws SQLException
+    public int getColumnDisplaySize(int column)
     {
         return _list.get(column).columnDisplaySize;
     }
 
-    public String getColumnLabel(int column) throws SQLException
+    public String getColumnLabel(int column)
     {
         return _list.get(column).columnLabel;
     }
 
-    public String getColumnName(int column) throws SQLException
+    public String getColumnName(int column)
     {
         return _list.get(column).columnName;
     }
 
-    public String getSchemaName(int column) throws SQLException
+    public String getSchemaName(int column)
     {
         return _list.get(column).schemaName;
     }
 
-    public int getPrecision(int column) throws SQLException
+    public int getPrecision(int column)
     {
         return _list.get(column).precision;
     }
 
-    public int getScale(int column) throws SQLException
+    public int getScale(int column)
     {
         return _list.get(column).scale;
     }
 
-    public String getTableName(int column) throws SQLException
+    public String getTableName(int column)
     {
         return _list.get(column).tableName;
     }
 
-    public String getCatalogName(int column) throws SQLException
+    public String getCatalogName(int column)
     {
         return _list.get(column).catalogName;
     }
 
-    public int getColumnType(int column) throws SQLException
+    public int getColumnType(int column)
     {
         return _list.get(column).columnType;
     }
 
-    public String getColumnTypeName(int column) throws SQLException
+    public String getColumnTypeName(int column)
     {
 //        if (null == list.get(column).columnTypeName)
 //            list.get(column).columnTypeName = ColumnInfo.sqlTypeNameFromSqlType(list.get(column).columnType, SqlDialectMicrosoftSQLServer.getInstance());
         return _list.get(column).columnTypeName;
     }
 
-    public boolean isReadOnly(int column) throws SQLException
+    public boolean isReadOnly(int column)
     {
         return _list.get(column).isReadOnly;
     }
 
-    public boolean isWritable(int column) throws SQLException
+    public boolean isWritable(int column)
     {
         return _list.get(column).isWritable;
     }
 
-    public boolean isDefinitelyWritable(int column) throws SQLException
+    public boolean isDefinitelyWritable(int column)
     {
         return _list.get(column).isDefinitelyWritable;
     }
 
-    public String getColumnClassName(int column) throws SQLException
+    public String getColumnClassName(int column)
     {
         return _list.get(column).columnClassName;
     }
@@ -166,7 +166,7 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
         throw new SQLException("Not a wrapper for " + iface);
     }
 
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
+    public boolean isWrapperFor(Class<?> iface)
     {
         return false;
     }

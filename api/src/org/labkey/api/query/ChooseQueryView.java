@@ -37,7 +37,7 @@ public class ChooseQueryView extends WebPartView
         _dataRegionName = dataRegionName;
     }
 
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter out)
     {
         out.write("<table>");
         Map<String, QueryDefinition> queryDefs = _schema.getQueryDefs();

@@ -535,7 +535,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return null;
         }
 
-        public long copyFrom(User user, FileStream in) throws IOException
+        public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException(); 
         }

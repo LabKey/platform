@@ -191,7 +191,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
     }
 
-    public ModelAndView getView(PublishConfirmForm publishConfirmForm, BindException errors) throws Exception
+    public ModelAndView getView(PublishConfirmForm publishConfirmForm, BindException errors)
     {
         ViewContext context = getViewContext();
         _protocol = publishConfirmForm.getProtocol();

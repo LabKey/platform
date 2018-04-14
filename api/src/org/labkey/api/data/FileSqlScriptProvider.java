@@ -101,7 +101,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     // schema = null returns all scripts
     @NotNull
     @Override
-    public List<SqlScript> getScripts(@NotNull DbSchema schema) throws SqlScriptException
+    public List<SqlScript> getScripts(@NotNull DbSchema schema)
     {
         Set<String> filenames = getScriptFilenames(schema);
 
@@ -139,7 +139,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         Returned set can be empty (i.e., schemas that have no scripts)
     */
-    private @NotNull Set<String> getScriptFilenames(@NotNull DbSchema schema) throws SqlScriptException
+    private @NotNull Set<String> getScriptFilenames(@NotNull DbSchema schema)
     {
         return _module.getSqlScripts(schema);
     }

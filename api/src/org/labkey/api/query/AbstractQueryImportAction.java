@@ -150,7 +150,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         this._successMessageSuffix = successMessageSuffix;
     }
 
-    public ModelAndView getDefaultImportView(FORM form, BindException errors) throws Exception
+    public ModelAndView getDefaultImportView(FORM form, BindException errors)
     {
         return getDefaultImportView(form, null, errors);
     }
@@ -160,7 +160,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _acceptZeroResults = acceptZeroResults;
     }
     
-    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors) throws Exception
+    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
     {
         ActionURL url = getViewContext().getActionURL();
         User user = getUser();

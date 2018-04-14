@@ -524,7 +524,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
     public static class TestCase extends Assert
     {
         @Test
-        public void test() throws Exception
+        public void test()
         {
             Path a = Path.parse("/a");
             assertTrue(a.isAbsolute());
@@ -568,7 +568,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         }
 
         @Test
-        public void test21949() throws Exception
+        public void test21949()
         {
             Path messy = Path.parse("/a/./b/..//c/d/e/../../././f");
             Path normalized = messy.normalize();

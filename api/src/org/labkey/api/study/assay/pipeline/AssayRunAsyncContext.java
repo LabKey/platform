@@ -85,7 +85,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient TransformResult _transformResult;
     private transient Logger _logger;
 
-    public AssayRunAsyncContext(AssayRunUploadContext<ProviderType> originalContext) throws IOException, ExperimentException
+    public AssayRunAsyncContext(AssayRunUploadContext<ProviderType> originalContext) throws ExperimentException
     {
         // Cache the values, and remember their ids so that we can refetch the objects if needed
         _user = originalContext.getUser();
@@ -200,16 +200,11 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         logger.info("----- End Batch Properties -----");
 
         logger.info("----- Start Run Properties -----");
-        try{
-            logger.info("\tUploaded Files:");
-            for(Map.Entry<String, File> entry : getUploadedData().entrySet())
-            {
-                logger.info("\t\t* " + entry.getValue().getName());
-            }
-        }
-        catch(ExperimentException e)
+        logger.info("\tUploaded Files:");
+
+        for(Map.Entry<String, File> entry : getUploadedData().entrySet())
         {
-            logger.info("ERROR:  Experiment Exception getting file names.");
+            logger.info("\t\t* " + entry.getValue().getName());
         }
 
         if(_runName == null)
@@ -249,7 +244,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     }
 
     @Override
-    public Map<DomainProperty, String> getRunProperties() throws ExperimentException
+    public Map<DomainProperty, String> getRunProperties()
     {
         if (_runProperties == null)
         {
@@ -315,7 +310,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
     @NotNull
     @Override
-    public Map<String, File> getUploadedData() throws ExperimentException
+    public Map<String, File> getUploadedData()
     {
         return _uploadedData;
     }
@@ -362,7 +357,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     }
 
     @Override
-    public void uploadComplete(ExpRun run) throws ExperimentException
+    public void uploadComplete(ExpRun run)
     {
         // no-op
     }

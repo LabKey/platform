@@ -42,7 +42,7 @@ public class HttpRedirectView extends HttpView
     }
 
     @Override
-    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    protected void renderInternal(Object model, PrintWriter out)
     {
         throw new RedirectException(_url);
     }

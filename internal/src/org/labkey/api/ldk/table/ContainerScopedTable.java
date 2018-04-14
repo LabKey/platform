@@ -252,7 +252,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
             it.addColumn(pseudoPkCol, new Callable<Object>()
             {
                 @Override
-                public Object call() throws Exception
+                public Object call()
                 {
                     Container c = null;
                     if (inputColMap.containsKey(containerColName))

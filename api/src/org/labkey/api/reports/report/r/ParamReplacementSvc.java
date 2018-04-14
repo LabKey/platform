@@ -333,14 +333,14 @@ public class ParamReplacementSvc
         return null;
     }
 
-    public String processInputReplacement(String script, String replacementParam, String value) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String value)
     {
         return processInputReplacement(script, replacementParam, value, false);
     }
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
      */
-    public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio)
     {
         String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionSyntax.COMMENT);
         if (isRStudio)
@@ -351,7 +351,7 @@ public class ParamReplacementSvc
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
      */
-    public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionSyntax pattern) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionSyntax pattern)
     {
         Matcher m = pattern.getMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
@@ -405,7 +405,7 @@ public class ParamReplacementSvc
      * Removes any replacement param sequences '${}' from the specified String, this is useful when a replacement
      * parameter is conditional and you need to remove any unprocessed sequences before the command is executed
      */
-    public String clearUnusedReplacements(String script) throws Exception
+    public String clearUnusedReplacements(String script)
     {
         return script.replaceAll(SubstitutionSyntax.INLINE.getMatchPattern().pattern(), "");
     }
@@ -477,7 +477,7 @@ public class ParamReplacementSvc
         return sb.toString();
     }
 
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory) throws Exception
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory)
     {
         String commentProcessedScript = processHrefParamReplacement(report, script, parentDirectory, SubstitutionSyntax.COMMENT);
         return processHrefParamReplacement(report, commentProcessedScript, parentDirectory, SubstitutionSyntax.INLINE);
@@ -493,7 +493,7 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param pattern - the remote reference to this path if specified; may be null
      */
-    public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionSyntax pattern) throws Exception
+    public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionSyntax pattern)
     {
         Matcher m = pattern.getEscapedMatchPattern().matcher(script);
         StringBuffer sb = new StringBuffer();
@@ -539,7 +539,7 @@ public class ParamReplacementSvc
      * @param script - the script upon which to replace the Href parameters
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      */
-    public String processRelativeHrefReplacement(Report report, String script, File parentDirectory) throws Exception
+    public String processRelativeHrefReplacement(Report report, String script, File parentDirectory)
     {
         Matcher m = Pattern.compile("(href|src)=\"([^\"]*)\"").matcher(script);
         StringBuffer sb = new StringBuffer();

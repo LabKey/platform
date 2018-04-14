@@ -52,7 +52,7 @@ public class WrappingCloseableIterator<T> implements CloseableIterator<T>
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
     }
 }

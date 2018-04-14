@@ -93,7 +93,7 @@ public interface MessageConfigService
          */
         String getName();
 
-        EmailConfigForm createConfigForm(ViewContext context, PanelInfo info) throws Exception;
+        EmailConfigForm createConfigForm(ViewContext context, PanelInfo info);
 
         void validateCommand(ViewContext context, Errors errors);
 

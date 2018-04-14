@@ -515,7 +515,7 @@ public class ImageUtil
         public WebThumb() { }
 
         @Override
-        public void start(Stage stage) throws Exception
+        public void start(Stage stage)
         {
             stage.setTitle("WebThumb");
             final Group rootGroup = new Group();

@@ -106,15 +106,8 @@ public class SimpleModule extends SpringModule
 
         for (DbSchema schema : provider.getSchemas())
         {
-            try
-            {
-                if (!provider.getScripts(schema).isEmpty())
-                    return true;
-            }
-            catch (SqlScriptException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            if (!provider.getScripts(schema).isEmpty())
+                return true;
         }
 
         return false;

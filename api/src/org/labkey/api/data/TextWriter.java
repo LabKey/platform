@@ -71,7 +71,7 @@ public abstract class TextWriter implements AutoCloseable
         _pw = PrintWriters.getPrintWriter(file);
     }
 
-    public void prepare(OutputStream os) throws IOException
+    public void prepare(OutputStream os)
     {
         _pw = PrintWriters.getPrintWriter(os);
     }

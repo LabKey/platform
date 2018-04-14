@@ -29,7 +29,7 @@ import java.io.PrintWriter;
 public class EmptyView extends HttpView
 {
     @Override
-    protected void renderInternal(Object model, PrintWriter out) throws Exception
+    protected void renderInternal(Object model, PrintWriter out)
     {
     }
 }

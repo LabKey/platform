@@ -49,7 +49,7 @@ public class CountingSemaphore
     private class _Permit implements AutoCloseable
     {
         @Override
-        public void close() throws Exception
+        public void close()
         {
             s.release();
         }

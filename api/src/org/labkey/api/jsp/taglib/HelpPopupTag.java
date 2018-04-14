@@ -25,7 +25,7 @@ import java.io.IOException;
 public class HelpPopupTag extends BodyTagSupport
 {
     private String title;
-    public int doStartTag() throws JspException
+    public int doStartTag()
     {
         return EVAL_BODY_BUFFERED;
     }

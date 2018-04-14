@@ -43,7 +43,7 @@ public class LinkBarView extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderView(Object model, PrintWriter out)
     {
         out.write("<table width=\"100%\" cellpadding=0><tr><td>");
         for (Pair<String, String> link : _links)

@@ -2299,7 +2299,7 @@ public class ContainerManager
         Container _testRoot = null;
 
         @Before
-        public void setUp() throws Exception
+        public void setUp()
         {
             if (null == _testRoot)
             {
@@ -2311,7 +2311,7 @@ public class ContainerManager
 
 
         @After
-        public void tearDown() throws Exception
+        public void tearDown()
         {
             ContainerManager.removeContainerListener(this);
             if (null != _testRoot)
@@ -2320,7 +2320,7 @@ public class ContainerManager
 
 
         @Test
-        public void testImproperFolderNamesBlocked() throws Exception
+        public void testImproperFolderNamesBlocked()
         {
             String[] badnames = {"", "f\\o", "f/o", "f\\\\o", "foo;", "@foo", "foo" + '\u001F', '\u0000' + "foo", "fo" + '\u007F' + "o", "" + '\u009F'};
 
@@ -2345,7 +2345,7 @@ public class ContainerManager
 
 
         @Test
-        public void testCreateDeleteContainers() throws Exception
+        public void testCreateDeleteContainers()
         {
             int count = 20;
             Random random = new Random();
@@ -2371,7 +2371,7 @@ public class ContainerManager
 
 
         @Test
-        public void testCache() throws Exception
+        public void testCache()
         {
             assertEquals(0, _containers.size());
             assertEquals(0, ContainerManager.getChildren(_testRoot).size());

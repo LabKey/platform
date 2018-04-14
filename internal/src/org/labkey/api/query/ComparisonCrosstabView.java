@@ -44,7 +44,7 @@ public abstract class ComparisonCrosstabView extends CrosstabView
     protected abstract FieldKey getComparisonColumn();
 
     public GWTComparisonResult createComparisonResult()
-            throws SQLException, IOException, ServletException
+            throws IOException
     {
         List<FieldKey> cols = new ArrayList<>();
         CrosstabTableInfo table = (CrosstabTableInfo) getTable();

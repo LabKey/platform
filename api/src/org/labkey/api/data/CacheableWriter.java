@@ -79,7 +79,7 @@ public class CacheableWriter implements DocumentWriter
         _size = size;
     }
 
-    public OutputStream getOutputStream() throws IOException
+    public OutputStream getOutputStream()
     {
         return _bOut;
     }

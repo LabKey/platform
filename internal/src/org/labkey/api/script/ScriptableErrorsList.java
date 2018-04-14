@@ -37,7 +37,7 @@ public class ScriptableErrorsList extends ScriptableList
     static final String CLASSNAME = "ErrorsList";
     BatchValidationException errors;
 
-    public static void init(Scriptable scope) throws NoSuchMethodException
+    public static void init(Scriptable scope)
     {
         BaseFunction ctor = new BaseFunction(scope, ScriptableObject.getFunctionPrototype(scope))
         {

@@ -251,7 +251,7 @@ public class HTMLDataLoader extends DataLoader
 
 
     @Override
-    public String[][] getFirstNLines(int n) throws IOException
+    public String[][] getFirstNLines(int n)
     {
         Collection<String[]> table = parse(n);
         return table.toArray(new String[table.size()][]);
@@ -300,7 +300,7 @@ public class HTMLDataLoader extends DataLoader
         }
 
         @Override
-        protected Object[] readFields() throws IOException
+        protected Object[] readFields()
         {
             if (!iter.hasNext())
                 return null;

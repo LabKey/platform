@@ -150,7 +150,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      * pushed back into the form. When insert reselects
      * all columns this will reselect.
      */
-    public void doInsert() throws SQLException, ServletException
+    public void doInsert() throws SQLException
     {
         assert null != _tinfo;
 
@@ -172,7 +172,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      * When update reselects all columns this will drive the changes
      * back into the form
      */
-    public void doUpdate() throws SQLException, ServletException
+    public void doUpdate() throws SQLException
     {
         assert null != _tinfo : "No table";
         assert null != getPkVals() : "No PK values";
@@ -198,7 +198,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      * <p/>
      * NOTE: Cascading deletes are NOT supported.
      */
-    public void doDelete() throws SQLException, ServletException
+    public void doDelete()
     {
         assert null != _tinfo : "No table";
         assert null != getPkVals() : "No PK values";
@@ -226,7 +226,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     /**
      * Pulls in the data from the current row of the database.
      */
-    public void refreshFromDb() throws SQLException
+    public void refreshFromDb()
     {
         assert null != _tinfo : "No table";
         assert null != getPkVals() : "No PK values";

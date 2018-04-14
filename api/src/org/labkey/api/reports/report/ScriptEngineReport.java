@@ -687,7 +687,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
     }
 
-    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio) throws Exception
+    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio)
     {
         return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio);
     }
@@ -814,7 +814,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             _path = path;
         }
 
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
+        protected void renderInternal(Object model, PrintWriter out)
         {
             FileUtil.deleteDir(new File(_path));
         }

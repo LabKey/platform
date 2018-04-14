@@ -77,7 +77,7 @@ public abstract class AbstractSpecimenTransformTask
     private int rowIndex = 0;
     private Set<String> hashes = new HashSet<>();
 
-    protected List<Map<String, Object>> transformRows(List<Map<String, Object>> inputRows) throws IOException
+    protected List<Map<String, Object>> transformRows(List<Map<String, Object>> inputRows)
     {
         return inputRows
             .stream()

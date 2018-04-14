@@ -63,7 +63,7 @@ public class SystemProperty
         return _pd;
     }
 
-    private void register() throws SQLException, ChangePropertyDescriptorException
+    private void register() throws ChangePropertyDescriptorException
     {
         _pd = OntologyManager.getPropertyDescriptor(_propertyURI, getContainer());
         MemTracker.getInstance().remove(_pd);  // these are globals now, so don't track
