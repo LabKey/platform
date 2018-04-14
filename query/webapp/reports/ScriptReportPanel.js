@@ -795,8 +795,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     window.name = selfWindowName;
                     // close external edit window to avoid simultaneous editing
                     if (me.externalEditWindow && me.externalEditWindow.window) {
-                        if (!me.externalEditWindow.window.closed && me.externalEditWindow.location.href.indexOf(config.externalUrl) !== -1)
-                            me.externalEditWindow.close();
+                        if (!me.externalEditWindow.window.closed && me.externalEditWindow.location.href.indexOf(config.externalUrl) !== -1) {
+                            if (me.externalEditWindow.saveAndClose && typeof me.externalEditWindow.saveAndClose === "function")
+                                me.externalEditWindow.saveAndClose();
+                            else
+                                me.externalEditWindow.close();
+                        }
                     }
                     else
                     {
@@ -807,7 +811,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             var href = tmpWin.location.href;
                             // if temp window href is desired externalUrl, temp window is the target external window.
                             if (href.indexOf(config.externalUrl) !== -1) // if RStudio report
-                                tmpWin.close();
+                            {
+                                if (tmpWin.saveAndClose && typeof tmpWin.saveAndClose === "function")
+                                    tmpWin.saveAndClose();
+                                else
+                                    tmpWin.close();
+                            }
                             // if temp window href is about:blank, temp window is newly opened and should be closed.
                             else if (href === 'about:blank') // if newly opened blank window
                                 tmpWin.close();
@@ -820,27 +829,30 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         }
                     }
 
-                    Ext4.Ajax.request(
-                            {
-                                method: "POST",
-                                url: me.externalEditSettings.finishUrl,
-                                params: {
-                                    returnUrl: config.redirectUrl,
-                                    entityId: config.entityId
-                                },
-                                success : function(resp, opt) {
-                                    var o = Ext4.decode(resp.responseText);
+                    new Ext4.util.DelayedTask(function() {
+                        Ext4.Ajax.request(
+                                {
+                                    method: "POST",
+                                    url: me.externalEditSettings.finishUrl,
+                                    params: {
+                                        returnUrl: config.redirectUrl,
+                                        entityId: config.entityId
+                                    },
+                                    success : function(resp, opt) {
+                                        var o = Ext4.decode(resp.responseText);
 
-                                    if (o.success) {
-                                        window.location = o.redirectUrl;
-                                    }
-                                    else {
-                                        LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
-                                    }
-                                },
-                                failure : LABKEY.Utils.displayAjaxErrorResponse
-                            }
-                    )
+                                        if (o.success) {
+                                            window.location = o.redirectUrl;
+                                        }
+                                        else {
+                                            LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+                                        }
+                                    },
+                                    failure : LABKEY.Utils.displayAjaxErrorResponse
+                                }
+                        );
+                    }, me).delay(5000); // wait to stop RStudio container to allow buffer for saveAndClose
+
                 }
             },{
                 text: 'Go to ' + externalName,
