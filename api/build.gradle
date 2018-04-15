@@ -113,7 +113,9 @@ configurations {
 sourceSets {
   main {
     java {
-      srcDirs =["src", "${parent.projectDir}/internal/gwtsrc"]
+      srcDirs =["src", "gwtsrc"]
+      if (parent.file("${parent.projectDir}/internal/gwtsrc").exists())
+        srcDirs += ["${parent.projectDir}/internal/gwtsrc"]
     }
   }
 }
