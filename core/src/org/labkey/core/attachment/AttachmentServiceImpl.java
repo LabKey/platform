@@ -55,7 +55,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
@@ -661,7 +660,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 selectStatement.append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
                     .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
                     .append(" WHERE ");
-                type.addWhereSql(selectStatement, "d.Parent", "d.DocumentName");
+                addAndVerifyWhereSql(type, selectStatement);
                 selectStatement.append("\n");
 
                 selectStatements.add(selectStatement);
@@ -682,7 +681,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 whereSql.append(sep);
                 sep = " OR";
                 whereSql.append("\n(");
-                type.addWhereSql(whereSql, "d.Parent", "d.DocumentName");
+                addAndVerifyWhereSql(type, whereSql);
                 whereSql.append(")");
             }
 
@@ -746,11 +745,19 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment oneTypeSql = new SQLFragment("SELECT d.Container, c.Name, d.Parent, d.DocumentName FROM core.Documents d\n" +
                 "INNER JOIN core.Containers c ON c.EntityId = d.Container\n" +
                 "WHERE ");
-            attachmentType.addWhereSql(oneTypeSql, "d.Parent", "d.DocumentName");
+            addAndVerifyWhereSql(attachmentType, oneTypeSql);
             oneTypeSql.append("\nORDER BY Container, Parent, DocumentName");
 
             return getResultSetView(oneTypeSql, attachmentType.getUniqueName() + " Attachments", null);
         }
+    }
+
+    private void addAndVerifyWhereSql(AttachmentType attachmentType, SQLFragment sql)
+    {
+        int initialLength = sql.length();
+        attachmentType.addWhereSql(sql, "d.Parent", "d.DocumentName");
+        if (initialLength == sql.length())
+            throw new UnsupportedOperationException("AttachmentType: '" + attachmentType.getUniqueName() + "' did not update attachment WHERE clause.");
     }
 
     @Override
