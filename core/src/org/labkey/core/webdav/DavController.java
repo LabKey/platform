@@ -68,6 +68,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.CSRFException;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -1162,6 +1164,18 @@ public class DavController extends SpringActionController
         {
             if (PremiumService.get().isFileUploadDisabled())
                 return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+
+            if ("POST".equals(AppProps.getInstance().getCSRFCheck()))
+            {
+                try
+                {
+                    CSRFUtil.validate(getRequest(), getResponse().response);
+                }
+                catch (CSRFException ex)
+                {
+                    throw new UnauthorizedException(null, ex.getMessage());
+                }
+            }
 
             WebdavResource resource = resolvePath();
             if (null == resource)

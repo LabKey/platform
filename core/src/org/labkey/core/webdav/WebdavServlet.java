@@ -27,7 +27,6 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
@@ -97,11 +96,6 @@ public class WebdavServlet extends HttpServlet
                     return;
                 }
             }
-        }
-
-        if (("POST".equals(request.getMethod()) || "POST".equals(method)) && "POST".equals(AppProps.getInstance().getCSRFCheck()))
-        {
-            CSRFUtil.validate(request, response);
         }
 
         if ("GET".equals(method) && "/".equals(fullPath) && AppProps.getInstance().getSiteWelcomePageUrlString() != null)
