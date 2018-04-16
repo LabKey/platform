@@ -36,10 +36,17 @@ public interface AttachmentType
         @Override
         public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
         {
+            sql.append("0 = 1");
         }
     };
 
     @NotNull String getUniqueName();
 
+    /**
+     * Append to the where clause of a query that wants to select attachments of the implementing type
+     * @param sql Implementers MUST append a valid where clause to this SQLFragment
+     * @param parentColumn Column identifier for use in where clause. Usually represents 'core.Documents.Parent'
+     * @param documentNameColumn Column identifier for use in where clause. Usually represents 'core.Documents.DocumentName'
+     */
     void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn);
 }

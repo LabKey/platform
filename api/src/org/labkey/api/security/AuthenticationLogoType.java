@@ -63,5 +63,9 @@ public class AuthenticationLogoType implements AttachmentType
             sql.addAll(validLogoNames);
             sql.append(")");
         }
+        else
+        {
+            sql.append("0 = 1");
+        }
     }
 }
