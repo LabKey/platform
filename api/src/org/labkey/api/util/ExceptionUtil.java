@@ -88,6 +88,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExceptionUtil
 {
+    public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
+
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
     private static final Logger LOG = Logger.getLogger(ExceptionUtil.class);
     // Allow 10 report submissions to mothership per minute
@@ -564,6 +566,7 @@ public class ExceptionUtil
 
         // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
         ex = unwrapException(ex);
+        request.setAttribute(REQUEST_EXCEPTION_ATTRIBUTE, ex);
 
         // unhandledException indicates whether the exception is expected or not
         // assume it is unhandled and clear for Unauthorized, NotFound, etc

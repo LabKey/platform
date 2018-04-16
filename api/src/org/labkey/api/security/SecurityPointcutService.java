@@ -16,15 +16,21 @@
 package org.labkey.api.security;
 
 import org.labkey.api.module.Module;
+import org.labkey.api.services.ServiceRegistry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Created by matthew on 6/20/17.
+ * TODO should implement some sort of addListener() pattern
  */
 public interface SecurityPointcutService
 {
+    static void setInstance(SecurityPointcutService impl)
+    {
+        ServiceRegistry.get().registerService(SecurityPointcutService.class, impl);
+    }
 
     /**
      * This handler is called before a action request (.api,.view,.post) is dispatched to an module for resolving to an action.
@@ -43,4 +49,10 @@ public interface SecurityPointcutService
      * This handler is called _very_ early, to validate that the request is well-formed
      */
     boolean beforeProcessRequest(HttpServletRequest req, HttpServletResponse res);
+
+    /**
+     * This handler is called _very_ early, to validate that the request is well-formed
+     */
+    void afterProcessRequest(HttpServletRequest req, HttpServletResponse res);
+
 }

@@ -44,6 +44,7 @@ public interface AppProps
     String EXPERIMENTAL_RSERVE_REPORTING = "rserveReports";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
+    String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     // For Customisable web colour theme
     String WEB_THEME_CONFIG_NAME = "WebThemeConfig";

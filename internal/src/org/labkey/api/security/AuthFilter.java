@@ -17,6 +17,14 @@
 package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -26,8 +34,11 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.Filter;
@@ -39,8 +50,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -66,11 +84,11 @@ public class AuthFilter implements Filter
     {
         ViewServlet.setAsRequestThread();
         HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse resp = new SafeFlushResponseWrapper((HttpServletResponse)response);
+        HttpServletResponse resp = new SafeFlushResponseWrapper((HttpServletResponse) response);
 
         if (null != _securityPointcut)
         {
-            if (!_securityPointcut.beforeProcessRequest(req,resp))
+            if (!_securityPointcut.beforeProcessRequest(req, resp))
                 return;
         }
 
@@ -202,7 +220,7 @@ public class AuthFilter implements Filter
             // Render unauthorized impersonation exception so admin knows what's going on
             ExceptionUtil.handleException(req, resp, e, null, false);
             SecurityManager.stopImpersonating(req, e.getFactory());    // Needs to happen after rendering exception page, otherwise session gets messed up
-            ((AuthenticatedRequest)req).close();
+            ((AuthenticatedRequest) req).close();
             return;
         }
 
@@ -215,12 +233,18 @@ public class AuthFilter implements Filter
         }
         finally
         {
+            int status = resp.getStatus();
+            if (null != _securityPointcut)
+            {
+                _securityPointcut.afterProcessRequest(req, resp);
+            }
+
             SecurityLogger.popSecurityContext();
             QueryService.get().clearEnvironment();
-            
+
             // Clear all the request attributes that have been set. This helps memtracker.  See #10747.
             assert clearRequestAttributes(req);
-            ((AuthenticatedRequest)req).close();
+            ((AuthenticatedRequest) req).close();
         }
     }
 
@@ -238,7 +262,7 @@ public class AuthFilter implements Filter
 
     private void ensureFirstRequestHandled(HttpServletRequest request)
     {
-        synchronized(FIRST_REQUEST_LOCK)
+        synchronized (FIRST_REQUEST_LOCK)
         {
             if (_firstRequestHandled)
                 return;
