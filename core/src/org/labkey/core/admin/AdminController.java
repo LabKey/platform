@@ -264,6 +264,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
         AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
+        AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class,root));
         AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
@@ -8946,6 +8947,48 @@ public class AdminController extends SpringActionController
             _testMode = testMode;
         }
     }
+
+
+    @RequiresPermission(AdminReadPermission.class)
+    public class SuspiciousAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            Collection<BlacklistFilter.Suspicious> list = BlacklistFilter.reportSuspicious();
+            StringBuilder sb = new StringBuilder();
+            if (list.isEmpty())
+            {
+                sb.append("No suspicious activity.\n");
+            }
+            else
+            {
+                sb.append("<table class='table'>");
+                sb.append("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
+                for (BlacklistFilter.Suspicious s : list)
+                {
+                    sb.append("<tr><td>")
+                            .append(PageFlowUtil.filter(s.host));
+                    if (!StringUtils.isBlank(s.user))
+                            sb.append("&nbsp;(" + PageFlowUtil.filter(s.user) + ")");
+                     sb.append("</td><td>")
+                            .append(PageFlowUtil.filter(s.userAgent))
+                            .append("</td><td>")
+                            .append(PageFlowUtil.filter(s.count))
+                            .append("</td></tr>\n");
+                }
+                sb.append("</table>");
+            }
+            return new HtmlView(sb.toString());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Suspicious activity", SuspiciousAction.class);
+        }
+    }
+
 
     public static class TestCase extends AbstractActionPermissionTest
     {

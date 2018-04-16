@@ -101,6 +101,8 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPointcutService;
+import org.labkey.api.security.SecurityPointcutServiceImpl;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -334,6 +336,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.setInstance(new UsageMetricsServiceImpl());
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
         WarningService.setInstance(new WarningServiceImpl());
+        SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
 
         try
         {
@@ -865,6 +868,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
                 "No Guest Account",
                 "Disable the guest account",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
+                "Block malicious clients",
+                "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
                 false);
 
         if (null != PropertyService.get())
