@@ -140,6 +140,17 @@ public class QMethodCall extends QExpr
         return false;
     }
 
+    public void addFieldRefs(Object referant)
+    {
+        // skip ref'ing the method name
+        List<QNode> children = childList();
+        for (int i=1 ; i<children.size() ; i++)
+        {
+            QNode child = children.get(i);
+            child.addFieldRefs(referant);
+        }
+    }
+
     @Override @NotNull
     public JdbcType getJdbcType()
     {

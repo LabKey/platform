@@ -69,6 +69,7 @@ public class QueryTable extends QueryRelation
     final int _uniqueAliasCounter;
 
     Boolean _generateSelectSQL = null;
+    Boolean _selectAllColumns = false;
 
     public QueryTable(Query query, QuerySchema schema, TableInfo table, String alias)
     {
@@ -117,7 +118,12 @@ public class QueryTable extends QueryRelation
     {
         MethodInfo m = _tableInfo.getMethod(name);
         if (null != m)
+        {
+            // TODO: _selectAllColumns is a fix for not knowing which columns the method might depend on
+            // TODO: proper fix is to add MethodInfo.getDependantFiekdKeys()
+            _selectAllColumns = true;
             _generateSelectSQL = Boolean.TRUE; // don't optimize, see getAlias()
+        }
         return m;
     }
 
@@ -295,7 +301,7 @@ public class QueryTable extends QueryRelation
 
         for (ColumnInfo c : _tableInfo.getColumns())
         {
-            if (c.isKeyField())
+            if (c.isKeyField() || _selectAllColumns)
             {
                 RelationColumn keyField = getColumn(c.getName());
                 if (null != keyField)
