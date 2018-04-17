@@ -32,11 +32,7 @@ LABKEY.Ajax = new function () {
         }
     };
 
-    /**
-     * Returns true iff obj contains case-insensitive key
-     * @param {object} obj
-     * @param {string} key
-     */
+    // Returns true iff obj contains case-insensitive key
     var contains = function(obj, key) {
         if (key) {
             var lowerKey = key.toLowerCase();
@@ -142,6 +138,44 @@ LABKEY.Ajax = new function () {
     return {
         DEFAULT_HEADERS : DEFAULT_HEADERS,
 
+        /**
+         * Make a XMLHttpRequest nominally to a LabKey instance. Includes success/failure callback mechanism,
+         * HTTP header configuration, support for FormData, and parameter encoding amongst other features.
+         * @param config An object which contains the following configuration properties.
+         * @param {String} config.url the url used for the XMLHttpRequest. If you are making a request to the
+         *              LabKey Server instance see {@link LABKEY.ActionURL.buildURL} for helpful URL construction.
+         * @param {String} [config.method] the HTTP request method used for the XMLHttpRequest. Examples are "GET", "PUSH, "DELETE", etc.
+         *              Defaults to "GET" unless jsonData is supplied then the default is changed to "POST". For more information,
+         *              see this <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP request method documentation</a>.
+         * @param {Object} [config.jsonData] data provided to the XMLHttpRequest.send(data) function. If the request is method "POST" this is the body of the request.
+         * @param {Object} [config.params] An object representing URL parameters that will be added to the URL.
+         *                 Note, that if the request is method "POST" and jsonData is not provided these params will be sent via the body of the request.
+         * @param {Object} [config.headers] Object specifying additional HTTP headers to add the request.
+         * @param {Mixed} [config.form] FormData or Object consumable by FormData that can be used to POST key/value pairs of form information.
+         *              For more information, see <a href="https://developer.mozilla.org/en-US/docs/Web/API/FormData">FormData documentation</a>.
+         * @param {Function} [config.success] A function called when a successful response is received (determined by XHR readyState and status).
+         *              It will be passed the following arguments:
+         * <ul>
+         * <li><b>xhr:</b> The XMLHttpRequest where the text of the response can be found on xhr.responseText amongst other properties</li>
+         * <li><b>originalConfig:</b> The config originally supplied to LABKEY.Ajax.request</li>
+         * </ul>
+         * @param {Function} [config.failure] A function called when a failure response is received (determined by
+         *              XHR readyState, status, or ontimeout if supplied). It will be passed the following arguments:
+         * <ul>
+         * <li><b>xhr:</b> The XMLHttpRequest where the text of the response can be found on xhr.responseText amongst other properties</li>
+         * <li><b>originalConfig:</b> The config originally supplied to LABKEY.Ajax.request</li>
+         * </ul>
+         * @param {Function} [config.callback] A function called after any success/failure response is received. It will
+         *              be passed the following arguments:
+         * <ul>
+         * <li><b>originalConfig:</b> The config originally supplied to LABKEY.Ajax.request</li>
+         * <li><b>success:</b> boolean value that is true if the request was successful</li>
+         * <li><b>xhr:</b> The XMLHttpRequest where the text of the response can be found on xhr.responseText amongst other properties</li>
+         * </ul>
+         * @param {Mixed} [config.scope] A scope for the callback functions. Defaults to "this".
+         * @param {Mixed} [config.timeout] If a non-null value is supplied then XMLHttpRequest.ontimeout will be hooked to failure.
+         * @returns {XMLHttpRequest}
+         */
         request : function(config) {
             var options = configureOptions(config),
                 scope = config.hasOwnProperty('scope') && config.scope !== null ? config.scope : this,
