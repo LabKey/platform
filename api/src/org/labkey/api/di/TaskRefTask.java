@@ -45,6 +45,8 @@ import java.util.Map;
  */
 public interface TaskRefTask
 {
+    String TASKREF_MISSING_REQUIRED_SETTING = "TaskRef missing required setting(s):";
+
     /**
      * The method that does the real work in the implementing class.
      * @return RecordedActionSet Any parameters of any RecordedActions in the set get persisted in the job parameter set in
