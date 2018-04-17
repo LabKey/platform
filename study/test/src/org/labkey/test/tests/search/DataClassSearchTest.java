@@ -68,7 +68,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     private static final String DATA_CLASS_2_NAME = "DataClass2";
     private static final String DATA_CLASS_3_NAME = "DataClass3";
     private static final String DATA_CLASS_ICE_CREAM = "cookies and cream";
-    private static String dataClassDomainId;
+    private static Long dataClassDomainId;
     private static String dataClassDomainUri;
     private static long[] dataClassRowIds = new long[3];
     private static Connection connection;
