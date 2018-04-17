@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -518,7 +519,7 @@ public class UploadSamplesHelper
                 String newComment = null == newCommentObj ? null : String.valueOf(newCommentObj);
                 if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
                 {
-                    Map<String, Object> newMap = new HashMap<>(map);
+                    Map<String, Object> newMap = new CaseInsensitiveHashMap<>(map);
                     newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
                     li.set(newMap);
                 }

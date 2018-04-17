@@ -32,7 +32,6 @@ public class TaskRefTransformStepMeta extends StepMetaImpl
     public static final String TASKREF_CLASS_NOT_FOUND = "TaskRef class not found: ";
     public static final String TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE = "TaskRef class must implement interface: ";
     public static final String TASKREF_CLASS_INSTANTIATION_EXCEPTION = "Exception instantiating taskRef class ";
-    public static final String TASKREF_MISSING_REQUIRED_SETTING = "TaskRef missing required setting(s):";
     private TaskRefTask taskInstance = null;
     private String taskClassName = "";
 

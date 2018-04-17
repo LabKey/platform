@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import com.google.common.collect.Iterables;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
@@ -2495,27 +2496,31 @@ public class ExperimentServiceImpl implements ExperimentService
     // insert objects for any LSIDs not yet in exp.object
     private void ensureEdgeObjects(Map<String, Map<String, Object>> allNodesByLsid)
     {
-        SQLFragment sql = new SQLFragment("SELECT lsid FROM (\n");
-        sql.append("VALUES\n");
-        String sep = "";
-        for (String lsid : allNodesByLsid.keySet())
-        {
-            sql.append(sep).append("(?)").add(lsid);
-            sep = ",\n";
-        }
-        sql.append(") AS t (lsid)\n");
-        sql.append("WHERE NOT EXISTS (SELECT 1 FROM ").append(getTinfoObject(), "o").append(" WHERE o.objectUri = lsid)");
+        // Issue 33932: partition into groups of 1000 to avoid SQLServer parameter limit
+        Set<String> allLsids = allNodesByLsid.keySet();
+        Iterables.partition(allLsids, 1000).forEach(lsids -> {
 
-        SqlSelector ss = new SqlSelector(getExpSchema(), sql);
-        ss.getCollection(String.class).forEach(missingObjectLsid -> {
-            Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
-            Container container = ContainerManager.getForId((String)missingObjectRow.get("container"));
-            if (container == null)
-                throw new IllegalArgumentException();
-            String cpasType = (String)missingObjectRow.get("cpasType");
-            ensureEdgeObject(container, missingObjectLsid, cpasType);
+            SQLFragment sql = new SQLFragment("SELECT lsid FROM (\n");
+            sql.append("VALUES\n");
+            String sep = "";
+            for (String lsid : lsids)
+            {
+                sql.append(sep).append("(?)").add(lsid);
+                sep = ",\n";
+            }
+            sql.append(") AS t (lsid)\n");
+            sql.append("WHERE NOT EXISTS (SELECT 1 FROM ").append(getTinfoObject(), "o").append(" WHERE o.objectUri = lsid)");
+
+            SqlSelector ss = new SqlSelector(getExpSchema(), sql);
+            ss.getCollection(String.class).forEach(missingObjectLsid -> {
+                Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
+                Container container = ContainerManager.getForId((String)missingObjectRow.get("container"));
+                if (container == null)
+                    throw new IllegalArgumentException();
+                String cpasType = (String)missingObjectRow.get("cpasType");
+                ensureEdgeObject(container, missingObjectLsid, cpasType);
+            });
         });
-
     }
 
     private int ensureEdgeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType)

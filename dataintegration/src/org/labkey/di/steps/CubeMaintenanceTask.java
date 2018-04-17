@@ -32,7 +32,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.di.pipeline.TaskRefTaskImpl;
+import org.labkey.api.di.TaskRefTaskImpl;
 
 import java.util.Arrays;
 import java.util.Collections;

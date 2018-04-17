@@ -24,10 +24,10 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -166,7 +166,7 @@ public class LogManager
      */
     private <K extends AuditTypeEvent> K validateFields(@NotNull AuditTypeProvider provider, @NotNull K type)
     {
-        BeanObjectFactory<K> factory = new BeanObjectFactory<>((Class<K>) type.getClass());
+        ObjectFactory<K> factory = ObjectFactory.Registry.getFactory((Class<K>)type.<K>getClass());
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         factory.toMap(type, values);
 

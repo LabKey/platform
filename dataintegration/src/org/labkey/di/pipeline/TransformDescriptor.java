@@ -32,6 +32,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.TaskRefTask;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -73,7 +74,6 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.steps.ExternalPipelineTaskMeta;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.di.steps.TaskRefTransformStepMeta;
 import org.labkey.di.steps.TestTask;
 import org.labkey.etl.xml.EtlType;
 import org.quartz.CronExpression;
@@ -711,7 +711,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             checkInvalidSyntax(getFile(BAD_SOURCE), TransformManager.INVALID_SOURCE);
             checkInvalidSyntax(getFile(BAD_TARGET), TransformManager.INVALID_DESTINATION);
             checkInvalidSyntax(getFile(BAD_PROCEDURE), TransformManager.INVALID_PROCEDURE);
-            checkInvalidSyntax(getFile(TASKREF_BAD_SETTING), TaskRefTransformStepMeta.TASKREF_MISSING_REQUIRED_SETTING + "\nsetting1\n");
+            checkInvalidSyntax(getFile(TASKREF_BAD_SETTING), TaskRefTask.TASKREF_MISSING_REQUIRED_SETTING + "\nsetting1\n");
         }
 
         @Test

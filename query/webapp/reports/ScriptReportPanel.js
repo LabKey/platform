@@ -768,7 +768,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     {
         var externalName = this.externalEditSettings.name;
         var me = this;
-        new Ext4.Window({
+        var popup = new Ext4.Window({
             autoShow: true,
             modal: false,
             width: 380,
@@ -790,7 +790,21 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             buttons: [{
                 text: 'Edit in LabKey',
                 onClick : function () {
-                    this.disable();
+                    popup.close();
+                    new Ext4.Window({
+                        autoShow: true,
+                        modal: false,
+                        width: 150,
+                        height: 80,
+                        border: false,
+                        header: false,
+                        closable: false,
+                        resizable: false,
+                        items:[{
+                            xtype: 'box',
+                            html: '<div style="padding: 20px;"><i class="fa fa-spinner fa-pulse"></i> loading...</div>'
+                        }]
+                    });
                     var selfWindowName = 'lk' + (new Date()).getTime(); //a unique window name for current window
                     window.name = selfWindowName;
                     // close external edit window to avoid simultaneous editing

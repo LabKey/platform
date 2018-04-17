@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.di.pipeline.TaskRefTaskImpl;
+import org.labkey.api.di.TaskRefTaskImpl;
 
 import java.util.Collections;
 import java.util.List;

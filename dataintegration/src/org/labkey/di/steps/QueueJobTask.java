@@ -22,7 +22,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.di.pipeline.TaskRefTaskImpl;
+import org.labkey.api.di.TaskRefTaskImpl;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformPipelineJob;
