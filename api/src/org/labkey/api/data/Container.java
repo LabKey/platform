@@ -211,11 +211,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.isDuplicatedInContainerFilter();
    }
 
-    public Boolean parentDataIsRelevant(ContainerType.DataType dataType)
-    {
-        return _containerType.parentDataIsRelevant(dataType);
-    }
-
     public String getTitleFor(ContainerType.TitleContext context)
     {
         return _containerType.getTitleFor(context, this);

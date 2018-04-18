@@ -20,84 +20,77 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public Boolean canHaveChildren()
+    public boolean canHaveChildren()
     {
         return true;
     }
 
     @Override
-    public Boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(ImportContext context)
     {
        return context.isIncludeSubfolders();
     }
 
     @Override
-    public Boolean shouldRemoveFromPortal()
+    public boolean shouldRemoveFromPortal()
     {
         return true;
     }
 
     @Override
-    public Boolean includePropertiesAsChild(boolean includeTabs)
+    public boolean includePropertiesAsChild(boolean includeTabs)
     {
         return true;
     }
 
     @Override
-    public Boolean isInFolderNav()
+    public boolean isInFolderNav()
     {
         return true;
     }
 
     @Override
-    public Boolean isConvertibleToTab()
+    public boolean isConvertibleToTab()
     {
         return true;
     }
 
     @Override
-    public Boolean canDeleteFromContainer(Container currentContainer, Container container)
+    public boolean canDeleteFromContainer(Container currentContainer, Container container)
     {
         return false;
     }
 
     @Override
-    public Boolean canUpdateFromContainer(Container currentContainer, Container container)
+    public boolean canUpdateFromContainer(Container currentContainer, Container container)
     {
         return false;
     }
 
     @Override
-    public Boolean canAdminFolder()
+    public boolean canAdminFolder()
     {
         return true;
     }
 
     @Override
-    public Boolean requiresAdminToDelete()
+    public boolean requiresAdminToDelete()
     {
         return true;
     }
 
     @Override
-    public Boolean requiresAdminToCreate()
+    public boolean requiresAdminToCreate()
     {
         return true;
     }
 
     @Override
-    public Boolean isDuplicatedInContainerFilter()
+    public boolean isDuplicatedInContainerFilter()
     {
         return false;
     }
 
-    @Override
-    public Boolean parentDataIsRelevant(DataType dataType)
-    {
-        return false;
-    }
-
-    // The methods below require the current container
     @Override
     public String getTitleFor(TitleContext tContext, Container currentContainer)
     {
@@ -123,7 +116,7 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public Boolean isContainerFor(DataType dataType)
+    public boolean isContainerFor(DataType dataType)
     {
         return true;
     }

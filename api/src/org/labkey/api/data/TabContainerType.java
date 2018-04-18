@@ -13,37 +13,37 @@ public class TabContainerType extends NormalContainerType implements ContainerTy
     }
 
     @Override
-    public Boolean canHaveChildren()
+    public boolean canHaveChildren()
     {
         return false;
     }
 
     @Override
-    public Boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(ImportContext context)
     {
         return true;
     }
 
     @Override
-    public Boolean shouldRemoveFromPortal()
+    public boolean shouldRemoveFromPortal()
     {
         return true;
     }
 
     @Override
-    public Boolean includePropertiesAsChild(boolean includeTabs)
+    public boolean includePropertiesAsChild(boolean includeTabs)
     {
         return includeTabs;
     }
 
     @Override
-    public Boolean isInFolderNav()
+    public boolean isInFolderNav()
     {
         return false;
     }
 
     @Override
-    public Boolean isContainerFor(DataType dataType)
+    public boolean isContainerFor(DataType dataType)
     {
         switch (dataType)
         {

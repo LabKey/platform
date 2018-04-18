@@ -7,8 +7,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.labkey.api.data.ContainerType.DataType.assayProtocols;
-import static org.labkey.api.data.ContainerType.DataType.inventory;
-import static org.labkey.api.data.ContainerType.DataType.list;
 import static org.labkey.api.data.ContainerType.DataType.sharedDataTable;
 
 public class WorkbookContainerType implements ContainerType
@@ -22,81 +20,75 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public Boolean canHaveChildren()
+    public boolean canHaveChildren()
     {
         return false;
     }
 
     @Override
-    public Boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(ImportContext context)
     {
         return false;
     }
 
     @Override
-    public Boolean shouldRemoveFromPortal()
+    public boolean shouldRemoveFromPortal()
     {
         return false;
     }
 
     @Override
-    public Boolean includePropertiesAsChild(boolean includeTabs)
+    public boolean includePropertiesAsChild(boolean includeTabs)
     {
         return false;
     }
 
     @Override
-    public Boolean isInFolderNav()
+    public boolean isInFolderNav()
     {
         return false;
     }
 
     @Override
-    public Boolean isConvertibleToTab()
+    public boolean isConvertibleToTab()
     {
         return false;
     }
 
     @Override
-    public Boolean canDeleteFromContainer(Container currentContainer, Container container)
+    public boolean canDeleteFromContainer(Container currentContainer, Container container)
     {
         return currentContainer.getParent().equals(container);
     }
 
     @Override
-    public Boolean canUpdateFromContainer(Container currentContainer, Container container)
+    public boolean canUpdateFromContainer(Container currentContainer, Container container)
     {
         return currentContainer.getParent().equals(container);
     }
 
     @Override
-    public Boolean canAdminFolder()
+    public boolean canAdminFolder()
     {
         return false;
     }
 
     @Override
-    public Boolean requiresAdminToDelete()
+    public boolean requiresAdminToDelete()
     {
         return false;
     }
 
     @Override
-    public Boolean requiresAdminToCreate()
+    public boolean requiresAdminToCreate()
     {
         return false;
     }
 
     @Override
-    public Boolean isDuplicatedInContainerFilter()
+    public boolean isDuplicatedInContainerFilter()
     {
         return true;
-    }
-
-    @Override
-    public Boolean parentDataIsRelevant(DataType dataType)
-    {
-        return dataType == inventory || dataType == list;
     }
 
     @Override
@@ -124,14 +116,13 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public Boolean isContainerFor(DataType dataType)
+    public boolean isContainerFor(DataType dataType)
     {
         switch (dataType)
         {
             case assays:
             case assayProtocols:
             case folderManagement:
-            case inventory:
             case sharedDataTable:
                 return true;
             default:
@@ -153,7 +144,6 @@ public class WorkbookContainerType implements ContainerType
             case assayProtocols:
             case dataspace:
             case folderManagement:
-            case inventory:
                 return currentContainer;
             default:
                 return currentContainer.getParent();
