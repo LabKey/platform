@@ -16,8 +16,9 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -25,9 +26,8 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Objects" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
-<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -38,35 +38,9 @@
 %>
 <script type="text/javascript">
 
-var testNetworkDrive;
 var submitSystemMaintenance;
 
 (function(){
-
-    testNetworkDrive = function()
-    {
-        var preferenceForm = document.forms['preferences'];
-        var networkDriveForm = document.forms['networkdrivetest'];
-        if (preferenceForm.networkDriveLetter.value.length == 0)
-        {
-            alert("Please specify your drive letter before testing.");
-            try {preferenceForm.networkDriveLetter.focus();} catch(x){}
-            return;
-        }
-
-        if (preferenceForm.networkDrivePath.value.length == 0)
-        {
-            alert("Please specify your drive path before testing.");
-            try {preferenceForm.networkDrivePath.focus();} catch(x){}
-            return;
-        }
-        networkDriveForm.networkDriveLetter.value = preferenceForm.networkDriveLetter.value;
-        networkDriveForm.networkDrivePath.value = preferenceForm.networkDrivePath.value;
-        networkDriveForm.networkDriveUser.value = preferenceForm.networkDriveUser.value;
-        networkDriveForm.networkDrivePassword.value = preferenceForm.networkDrivePassword.value;
-
-        networkDriveForm.submit();
-    };
 
     submitSystemMaintenance = function()
     {
@@ -391,34 +365,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Map network drive (Windows only) (<%=text(bean.helpLink)%>)</td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Drive letter</td>
-    <td><input type="text" name="networkDriveLetter" id="networkDriveLetter" value="<%= h(appProps.getNetworkDriveLetter()) %>" size="1" maxlength="1"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Path</td>
-    <td><input type="text" name="networkDrivePath" id="networkDrivePath" value="<%= h(appProps.getNetworkDrivePath()) %>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">User</td>
-    <td><input type="text" name="networkDriveUser" id="networkDriveUser" value="<%= h(appProps.getNetworkDriveUser()) %>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Password</td>
-    <td><input type="password" name="networkDrivePassword" id="networkDrivePassword" value="<%= h(appProps.getNetworkDrivePassword()) %>"></td>
-</tr>
-<% if (hasAdminOpsPerms) { %>
-<tr>
-    <td></td>
-    <td><%=textLink("Test network drive settings", "javascript:testNetworkDrive()")%> - Note: Do not test if the drive is currently being accessed from within LabKey Server.</td>
-</tr>
-<% } %>
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
     <td colspan=2>Ribbon Bar Message (<%=text(bean.helpLink)%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
@@ -496,12 +442,4 @@ Click the Save button at any time to accept the current settings and continue.</
     </td>
 </tr>
 </table>
-</labkey:form>
-
-<labkey:form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
-    <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
-    <input type="hidden" name="networkDriveLetter" value="" />
-    <input type="hidden" name="networkDrivePath" value="" />
-    <input type="hidden" name="networkDriveUser" value="" />
-    <input type="hidden" name="networkDrivePassword" value="" />
 </labkey:form>

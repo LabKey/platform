@@ -1133,11 +1133,12 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void validateNetworkDrive(SiteSettingsForm form, BindException errors)
+    private void validateNetworkDrive(SiteSettingsForm form, Errors errors)
     {
-        if (form.getNetworkDriveLetter() == null)
+        if (StringUtils.isBlank(form.getNetworkDriveUser()) || StringUtils.isBlank(form.getNetworkDrivePath()) ||
+            StringUtils.isBlank(form.getNetworkDrivePassword()) || StringUtils.isBlank(form.getNetworkDriveLetter()))
         {
-            errors.reject(ERROR_MSG, "You must specify a drive letter");
+            errors.reject(ERROR_MSG, "All fields are required");
         }
         else if (form.getNetworkDriveLetter().trim().length() > 1)
         {
@@ -1342,18 +1343,6 @@ public class AdminController extends SpringActionController
             {
             }
 
-            if (form.getNetworkDriveLetter() != null && form.getNetworkDriveLetter().trim().length() > 0)
-            {
-                validateNetworkDrive(form, errors);
-
-                if (errors.hasErrors())
-                    return false;
-            }
-
-            props.setNetworkDriveLetter(form.getNetworkDriveLetter() == null ? null : form.getNetworkDriveLetter().trim());
-            props.setNetworkDrivePath(form.getNetworkDrivePath() == null ? null : form.getNetworkDrivePath().trim());
-            props.setNetworkDriveUser(form.getNetworkDriveUser() == null ? null : form.getNetworkDriveUser().trim());
-            props.setNetworkDrivePassword(form.getNetworkDrivePassword() == null ? null : form.getNetworkDrivePassword().trim());
             props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
 
             if (null != form.getBaseServerUrl())
@@ -1415,6 +1404,51 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminOperationsPermission.class)
+    @AdminConsoleAction
+    @CSRF
+    public class MapNetworkDriveAction extends FormViewAction<SiteSettingsForm>
+    {
+        @Override
+        public void validateCommand(SiteSettingsForm form, Errors errors)
+        {
+            validateNetworkDrive(form, errors);
+        }
+
+        @Override
+        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
+
+            return new JspView<>("/org/labkey/core/admin/mapNetworkDrive.jsp", bean, errors);
+        }
+
+        @Override
+        public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+
+            props.setNetworkDriveLetter(form.getNetworkDriveLetter().trim());
+            props.setNetworkDrivePath(form.getNetworkDrivePath().trim());
+            props.setNetworkDriveUser(form.getNetworkDriveUser().trim());
+            props.setNetworkDrivePassword(form.getNetworkDrivePassword().trim());
+
+            props.save(getViewContext().getUser());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SiteSettingsForm siteSettingsForm)
+        {
+            return new ActionURL(FilesSiteSettingsAction.class, getContainer());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Map Network Drive", this.getClass());
+        }
+    }
 
     public static class SiteSettingsBean
     {
@@ -2281,15 +2315,18 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ShowNetworkDriveTestAction extends SimpleViewAction<SiteSettingsForm>
     {
+        @Override
+        public void validate(SiteSettingsForm form, BindException errors)
+        {
+            validateNetworkDrive(form, errors);
+        }
+
         public ModelAndView getView(SiteSettingsForm form, BindException errors)
         {
             NetworkDrive testDrive = new NetworkDrive();
             testDrive.setPassword(form.getNetworkDrivePassword());
             testDrive.setPath(form.getNetworkDrivePath());
             testDrive.setUser(form.getNetworkDriveUser());
-
-            validateNetworkDrive(form, errors);
-
             TestNetworkDriveBean bean = new TestNetworkDriveBean();
 
             if (!errors.hasErrors())

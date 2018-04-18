@@ -16,17 +16,19 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.apache.commons.lang3.SystemUtils" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.FileListAction" %>
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
-<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -44,7 +46,7 @@
 <labkey:form action="<%=h(buildURL(FilesSiteSettingsAction.class))%>" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table width="80%">
-        <tr><td colspan="2" class="labkey-announcement-title"><span>Site-Level File Root</span></td></tr>
+        <tr><td colspan="2"><h4>Site-Level File Root</h4></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
 
         <% if (bean.isUpgrade()) { %>
@@ -82,7 +84,7 @@
         <%
             } else {
         %>
-            <tr><td colspan="2" class="labkey-announcement-title"><span>Alternative Webfiles Root</span></td></tr>
+            <tr><td colspan="2"><h4>Alternative Webfiles Root</h4></td></tr>
             <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
             <tr><td colspan="2">Site level setting to enable/disable alternative webdav tree: _webfiles.</td></tr>
 
@@ -93,7 +95,7 @@
         <%
             if (PremiumService.get().isDisableFileUploadSupported()) {
         %>
-            <tr><td colspan="2" class="labkey-announcement-title"><span>Disable file upload</span></td></tr>
+            <tr><td colspan="2"><h4>Disable file upload</h4></td></tr>
             <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
             <tr><td colspan="2">Site level setting to enable/disable file upload.</td></tr>
 
@@ -116,6 +118,16 @@
 
     </table>
 </labkey:form>
+
+<%
+    if (SystemUtils.IS_OS_WINDOWS)
+    {
+%>
+<br><h4>Map Network Drive (Windows Only)</h4>
+<labkey:link href="<%=h(new ActionURL(AdminController.MapNetworkDriveAction.class, getContainer()))%>" text="Configure"/>
+<%
+    }
+%>
 
 <script type="text/javascript">
     var isUpgrade = <%=bean.isUpgrade()%>;
@@ -257,7 +269,7 @@
 
 <% if (!bean.isUpgrade()) { %>
     <table width="80%">
-        <tr><td colspan="2" class="labkey-announcement-title"><span>Summary View for File Directories</span></td></tr>
+        <tr><td colspan="2"><h4>Summary View for File Directories</h4></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
         <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column for @files
             indicates whether the directory is derived from the site-level file root (set above) or has been overridden. The 'Default' column for @pipeline

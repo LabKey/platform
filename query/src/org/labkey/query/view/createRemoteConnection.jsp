@@ -41,7 +41,7 @@
     This feature should be used with care since, depending
     on your configuration, any user with access to the remote site could view arbitrary data in your remote server.
 </p>
-<labkey:errors></labkey:errors>
+<labkey:errors/>
 <br>
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post" layout="horizontal">
     <labkey:input type="text" label="Connection Name *" name="newConnectionName" id="newConnectionName" size="50" value="<%=h(nameToShow)%>" isRequired="true"/>

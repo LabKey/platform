@@ -237,6 +237,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
+    @CSRF
     public class EditRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
