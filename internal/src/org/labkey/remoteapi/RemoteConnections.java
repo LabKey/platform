@@ -56,11 +56,6 @@ public class RemoteConnections
         String newName = remoteConnectionForm.getNewConnectionName();
         boolean editing = StringUtils.isNotEmpty(name);
         boolean changingName = editing && !name.equals(newName);
-        if (!StringUtils.isNotBlank(newName))
-        {
-            errors.addError(new LabKeyError("Connection name may not be blank."));
-            return false;
-        }
 
         String url = remoteConnectionForm.getUrl();
         String user = remoteConnectionForm.getUser();
@@ -68,7 +63,7 @@ public class RemoteConnections
         String folderPath = remoteConnectionForm.getContainer();
         String connectionKind = remoteConnectionForm.getConnectionKind();
 
-        if (url == null || user == null || password == null || (CONNECTION_KIND_QUERY.equals(connectionKind) && folderPath == null))
+        if (StringUtils.isBlank(newName) || url == null || user == null || password == null || (CONNECTION_KIND_QUERY.equals(connectionKind) && folderPath == null))
         {
             errors.addError(new LabKeyError("All fields must be filled in."));
             return false;
