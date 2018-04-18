@@ -132,7 +132,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         // Workbooks can see parent lists. In the event of a name collision, the child workbook list wins.
         // In future, may add additional ways to cross-folder scope lists
-        if (container.parentDataIsRelevant(ContainerType.DataType.list))
+        if (container.isWorkbook())
         {
             List<ListDef> parentLists = _listDefCache.get(container.getParent().getId());
             if (ownLists.size() > 0 && parentLists.size() > 0)
@@ -172,7 +172,7 @@ public class ListManager implements SearchService.DocumentProvider
         ListDef list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
 
         // Workbooks can see their parent's lists, so check that container if we didn't find the list the first time
-        if (list == null && container.parentDataIsRelevant(ContainerType.DataType.list))
+        if (list == null && container.isWorkbook())
         {
             filter = new PkFilter(getListMetadataTable(), new Object[]{container.getParent(), listId});
             list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDef.class);
