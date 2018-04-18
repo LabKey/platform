@@ -619,7 +619,8 @@ public class RReport extends ExternalScriptEngineReport
                 {
                     final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-                    final File rScriptFile = new File(getReportDir(context.getContainer().getId()), rName + ".R");
+                    final String rExtension = ((RReport) report).getScriptFileExtension();
+                    final File rScriptFile = new File(getReportDir(context.getContainer().getId()), rName + rExtension);
 
                     String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters, false, isRStudio);
 
@@ -636,6 +637,17 @@ public class RReport extends ExternalScriptEngineReport
         }
 
         return script;
+    }
+
+    private String getScriptFileExtension()
+    {
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
+            return ".Rhtml";
+
+        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown)
+            return ".Rmd";
+
+        return ".R";
     }
 
     /**
