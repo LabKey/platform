@@ -5189,7 +5189,7 @@ public class AdminController extends SpringActionController
         if (CloudStoreService.get() != null)
             title += " And Enable Cloud Stores";
         view.setTitle(title);
-
+        view.setFrame(WebPartView.FrameType.DIV);
         try
         {
             setFormAndConfirmMessage(getViewContext(), form);

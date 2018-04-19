@@ -38,6 +38,7 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
         try
         {
             ImportOptions options = new ImportOptions(containerId, job.getUser().getUserId());
+            options.setAnalysisDir(support.getDataDirectory());
             StudyReload.ReloadStatus status = reloadTask.attemptTriggeredReload(options, "a configured study reload filewatcher");
             job.setStatus(status.getMessage());
         }

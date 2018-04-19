@@ -475,7 +475,31 @@ public class StudyReload
                     ImportOptions options = QUEUE.take();
                     c = ContainerManager.getForId(options.getContainerId());
                     User reloadUser = options.getUser();
+                    File studyXml = null;
                     PipeRoot root = StudyReload.getPipelineRoot(c);
+
+                    // Task overrides default analysis directory, usually when study.xml is located
+                    // in a subdirectory underneath the pipeline root
+                    if (options.getAnalysisDir() != null)
+                    {
+                        File[] files = options.getAnalysisDir().listFiles();
+                        if (files != null)
+                        {
+                            for (File f : files)
+                            {
+                                if (f.getName().equalsIgnoreCase("study.xml"))
+                                {
+                                    studyXml = f;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        studyXml = root.resolvePath("study.xml");
+                    }
+
                     study = manager.getStudy(c);
                     //noinspection ThrowableInstanceNeverThrown
                     BindException errors = new NullSafeBindException(c, "reload");
@@ -483,10 +507,8 @@ public class StudyReload
 
                     LOG.info("Handling " + c.getPath());
 
-                    File studyXml = root.resolvePath("study.xml");
-
                     // issue 15681: if there is a folder archive instead of a study archive, see if the folder.xml exists to point to the study root dir
-                    if (!studyXml.exists())
+                    if (studyXml != null && !studyXml.exists())
                     {
                         File folderXml = root.resolvePath("folder.xml");
                         if (folderXml.exists())
@@ -499,8 +521,10 @@ public class StudyReload
                             }
                         }
                     }
-
-                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root, options));
+                    if (studyXml != null)
+                        PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root, options));
+                    else
+                        LOG.error("Study.xml does not exist in the analysis directory or pipeline root.");
                 }
                 catch (InterruptedException e)
                 {

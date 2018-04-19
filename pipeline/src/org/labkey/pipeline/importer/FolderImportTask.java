@@ -16,12 +16,16 @@
 package org.labkey.pipeline.importer;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -33,6 +37,7 @@ import java.util.*;
 */
 public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 {
+    private static final String FOLDER_XML = "folder.xml";
     private FolderImportTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
@@ -41,35 +46,55 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
+        VirtualFile vf;
+        FolderImportContext importContext;
         PipelineJob job = getJob();
-        FolderJobSupport support = job.getJobSupport(FolderJobSupport.class);
+
+        /* File watcher triggered job */
+        if (FileAnalysisJobSupport.class.isInstance(job))
+        {
+            FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
+            ImportOptions options = new ImportOptions(job.getContainerId(), job.getUser().getUserId());
+            options.setAnalysisDir(support.getDataDirectory());
+
+            job = new FolderImportJob(job.getContainer(), job.getUser(), null, support.findInputFile(FOLDER_XML), FOLDER_XML, job.getPipeRoot(), options);
+            job.setStatus(PipelineJob.TaskStatus.running.toString(), "Starting folder import job", true);
+
+            importContext = ((FolderImportJob) job).getImportContext();
+            vf = new FileSystemFile(support.getDataDirectory());
+        }
+        /* Standard Pipeline triggered job */
+        else
+        {
+            FolderJobSupport support = job.getJobSupport(FolderJobSupport.class);
+            vf = support.getRoot();
+            importContext = support.getImportContext();
+        }
 
         try
         {
-            VirtualFile vf = support.getRoot();
-
             // verify the archiveVersion
-            FolderDocument.Folder folderXml = support.getImportContext().getXml();
+            FolderDocument.Folder folderXml = importContext.getXml();
             double currVersion = ModuleLoader.getInstance().getCoreModule().getVersion();
             if (folderXml.isSetArchiveVersion() && folderXml.getArchiveVersion() > currVersion)
                 throw new PipelineJobException("Can't import folder archive. The archive version " + folderXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
             FolderImporterImpl importer = new FolderImporterImpl(job);
 
-            if(HttpView.hasCurrentView())
+            if (HttpView.hasCurrentView())
             {
-                importer.process(job, support.getImportContext(), vf);
+                importer.process(job, importContext, vf);
             }
             else
             {
                 //Build a fake ViewContext so we can run trigger scripts
-                try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(job.getUser(),job.getContainer(),job.getActionURL()))
+                try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(job.getUser(), job.getContainer(), job.getActionURL()))
                 {
-                    importer.process(job, support.getImportContext(), vf);
+                    importer.process(job, importContext, vf);
                 }
             }
 
-            Collection<PipelineJobWarning> warnings = importer.postProcess(support.getImportContext(), vf);
+            Collection<PipelineJobWarning> warnings = importer.postProcess(importContext, vf);
             //TODO: capture warnings in the pipeline job and make a distinction between success & success with warnings
             //for now, just fail the job if there were any warnings. The warnings will
             //have already been written to the log

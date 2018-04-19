@@ -1,13 +1,15 @@
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
-<%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
-<%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
-<%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
-<%@ page import="org.labkey.api.util.element.TextArea" %>
-<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
-<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
+<%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
+<%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
+<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
+<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
+<%@ page import="org.labkey.api.util.element.TextArea" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -21,6 +23,16 @@
 <%
     HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
     PipelineController.PipelineTriggerForm bean = me.getModelBean();
+
+    Map<String, TaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
+            .stream()
+            .filter(FileAnalysisTaskPipeline.class::isInstance)
+            .map(FileAnalysisTaskPipeline.class::cast)
+            .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
+            .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(),
+                    FileAnalysisTaskPipeline -> PipelineJobService.get().getTaskPipeline(FileAnalysisTaskPipeline.getId())));
+
+    final String HELP_TEXT = "Fields marked with an asterisk * are required. ";
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
@@ -58,8 +70,13 @@
         <div class="col-sm-10">
             <labkey:errors/>
             <div id="details" class="lk-trigger-section">
-                <p>Fields marked with an asterisk * are required.</p>
-
+                <div class="alert alert-info" style="max-width: 700px;">
+                    <p class="lk-trigger-help-text">
+                        <%if (bean.getPipelineTask() == null && bean.getRowId() == null) {%>
+                            <%=h(HELP_TEXT)%>
+                        <%}%>
+                    </p>
+                </div>
                 <labkey:input name="name"
                               className="form-control lk-pipeline-input"
                               label="Name *"
@@ -109,33 +126,21 @@
                         Pipeline Task *
                     </label>
                     <div class="col-sm-9 col-lg-10">
-                        <select name="pipelineTask" class="form-control">
+                        <select name="pipelineTask" class="form-control" id="pipelineTaskSelect">
                             <%
-                                for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
+                                if (bean.getPipelineTask() == null)
                                 {
-                                    if (taskPipeline instanceof FileAnalysisTaskPipeline)
-                                    {
-                                        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline) taskPipeline;
-                                        if (fatp.isAllowForTriggerConfiguration())
-                                        {
-                                            String taskIdStr = taskPipeline.getId().getName();
-                                            boolean selected = false;
-                                            if (taskIdStr != null)
-                                            {
-                                                if (bean.getPipelineTask() != null)
-                                                {
-                                                    selected = bean.getPipelineTask().equalsIgnoreCase(taskIdStr);
-                                                }
-                                                else
-                                                {
-                                                    selected = taskIdStr.equalsIgnoreCase(getActionURL().getParameter("pipelineTask"));
-                                                }
-                                            }
+                                    %> <option disabled selected value style="display: none"> </option><%
+                                }
+                                for (String key : triggerConfigTasks.keySet())
+                                {
+                                    boolean selected = false;
+
+                                    if (bean.getPipelineTask() != null)
+                                        selected = bean.getPipelineTask().equalsIgnoreCase(key);
                             %>
-                            <option <%=selected(selected)%> value="<%=text(taskPipeline.getId().toString())%>"><%=text(taskPipeline.getDescription())%></option>
+                            <option <%=selected(selected)%> value="<%=text(triggerConfigTasks.get(key).getId().toString())%>"><%=text(triggerConfigTasks.get(key).getDescription())%></option>
                             <%
-                                        }
-                                    }
                                 }
                             %>
                         </select>
@@ -168,7 +173,13 @@
             </div>
 
             <div id="configuration" class="lk-trigger-section">
-                <p>Fields marked with an asterisk * are required.</p>
+                <div class="alert alert-info" style="max-width: 700px;">
+                    <p class="lk-trigger-help-text">
+                        <%if (bean.getPipelineTask() == null && bean.getRowId() == null) {%>
+                            <%=h(HELP_TEXT)%>
+                        <%}%>
+                    </p>
+                </div>
                 <labkey:input name="location"
                               className="form-control lk-pipeline-input"
                               label="Location *"
@@ -247,15 +258,36 @@
 </labkey:form>
 <script type="text/javascript">
     +function($) {
-
+        var taskPipelineVariables = {};
         <%
-            if (StringUtils.isNotEmpty(bean.getConfigJson()) && !bean.getConfigJson().equalsIgnoreCase("{}"))
-            {%>
-                var configObj = JSON.parse(<%=q(bean.getConfigJson())%>);
-                processConfigJson(configObj);
+        for (String key : triggerConfigTasks.keySet())
+        {
+            TaskPipeline task = triggerConfigTasks.get(key);
+            String helpText = HELP_TEXT + task.getHelpText();
+        %>
+            taskPipelineVariables[<%=q(task.getId().toString())%>] = {
+                helpText: <%=q(helpText)%>,
+                moveEnabled: <%=task.isMoveAvailable()%>
+            };
+        <%
+        }
 
-                var customConfigObj = JSON.parse(<%=q(bean.getCustomConfigJson())%>);
-                processCustomConfigJson(customConfigObj);
+        if (triggerConfigTasks.get(bean.getPipelineTask()) != null)
+        {
+            String taskStr = triggerConfigTasks.get(bean.getPipelineTask()).getId().toString();
+        %>
+            setHelpText(<%=q(taskStr)%>);
+            handleMoveField(<%=q(taskStr)%>);
+        <%
+        }
+
+        if (StringUtils.isNotEmpty(bean.getConfigJson()) && !bean.getConfigJson().equalsIgnoreCase("{}"))
+        {%>
+            var configObj = JSON.parse(<%=q(bean.getConfigJson())%>);
+            processConfigJson(configObj);
+
+            var customConfigObj = JSON.parse(<%=q(bean.getCustomConfigJson())%>);
+            processCustomConfigJson(customConfigObj);
         <%
         }
         else if (bean.getRowId() != null) {
@@ -285,6 +317,8 @@
                 if (task) {
                     $("select[name='pipelineTask'] option").map(function () {
                         if ($(this).text() === task) {
+                            setHelpText(this.value);
+                            handleMoveField(this.value);
                             return this;
                         }
                     }).attr('selected', true);
@@ -389,6 +423,12 @@
             allowNavigate();
         });
 
+        $("#pipelineTaskSelect").on('change', function () {
+            setHelpText(this.value);
+            handleMoveField(this.value);
+        });
+
+
         $("#btnSubmit").on('click', (function() {
             var standardObj = {};
             var customObj = {};
@@ -438,15 +478,31 @@
             $("#pipelineForm").submit();
         }));
 
+        function setHelpText(taskId) {
+            if (taskId) {
+                $(".lk-trigger-help-text").html(taskPipelineVariables[taskId].helpText);
+            }
+        }
+
+        function handleMoveField(taskId) {
+            if (taskId) {
+                var moveElem = $("input[name='move']");
+                moveElem.prop('disabled', !taskPipelineVariables[taskId].moveEnabled);
+                if (!taskPipelineVariables[taskId].moveEnabled) {
+                    moveElem[0].value = "";
+                }
+            }
+        }
+
         function addParameterGroup(key, value) {
             var elem = $("<div class='form-group lk-pipeline-customParam-group'>" +
-                    "<div class='col-sm-3 col-lg-2'>" +
-                    "<input type='text' class='form-control lk-pipeline-custom-key' placeholder='Name' name='customParamKey' style='float: right;'>" +
-                    "</div>" +
-                    "<div class='col-sm-9 col-lg-10'>" +
-                    "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' name='customParamValue' style='display: inline-block;'>" +
-                    "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
-                    "</div>" +
+                        "<div class='col-sm-3 col-lg-2'>" +
+                            "<input type='text' class='form-control lk-pipeline-custom-key' placeholder='Name' name='customParamKey' style='float: right;'>" +
+                        "</div>" +
+                        "<div class='col-sm-9 col-lg-10'>" +
+                            "<input type='text' class='form-control lk-pipeline-custom-value' placeholder='Value' name='customParamValue' style='display: inline-block;'>" +
+                            "<a class='removeParamTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
+                        "</div>" +
                     "</div>");
 
             if (key && value) {

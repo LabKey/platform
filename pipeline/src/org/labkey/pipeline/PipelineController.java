@@ -54,11 +54,13 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJobData;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.CSRF;
@@ -1253,22 +1255,7 @@ public class PipelineController extends SpringActionController
             }
             else
             {
-                _archiveFile = new File(form.getFilePath());
-                if (!_archiveFile.isAbsolute())
-                {
-                    // Resolve the relative path to an absolute path under the current container's root
-                    _archiveFile = currentPipelineRoot.resolvePath(form.getFilePath());
-                }
-
-                // Be sure that the referenced file exists and is under the pipeline root
-                if (_archiveFile == null || !_archiveFile.exists())
-                {
-                    errors.reject(ERROR_MSG, "Could not find file at path: " + form.getFilePath());
-                }
-                else if (!currentPipelineRoot.isCloudRoot() && !currentPipelineRoot.isUnderRoot(_archiveFile))     // TODO: check for isCloud, then file should be in temp
-                {
-                    errors.reject(ERROR_MSG, "Cannot access file " + form.getFilePath());
-                }
+                _archiveFile = PipelineManager.validateFolderImportFilePath(form.getFilePath(), currentPipelineRoot, errors);
 
                 // Be sure that the set of folder to apply the import to match the setting to enable/disable them
                 if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().size() == 0))
@@ -1344,7 +1331,7 @@ public class PipelineController extends SpringActionController
                 // iterate over the selected containers, or just the current container in the default case, and unzip the archive if necessary
                 for (Container container : _importContainers)
                 {
-                    File archiveXml = getArchiveXmlFile(container, _archiveFile, form.isAsStudy() ? "study.xml" : "folder.xml", errors);
+                    File archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, form.isAsStudy() ? "study.xml" : "folder.xml", errors);
                     if (errors.hasErrors())
                         return false;
 
@@ -1416,68 +1403,6 @@ public class PipelineController extends SpringActionController
             return root.addChild(_navTrail);
         }
 
-        private File getArchiveXmlFile(Container container, File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
-        {
-            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
-            File xmlFile = archiveFile;
-
-            if (pipelineRoot != null && archiveFile.getName().endsWith(".zip"))
-            {
-                try
-                {
-                    // check if the archive file already exists in the unzip dir of this pipeline root
-                    File importDir = pipelineRoot.getImportDirectory();
-                    if (!archiveFile.getParentFile().getAbsolutePath().equals(importDir.getAbsolutePath()))
-                        importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
-
-                    ZipUtil.unzipToDirectory(archiveFile, importDir);
-
-                    // when importing a folder archive for a study, the study.xml file may not be at the root
-                    if ("study.xml".equals(xmlFileName) && archiveFile.getName().endsWith(".folder.zip"))
-                    {
-                        File folderXml = new File(importDir, "folder.xml");
-                        FolderDocument folderDoc;
-                        try
-                        {
-                            folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
-                            XmlBeansUtil.validateXmlDocument(folderDoc);
-                        }
-                        catch (Exception e)
-                        {
-                            throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
-                        }
-
-                        if (folderDoc.getFolder().isSetStudy())
-                        {
-                            importDir = new File(importDir, folderDoc.getFolder().getStudy().getDir());
-                        }
-                    }
-
-                    xmlFile = new File(importDir, xmlFileName);
-                }
-                catch (FileNotFoundException e)
-                {
-                    errors.reject(ERROR_MSG, "File not found.");
-                }
-                catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, "This file does not appear to be a valid .zip file.");
-                }
-            }
-
-            // if this is an import from a source template folder that has been previously implicitly exported
-            // to the unzip dir (without ever creating a zip file) then just look there for the xmlFile.
-            if (pipelineRoot != null && archiveFile.isDirectory())
-            {
-                xmlFile = new File(archiveFile, xmlFileName);
-            }
-
-            return xmlFile;
-        }
     }
 
     public static class StartFolderImportForm

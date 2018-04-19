@@ -23,6 +23,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ImportFolderForm" %>
+<%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
+<%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
+<%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -98,6 +105,7 @@
         font-weight: normal;
     }
 </style>
+<labkey:panel title="Import Folder Archive">
 <labkey:form action="" name="import" enctype="multipart/form-data" method="post">
 <table class="lk-import-folder" cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
@@ -176,7 +184,54 @@
 </table>
     <input type="hidden" name="sourceTemplateFolderId"/>
 </labkey:form>
+</labkey:panel>
 
+<labkey:panel title="File Watchers">
+    <table>
+        <tr>
+            <td>
+                <p>A folder's file watcher triggers can be configured to import/reload server objects automatically when specific files are updated.</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold">
+                <p>Create a trigger to...</p>
+            </td>
+        </tr>
+        <%
+            if (getContainer().hasPermission(getUser(), AdminPermission.class))
+            {
+                for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
+                {
+                    if (taskPipeline instanceof FileAnalysisTaskPipeline)
+                    {
+                        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline) taskPipeline;
+                        if (fatp.isAllowForTriggerConfiguration())
+                        {
+        %>
+
+        <tr>
+            <td style="padding-left: 20px">
+                <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL())%>"><%=h(fatp.getDescription())%></a></p>
+            </td>
+        </tr>
+        <%
+                        }
+                    }
+                }
+            }
+        %>
+        <tr>
+            <td>
+                <p>
+                    <%=
+                    button("Manage file watcher triggers").href(PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")).build()
+                    %>
+                </p>
+            </td>
+        </tr>
+    </table>
+</labkey:panel>
 <script type="text/javascript">
     Ext4.onReady(function()  {
         // note: client dependencies declared in FolderManagementTabStrip

@@ -311,14 +311,17 @@
                     <%
                         for (StudyManagementOption option : StudyService.get().getManagementOptions())
                         {
-                            option.setContainer(getContainer());
+                            if (c.hasPermission(user, option.getPermission()))
+                            {
+                                option.setContainer(getContainer());
                     %>
-                            <tr>
-                                <td class="lk-study-prop-label"><%=h(option.getTitle())%></td>
-                                <td class="lk-study-prop-desc"><%=h(option.getDescription())%></td>
-                                <td><%=textLink(option.getLinkText(), option.getLinkUrl())%></td>
-                            </tr>
+                                <tr>
+                                    <td class="lk-study-prop-label"><%=h(option.getTitle())%></td>
+                                    <td class="lk-study-prop-desc"><%=h(option.getDescription())%></td>
+                                    <td><%=textLink(option.getLinkText(), option.getLinkUrl())%></td>
+                                </tr>
                     <%
+                            }
                         }
                     %>
                 </table>

@@ -133,6 +133,7 @@
                             </bean>
                         </list>
                     </property>
+                    <property name="helpText" value="The selected Pipeline task can only be initiated on Excel, .tsv, and .txt files." />
                 </bean>
 
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
@@ -143,6 +144,7 @@
                     <property name="protocolFactoryName" value="studyReload"/>
                     <property name="defaultDisplayState" value="hidden"/>
                     <property name="allowForTriggerConfiguration" value="true"/>
+                    <property name="moveAvailable" value="false"/>
                     <property name="initialInputExts">
                         <list>
                             <ref bean="txtFileType"/>
@@ -155,6 +157,7 @@
                             </bean>
                         </list>
                     </property>
+                    <property name="helpText" value="The selected Pipeline task can only be initiated on a studyload.txt file. It will not accept compressed (.zip) study archives." />
                 </bean>
             </list>
         </property>

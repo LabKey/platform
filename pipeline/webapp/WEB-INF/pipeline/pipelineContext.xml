@@ -8,6 +8,7 @@
             <list>
                 <bean class="org.labkey.pipeline.analysis.CommandTaskImpl$Factory"/>
                 <bean class="org.labkey.pipeline.analysis.ConvertTaskFactory"/>
+                <bean class="org.labkey.pipeline.importer.FolderImportTask$Factory"/>
 
                 <!-- For unit-testing purposes -->
                 <bean class="org.labkey.pipeline.mule.test.DummyTaskFactory"/>
@@ -41,8 +42,37 @@
                         </list>
                     </property>
                 </bean>
+
+                <!-- Folder reload pipeline trigger task -->
+                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
+                    <constructor-arg value="FolderReloadTask"/>
+                    <property name="description" value="Reload Folder Archive"/>
+                    <property name="protocolObjectId" value="folder.folderArchiveReload"/>
+                    <property name="protocolName" value="Folder Archive Reload"/>
+                    <property name="protocolFactoryName" value="folderReload"/>
+                    <property name="defaultDisplayState" value="hidden"/>
+                    <property name="allowForTriggerConfiguration" value="true"/>
+                    <property name="moveAvailable" value="false"/>
+                    <property name="initialInputExts">
+                        <list>
+                            <ref bean="xmlFileType"/>
+                        </list>
+                    </property>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="folderReloadTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                    <property name="helpText" value="The selected Pipeline task can only be initiated on a folder.xml file. It will not accept compressed (.zip) folder archives." />
+                </bean>
             </list>
         </property>
+    </bean>
+
+    <bean id="xmlFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".xml"/>
     </bean>
 </beans>
 

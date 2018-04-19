@@ -33,6 +33,8 @@
                             </bean>
                         </list>
                     </property>
+                    <property name="helpText" value="The selected Pipeline task can only be initiated on Excel and .tsv files.
+                        It will not create new lists, but can reload existing lists' data and infer non-key column changes." />
                 </bean>
             </list>
         </property>
