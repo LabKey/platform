@@ -283,6 +283,10 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>maxLength</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>onChange</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>

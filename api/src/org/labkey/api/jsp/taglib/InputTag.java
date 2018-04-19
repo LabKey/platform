@@ -43,6 +43,7 @@ public class InputTag extends SimpleTagBase
     private String type;
     private Object value;
     private Integer size;
+    private Integer maxLength;
 
     public void setChecked(Boolean checked)
     {
@@ -139,6 +140,11 @@ public class InputTag extends SimpleTagBase
         this.size = size;
     }
 
+    public void setMaxLength(Integer maxLength)
+    {
+        this.maxLength = maxLength;
+    }
+
     public void doTag() throws IOException
     {
         Input.InputBuilder input;
@@ -181,6 +187,7 @@ public class InputTag extends SimpleTagBase
             .unsafeValue(value) // 32433: mimic a normal <input/> where user is responsible for the encoding
             .checked(checked)
             .size(size)
+            .maxLength(maxLength)
             .state(Input.State.get(state));
 
         FormTag form = (FormTag) findAncestorWithClass(this, FormTag.class);

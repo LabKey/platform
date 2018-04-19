@@ -91,6 +91,7 @@ public class Input extends DisplayElement
     private final boolean _readOnly;
     private final boolean _required;
     private final Integer _size;
+    private final Integer _maxLength;
     private final State _state;
     private final String _stateMessage;
     private final boolean _showLabel;
@@ -121,6 +122,7 @@ public class Input extends DisplayElement
         _required = builder._required == null ? false : builder._required;
         _type = builder._type;
         _size = builder._size;
+        _maxLength = builder._maxLength;
         _state = builder._state;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
         _unsafeValue = builder._unsafeValue == null ? false : builder._unsafeValue;
@@ -231,6 +233,11 @@ public class Input extends DisplayElement
     public Integer getSize()
     {
         return _size;
+    }
+
+    public Integer getMaxLength()
+    {
+        return _maxLength;
     }
 
     public State getState()
@@ -352,6 +359,8 @@ public class Input extends DisplayElement
             sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
         if (getSize() != null)
             sb.append(" size=\"").append(getSize()).append("\"");
+        if (getMaxLength() != null)
+            sb.append(" maxlength=\"").append(getMaxLength()).append("\"");
         if (StringUtils.isNotEmpty(getContextContent()))
             sb.append(" aria-describedby=\"").append(getId()).append("HelpBlock\""); //described by the help block
 
@@ -512,6 +521,7 @@ public class Input extends DisplayElement
         private Boolean _required;
         private Boolean _showLabel;
         private Integer _size;
+        private Integer _maxLength;
         private State _state;
         private String _stateMessage;
         private String _type = "text";
@@ -635,6 +645,12 @@ public class Input extends DisplayElement
         public T size(Integer size)
         {
             _size = size;
+            return (T)this;
+        }
+
+        public T maxLength(Integer maxLength)
+        {
+            _maxLength = maxLength;
             return (T)this;
         }
 
