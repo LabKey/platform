@@ -5919,9 +5919,10 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
     @CSRF
-    public class RebuildEdgesAction extends MutatingApiAction
+    public class RebuildEdgesAction extends MutatingApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)

@@ -2589,6 +2589,13 @@ public class ExperimentServiceImpl implements ExperimentService
         syncRunEdges(run.getRowId(), run.getLSID(), run.getContainer());
     }
 
+    @Override
+    public void syncRunEdges(Collection<ExpRun> runs)
+    {
+        for (ExpRun run : runs)
+            syncRunEdges(run.getRowId(), run.getLSID(), run.getContainer());
+    }
+
     public void syncRunEdges(int runId, String runLsid, Container runContainer)
     {
         syncRunEdges(runId, runLsid, runContainer, true);
