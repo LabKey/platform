@@ -115,6 +115,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
     ExpRun createExperimentRun(Container container, String name);
     void syncRunEdges(ExpRun run);
+    void syncRunEdges(Collection<ExpRun> runs);
 
     ExpData getExpData(int rowid);
     ExpData getExpData(String lsid);
