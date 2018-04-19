@@ -631,8 +631,9 @@ public class Portal
 
     private static void ensurePage(Container c, String pageId)
     {
-        assert getSchema().getScope().isTransactionActive();
+        assert !getSchema().getScope().isTransactionActive();
 
+        TableInfo portalPageTable = getTableInfoPortalPages();
         Map<String, PortalPage> pages = Portal.getPages(c, true);
         int index = pages.size() + 1;           // new index must be at least this big
         for (PortalPage p : pages.values())
@@ -647,11 +648,12 @@ public class Portal
 
         try
         {
-            insertPortalPage(getTableInfoPortalPages(), c, pageId, index, null);
+            insertPortalPage(portalPageTable, c, pageId, index, null);
         }
         catch (RuntimeSQLException | DataIntegrityViolationException x)
         {
-            throw getPortalPageException(x);
+            // ignore
+            LOG.warn("Ensure page failed, likely because page already present.");
         }
     }
 
@@ -929,7 +931,7 @@ public class Portal
             part.container = c;
         }
 
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+        try
         {
             ensurePage(c, pageId);
 
@@ -967,7 +969,6 @@ public class Portal
                     // ignore
                 }
             }
-            transaction.commit();
         }
         catch (RuntimeSQLException x)
         {
