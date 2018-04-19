@@ -1,6 +1,8 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
 public class StudyManagementOption
@@ -9,12 +11,22 @@ public class StudyManagementOption
     private String _linkText;
     private ActionURL _linkUrl;
     private Container _container;
+    private Class<? extends Permission> _permission;
 
     public StudyManagementOption(String title, String linkText, ActionURL linkUrl)
     {
         _title = title;
         _linkText = linkText;
         _linkUrl = linkUrl;
+        _permission = AdminPermission.class; //default to Admin if not specified
+    }
+
+    public StudyManagementOption(String title, String linkText, ActionURL linkUrl, Class<? extends Permission> permission)
+    {
+        _title = title;
+        _linkText = linkText;
+        _linkUrl = linkUrl;
+        _permission = permission;
     }
 
     public String getDescription()
@@ -45,5 +57,10 @@ public class StudyManagementOption
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    public Class<? extends Permission> getPermission()
+    {
+        return _permission;
     }
 }

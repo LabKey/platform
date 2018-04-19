@@ -20,6 +20,7 @@ import org.labkey.api.data.Activity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
@@ -41,6 +42,7 @@ public class ImportOptions
     private Collection<String> _messages = new LinkedList<>();
     private Set<String> _dataTypes;
     private Activity _activity;
+    private File _analysisDir;
 
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
@@ -146,5 +148,15 @@ public class ImportOptions
     public void setActivity(Activity activity)
     {
         _activity = activity;
+    }
+
+    public File getAnalysisDir()
+    {
+        return _analysisDir;
+    }
+
+    public void setAnalysisDir(File analysisDir)
+    {
+        _analysisDir = analysisDir;
     }
 }

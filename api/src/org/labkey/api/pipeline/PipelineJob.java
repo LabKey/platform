@@ -532,11 +532,16 @@ abstract public class PipelineJob extends Job implements Serializable
         return setStatus(status.toString(), info);
     }
 
+    public boolean setStatus(@NotNull String status, @Nullable String info)
+    {
+        return setStatus(status, info, false);
+    }
+
     /**
      * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
      * unless it matches one of the standard states
      */
-    public boolean setStatus(@NotNull String status, @Nullable String info)
+    public boolean setStatus(@NotNull String status, @Nullable String info, boolean allowInsert)
     {
         if (_settingStatus)
             return true;
@@ -544,7 +549,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _settingStatus = true;
         try
         {
-            boolean statusSet = PipelineJobService.get().getStatusWriter().setStatus(this, status, info, false);
+            boolean statusSet = PipelineJobService.get().getStatusWriter().setStatus(this, status, info, allowInsert);
             if (!statusSet)
             {
                 setActiveTaskStatus(TaskStatus.error);
