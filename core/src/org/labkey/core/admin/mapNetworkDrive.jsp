@@ -82,7 +82,7 @@
 <labkey:errors/>
 <labkey:form name="networkDrive" method="post" layout="horizontal">
 
-    <labkey:input type="text" label="Drive letter *" name="networkDriveLetter" id="networkDriveLetter" value="<%= h(appProps.getNetworkDriveLetter()) %>" size="1" isRequired="true"/>
+    <labkey:input type="text" label="Drive letter *" name="networkDriveLetter" id="networkDriveLetter" value="<%= h(appProps.getNetworkDriveLetter()) %>" size="1" maxLength="1" isRequired="true"/>
     <labkey:input type="text" label="Path *" name="networkDrivePath" id="networkDrivePath" value="<%= h(appProps.getNetworkDrivePath()) %>" size="50" isRequired="true"/>
     <labkey:input type="text" label="User *" name="networkDriveUser" id="networkDriveUser" value="<%= h(appProps.getNetworkDriveUser()) %>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="networkDrivePassword" id="networkDrivePassword" isRequired="true"/>
