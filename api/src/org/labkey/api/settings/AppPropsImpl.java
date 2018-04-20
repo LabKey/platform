@@ -77,10 +77,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String ADMINISTRATOR_CONTACT_EMAIL = "administratorContactEmail";
     static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
     static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
-    static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
-    static final String NETWORK_DRIVE_PATH = "networkDrivePath";
-    static final String NETWORK_DRIVE_USER = "networkDriveUser";
-    static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
     static final String WEB_ROOT = "webRoot";
@@ -107,12 +103,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     protected String getType()
     {
         return "site settings";
-    }
-
-    @Override
-    protected boolean isPasswordProperty(String propName)
-    {
-        return super.isPasswordProperty(propName) || NETWORK_DRIVE_PASSWORD.equals(propName);
     }
 
     protected String getGroupName()
@@ -361,26 +351,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public String getBLASTServerBaseURL()
     {
         return lookupStringValue(BLAST_SERVER_BASE_URL_PROP, "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;LAYOUT=TwoWindows&amp;AUTO_FORMAT=Semiauto&amp;ALIGNMENTS=50&amp;ALIGNMENT_VIEW=Pairwise&amp;CDD_SEARCH=on&amp;CLIENT=web&amp;COMPOSITION_BASED_STATISTICS=on&amp;DATABASE=nr&amp;DESCRIPTIONS=100&amp;ENTREZ_QUERY=(none)&amp;EXPECT=1000&amp;FILTER=L&amp;FORMAT_OBJECT=Alignment&amp;FORMAT_TYPE=HTML&amp;I_THRESH=0.005&amp;MATRIX_NAME=BLOSUM62&amp;NCBI_GI=on&amp;PAGE=Proteins&amp;PROGRAM=blastp&amp;SERVICE=plain&amp;SET_DEFAULTS.x=41&amp;SET_DEFAULTS.y=5&amp;SHOW_OVERVIEW=on&amp;END_OF_HTTPGET=Yes&amp;SHOW_LINKOUT=yes&amp;QUERY=");
-    }
-
-    public String getNetworkDriveLetter()
-    {
-        return lookupStringValue(NETWORK_DRIVE_LETTER, "");
-    }
-
-    public String getNetworkDrivePath()
-    {
-        return lookupStringValue(NETWORK_DRIVE_PATH, "");
-    }
-
-    public String getNetworkDriveUser()
-    {
-        return lookupStringValue(NETWORK_DRIVE_USER, "");
-    }
-
-    public String getNetworkDrivePassword()
-    {
-        return lookupStringValue(NETWORK_DRIVE_PASSWORD, "");
     }
 
     public String getServerSessionGUID()

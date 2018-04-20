@@ -147,26 +147,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(NAV_ACCESS_OPEN, navAccessOpen);
     }
 
-    public void setNetworkDriveLetter(String letter)
-    {
-        storeStringValue(NETWORK_DRIVE_LETTER, letter);
-    }
-
-    public void setNetworkDrivePath(String path)
-    {
-        storeStringValue(NETWORK_DRIVE_PATH, path);
-    }
-
-    public void setNetworkDriveUser(String user)
-    {
-        storeStringValue(NETWORK_DRIVE_USER, user);
-    }
-
-    public void setNetworkDrivePassword(String password)
-    {
-        storeStringValue(NETWORK_DRIVE_PASSWORD, password);
-    }
-
     public void setMailRecorderEnabled(boolean enabled)
     {
         storeBooleanValue(MAIL_RECORDER_ENABLED, enabled);        

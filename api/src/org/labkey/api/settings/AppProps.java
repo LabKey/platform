@@ -65,14 +65,6 @@ public interface AppProps
         return PropertyManager.getWritableProperties(AppPropsImpl.SITE_CONFIG_USER, ContainerManager.getRoot(), WEB_THEME_CONFIG_NAME, true);
     }
 
-    String getNetworkDriveLetter();
-
-    String getNetworkDrivePath();
-
-    String getNetworkDriveUser();
-
-    String getNetworkDrivePassword();
-
     String getServerSessionGUID();
 
     boolean isMailRecorderEnabled();
