@@ -223,15 +223,20 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             // Check timepoint field
             if (study.getTimepointType() == TimepointType.CONTINUOUS && null == row.get(SimpleSpecimenImporter.DRAW_TIMESTAMP) && null == row.get(SimpleSpecimenImporter.VISIT))
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " must contain a value for field " + SimpleSpecimenImporter.DRAW_TIMESTAMP + " or " + SimpleSpecimenImporter.VISIT);
+                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " must contain a value for field " +
+                        (null == labels.get(SimpleSpecimenImporter.DRAW_TIMESTAMP) ? SimpleSpecimenImporter.DRAW_TIMESTAMP : labels.get(SimpleSpecimenImporter.DRAW_TIMESTAMP)) +
+                        " or " +
+                        (null == labels.get(SimpleSpecimenImporter.VISIT) ? SimpleSpecimenImporter.VISIT : labels.get(SimpleSpecimenImporter.VISIT)));
             }
             else if (study.getTimepointType() == TimepointType.DATE && null == row.get(SimpleSpecimenImporter.DRAW_TIMESTAMP))
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + SimpleSpecimenImporter.DRAW_TIMESTAMP);
+                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " +
+                        (null == labels.get(SimpleSpecimenImporter.DRAW_TIMESTAMP) ? SimpleSpecimenImporter.DRAW_TIMESTAMP : labels.get(SimpleSpecimenImporter.DRAW_TIMESTAMP)));
             }
             else if (study.getTimepointType() == TimepointType.VISIT && null == row.get(SimpleSpecimenImporter.VISIT))
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + SimpleSpecimenImporter.VISIT);
+                errors.reject(SpringActionController.ERROR_MSG, "Error: row " + rowNum + " does not contain a value for field " + 
+                        (null == labels.get(SimpleSpecimenImporter.VISIT) ? SimpleSpecimenImporter.VISIT : labels.get(SimpleSpecimenImporter.VISIT)));
             }
 
             if (errors.getAllErrors().size() >= 3)
