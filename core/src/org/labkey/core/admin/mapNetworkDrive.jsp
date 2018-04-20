@@ -16,18 +16,17 @@
      */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
+<%@ page import="org.labkey.api.settings.NetworkDriveProps" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     AdminController.SiteSettingsBean bean = ((JspView<AdminController.SiteSettingsBean>) HttpView.currentView()).getModelBean();
-    AppProps appProps = AppProps.getInstance();
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 
@@ -82,9 +81,9 @@
 <labkey:errors/>
 <labkey:form name="networkDrive" method="post" layout="horizontal">
 
-    <labkey:input type="text" label="Drive letter *" name="networkDriveLetter" id="networkDriveLetter" value="<%= h(appProps.getNetworkDriveLetter()) %>" size="1" maxLength="1" isRequired="true"/>
-    <labkey:input type="text" label="Path *" name="networkDrivePath" id="networkDrivePath" value="<%= h(appProps.getNetworkDrivePath()) %>" size="50" isRequired="true"/>
-    <labkey:input type="text" label="User *" name="networkDriveUser" id="networkDriveUser" value="<%= h(appProps.getNetworkDriveUser()) %>" isRequired="true"/>
+    <labkey:input type="text" label="Drive letter *" name="networkDriveLetter" id="networkDriveLetter" value="<%= h(NetworkDriveProps.getNetworkDriveLetter()) %>" size="1" maxLength="1" isRequired="true"/>
+    <labkey:input type="text" label="Path *" name="networkDrivePath" id="networkDrivePath" value="<%= h(NetworkDriveProps.getNetworkDrivePath()) %>" size="50" isRequired="true"/>
+    <labkey:input type="text" label="User *" name="networkDriveUser" id="networkDriveUser" value="<%= h(NetworkDriveProps.getNetworkDriveUser()) %>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="networkDrivePassword" id="networkDrivePassword" isRequired="true"/>
 
     <labkey:button text="save" submit="true"/>

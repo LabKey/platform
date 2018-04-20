@@ -17,6 +17,7 @@ package org.labkey.pipeline.api.properties;
 
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.NetworkDriveProps;
 
 /**
  * <code>ApplicationPropertiesSite</code> overrides <code>ApplicationPropertiesImpl</code>
@@ -31,7 +32,7 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
 
     public Character getNetworkDriveLetter()
     {
-        String letter = AppProps.getInstance().getNetworkDriveLetter();
+        String letter = NetworkDriveProps.getNetworkDriveLetter();
         if (letter == null || letter.length() == 0)
         {
             return null;
@@ -45,17 +46,17 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
 
     public String getNetworkDrivePath()
     {
-        return AppProps.getInstance().getNetworkDrivePath();
+        return NetworkDriveProps.getNetworkDrivePath();
     }
 
     public String getNetworkDriveUser()
     {
-        return AppProps.getInstance().getNetworkDriveUser();
+        return NetworkDriveProps.getNetworkDriveUser();
     }
 
     public String getNetworkDrivePassword()
     {
-        return AppProps.getInstance().getNetworkDrivePassword();
+        return NetworkDriveProps.getNetworkDrivePassword();
     }
 
     public String getBaseServerUrl()

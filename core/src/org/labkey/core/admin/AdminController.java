@@ -111,6 +111,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -1426,14 +1427,11 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
-            WriteableAppProps props = AppProps.getWriteableInstance();
+            NetworkDriveProps.setNetworkDriveLetter(form.getNetworkDriveLetter().trim());
+            NetworkDriveProps.setNetworkDrivePath(form.getNetworkDrivePath().trim());
+            NetworkDriveProps.setNetworkDriveUser(form.getNetworkDriveUser().trim());
+            NetworkDriveProps.setNetworkDrivePassword(form.getNetworkDrivePassword().trim());
 
-            props.setNetworkDriveLetter(form.getNetworkDriveLetter().trim());
-            props.setNetworkDrivePath(form.getNetworkDrivePath().trim());
-            props.setNetworkDriveUser(form.getNetworkDriveUser().trim());
-            props.setNetworkDrivePassword(form.getNetworkDrivePassword().trim());
-
-            props.save(getViewContext().getUser());
             return true;
         }
 
