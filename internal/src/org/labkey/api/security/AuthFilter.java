@@ -163,7 +163,9 @@ public class AuthFilter implements Filter
                 port = -1;
             }
             url = new URL("https", url.getHost(), port, url.getFile());
-            resp.sendRedirect(url.toString());
+            // Use 301 redirect instead of a 302 to indicate it's a permanent move
+            resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+            resp.setHeader("Location", resp.encodeRedirectURL(url.toString()));
             return;
         }
 
