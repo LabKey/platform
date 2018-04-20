@@ -631,7 +631,7 @@ public class Portal
 
     private static void ensurePage(Container c, String pageId)
     {
-        assert !getSchema().getScope().isTransactionActive();
+        boolean inTransaction = getSchema().getScope().isTransactionActive();
 
         TableInfo portalPageTable = getTableInfoPortalPages();
         Map<String, PortalPage> pages = Portal.getPages(c, true);
@@ -652,7 +652,9 @@ public class Portal
         }
         catch (RuntimeSQLException | DataIntegrityViolationException x)
         {
-            // ignore
+            // ignore if not in transaction, which is usually the case
+            if (inTransaction)
+                throw x;
             LOG.warn("Ensure page failed, likely because page already present.");
         }
     }
