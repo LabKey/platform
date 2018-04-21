@@ -16,6 +16,7 @@
 package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.Marshal;
@@ -70,6 +71,7 @@ public class SqlController extends SpringActionController
 
     public static class SqlForm
     {
+        private Double apiVersion = null;
         private String schema;
         private String sql;
         private String sep = null;
@@ -77,12 +79,32 @@ public class SqlController extends SpringActionController
         private boolean compact = false;
         private Parameters parameters = new Parameters();
 
+        public Double getApiVersion()
+        {
+            return apiVersion;
+        }
+
+        public void setApiVersion(Double apiVersion)
+        {
+            this.apiVersion = apiVersion;
+        }
+
         public String getSchema()
         {
             return schema;
         }
 
         public void setSchema(String schema)
+        {
+            this.schema = schema;
+        }
+
+        public String getSchemaName()
+        {
+            return schema;
+        }
+
+        public void setSchemaName(String schema)
         {
             this.schema = schema;
         }
