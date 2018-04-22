@@ -30,7 +30,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
@@ -96,7 +95,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
         Set<Long> rowIds = new HashSet<>(keys.size());
         for (Map<String, Object> key : keys)
@@ -140,7 +139,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalStateException(e.getMessage());
         }
 
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
             QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE);
@@ -205,7 +204,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         try
         {
             if (hasTableScript)
-                getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
+                getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
         }
         catch (BatchValidationException e)
         {
@@ -265,7 +264,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         try
         {
             if (hasTableScript)
-                getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
+                getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
         }
         catch (BatchValidationException e)
         {
@@ -335,7 +334,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
         Set<Long> rowIds = new HashSet<>(rows.size());
         Map<Long, Map<String, Object>> uniqueRows = new HashMap<>(rows.size());
@@ -402,7 +401,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalStateException(e.getMessage());
         }
 
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
             QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, rows);

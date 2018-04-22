@@ -317,7 +317,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     {
                         try
                         {
-                            target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, false, context.getErrors(), extraContext);
+                            target.fireBatchTrigger(c, getJob().getUser(), TableInfo.TriggerType.INSERT, false, context.getErrors(), extraContext);
                             target.resetTriggers(c);
                         }
                         catch (BatchValidationException e)
@@ -332,7 +332,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     {
                         try
                         {
-                            target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, true, context.getErrors(), extraContext);
+                            target.fireBatchTrigger(c, getJob().getUser(), TableInfo.TriggerType.INSERT, true, context.getErrors(), extraContext);
                         }
                         catch (BatchValidationException e)
                         {

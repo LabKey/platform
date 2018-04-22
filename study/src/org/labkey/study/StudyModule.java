@@ -90,6 +90,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
@@ -181,7 +182,6 @@ import org.labkey.study.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -758,9 +758,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
     }
 
-    @NotNull
     @Override
-    public JSONObject getPageContextJson(ViewContext context)
+    public JSONObject getPageContextJson(ContainerUser context)
     {
         Container c = context.getContainer();
         Map<String, String> moduleProperties = getDefaultPageContextJson(c);

@@ -41,7 +41,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
@@ -51,7 +50,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -62,7 +60,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -441,14 +438,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 if (null != ss)
                     ss.defaultTask().addResource(resource, SearchService.PRIORITY.item);
 
-                resource.notify(new ContainerUser(){
-                    public User getUser(){
-                        return user;
-                    }
-                    public Container getContainer(){
-                        return container;
-                    }
-                }, sb.toString());
+                resource.notify(ContainerUser.create(container, user), sb.toString());
             }
             return row;
         }
