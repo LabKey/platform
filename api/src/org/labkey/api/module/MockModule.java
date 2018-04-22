@@ -33,14 +33,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -435,7 +433,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public @NotNull JSONObject getPageContextJson(ViewContext context)
+    public JSONObject getPageContextJson(ContainerUser context)
     {
         return new JSONObject();
     }

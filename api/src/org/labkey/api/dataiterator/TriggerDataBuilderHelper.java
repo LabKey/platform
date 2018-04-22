@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 
 import java.util.Map;
 
@@ -31,15 +32,17 @@ public class TriggerDataBuilderHelper
 {
     final Container _c;
     final TableInfo _target;
+    private final User _user;
     final Map<String,Object> _extraContext;
     final boolean _useImportAliases;
     /** Only fire complete() if we got far enough to fire init() */
     boolean firedInit = false;
 
-    public TriggerDataBuilderHelper(TableInfo target, Container c, Map<String,Object> extraContext, boolean useImportAliases)
+    public TriggerDataBuilderHelper(TableInfo target, Container c, User user, Map<String, Object> extraContext, boolean useImportAliases)
     {
         _target = target;
         _c = c;
+        _user = user;
         _extraContext = extraContext;
         _useImportAliases = useImportAliases;
     }
@@ -117,7 +120,7 @@ public class TriggerDataBuilderHelper
 
             if (_firstRow)
             {
-                _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, true, getErrors(), _extraContext);
+                _target.fireBatchTrigger(_c, _user, TableInfo.TriggerType.INSERT, true, getErrors(), _extraContext);
                 firedInit = true;
                 _firstRow = false;
             }
@@ -128,7 +131,7 @@ public class TriggerDataBuilderHelper
                 _currentRow = getInput().getMap();
                 try
                 {
-                    _target.fireRowTrigger(_c, TableInfo.TriggerType.INSERT, true, rowNumber, _currentRow, null, _extraContext);
+                    _target.fireRowTrigger(_c, _user, TableInfo.TriggerType.INSERT, true, rowNumber, _currentRow, null, _extraContext);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -209,7 +212,7 @@ public class TriggerDataBuilderHelper
                     Map<String,Object> newRow = getInput().getMap();
                     try
                     {
-                        _target.fireRowTrigger(_c, TableInfo.TriggerType.INSERT, false, rowNumber, newRow, null, _extraContext);
+                        _target.fireRowTrigger(_c, _user, TableInfo.TriggerType.INSERT, false, rowNumber, newRow, null, _extraContext);
                     }
                     catch (ValidationException vex)
                     {
@@ -221,7 +224,7 @@ public class TriggerDataBuilderHelper
             finally
             {
                 if (!hasNext && firedInit && !getErrors().hasErrors())
-                    _target.fireBatchTrigger(_c, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
+                    _target.fireBatchTrigger(_c, _user, TableInfo.TriggerType.INSERT, false, getErrors(), _extraContext);
             }
         }
     }

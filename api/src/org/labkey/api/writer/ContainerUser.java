@@ -28,4 +28,23 @@ public interface ContainerUser
 {
     User getUser();
     Container getContainer();
+
+    /** Creates a minimal implementation of the interface */
+    static ContainerUser create(final Container c, final User u)
+    {
+        return new ContainerUser()
+        {
+            @Override
+            public User getUser()
+            {
+                return u;
+            }
+
+            @Override
+            public Container getContainer()
+            {
+                return c;
+            }
+        };
+    }
 }

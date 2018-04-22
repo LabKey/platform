@@ -23,7 +23,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
+import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptException;
 import java.sql.SQLException;
@@ -32,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Implements a trigger for table operations backed by JavaScript code.
  * User: kevink
  * Date: 12/21/15
  */
@@ -62,72 +66,72 @@ import java.util.Map;
     }
 
     @Override
-    public void init(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+    public void init(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "init", errors, extraContext, event.name().toLowerCase());
+        invokeTableScript(table, c, user, "init", errors, extraContext, event.name().toLowerCase());
     }
 
     @Override
-    public void complete(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+    public void complete(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "complete", errors, extraContext, event.name().toLowerCase());
+        invokeTableScript(table, c, user, "complete", errors, extraContext, event.name().toLowerCase());
     }
 
 
     @Override
     public void beforeInsert(TableInfo table, Container c,
-                             @Nullable Map<String, Object> newRow,
+                             User user, @Nullable Map<String, Object> newRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "beforeInsert", errors, extraContext, newRow);
+        invokeTableScript(table, c, user, "beforeInsert", errors, extraContext, newRow);
     }
 
     @Override
     public void beforeUpdate(TableInfo table, Container c,
-                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                             User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "beforeUpdate", errors, extraContext, newRow, oldRow);
+        invokeTableScript(table, c, user, "beforeUpdate", errors, extraContext, newRow, oldRow);
     }
 
     @Override
     public void beforeDelete(TableInfo table, Container c,
-                             @Nullable Map<String, Object> oldRow,
+                             User user, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "beforeDelete", errors, extraContext, oldRow);
+        invokeTableScript(table, c, user, "beforeDelete", errors, extraContext, oldRow);
     }
 
     @Override
     public void afterInsert(TableInfo table, Container c,
-                            @Nullable Map<String, Object> newRow,
+                            User user, @Nullable Map<String, Object> newRow,
                             ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "afterInsert", errors, extraContext, newRow);
+        invokeTableScript(table, c, user, "afterInsert", errors, extraContext, newRow);
     }
 
     @Override
     public void afterUpdate(TableInfo table, Container c,
-                            @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                            User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "afterUpdate", errors, extraContext, newRow, oldRow);
+        invokeTableScript(table, c, user, "afterUpdate", errors, extraContext, newRow, oldRow);
     }
 
     @Override
     public void afterDelete(TableInfo table, Container c,
-                            @Nullable Map<String, Object> oldRow,
+                            User user, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, "afterDelete", errors, extraContext, oldRow);
+        invokeTableScript(table, c, user, "afterDelete", errors, extraContext, oldRow);
     }
 
 
-    protected void invokeTableScript(TableInfo table, Container c, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Object... args)
+    protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
         allArgs[allArgs.length-1] = errors;
-        Boolean success = _invokeTableScript(c, Boolean.class, methodName, extraContext, allArgs);
+        Boolean success = _invokeTableScript(c, user, Boolean.class, methodName, extraContext, allArgs);
         if (success != null && !success)
             errors.addRowError(new ValidationException(methodName + " validation failed"));
         if (isConnectionClosed(table.getSchema().getScope()))
@@ -135,11 +139,11 @@ import java.util.Map;
     }
 
 
-    protected void invokeTableScript(TableInfo table, Container c, String methodName, ValidationException errors, Map<String, Object> extraContext, Object... args)
+    protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, ValidationException errors, Map<String, Object> extraContext, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
         allArgs[allArgs.length-1] = errors;
-        Boolean success = _invokeTableScript(c, Boolean.class, methodName, extraContext, allArgs);
+        Boolean success = _invokeTableScript(c, user, Boolean.class, methodName, extraContext, allArgs);
         if (success != null && !success)
             errors.addGlobalError(methodName + " validation failed");
         if (isConnectionClosed(table.getSchema().getScope()))
@@ -147,7 +151,7 @@ import java.util.Map;
     }
 
 
-    private <T> T _invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
+    private <T> T _invokeTableScript(Container c, User user, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
     {
         try
         {
@@ -165,7 +169,25 @@ import java.util.Map;
 
             if (_script.hasFn(methodName))
             {
-                return _script.invokeFn(resultType, methodName, args);
+                ViewContext.StackResetter viewContextResetter = null;
+                if (!HttpView.hasCurrentView())
+                {
+                    // Push a view context if we don't already have one available. It will be pulled if labkey.js
+                    // is required by the trigger script being invoked, via the call to PageFlowUtil.jsInitObject() in
+                    // server/modules/core/resources/scripts/labkey/init.js
+                    viewContextResetter = ViewContext.pushMockViewContext(user, c, null);
+                }
+                try
+                {
+                    return _script.invokeFn(resultType, methodName, args);
+                }
+                finally
+                {
+                    if (viewContextResetter != null)
+                    {
+                        viewContextResetter.close();
+                    }
+                }
             }
         }
         catch (NoSuchMethodException | ScriptException e)

@@ -63,6 +63,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.data.xml.PermissionType;
 import org.labkey.moduleProperties.xml.ModuleDocument;
@@ -1548,7 +1549,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _moduleProperties.put(property.getName(), property);
     }
 
-    public @NotNull JSONObject getPageContextJson(ViewContext context)
+    public JSONObject getPageContextJson(ContainerUser context)
     {
         return new JSONObject(getDefaultPageContextJson(context.getContainer()));
     }

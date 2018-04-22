@@ -52,6 +52,7 @@ import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -1355,7 +1356,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
+    public void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
     {
         assert batchErrors != null;
@@ -1364,7 +1365,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         for (Trigger script : triggers)
         {
-            script.batchTrigger(this, c, type, before, batchErrors, extraContext);
+            script.batchTrigger(this, c, user, type, before, batchErrors, extraContext);
             if (batchErrors.hasErrors())
                 break;
         }
@@ -1374,7 +1375,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
+    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
                                @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException
     {
@@ -1388,7 +1389,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         for (Trigger script : triggers)
         {
-            script.rowTrigger(this, c, type, before, rowNumber, newRow, oldRow, errors, extraContext);
+            script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext);
             if (errors.hasErrors())
                 break;
         }

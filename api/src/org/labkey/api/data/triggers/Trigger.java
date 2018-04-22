@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 
 import java.util.Map;
 
@@ -39,24 +40,24 @@ public interface Trigger
      */
     default boolean canStream() { return false; }
 
-    default void batchTrigger(TableInfo table, Container c, TableInfo.TriggerType event, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+    default void batchTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
     {
         if (before)
-            init(table, c, event, errors, extraContext);
+            init(table, c, user, event, errors, extraContext);
         else
-            complete(table, c, event, errors, extraContext);
+            complete(table, c, user, event, errors, extraContext);
     }
 
-    default void init(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+    default void init(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
     }
 
-    default void complete(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+    default void complete(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
     }
 
 
-    default void rowTrigger(TableInfo table, Container c, TableInfo.TriggerType event, boolean before, int rowNumber,
+    default void rowTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, int rowNumber,
                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
@@ -65,13 +66,13 @@ public interface Trigger
             switch (event)
             {
                 case INSERT:
-                    beforeInsert(table, c, newRow, errors, extraContext);
+                    beforeInsert(table, c, user, newRow, errors, extraContext);
                     break;
                 case UPDATE:
-                    beforeUpdate(table, c, newRow, oldRow, errors, extraContext);
+                    beforeUpdate(table, c, user, newRow, oldRow, errors, extraContext);
                     break;
                 case DELETE:
-                    beforeDelete(table, c, oldRow, errors, extraContext);
+                    beforeDelete(table, c, user, oldRow, errors, extraContext);
                     break;
             }
         }
@@ -80,50 +81,50 @@ public interface Trigger
             switch (event)
             {
                 case INSERT:
-                    afterInsert(table, c, newRow, errors, extraContext);
+                    afterInsert(table, c, user, newRow, errors, extraContext);
                     break;
                 case UPDATE:
-                    afterUpdate(table, c, newRow, oldRow, errors, extraContext);
+                    afterUpdate(table, c, user, newRow, oldRow, errors, extraContext);
                     break;
                 case DELETE:
-                    afterDelete(table, c, oldRow, errors, extraContext);
+                    afterDelete(table, c, user, oldRow, errors, extraContext);
                     break;
             }
         }
     }
 
     default void beforeInsert(TableInfo table, Container c,
-                              @Nullable Map<String, Object> newRow,
+                              User user, @Nullable Map<String, Object> newRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void beforeUpdate(TableInfo table, Container c,
-                              @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                              User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void beforeDelete(TableInfo table, Container c,
-                              @Nullable Map<String, Object> oldRow,
+                              User user, @Nullable Map<String, Object> oldRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void afterInsert(TableInfo table, Container c,
-                             @Nullable Map<String, Object> newRow,
+                             User user, @Nullable Map<String, Object> newRow,
                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void afterUpdate(TableInfo table, Container c,
-                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                             User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void afterDelete(TableInfo table, Container c,
-                             @Nullable Map<String, Object> oldRow,
+                             User user, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }

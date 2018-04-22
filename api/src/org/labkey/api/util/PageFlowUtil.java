@@ -57,7 +57,6 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelProvider;
 import org.labkey.api.settings.CustomLabelService;
@@ -72,6 +71,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.util.WebUtils;
@@ -1986,7 +1986,7 @@ public class PageFlowUtil
         return jsInitObject(context, new LinkedHashSet<>(), false);
     }
 
-    public static JSONObject jsInitObject(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static JSONObject jsInitObject(ContainerUser context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         AppProps appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
@@ -2009,11 +2009,9 @@ public class PageFlowUtil
         if (null != shared) // not good
             json.put("sharedContainer", shared.getName());
         json.put("hash", getServerSessionHash());
-        json.put("pageAdminMode", isPageAdminMode(context));
 
         Container container = context.getContainer();
         User user = context.getUser();
-        HttpServletRequest request = context.getRequest();
 
         if (container != null)
             json.put("moduleContext", getModuleClientContext(context, resources));
@@ -2069,18 +2067,27 @@ public class PageFlowUtil
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
 
-        if (request != null)
+        boolean pageAdminMode = false;
+        // Be tolerant of not having a ViewContext, or having one but being detached from an HttpServletRequest
+        if (context instanceof ViewContext)
         {
-            json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
-            if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
-                json.put("postParameters", request.getParameterMap());
-            String tok = CSRFUtil.getExpectedToken(request, null);
-            if (null != tok)
+            ViewContext viewContext = (ViewContext)context;
+            pageAdminMode = isPageAdminMode(viewContext);
+            HttpServletRequest request = viewContext.getRequest();
+            if (request != null)
             {
-                json.put("CSRF", tok);
-                defaultHeaders.put(CSRFUtil.csrfHeader, tok);
+                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
+                if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
+                    json.put("postParameters", request.getParameterMap());
+                String tok = CSRFUtil.getExpectedToken(request, null);
+                if (null != tok)
+                {
+                    json.put("CSRF", tok);
+                    defaultHeaders.put(CSRFUtil.csrfHeader, tok);
+                }
             }
         }
+        json.put("pageAdminMode", pageAdminMode);
 
         json.put("defaultHeaders", defaultHeaders);
 
@@ -2607,7 +2614,7 @@ public class PageFlowUtil
         EncoderUtil.writeBufferedImage(buffer, ImageFormat.PNG, response.getOutputStream());
     }
 
-    public static JSONObject getModuleClientContext(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
+    public static JSONObject getModuleClientContext(ContainerUser context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         JSONObject ret = new JSONObject();
 

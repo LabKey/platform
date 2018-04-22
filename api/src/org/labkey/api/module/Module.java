@@ -34,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -344,7 +345,7 @@ public interface Module extends Comparable<Module>
      * Note: this is written as plain text.
      * @param context Current ViewContext for the page
      */
-    @NotNull JSONObject getPageContextJson(ViewContext context);
+    JSONObject getPageContextJson(ContainerUser context);
 
     @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
 

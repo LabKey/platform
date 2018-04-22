@@ -199,7 +199,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         in = preTriggerDataIterator(in, context);
 
         boolean hasTableScript = hasTableScript(container);
-        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.getInsertOption().useImportAliases);
+        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (hasTableScript)
             in = helper.before(in);
         DataIteratorBuilder importDIB = createImportDIB(user, container, in, context);
@@ -354,7 +354,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         errors.setExtraContext(extraScriptContext);
         if (hasTableScript)
-            getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
+            getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
@@ -366,14 +366,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 row = coerceTypes(row);
                 if (hasTableScript)
                 {
-                    getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
+                    getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.INSERT, true, i, row, null, extraScriptContext);
                 }
                 row = insertRow(user, container, row);
                 if (row == null)
                     continue;
 
                 if (hasTableScript)
-                    getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, false, i, row, null, extraScriptContext);
+                    getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.INSERT, false, i, row, null, extraScriptContext);
                 result.add(row);
             }
             catch (SQLException sqlx)
@@ -406,7 +406,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         if (hasTableScript)
-            getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
+            getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
             QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
@@ -507,7 +507,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         List<Map<String, Object>> oldRows = new ArrayList<>(rows.size());
@@ -529,12 +529,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                         throw new NotFoundException("The existing row was not found.");
                 }
 
-                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, true, i, row, oldRow, extraScriptContext);
+                getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.UPDATE, true, i, row, oldRow, extraScriptContext);
                 Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
                 if (!streaming && updatedRow == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow, extraScriptContext);
+                getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow, extraScriptContext);
                 if (!streaming)
                 {
                     result.add(updatedRow);
@@ -557,7 +557,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
         if (errors.hasErrors())
             throw errors;
 
@@ -578,7 +578,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
         // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
@@ -598,12 +598,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                         continue;
                 }
 
-                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, true, i, null, oldRow, extraScriptContext);
+                getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.DELETE, true, i, null, oldRow, extraScriptContext);
                 Map<String, Object> updatedRow = deleteRow(user, container, oldRow);
                 if (!streaming && updatedRow == null)
                     continue;
 
-                getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, false, i, null, updatedRow, extraScriptContext);
+                getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.DELETE, false, i, null, updatedRow, extraScriptContext);
                 result.add(updatedRow);
             }
             catch (InvalidKeyException ex)
@@ -623,7 +623,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
             QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
@@ -646,11 +646,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.TRUNCATE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, true, errors, extraScriptContext);
 
         int result = truncateRows(user, container);
 
-        getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
         if (!isBulkLoad())
             QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.TRUNCATE);
 

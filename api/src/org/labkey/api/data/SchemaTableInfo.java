@@ -39,7 +39,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -828,13 +827,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+    public void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
 
     @Override
-    public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
+    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }

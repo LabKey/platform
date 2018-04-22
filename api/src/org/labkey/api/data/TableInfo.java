@@ -33,6 +33,7 @@ import org.labkey.api.query.SchemaTreeNode;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -435,13 +436,14 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * </pre>
      *
      * @param c The current Container.
+     * @param user the current user
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
      * @param errors Any errors created by the validation script will be added to the errors collection.
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws BatchValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+    void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
             throws BatchValidationException;
 
     /**
@@ -472,14 +474,15 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * </dl>
      *
      * @param c The current Container.
+     * @param user the current user
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
-     * @param oldRow The previous row for UPDATE and DELETE
      * @param newRow The new row for INSERT and UPDATE.
+     * @param oldRow The previous row for UPDATE and DELETE
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
+    void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
                         @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException;
 
