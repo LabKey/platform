@@ -5498,14 +5498,14 @@ public class ExperimentServiceImpl implements ExperimentService
         if (outputDatas.isEmpty())
         {
             if (outputMaterials.size() == 1)
-                name.append(" sample ");
+                name.append("sample ");
             else
                 name.append(outputMaterials.size()).append(" samples ");
         }
         else if (outputMaterials.isEmpty())
         {
             if (outputDatas.size() == 1)
-                name.append(" data ");
+                name.append("data ");
             else
                 name.append(outputDatas.size()).append(" data ");
         }

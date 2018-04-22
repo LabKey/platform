@@ -764,8 +764,9 @@ public class UploadSamplesHelper
 
         List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
         List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
-        if (dataOutputs.isEmpty() && materialOutputs.isEmpty())
+        if (dataOutputs.isEmpty() && (materialOutputs.isEmpty() || materialOutputs.contains(material)))
         {
+            _log.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
             // if run has no other outputs, delete the run completely
             material.setSourceApplication(null);
             material.save(user);
@@ -773,6 +774,7 @@ public class UploadSamplesHelper
         }
         else
         {
+            _log.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has other " + dataOutputs.size() + " data outputs and " + materialOutputs.size() + " material outputs, removing sample from run");
             // if the existing run has other outputs, remove the run as the source application for this sample
             // and remove it as an output from the run
             material.setSourceApplication(null);
@@ -781,6 +783,7 @@ public class UploadSamplesHelper
             if (outputApp != null)
                 outputApp.removeMaterialInput(user, material);
             existingSourceApp.removeMaterialInput(user, material);
+            ExperimentService.get().syncRunEdges(existingDerivationRun);
         }
     }
 

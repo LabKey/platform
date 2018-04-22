@@ -5922,12 +5922,20 @@ public class ExperimentController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
     @CSRF
-    public class RebuildEdgesAction extends MutatingApiAction<Object>
+    public class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override
-        public Object execute(Object o, BindException errors)
+        public Object execute(ExperimentRunForm form, BindException errors)
         {
-            ExperimentServiceImpl.get().rebuildAllEdges();
+            if (form.getRowId() != 0 || form.getLsid() != null)
+            {
+                ExpRunImpl run = form.lookupRun();
+                ExperimentServiceImpl.get().syncRunEdges(run);
+            }
+            else
+            {
+                ExperimentServiceImpl.get().rebuildAllEdges();
+            }
             return success();
         }
     }
