@@ -764,7 +764,7 @@ public class UploadSamplesHelper
 
         List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
         List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
-        if (dataOutputs.isEmpty() && (materialOutputs.isEmpty() || materialOutputs.contains(material)))
+        if (dataOutputs.isEmpty() && (materialOutputs.isEmpty() || (materialOutputs.size() == 1 && materialOutputs.contains(material))))
         {
             _log.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
             // if run has no other outputs, delete the run completely
