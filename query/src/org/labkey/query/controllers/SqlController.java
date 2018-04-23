@@ -19,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
@@ -32,10 +34,14 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NavTree;
 import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -237,6 +243,9 @@ public class SqlController extends SpringActionController
         final int count = rs.getMetaData().getColumnCount();
         final boolean serializeDateAsNumber=false;
 
+        // meta-meta-data
+        out.write("18.2"+sep+"name"+sep+"jdbcType"+eol);
+
         for (int i = 1; i <= count; i++)
         {
             out.write(rs.getColumn(i).getName());
@@ -350,6 +359,9 @@ public class SqlController extends SpringActionController
         final int count = rs.getMetaData().getColumnCount();
         final boolean serializeDateAsNumber=false;
 
+        // meta-meta-data
+        out.write("18.2"+sep+"name"+sep+"jdbcType"+eol);
+
         for (int i = 1; i <= count; i++)
         {
             out.write(rs.getColumn(i).getName());
@@ -421,7 +433,7 @@ public class SqlController extends SpringActionController
             for (int column = 1; column <= count; column++)
             {
                 String s = row[column];
-                if (null != s)
+                if (null != s && s.length() > 0)
                 {
                     if (s.equals(prev[column]))
                         out.write(DITTO);
@@ -435,5 +447,28 @@ public class SqlController extends SpringActionController
             row = t;
         }
         out.flush();
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class TestSqlAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView("<script src='/labkey/clientapi/core/SQL.js'></script>\n" +
+                    "<textarea cols=120 id=sql></textarea><br><button onClick='exec()'>exec</button>"+
+                    "<script>"+
+                    "function exec(){\n"+
+                    "LABKEY.Query.experimental.SQL.execute(\n"+
+                    "  {schema:'core', sql:document.getElementById('sql').value,"+
+                    "  success:function(r){\nalert(JSON.stringify(r));\n}});"+
+                    "}</script>");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
     }
 }
