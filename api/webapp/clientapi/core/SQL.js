@@ -51,16 +51,21 @@
             rows.pop();
 
         // names
-        var names = rows[0].split(sep);
+        var r=0;
+        var meta = rows[r++].split(sep);
+        var names = rows[r++].split(sep);
 
         // types
         var colConverters = [];
-        var types = rows[1].split(sep);
+        var types = rows[r++].split(sep);
         for (var i=0 ; i<types.length ; i++)
             colConverters[i] = converters[types[i]] || identity;
 
+        // skip all metadata rows
+        rows = rows.slice(meta.length);
+
         // rows
-        for (var r=2 ; r<rows.length ; r++)
+        for (r=0 ; r<rows.length ; r++)
         {
             var row = rows[r].split(sep);
             for (var c=0 ; c<row.length ; c++)
@@ -68,14 +73,13 @@
                 var s = row[c];
                 if ("" === s)
                     row[c] = null;
-                else if (control_chars.bs === s && r>2)
-                    row[c] = rows[r-3][c];
+                else if (control_chars.bs === s && r>0)
+                    row[c] = rows[r-1][c];
                 else
                     row[c] = colConverters[c](s);
             }
-            rows[r-2] = row;
+            rows[r] = row;
         }
-        rows.pop(); rows.pop();
         return {names:names, types:types, rows:rows};
     }
 
