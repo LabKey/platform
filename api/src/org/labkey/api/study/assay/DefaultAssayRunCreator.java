@@ -510,7 +510,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 continue;
 
             // Lookup must point at "Samples.*" or "exp.Materials"
-            @Nullable ExpSampleSet ss = getLookupSampleSet(dp, context.getContainer());
+            @Nullable ExpSampleSet ss = getLookupSampleSet(dp, context.getContainer(), context.getUser());
             if (ss == null && !isLookupToMaterials(dp))
                 continue;
 
@@ -539,7 +539,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     @Nullable
-    public static ExpSampleSet getLookupSampleSet(@NotNull DomainProperty dp, @NotNull Container container)
+    public static ExpSampleSet getLookupSampleSet(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
     {
         Lookup lookup = dp.getLookup();
         if (lookup == null)
@@ -554,7 +554,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             return null;
 
         Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return ExperimentService.get().getSampleSet(c, lookup.getQueryName(), true);
+        return ExperimentService.get().getSampleSet(c, user, lookup.getQueryName());
     }
 
     public static boolean isLookupToMaterials(@NotNull DomainProperty dp)

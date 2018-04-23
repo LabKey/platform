@@ -148,19 +148,29 @@ public interface ExperimentService extends ExperimentRunTypeSource
              @Nullable TemplateInfo templateInfo)
         throws ExperimentException, SQLException;
 
-    List<? extends ExpDataClass> getDataClasses(Container container, User user, boolean includeOtherContainers);
+    /**
+     * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,
+     * a user must be provided to check for read permission of the containers in scope.
+     */
+    List<? extends ExpDataClass> getDataClasses(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
 
     /** Get a DataClass by name within the definition container. */
-    ExpDataClass getDataClass(Container definitionContainer, String dataClassName);
+    ExpDataClass getDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName);
 
     /**
      * Get a DataClass by name within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
-    ExpDataClass getDataClass(Container scope, User user, String dataClassName);
+    ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, @NotNull String dataClassName);
 
-    ExpDataClass getDataClass(int rowId);
-    ExpDataClass getDataClass(String lsid);
+    /** Get a DataClass by rowId within the definition container. */
+    ExpDataClass getDataClass(@NotNull Container definitionContainer, int rowId);
+
+    /**
+     * Get a DataClass by rowId within scope -- current, project, and shared.
+     * Requires a user to check for container read permission.
+     */
+    ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, int rowId);
 
     /**
      * Get materials with the given names, optionally within the provided sample set.
@@ -219,13 +229,26 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
      */
-    List<? extends ExpSampleSet> getSampleSets(Container container, User user, boolean includeOtherContainers);
-    ExpSampleSet getSampleSet(Container container, String name);
+    List<? extends ExpSampleSet> getSampleSets(@NotNull Container container, User user, boolean includeOtherContainers);
+
+    /** Get a SampleSet by name within the definition container. */
+    ExpSampleSet getSampleSet(@NotNull Container definitionContainer, @NotNull String sampleSetName);
 
     /**
-     * @param includeOtherContainers If true, try getting sample set from project and shared containers.
+     * Get a SampleSet by name within scope -- current, project, and shared.
+     * Requires a user to check for container read permission.
      */
-    ExpSampleSet getSampleSet(Container container, String name, boolean includeOtherContainers);
+    ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, @NotNull String sampleSetName);
+
+    /** Get a SampleSet by rowId within the definition container. */
+    ExpSampleSet getSampleSet(@NotNull Container definitionContainer, int rowId);
+
+    /**
+     * Get a SampleSet by rowId within scope -- current, project, and shared.
+     * Requires a user to check for container read permission.
+     */
+    ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, int rowId);
+
     ExpSampleSet lookupActiveSampleSet(Container container);
     void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
 

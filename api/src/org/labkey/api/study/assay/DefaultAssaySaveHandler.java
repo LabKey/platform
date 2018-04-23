@@ -533,7 +533,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                 else if (sampleSetJson.has(ExperimentJSONConverter.NAME))
                 {
                     String sampleSetName = sampleSetJson.getString(ExperimentJSONConverter.NAME);
-                    sampleSet = ExperimentService.get().getSampleSet(context.getContainer(), sampleSetName, true);
+                    sampleSet = ExperimentService.get().getSampleSet(context.getContainer(), context.getUser(), sampleSetName);
                     if (sampleSet == null)
                         throw new NotFoundException("A sample set named '" + sampleSetName + "' doesn't exist.");
                 }

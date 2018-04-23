@@ -592,7 +592,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             else
             {
-                ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container);
+                ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container, user);
                 if (ss != null)
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
