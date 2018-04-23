@@ -58,12 +58,8 @@ public class PopupAdminView extends PopupMenuView
     public PopupAdminView(final ViewContext context)
     {
         Container c = context.getContainer();
-        // If current context is a container tab, use the parent container to build this menu
-        if (!c.isContainerFor(ContainerType.DataType.folderManagement))
-        {
-            c = c.getContainerFor(ContainerType.DataType.folderManagement);
-            context.setContainer(c);
-        }
+        c = c.getContainerFor(ContainerType.DataType.folderManagement);
+        context.setContainer(c);
 
         NavTree tree = createNavTree(context);
 
@@ -109,11 +105,9 @@ public class PopupAdminView extends PopupMenuView
     public static NavTree createNavTree(final ViewContext context)
     {
         Container c = context.getContainer();
-        if (!c.isContainerFor(ContainerType.DataType.folderManagement))
-        {
-            c = c.getContainerFor(ContainerType.DataType.folderManagement);
-            context.setContainer(c);
-        }
+
+        c = c.getContainerFor(ContainerType.DataType.folderManagement);
+        context.setContainer(c);
 
         if (!hasPermission(context))
             return null;

@@ -43,20 +43,6 @@ public class TabContainerType extends NormalContainerType implements ContainerTy
     }
 
     @Override
-    public boolean isContainerFor(DataType dataType)
-    {
-        switch (dataType)
-        {
-            case fileRoot:
-            case folderManagement:
-            case tabs:
-                return false;
-            default:
-                return true;
-        }
-    }
-
-    @Override
     public Container getContainerFor(DataType dataType, Container currentContainer)
     {
         switch (dataType)

@@ -221,7 +221,7 @@ public class ExperimentRunListView extends QueryView
             {
                 MenuButton addRunsButton;
 
-                if (!c.isContainerFor(ContainerType.DataType.assays))
+                if (!c.isContainerFor(ContainerType.DataType.assayData))
                 // the folder type may indicate that assays should be uploaded into a different container (a workbook)
                 {
                     addRunsButton = new MenuButton("Upload Assay Runs"){
@@ -246,7 +246,7 @@ public class ExperimentRunListView extends QueryView
                     if (provider != null)
                     {
                         NavTree btn;
-                        if (!c.isContainerFor(ContainerType.DataType.assays))
+                        if (!c.isContainerFor(ContainerType.DataType.assayData))
                         {
                             btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
                             btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +

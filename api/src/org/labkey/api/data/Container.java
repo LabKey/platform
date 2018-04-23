@@ -145,12 +145,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     // BEGIN Container Type forwarding methods
 
-    public Boolean canHaveChildren()
+    public boolean canHaveChildren()
     {
         return _containerType.canHaveChildren();
     }
 
-    public Boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(ImportContext context)
     {
         // only include subfolders if requested by user (otherwise just container tabs)
         // but don't include the current folder in the case of creating a folder from template
@@ -160,12 +160,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.includeForImportExport(context);
     }
 
-    public Boolean shouldRemoveFromPortal()
+    public boolean shouldRemoveFromPortal()
     {
         return _containerType.shouldRemoveFromPortal();
     }
 
-    public Boolean includePropertiesAsChild(boolean includeTabs)
+    public boolean includePropertiesAsChild(boolean includeTabs)
     {
         // workbook - never
         // normal - always
@@ -173,38 +173,38 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.includePropertiesAsChild(includeTabs);
     }
 
-    public Boolean isInFolderNav()
+    public boolean isInFolderNav()
     {
         return _containerType.isInFolderNav();
     }
 
 
-    public Boolean isConvertibleToTab()
+    public boolean isConvertibleToTab()
     {
         return _containerType.isConvertibleToTab();
     }
 
-    public Boolean canDeleteFromContainer(Container container)
+    public boolean canDeleteFromContainer(Container container)
     {
         return _containerType.canDeleteFromContainer(this, container);
     }
 
-    public Boolean canUpdateFromContainer(Container container)
+    public boolean canUpdateFromContainer(Container container)
     {
         return _containerType.canUpdateFromContainer(this, container);
     }
 
-    public Boolean canAdminFolder()
+    public boolean canAdminFolder()
     {
         return _containerType.canAdminFolder();
     }
 
-    public Boolean requiresAdminToDelete()
+    public boolean requiresAdminToDelete()
     {
         return _containerType.requiresAdminToDelete();
     }
 
-    public Boolean isDuplicatedInContainerFilter()
+    public boolean isDuplicatedInContainerFilter()
     {
         // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
         // automatically because we always add them via the SQL that we generate
@@ -216,14 +216,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.getTitleFor(context, this);
     }
 
-    public Boolean isContainerFor(ContainerType.DataType dataType)
+    public boolean isContainerFor(ContainerType.DataType dataType)
     {
-        if (dataType == ContainerType.DataType.assays)
+        if (dataType == ContainerType.DataType.assayData)
         {
             // the folder type may indicate that assays should be uploaded to workbooks
-            return !getFolderType().getForceAssayUploadIntoWorkbooks() && isWorkbook();
+            return !getFolderType().getForceAssayUploadIntoWorkbooks() || isWorkbook();
         }
-        return _containerType.isContainerFor(dataType);
+        return this.getContainerFor(dataType) == this;
     }
 
     public Container getContainerFor(ContainerType.DataType dataType)

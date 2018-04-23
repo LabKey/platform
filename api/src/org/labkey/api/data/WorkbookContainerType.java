@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.labkey.api.data.ContainerType.DataType.assayProtocols;
+import static org.labkey.api.data.ContainerType.DataType.protocol;
 import static org.labkey.api.data.ContainerType.DataType.sharedDataTable;
 
 public class WorkbookContainerType implements ContainerType
@@ -116,31 +117,11 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public boolean isContainerFor(DataType dataType)
-    {
-        switch (dataType)
-        {
-            case assays:
-            case assayProtocols:
-            case folderManagement:
-            case sharedDataTable:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    @Override
     public Container getContainerFor(DataType dataType, Container currentContainer)
     {
         switch (dataType)
         {
-            case assays: ;
-                // for workbooks, use the parent folder as the current folder (unless it happens to be the project)
-                Container container = currentContainer.getParent();
-                if (container != null && container.isProject())
-                    container = null;
-                return container;
+            case assayData: ;
             case assayProtocols:
             case dataspace:
             case folderManagement:
@@ -165,6 +146,14 @@ public class WorkbookContainerType implements ContainerType
                 containers.add(project);
             }
 
+            containers.add(currentContainer.getParent());
+            containers.add(ContainerManager.getSharedContainer());
+        }
+        else if (dataType == protocol)
+        {
+            containers.add(currentContainer);
+            containers.add(currentContainer.getProject());
+            containers.add(ContainerManager.getSharedContainer());
             containers.add(currentContainer.getParent());
         }
         else if (dataType == sharedDataTable)

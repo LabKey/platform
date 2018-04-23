@@ -14,9 +14,8 @@ public interface ContainerType
      */
     enum DataType
     {
-        assayLocationFilter,
         assayProtocols,
-        assays,
+        assayData,
         customQueryViews,
         dataspace,
         domainDefinitions,
@@ -128,16 +127,6 @@ public interface ContainerType
     String getTitleFor(TitleContext context, Container currentContainer);
 
     /**
-     * You should not call this method if you don't want to know the answer.
-     *
-     * @param dataType the type of data we are interested in
-     * @return an indication of whether this container holds the type of data indicated
-     */
-    boolean isContainerFor(DataType dataType);
-
-    /**
-     * You should not call this method if you don't want to know the answer.
-     *
      * @param dataType the type of data we are interested in
      * @param currentContainer the container the query is made relative to
      * @return the container in the given container's hierarchy in which the indicated data relevant to this container is contained

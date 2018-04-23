@@ -669,9 +669,9 @@ public abstract class ContainerFilter
             {
                 return null;
             }
-            if (!currentContainer.isContainerFor(ContainerType.DataType.assayLocationFilter) && currentContainer.getContainerFor(ContainerType.DataType.assayLocationFilter).hasPermission(_user, perm, roles))
+            if (!currentContainer.isContainerFor(ContainerType.DataType.assayProtocols) && currentContainer.getContainerFor(ContainerType.DataType.assayProtocols).hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getContainerFor(ContainerType.DataType.assayLocationFilter).getEntityId());
+                result.add(currentContainer.getContainerFor(ContainerType.DataType.assayProtocols).getEntityId());
             }
             return result;
         }

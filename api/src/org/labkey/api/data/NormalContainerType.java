@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.labkey.api.data.ContainerType.DataType.assayProtocols;
+import static org.labkey.api.data.ContainerType.DataType.protocol;
 import static org.labkey.api.data.ContainerType.DataType.sharedDataTable;
 
 public class NormalContainerType implements ContainerType
@@ -116,12 +117,6 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public boolean isContainerFor(DataType dataType)
-    {
-        return true;
-    }
-
-    @Override
     public Container getContainerFor(DataType dataType, Container currentContainer)
     {
         return currentContainer;
@@ -139,6 +134,13 @@ public class NormalContainerType implements ContainerType
             Container project = currentContainer.getProject();
             if (project != null)
                 containers.add(project);
+            containers.add(ContainerManager.getSharedContainer());
+        }
+        else if (dataType == protocol)
+        {
+            containers.add(currentContainer);
+            containers.add(currentContainer.getProject());
+            containers.add(ContainerManager.getSharedContainer());
         }
         else if (dataType == sharedDataTable)
         {
