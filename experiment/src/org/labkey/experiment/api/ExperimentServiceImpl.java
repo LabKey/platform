@@ -193,6 +193,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
@@ -206,8 +207,17 @@ public class ExperimentServiceImpl implements ExperimentService
 {
     private static final Logger LOG = Logger.getLogger(ExperimentServiceImpl.class);
 
-    private DatabaseCache<MaterialSource> materialSourceCache;
     private StringKeyCache<Protocol> protocolCache;
+
+    private StringKeyCache<SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
+    {
+        Container c = ContainerManager.getForId(container);
+        if (c == null)
+            return Collections.emptySortedSet();
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoMaterialSource(), filter, null).getCollection(MaterialSource.class)));
+    });
 
     private final StringKeyCache<SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
     {
@@ -231,13 +241,17 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
 
-    synchronized DatabaseCache<MaterialSource> getMaterialSourceCache()
+    StringKeyCache<SortedSet<MaterialSource>> getMaterialSourceCache()
     {
-        if (materialSourceCache == null)
-        {
-            materialSourceCache = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Material source");
-        }
         return materialSourceCache;
+    }
+
+    public void clearMaterialSourceCache(@Nullable Container c)
+    {
+        if (c == null)
+            materialSourceCache.clear();
+        else
+            materialSourceCache.remove(c.getId());
     }
 
     StringKeyCache<SortedSet<DataClass>> getDataClassCache()
@@ -782,61 +796,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
-    private static final MaterialSource MISS_MARKER = new MaterialSource();
-
-    @Nullable
-    public ExpSampleSetImpl getSampleSet(int rowId)
-    {
-        MaterialSource ms = getMaterialSourceCache().get("ROWID/" + rowId);
-
-        if (null == ms)
-        {
-            ms = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
-
-            if (null == ms)
-            {
-                getMaterialSourceCache().put("ROWID/" + rowId, MISS_MARKER);
-                return null;
-            }
-            cacheMaterialSource(ms);
-        }
-
-        if (MISS_MARKER == ms)
-            return null;
-
-        return new ExpSampleSetImpl(ms);
-    }
-
-    @Nullable
-    public ExpSampleSetImpl getSampleSet(String lsid)
-    {
-        MaterialSource ms = getMaterialSourceCache().get(getCacheKey(lsid));
-
-        if (null == ms)
-        {
-            ms = getMaterialSource(lsid);
-
-            if (null == ms)
-            {
-                getMaterialSourceCache().put(getCacheKey(lsid), MISS_MARKER);
-                return null;
-            }
-            cacheMaterialSource(ms);
-        }
-
-        if (MISS_MARKER == ms)
-            return null;
-
-        return new ExpSampleSetImpl(ms);
-    }
-
-
-    void cacheMaterialSource(MaterialSource ms)
-    {
-        DatabaseCache<MaterialSource> c = getMaterialSourceCache();
-        c.put("ROWID/" + ms.getRowId(), ms);
-        c.put(getCacheKey(ms.getLSID()), ms);
-    }
 
 
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
@@ -1013,13 +972,6 @@ public class ExperimentServiceImpl implements ExperimentService
         DbCache.remove(getTinfoProtocol(), getCacheKey(p.getLSID()));
     }
 
-    protected void uncacheMaterialSource(MaterialSource ms)
-    {
-        StringKeyCache<MaterialSource> c = getMaterialSourceCache();
-        c.remove(getCacheKey(ms.getLSID()));
-        c.remove("ROWID/" + ms.getRowId());
-    }
-
 
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
@@ -1186,20 +1138,79 @@ public class ExperimentServiceImpl implements ExperimentService
         return null;
     }
 
-    public ExpSampleSetImpl getSampleSet(@NotNull Container container, @NotNull String name)
+    @Override
+    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull String sampleSetName)
     {
-        return getSampleSet(generateLSID(container, ExpSampleSet.class, name));
+        return getSampleSet(c, null, false, sampleSetName);
     }
 
-    public ExpSampleSetImpl getSampleSet(Container c, String name, boolean includeOtherContainers)
+    // NOTE: This method used to not take a user or check permissions
+    @Override
+    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull User user, @NotNull String sampleSetName)
     {
-        ExpSampleSetImpl ss = getSampleSet(c, name);
-        if (ss == null && !c.isProject() && c.getProject() != null)
-            ss = getSampleSet(c.getProject(), name);
-        if (ss == null && !c.equals(ContainerManager.getSharedContainer()))
-            ss = getSampleSet(ContainerManager.getSharedContainer(), name);
-        return ss;
+        return getSampleSet(c, user, true, sampleSetName);
     }
+
+    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String sampleSetName)
+    {
+        return getSampleSet(c, user, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleSetName)));
+    }
+
+    @Override
+    public ExpSampleSetImpl getSampleSet(@NotNull Container c, int rowId)
+    {
+        return getSampleSet(c, null, rowId, false);
+    }
+
+    @Override
+    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull User user, int rowId)
+    {
+        return getSampleSet(c, user, rowId, true);
+    }
+
+    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
+    {
+        return getSampleSet(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
+    }
+
+    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
+    {
+        List<String> containerIds = createContainerList(c, user, includeOtherContainers);
+        for (String containerId : containerIds)
+        {
+            Collection<MaterialSource> sampleSetes = getMaterialSourceCache().get(containerId);
+            for (MaterialSource materialSource : sampleSetes)
+            {
+                if (predicate.test(materialSource))
+                    return new ExpSampleSetImpl(materialSource);
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public ExpSampleSetImpl getSampleSet(int rowId)
+    {
+        // TODO: Cache
+        MaterialSource materialSource = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
+        if (materialSource == null)
+            return null;
+
+        return new ExpSampleSetImpl(materialSource);
+    }
+
+    @Nullable
+    public ExpSampleSetImpl getSampleSet(String lsid)
+    {
+        // TODO: Cache
+        MaterialSource ms = getMaterialSource(lsid);
+        if (ms == null)
+            return null;
+
+        return new ExpSampleSetImpl(ms);
+    }
+
 
     public ExpSampleSetImpl lookupActiveSampleSet(Container container)
     {
@@ -1248,7 +1259,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<ExpDataClassImpl> getDataClasses(Container container, User user, boolean includeOtherContainers)
+    public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeOtherContainers)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
         List<String> containerIds = createContainerList(container, user, includeOtherContainers);
@@ -1263,18 +1274,40 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpDataClassImpl getDataClass(Container c, String dataClassName)
+    public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull String dataClassName)
     {
-        return getDataClass(c, null, dataClassName, false);
+        return getDataClass(c, null, false, dataClassName);
     }
 
     @Override
-    public ExpDataClassImpl getDataClass(Container c, @NotNull User user, String dataClassName)
+    public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, @NotNull String dataClassName)
     {
-        return getDataClass(c, user, dataClassName, true);
+        return getDataClass(c, user, true, dataClassName);
     }
 
-    private ExpDataClassImpl getDataClass(Container c, @Nullable User user, String dataClassName, boolean includeOtherContainers)
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String dataClassName)
+    {
+        return getDataClass(c, user, includeOtherContainers, (dataClass -> dataClass.getName().equalsIgnoreCase(dataClassName)));
+    }
+
+    @Override
+    public ExpDataClassImpl getDataClass(@NotNull Container c, int rowId)
+    {
+        return getDataClass(c, null, rowId, false);
+    }
+
+    @Override
+    public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, int rowId)
+    {
+        return getDataClass(c, user, rowId, true);
+    }
+
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
+    {
+        return getDataClass(c, user, includeOtherContainers, (dataClass -> dataClass.getRowId() == rowId));
+    }
+
+    private ExpDataClassImpl getDataClass(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<DataClass> predicate)
     {
         List<String> containerIds = createContainerList(c, user, includeOtherContainers);
         for (String containerId : containerIds)
@@ -1282,7 +1315,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
             for (DataClass dataClass : dataClasses)
             {
-                if (dataClass.getName().equalsIgnoreCase(dataClassName))
+                if (predicate.test(dataClass))
                     return new ExpDataClassImpl(dataClass);
             }
         }
@@ -1290,8 +1323,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return null;
     }
 
-    // TODO: add container parameter and use getDataClassCache()
-    @Override
+    // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
     public ExpDataClassImpl getDataClass(int rowId)
     {
         DataClass dataClass = new TableSelector(getTinfoDataClass()).getObject(rowId, DataClass.class);
@@ -1301,8 +1333,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpDataClassImpl(dataClass);
     }
 
-    // TODO: add container parameter and use getDataClassCache()
-    @Override
+    // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
     public ExpDataClassImpl getDataClass(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
@@ -2978,7 +3009,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return LsidType.get(typeName);
     }
 
-    public List<String> createContainerList(Container container, User user, boolean includeProjectAndShared)
+    public List<String> createContainerList(@NotNull Container container, @Nullable User user, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<>();
         containerIds.add(container.getId());
@@ -4254,7 +4285,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
     {
-        ExpSampleSetImpl source = getSampleSet(rowId);
+        ExpSampleSetImpl source = getSampleSet(c, user, rowId);
         if (null == source)
             throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
         if (!source.getContainer().equals(c))
@@ -4271,7 +4302,7 @@ public class ExperimentServiceImpl implements ExperimentService
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            transaction.addCommitTask(() -> uncacheMaterialSource(source.getDataObject()), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT);
+            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT);
             transaction.commit();
         }
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
@@ -5757,13 +5788,13 @@ public class ExperimentServiceImpl implements ExperimentService
             @Nullable TemplateInfo templateInfo)
         throws ExperimentException
     {
-        ExpDataClass existing = getDataClass(c, u, name, true);
+        ExpDataClass existing = getDataClass(c, u, name);
         if (existing != null)
             throw new IllegalArgumentException("DataClass '" + name + "' already exists");
 
         if (sampleSetId != null)
         {
-            ExpSampleSet ss = getSampleSet(sampleSetId);
+            ExpSampleSet ss = getSampleSet(c, u, sampleSetId);
             if (ss == null)
                 throw new IllegalArgumentException("SampleSet '" + sampleSetId + "' not found");
 

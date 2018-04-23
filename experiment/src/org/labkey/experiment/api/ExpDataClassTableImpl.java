@@ -190,7 +190,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             if (rowId == null)
                 throw new IllegalStateException();
 
-            ExpDataClass dc = ExperimentService.get().getDataClass(rowId);
+            // Get the DataClass defined in the current container by rowId
+            ExpDataClass dc = ExperimentService.get().getDataClass(container, rowId);
             if (dc == null)
                 throw new NotFoundException("DataClass not found");
 
@@ -235,7 +236,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             if (rowId == null)
                 throw new IllegalStateException();
 
-            ExpDataClass dc = ExperimentService.get().getDataClass(rowId);
+            // Get the DataClass defined in the current container by rowId
+            ExpDataClass dc = ExperimentService.get().getDataClass(c, rowId);
             if (dc == null)
                 throw new NotFoundException("DataClass not found");
 
@@ -255,7 +257,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             if (rowId == null)
                 throw new InvalidKeyException("DataClass rowId required");
 
-            ExpDataClass dc = ExperimentService.get().getDataClass(rowId);
+            // Get the DataClass defined in the current container by rowId
+            ExpDataClass dc = ExperimentService.get().getDataClass(c, rowId);
             if (dc == null)
                 throw new NotFoundException("DataClass not found");
 

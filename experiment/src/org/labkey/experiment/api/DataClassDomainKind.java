@@ -124,7 +124,7 @@ public class DataClassDomainKind extends AbstractDomainKind
 
     private ExpDataClass getDataClass(Domain domain)
     {
-        return ExperimentService.get().getDataClass(domain.getTypeURI());
+        return ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
     }
 
     @Nullable
@@ -213,7 +213,7 @@ public class DataClassDomainKind extends AbstractDomainKind
             if (id > 0)
                 sampleSetId = id;
 
-            ExpSampleSet ss = ExperimentService.get().getSampleSet(container, sampleSet, false);
+            ExpSampleSet ss = ExperimentService.get().getSampleSet(container, sampleSet);
             if (ss != null)
                 sampleSetId = ss.getRowId();
         }
@@ -238,7 +238,7 @@ public class DataClassDomainKind extends AbstractDomainKind
     @Override
     public void deleteDomain(User user, Domain domain)
     {
-        ExpDataClass dc = ExperimentService.get().getDataClass(domain.getTypeURI());
+        ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
         if (dc == null)
             throw new NotFoundException("DataClass not found: " + domain.getTypeURI());
 
@@ -257,7 +257,7 @@ public class DataClassDomainKind extends AbstractDomainKind
     {
         super.invalidate(domain);
 
-        ExpDataClass dc = ExperimentService.get().getDataClass(domain.getTypeURI());
+        ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
         if (dc != null && dc.getDomain() != null && dc.getDomain().getStorageTableName() != null)
             ExperimentServiceImpl.get().indexDataClass(dc);
     }

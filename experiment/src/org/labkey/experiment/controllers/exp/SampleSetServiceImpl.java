@@ -61,7 +61,7 @@ public class SampleSetServiceImpl extends BaseRemoteService implements SampleSet
 
     public List<GWTMaterial> getMaterials(GWTSampleSet gwtSet)
     {
-        ExpSampleSet set = ExperimentService.get().getSampleSet(gwtSet.getRowId());
+        ExpSampleSet set = ExperimentService.get().getSampleSet(getContainer(), getUser(), gwtSet.getRowId());
         if (set == null)
         {
             return null;

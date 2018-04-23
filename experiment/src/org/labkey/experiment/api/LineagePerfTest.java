@@ -398,7 +398,7 @@ public class LineagePerfTest extends Assert
 
     private Pair<ExpSampleSet, ExpData> reuseExistingJunk()
     {
-        ExpSampleSet ss = ExperimentService.get().getSampleSet(_container, "MySamples", false);
+        ExpSampleSet ss = ExperimentService.get().getSampleSet(_container, "MySamples");
         if (ss == null)
             return null;
 

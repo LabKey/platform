@@ -127,7 +127,7 @@ public class ParentChildView extends VBox
 
         final List<Integer> rowIds = data.stream().map(ExpData::getRowId).collect(Collectors.toList());
 
-        final ExpDataClass dataClass = classId == null ? null : ExperimentService.get().getDataClass(classId);
+        final ExpDataClass dataClass = classId == null ? null : ExperimentServiceImpl.get().getDataClass(classId);
 
         UserSchema schema = new ExpSchema(getUser(), getContainer());
         QuerySettings settings;

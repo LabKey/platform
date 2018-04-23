@@ -705,9 +705,9 @@ public class ExpDataClassDataTestCase
         // test: delete container, ensure everything is removed
         {
             // verify exists
-            Assert.assertNotNull(ExperimentService.get().getDataClass(dataClassId));
-            Assert.assertNotNull(ExperimentService.get().getExpData(dataRowId1));
-            Assert.assertNotNull(ExperimentService.get().getExpData(dataRowId2));
+            Assert.assertNotNull(ExperimentServiceImpl.get().getDataClass(dataClassId));
+            Assert.assertNotNull(ExperimentServiceImpl.get().getExpData(dataRowId1));
+            Assert.assertNotNull(ExperimentServiceImpl.get().getExpData(dataRowId2));
 
             String storageTableName = dataClass.getTinfo().getName();
             DbSchema dbSchema = DbSchema.get("labkey.expdataclass", DbSchemaType.Provisioned);
@@ -718,9 +718,9 @@ public class ExpDataClassDataTestCase
             ContainerManager.deleteAll(c, user);
 
             // verify deleted
-            Assert.assertNull(ExperimentService.get().getDataClass(dataClassId));
-            Assert.assertNull(ExperimentService.get().getExpData(dataRowId1));
-            Assert.assertNull(ExperimentService.get().getExpData(dataRowId2));
+            Assert.assertNull(ExperimentServiceImpl.get().getDataClass(dataClassId));
+            Assert.assertNull(ExperimentServiceImpl.get().getExpData(dataRowId1));
+            Assert.assertNull(ExperimentServiceImpl.get().getExpData(dataRowId2));
 
             dbTable = dbSchema.getTable(storageTableName);
             Assert.assertNull(dbTable);

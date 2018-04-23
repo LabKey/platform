@@ -898,7 +898,7 @@ public class UploadSamplesHelper
             {
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
-                    ExpMaterial sample = findMaterial(c, parts[1], parentValue);
+                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue);
                     if (sample != null)
                         parentMaterials.put(sample, "Sample");
                     else
@@ -906,7 +906,7 @@ public class UploadSamplesHelper
                 }
                 else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
                 {
-                    ExpMaterial sample = findMaterial(c, parts[1], parentValue);
+                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue);
                     if (sample != null)
                         childMaterials.put(sample, "Sample");
                     else
@@ -988,7 +988,7 @@ public class UploadSamplesHelper
                         }
                     }
 
-                    List<ExpMaterial> parentMaterials = resolveParentMaterials(c, newParent, potentialParents);
+                    List<ExpMaterial> parentMaterials = resolveParentMaterials(c, user, newParent, potentialParents);
                     int index = 1;
                     for (ExpMaterial parentMaterial : parentMaterials)
                     {
@@ -1053,7 +1053,7 @@ public class UploadSamplesHelper
         }
     }
 
-    private List<ExpMaterial> resolveParentMaterials(Container c, String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
+    private List<ExpMaterial> resolveParentMaterials(Container c, User user, String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
     {
         List<ExpMaterial> parents = new ArrayList<>();
 
@@ -1091,7 +1091,7 @@ public class UploadSamplesHelper
                     }
 
                     String sampleName = parentName.substring(dotIndex + 1);
-                    parent = findMaterial(c, sampleSetName, sampleName);
+                    parent = findMaterial(c, user, sampleSetName, sampleName);
                 }
                 if (parent != null)
                 {
@@ -1110,10 +1110,10 @@ public class UploadSamplesHelper
         return parents;
     }
 
-    private static ExpMaterial findMaterial(Container c, String sampleSetName, String sampleName) throws ValidationException
+    private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName) throws ValidationException
     {
         // Could easily do some caching here, but probably not a significant perf issue
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, sampleSetName, true);
+        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, user, sampleSetName);
         if (sampleSet == null)
             throw new ValidationException("SampleSet '" + sampleSetName + "' not found");
 

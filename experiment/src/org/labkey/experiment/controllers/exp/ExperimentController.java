@@ -484,7 +484,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _source = ExperimentServiceImpl.get().getSampleSet(form.getRowId());
+            _source = ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getRowId());
             if (_source == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -923,7 +923,7 @@ public class ExperimentController extends SpringActionController
             }
 
             if (_dataClass == null && form.getRowId() > 0)
-                _dataClass = ExperimentServiceImpl.get().getDataClass(form.getRowId());
+                _dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), form.getRowId());
 
             if (_dataClass == null)
                 throw new NotFoundException("No data class found");
@@ -1024,7 +1024,7 @@ public class ExperimentController extends SpringActionController
             List<ExpDataClass> dataClasses = new ArrayList<>();
             for (int rowId : deleteForm.getIds(false))
             {
-                ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(rowId);
+                ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), rowId);
                 if (dataClass != null)
                 {
                     dataClasses.add(dataClass);
@@ -3093,7 +3093,7 @@ public class ExperimentController extends SpringActionController
             List<ExpSampleSet> sources = new ArrayList<>();
             for (int rowId : deleteForm.getIds(false))
             {
-                ExpSampleSet sampleSet = ExperimentServiceImpl.get().getSampleSet(rowId);
+                ExpSampleSet sampleSet = ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), rowId);
                 if (sampleSet != null)
                 {
                     sources.add(sampleSet);
@@ -3138,7 +3138,7 @@ public class ExperimentController extends SpringActionController
         {
             try
             {
-                _sampleSet = ExperimentService.get().getSampleSet(form.getBean().getRowId());
+                _sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getBean().getRowId());
             }
             catch (ConversionException e)
             {
@@ -3273,7 +3273,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("MaterialSource with LSID " + _source.getLSID());
             }
             Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId());
-            ExperimentServiceImpl.get().clearCaches();
+            ExperimentServiceImpl.get().clearMaterialSourceCache(getContainer());
             return true;
         }
 
@@ -3414,7 +3414,7 @@ public class ExperimentController extends SpringActionController
 
             ExpSampleSet sampleSet = null;
             if (rowId != null)
-                sampleSet = ExperimentService.get().getSampleSet(Integer.parseInt(rowId));
+                sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), Integer.parseInt(rowId));
 
             String name = getViewContext().getRequest().getParameter("name");
             if (sampleSet == null && name != null && name.trim().length() > 0)
@@ -3994,7 +3994,7 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException("No sampleSetId specified");
             }
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(rowId.intValue());
+            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), rowId.intValue());
             if (sampleSet == null)
             {
                 throw new NotFoundException("No such sample set with RowId " + rowId);
@@ -4509,7 +4509,7 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(form.getTargetSampleSetId());
+            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
             if (form.getTargetSampleSetId() != 0 && sampleSet == null)
             {
                 throw new NotFoundException("Could not find sample set with rowId " + form.getTargetSampleSetId());
@@ -4576,7 +4576,7 @@ public class ExperimentController extends SpringActionController
                 inputMaterials.put(materials.get(i), inputRole);
             }
 
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(form.getTargetSampleSetId());
+            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
 
             Map<ExpMaterial, String> outputMaterials = new HashMap<>();
 
@@ -4926,7 +4926,7 @@ public class ExperimentController extends SpringActionController
             if (form.targetDataClass != null)
             {
                 // TODO: check in scope and has permission
-                outDataClass = ExperimentService.get().getDataClass(form.targetDataClass.toString());
+                outDataClass = ExperimentServiceImpl.get().getDataClass(form.targetDataClass.toString());
                 if (outDataClass == null)
                     errors.reject(ERROR_MSG, "DataClass not found: " + form.targetDataClass.toString());
             }

@@ -303,6 +303,6 @@ public class UploadMaterialSetForm extends ViewForm
     {
         if (name == null)
             return null;
-        return ExperimentServiceImpl.get().getSampleSet(getContainer(), name, true);
+        return ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), name);
     }
 }

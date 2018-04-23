@@ -15,12 +15,14 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Bean class for the exp.materialsource table. Referred to as sample sets within the UI.
  * User: migra
  * Date: Aug 15, 2005
  */
-public class MaterialSource extends IdentifiableEntity
+public class MaterialSource extends IdentifiableEntity implements Comparable<MaterialSource>
 {
     private String materialLSIDPrefix;
     private String description;
@@ -112,4 +114,26 @@ public class MaterialSource extends IdentifiableEntity
     {
         _nameExpression = nameExpression;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof MaterialSource)) return false;
+        MaterialSource ms = (MaterialSource) o;
+        return !(getRowId() == 0 || getRowId() != ms.getRowId());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getRowId();
+    }
+
+    @Override
+    public int compareTo(@NotNull MaterialSource o)
+    {
+        return getName().compareToIgnoreCase(o.getName());
+    }
+
 }

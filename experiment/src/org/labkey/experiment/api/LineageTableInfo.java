@@ -139,6 +139,7 @@ public class LineageTableInfo extends VirtualTable
 
     private ForeignKey createCpasTypeFK(String cpasType)
     {
+        // TODO: check in scope and has permission
         ExpSampleSet ss = ExperimentService.get().getSampleSet(cpasType);
         if (ss != null)
         {
@@ -159,7 +160,9 @@ public class LineageTableInfo extends VirtualTable
             };
         }
 
-        ExpDataClass dc = ExperimentService.get().getDataClass(cpasType);
+
+        // TODO: check in scope and has permission
+        ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(cpasType);
         if (dc != null)
         {
             return new LookupForeignKey("lsid", "Name")
@@ -179,6 +182,7 @@ public class LineageTableInfo extends VirtualTable
             };
         }
 
+        // TODO: check in scope and has permission
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(cpasType);
         if (protocol != null)
         {
