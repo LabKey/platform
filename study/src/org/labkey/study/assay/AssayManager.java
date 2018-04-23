@@ -383,7 +383,6 @@ public class AssayManager implements AssayService
         {
             // Build up a set of containers so that we can query them all at once
             Set<Container> containers = c.getContainersFor(ContainerType.DataType.assayProtocols);
-            containers.add(ContainerManager.getSharedContainer());
 
             List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
             List<ExpProtocol> result = new ArrayList<>();
@@ -766,7 +765,13 @@ public class AssayManager implements AssayService
                 containers.add(new Pair<>(project, String.format("%s (%s)", "Project", project.getName())));
         }
 
-        container = container.getContainerFor(ContainerType.DataType.assays);
+        // for workbooks, use the parent folder as the current folder (unless it happens to be the project since that has already been added)
+        if (container.isWorkbook())
+        {
+            container = container.getParent();
+            if (container != null && container.isProject())
+                container = null;
+        }
 
         // current folder
         if (container != null && container.hasPermission(user, DesignAssayPermission.class))
