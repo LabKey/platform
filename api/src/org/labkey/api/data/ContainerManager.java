@@ -290,7 +290,7 @@ public class ContainerManager
         }
 
         //workbooks inherit perms from their parent so don't create a policy if this is a workbook     TODO; and container tabs???
-        if (cType instanceof NormalContainerType)
+        if (c.isContainerFor(ContainerType.DataType.permissions))
             SecurityManager.setAdminOnlyPermissions(c);
 
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache

@@ -654,7 +654,7 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class AssayLocation extends CurrentPlusProjectAndShared
+    public static class AssayLocation extends ContainerFilterWithUser
     {
         public AssayLocation(User user)
         {
@@ -664,16 +664,11 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Collection<GUID> result = super.getIds(currentContainer, perm, roles);
-            if (result == null)
-            {
-                return null;
-            }
-            if (!currentContainer.isContainerFor(ContainerType.DataType.assayProtocols) && currentContainer.getContainerFor(ContainerType.DataType.assayProtocols).hasPermission(_user, perm, roles))
-            {
-                result.add(currentContainer.getContainerFor(ContainerType.DataType.assayProtocols).getEntityId());
-            }
-            return result;
+            Set<Container> containers = currentContainer.getContainersFor(ContainerType.DataType.assayProtocols);
+            return containers.stream()
+                    .filter(container -> container.hasPermission(_user, perm, roles))
+                    .map(Container::getEntityId)
+                    .collect(Collectors.toList());
         }
 
         @Override

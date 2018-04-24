@@ -3,7 +3,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static org.labkey.api.data.ContainerType.DataType.assayProtocols;
@@ -126,7 +126,7 @@ public class NormalContainerType implements ContainerType
     @NotNull
     public Set<Container> getContainersFor(DataType dataType, Container currentContainer)
     {
-        Set<Container> containers = new HashSet<>();
+        Set<Container> containers = new LinkedHashSet<>();
 
         if (dataType == assayProtocols)
         {
