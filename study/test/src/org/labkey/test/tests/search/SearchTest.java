@@ -22,8 +22,8 @@ import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.tests.issues.IssuesTest;
-import org.labkey.test.tests.study.StudyTest;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.LogMethod;
@@ -42,7 +42,7 @@ import java.util.List;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
-public abstract class SearchTest extends StudyTest
+public abstract class SearchTest extends StudyBaseTest
 {
     private final SearchHelper _searchHelper = new SearchHelper(this);
     
@@ -160,9 +160,20 @@ public abstract class SearchTest extends StudyTest
     protected void doVerifySteps()
     {
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
+        renameFolderAndReSearch();
+        moveFolderAlterListsAndReSearch();
+        deleteFolderAndVerifyNoResults();
+    }
+
+    private void renameFolderAndReSearch()
+    {
         _containerHelper.renameFolder(getProjectName(), getFolderName(), FOLDER_C, true);
         FOLDER_NAME = FOLDER_C;
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
+    }
+
+    private void moveFolderAlterListsAndReSearch()
+    {
         try
         {
             _containerHelper.moveFolder(getProjectName(), getFolderName(), getProjectName() + "/" + FOLDER_B, true);
@@ -171,15 +182,7 @@ public abstract class SearchTest extends StudyTest
         {
             throw new RuntimeException(fail);
         }
-        alterListsAndReSearch();
 
-        _containerHelper.deleteProject(getProjectName());
-        goToHome(); // Need to leave deleted project
-        _searchHelper.verifyNoSearchResults();
-    }
-
-    private void alterListsAndReSearch()
-    {
         log("Verifying list index updated on row insertion.");
         clickFolder(FOLDER_C);
         clickAndWait(Locator.linkWithText(listIndexAsWhole));
@@ -204,6 +207,13 @@ public abstract class SearchTest extends StudyTest
         goBack();
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), false);
 
+    }
+
+    private void deleteFolderAndVerifyNoResults()
+    {
+        _containerHelper.deleteProject(getProjectName());
+        goToHome(); // Need to leave deleted project
+        _searchHelper.verifyNoSearchResults();
     }
 
     public void runApiTests()
