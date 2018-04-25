@@ -144,25 +144,28 @@ public class ApiQueryResponse implements ApiResponse
         else
         {
             // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
+            // Issue 33967: Close the connection before getting aggregates
+            boolean complete;
             try (Results results = getResults())
             {
                 if (_includeMetaData)
                     writeMetaData(writer);
 
-                boolean complete = writeRowset(writer, results);
-
-                // Figure out if we need to make a separate request to get the total row count (via the aggregates)
-                if (!complete && _rowCount == 0)
-                {
-                    // Load the aggregates
-                    _dataRegion.getAggregateResults(_ctx);
-                    if (_dataRegion.getTotalRows() != null)
-                    {
-                        _rowCount = _dataRegion.getTotalRows();
-                    }
-                }
-                writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+                complete = writeRowset(writer, results);
             }
+
+            // Figure out if we need to make a separate request to get the total row count (via the aggregates)
+            if (!complete && _rowCount == 0)
+            {
+                // Load the aggregates
+                _dataRegion.getAggregateResults(_ctx);
+                if (_dataRegion.getTotalRows() != null)
+                {
+                    _rowCount = _dataRegion.getTotalRows();
+                }
+            }
+            writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+
         }
 
         writer.endResponse();

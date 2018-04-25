@@ -32,6 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -232,10 +233,10 @@ public class DebugInfoDumper
     public static synchronized void dumpThreads(Logger log)
     {
         log.debug("*********************************************");
-        log.debug("Starting thread dump - Heap usage at " +
+        log.debug("Starting thread dump - " + LocalDateTime.now().toString());
+        log.debug("Heap usage at " +
                 FileUtils.byteCountToDisplaySize(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed()) + " from a total of " +
                 FileUtils.byteCountToDisplaySize(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax()));
-
         log.debug("*********************************************");
         Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
@@ -259,6 +260,11 @@ public class DebugInfoDumper
             {
                 log.debug("\t" + stackTraceElement.toString());
             }
+
+            if (ConnectionWrapper.getProbableLeakCount() > 0)
+            {
+                ConnectionWrapper.dumpLeaksForThread(thread, log);
+            }
         }
 
         log.debug("*********************************************");
@@ -267,7 +273,18 @@ public class DebugInfoDumper
 
         for (DbScope dbScope : DbScope.getDbScopes())
         {
-            dbScope.logCurrentConnectionState();
+            dbScope.logCurrentConnectionState(log);
+        }
+
+        if (ConnectionWrapper.getActiveConnectionCount() > 0)
+        {
+            log.debug("*********************************************");
+            log.debug("Start dump of all open connections");
+            log.debug("*********************************************");
+            ConnectionWrapper.dumpOpenConnections(log);
+            log.debug("*********************************************");
+            log.debug("Completed dump of all open connections");
+            log.debug("*********************************************");
         }
     }
 }

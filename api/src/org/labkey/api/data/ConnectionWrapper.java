@@ -161,34 +161,51 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public static boolean dumpOpenConnections()
     {
-        for (Pair<Thread, Throwable> p : _openConnections.values())
+        return dumpOpenConnections(_logDefault);
+    }
+
+    public static boolean dumpOpenConnections(@NotNull Logger log)
+    {
+        synchronized (_openConnections)
         {
-            String thread = p.first.getName();
-            Throwable t = p.second;
-            System.err.println("Connection opened on thread " + thread);
-            t.printStackTrace(System.err);
+            for (Pair<Thread, Throwable> p : _openConnections.values())
+            {
+                String thread = p.first.getName();
+                Throwable t = p.second;
+                log.debug("Connection opened on thread: " + thread, t);
+            }
         }
 
         return true;
     }
 
-    public static void dumpLeaksForThread(Thread t)
+    public static boolean dumpLeaksForThread(Thread t)
     {
+        return dumpLeaksForThread(t, _logDefault);
+    }
+
+    public static boolean dumpLeaksForThread(Thread t, Logger log)
+    {
+        boolean leaks = false;
         synchronized(_openConnections)
         {
             for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())
             {
-                if (entry.getValue().getKey() == t)
+                ConnectionWrapper connection = entry.getKey();
+                Thread connectionThread = entry.getValue().getKey();
+                Throwable throwable = entry.getValue().second;
+                if (connectionThread == t)
                 {
-                    Throwable throwable = entry.getValue().second;
-                    if (!_loggedLeaks.contains(entry.getKey()))
+                    if (!_loggedLeaks.contains(connection))
                     {
-                        _logDefault.error("Probable connection leak, connection was acquired at: ", throwable);
-                        _loggedLeaks.add(entry.getKey());
+                        log.error("Probable connection leak for thread '" + t.getName() + "', connection was acquired at: ", throwable);
+                        _loggedLeaks.add(connection);
+                        leaks = true;
                     }
                 }
             }
         }
+        return leaks;
     }
 
     public static Set<Integer> getSPIDsForThread(Thread t)

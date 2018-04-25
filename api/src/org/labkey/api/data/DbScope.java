@@ -567,7 +567,7 @@ public class DbScope
         return result;
     }
 
-    private Thread getEffectiveThread()
+    private static Thread getEffectiveThread()
     {
         synchronized (_sharedConnections)
         {
@@ -746,31 +746,36 @@ public class DbScope
      */
     public void logCurrentConnectionState()
     {
+        logCurrentConnectionState(LOG);
+    }
+
+    public void logCurrentConnectionState(@NotNull Logger log)
+    {
         synchronized (_transaction)
         {
             if (_transaction.isEmpty())
             {
-                LOG.info("There are no threads holding connections for the data source '" + toString() + "'");
+                log.info("There are no threads holding connections for the data source '" + toString() + "'");
             }
             else
             {
-                LOG.info("There is/are " + _transaction.size() + " thread(s) holding a transaction for the data source '" + toString() + "':");
+                log.info("There is/are " + _transaction.size() + " thread(s) holding a transaction for the data source '" + toString() + "':");
                 for (Map.Entry<Thread, List<TransactionImpl>> entry : _transaction.entrySet())
                 {
                     Thread thread = entry.getKey();
-                    LOG.info("\t'" + thread.getName() + "', State = " + thread.getState());
+                    log.info("\t'" + thread.getName() + "', State = " + thread.getState());
                     if (thread.getState() == Thread.State.TERMINATED || thread.getState() == Thread.State.NEW)
                     {
                         for (TransactionImpl transaction : entry.getValue())
                         {
                             for (StackTraceElement stackTraceElement : transaction._creation.getStackTrace())
                             {
-                                LOG.info("\t\t" + stackTraceElement.toString());
+                                log.info("\t\t" + stackTraceElement.toString());
                             }
-                            LOG.info("");
+                            log.info("");
                         }
                     }
-                    LOG.info("");
+                    log.info("");
                 }
             }
         }
@@ -1303,6 +1308,7 @@ public class DbScope
      */
     public static void finishedWithThread()
     {
+        ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
         closeAllConnectionsForCurrentThread();
         QueryService.get().clearEnvironment();
     }
