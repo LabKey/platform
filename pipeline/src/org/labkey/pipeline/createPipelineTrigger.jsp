@@ -72,9 +72,7 @@
             <div id="details" class="lk-trigger-section">
                 <div class="alert alert-info" style="max-width: 700px;">
                     <p class="lk-trigger-help-text">
-                        <%if (bean.getPipelineTask() == null && bean.getRowId() == null) {%>
-                            <%=h(HELP_TEXT)%>
-                        <%}%>
+                        <%=h(HELP_TEXT)%>
                     </p>
                 </div>
                 <labkey:input name="name"
@@ -175,9 +173,7 @@
             <div id="configuration" class="lk-trigger-section">
                 <div class="alert alert-info" style="max-width: 700px;">
                     <p class="lk-trigger-help-text">
-                        <%if (bean.getPipelineTask() == null && bean.getRowId() == null) {%>
-                            <%=h(HELP_TEXT)%>
-                        <%}%>
+                        <%=h(HELP_TEXT)%>
                     </p>
                 </div>
                 <labkey:input name="location"
