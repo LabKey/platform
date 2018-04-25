@@ -181,6 +181,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                         url : <%=q(buildURL(DataIntegrationController.TruncateTransformStateAction.class))%>,
                         params : params,
                         method : "POST",
+                        timeout : 86400000,  // 24 hours
                         success : function(response)
                         {
                             waitMask.close();
