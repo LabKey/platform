@@ -84,7 +84,8 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         return getColumn(Column.LSID);
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(Column.Material);
         addColumn(Column.TargetProtocolApplication);

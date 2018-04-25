@@ -544,7 +544,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return dataOutputsCol;
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         ExpSchema schema = getExpSchema();
         addColumn(Column.RowId);

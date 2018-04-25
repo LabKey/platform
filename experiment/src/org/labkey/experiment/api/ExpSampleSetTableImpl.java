@@ -93,7 +93,8 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         }
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(ExpSampleSetTable.Column.RowId).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Name);

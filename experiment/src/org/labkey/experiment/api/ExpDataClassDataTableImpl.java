@@ -230,7 +230,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
     }
 
     @Override
-    public void populate()
+    protected void populateColumns()
     {
         UserSchema schema = getUserSchema();
 

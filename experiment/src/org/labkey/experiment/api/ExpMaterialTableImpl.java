@@ -316,12 +316,20 @@ public class ExpMaterialTableImpl extends ExpProtocolOutputTableImpl<ExpMaterial
         }
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         populate(null, false);
     }
 
-    public void populate(@Nullable ExpSampleSet ss, boolean filter)
+    @Override
+    public final void populate(@Nullable ExpSampleSet ss, boolean filter)
+    {
+        populateColumns(ss, filter);
+        _populated = true;
+    }
+
+    protected void populateColumns(@Nullable ExpSampleSet ss, boolean filter)
     {
         if (ss != null)
         {

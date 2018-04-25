@@ -95,7 +95,8 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         throw new IllegalArgumentException("Unknown column " + column);
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         ColumnInfo colRowId = addColumn(Column.RowId);
         colRowId.setHidden(true);

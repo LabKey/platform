@@ -97,7 +97,8 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         throw new IllegalArgumentException("Unknown column " + column);
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(Column.RowId);
         addColumn(Column.Run);

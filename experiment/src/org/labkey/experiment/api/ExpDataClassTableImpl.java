@@ -138,7 +138,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     }
 
     @Override
-    public void populate()
+    protected void populateColumns()
     {
         addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);

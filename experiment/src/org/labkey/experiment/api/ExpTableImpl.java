@@ -63,6 +63,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
 
+    // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
+    protected boolean _populated;
+
     protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
     {
         super(rootTable, schema);
@@ -83,6 +86,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     @Override
+    public final void populate()
+    {
+        populateColumns();
+        _populated = true;
+    }
+
+    protected abstract void populateColumns();
+
+    @Override
     protected ColumnInfo resolveColumn(String name)
     {
         ColumnInfo result = super.resolveColumn(name);
@@ -98,7 +110,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             }
         }
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
         {
             ColumnInfo lsidCol = getLSIDColumn();
             if (lsidCol != null)
@@ -108,14 +120,16 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                     return createPropertiesColumn(name);
                 }
 
-                // The the column name is a property URI
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
-                if (pd != null)
+                // Attempt to resolve the column name as a property URI if it looks like a URI
+                if (name.contains(":") || name.contains("/"))
                 {
-                    PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
-                    return pc;
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
+                    if (pd != null)
+                    {
+                        PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        return pc;
+                    }
                 }
-
             }
         }
 

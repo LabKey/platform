@@ -46,7 +46,8 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return false;
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(Column.RowId).setHidden(true);
         ColumnInfo nameCol = addColumn(Column.Name);

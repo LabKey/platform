@@ -136,7 +136,8 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         return ret;
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(Column.RowId);
         addColumn(Column.Name);

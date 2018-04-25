@@ -77,7 +77,8 @@ public class ExpDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataTable.Co
         addAllowablePermission(InsertPermission.class);
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);

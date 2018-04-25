@@ -80,7 +80,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     }
 
     @Override
-    public void populate()
+    protected void populateColumns()
     {
         addColumn(Column.RunGroup);
         addColumn(Column.Run);

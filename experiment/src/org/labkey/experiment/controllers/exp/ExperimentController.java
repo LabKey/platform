@@ -564,6 +564,14 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Sample Set Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
+            if (_source.hasNameAsIdCol())
+            {
+                SimpleDisplayColumn nameIdCol = new SimpleDisplayColumn();
+                nameIdCol.setCaption("Has Name Id Column");
+                nameIdCol.setDisplayHtml("true");
+                detailsView.getDataRegion().addDisplayColumn(nameIdCol);
+            }
+
             if (_source.hasIdColumns())
             {
                 SimpleDisplayColumn idCols = new SimpleDisplayColumn();
@@ -1380,7 +1388,7 @@ public class ExperimentController extends SpringActionController
             vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL(), errors));
 
             StringBuilder html = new StringBuilder();
-            html.append("<form id=\"exportFilesForm\" method=\"post\" action=\"");
+            html.append("<form id=\"exportFilesForm\" method=\"POST\" action=\"");
             html.append(new ActionURL(ExportRunFilesAction.class, _experimentRun.getContainer()));
             html.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");
             html.append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
@@ -1390,7 +1398,10 @@ public class ExperimentController extends SpringActionController
             html.append(_experimentRun.getRowId());
             html.append("\" /><input type=\"hidden\" name=\"zipFileName\" value=\"");
             html.append(PageFlowUtil.filter(_experimentRun.getName()));
-            html.append(".zip\" /></form>");
+            html.append(".zip\" />");
+            html.append("<input type=\"hidden\" name=\"").append(CSRFUtil.csrfName).append("\"");
+            html.append(" value=\"").append(CSRFUtil.getExpectedToken(getViewContext())).append("\"");
+            html.append("/></form>");
             html.append("<script>function exportFiles() { document.getElementById('exportFilesForm').submit(); }</script>");
 
             HtmlView hiddenFormView = new HtmlView(html.toString());

@@ -84,7 +84,8 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
         return getColumn(Column.LSID);
     }
 
-    public void populate()
+    @Override
+    protected void populateColumns()
     {
         addColumn(Column.Data);
         addColumn(Column.TargetProtocolApplication);
