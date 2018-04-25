@@ -63,7 +63,7 @@
                 <a href="#details" class="list-group-item">Details</a>
                 <a href="#configuration" class="list-group-item">Configuration</a>
             </div>
-            <a class="list-group-item lk-pipeline-allowNavigate" style="margin-top: 2em" target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher">
+            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher">
                 Documentation &nbsp; &nbsp;<i class="fa fa-external-link" aria-hidden="true"></i>
             </a>
         </div>
@@ -167,7 +167,7 @@
                               checked="<%=bean.isEnabled()%>" />
 
                 <br/>
-                <%= button("Cancel").href(bean.getReturnUrl()).addClass("lk-pipeline-allowNavigate") %>
+                <%= button("Cancel").href(bean.getReturnUrl()) %>
                 &nbsp;&nbsp;
                 <%= button("Next").primary(true).href("#configuration") %>
             </div>
@@ -248,7 +248,7 @@
                 <labkey:input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>"/>
 
                 <br/>
-                <%= button("Cancel").href(bean.getReturnUrl()).addClass("lk-pipeline-allowNavigate") %>
+                <%= button("Cancel").href(bean.getReturnUrl()) %>
                 &nbsp;&nbsp;
                 <%= button("Back").href("#details") %>
                 <%= button("Save").primary(true).id("btnSubmit").addClass("lk-pipeline-allowNavigate") %>
@@ -385,10 +385,6 @@
                 }
             }
         }
-        window.onbeforeunload = function (e) {
-            // Force confirmation when leaving the page
-            return true;
-        };
 
         var defaultRoute = "details";
 
@@ -513,9 +509,19 @@
             elem.appendTo($("#extraParams"));
         }
 
+        var _isDirty = false, body = $("body");
+        body.on("change", "#pipelineForm :input", function() {
+            _isDirty = true
+        });
+
+        function isDirty() {
+            return _isDirty;
+        }
         function allowNavigate() {
             window.onbeforeunload = undefined;
         }
+
+        window.onbeforeunload = LABKEY.beforeunload(isDirty);
     }(jQuery);
 </script>
 <%

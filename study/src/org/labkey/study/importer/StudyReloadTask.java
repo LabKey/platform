@@ -47,12 +47,12 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
             Container c = ContainerManager.getForId(containerId);
             String message = null != c ? " in folder " + c.getPath() : "";
 
-            getJob().getLogger().error("Study reload failed" + message, ie);
+            getJob().getLogger().error("Study reload failed. " + message, ie);
         }
         catch (Throwable t)
         {
             ExceptionUtil.logExceptionToMothership(null, t);
-            getJob().getLogger().error("Study reload failed" + t.getMessage());
+            getJob().getLogger().error("Study reload failed. " + t.getMessage());
         }
 
         return new RecordedActionSet();
