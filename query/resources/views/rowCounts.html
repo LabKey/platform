@@ -1,14 +1,22 @@
 <h4 id="lk-schema-name"></h4>
 <table id="lk-table-rowcounts" class="labkey-data-region-legacy labkey-show-borders"></table>
+<h4 id="lk-total-count"></h4>
 
 <script type='text/javascript'>
     (function ($) {
+        function formatNumber(value) {
+            return Number(value).toLocaleString();
+        }
+
         LABKEY.Utils.onReady(function() {
-            var schemaDiv = $('#lk-schema-name');
-            var table = $('#lk-table-rowcounts');
             var schemaName = LABKEY.ActionURL.getParameter("schemaName");
             var includeUserQueries = LABKEY.ActionURL.getParameter("includeUserQueries");
             var includeSystemQueries = LABKEY.ActionURL.getParameter("includeSystemQueries");
+
+            var schemaDiv = $('#lk-schema-name');
+            var table = $('#lk-table-rowcounts');
+            var totalCountDiv = $('#lk-total-count');
+            var totalCount = 0;
 
             if (!schemaName) {
                 schemaDiv.append('<span class="labkey-error">No schemaName provided.</span>');
@@ -20,7 +28,7 @@
             LABKEY.Query.getQueries({
                 schemaName: schemaName,
                 includeColumns: false,
-                includeUserQueries: includeUserQueries === undefined ? true : includeUserQueries,
+                includeUserQueries: includeUserQueries === undefined ? false : includeUserQueries,
                 includeSystemQueries: includeSystemQueries === undefined ? true : includeSystemQueries,
                 success: function(results) {
                     table.empty();
@@ -46,7 +54,11 @@
                             schemaName: schemaName,
                             sql: 'SELECT count(*) AS rowCount FROM "' + query.name + '"',
                             success: function(data) {
-                                $('#' + rowCountId).html(data.rows[0].rowCount);
+                                var rowCount = data.rows[0].rowCount;
+                                $('#' + rowCountId).html(formatNumber(rowCount));
+
+                                totalCount += rowCount;
+                                totalCountDiv.html('Total Count: <b>' + formatNumber(totalCount) + '</b>');
                             },
                             failure: function(response) {
                                 $('#' + rowCountId).html('<span class="labkey-error">' + response.exception + '</span>');
