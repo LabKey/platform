@@ -105,14 +105,6 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
             // mayb be best to just create a temporary, but real zip file and pass that around... but where to put the zip file itself?
             if (job.getErrors() == 0)
                 job.getPipeRoot().deleteImportDirectory();
-
-            if (job instanceof FolderImportJob)
-            {
-                String message = "Folder import job complete";
-                if (!warnings.isEmpty())
-                    message += " with warnings. See log for details";
-                job.setStatus(PipelineJob.TaskStatus.complete.toString(), message, true);
-            }
         }
         catch (CancelledException e)
         {
