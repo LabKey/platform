@@ -49,9 +49,9 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         VirtualFile vf;
         FolderImportContext importContext;
         PipelineJob job = getJob();
+        boolean isFileAnalysisJob = FileAnalysisJobSupport.class.isInstance(job); // File watcher triggered job
 
-        /* File watcher triggered job */
-        if (FileAnalysisJobSupport.class.isInstance(job))
+        if (isFileAnalysisJob)
         {
             FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
             ImportOptions options = new ImportOptions(job.getContainerId(), job.getUser().getUserId());
@@ -103,8 +103,13 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 
             // todo: if importing into multiple folders from a single template source folder then we dont want to delete the import directory until done with all the imports
             // mayb be best to just create a temporary, but real zip file and pass that around... but where to put the zip file itself?
-            if (job.getErrors() == 0)
+            if (job.getErrors() == 0) {
                 job.getPipeRoot().deleteImportDirectory();
+                if (isFileAnalysisJob) {
+                    String message = "File analysis-based folder import job complete";
+                    job.setStatus(PipelineJob.TaskStatus.complete.toString(), message, true);
+                }
+            }
         }
         catch (CancelledException e)
         {
