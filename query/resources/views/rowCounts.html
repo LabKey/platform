@@ -1,0 +1,64 @@
+<h4 id="lk-schema-name"></h4>
+<table id="lk-table-rowcounts" class="labkey-data-region-legacy labkey-show-borders"></table>
+
+<script type='text/javascript'>
+    (function ($) {
+        LABKEY.Utils.onReady(function() {
+            var schemaDiv = $('#lk-schema-name');
+            var table = $('#lk-table-rowcounts');
+            var schemaName = LABKEY.ActionURL.getParameter("schemaName");
+            var includeUserQueries = LABKEY.ActionURL.getParameter("includeUserQueries");
+            var includeSystemQueries = LABKEY.ActionURL.getParameter("includeSystemQueries");
+
+            if (!schemaName) {
+                schemaDiv.append('<span class="labkey-error">No schemaName provided.</span>');
+                return;
+            }
+            schemaDiv.html('Schema Name: <b>' + LABKEY.Utils.encodeHtml(schemaName) + '</b>');
+
+            table.append('<tr><td><i class="fa fa-spinner fa-pulse"></i></td>');
+            LABKEY.Query.getQueries({
+                schemaName: schemaName,
+                includeColumns: false,
+                includeUserQueries: includeUserQueries === undefined ? true : includeUserQueries,
+                includeSystemQueries: includeSystemQueries === undefined ? true : includeSystemQueries,
+                success: function(results) {
+                    table.empty();
+
+                    table.append('<tr><td class="labkey-column-header">Title</td><td class="labkey-column-header">Name</td>'
+                            + '<td class="labkey-column-header">Is User Defined</td><td class="labkey-column-header">Row Count</td></tr>');
+
+                    $.each(results.queries, function(i, query) {
+                        var rowCountId = 'lk-table-rowcount-' + i;
+                        var rowClass = i % 2 === 1 ? "labkey-row" : "labkey-alternate-row";
+                        var href = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {
+                            schemaName: schemaName, 'query.queryName': query.name
+                        });
+
+                        table.append('<tr class="' + rowClass + '">'
+                                + '<td><a href="' + href + '">' + LABKEY.Utils.encodeHtml(query.name) + '</a></td>'
+                                + '<td>' + LABKEY.Utils.encodeHtml(query.title) + '</td>'
+                                + '<td>' + LABKEY.Utils.encodeHtml(query.isUserDefined) + '</td>'
+                                + '<td id="' + rowCountId + '" style="text-align: right;"><i class="fa fa-spinner fa-pulse"></i></td>'
+                                + '</tr>');
+
+                        LABKEY.Query.executeSql({
+                            schemaName: schemaName,
+                            sql: 'SELECT count(*) AS rowCount FROM "' + query.name + '"',
+                            success: function(data) {
+                                $('#' + rowCountId).html(data.rows[0].rowCount);
+                            },
+                            failure: function(response) {
+                                $('#' + rowCountId).html('<span class="labkey-error">' + response.exception + '</span>');
+                            }
+                        })
+                    });
+                },
+                failure: function(response) {
+                    table.empty();
+                    schemaDiv.html('<span class="labkey-error">' + response.exception + '</span>');
+                }
+            })
+        });
+    })(jQuery);
+</script>
