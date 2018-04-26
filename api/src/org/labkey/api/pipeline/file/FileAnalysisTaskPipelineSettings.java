@@ -88,6 +88,11 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private PipelineActionConfig.displayState _defaultDisplayState;
     /** Set to true to allow this FileAnalysisTaskPipeline to be used with pipeline.TriggerConfigurations */
     private boolean _allowForTriggerConfiguration;
+    /** Additional help text to assist the user in configuring their pipeline */
+    private String _helpText;
+
+    /** Whether to allow the task to move files during file analysis. Default is true */
+    private Boolean _moveAvailable;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -198,5 +203,25 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setAllowForTriggerConfiguration(boolean allowForTriggerConfiguration)
     {
         _allowForTriggerConfiguration = allowForTriggerConfiguration;
+    }
+
+    public String getHelpText()
+    {
+        return _helpText;
+    }
+
+    public void setHelpText(String helpText)
+    {
+        _helpText = helpText;
+    }
+
+    public Boolean isMoveAvailable()
+    {
+        return _moveAvailable;
+    }
+
+    public void setMoveAvailable(Boolean moveAvailable)
+    {
+        _moveAvailable = moveAvailable;
     }
 }

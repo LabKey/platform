@@ -35,10 +35,6 @@ public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
 
     TaskId getId();
 
-    String getHelpText();
-
-    Boolean isMoveAvailable();
-
     TaskId[] getTaskProgression();
 
     TaskPipeline cloneAndConfigure(SettingsType settings, TaskId[] taskProgression) throws CloneNotSupportedException;

@@ -87,4 +87,8 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      */
     boolean isSplittable();
 
+    String getHelpText();
+
+    Boolean isMoveAvailable();
+
 }

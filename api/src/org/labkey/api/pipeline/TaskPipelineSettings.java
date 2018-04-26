@@ -42,12 +42,6 @@ public class TaskPipelineSettings
      */
     private String _protocolShortDescription;
 
-    /** Additional help text to assist the user in configuring their pipeline */
-    private String _helpText;
-
-    /** Whether to allow the task to move files during file analysis. Default is true */
-    private Boolean _moveAvailable;
-
     /** Module in which the task pipeline is declared. */
     private Module _declaringModule;
 
@@ -175,27 +169,6 @@ public class TaskPipelineSettings
     public void setWorkflowProcessModule(String workflowProcessModule)
     {
         _workflowProcessModule = workflowProcessModule;
-    }
-
-
-    public String getHelpText()
-    {
-        return _helpText;
-    }
-
-    public void setHelpText(String helpText)
-    {
-        _helpText = helpText;
-    }
-
-    public Boolean isMoveAvailable()
-    {
-        return _moveAvailable;
-    }
-
-    public void setMoveAvailable(Boolean moveAvailable)
-    {
-        _moveAvailable = moveAvailable;
     }
 
     /**
