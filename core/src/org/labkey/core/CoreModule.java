@@ -276,19 +276,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected void init()
     {
-        // Start up the default Quartz scheduler, used in many places
-        try
-        {
-            // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
-            Properties props = System.getProperties();
-            props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
-            StdSchedulerFactory.getDefaultScheduler().start();
-        }
-        catch (SchedulerException e)
-        {
-            throw new UnexpectedException(e);
-        }
-
         ContainerService.setInstance(new ContainerServiceImpl());
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
 
@@ -704,25 +691,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
 
-        ContextListener.addStartupListener(new StartupListener()
-        {
-            @Override
-            public String getName()
-            {
-                return "Schedule Upgrade Check";
-            }
-
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                // On bootstrap in production mode, this will send an initial ping with very little
-                // information, as the admin will not have set up their account yet.
-                // On later startups, depending on the reporting level, this will send an immediate
-                // ping, and then once every 24 hours.
-                AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
-            }
-        });
-
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
         {
             AuditLogService.get().registerAuditType(new UserAuditProvider());
@@ -734,7 +702,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
             AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
         }
-        TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
 
@@ -755,7 +722,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                     scheduler.standby();
                 }
-                catch (SchedulerException x)
+                catch (SchedulerException ignored)
                 {
                 }
 
@@ -766,7 +733,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     LOG.info("Starting to log statistics for actions prior to web application shut down");
                     Appender appender = logger.getAppender("ACTION_STATS");
 
-                    if (null != appender && appender instanceof RollingFileAppender)
+                    if (appender instanceof RollingFileAppender)
                         ((RollingFileAppender)appender).rollOver();
                     else
                         Logger.getLogger(CoreModule.class).warn("Could not rollover the action stats tsv file--there was no appender named ACTION_STATS, or it is not a RollingFileAppender.");
@@ -796,7 +763,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                     scheduler.shutdown(true);
                 }
-                catch (SchedulerException x)
+                catch (SchedulerException ignored)
                 {
                 }
             }
@@ -895,6 +862,25 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         SystemMaintenance.setTimer();
         ThumbnailServiceImpl.startThread();
+
+        // Start up the default Quartz scheduler, used in many places
+        try
+        {
+            // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
+            Properties props = System.getProperties();
+            props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
+            StdSchedulerFactory.getDefaultScheduler().start();
+        }
+        catch (SchedulerException e)
+        {
+            throw new UnexpectedException(e);
+        }
+
+        // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
+        // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
+        // ping, and then once every 24 hours.
+        AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+        TempTableTracker.init();
     }
 
     private static final String LIB_PATH = "/WEB-INF/lib/";
