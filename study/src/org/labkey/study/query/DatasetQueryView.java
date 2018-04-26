@@ -333,7 +333,7 @@ public class DatasetQueryView extends StudyQueryView
         Report report = getSettings().getReportView(getViewContext());
 
         // query reports will render their own button bar
-        if (!(report instanceof QueryReport))
+        if (!(report instanceof QueryReport) && getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(getViewItemFilter()));
             populateChartsReports(bar);
@@ -360,7 +360,10 @@ public class DatasetQueryView extends StudyQueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createFilterButton());
-        bar.add(createViewButton(getItemFilter()));
+        if (getSettings().getAllowChooseView())
+        {
+            bar.add(createViewButton(getItemFilter()));
+        }
 
         populateChartsReports(bar);
 
