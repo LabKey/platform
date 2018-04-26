@@ -473,6 +473,8 @@
         function setHelpText(taskId) {
             if (taskId) {
                 $(".lk-trigger-help-text").html(taskPipelineVariables[taskId].helpText);
+            } else if ($('#pipelineTaskSelect').val()){
+                $(".lk-trigger-help-text").html(taskPipelineVariables[$('#pipelineTaskSelect').val()].helpText);
             }
         }
 
@@ -518,6 +520,7 @@
         }
 
         window.onbeforeunload = LABKEY.beforeunload(isDirty);
+        setHelpText();
     }(jQuery);
 </script>
 <%
