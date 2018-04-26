@@ -2776,7 +2776,7 @@ public class DataRegion extends DisplayElement
         CustomView view = ctx.getView();
 
         // 32294: Only display default view context action when it is being edited
-        if (view != null && view.getLabel() != null && (!isDefaultView(ctx) || view.isSession()))
+        if (view != null && view.getLabel() != null && (!isDefaultView(ctx) || view.isSession()) && getSettings().getAllowChooseView())
         {
             ContextAction.Builder action = new ContextAction.Builder()
                     .iconCls("table")
