@@ -141,8 +141,6 @@ public class DatasetQueryView extends StudyQueryView
         // Only show link to edit if permission allows it
         setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()));
 
-        getSettings().setAllowChooseView(false);
-
         if (form.getVisitRowId() != 0)
         {
             assert _study.getTimepointType() != TimepointType.CONTINUOUS;
