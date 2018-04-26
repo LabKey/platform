@@ -75,7 +75,10 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.util.WebUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -90,6 +93,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -112,6 +117,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -163,6 +169,8 @@ public class PageFlowUtil
     private static final String NONPRINTING_ALTCHAR = "~";
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
+
+    public static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     public static boolean useExperimentalCoreUI()
     {
@@ -1972,7 +1980,69 @@ public class PageFlowUtil
         return tidy;
     }
 
+    public static String sanitizeHtml(String html, Collection<String> errors)
+    {
+        if (html == null)
+            return null;
+        if (!html.toLowerCase().contains("target=\"_blank\""))
+            return html;
+        boolean modified = false;
+        try
+        {
+            Document document = loadXMLFromString(html);
+            NodeList hrefs = document.getElementsByTagName("a");
+            for(int hrefIndex = 0; hrefIndex < hrefs.getLength(); hrefIndex++)
+            {
+                Element href = (Element) hrefs.item(hrefIndex);
+                String target = href.getAttribute("target");
+                if ("_blank".equals(target))
+                {
+                    String rel = href.getAttribute("rel");
+                    if (rel == null || !rel.contains("noopener") || !rel.contains("noreferrer"))
+                    {
+                        modified = true;
+                        href.setAttribute("rel", "noopener noreferrer");
+                    }
+                }
+            }
+            if (!modified)
+                return html;
+            String xhtml = documentToString(document);
+            if (xhtml != null && xhtml.startsWith(XML_ENCODING_DECLARATION) && !html.trim().startsWith(XML_ENCODING_DECLARATION))
+                xhtml = xhtml.substring(XML_ENCODING_DECLARATION.length());
+            return xhtml;
+        }
+        catch (Exception e)
+        {
+            _log.error(e.getMessage(), e);
+            errors.add(e.getMessage());
+            return null;
+        }
+    }
 
+    public static String documentToString(Document document) {
+        try
+        {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer trans = tf.newTransformer();
+            StringWriter sw = new StringWriter();
+            trans.transform(new DOMSource(document), new StreamResult(sw));
+            return sw.toString();
+        }
+        catch (TransformerException tEx)
+        {
+            tEx.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Document loadXMLFromString(String xml) throws Exception
+    {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        InputSource is = new InputSource(new StringReader(xml));
+        return builder.parse(is);
+    }
 
     private static final int SERVER_HASH = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
     private static final String SERVER_HASH_STRING = Integer.toString(SERVER_HASH);
@@ -2263,9 +2333,6 @@ public class PageFlowUtil
                 _errors.add("Illegal element <" + qName + ">. For permissions to use this element, contact your system administrator.");
             }
 
-            String hrefTarget = null;
-            List<String> hrefRel = null;
-
             for (int i = 0; i < attributes.getLength(); i++)
             {
                 String a = attributes.getQName(i).toLowerCase();
@@ -2293,23 +2360,8 @@ public class PageFlowUtil
                         _errors.add("Style attribute cannot contain behaviors, expresssions, or urls. Error on element <" + qName + ">.");
                     }
                 }
-                if ("a".equals(e))
-                {
-                    if ("target".equals(a))
-                        hrefTarget = value;
-                    else if ("rel".equals(a))
-                        hrefRel = Arrays.asList(value.trim().split("\\s+"));
-                }
             }
 
-            if ("a".equals(e) && "_blank".equals(hrefTarget))
-            {
-                if ((hrefRel == null || !hrefRel.contains("noopener") || !hrefRel.contains("noreferrer")) && !_reported.contains("rel"))
-                {
-                    _reported.add("rel");
-                    _errors.add("Rel attribute must be set to \"noopener noreferrer\" with target=\"_blank\". Error on element <" + qName + ">.");
-                }
-            }
         }
 
         @Override
