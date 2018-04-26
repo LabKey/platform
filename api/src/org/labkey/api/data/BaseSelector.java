@@ -207,7 +207,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
                 while (rs.next())
                     block.exec(rs);
             }
-            catch (StopIteratingException sie)
+            catch (StopIteratingException ignored)
             {
             }
 
@@ -231,7 +231,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
                 while (iter.hasNext())
                     block.exec(iter.next());
             }
-            catch (StopIteratingException sie)
+            catch (StopIteratingException ignored)
             {
             }
 
@@ -242,11 +242,6 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     public interface ResultSetHandler<T>
     {
         T handle(ResultSet rs, Connection conn) throws SQLException;
-    }
-
-    public interface StatementHandler<T>
-    {
-        T handle(PreparedStatement stmt, Connection conn);
     }
 
     protected <T> T handleResultSet(ResultSetFactory factory, ResultSetHandler<T> handler)

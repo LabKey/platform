@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
-import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.ExceptionUtil;
 
@@ -104,14 +103,6 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         return execute(sql, resultsExecutor, handler);
     }
 
-    // Provides the ability to execute a SQL statement that returns multiple result sets. The method prepares the statement,
-    // passes it into the StatementHandler for execution and result set handling, and then closes the statement.
-    public <T> T executeWithMultipleResults(SQLFragment sql, StatementHandler<T> handler)
-    {
-        StatementHandlingStatementExecutor<T> statementExecutor = new StatementHandlingStatementExecutor<>();
-        return execute(sql, statementExecutor, handler);
-    }
-
     public <T, C> T execute(SQLFragment sql, StatementExecutor<T, C> statementExecutor, @Nullable C context)
     {
         Connection conn = null;
@@ -191,24 +182,6 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
                 {
                     return handler.handle(rs, conn);
                 }
-            }
-        }
-    }
-
-    private static class StatementHandlingStatementExecutor<T> implements StatementExecutor<T, BaseSelector.StatementHandler<T>>
-    {
-        @Override
-        public T execute(Connection conn, SqlDialect dialect, SQLFragment sqlFragment, BaseSelector.StatementHandler<T> handler) throws SQLException
-        {
-            List<Object> parameters = sqlFragment.getParams();
-            String sql = sqlFragment.getSQL();
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql);
-                 Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
-            {
-                Table.setParameters(stmt, parameters, jdbcParameters);
-
-                return handler.handle(stmt, conn);
             }
         }
     }
