@@ -48,10 +48,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     private String _protocolIdentifier;
     /** Name to show in the UI for the generated Experiment protocol */
     private String _protocolShortDescription;
-    /** Text to show at time of Task Pipeline configuration */
-    private String _helpText;
-    /** Whether to allow the task to move files during file analysis. Default is true */
-    private Boolean _moveAvailable = true;
+
     /** Move the input files into a unique directory before starting analysis */
     private boolean _useUniqueAnalysisDirectory = false;
 
@@ -121,12 +118,6 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         if (settings.getWorkflowProcessModule() != null)
             _workflowProcessModule = settings.getWorkflowProcessModule();
 
-        if (settings.getHelpText() != null)
-            _helpText = settings.getHelpText();
-
-        if (settings.isMoveAvailable() != null)
-            _moveAvailable = settings.isMoveAvailable();
-
         _useUniqueAnalysisDirectory = settings.isUseUniqueAnalysisDirectory();
 
         return this;
@@ -145,18 +136,6 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     public TaskId[] getTaskProgression()
     {
         return _taskProgression;
-    }
-
-    @Override
-    public String getHelpText()
-    {
-        return _helpText;
-    }
-
-    @Override
-    public Boolean isMoveAvailable()
-    {
-        return _moveAvailable;
     }
 
     public void setTaskProgression(TaskId... taskProgression)

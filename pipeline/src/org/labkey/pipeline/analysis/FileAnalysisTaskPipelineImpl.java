@@ -77,6 +77,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private boolean _allowForTriggerConfiguration = false;
     private boolean _splittable = true;
     private boolean _writeJobInfoFile = false;
+    /** Text to show at time of Task Pipeline configuration */
+    private String _helpText;
+    /** Whether to allow the task to move files during file analysis. Default is true */
+    private Boolean _moveAvailable = true;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -152,6 +156,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         if (settings.isAllowForTriggerConfiguration())
             _allowForTriggerConfiguration = true;
+
+        if (settings.getHelpText() != null)
+            _helpText = settings.getHelpText();
+
+        if (settings.isMoveAvailable() != null)
+            _moveAvailable = settings.isMoveAvailable();
 
         return this;
     }
@@ -243,6 +253,18 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public String toString()
     {
         return getDescription();
+    }
+
+    @Override
+    public String getHelpText()
+    {
+        return _helpText;
+    }
+
+    @Override
+    public Boolean isMoveAvailable()
+    {
+        return _moveAvailable;
     }
 
     /**

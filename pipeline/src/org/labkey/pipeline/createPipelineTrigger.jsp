@@ -24,13 +24,13 @@
     HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
     PipelineController.PipelineTriggerForm bean = me.getModelBean();
 
-    Map<String, TaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
+    Map<String, FileAnalysisTaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
             .stream()
             .filter(FileAnalysisTaskPipeline.class::isInstance)
             .map(FileAnalysisTaskPipeline.class::cast)
             .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
             .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(),
-                    FileAnalysisTaskPipeline -> PipelineJobService.get().getTaskPipeline(FileAnalysisTaskPipeline.getId())));
+                    FileAnalysisTaskPipeline -> (FileAnalysisTaskPipeline) PipelineJobService.get().getTaskPipeline(FileAnalysisTaskPipeline.getId())));
 
     final String HELP_TEXT = "Fields marked with an asterisk * are required. ";
 %>
@@ -258,7 +258,7 @@
         <%
         for (String key : triggerConfigTasks.keySet())
         {
-            TaskPipeline task = triggerConfigTasks.get(key);
+            FileAnalysisTaskPipeline task = triggerConfigTasks.get(key);
             String helpText = HELP_TEXT + task.getHelpText();
         %>
             taskPipelineVariables[<%=q(task.getId().toString())%>] = {
