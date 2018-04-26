@@ -185,7 +185,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
 
     private boolean canEmailNonUsers(User user)
     {
-        return getContainer().hasPermission(user, EmailNonUsersPermission.class) || user.hasRootPermission(EmailNonUsersPermission.class);
+        return user.hasRootPermission(EmailNonUsersPermission.class);
     }
 
     private String[] resolveEmailAddress(JSONObject recipient)
