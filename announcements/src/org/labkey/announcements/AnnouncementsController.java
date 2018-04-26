@@ -1253,6 +1253,8 @@ public class AnnouncementsController extends SpringActionController
             List<AttachmentFile> files = getAttachmentFileList();
 
             AnnouncementModel update = form.getBean();
+            if (!StringUtils.isEmpty(form.getSanitizedHtml()))
+                update.setBody(form.getSanitizedHtml());
 
             // TODO: What is this checking for?
             if (!c.getId().equals(update.getContainerId()))
@@ -1798,6 +1800,7 @@ public class AnnouncementsController extends SpringActionController
     public static class AnnouncementForm extends BeanViewForm<AnnouncementModel>
     {
         AnnouncementModel _selectedAnnouncementModel = null;
+        String _sanitizedHtml = null;
         String _memberListInput = null;
         List<Integer> _memberListIds = null;
 
@@ -1929,6 +1932,10 @@ public class AnnouncementsController extends SpringActionController
                     for (String err : validateErrors)
                         errors.reject(ERROR_MSG, err);
                     bean.setBody(body);
+                    if (!getUser().isDeveloper())
+                    {
+                        this._sanitizedHtml = PageFlowUtil.sanitizeHtml(body, validateErrors);
+                    }
                 }
             }
         }
@@ -1955,6 +1962,11 @@ public class AnnouncementsController extends SpringActionController
             String fromDiscussion = (String)get("allowMultipleDiscussions");
 
             return Boolean.parseBoolean(fromDiscussion);
+        }
+
+        public String getSanitizedHtml()
+        {
+            return _sanitizedHtml;
         }
     }
 

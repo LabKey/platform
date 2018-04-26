@@ -2244,6 +2244,7 @@ public class WikiController extends SpringActionController
     public class SaveWikiAction extends ExtFormAction<SaveWikiForm>
     {
         public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
+        private String sanitizedHtml = null;
 
         public ApiResponse execute(SaveWikiForm form, BindException errors) throws Exception
         {
@@ -2297,6 +2298,11 @@ public class WikiController extends SpringActionController
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
                 PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermission(user, IncludeScriptPermission.class, contextualRoles));
 
+                if (!getUser().isDeveloper())
+                {
+                    this.sanitizedHtml = PageFlowUtil.sanitizeHtml(body, tidyErrors);
+                }
+
                 for (String err : tidyErrors)
                     errors.rejectValue("body", ERROR_MSG, err);
             }
@@ -2321,7 +2327,7 @@ public class WikiController extends SpringActionController
             //if user has not submitted title, use page name as title
             String title = form.getTitle() == null ? wikiname : form.getTitle();
             wikiversion.setTitle(title);
-            wikiversion.setBody(form.getBody());
+            wikiversion.setBody(StringUtils.isEmpty(this.sanitizedHtml) ? form.getBody() : this.sanitizedHtml);
             wikiversion.setRendererType(form.getRendererType());
 
             //insert new wiki and new version
@@ -2414,7 +2420,7 @@ public class WikiController extends SpringActionController
                 wikiUpdate.setName(form.getName());
                 wikiUpdate.setParent(form.getParentId());
                 wikiversion.setTitle(title);
-                wikiversion.setBody(form.getBody());
+                wikiversion.setBody(StringUtils.isEmpty(this.sanitizedHtml) ? form.getBody() : this.sanitizedHtml);
                 wikiversion.setRendererTypeEnum(currentRendererType);
                 getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion);
             }
