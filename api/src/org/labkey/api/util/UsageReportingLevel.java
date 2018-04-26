@@ -190,7 +190,8 @@ public enum UsageReportingLevel
 
     private static class UsageTimerTask extends TimerTask
     {
-        final UsageReportingLevel _level;
+        private final UsageReportingLevel _level;
+
         UsageTimerTask(UsageReportingLevel level)
         {
             _level = level;

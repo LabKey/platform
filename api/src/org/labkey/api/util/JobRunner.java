@@ -93,7 +93,7 @@ public class JobRunner implements Executor
                 {
                     _jobs.wait();
                 }
-                catch (InterruptedException e) {}
+                catch (InterruptedException ignored) {}
             }
         }
     }

@@ -2269,7 +2269,7 @@ public class SecurityManager
         public void tearDown()
         {
             SecurityManager.deleteGroup(groupA);
-            try{SecurityManager.deleteGroup(groupB);}catch(Exception e){}
+            try{SecurityManager.deleteGroup(groupB);}catch(Exception ignored){}
         }
 
         @Test
@@ -2401,12 +2401,12 @@ public class SecurityManager
             String rawEmail;
 
             // Just in case, loop until we find one that doesn't exist already
-            while (true)
+            do
             {
                 rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
                 email = new ValidEmail(rawEmail);
-                if (!SecurityManager.loginExists(email)) break;
             }
+            while (SecurityManager.loginExists(email));
 
             User user = null;
 
@@ -2489,7 +2489,7 @@ public class SecurityManager
 
             String displayName = "Personal Name";
             ValidEmail email = testEmail(displayName + " <personal@name.com>", true);
-            assertTrue("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName.equals(email.getPersonal()));
+            assertEquals("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName, email.getPersonal());
 
             String defaultDomain = ValidEmail.getDefaultDomain();
             // If default domain is defined this should succeed; if it's not defined, this should fail.
@@ -2572,13 +2572,13 @@ public class SecurityManager
 
             // examine the original list of groups to ensure the test group is not already created
             Container rootContainer = ContainerManager.getRoot();
-            assertTrue("The group defined in the startup properties was already on the server: " + TEST_GROUP_1_NAME, null == GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
+            assertNull("The group defined in the startup properties was already on the server: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
 
             // call the method that makes use of the test startup properties to add a new group with specified role
             populateGroupRolesWithStartupProps();
 
             // check that the expected group has been added
-            assertFalse("The group defined in the startup properties was not added to the list of groups: " + TEST_GROUP_1_NAME, null == GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
+            assertNotNull("The group defined in the startup properties was not added to the list of groups: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
 
             // check that the group has the expected role
             Group group = GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE);
@@ -2615,7 +2615,7 @@ public class SecurityManager
             Container rootContainer = ContainerManager.getRoot();
             User user = UserManager.getUser(userEmail);
             Group group = GroupManager.getGroup(rootContainer, TEST_USER_2_GROUP_NAME, GroupEnumType.SITE);
-            assertTrue("The user defined in the startup properties: "  + TEST_USER_2_EMAIL + " did not have the specified group: " + TEST_USER_2_GROUP_NAME, "Principal is already a member of this group".equals(SecurityManager.getAddMemberError(group, user)));
+            assertEquals("The user defined in the startup properties: " + TEST_USER_2_EMAIL + " did not have the specified group: " + TEST_USER_2_GROUP_NAME, "Principal is already a member of this group", SecurityManager.getAddMemberError(group, user));
 
             // delete the test user that was added
             UserManager.deleteUser(user.getUserId());

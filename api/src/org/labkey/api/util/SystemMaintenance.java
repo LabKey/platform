@@ -102,7 +102,7 @@ public class SystemMaintenance
         {
             date = DateUtil.parseDateTime(time, "h:mm a");
         }
-        catch(ParseException e)
+        catch(ParseException ignored)
         {
         }
 
@@ -112,7 +112,7 @@ public class SystemMaintenance
             {
                 return DateUtil.parseDateTime(time, "H:mm");
             }
-            catch(ParseException e)
+            catch(ParseException ignored)
             {
             }
         }
