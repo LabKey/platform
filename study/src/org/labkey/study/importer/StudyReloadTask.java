@@ -12,7 +12,9 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,7 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
     {
         PipelineJob job = getJob();
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
+        job.setLogFile(new File(support.getDataDirectory(), FileUtil.makeFileNameWithTimestamp("triggered_study_reload", "log")));
         Map<String, String> params = support.getParameters();
         StudyReload.ReloadTask reloadTask = new StudyReload.ReloadTask();
         String containerId = getJob().getContainer().getId();
@@ -45,7 +48,7 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
         catch (ImportException ie)
         {
             Container c = ContainerManager.getForId(containerId);
-            String message = null != c ? " in folder " + c.getPath() : "";
+            String message = null != c ? "Folder: " + c.getPath() : "";
 
             getJob().getLogger().error("Study reload failed. " + message, ie);
         }

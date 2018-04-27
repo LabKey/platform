@@ -310,7 +310,8 @@ public class StudyReload
                 }
                 else
                 {
-                    assert study.isAllowReload() : "Can't reload a study set for no reload";
+                    if (!study.isAllowReload())
+                        return null;
                     return study;
                 }
         }
@@ -336,6 +337,9 @@ public class StudyReload
             else
             {
                 StudyImpl study = validateStudyForReload(options, c, false);
+                if (study == null)
+                    throw new ImportException("Reload failed. Can't reload a study set for no reload.");
+
                 return reloadStudy(study, options, source, null, study.getLastReload());
             }
         }
@@ -353,6 +357,9 @@ public class StudyReload
             else
             {
                 StudyImpl study = validateStudyForReload(options, c, false);
+                if (study == null)
+                    throw new ImportException("Reload failed. Can't reload a study set for no reload.");
+
                 PipeRoot root = validatePipeRoot(c);
                 File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
 
