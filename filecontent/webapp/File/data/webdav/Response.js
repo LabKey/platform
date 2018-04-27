@@ -120,6 +120,7 @@ Ext4.define('File.data.webdav.JSONResponse', {
         {name : 'name', mapping : 'text'},
         {name : 'icon', mapping : 'iconHref'},
         {name : 'iconfacls', mapping : 'iconFontCls'},
+        {name : 'dataFileUrl'},
         {name : 'absolutePath', mapping : 'absolutePath'},
         {name : 'options', convert : function(val) { return File.data.webdav.XMLResponse.readOptions(val); }},
         {name : 'directget'},

@@ -1310,9 +1310,7 @@ Ext4.define('File.panel.Browser', {
             strStartIndex, fileStore = this.getFileStore();
 
         Ext4.each(rows, function(row) {
-            // The record 'Id' to lookup the fileStore record is baseUrl + dataFileUrl
-            recId = baseUrl + row.dataFileUrl;
-            idx = fileStore.findExact('id', recId);
+            idx = fileStore.findExact('dataFileUrl', row.dataFileUrl);
 
             if (idx >= 0) {
                 rec = fileStore.getAt(idx);

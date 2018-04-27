@@ -1338,60 +1338,40 @@ public class FileContentController extends SpringActionController
         public ApiResponse execute(CustomPropertiesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            FileContentService service = FileContentService.get();
-            if (null != service)
+            List<Map<String, Object>> rows = new ArrayList<>();
+            TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString());
+            new TableSelector(tableInfo).forEachMap(data ->
             {
-                List<Map<String, Object>> rows = new ArrayList<>();
-                TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString());
-                new TableSelector(tableInfo).forEachMap(data ->
+                Object encodedUrl = data.get("dataFileUrl");
+                if (null != encodedUrl)
                 {
-                    Object encodedUrl = data.get("dataFileUrl");
-                    if (null != encodedUrl)
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("dataFileUrl", encodedUrl);
+                    row.put("rowId", data.get("RowId"));
+                    row.put("name", data.get("Name"));
+                    if (null != form.getCustomProperties())
                     {
-                        java.nio.file.Path fileRootPath = service.getFileRootPath(getContainer());
-                        if (null != fileRootPath)
+                        for (String property : form.getCustomProperties())
                         {
-                            try
+                            ColumnInfo column = tableInfo.getColumn(property);
+                            if (null != column)
                             {
-                                String relative = FileUtil.relativizeUnix(fileRootPath, FileUtil.stringToPath(getContainer(), (String) encodedUrl), false);
-                                if (null != relative)
-                                {
-                                    if (!service.isCloudRoot(getContainer()))
-                                        relative = relative.replace(FileContentService.FILES_LINK + "/", "");
-                                    Map<String, Object> row = new HashMap<>();
-                                    row.put("dataFileUrl", relative);
-                                    row.put("rowId", data.get("RowId"));
-                                    row.put("name", data.get("Name"));
-                                    if (null != form.getCustomProperties())
-                                    {
-                                        for (String property : form.getCustomProperties())
-                                        {
-                                            ColumnInfo column = tableInfo.getColumn(property);
-                                            if (null != column)
-                                            {
-                                                Map<String, Object> map = new HashMap<>();
-                                                map.put("value", data.get(property));
-                                                StringExpression url = column.getEffectiveURL();
-                                                if (null != url)
-                                                    map.put("url", url.eval(data));
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("value", data.get(property));
+                                StringExpression url = column.getEffectiveURL();
+                                if (null != url)
+                                    map.put("url", url.eval(data));
 
-                                                // Display value for a lookup has already been handled by Exp.Data
-                                                row.put(property, map);
-                                            }
-                                        }
-                                    }
-                                    rows.add(row);
-                                }
-                            }
-                            catch (IOException e)
-                            {
-                                // Ignore
+                                // Display value for a lookup has already been handled by Exp.Data
+                                row.put(property, map);
                             }
                         }
                     }
-                });
-                response.put("rows", rows);
-            }
+                    rows.add(row);
+
+                }
+            });
+            response.put("rows", rows);
             response.put("success", true);
             return response;
         }

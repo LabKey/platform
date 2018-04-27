@@ -2757,6 +2757,8 @@ public class DavController extends SpringActionController
             json.key("id").value(resource.getPath());
             String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
             json.key("href").value(resource.getLocalHref(getViewContext()));
+            if (resource.getFile() != null)
+                json.key("dataFileUrl").value(FileUtil.uriToString(resource.getFile().toURI()));
             json.key("text").value(displayName);
             json.key("iconHref").value(resource.getIconHref());
             json.key("iconFontCls").value(resource.getIconFontCls());
