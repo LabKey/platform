@@ -1153,10 +1153,6 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Network drive letter must be a letter");
             }
-            else if (form.getNetworkDrivePath() == null || form.getNetworkDrivePath().trim().length() == 0)
-            {
-                errors.reject(ERROR_MSG, "If you specify a network drive letter, you must also specify a path");
-            }
         }
     }
 

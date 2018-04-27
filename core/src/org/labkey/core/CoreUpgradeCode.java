@@ -16,6 +16,7 @@
 package org.labkey.core;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -58,7 +59,7 @@ public class CoreUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void encryptMappedDrivePassword(final ModuleContext context)
     {
-        if (!context.isNewInstall())
+        if (!context.isNewInstall() && SystemUtils.IS_OS_WINDOWS)
         {
             WritableNetworkProps props = new WritableNetworkProps();
 
@@ -106,10 +107,10 @@ public class CoreUpgradeCode implements UpgradeCode
 
         public void clearNetworkSettings()
         {
-            storeStringValue(NETWORK_DRIVE_LETTER, "");
-            storeStringValue(NETWORK_DRIVE_PATH, "");
-            storeStringValue(NETWORK_DRIVE_USER, "");
-            storeStringValue(NETWORK_DRIVE_PASSWORD, "");
+            remove(NETWORK_DRIVE_LETTER);
+            remove(NETWORK_DRIVE_PATH);
+            remove(NETWORK_DRIVE_USER);
+            remove(NETWORK_DRIVE_PASSWORD);
         }
 
         public String getStringValue(String key)
