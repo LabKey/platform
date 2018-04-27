@@ -921,10 +921,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         RenderContext renderContext = view.getRenderContext();
-        ResultSet rs = null;
-        try
+
+        try (ResultSet rs = rgn.getResultSet(renderContext))
         {
-            rs = rgn.getResultSet(renderContext);
             List<DisplayColumn> allColumns = getExportColumns(rgn.getDisplayColumns());
             List<DisplayColumn> columns = new ArrayList<>();
             for (DisplayColumn col : allColumns)
@@ -959,16 +958,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
             }
             builder.append("</table>");
             return builder.toString();
-        }
-        finally
-        {
-            if (rs != null) try
-            {
-                rs.close();
-            }
-            catch (SQLException e)
-            {
-            }
         }
     }
 

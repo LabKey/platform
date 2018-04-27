@@ -1437,8 +1437,7 @@ public class StudyManager
         TableSelector selector = new TableSelector(tinfo, containerFilter, null);
         selector.forEach(visitTag -> {
             allVisitTagMap.put(visitTag.getName(), visitTag);
-            if (newVisitTagMap.containsKey(visitTag.getName()))
-                newVisitTagMap.remove(visitTag.getName());
+            newVisitTagMap.remove(visitTag.getName());
         }, VisitTag.class);
 
         List<VisitTag> newVisitTags = new ArrayList<>();
@@ -5685,44 +5684,42 @@ public class StudyManager
 
         private void _testDatasetTransformExport(Study study) throws Throwable
         {
-            ResultSet rs = null;
+            // create a dataset
+            StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+            Dataset def = createDataset(study, "DS", false);
+            TableInfo datasetTI = ss.getTable(def.getName());
+            QueryUpdateService qus = datasetTI.getUpdateService();
+            BatchValidationException errors = new BatchValidationException();
+            assertNotNull(qus);
 
-            try
+            // insert one row
+            List rows = new ArrayList();
+            Date jan1 = new Date(DateUtil.parseISODateTime("2012-01-01"));
+            rows.add(PageFlowUtil.mapInsensitive("SubjectId", "DS1", "Date", jan1, "Measure", "Test" + (++this.counterRow), "Value", 0.0));
+            List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
+            assertFalse(errors.hasErrors());
+            Map<String,Object> firstRowMap = ret.get(0);
+
+            // Ensure alternateIds are generated for all participants
+            StudyManager.getInstance().generateNeededAlternateParticipantIds(study, _context.getUser());
+
+            // query the study.participant table to verify that the dateoffset and alternateID were generated for the ptid row inserted into the dataset
+            TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
+            List<ColumnInfo> cols = new ArrayList<>();
+            cols.add(participantTableInfo.getColumn("participantid"));
+            cols.add(participantTableInfo.getColumn("dateoffset"));
+            cols.add(participantTableInfo.getColumn("alternateid"));
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition(participantTableInfo.getColumn("participantid"), "DS1");
+            filter.addCondition(participantTableInfo.getColumn("container"), study.getContainer());
+
+            String alternateId = null;
+
+            try (ResultSet rs = QueryService.get().select(participantTableInfo, cols, null, null))
             {
-                // create a dataset
-                StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
-                Dataset def = createDataset(study, "DS", false);
-                TableInfo datasetTI = ss.getTable(def.getName());
-                QueryUpdateService qus = datasetTI.getUpdateService();
-                BatchValidationException errors = new BatchValidationException();
-                assertNotNull(qus);
-
-                // insert one row
-                List rows = new ArrayList();
-                Date jan1 = new Date(DateUtil.parseISODateTime("2012-01-01"));
-                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "DS1", "Date", jan1, "Measure", "Test" + (++this.counterRow), "Value", 0.0));
-                List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-                assertFalse(errors.hasErrors());
-                Map<String,Object> firstRowMap = ret.get(0);
-
-                // Ensure alternateIds are generated for all participants
-                StudyManager.getInstance().generateNeededAlternateParticipantIds(study, _context.getUser());
-
-                // query the study.participant table to verify that the dateoffset and alternateID were generated for the ptid row inserted into the dataset
-                TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
-                List<ColumnInfo> cols = new ArrayList<>();
-                cols.add(participantTableInfo.getColumn("participantid"));
-                cols.add(participantTableInfo.getColumn("dateoffset"));
-                cols.add(participantTableInfo.getColumn("alternateid"));
-                SimpleFilter filter = new SimpleFilter();
-                filter.addCondition(participantTableInfo.getColumn("participantid"), "DS1");
-                filter.addCondition(participantTableInfo.getColumn("container"), study.getContainer());
-                rs = QueryService.get().select(participantTableInfo, cols, null, null);
-
                 // store the ptid date offset and alternate ID for verification later
                 int dateOffset = -1;
-                String alternateId = null;
-                while(rs.next())
+                while (rs.next())
                 {
                     if ("DS1".equals(rs.getString("participantid")))
                     {
@@ -5733,28 +5730,23 @@ public class StudyManager
                 }
                 assertTrue("Date offset expected to be between 1 and 365", dateOffset > 0 && dateOffset < 366);
                 assertNotNull(alternateId);
-                rs.close(); rs = null;
+            }
 
-                // test "exporting" the dataset data using the date shited values and alternate IDs
-                Collection<ColumnInfo> datasetCols = new LinkedHashSet<>(datasetTI.getColumns());
-                DatasetDataWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
-                DatasetDataWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
-                rs = QueryService.get().select(datasetTI, datasetCols, null, null);
+            // test "exporting" the dataset data using the date shited values and alternate IDs
+            Collection<ColumnInfo> datasetCols = new LinkedHashSet<>(datasetTI.getColumns());
+            DatasetDataWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
+            DatasetDataWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
 
+            try (ResultSet rs = QueryService.get().select(datasetTI, datasetCols, null, null))
+            {
                 // verify values from the transformed dataset
                 assertTrue(rs.next());
                 assertNotNull(rs.getString("SubjectId"));
-                assertFalse("DS1".equals(rs.getString("SubjectId")));
-                assertTrue(alternateId.equals(rs.getString("SubjectID")));
-                assertTrue(rs.getDate("Date").before((Date)firstRowMap.get("Date")));
+                assertNotEquals("DS1", rs.getString("SubjectId"));
+                assertEquals(alternateId, rs.getString("SubjectID"));
+                assertTrue(rs.getDate("Date").before((Date) firstRowMap.get("Date")));
                 // TODO: calculate the date offset and verify that it matches the firstRowMap.get("Date") value
                 assertFalse(rs.next());
-
-                rs.close(); rs = null;
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
 
@@ -5801,7 +5793,7 @@ public class StudyManager
             datasetService.updateDatasetDefinition(gwtDataset, gwtDomain, gwtDomain);
 
             DatasetDefinition ds = _studyDateBased.getDataset(datasetId);
-            assertTrue(ds.getCategoryId() == subCategory.getRowId());
+            assertEquals((int) ds.getCategoryId(), subCategory.getRowId());
 
             // clean up
             try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())

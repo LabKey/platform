@@ -78,10 +78,10 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
         // charts do not seem to have the same problem.
         
         view.getSettings().getBaseSort().insertSortColumn(columnX);
-        ResultSet rs = generateResultSet(view);
-        if (rs != null)
+        try (ResultSet rs = generateResultSet(view))
         {
-            try {
+            if (rs != null)
+            {
                 Map<String, String> labels = getLabelMap(view);
                 Map<String, TimePeriodValues> datasets = new HashMap<>();
                 for (String columnName : descriptor.getColumnYName())
@@ -117,35 +117,35 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
                 {
                     boolean isVertical = BooleanUtils.toBoolean(descriptor.getProperty(ChartReportDescriptor.Prop.isVerticalOrientation));
                     plot = isVertical ?
-                            new CombinedDomainXYPlot((ValueAxis)createAxis(X_AXIS, descriptor, null)) :
-                            new CombinedRangeXYPlot((ValueAxis)createAxis(Y_AXIS, descriptor, null));
+                            new CombinedDomainXYPlot((ValueAxis) createAxis(X_AXIS, descriptor, null)) :
+                            new CombinedRangeXYPlot((ValueAxis) createAxis(Y_AXIS, descriptor, null));
 
                     for (TimePeriodValues series : datasets.values())
                     {
                         XYPlot subPlot = new XYPlot();
 
                         subPlot.setDataset(new TimePeriodValuesCollection(series));
-                        subPlot.setRangeAxis((ValueAxis)createAxis(Y_AXIS, descriptor, series.getKey().toString()));
-                        subPlot.setDomainAxis((ValueAxis)createAxis(X_AXIS, descriptor, getLabel(labels, columnX)));
+                        subPlot.setRangeAxis((ValueAxis) createAxis(Y_AXIS, descriptor, series.getKey().toString()));
+                        subPlot.setDomainAxis((ValueAxis) createAxis(X_AXIS, descriptor, getLabel(labels, columnX)));
                         subPlot.setRenderer(new XYLineAndShapeRenderer(showLines, true));
                         subPlot.getRenderer().setURLGenerator(new UrlGenerator(getRenderInfo()));
                         subPlot.getRenderer().setToolTipGenerator(new XYReportToolTipGenerator());
 
                         if (isVertical)
-                            ((CombinedDomainXYPlot)plot).add(subPlot);
+                            ((CombinedDomainXYPlot) plot).add(subPlot);
                         else
-                            ((CombinedRangeXYPlot)plot).add(subPlot);
+                            ((CombinedRangeXYPlot) plot).add(subPlot);
                     }
                 }
                 else if (isMultiYAxis && collection.getSeriesCount() > 0)
                 {
-                    for (int idx=0; idx < collection.getSeriesCount(); idx++)
+                    for (int idx = 0; idx < collection.getSeriesCount(); idx++)
                     {
                         TimePeriodValues timeSeries = collection.getSeries(idx);
                         plot.setDataset(idx, new TimePeriodValuesCollection(timeSeries));
 
                         Axis axis = createAxis(Y_AXIS, descriptor, timeSeries.getKey().toString());
-                        plot.setRangeAxis(idx, (ValueAxis)axis);
+                        plot.setRangeAxis(idx, (ValueAxis) axis);
                         plot.setRenderer(idx, new XYLineAndShapeRenderer(showLines, true));
                         plot.getRenderer().setURLGenerator(new UrlGenerator(getRenderInfo()));
                         plot.getRenderer().setToolTipGenerator(new XYReportToolTipGenerator());
@@ -158,19 +158,15 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
                     Axis axis = createAxis(Y_AXIS, descriptor, "");
                     if (collection.getSeriesCount() == 1)
                         axis.setLabel(collection.getSeries(0).getKey().toString());
-                    plot.setRangeAxis((ValueAxis)axis);
+                    plot.setRangeAxis((ValueAxis) axis);
                     plot.setDataset(collection);
                     plot.setRenderer(new XYLineAndShapeRenderer(showLines, true));
                     plot.getRenderer().setURLGenerator(new UrlGenerator(getRenderInfo()));
                     plot.getRenderer().setToolTipGenerator(new XYReportToolTipGenerator());
                 }
 
-                plot.setDomainAxis((ValueAxis)createAxis(X_AXIS, descriptor, getLabel(labels, columnX)));
+                plot.setDomainAxis((ValueAxis) createAxis(X_AXIS, descriptor, getLabel(labels, columnX)));
                 return plot;
-            }
-            finally
-            {
-                rs.close();
             }
         }
         return null;

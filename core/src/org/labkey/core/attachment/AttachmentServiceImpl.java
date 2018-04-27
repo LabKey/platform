@@ -153,7 +153,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (context != null)
                 user = context.getUser();
         }
-        catch (RuntimeException e)
+        catch (RuntimeException ignored)
         {
         }
 

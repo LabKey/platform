@@ -5251,9 +5251,8 @@ public class SpecimenController extends BaseStudyController
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
-                ResultSet rs = null;
-                try {
-                    rs = queryView.getResultSet();
+                try (ResultSet rs = queryView.getResultSet())
+                {
                     while (rs.next())
                     {
                         String lsid = rs.getString("lsid");
@@ -5264,11 +5263,6 @@ public class SpecimenController extends BaseStudyController
                 catch (Exception e)
                 {
                     _log.error("Error encountered trying to get " + StudyService.get().getSubjectNounSingular(getContainer()) + " comments", e);
-                }
-                finally
-                {
-                    if (null != rs)
-                        try { rs.close(); } catch (SQLException e){}
                 }
             }
             return null;

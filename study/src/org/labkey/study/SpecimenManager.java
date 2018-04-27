@@ -3130,7 +3130,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                     StudySchema.getInstance().getSchema().getScope(), 10, 8 * CacheManager.HOUR, "Grouped Values Cache");
         }
 
-        TableResultSet resultSet;
         try
         {
             groupedValues = new HashMap<>();
@@ -3183,8 +3182,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
                 SqlSelector selector = new SqlSelector(tableInfo.getSchema(), sql);
 
-                resultSet = selector.getResultSet();
-                try
+                try (TableResultSet resultSet = selector.getResultSet())
                 {
                     if (null != resultSet)
                     {
@@ -3241,11 +3239,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                         }
                         groupedValues.put(grouping[0], groupedValue);
                     }
-                }
-                finally
-                {
-                    if (null != resultSet)
-                        resultSet.close();
                 }
             }
 

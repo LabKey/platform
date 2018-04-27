@@ -67,10 +67,9 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
 
     public Plot createPlot(ChartReportDescriptor descriptor, ReportQueryView view) throws Exception
     {
-        ResultSet rs = generateResultSet(view);
-        if (rs != null)
+        try (ResultSet rs = generateResultSet(view))
         {
-            try
+            if (rs != null)
             {
                 Map<String, String> labels = getLabelMap(view);
                 Map<String, XYSeries> datasets = new HashMap<>();
@@ -160,10 +159,6 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
 
                 plot.setDomainAxis((ValueAxis)createAxis(X_AXIS, descriptor, getLabel(labels, columnX)));
                 return plot;
-            }
-            finally
-            {
-                rs.close();
             }
         }
         return null;

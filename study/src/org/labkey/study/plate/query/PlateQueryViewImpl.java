@@ -105,15 +105,10 @@ public class PlateQueryViewImpl extends PlateQueryView
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        ResultSet rs = null;
-        try
+
+        try (ResultSet rs = rgn.getResultSet(view.getRenderContext()))
         {
-            rs = rgn.getResultSet(view.getRenderContext());
             return rs.next();
-        }
-        finally
-        {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
         }
     }
 
