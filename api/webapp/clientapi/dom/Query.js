@@ -161,7 +161,7 @@ LABKEY.Query = new function(impl, $) {
     function sortObjectArrayByTitle(a, b){
         var aTitle = a.title ? a.title : a.caption;
         var bTitle = b.title ? b.title : b.caption;
-        return ((aTitle < bTitle) ? -1 : ((aTitle > bTitle) ? 1 : 0));
+        return aTitle.localeCompare(bTitle);
     }
 
     var SCHEMA_QUERIES_CACHE = {}; // cache of queries by schema
