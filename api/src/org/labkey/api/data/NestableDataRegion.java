@@ -86,22 +86,23 @@ public class NestableDataRegion extends AbstractNestableDataRegion
         super.renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex);
 
         _groupedRS.previous();
-        ResultSet nestedRS = _groupedRS.getNextResultSet();
 
-        // Validate that the inner and outer result sets are sorted the same
-        while (nestedRS.next())
+        try (ResultSet nestedRS = _groupedRS.getNextResultSet())
         {
-            Object outerValue = ctx.getRow().get(_uniqueColumnName);
-            Object innerValue = nestedRS.getInt(_uniqueColumnName);
-            if (!Objects.equals(outerValue, innerValue))
+            // Validate that the inner and outer result sets are sorted the same
+            while (nestedRS.next())
             {
-                throw new IllegalArgumentException("Ids do not match for the outer and inner result sets for column " + _uniqueColumnName + " - " + outerValue + " vs " + innerValue);
+                Object outerValue = ctx.getRow().get(_uniqueColumnName);
+                Object innerValue = nestedRS.getInt(_uniqueColumnName);
+                if (!Objects.equals(outerValue, innerValue))
+                {
+                    throw new IllegalArgumentException("Ids do not match for the outer and inner result sets for column " + _uniqueColumnName + " - " + outerValue + " vs " + innerValue);
+                }
             }
-        }
-        nestedRS.beforeFirst();
+            nestedRS.beforeFirst();
 
-        renderNestedGrid(out, ctx, new ResultsImpl(nestedRS), rowIndex);
-        nestedRS.close();
+            renderNestedGrid(out, ctx, new ResultsImpl(nestedRS), rowIndex);
+        }
     }
 
     public void setSettings(QuerySettings settings)

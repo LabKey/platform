@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 
 import java.io.File;
@@ -260,7 +261,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     private void closeResults()
     {
-        if (_rs != null) try { _rs.close(); } catch (SQLException e) {}
+        ResultSetUtil.close(_rs);
     }
 
     protected void writeRow(RenderContext ctx, List<DisplayColumn> displayColumns)

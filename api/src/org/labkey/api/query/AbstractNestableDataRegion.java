@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.JspView;
 
 import java.io.Writer;
@@ -57,10 +58,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         }
 
         super.renderTable(ctx, out);
-        if (_groupedRS != null)
-        {
-            _groupedRS.close();
-        }
+        ResultSetUtil.close(_groupedRS);
     }
 
     protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException

@@ -1179,9 +1179,6 @@ public class DbScope
 
     public static void createDataBase(SqlDialect dialect, String url, String username, String password, boolean primaryDataSource) throws ServletException
     {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-
         String dbName = dialect.getDatabaseName(url);
 
         LOG.info("Attempting to create database \"" + dbName + "\"");
@@ -1189,38 +1186,21 @@ public class DbScope
         String masterUrl = StringUtils.replace(url, dbName, dialect.getMasterDataBaseName());
         String createSql = "(undefined)";
 
-        try
+        try (Connection conn = DriverManager.getConnection(masterUrl, username, password))
         {
-            conn = DriverManager.getConnection(masterUrl, username, password);
             // Get version-specific dialect; don't log version warnings.
             dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, primaryDataSource);
             createSql = dialect.getCreateDatabaseSql(dbName);
-            stmt = conn.prepareStatement(createSql);
-            stmt.execute();
+
+            try (PreparedStatement stmt = conn.prepareStatement(createSql))
+            {
+                stmt.execute();
+            }
         }
         catch (SQLException e)
         {
             LOG.error("Create database failed, SQL: " + createSql, e);
             dialect.handleCreateDatabaseException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (null != conn) conn.close();
-            }
-            catch (Exception x)
-            {
-                LOG.error("", x);
-            }
-            try
-            {
-                if (null != stmt) stmt.close();
-            }
-            catch (Exception x)
-            {
-                LOG.error("", x);
-            }
         }
 
         LOG.info("Database \"" + dbName + "\" created");
@@ -2388,7 +2368,7 @@ public class DbScope
                 {
                     bkg.join();
                 }
-                catch (InterruptedException x)
+                catch (InterruptedException ignored)
                 {
                 }
             }

@@ -45,6 +45,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.ServletOutputStream;
@@ -966,9 +967,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     @Override
     public void close()
     {
-        if (_rs != null)
-        {
-            try { _rs.close(); } catch (SQLException ignored) {}
-        }
+        ResultSetUtil.close(_rs);
     }
 }

@@ -1217,7 +1217,7 @@ public class Table
             {
                 rs.last();
                 int row = rs.getRow();
-                assertTrue(row == maxRows);
+                assertEquals(row, maxRows);
                 assertFalse(rs.isComplete());
             }
         }
@@ -1229,54 +1229,58 @@ public class Table
         }
 
         @Test
-        public void testParameter()
-                throws Exception
+        public void testParameter() throws Exception
         {
             DbSchema core = CoreSchema.getInstance().getSchema();
             SqlDialect dialect = core.getScope().getSqlDialect();
             
             String name = dialect.getTempTablePrefix() + "_" + GUID.makeHash();
-            Connection conn = core.getScope().getConnection();
-            assertTrue(conn != null);
-            
-            try
-            {
-                PreparedStatement stmt = conn.prepareStatement("CREATE " + dialect.getTempTableKeyword() + " TABLE " + name +
-                        "(s VARCHAR(36), d " + dialect.getSqlTypeName(JdbcType.TIMESTAMP) + ")");
-                stmt.execute();
-                stmt.close();
 
-                String sql = "INSERT INTO " + name + " VALUES (?, ?)";
-                stmt = conn.prepareStatement(sql);
-                Parameter s = new Parameter(stmt, 1);
-                Parameter d = new Parameter(stmt, 2, JdbcType.TIMESTAMP);
-
-                s.setValue(4);
-                d.setValue(GregorianCalendar.getInstance());
-                stmt.execute();
-                s.setValue(1.234);
-                d.setValue(new java.sql.Timestamp(System.currentTimeMillis()));
-                stmt.execute();
-                s.setValue("string");
-                d.setValue(null);
-                stmt.execute();
-                s.setValue(ContainerManager.getRoot());
-                d.setValue(new java.util.Date());
-                stmt.execute();
-                s.setValue(MyEnum.BETTY);
-                d.setValue(null);
-                stmt.execute();
-            }
-            finally
+            try (Connection conn = core.getScope().getConnection())
             {
+                assertNotNull(conn);
+
                 try
                 {
-                    PreparedStatement cleanup = conn.prepareStatement("DROP TABLE " + name);
-                    cleanup.execute();
+                    try (PreparedStatement stmt = conn.prepareStatement("CREATE " + dialect.getTempTableKeyword() + " TABLE " + name +
+                            "(s VARCHAR(36), d " + dialect.getSqlTypeName(JdbcType.TIMESTAMP) + ")"))
+                    {
+                        stmt.execute();
+                    }
+
+                    String sql = "INSERT INTO " + name + " VALUES (?, ?)";
+
+                    try (PreparedStatement stmt = conn.prepareStatement(sql))
+                    {
+                        Parameter s = new Parameter(stmt, 1);
+                        Parameter d = new Parameter(stmt, 2, JdbcType.TIMESTAMP);
+                        s.setValue(4);
+                        d.setValue(GregorianCalendar.getInstance());
+                        stmt.execute();
+
+                        s.setValue(1.234);
+                        d.setValue(new java.sql.Timestamp(System.currentTimeMillis()));
+                        stmt.execute();
+
+                        s.setValue("string");
+                        d.setValue(null);
+                        stmt.execute();
+
+                        s.setValue(ContainerManager.getRoot());
+                        d.setValue(new java.util.Date());
+                        stmt.execute();
+
+                        s.setValue(MyEnum.BETTY);
+                        d.setValue(null);
+                        stmt.execute();
+                    }
                 }
                 finally
                 {
-                    conn.close();
+                    try (PreparedStatement cleanup = conn.prepareStatement("DROP TABLE " + name))
+                    {
+                        cleanup.execute();
+                    }
                 }
             }
         }
