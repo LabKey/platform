@@ -114,7 +114,7 @@
             <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormat())%></td>
-            <td align="center"><input type=checkbox disabled<%=checked(!col.isNullable())%>></td>
+            <td align="center"><input type=checkbox disabled<%=checked(!col.isNullable() || col.isRequired())%>></td>
             <td align="center"><input type=checkbox disabled<%=checked(col.isMvEnabled())%>></td>
             <td><%=h(col.getDescription())%></td>
         </tr>
