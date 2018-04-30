@@ -30,6 +30,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -48,6 +49,7 @@ import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -58,6 +60,7 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -196,7 +199,7 @@ public class PipelineManager
                 container, user, ContainerManager.Property.PipelineRoot, oldValue, newValue));
     }
 
-    static public void purge(Container container)
+    static public void purge(Container container, User user)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
@@ -225,7 +228,21 @@ public class PipelineManager
             CACHE.remove(getCacheKey(container, null));
         }
 
-        ContainerUtil.purgeTable(pipeline.getTableInfoTriggerConfigurations(), container, "Container");
+        // Delete trigger configurations through the UserSchema so that we stop any associated listeners. See issue 33986
+        try
+        {
+            PipelineQuerySchema schema = new PipelineQuerySchema(user, container);
+            TableInfo table = schema.getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME);
+            table.getUpdateService().truncateRows(user, container, null, null);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        catch (QueryUpdateServiceException | BatchValidationException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
     static void setPipelineProperty(Container container, String name, String value)

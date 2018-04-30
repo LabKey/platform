@@ -25,6 +25,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
@@ -57,6 +58,8 @@ import org.labkey.pipeline.api.PipelineSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -277,6 +280,26 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String newName = getStringFromRow(newRow, "Name");
             startIfEnabled(container, newName, newRow);
             return newRow;
+        }
+
+        /** Implement to make sure the listener gets unregistered */
+        @Override
+        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+        {
+            TableSelector ts = new TableSelector(TriggerConfigurationsTable.this);
+            Collection<Map<String, Object>> rowsToDelete = ts.getMapCollection();
+            for (Map<String, Object> rowMap : rowsToDelete)
+            {
+                try
+                {
+                    deleteRow(user, container, rowMap);
+                }
+                catch (InvalidKeyException e)
+                {
+                    throw new QueryUpdateServiceException(e);
+                }
+            }
+            return rowsToDelete.size();
         }
 
         @Override

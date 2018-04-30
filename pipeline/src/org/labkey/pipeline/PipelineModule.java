@@ -219,7 +219,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public void containerDeleted(Container c, User user)
     {
-        PipelineManager.purge(c);
+        PipelineManager.purge(c, user);
     }
 
     @Override
