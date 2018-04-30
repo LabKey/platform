@@ -133,9 +133,9 @@
                                 for (String key : triggerConfigTasks.keySet())
                                 {
                                     boolean selected = false;
-
-                                    if (bean.getPipelineTask() != null)
-                                        selected = bean.getPipelineTask().equalsIgnoreCase(key);
+                                    String pipeTask = bean.getPipelineTask();
+                                    if (pipeTask != null)
+                                        selected = pipeTask.substring(pipeTask.lastIndexOf(":")+1, pipeTask.length()).equalsIgnoreCase(key);
                             %>
                             <option <%=selected(selected)%> value="<%=text(triggerConfigTasks.get(key).getId().toString())%>"><%=text(triggerConfigTasks.get(key).getDescription())%></option>
                             <%
@@ -156,7 +156,7 @@
                               className="form-control lk-pipeline-param-input"
                               label="Assay Provider"
                               forceSmallContext="true"
-                              contextContent="Use this provider for running assay import runs" />
+                              contextContent="Use this provider for running assay import runs." />
 
                 <labkey:input name="enabled"
                               id="pipeline-enabled-check"
@@ -192,7 +192,7 @@
                               className="form-control lk-pipeline-input"
                               label="File Pattern"
                               forceSmallContext="true"
-                              contextContent="A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties"/>
+                              contextContent="A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties."/>
 
                 <labkey:input name="quiet"
                               className="form-control lk-pipeline-input"
