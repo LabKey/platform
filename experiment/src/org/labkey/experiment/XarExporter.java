@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
@@ -65,9 +66,10 @@ import org.labkey.experiment.api.MaterialInput;
 import org.labkey.experiment.api.ProtocolActionPredecessor;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
-import org.w3c.dom.Document;
 
 import javax.xml.namespace.QName;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -75,7 +77,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -166,12 +167,14 @@ public class XarExporter
         _xarXmlFileName = fileName;
     }
 
-    public void addExpData(ExpData data) throws ExperimentException{
+    public void addExpData(ExpData data) throws ExperimentException
+    {
         if(_expDataIDs.contains(data.getRowId()))
         {
             return;
         }
         logProgress("Adding experiment data " + data.getRowId());
+        _expDataIDs.add(data.getRowId());
 
         ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
 
@@ -688,32 +691,26 @@ public class XarExporter
     private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
+        xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
         Path path = data.getFilePath();
-        String url = null;
         if (path != null)
         {
-            url = _urlRewriter.rewriteURL(path, data, role, run, _user);
+            String url = _urlRewriter.rewriteURL(path, data, role, run, _user);
+            if (url != null)
+                xData.setDataFileUrl(url);
         }
-        xData.setName(data.getName());
+
+        // Add the original URL as a property on the data object
+        // so that it's easier to figure out links between files later, since
+        // the URLs have all been rewritten
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
-        if (url != null)
-        {
-            xData.setDataFileUrl(url);
-            if (!url.equals(data.getDataFileUrl()))
-            {
-                // Add the original URL as a property on the data object
-                // so that it's easier to figure out links between files later, since
-                // the URLs have all been rewritten
-                dataProperties = addOriginalURLProperty(dataProperties, data.getDataFileUrl());
-            }
-        }
+        if (!StringUtils.isBlank(data.getDataFileUrl()) && !StringUtils.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
+            dataProperties = addOriginalURLProperty(dataProperties, data.getDataFileUrl());
         if (dataProperties != null)
-        {
             xData.setProperties(dataProperties);
-        }
     }
 
     public void addProtocol(ExpProtocol protocol, boolean includeChildren) throws ExperimentException
@@ -889,8 +886,7 @@ public class XarExporter
     {
         Map<String, ObjectProperty> properties = getObjectProperties(parentContainer, lsid);
 
-        Set<String> ignoreSet = new HashSet<>();
-        ignoreSet.addAll(Arrays.asList(ignoreProperties));
+        Set<String> ignoreSet = new HashSet<>(Arrays.asList(ignoreProperties));
 
         PropertyCollectionType result = PropertyCollectionType.Factory.newInstance();
         boolean addedProperty = false;
@@ -1065,7 +1061,14 @@ public class XarExporter
         }
     }
 
+    @Deprecated
     public void write(OutputStream out) throws IOException
+    {
+        writeAsArchive(out);
+    }
+
+    /** TODO use VFS so we can void two impl */
+    public void writeAsArchive(OutputStream out) throws IOException
     {
         try (ZipOutputStream zOut = new ZipOutputStream(out))
         {
@@ -1103,6 +1106,47 @@ public class XarExporter
                 ps.println("Failed to complete export of the XAR file: ");
                 e.printStackTrace(ps);
                 zOut.closeEntry();
+            }
+        }
+    }
+
+    public void writeAsDirectory(File dir) throws IOException
+    {
+        try
+        {
+            if (_includeXML)
+            {
+                File xmlEntry = new File(dir, _xarXmlFileName);
+                logProgress("Writing XAR XML file");
+                try (FileOutputStream os = new FileOutputStream(xmlEntry))
+                {
+                    dumpXML(os);
+                }
+            }
+
+            for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
+            {
+                if (fileInfo.hasContentToExport())
+                {
+                    logProgress("Adding data file to archive: " + fileInfo.getName());
+                    File fileEntry = new File(dir, fileInfo.getName());
+                    fileEntry.getParentFile().mkdirs();
+                    try (FileOutputStream os = new FileOutputStream(fileEntry))
+                    {
+                        fileInfo.writeFile(os);
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // insert the stack trace into the zip file
+            File errorEntry = new File(dir,"error.log");
+
+            try (FileOutputStream os = new FileOutputStream(errorEntry); PrintStream ps = new PrintStream(os))
+            {
+                ps.println("Failed to complete export of the XAR file: ");
+                e.printStackTrace(ps);
             }
         }
     }
@@ -1151,15 +1195,5 @@ public class XarExporter
     private Map<String, Object> getProperties(Container container, String contactLSID)
     {
         return OntologyManager.getProperties(container, contactLSID);
-    }
-
-    public Document getDOMDocument()
-    {
-        return (Document)_document.getDomNode();
-    }
-
-    public ExperimentArchiveDocument getXMLBean()
-    {
-        return _document;
     }
 }

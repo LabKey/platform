@@ -152,20 +152,24 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
+import org.labkey.experiment.xar.XarExportSelection;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -740,7 +744,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (d == null)
             return; // Domain may be null if the DataClass has been deleted
 
-        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
         if (table == null)
             return;
 
@@ -794,8 +798,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
-
-
 
 
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
@@ -1050,7 +1052,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, @NotNull ExpDataClass dataClass)
     {
-        return new ExpDataClassDataTableImpl(name, schema, (ExpDataClassImpl)dataClass);
+        return new ExpDataClassDataTableImpl(name, schema, (ExpDataClassImpl) dataClass);
     }
 
     public ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema schema)
@@ -1133,7 +1135,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Identifiable id = LsidManager.get().getObject(lsid);
         if (id instanceof ExpObject)
         {
-            return (ExpObject)id;
+            return (ExpObject) id;
         }
         return null;
     }
@@ -1237,7 +1239,7 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 // No current value, so need to insert a new row
                 String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
-                    "VALUES (?, ?)";
+                        "VALUES (?, ?)";
                 new SqlExecutor(getExpSchema()).execute(sql, container.getId(), materialSourceLSID);
             }
         }
@@ -1351,7 +1353,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (d == null)
             throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
-        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
         if (table == null)
             throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
@@ -1373,7 +1375,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (d == null)
             throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
-        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
         if (table == null)
             throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
@@ -1396,7 +1398,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (d == null)
             throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
-        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
         if (table == null)
             throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
@@ -1486,6 +1488,77 @@ public class ExperimentServiceImpl implements ExperimentService
         return view;
     }
 
+
+    /**
+     * export to temp directory
+     */
+    @Override
+    public File exportXarForRuns(
+            User user,
+            Set<Integer> runIds,
+            Integer expRowId,
+            XarExportOptions options)
+            throws NotFoundException, IOException, ExperimentException
+    {
+        if (runIds.isEmpty())
+        {
+            throw new NotFoundException();
+        }
+
+        try
+        {
+            for (int id : runIds)
+            {
+                ExpRun run = ExperimentService.get().getExpRun(id);
+                if (run == null || !run.getContainer().hasPermission(user, ReadPermission.class))
+                {
+                    throw new NotFoundException("Could not find run " + id);
+                }
+            }
+
+            XarExportSelection selection = new XarExportSelection();
+            if (expRowId != null)
+            {
+                ExpExperiment experiment = ExperimentService.get().getExpExperiment(expRowId);
+                if (experiment != null && !experiment.getContainer().hasPermission(user, ReadPermission.class))
+                {
+                    throw new NotFoundException("Run group " + expRowId);
+                }
+                selection.addExperimentIds(experiment.getRowId());
+            }
+            selection.addRunIds(runIds);
+            // NOTE: selection distinguishes between null and empty (careful)
+            // TODO have ArchiveURLRewriter() differentiate between input and output roles
+            // TODO using Set<roles> is adequate for now (as long as the caller knows all the roles of interest)
+            if (options.isFilterDataRoles())
+                selection.addRoles(options.getDataRoles());
+            XarExporter exporter = new XarExporter(
+                    LSIDRelativizer.valueOf(options.getLsidRelativizer()),
+                    selection,
+                    user,
+                    options.getXarXmlFileName(),
+                    options.getLog()
+            );
+            if (options.getExportFile().isDirectory())
+            {
+                exporter.writeAsDirectory(options.getExportFile());
+            }
+            else
+            {
+                try (FileOutputStream fOut = new FileOutputStream(options.getExportFile().getPath()))
+                {
+                    exporter.writeAsArchive(fOut);
+                }
+            }
+            return options.getExportFile();
+        }
+        catch (NumberFormatException e)
+        {
+            throw new NotFoundException(runIds.toString());
+        }
+    }
+
+
     public DbSchema getSchema()
     {
         return getExpSchema();
@@ -1493,8 +1566,16 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException
     {
+        XarImportOptions options = new XarImportOptions().setReplaceExistingRuns(reloadExistingRuns);
+        return importXar(source, pipelineJob, options);
+    }
+
+    public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, XarImportOptions options) throws ExperimentException
+    {
         XarReader reader = new XarReader(source, pipelineJob);
-        reader.parseAndLoad(reloadExistingRuns);
+        reader.setReloadExistingRuns(options.isReplaceExistingRuns());
+        reader.setUseOriginalFileUrl(options.isUseOriginalDataFileUrl());
+        reader.parseAndLoad();
         return reader.getExperimentRuns();
     }
 

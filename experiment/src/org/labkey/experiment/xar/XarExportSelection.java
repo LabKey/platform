@@ -26,11 +26,12 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -44,7 +45,7 @@ public class XarExportSelection implements Serializable
     private List<Integer> _sampleSetIds = new ArrayList<>();
     private List<Integer> _protocolIds = new ArrayList<>();
     private boolean _includeXarXml = true;
-    private List<String> _roles;
+    private Set<String> _roles;
 
     public void addExperimentIds(int... expIds)
     {
@@ -97,9 +98,18 @@ public class XarExportSelection implements Serializable
     {
         if (_roles == null)
         {
-            _roles = new ArrayList<>();
+            _roles = new HashSet<>();
         }
         _roles.addAll(Arrays.asList(roles));
+    }
+
+    public void addRoles(Set<String> roles)
+    {
+        if (_roles == null)
+        {
+            _roles = new HashSet<>();
+        }
+        _roles.addAll(roles);
     }
 
     public void addContent(XarExporter exporter) throws ExperimentException

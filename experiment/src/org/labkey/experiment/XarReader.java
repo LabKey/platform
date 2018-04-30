@@ -72,9 +72,11 @@ import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
 
 import javax.xml.namespace.QName;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
@@ -100,6 +102,8 @@ public class XarReader extends AbstractXarImporter
 
     private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
+    private boolean _reloadExistingRuns = false;
+    private boolean _useOriginalFileUrl = false;
     private List<ExpRun> _loadedRuns = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
@@ -117,7 +121,23 @@ public class XarReader extends AbstractXarImporter
         super(source, job);
     }
 
+    public void setReloadExistingRuns(boolean reloadExistingRuns)
+    {
+        this._reloadExistingRuns = reloadExistingRuns;
+    }
+
+    public void setUseOriginalFileUrl(boolean useOriginalFileUrl)
+    {
+        this._useOriginalFileUrl = useOriginalFileUrl;
+    }
+
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
+    {
+        this._reloadExistingRuns = reloadExistingRuns;
+        parseAndLoad();
+    }
+
+    public void parseAndLoad() throws ExperimentException
     {
         try
         {
@@ -133,7 +153,7 @@ public class XarReader extends AbstractXarImporter
                 checkValidationErrors(document, errorList);
 
             _experimentArchive = document.getExperimentArchive();
-            loadDoc(reloadExistingRuns);
+            loadDoc();
 
             Path expDir = _xarSource.getRootPath().resolve("export");
             if (Files.exists(expDir) && Files.isDirectory(expDir) &&
@@ -219,7 +239,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void loadDoc(boolean deleteExistingRuns) throws ExperimentException
+    private void loadDoc() throws ExperimentException
     {
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
@@ -227,7 +247,7 @@ public class XarReader extends AbstractXarImporter
             // Start by clearing out existing things that we're going to be importing
             if (experimentRuns != null)
             {
-                deleteExistingExperimentRuns(experimentRuns, deleteExistingRuns);
+                deleteExistingExperimentRuns(experimentRuns);
             }
 
             ExperimentArchiveType.ProtocolActionDefinitions actionDefs = _experimentArchive.getProtocolActionDefinitions();
@@ -420,20 +440,20 @@ public class XarReader extends AbstractXarImporter
 
         if (existingMaterialSource != null)
         {
-            List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
-            IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
-            IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
-            IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
+                List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
+                IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
+                IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
+                IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
 
-            if (!diffs.isEmpty())
-            {
-                getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
-                for (IdentifiableEntity.Difference diff : diffs)
+                if (!diffs.isEmpty())
                 {
-                    getLog().error(diff.toString());
+                    getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    for (IdentifiableEntity.Difference diff : diffs)
+                    {
+                        getLog().error(diff.toString());
+                    }
+                    throw new XarFormatException("SampleSet with LSID '" + lsid + "' does not match existing SampleSet");
                 }
-                throw new XarFormatException("SampleSet with LSID '" + lsid + "' does not match existing SampleSet");
-            }
 
             return existingMaterialSource;
         }
@@ -570,7 +590,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void deleteExistingExperimentRuns(ExperimentArchiveType.ExperimentRuns experimentRuns, boolean deleteExistingRuns) throws ExperimentException
+    private void deleteExistingExperimentRuns(ExperimentArchiveType.ExperimentRuns experimentRuns) throws ExperimentException
     {
         for (ExperimentRunType experimentRun : experimentRuns.getExperimentRunArray())
         {
@@ -578,7 +598,7 @@ public class XarReader extends AbstractXarImporter
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
-            if (existingRun != null && (deleteExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(_xarSource.getRoot()))))
+            if (existingRun != null && (_reloadExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(_xarSource.getRoot()))))
             {
                 getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
                 existingRun.delete(getUser());
@@ -1087,6 +1107,27 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+
+    String findOriginalUrlProperty(PropertyCollectionType xbProps)
+    {
+        if (xbProps != null)
+        {
+            SimpleValueType[] simpleValArray = xbProps.getSimpleValArray();
+            if (simpleValArray != null)
+            {
+                for (SimpleValueType simpleValue : simpleValArray)
+                {
+                    if (ORIGINAL_URL_PROPERTY.equals(simpleValue.getOntologyEntryURI()) && ORIGINAL_URL_PROPERTY_NAME.equals(simpleValue.getName()))
+                    {
+                        return simpleValue.getStringValue();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
     private Data loadData(DataBaseType xbData,
                           ExperimentRun experimentRun,
                           Integer sourceApplicationId,
@@ -1106,6 +1147,7 @@ public class XarReader extends AbstractXarImporter
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
 
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
+
         if (expData != null)
         {
             Path existingFile = expData.getFilePath();
@@ -1162,6 +1204,19 @@ public class XarReader extends AbstractXarImporter
             {
                 data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl())));
             }
+            else if (_useOriginalFileUrl)
+            {
+                String original = findOriginalUrlProperty(xbData.getProperties());
+                if (null != original)
+                {
+                    URI uri = FileUtil.createUri(original);
+                    if ("file".equals(uri.getScheme()))
+                    {
+                        if (new File(uri).exists())
+                            data.setDataFileUrl(original);
+                    }
+                }
+            }
 
             Data insertedData = Table.insert(getUser(), tiData, data);
             // Pull from the database so we get the magically filled-in fields,
@@ -1174,20 +1229,11 @@ public class XarReader extends AbstractXarImporter
 
             loadPropertyCollection(xbProps, dataLSID, null, null);
 
-            if (xbProps.getSimpleValArray() != null)
+            Path path = expData.getFilePath();
+            if (null != path)
             {
-                for (SimpleValueType simpleValue : xbProps.getSimpleValArray())
-                {
-                    if (ORIGINAL_URL_PROPERTY.equals(simpleValue.getOntologyEntryURI()) && ORIGINAL_URL_PROPERTY_NAME.equals(simpleValue.getName()))
-                    {
-                        Path path = expData.getFilePath();
-                        if (path != null)
-                        {
-                            getRootContext().addData(new ExpDataImpl(data), simpleValue.getStringValue());
-                        }
-                        break;
-                    }
-                }
+                String originalUrl = findOriginalUrlProperty(xbProps);
+                getRootContext().addData(new ExpDataImpl(data), originalUrl);
             }
 
             loadExtendedDataType(xbData, dataLSID, experimentRun);
