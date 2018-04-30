@@ -92,7 +92,7 @@ public class LogManager
 
                 if (schema != null)
                 {
-                    TableInfo table = schema.getTable(provider.getEventName());
+                    TableInfo table = schema.getTable(provider.getEventName(), false);
 
                     if (table instanceof DefaultAuditTypeTable)
                     {
