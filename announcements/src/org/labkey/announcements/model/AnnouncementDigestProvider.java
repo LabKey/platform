@@ -55,8 +55,8 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Logger _log = Logger.getLogger(AnnouncementDigestProvider.class);
 
-    // Retrieve from this container all messages with a body or attachments posted during the given timespan
-    // Messages are grouped by thread and threads are sorted by earliest post within each thread
+    // Retrieve from this container all messages with a body or attachments that were marked as "approved" during the given
+    // timespan. Messages are grouped by thread and threads are sorted by earliest post within each thread.
     private static final String RECENT_ANN_SQL = "SELECT annModel.* FROM\n" +
             "\t(\n" +
             "\tSELECT Thread, MIN(Approved) AS Earliest FROM\n" +
