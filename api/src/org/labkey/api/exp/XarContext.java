@@ -260,7 +260,7 @@ public class XarContext
             return data.getFile();
         }
 
-        // Second, try looking for a case-insenstive match
+        // Second, try looking for a case-insensitive match
         data = _originalCaseInsensitiveURLs.get(lookupPath);
         if (data != null)
         {
