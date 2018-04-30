@@ -25,6 +25,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -155,38 +156,39 @@ import java.util.Map;
     {
         try
         {
-            if (!_script.evaluated())
+            ViewContext.StackResetter viewContextResetter = null;
+            if (!HttpView.hasCurrentView())
             {
-                Map<String, Object> bindings = new HashMap<>();
-                if (extraContext == null)
-                    extraContext = new HashMap<>();
-                bindings.put("extraContext", extraContext);
-                bindings.put("schemaName", _table.getPublicSchemaName());
-                bindings.put("tableName", _table.getPublicName());
-
-                _script.eval(bindings);
+                // Push a view context if we don't already have one available. It will be pulled if labkey.js
+                // is required by the trigger script being invoked, via the call to PageFlowUtil.jsInitObject() in
+                // server/modules/core/resources/scripts/labkey/init.js
+                //noinspection deprecation
+                viewContextResetter = ViewContext.pushMockViewContext(user, c, new ActionURL("dummy", "dummy", c));
             }
-
-            if (_script.hasFn(methodName))
+            try
             {
-                ViewContext.StackResetter viewContextResetter = null;
-                if (!HttpView.hasCurrentView())
+                if (!_script.evaluated())
                 {
-                    // Push a view context if we don't already have one available. It will be pulled if labkey.js
-                    // is required by the trigger script being invoked, via the call to PageFlowUtil.jsInitObject() in
-                    // server/modules/core/resources/scripts/labkey/init.js
-                    viewContextResetter = ViewContext.pushMockViewContext(user, c, null);
+                    Map<String, Object> bindings = new HashMap<>();
+                    if (extraContext == null)
+                        extraContext = new HashMap<>();
+                    bindings.put("extraContext", extraContext);
+                    bindings.put("schemaName", _table.getPublicSchemaName());
+                    bindings.put("tableName", _table.getPublicName());
+
+                    _script.eval(bindings);
                 }
-                try
+
+                if (_script.hasFn(methodName))
                 {
                     return _script.invokeFn(resultType, methodName, args);
                 }
-                finally
+            }
+            finally
+            {
+                if (viewContextResetter != null)
                 {
-                    if (viewContextResetter != null)
-                    {
-                        viewContextResetter.close();
-                    }
+                    viewContextResetter.close();
                 }
             }
         }
