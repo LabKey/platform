@@ -295,6 +295,7 @@ public class AnnouncementManager
 
     private static void notifyModerators(Container c, User user, AnnouncementModel ann)
     {
+        String name = AnnouncementManager.getMessageBoardSettings(c).getConversationName();
         BulkEmailer emailer = new BulkEmailer(user);
         List<String> toList = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class)).stream()
             .map(admin->admin.getEmail())
@@ -302,7 +303,7 @@ public class AnnouncementManager
 
         if (toList.isEmpty())
         {
-            Logger.getLogger(AnnouncementManager.class).warn("New message requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
+            Logger.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
         }
         else
         {
@@ -310,9 +311,16 @@ public class AnnouncementManager
 
             try
             {
-                msg.setFrom(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getSystemEmailAddress());
-                msg.setSubject("New message in " + c.getPath() + " (" + c.getTitle() + ") requires moderator review");
-                msg.setTextContent(user.getDisplayName(user) + " (" + user.getEmail() + ") posted a new message with subject \"" + ann.getTitle() + "\". Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString());
+                msg.setFrom(LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
+                msg.setSubject("New " + name.toLowerCase() + " in " + c.getPath() + " (" + c.getTitle() + ") requires moderator review");
+
+                StringBuilder content = new StringBuilder();
+                content.append("Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString());
+                content.append("\n\nSubject: ").append(ann.getTitle());
+                content.append("\nUser: ").append(user.getDisplayName(user) + " (" + user.getEmail() + ")");
+                content.append("\n").append(name).append(": ").append(AnnouncementsController.getThreadURL(c, ann.getEntityId(), ann.getRowId()).getURIString());
+
+                msg.setTextContent(content.toString());
                 emailer.addMessage(toList, msg);
                 emailer.start();
             }
@@ -843,7 +851,7 @@ public class AnnouncementManager
             TestContext context = TestContext.get();
 
             User user = context.getUser();
-            assertTrue("login before running this test", null != user);
+            assertNotNull("login before running this test", user);
             assertFalse("login before running this test", user.isGuest());
 
             Container c = JunitUtil.getTestContainer();

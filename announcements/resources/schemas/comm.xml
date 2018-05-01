@@ -90,6 +90,7 @@
         <inputType>text</inputType>
         <inputLength>40</inputLength>
         <isReadOnly>false</isReadOnly>
+        <url>org.labkey.announcements.AnnouncementsController$ThreadAction.class?rowId=${RowId}</url>
       </column>
       <column columnName="Expires">
         <columnTitle>Expires</columnTitle>

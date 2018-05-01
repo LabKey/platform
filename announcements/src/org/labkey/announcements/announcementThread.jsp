@@ -63,7 +63,12 @@ if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 
 if (!bean.print && null != discussionSrc)
 { %>
-    <p></p><img src="<%=getContextPath()%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", discussionSrc.getLocalURIString())%><%
+    <p></p><img src="<%=getContextPath()%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=textLink("view page", discussionSrc.getLocalURIString())%><%
+}
+
+if (announcementModel.isSpam())
+{ %>
+    <p></p><img src="<%=getContextPath()%>/_images/exclaim.gif">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> is marked as spam.<%
 }
 %>
 

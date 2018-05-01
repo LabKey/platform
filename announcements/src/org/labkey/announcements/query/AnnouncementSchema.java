@@ -17,6 +17,7 @@ package org.labkey.announcements.query;
 
 import org.labkey.announcements.AnnouncementModule;
 import org.labkey.announcements.AnnouncementsController;
+import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
@@ -39,6 +40,7 @@ public class AnnouncementSchema extends UserSchema
     public static final String SCHEMA_NAME = "announcement";
     public static final String ANNOUNCEMENT_TABLE_NAME = "Announcement";
     public static final String MODERATOR_REVIEW_TABLE_NAME = "ModeratorReview";
+    public static final String SPAM_TABLE_NAME = "Spam";
     public static final String FORUM_SUBSCRIPTION_TABLE_NAME = "ForumSubscription";
     public static final String ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME = "AnnouncementSubscription";
     public static final String EMAIL_OPTION_TABLE_NAME = "EmailOption";
@@ -98,6 +100,10 @@ public class AnnouncementSchema extends UserSchema
         {
             return createModeratorReviewTable();
         }
+        if (SPAM_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return createSpamTable();
+        }
         if (EMAIL_FORMAT_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createEmailFormatTable();
@@ -145,17 +151,17 @@ public class AnnouncementSchema extends UserSchema
         return result;
     }
 
-    public TableInfo createRSSFeedsTable()
+    private TableInfo createRSSFeedsTable()
     {
         return new RSSFeedsTable(this);
     }
 
-    public TableInfo createAnnouncementSubscriptionTable()
+    private TableInfo createAnnouncementSubscriptionTable()
     {
         return new AnnouncementSubscriptionTable(this);
     }
 
-    public TableInfo createForumSubscriptionTable()
+    private TableInfo createForumSubscriptionTable()
     {
         return new ForumSubscriptionTable(this);
     }
@@ -165,9 +171,9 @@ public class AnnouncementSchema extends UserSchema
         return new AnnouncementTable(this);
     }
 
-    public AnnouncementTable createModeratorReviewTable()
+    private AnnouncementTable createFilteredAnnouncementTable(SimpleFilter filter)
     {
-        AnnouncementTable table = new AnnouncementTable(this, new SimpleFilter(FieldKey.fromParts("Approved"), null, CompareType.ISBLANK));
+        AnnouncementTable table = new AnnouncementTable(this, filter);
 
         for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "DiscussionSrcURL", "Folder", "LastIndexed"))
             table.getColumn(name).setHidden(true);
@@ -175,7 +181,17 @@ public class AnnouncementSchema extends UserSchema
         return table;
     }
 
-    public TableInfo createToursTable()
+    private AnnouncementTable createModeratorReviewTable()
+    {
+        return createFilteredAnnouncementTable(new SimpleFilter(FieldKey.fromParts("Approved"), null, CompareType.ISBLANK));
+    }
+
+    private AnnouncementTable createSpamTable()
+    {
+        return createFilteredAnnouncementTable(new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.EQUAL));
+    }
+
+    private TableInfo createToursTable()
     {
         return new ToursTable(this);
     }

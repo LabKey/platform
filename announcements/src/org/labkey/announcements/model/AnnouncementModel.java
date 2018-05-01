@@ -46,6 +46,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.labkey.announcements.model.AnnouncementManager.SPAM_MAGIC_DATE;
+
 
 /**
  * Bean Class for AnnouncementModel.
@@ -73,6 +75,7 @@ public class AnnouncementModel extends Entity implements Serializable
 
     private Collection<AnnouncementModel> _responses = null;
     private Set<User> _authors;
+    private Date _approved = null;
 
 
     /**
@@ -441,6 +444,21 @@ public class AnnouncementModel extends Entity implements Serializable
     public AttachmentParent getAttachmentParent()
     {
         return new AnnouncementAttachmentParent(this);
+    }
+
+    public Date getApproved()
+    {
+        return _approved;
+    }
+
+    public void setApproved(Date approved)
+    {
+        _approved = approved;
+    }
+
+    public boolean isSpam()
+    {
+        return SPAM_MAGIC_DATE.equals(_approved);
     }
 }
 
