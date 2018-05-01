@@ -104,6 +104,8 @@ public class XarReader extends AbstractXarImporter
 
     private boolean _reloadExistingRuns = false;
     private boolean _useOriginalFileUrl = false;
+    private boolean _strictValidateExistingSampleSet = true;
+
     private List<ExpRun> _loadedRuns = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
@@ -129,6 +131,11 @@ public class XarReader extends AbstractXarImporter
     public void setUseOriginalFileUrl(boolean useOriginalFileUrl)
     {
         this._useOriginalFileUrl = useOriginalFileUrl;
+    }
+
+    public void setStrictValidateExistingSampleSet(boolean strictValidateExistingSampleSet)
+    {
+        _strictValidateExistingSampleSet = strictValidateExistingSampleSet;
     }
 
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
@@ -440,11 +447,12 @@ public class XarReader extends AbstractXarImporter
 
         if (existingMaterialSource != null)
         {
+            if (_strictValidateExistingSampleSet)
+            {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
                 IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
                 IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
                 IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
-
                 if (!diffs.isEmpty())
                 {
                     getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
@@ -454,6 +462,7 @@ public class XarReader extends AbstractXarImporter
                     }
                     throw new XarFormatException("SampleSet with LSID '" + lsid + "' does not match existing SampleSet");
                 }
+            }
 
             return existingMaterialSource;
         }
