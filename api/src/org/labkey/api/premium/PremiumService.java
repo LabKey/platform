@@ -18,6 +18,8 @@ public interface PremiumService
 
     boolean isFileUploadDisabled();
 
+    boolean isFileWatcherSupported();
+
     static void setInstance(PremiumService instance)
     {
         ServiceRegistry.get().registerService(PremiumService.class, instance);
@@ -33,6 +35,12 @@ public interface PremiumService
 
         @Override
         public boolean isFileUploadDisabled()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFileWatcherSupported()
         {
             return false;
         }
