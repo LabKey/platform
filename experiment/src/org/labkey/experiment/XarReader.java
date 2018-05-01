@@ -1233,7 +1233,8 @@ public class XarReader extends AbstractXarImporter
             if (null != path)
             {
                 String originalUrl = findOriginalUrlProperty(xbProps);
-                getRootContext().addData(new ExpDataImpl(data), originalUrl);
+                if (null != originalUrl)
+                    getRootContext().addData(new ExpDataImpl(data), originalUrl);
             }
 
             loadExtendedDataType(xbData, dataLSID, experimentRun);
