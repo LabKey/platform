@@ -505,12 +505,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean isSetUseContainerRelativeURL()
-    {
-        return null != lookupStringValue(USE_CONTAINER_RELATIVE_URL, null);
-    }
-
-    @Override
     public boolean isAllowApiKeys()
     {
         return lookupBooleanValue(ALLOW_API_KEYS, false);

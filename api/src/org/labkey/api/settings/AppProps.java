@@ -201,12 +201,6 @@ public interface AppProps
      */
     boolean getUseContainerRelativeURL();
 
-    /**
-     * @return if server has been explicitly configured to use container-style URLs, or false if it is
-     * falling back to the default setting
-     */
-    boolean isSetUseContainerRelativeURL();
-
     boolean isAllowApiKeys();
 
     int getApiKeyExpirationSeconds();
