@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -185,7 +186,10 @@
     <input type="hidden" name="sourceTemplateFolderId"/>
 </labkey:form>
 </labkey:panel>
-
+<%
+    if (PremiumService.get().isFileWatcherSupported())
+    {
+%>
 <labkey:panel title="File Watchers">
     <table>
         <tr>
@@ -232,6 +236,9 @@
         </tr>
     </table>
 </labkey:panel>
+<%
+    }
+%>
 <script type="text/javascript">
     Ext4.onReady(function()  {
         // note: client dependencies declared in FolderManagementTabStrip
