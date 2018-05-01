@@ -20,12 +20,14 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.ValidationError;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,6 +42,12 @@ public class TaskRefTransformStep extends TransformTask
     {
         super(factory, job, meta, context);
         _meta = meta;
+    }
+
+    @Override
+    public List<ValidationError> preFlightCheck()
+    {
+        return _meta.getTaskInstance().preFlightCheck();
     }
 
     @Override

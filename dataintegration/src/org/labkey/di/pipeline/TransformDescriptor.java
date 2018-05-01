@@ -55,6 +55,9 @@ import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -307,7 +310,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         Exception x = null;
         String errorVerbose = null;
-
+        boolean hasWork = false;
         try
         {
             LOG.debug("Running" + this.getClass().getSimpleName() + " " + this.toString());
@@ -317,13 +320,19 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 return false;
             // Call this just to create the TransformConfiguration record if it doesn't exist
             TransformManager.get().getTransformConfiguration(c, this);
-            validate(context);
+            validateWrappingScopes(context);
+            List<ValidationError> validationErrors = new ArrayList<>();
             for (StepMeta stepMeta : _stepMetaDatas)
             {
                 TransformTask step = stepMeta.getProvider().createStepInstance(null, null, stepMeta, (TransformJobContext)context);
-                if (step.hasWork())
-                    return true;
+                validationErrors.addAll(step.preFlightCheck());
+                if (!hasWork && validationErrors.isEmpty())
+                    hasWork = step.hasWork();
             }
+            if (!validationErrors.isEmpty())
+                throw new ValidationException(validationErrors);
+            else if (hasWork)
+                return true;
         }
         catch (Exception ex)
         {
@@ -356,7 +365,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return false;
     }
 
-    private void validate(ScheduledPipelineJobContext context)
+    private void validateWrappingScopes(ScheduledPipelineJobContext context)
     {
         if (null != getTransactSourceSchema())
         {
@@ -392,6 +401,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         catch (SQLException ex)
         {
             throw new RuntimeSQLException(ex);
+        }
+        catch (ValidationException ex)
+        {
+            throw new RuntimeValidationException(ex);
         }
         catch (Exception ex)
         {

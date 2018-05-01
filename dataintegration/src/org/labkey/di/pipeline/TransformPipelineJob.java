@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedAction;
@@ -96,6 +97,14 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         setBaseName(StringUtils.substringBefore(etlLogFile.getName(), "." + LOG_EXTENSION));
         initVariableMap(info);
         _parameters.putAll(etlDescriptor.getPipelineParameters());
+    }
+
+    @NotNull
+    public static TransformPipelineJob getTransformPipelineJob(@NotNull PipelineJob job) throws PipelineJobException
+    {
+        if (!(job instanceof TransformPipelineJob)) // shouldn't ever happen, but otherwise we can't get at transform properties
+            throw new PipelineJobException("PipelineJob instance is not a TransformPipelineJob");
+        return (TransformPipelineJob) job;
     }
 
     private void initVariableMap(TransformJobContext info)

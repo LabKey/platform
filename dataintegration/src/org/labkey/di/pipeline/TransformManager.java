@@ -167,9 +167,10 @@ public class TransformManager implements DataIntegrationService
         {
             return parseETLThrow(resource, module);
         }
-        catch (XmlValidationException|XmlException|IOException e)
+        catch (XmlValidationException|XmlException|IOException|IllegalArgumentException e)
         {
-            LOG.warn("ETL Config: Unable to parse " + resource + " : " + e.getMessage());
+            String message = e instanceof XmlValidationException ? ((XmlValidationException)e).getDetails() : e.getMessage();
+            LOG.warn("ETL Config: Unable to parse " + resource + " : " + message);
             LOG.debug(e);
         }
         return null;

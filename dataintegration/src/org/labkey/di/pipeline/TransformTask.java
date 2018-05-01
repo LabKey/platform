@@ -33,10 +33,10 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.PipelineJob;
@@ -51,6 +51,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
@@ -690,5 +691,17 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         if (null == scope || !useTransaction || scope.isTransactionActive())
             return null;
         else return scope.ensureTransaction();
+    }
+
+    /**
+     * Called during the check for work before queuing a job. Each step in an ETL can optionally perform
+     * any final validation check necessary to allow queuing the job. Although much validation happens when the xml is
+     * parsed, some checks are dependent on parsing order, a cache being fully populated, or some other necessary app
+     * configuration.
+     * TODO: There are other existing checks in steps' hasWork() and doWork() method chains. Convert those to use this mechanism.
+     */
+    public List<ValidationError> preFlightCheck()
+    {
+        return Collections.emptyList();
     }
 }

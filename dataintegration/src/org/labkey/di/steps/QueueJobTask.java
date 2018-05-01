@@ -18,15 +18,19 @@ package org.labkey.di.steps;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.di.TaskRefTaskImpl;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.di.TaskRefTaskImpl;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformPipelineJob;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,7 +41,7 @@ import java.util.Map;
  */
 public class QueueJobTask extends TaskRefTaskImpl
 {
-    private String _transformId;
+    private String _transformId; // Not a "required" setting. Null means etl will requeue itself
 
     @Override
     public RecordedActionSet run(@NotNull PipelineJob job) throws PipelineJobException
@@ -94,9 +98,27 @@ public class QueueJobTask extends TaskRefTaskImpl
     {
         super.setSettings(xmlSettings);
         _transformId = settings.get("transformId");
+    }
 
-        // Removed because this check introduces re-entrancy during cache loading. TODO: Do this validation elsewhere...
-//        if (null != _transformId && null == TransformManager.get().getDescriptor(_transformId))
-//            throw new XmlException(QueueJobTask.class.getName() + " can't find ETL to be queued: " + _transformId);
+    @Override
+    public List<ValidationError> preFlightCheck()
+    {
+        // Validate existence of the etl to be queued
+        List<ValidationError> errors = new ArrayList<>();
+        if (null != _transformId) // _transformId null if etl is requeueing itself
+        {
+            try
+            {
+                if (null == TransformManager.get().getDescriptor(_transformId))
+                {
+                    errors.add(new SimpleValidationError(QueueJobTask.class.getSimpleName() + ": Can't find ETL to be queued: " + _transformId));
+                }
+            }
+            catch (IllegalStateException ex) // ModuleResourceCache throws on attempt to get a malformed cache key
+            {
+                errors.add(new SimpleValidationError(QueueJobTask.class.getSimpleName() + ": " + ex.getMessage()));
+            }
+        }
+        return errors;
     }
 }
