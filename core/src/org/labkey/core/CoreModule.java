@@ -586,16 +586,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             bootstrap();
         }
-        else
-        {
-            WriteableAppProps app = AppProps.getWriteableInstance();
-
-            if (!app.isSetUseContainerRelativeURL())
-            {
-                app.setUseContainerRelativeURL(false);
-                app.save(moduleContext.getUpgradeUser());
-            }
-        }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
         WriteableAppProps.incrementLookAndFeelRevisionAndSave();
