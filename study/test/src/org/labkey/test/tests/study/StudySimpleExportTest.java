@@ -748,8 +748,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         for (Map.Entry<String, List<Map>> entry : tableData.entrySet())
         {
             beginAt("/query/" + getProjectName() + "/executeQuery.view?schemaName=study&query.queryName=" + entry.getKey());
-            checkCheckbox(Locator.checkboxByName(".select"));
             DataRegionTable dt = new DataRegionTable("query", getDriver());
+            dt.checkCheckbox(0);
             dt.clickHeaderButton("Delete");
             assertAlert("Are you sure you want to delete the selected row?");
         }
