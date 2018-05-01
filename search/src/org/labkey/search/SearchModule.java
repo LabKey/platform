@@ -27,7 +27,6 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -60,6 +59,9 @@ import java.util.Set;
 
 public class SearchModule extends DefaultModule
 {
+    // package logger for use with logger-manage.view
+    static final Logger _logPackage = Logger.getLogger(SearchModule.class.getPackage().getName());
+
     public String getName()
     {
         return "Search";
