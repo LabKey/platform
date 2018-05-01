@@ -33,7 +33,7 @@
     int emailPrefs = bean.getSavedPrefs();
     String message = bean.getMessage();
     int issueId = bean.getIssueId();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, bean.getIssueDefName() != null ? bean.getIssueDefName() : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
     String indefArticle = names.getIndefiniteSingularArticle();
 
     if (message != null)
