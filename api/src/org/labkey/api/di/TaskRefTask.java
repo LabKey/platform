@@ -20,17 +20,17 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
  * User: tgaluhn
  * Date: 7/22/2014
- */
-
-/**
+ *
  * A more generic interface for ETL transform task types that aren't going to be fully defined in the etl.xsd
  * The fully qualified classname of an implementor of this interface can be specified in an ETL transform taskref
  * element, with configuration in settings/setting child elements. The taskref element is compatible with the
@@ -73,4 +73,13 @@ public interface TaskRefTask
      *
      */
     void setContainerUser(ContainerUser containerUser);
+
+    /**
+     * A validation step called at job time, before queuing the job
+     * @return Any errors which should prevent queuing the job
+     */
+    default List<ValidationError> preFlightCheck()
+    {
+        return Collections.emptyList();
+    }
 }
