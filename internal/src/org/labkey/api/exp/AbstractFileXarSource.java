@@ -39,6 +39,11 @@ public abstract class AbstractFileXarSource extends XarSource
 {
     protected File _xmlFile;
 
+    protected File getXmlFile()
+    {
+        return _xmlFile;
+    }
+
     public AbstractFileXarSource(PipelineJob job)
     {
         super(job);
@@ -55,8 +60,8 @@ public abstract class AbstractFileXarSource extends XarSource
 
         try
         {
-            NetworkDrive.exists(_xmlFile);
-            fIn = new FileInputStream(_xmlFile);
+            NetworkDrive.exists(getXmlFile());
+            fIn = new FileInputStream(getXmlFile());
             return ExperimentArchiveDocument.Factory.parse(fIn, XmlBeansUtil.getDefaultParseOptions());
         }
         finally
@@ -76,7 +81,7 @@ public abstract class AbstractFileXarSource extends XarSource
 
     public File getRoot()
     {
-        return _xmlFile.getParentFile();
+        return getXmlFile().getParentFile();
     }
 
     public Path getRootPath()
@@ -128,6 +133,5 @@ public abstract class AbstractFileXarSource extends XarSource
             xarShortName = xarShortName.substring(0, index);
         }
         return new File(xarDirectory, xarShortName + LOG_FILE_NAME_SUFFIX);
-
     }
 }

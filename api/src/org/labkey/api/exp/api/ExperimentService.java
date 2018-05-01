@@ -739,6 +739,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     {
         boolean _replaceExistingRuns = false;
         boolean _useOriginalDataFileUrl = false;
+        boolean _strictValidateExistingSampleSet = true;
+
 
         // e.g. delete then re-import
 
@@ -763,6 +765,17 @@ public interface ExperimentService extends ExperimentRunTypeSource
         public XarImportOptions setUseOriginalDataFileUrl(boolean useOriginalDataFileUrl)
         {
             _useOriginalDataFileUrl = useOriginalDataFileUrl;
+            return this;
+        }
+
+        public boolean isStrictValidateExistingSampleSet()
+        {
+            return _strictValidateExistingSampleSet;
+        }
+
+        public XarImportOptions setStrictValidateExistingSampleSet(boolean strictValidateExistingSampleSet)
+        {
+            _strictValidateExistingSampleSet = strictValidateExistingSampleSet;
             return this;
         }
     }
