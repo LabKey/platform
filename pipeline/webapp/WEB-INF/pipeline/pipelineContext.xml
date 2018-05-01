@@ -65,7 +65,7 @@
                             </bean>
                         </list>
                     </property>
-                    <property name="helpText" value="The selected Pipeline task can only be initiated on a folder.xml file. It will not accept compressed (.zip) folder archives." />
+                    <property name="helpText" value="The selected Pipeline task should only be initiated on a folder.xml file underneath a pipeline root. It will not accept compressed (.zip) folder archives." />
                 </bean>
             </list>
         </property>

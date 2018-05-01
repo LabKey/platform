@@ -157,7 +157,7 @@
                             </bean>
                         </list>
                     </property>
-                    <property name="helpText" value="The selected Pipeline task can only be initiated on a studyload.txt file, and will only analyze exploded study archives. It will not accept compressed (.zip) study archives." />
+                    <property name="helpText" value="The selected Pipeline task should only be initiated on a studyload.txt file underneath a pipeline root, and will only analyze exploded study archives. It will not accept compressed (.zip) study archives." />
                 </bean>
             </list>
         </property>
