@@ -85,7 +85,8 @@ public enum LuceneAnalyzer
                 LuceneSearchServiceImpl.FIELD_NAME.searchCategories.name(), identifierAnalyzer,
                 LuceneSearchServiceImpl.FIELD_NAME.identifiersLo.name(), identifierAnalyzer,
                 LuceneSearchServiceImpl.FIELD_NAME.identifiersMed.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersHi.name(), identifierAnalyzer
+                LuceneSearchServiceImpl.FIELD_NAME.identifiersHi.name(), identifierAnalyzer,
+                LuceneSearchServiceImpl.FIELD_NAME.uniqueId.name(), identifierAnalyzer
             ));
         }};
 
