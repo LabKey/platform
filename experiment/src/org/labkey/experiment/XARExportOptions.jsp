@@ -50,14 +50,11 @@ ExperimentController.ExportBean bean = me.getModelBean();
         </td>
     </tr>
     <tr>
-        <td>Filename:</td>
+        <td>File name:</td>
         <td><input type="text" size="45" name="xarFileName" value="<%= h(bean.getFileName()) %>" /></td>
     </tr>
-    <tr>
-        <td/>
-        <td><%= button("Export").submit(true).onClick("return verifySelected(this.form, '" + bean.getPostURL() + "', 'POST', 'runs');") %></td>
-    </tr>
 </table>
+<%= button("Export").submit(true).onClick("return verifySelected(this.form, '" + bean.getPostURL() + "', 'POST', 'runs');") %>
 
 <% if (bean.getExpRowId() != null)
 { %>

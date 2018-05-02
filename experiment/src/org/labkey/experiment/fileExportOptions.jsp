@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
@@ -28,54 +27,69 @@ String guid = GUID.makeGUID();
 %>
 
 <script type="text/javascript">
-    function setFileDownloadEnabled(enabled, guid)
+LABKEY.FileExportOptions = {};
+(function($) {
+    LABKEY.FileExportOptions.setFileDownloadEnabled = function(enabled, guid)
     {
-        var elements = Ext.DomQuery.select("input[class=file-download-role-checkbox-" + guid + "]");
-        for (var i = 0; i < elements.length; i++)
-        {
-            elements[i].disabled = !enabled;
-        }
-    }
+        var elements = $('input.file-download-role-checkbox-' + guid);
+        elements.each(function(i, el) {
+            el.disabled = !enabled;
+        });
+    };
 
-    function validateFileExportOptions(guid, form, submitURL)
+    LABKEY.FileExportOptions.validateFileExportOptions = function (guid, form, submitURL)
     {
         if (document.getElementById(guid).checked)
         {
-            var elements = Ext.DomQuery.select("input[class=file-download-role-checkbox-" + guid + "]");
             var roleCount = 0;
-            for (var i = 0; i < elements.length; i++)
-            {
-                if (elements[i].checked)
-                {
+            var elements = $('input.file-download-role-checkbox-' + guid);
+            elements.each(function(i, el) {
+                if (el.checked) {
                     roleCount++;
                 }
-            }
-            if (roleCount == 0)
-            {
-                alert("Please select at least one file usage type.");
+            });
+            if (roleCount === 0) {
+                LABKEY.Utils.alert("Error", "Please select at least one file usage type.");
                 return false;
             }
         }
         return verifySelected(form, submitURL, 'POST', 'runs');
-    }
+    };
+})(jQuery);
 </script>
 
 <table cellspacing="4" class="lk-fields-table" style="overflow-y: visible;">
     <tr>
-        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked onclick="setFileDownloadEnabled(document.getElementById('<%=h(guid) %>').checked, '<%= h(guid) %>');" /></td>
+        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%=h(guid) %>').checked, '<%= h(guid) %>');" /></td>
         <td valign="middle">Include all files</td>
     </tr>
     <% if (!bean.getRoles().isEmpty()) { %>
         <tr>
-            <td valign="middle"><input type="radio" id="<%=h(guid) %>"name="fileExportType" value="role" onclick="setFileDownloadEnabled(document.getElementById('<%= h(guid) %>').checked, '<%= h(guid) %>');" /></td>
+            <td valign="middle"><input type="radio" id="<%=h(guid) %>"name="fileExportType" value="role" onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%= h(guid) %>').checked, '<%= h(guid) %>');" /></td>
             <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>
             <td></td>
             <td>
-                <% for (String role : bean.getRoles()) { %>
-                    <div style="white-space:nowrap; width: 15em; float: left;"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= h(role) %>" value="<%= h(role) %>" /><span style="padding-left: .4em; padding-right: 1.5em;"><%= h(role) %></span></div>
-                <% } %>
+                <table>
+                    <tr>
+                    <%
+                        int index = 0;
+                        for (String role : bean.getRoles())
+                        {
+                            if (index != 0 && index % 3 == 0)
+                                %></tr><tr><%
+                    %>
+                            <td>
+                                <input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= h(role) %>" value="<%= h(role) %>" />
+                                <span style="padding-left: .4em; padding-right: 1.5em;"><%= h(role) %></span>
+                            </td>
+                    <%
+                            index++;
+                        }
+                    %>
+                    </tr>
+                </table>
             </td>
         </tr>
     <% } %>
@@ -84,6 +98,6 @@ String guid = GUID.makeGUID();
     </tr>
 
     <tr>
-        <td colspan="2"><%= button("Export As ZIP").submit(true).onClick("return validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
+        <td colspan="2"><%= button("Export").submit(true).onClick("return LABKEY.FileExportOptions.validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
     </tr>
 </table>
