@@ -118,17 +118,17 @@
     </h3>
 
     <p>This page enables you to fine-tune permissions for this view.</p>
-    <p>You can choose the default behavior as described.  Alternately, you can set custom permissions for each group. As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
+    <p>Only users with at least read permission to this folder are able to access this report/view. Use the custom option below to further control access by group or individual.</p>
 
     <labkey:form id="permissionsForm" action="" method="POST">
     <table class="lk-fields-table">
-        <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.defaultPermission)%> onclick="updateDisplay()"></td><td><b>Default</b> :
-          this dynamic view will be readable only by users who have permission to see the source datasets</td></tr>
-        <tr><td colspan=2><input id=useCustom name=permissionType type=radio value="<%=SecurityController.PermissionType.customPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.customPermission)%> onclick="updateDisplay()"></td><td><b>Custom</b> : set permissions per group / user
+        <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.defaultPermission)%> onclick="updateDisplay()"></td><td><b>Public</b> :
+          this dynamic view will be accessible by any user who has permission to see the source data</td></tr>
+        <tr><td colspan=2><input id=useCustom name=permissionType type=radio value="<%=SecurityController.PermissionType.customPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.customPermission)%> onclick="updateDisplay()"></td><td><b>Custom</b> : set access per group / user
     <%
         if (isOwner(bean )) {
     %>
-        <tr><td colspan=2><input id=usePrivate name=permissionType type=radio value="<%=SecurityController.PermissionType.privatePermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.privatePermission)%> onclick="updateDisplay()"></td><td><b>Private</b> : this view is only visible to you
+        <tr><td colspan=2><input id=usePrivate name=permissionType type=radio value="<%=SecurityController.PermissionType.privatePermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.privatePermission)%> onclick="updateDisplay()"></td><td><b>Private</b> : this view is only accessible to you
     <%
         }
     %>
