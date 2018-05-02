@@ -157,7 +157,9 @@
         <td colspan=2>
             <br/>
             <%= button("Save").submit(true) %>
-            <%= button("Cancel").href(bean.returnURL) %>
+            <% if (null != bean.returnURL) { %>
+                <%= button("Cancel").href(bean.returnURL) %>
+            <% } %>
         </td>
     </tr>
 </table>
