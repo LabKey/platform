@@ -1374,7 +1374,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     {
         return Ext4.create('Ext.Component', {
             cls: 'export-icon',
-            style: 'right: ' + ((indexFromLeft*30) + 20) + 'px;',
+            style: 'left: ' + ((indexFromLeft*30) + 20) + 'px;',
             html: '<i class="fa ' + iconCls + '"></i>',
             listeners: {
                 scope: this,
