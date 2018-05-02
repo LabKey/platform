@@ -143,7 +143,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                 Security.util.Policy.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy,
                     errorCallback: function(errorInfo, response){
                         if (response.status != 401)
-                            Ext4.Msg.alert("Error", "Error getting parent policy: " + errorInfo.exception);
+                            LABKEY.Utils.alert("Error", "Error getting parent policy: " + errorInfo.exception);
                     }, scope:this});
         }
 
@@ -700,12 +700,13 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     saveSuccess : function()
     {
-        if (this.getEl())
-        {
+        if (this.getEl()) {
             this.getEl().unmask();
         }
+
         // reload policy
         Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+
         // feedback
         var mb = Ext4.MessageBox.show({
             title  : 'Save',
@@ -718,21 +719,19 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     saveFail : function(json, response, options)
     {
-        var optimisticFail = false;
-        if (-1 != response.responseText.indexOf('OptimisticConflictException'))
-            optimisticFail = true;
-        if (-1 != json.exception.indexOf('has been altered by someone'))
-            optimisticFail = true;
-
-        if (optimisticFail)
-        {
-            // UNDONE: prompt for overwrite
-            Ext4.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
-            Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
-            return;
+        if (this.getEl()) {
+            this.getEl().unmask();
         }
 
-        Ext4.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
+        var msg = json.exception || response.statusText || 'Unknown error, save failed.';
+
+        var optimisticFail = response.responseText.indexOf('OptimisticConflictException') > -1 || json.exception.indexOf('has been altered by someone') > -1;
+        if (optimisticFail) {
+            msg += ' The security policy will be reloaded with the updated information. Please reapply your changes and try saving again.';
+            Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+        }
+
+        LABKEY.Utils.alert("Error", msg);
         this.enable();
     }
 });

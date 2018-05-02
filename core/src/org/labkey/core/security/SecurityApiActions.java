@@ -32,6 +32,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -767,13 +768,20 @@ public class SecurityApiActions
                 return new ApiSimpleResponse(props);
             }
 
-            //save it
-            SecurityPolicyManager.savePolicy(policy);
+            try
+            {
+                //save it
+                SecurityPolicyManager.savePolicy(policy);
 
-            //audit log
-            writeToAuditLog(resource, oldPolicy, policy);
+                //audit log
+                writeToAuditLog(resource, oldPolicy, policy);
+            }
+            catch(OptimisticConflictException e)
+            {
+                errors.reject(null, e.getMessage());
+            }
 
-            return new ApiSimpleResponse("success", true);
+            return new ApiSimpleResponse("success", !errors.hasErrors());
         }
 
         protected void writeToAuditLog(SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
