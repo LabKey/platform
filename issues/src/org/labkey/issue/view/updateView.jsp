@@ -42,6 +42,7 @@
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -182,7 +183,7 @@
 
     function onSubmit(){
         (function($){
-            $("input[name='dirty']").val(LABKEY.isDirty());
+            $("input[name='dirty']").val(isDirty());
             LABKEY.setSubmit(true);
         })(jQuery);
     }
@@ -197,11 +198,11 @@
         <%
             for (DomainProperty prop : column1Props)
             {%>
-        column1.push(<%=q(prop.getName().toLowerCase())%>);<%
+        column1.push(<%=q(ColumnInfo.legalNameFromName(prop.getName().toLowerCase()))%>);<%
             }
             for (DomainProperty prop : column2Props)
             {%>
-        column2.push(<%=q(prop.getName().toLowerCase())%>);<%
+        column2.push(<%=q(ColumnInfo.legalNameFromName(prop.getName().toLowerCase()))%>);<%
             }
         %>
 
