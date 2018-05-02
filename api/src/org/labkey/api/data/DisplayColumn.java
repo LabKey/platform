@@ -41,7 +41,6 @@ import org.labkey.api.view.template.ClientDependency;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
@@ -933,21 +932,19 @@ public abstract class DisplayColumn extends RenderColumn
     public final void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<td");
-        if (_displayClass != null)
+        String displayClass = getDisplayClass(ctx);
+        if (!displayClass.isEmpty())
         {
-            out.write(" class=' " + _displayClass + "'");
+            out.write(" class='" + displayClass + "'");
         }
         if (_textAlign != null)
         {
-            out.write(" align=");
-            out.write(_textAlign);
+            out.write(" align=" + _textAlign);
         }
         String style = getCssStyle(ctx);
         if (!style.isEmpty())
         {
-            out.write(" style='");
-            out.write(style);
-            out.write("'");
+            out.write(" style='" + style + "'");
         }
         String hoverContent = getHoverContent(ctx);
         if (hoverContent != null)
@@ -974,6 +971,12 @@ public abstract class DisplayColumn extends RenderColumn
     protected String getHoverTitle(RenderContext ctx)
     {
         return null;
+    }
+
+    @NotNull /** Always return a non-null string to make it easy to concatenate values */
+    public String getDisplayClass(RenderContext ctx)
+    {
+        return _displayClass != null ? _displayClass : "";
     }
 
     @NotNull /** Always return a non-null string to make it easy to concatenate values */
@@ -1251,7 +1254,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
         else if (!_displayClass.contains(className))
         {
-            _displayClass = _displayClass + " " + className;
+            _displayClass += " " + className;
         }
     }
 

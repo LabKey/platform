@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -57,29 +56,30 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override
+    public @NotNull String getDisplayClass(RenderContext ctx)
+    {
+        String displayClass = super.getDisplayClass(ctx);
+        if (getMvIndicator(ctx) != null)
+            displayClass += " labkey-mv-indicator";
+        return displayClass;
+    }
+
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String mvIndicator = getMvIndicator(ctx);
         if (mvIndicator != null)
         {
-            out.write("<font class=\"labkey-mv\">");
-            out.write(h(mvIndicator));
-            out.write("</font>");
-
-            String imgHtml = "<img align=\"top\" src=\"" +
-                    HttpView.currentContext().getContextPath() +
-                    "/_images/mv_indicator.gif\" class=\"labkey-mv-indicator\">";
-
             String popupText = PageFlowUtil.filter(MvUtil.getMvLabel(mvIndicator, ctx.getContainer()));
 
             // If we have a raw value, include it in the popup
             String value = super.getFormattedValue(ctx);
             if (value != null && !"".equals(value))
-            {
                 popupText += ("<p>The value as originally entered was: '" + value + "'.");
-            }
 
-            out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, imgHtml, 0));
+            out.write("<font class=\"labkey-mv\">");
+            out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, h(mvIndicator)));
+            out.write("</font>");
         }
         else
         {
