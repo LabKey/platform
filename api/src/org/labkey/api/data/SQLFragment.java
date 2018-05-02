@@ -58,10 +58,15 @@ public class SQLFragment implements Appendable, CharSequence
 
     private class CTE implements Cloneable
     {
-        CTE(@NotNull String name, SQLFragment sqlf, boolean recursive)
+        CTE(@NotNull String name)
         {
             this.preferredName = name;
             tokens.add("/*$*/" + GUID.makeGUID() + ":" + name + "/*$*/");
+        }
+
+        CTE(@NotNull String name, SQLFragment sqlf, boolean recursive)
+        {
+            this(name);
             this.sqlf = sqlf;
             this.recursive = recursive;
         }
@@ -88,9 +93,9 @@ public class SQLFragment implements Appendable, CharSequence
         }
 
         final String preferredName;
-        final boolean recursive;        // NOTE this is dialect dependant (getSql() does not take a dialect)
+        boolean recursive = false;        // NOTE this is dialect dependant (getSql() does not take a dialect)
         final Set<String> tokens = new TreeSet<>();
-        SQLFragment sqlf;
+        SQLFragment sqlf = null;
     }
 
     public SQLFragment()
@@ -536,10 +541,41 @@ public class SQLFragment implements Appendable, CharSequence
         if (null != prev)
             return prev.token();
         CTE cte = new CTE(proposedName, sqlf, recursive);
-        commonTableExpressionsMap.put(key,cte);
+        commonTableExpressionsMap.put(key, cte);
         return cte.token();
     }
 
+    public String createCommonTableExpressionToken(Object key, String proposedName)
+    {
+        if (null == commonTableExpressionsMap)
+            commonTableExpressionsMap = new LinkedHashMap<>();
+        CTE prev = commonTableExpressionsMap.get(key);
+        if (null != prev)
+            throw new IllegalStateException("Cannot create CTE token from already used key.");
+        CTE cte = new CTE(proposedName);
+        commonTableExpressionsMap.put(key, cte);
+        return cte.token();
+    }
+
+    public void setCommonTableExpressionSql(Object key, SQLFragment sqlf, boolean recursive)
+    {
+        if (null == commonTableExpressionsMap)
+            commonTableExpressionsMap = new LinkedHashMap<>();
+        CTE cte = commonTableExpressionsMap.get(key);
+        if (null == cte)
+            throw new IllegalStateException("CTE not found.");
+        cte.sqlf = sqlf;
+        cte.recursive = recursive;
+    }
+
+    @Nullable
+    public String getCommonTableExpressionToken(Object key)
+    {
+        if (null == commonTableExpressionsMap)
+            commonTableExpressionsMap = new LinkedHashMap<>();
+        CTE cte = commonTableExpressionsMap.get(key);
+        return null != cte ? cte.token() : null;
+    }
 
     private void mergeCommonTableExpressions(SQLFragment sqlFrom)
     {
