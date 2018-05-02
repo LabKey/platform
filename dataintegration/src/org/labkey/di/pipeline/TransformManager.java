@@ -1133,7 +1133,7 @@ public class TransformManager implements DataIntegrationService
             Module etlTest = ModuleLoader.getInstance().getModule("ETLTest");
 
             if (null != etlTest)
-                assertEquals("ETL descriptors from the ETLTest module", 59, DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
+                assertEquals("ETL descriptors from the ETLTest module", 60, DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
         }
     }
 
