@@ -81,9 +81,11 @@ public class QueryWith
 
     public SQLFragment getQueryWithSql()
     {
+        boolean dialectNeedsRecursive = _query.getSchema().getDbSchema().getSqlDialect().isPostgreSQL();
         for (Map.Entry<String, QueryRelation> entry : getWithRelations().entrySet())
         {
-            _withSql.setCommonTableExpressionSql(makeCteKey(entry.getKey()), entry.getValue().getSql(), _query.hasRecursiveWith());
+            _withSql.setCommonTableExpressionSql(makeCteKey(entry.getKey()), entry.getValue().getSql(),
+                    (dialectNeedsRecursive && _query.hasRecursiveWith()));
         }
         return _withSql;
     }
