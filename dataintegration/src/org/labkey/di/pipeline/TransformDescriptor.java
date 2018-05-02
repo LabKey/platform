@@ -644,6 +644,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         private static final String BAD_TARGET = "badtarget.xml";
         private static final String BAD_PROCEDURE = "badprocedure.xml";
         private static final String TASKREF_BAD_SETTING = "taskrefbadsetting.xml";
+        private static final String BAD_QUERY_PARAMETER = "badQueryParameterType.xml";
         private static final int TRY_QUANTA = 100; // ms
         private static final int NUM_TRIES = 100; // retry for a maximum of 10 seconds
         private static final Module module = ModuleLoader.getInstance().getModule("DataIntegration");
@@ -715,16 +716,17 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             d = checkValidSyntax(getFile(NO_CLASS));
             assertEquals(1, d._stepMetaDatas.size());
 
-            checkInvalidSyntax(getFile(NO_ID), TransformManager.ID_REQUIRED);
-            checkInvalidSyntax(getFile(DUP_ID), TransformManager.DUPLICATE_ID);
-            checkInvalidSyntax(getFile(UNKNOWN_CLASS), TransformManager.INVALID_TYPE);
-            checkInvalidSyntax(getFile(INVALID_CLASS), TransformManager.INVALID_TYPE);
-            checkInvalidSyntax(getFile(BAD_SOURCE_OPT), TransformManager.INVALID_SOURCE_OPTION);
-            checkInvalidSyntax(getFile(BAD_TARGET_OPT), TransformManager.INVALID_TARGET_OPTION);
-            checkInvalidSyntax(getFile(BAD_SOURCE), TransformManager.INVALID_SOURCE);
-            checkInvalidSyntax(getFile(BAD_TARGET), TransformManager.INVALID_DESTINATION);
-            checkInvalidSyntax(getFile(BAD_PROCEDURE), TransformManager.INVALID_PROCEDURE);
-            checkInvalidSyntax(getFile(TASKREF_BAD_SETTING), TaskRefTask.TASKREF_MISSING_REQUIRED_SETTING + "\nsetting1\n");
+            checkInvalidSyntax(getFile(NO_ID), TransformManager.ID_REQUIRED, true);
+            checkInvalidSyntax(getFile(DUP_ID), TransformManager.DUPLICATE_ID, true);
+            checkInvalidSyntax(getFile(UNKNOWN_CLASS), TransformManager.INVALID_TYPE, true);
+            checkInvalidSyntax(getFile(INVALID_CLASS), TransformManager.INVALID_TYPE, true);
+            checkInvalidSyntax(getFile(BAD_SOURCE_OPT), TransformManager.INVALID_SOURCE_OPTION, true);
+            checkInvalidSyntax(getFile(BAD_TARGET_OPT), TransformManager.INVALID_TARGET_OPTION, true);
+            checkInvalidSyntax(getFile(BAD_SOURCE), TransformManager.INVALID_SOURCE, true);
+            checkInvalidSyntax(getFile(BAD_TARGET), TransformManager.INVALID_DESTINATION, true);
+            checkInvalidSyntax(getFile(BAD_PROCEDURE), TransformManager.INVALID_PROCEDURE, true);
+            checkInvalidSyntax(getFile(TASKREF_BAD_SETTING), TaskRefTask.TASKREF_MISSING_REQUIRED_SETTING + "\nsetting1\n", true);
+            checkInvalidSyntax(getFile(BAD_QUERY_PARAMETER), "string value 'DATETIME' is not a valid enumeration value", false);
         }
 
         @Test
@@ -1082,7 +1084,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             return TransformManager.get().parseETLThrow(etl, module);
         }
 
-        private void checkInvalidSyntax(File file, String expected) throws IOException
+        private void checkInvalidSyntax(File file, String expected, boolean equals) throws IOException
         {
             EtlResource etl = new EtlResource(file);
             try
@@ -1092,7 +1094,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             }
             catch (XmlValidationException | XmlException x)
             {
-                assertEquals(expected, x.getMessage());
+                if (equals)
+                    assertEquals(expected, x.getMessage());
+                else
+                    assertTrue(expected + " not found in message: '" + x.getMessage() + "'", StringUtils.contains(x.getMessage(), expected));
             }
         }
     }

@@ -275,23 +275,23 @@ public class TransformManager implements DataIntegrationService
         }
     }
 
-    public void populateParameterMap(ParameterType[] params, Map<ParameterDescription, Object> mapToPopulate)
+    public void populateParameterMap(ParameterType[] params, Map<ParameterDescription, Object> mapToPopulate) throws XmlException
     {
-        for (ParameterType xmlp : params)
+        try
         {
-            String name = xmlp.getName();
-            try
+            for (ParameterType xmlp : params)
             {
+                String name = xmlp.getName();
                 JdbcType type = JdbcType.valueOf(xmlp.getType().toString().toUpperCase());
                 String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
                 Object value = type.convert(strValue);
                 ParameterDescription p = new ParameterDescriptionImpl(name, type, null);
                 mapToPopulate.put(p, value);
             }
-            catch (IllegalArgumentException e)
-            {
-                throw new IllegalArgumentException("Unknown JDBC parameter type: '" + xmlp.getType() + "'. Supported types are: " + Arrays.toString(JdbcType.values()), e);
-            }
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new XmlException(e.getMessage() + " Supported types are: " + Arrays.toString(JdbcType.values()), e);
         }
     }
 
