@@ -122,7 +122,7 @@
                                 <% for (String cloudStoreName : storeNames)
                                     if (cloud.isEnabled(cloudStoreName, getContainer()))
                                     { %>
-                                        <option value=<%=h(cloudStoreName)%> <%=selected(cloudStoreName.equalsIgnoreCase(currentCloudRootName))%>>
+                                        <option value="<%=h(cloudStoreName)%>" <%=selected(cloudStoreName.equalsIgnoreCase(currentCloudRootName))%>>
                                             <%=h(cloudStoreName)%>
                                         </option>
                                 <%  } %>

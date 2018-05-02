@@ -1368,7 +1368,6 @@ public class FileContentController extends SpringActionController
                         }
                     }
                     rows.add(row);
-
                 }
             });
             response.put("rows", rows);

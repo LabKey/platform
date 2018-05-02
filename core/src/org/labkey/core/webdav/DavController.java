@@ -149,6 +149,7 @@ import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -723,6 +724,7 @@ public class DavController extends SpringActionController
                     if (_requiresLogin && getUser().isGuest())
                         throw new UnauthorizedException(resolvePath());
 
+//                    _log.info("DoMethod " + method + " " + getResourcePath());    // TODO TEMP logging
                     WebdavStatus ret = doMethod();
                     assert null != ret || getResponse().getStatus() != null;
                     if (null != ret && 200 <= ret.code && ret.code < 300)
@@ -2757,8 +2759,8 @@ public class DavController extends SpringActionController
             json.key("id").value(resource.getPath());
             String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
             json.key("href").value(resource.getLocalHref(getViewContext()));
-            if (resource.getFile() != null)
-                json.key("dataFileUrl").value(FileUtil.uriToString(resource.getFile().toURI()));
+            if (resource.getNioPath() != null)
+                json.key("dataFileUrl").value(FileUtil.pathToString(resource.getNioPath()));
             json.key("text").value(displayName);
             json.key("iconHref").value(resource.getIconHref());
             json.key("iconFontCls").value(resource.getIconFontCls());
@@ -3786,6 +3788,9 @@ public class DavController extends SpringActionController
                 return getResponse().sendError(WebdavStatus.SC_LOCKED);
             }
 
+            Path path1 = getResourcePath();
+//            _log.info("LOCK " + path1.toString()); // TODO: TEMP logging
+
             LockInfo lock = new LockInfo();
 
             // Parsing lock request
@@ -4298,6 +4303,7 @@ public class DavController extends SpringActionController
             }
 
             Path path = getResourcePath();
+//            _log.info("UNLOCK " + path.toString());     // TODO: TEMP logging
 
             String lockTokenHeader = getRequest().getHeader("Lock-Token");
             if (lockTokenHeader == null)
@@ -4871,8 +4877,8 @@ public class DavController extends SpringActionController
                     }
                 }
 
-                File file = null==gz ? resource.getFile() : gz.getFile();
-                if (file != null && WebdavService.get().getPreGzippedExtensions().contains(FileUtil.getExtension(file)))
+                java.nio.file.Path file = null==gz ? resource.getNioPath() : gz.getNioPath();
+                if (file != null && WebdavService.get().getPreGzippedExtensions().contains(FileUtil.getExtension(FileUtil.getFileName(file))))
                 {
                     String accept = getRequest().getHeader("accept-encoding");
                     if (null != accept && accept.contains("gzip"))
@@ -4884,12 +4890,14 @@ public class DavController extends SpringActionController
                 HttpServletRequest request = getRequest();
                 if (null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
-                    request.setAttribute("org.apache.tomcat.sendfile.filename", file.getAbsolutePath());
+                    String absolutePath = FileUtil.getAbsolutePath(getContainer(), file);
+                    long length  = Files.size(file);
+                    request.setAttribute("org.apache.tomcat.sendfile.filename", absolutePath);
                     request.setAttribute("org.apache.tomcat.sendfile.start", new Long(0L));
-                    request.setAttribute("org.apache.tomcat.sendfile.end", new Long(file.length()));
+                    request.setAttribute("org.apache.tomcat.sendfile.end", new Long(length));
                     request.setAttribute("org.apache.tomcat.sendfile.token", this);
-                    getResponse().setContentLength(file.length());
-                    _log.debug("sendfile: " + file.getAbsolutePath());
+                    getResponse().setContentLength(length);
+                    _log.debug("sendfile: " + absolutePath);
                 }
                 else
                 {

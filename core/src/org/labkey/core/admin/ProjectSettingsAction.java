@@ -319,7 +319,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         // Cloud settings
         AdminController.setEnabledCloudStores(getViewContext(), form, errors);
 
-        return true;
+        return !errors.hasErrors();
     }
 
     public ActionURL getSuccessURL(AdminController.ProjectSettingsForm form)

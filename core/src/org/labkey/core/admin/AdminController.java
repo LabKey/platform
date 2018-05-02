@@ -4393,16 +4393,23 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("No valid pipeline root found");
                     }
-                    File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
-                    try
+                    else if (root.isCloudRoot())
                     {
-                        writer.write(container, ctx, new FileSystemFile(exportDir));
+                        errors.reject(ERROR_MSG, "Cannot export as individual files when root is in the cloud");
                     }
-                    catch (Container.ContainerException e)
+                    else
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
+                        try
+                        {
+                            writer.write(container, ctx, new FileSystemFile(exportDir));
+                        }
+                        catch (Container.ContainerException e)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        }
+                        _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
-                    _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
                     break;
                 }
                 case 1:
@@ -4412,8 +4419,8 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("No valid pipeline root found");
                     }
-                    File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
-                    exportDir.mkdir();
+                    Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
+                    Files.createDirectories(exportDir);
                     try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
                     {
                         writer.write(container, ctx, zip);
@@ -5102,7 +5109,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
         {
-            JspView view = getFileRootsView(form, errors);
+            JspView view = getFileRootsView(form, errors, getReshow());
             view.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(getContainer(), getContainer().getParent()));
@@ -5149,7 +5156,7 @@ public class AdminController extends SpringActionController
         @Override
         protected HttpView getTabView(FileRootsForm form, BindException errors)
         {
-            return getFileRootsView(form, errors);
+            return getFileRootsView(form, errors, getReshow());
         }
 
         @Override
@@ -5176,7 +5183,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private JspView getFileRootsView(FileRootsForm form, BindException errors)
+    private JspView getFileRootsView(FileRootsForm form, BindException errors, boolean reshow)
     {
         JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
         String title = "Configure File Root";
@@ -5186,7 +5193,8 @@ public class AdminController extends SpringActionController
         view.setFrame(WebPartView.FrameType.DIV);
         try
         {
-            setFormAndConfirmMessage(getViewContext(), form);
+            if (!reshow)
+                setFormAndConfirmMessage(getViewContext(), form);
         }
         catch (IllegalArgumentException e)
         {
@@ -5206,7 +5214,7 @@ public class AdminController extends SpringActionController
         {
             setFileRootFromForm(getViewContext(), form);
             setEnabledCloudStores(getViewContext(), form, errors);
-            return true;
+            return !errors.hasErrors();
         }
     }
 
@@ -5355,6 +5363,10 @@ public class AdminController extends SpringActionController
                     errors.reject(ERROR_MSG, e.getCause().getMessage());
                 else
                     throw e;
+            }
+            catch (UnauthorizedException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
             }
         }
     }

@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExportFolderForm" %>
 <%@ page import="org.labkey.api.data.PHI" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -41,6 +42,8 @@ ExportFolderForm form = (ExportFolderForm) HttpView.currentModel();
 Study study = StudyService.get() != null ? StudyService.get().getStudy(c) : null;
 String subjectNoun = study != null ? study.getSubjectNounSingular() : null;
 String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : null;
+
+boolean isCloudRoot = FileContentService.get().isCloudRoot(c);
 %>
 
 <style type="text/css">
@@ -67,6 +70,7 @@ Ext4.onReady(function(){
     var fullPhi = <%=PHI.PHI.ordinal()%>;
     var limitedPhi = <%=PHI.Limited.ordinal()%>;
     var notPhi = <%=PHI.NotPHI.ordinal()%>;
+    var isCloudRoot = <%=isCloudRoot%>;
 
     var maxAllowedPhiLevel = <%=form.getExportPhiLevel().ordinal()%>;
     var isIncludePhiChecked = (maxAllowedPhiLevel > notPhi);
@@ -183,7 +187,7 @@ Ext4.onReady(function(){
             hideLabel: true,
             columns: 1,
             items: [
-                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: 0, style:"margin-left: 2px"},
+                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: 0, style:"margin-left: 2px", disabled: isCloudRoot},
                 {boxLabel: "Pipeline root <b>export</b> directory, as zip file", cls: 'export-location', name: "location", inputValue: 1, style:"margin-left: 2px"},
                 {boxLabel: "Browser as zip file", cls: 'export-location', name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
             ]
