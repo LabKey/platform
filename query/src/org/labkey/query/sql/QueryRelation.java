@@ -57,6 +57,7 @@ public abstract class QueryRelation
     protected Query _query;
     protected QuerySchema _schema;
     protected String _alias = null;
+    private QueryWith _queryWith = null;
 
     // used to resolve column in outer scope
     protected QueryRelation _parent;
@@ -228,6 +229,16 @@ public abstract class QueryRelation
     public Set<SchemaKey> getResolvedTables()
     {
         return _query.getResolvedTables();
+    }
+
+    public QueryWith getQueryWith()
+    {
+        return _queryWith;
+    }
+
+    public void setQueryWith(QueryWith queryWith)
+    {
+        _queryWith = queryWith;
     }
 
     /**

@@ -92,8 +92,8 @@ import org.labkey.query.controllers.QueryController;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -149,6 +149,9 @@ public class Query
     private Set<SchemaKey> _resolvedTables = new HashSet<>();
 
     final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
+
+    final private Map<String, QueryRelation> _withTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
+    private boolean _hasRecursiveWith = false;
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -300,27 +303,51 @@ public class Query
 
     public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause)
     {
+        QueryWith queryWith = null;
+        if (root instanceof QWithQuery)
+        {
+            // With statement precedes query
+            queryWith = new QueryWith(query, ((QWithQuery)root).getWith());
+            root = ((QWithQuery) root).getExpr();
+        }
+
+        QueryRelation relation = null;
         if (root instanceof QUnion)
-            return new QueryUnion(query, (QUnion)root);
+        {
+            relation = new QueryUnion(query, (QUnion) root);
+        }
+        else if (root instanceof QQuery)
+        {
 
-        if (!(root instanceof QQuery))
-            return null;
+            QuerySelect select = new QuerySelect(query, (QQuery) root, inFromClause);
+            QueryLookupWrapper wrapper;
 
-        QuerySelect select = new QuerySelect(query, (QQuery)root, inFromClause);
-        QueryLookupWrapper wrapper;
+            if (null == root.getChildOfType(QPivot.class))
+            {
+                relation = new QueryLookupWrapper(query, select, null);
+            }
+            else
+            {
+                QueryPivot pivot = new QueryPivot(query, select, (QQuery) root);
+                pivot.setAlias("_pivot");
+                wrapper = new QueryLookupWrapper(query, pivot, null);
 
-        if (null == root.getChildOfType(QPivot.class))
-            return new QueryLookupWrapper(query, select, null);
-
-        QueryPivot pivot = new QueryPivot(query, select, (QQuery)root);
-        pivot.setAlias("_pivot");
-        wrapper = new QueryLookupWrapper(query, pivot, null);
-
-        if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
-            return wrapper;
-
-        QuerySelect qob = new QuerySelect(wrapper, ((QQuery)root).getOrderBy(), ((QQuery)root).getLimit());
-        return qob;
+                if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
+                {
+                    relation = wrapper;
+                }
+                else
+                {
+                    relation = new QuerySelect(wrapper, ((QQuery) root).getOrderBy(), ((QQuery) root).getLimit());
+                }
+            }
+        }
+        
+        if (null != relation && null != queryWith)
+        {
+            relation.setQueryWith(queryWith);
+        }
+        return relation;
     }
 
 
@@ -502,6 +529,17 @@ public class Query
     {
         QuerySelect select = getQuerySelect();
         return null != select && select.hasSubSelect();
+    }
+
+
+    public boolean hasRecursiveWith()
+    {
+        return _hasRecursiveWith;
+    }
+
+    public void setHasRecursiveWith(boolean recursive)
+    {
+        _hasRecursiveWith = recursive;
     }
 
 
@@ -881,6 +919,22 @@ public class Query
                     parseError(_parseErrors, "Parameter is declared with different types: " + p.getName(), to);
             }
         }
+    }
+
+    public void putWithTable(String legalName, QueryRelation relation)
+    {
+        _withTables.put(legalName, relation);
+    }
+
+    @Nullable
+    public QueryRelation lookupWithTable(String legalName)
+    {
+        return _withTables.get(legalName);
+    }
+
+    public void removeWithTable(String legalName)
+    {
+        _withTables.remove(legalName);
     }
 
 
@@ -1443,7 +1497,14 @@ public class Query
         new SqlTest("SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
 
         // Issue 18257: postgres error executing query selecting empty string value
-        new SqlTest("SELECT '' AS EmptyString")
+        new SqlTest("SELECT '' AS EmptyString"),
+
+        // WITH
+        new SqlTest("WITH peeps AS (SELECT * FROM R) SELECT * FROM peeps", -1, 84),
+        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps", -1, 84),
+        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
+        new SqlTest("WITH \"P 1\" AS (SELECT * FROM R), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
+        new SqlTest("WITH \"P 1\" AS (SELECT * FROM Folder.qtest.lists.S), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84)
     };
 
 
@@ -1473,6 +1534,10 @@ public class Query
         new FailTest("SELECT A.d FROM lists.R A WHERE A.StartsWith('x')"),     // bad method 17128
         new FailTest("SELECT A.d FROM lists.R A WHERE Z.StartsWith('x')"),     // bad method
         new FailTest("SELECT A.d FROM lists.R A WHERE A.d.StartsWith('x')"),     // bad method
+        new FailTest("WITH peeps AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),
+        new FailTest("WITH peeps AS (SELECT * FROM R), peeps1 AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),
+        new FailTest("WITH peeps AS (SELECT * FROM peeps1), peeps1 AS (SELECT * FROM R) SELECT * FROM peeps"),
+        new FailTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0) UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),
 
         // UNDONE: should work since R.seven and seven are the same
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),

@@ -62,8 +62,8 @@ public class QueryTable extends QueryRelation
 {
     private static final Logger _log = Logger.getLogger(QueryTable.class);
 
-    final AliasManager _aliasManager;
-    final TableInfo _tableInfo;
+    AliasManager _aliasManager;
+    TableInfo _tableInfo;
     TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<>();
     String _innerAlias;
     final int _uniqueAliasCounter;
@@ -73,18 +73,28 @@ public class QueryTable extends QueryRelation
 
     public QueryTable(Query query, QuerySchema schema, TableInfo table, String alias)
     {
-        super(query,schema,alias);
+        this(query, schema, alias);
+        setTableInfo(table);
+    }
+
+    public QueryTable(Query query, QuerySchema schema, String alias)
+    {
+        // For recursive queries we need to create this object before we create the TableInfo
+        super(query, schema, alias);
+
+        // call this now so we it doesn't change if _getSql() is called more than once
+        _uniqueAliasCounter = _query.incrementAliasCounter();
+    }
+
+    public void setTableInfo(TableInfo table)
+    {
         _tableInfo = table;
         _aliasManager = new AliasManager(table.getSchema());
 
         String selectName = table.getSelectName();
         if (null != selectName)
             setSavedName(selectName);
-
-        // call this now so we it doesn't change if _getSql() is called more than once
-        _uniqueAliasCounter = _query.incrementAliasCounter();
     }
-
 
     @Override
     public TableInfo getTableInfo()

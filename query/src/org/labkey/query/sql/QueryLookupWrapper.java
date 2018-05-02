@@ -47,7 +47,7 @@ public class QueryLookupWrapper extends QueryRelation
     private static final Logger _log = Logger.getLogger(QueryLookupWrapper.class);
 
     final AliasManager _aliasManager;
-    QueryRelation _source;
+    final QueryRelation _source;
     boolean _hasLookups = false;
 
     Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<>();
@@ -315,6 +315,11 @@ public class QueryLookupWrapper extends QueryRelation
         return _source.getOrderedSuggestedColumns(unwrapped);
     }
 
+    public void setQueryWith(QueryWith queryWith)
+    {
+        // Defer to source relation; that's where we'll look for the With
+        _source.setQueryWith(queryWith);
+    }
 
     private static abstract class _WrapperColumn extends RelationColumn
     {

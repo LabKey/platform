@@ -62,6 +62,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -183,9 +184,11 @@ public class SqlParser
 
                 // COMMON TABLE EXPRESSIONS
 
+                QNode qnodeWith = null;
                 if (!list.isEmpty() && list.get(0).getType() == SqlBaseParser.WITH)
                 {
-                    list.remove(0);
+                    CommonTree withStmt = list.remove(0);
+                    qnodeWith = convertParseTree(withStmt);
                 }
 
 
@@ -204,14 +207,25 @@ public class SqlParser
                     return null;
                 }
 
-				QNode qnodeRoot = convertParseTree(selectStmt);
+				QNode qnodeSelect = convertParseTree(selectStmt);
+                QNode qnodeRoot;
+                if (null != qnodeWith)
+                {
+                    qnodeRoot = new QWithQuery();
+                    qnodeRoot.setTokenText("WithQuery");
+                    qnodeRoot.appendChildren(qnodeWith, qnodeSelect);
+                }
+                else
+                {
+                    qnodeRoot = qnodeSelect;
+                }
 				assert dump(qnodeRoot);
 				assert MemTracker.getInstance().put(qnodeRoot);
 
-				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion)
+				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion || qnodeRoot instanceof QWithQuery)
 					_root = qnodeRoot;
 				else
-					errors.add(new QueryParseException("This does not look like a SELECT or UNION query", null, 0, 0));
+					errors.add(new QueryParseException("This does not look like a WITH, SELECT or UNION query", null, 0, 0));
             }
 			
 			for (Throwable e : _parseErrors)
@@ -1233,6 +1247,8 @@ public class SqlParser
 //              return null;
             case DECLARATION:
                 return new QUnknownNode();
+            case WITH:
+                return new QWith(node);
 			default:
 	            _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
 				return null;
@@ -1398,111 +1414,114 @@ public class SqlParser
         // no table name
         "SELECT S.a AS lutefisk FROM",
         // no group by
-        "SELECT R.a, R.b, SUM(x) sumX FROM R PIVOT sumX BY b IN (0,1,2)"
+        "SELECT R.a, R.b, SUM(x) sumX FROM R PIVOT sumX BY b IN (0,1,2)",
+        // With within subquery
+        "SELECT * FROM (WITH peeps AS (SELECT * FROM study.participant) SELECT * FROM peeps)"
     };
 
 
     
     public static class SqlParserTestCase extends Assert
     {
-        Pair<String, String>[] parseExprs = new Pair[]
-        {
+        List<Pair<String, String>> parseExprs = Arrays.asList(
             // IDENT
-            new Pair("a", "a"),
-            new Pair("_a", "_a"),
-            new Pair("$a", "$a"),
-            new Pair("$_0", "$_0"),
+            new Pair<>("a", "a"),
+            new Pair<>("_a", "_a"),
+            new Pair<>("$a", "$a"),
+            new Pair<>("$_0", "$_0"),
             // QUOTED_IDENTIFIER
-            new Pair("\"abcd\"", "\"abcd\""),
-            new Pair("\"ab\"\"cd\"", "\"ab\"\"cd\""),
+            new Pair<>("\"abcd\"", "\"abcd\""),
+            new Pair<>("\"ab\"\"cd\"", "\"ab\"\"cd\""),
             // QUOTED_STRING
-            new Pair("'abcdef'", "'abcdef'"),
-            new Pair("'abc''def'", "'abc''def'"),
+            new Pair<>("'abcdef'", "'abcdef'"),
+            new Pair<>("'abc''def'", "'abc''def'"),
             // NUM_INT
-            new Pair("123","123"),
-            new Pair("-123.45","(- 123.45)"),
+            new Pair<>("123","123"),
+            new Pair<>("-123.45","(- 123.45)"),
 // HEX?           new Pair("0xff","0x00ff"),
-            new Pair("1234567890L","1234567890"),
-            new Pair("1.2e4","12000.0"),
+            new Pair<>("1234567890L","1234567890"),
+            new Pair<>("1.2e4","12000.0"),
             // OPERATORS and precedence
-            new Pair("a = b","(= a b)"),
-            new Pair("a < b","(< a b)"),
-            new Pair("a > b","(> a b)"),
-            new Pair("a <> b","(<> a b)"),
-            new Pair("a != b","(!= a b)"),
-            new Pair("a <= b","(<= a b)"),
-            new Pair("a >= b","(>= a b)"),
-            new Pair("a || b","(|| a b)"),
-            new Pair("a + b","(+ a b)"),
-            new Pair("a - b","(- a b)"),
-            new Pair("a * b","(* a b)"),
-            new Pair("a / b","(/ a b)"),
-            new Pair("a | b","(| a b)"),
-            new Pair("a ^ b","(^ a b)"),
-            new Pair("a & b","(& a b)"),
-            new Pair("-a","(- a)"),
-            new Pair("+a","(+ a)"),
-            new Pair("(a)","a"),
-            new Pair("a IN (b)","(in a (IN_LIST b))"),
-            new Pair("a IN (b,c)","(in a (IN_LIST b c))"),
-            new Pair("a NOT IN (b,c)","(not in a (IN_LIST b c))"),
-            new Pair("a BETWEEN 4 and 5", "(between a 4 5)"),
-            new Pair("a NOT BETWEEN 4 and 5", "(not between a 4 5)"),
-            new Pair("a LIKE 'b'", "(like a 'b')"),
-            new Pair("a NOT LIKE 'b'", "(not like a 'b')"),
+            new Pair<>("a = b","(= a b)"),
+            new Pair<>("a < b","(< a b)"),
+            new Pair<>("a > b","(> a b)"),
+            new Pair<>("a <> b","(<> a b)"),
+            new Pair<>("a != b","(!= a b)"),
+            new Pair<>("a <= b","(<= a b)"),
+            new Pair<>("a >= b","(>= a b)"),
+            new Pair<>("a || b","(|| a b)"),
+            new Pair<>("a + b","(+ a b)"),
+            new Pair<>("a - b","(- a b)"),
+            new Pair<>("a * b","(* a b)"),
+            new Pair<>("a / b","(/ a b)"),
+            new Pair<>("a | b","(| a b)"),
+            new Pair<>("a ^ b","(^ a b)"),
+            new Pair<>("a & b","(& a b)"),
+            new Pair<>("-a","(- a)"),
+            new Pair<>("+a","(+ a)"),
+            new Pair<>("(a)","a"),
+            new Pair<>("a IN (b)","(in a (IN_LIST b))"),
+            new Pair<>("a IN (b,c)","(in a (IN_LIST b c))"),
+            new Pair<>("a NOT IN (b,c)","(not in a (IN_LIST b c))"),
+            new Pair<>("a BETWEEN 4 and 5", "(between a 4 5)"),
+            new Pair<>("a NOT BETWEEN 4 and 5", "(not between a 4 5)"),
+            new Pair<>("a LIKE 'b'", "(like a 'b')"),
+            new Pair<>("a NOT LIKE 'b'", "(not like a 'b')"),
 
-            new Pair("'a' || ('b' + 'c')", "(|| 'a' (+ 'b' 'c'))"),
-            new Pair("a ^ -3 & 256", "(^ a (& (- 3) 256))"),
-// CONCAT           new Pair("a OR b AND NOT b | c = d < e || f + g * -h", "")
-            new Pair("a OR b AND NOT c | d ^ e & f = g < h + i * -j",
+            new Pair<>("'a' || ('b' + 'c')", "(|| 'a' (+ 'b' 'c'))"),
+            new Pair<>("a ^ -3 & 256", "(^ a (& (- 3) 256))"),
+// CONCAT           new Pair<>("a OR b AND NOT b | c = d < e || f + g * -h", "")
+            new Pair<>("a OR b AND NOT c | d ^ e & f = g < h + i * -j",
                     "(OR a (AND b (NOT (= (| c (^ d (& e f))) (< g (+ h (* i (- j))))))))"),
-            new Pair("-a * b + c < d = e & f ^ g | h AND NOT i OR j",
+            new Pair<>("-a * b + c < d = e & f ^ g | h AND NOT i OR j",
                     "(OR (AND (= (< (+ (* (- a) b) c) d) (| (^ (& e f) g) h)) (NOT i)) j)"),
 
             // identPrimary functions aggregates
-            new Pair("a.b","(. a b)"),
-            new Pair("a.b.fn(5)","(METHOD_CALL (. (. a b) fn) (EXPR_LIST 5))"),
-            new Pair("CURDATE()","(METHOD_CALL CURDATE EXPR_LIST)"),
-            new Pair("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
-            new Pair("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
-            new Pair("SUM(a+b)","(SUM (+ a b))"),
-            new Pair("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a 'VARCHAR'))")
-        };
+            new Pair<>("a.b","(. a b)"),
+            new Pair<>("a.b.fn(5)","(METHOD_CALL (. (. a b) fn) (EXPR_LIST 5))"),
+            new Pair<>("CURDATE()","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair<>("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
+            new Pair<>("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
+            new Pair<>("SUM(a+b)","(SUM (+ a b))"),
+            new Pair<>("CAST(a AS VARCHAR)", "(METHOD_CALL CAST (EXPR_LIST a 'VARCHAR'))")
+        );
 
 
-        Pair<String, JdbcType>[] typeExprs = new Pair[]
-        {
-            new Pair("CASE 1 WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
-            new Pair("CASE 1 WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
-            new Pair("CASE 'one' WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
-            new Pair("CASE 'one' WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
-            new Pair("1 = 1", JdbcType.BOOLEAN),
-            new Pair("'one' = 'two'", JdbcType.BOOLEAN),
-            new Pair("1 = 'two'", JdbcType.BOOLEAN),
-            new Pair("'this ' || 'that'", JdbcType.VARCHAR),
-            new Pair("1 || ' plus ' || 2", JdbcType.VARCHAR),
-            new Pair("1 + 2", JdbcType.INTEGER),
-            new Pair("1.0 + 2.1", JdbcType.DOUBLE),
-            new Pair("1 + 2.1", JdbcType.DOUBLE),
-            new Pair("ROUND(0.0,1)", JdbcType.DOUBLE),
-            new Pair("1 + ROUND(0.0,1)", JdbcType.DOUBLE),
-            new Pair("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE)
-        };
+        List<Pair<String, JdbcType>> typeExprs = Arrays.asList(
+            new Pair<>("CASE 1 WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
+            new Pair<>("CASE 1 WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
+            new Pair<>("CASE 'one' WHEN 1 THEN 1 ELSE 2 END", JdbcType.INTEGER),
+            new Pair<>("CASE 'one' WHEN 1 THEN '1' ELSE '2' END", JdbcType.VARCHAR),
+            new Pair<>("1 = 1", JdbcType.BOOLEAN),
+            new Pair<>("'one' = 'two'", JdbcType.BOOLEAN),
+            new Pair<>("1 = 'two'", JdbcType.BOOLEAN),
+            new Pair<>("'this ' || 'that'", JdbcType.VARCHAR),
+            new Pair<>("1 || ' plus ' || 2", JdbcType.VARCHAR),
+            new Pair<>("1 + 2", JdbcType.INTEGER),
+            new Pair<>("1.0 + 2.1", JdbcType.DOUBLE),
+            new Pair<>("1 + 2.1", JdbcType.DOUBLE),
+            new Pair<>("ROUND(0.0,1)", JdbcType.DOUBLE),
+            new Pair<>("1 + ROUND(0.0,1)", JdbcType.DOUBLE),
+            new Pair<>("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE)
+        );
 
 
-        Pair<String,String>[] parseStmts = new Pair[]
-        {
+        List<Pair<String,String>> parseStmts = Arrays.asList(
             // joinExpression
-            new Pair("SELECT * FROM R JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) (RANGE S) (ON (= x y))))))"),
-            new Pair("SELECT * FROM R LEFT JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))))))"),
-            new Pair("SELECT * FROM R LEFT OUTER JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))))))"),
-            new Pair("SELECT * FROM R LEFT OUTER JOIN S ON x=y JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
-            new Pair("SELECT * FROM (R LEFT OUTER JOIN S ON x=y) JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
-            new Pair("SELECT * FROM R LEFT OUTER JOIN (S JOIN T on y=z) ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (JOIN (RANGE S) (RANGE T) (on (= y z))) (ON (= x y))))))"),
+            new Pair<>("SELECT * FROM R JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) (RANGE S) (ON (= x y))))))"),
+            new Pair<>("SELECT * FROM R LEFT JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))))))"),
+            new Pair<>("SELECT * FROM R LEFT OUTER JOIN S ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))))))"),
+            new Pair<>("SELECT * FROM R LEFT OUTER JOIN S ON x=y JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
+            new Pair<>("SELECT * FROM (R LEFT OUTER JOIN S ON x=y) JOIN T ON y=z", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (JOIN (RANGE R) LEFT (RANGE S) (ON (= x y))) (RANGE T) (ON (= y z))))))"),
+            new Pair<>("SELECT * FROM R LEFT OUTER JOIN (S JOIN T on y=z) ON x=y", "(QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (JOIN (RANGE R) LEFT (JOIN (RANGE S) (RANGE T) (on (= y z))) (ON (= x y))))))"),
             // 11440
-            new Pair("SELECT jrRuns.run_num FROM jrRuns WHERE ((SELECT max(jrRuns.run_num) FROM jrRuns) - jrRuns.run_num) < 10",
-                    "(QUERY (SELECT_FROM (SELECT (ALIAS (. jrRuns run_num))) (FROM (RANGE jrRuns))) (WHERE (< (- (QUERY (SELECT_FROM (SELECT (ALIAS (max (. jrRuns run_num)))) (FROM (RANGE jrRuns)))) (. jrRuns run_num)) 10)))")
-        };
+            new Pair<>("SELECT jrRuns.run_num FROM jrRuns WHERE ((SELECT max(jrRuns.run_num) FROM jrRuns) - jrRuns.run_num) < 10",
+                    "(QUERY (SELECT_FROM (SELECT (ALIAS (. jrRuns run_num))) (FROM (RANGE jrRuns))) (WHERE (< (- (QUERY (SELECT_FROM (SELECT (ALIAS (max (. jrRuns run_num)))) (FROM (RANGE jrRuns)))) (. jrRuns run_num)) 10)))"),
+            new Pair<>("WITH peeps AS (SELECT * FROM R) SELECT * FROM peeps",
+                    "(WithQuery (WITH (AS peeps (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE R)))))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps)))))"),
+            new Pair<>("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps",
+                    "(WithQuery (WITH (AS peeps1 (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE R))))) (AS peeps (UNION (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps1)))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps))) (WHERE (= 1 0)))))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps)))))")
+        );
 
         private void good(String sql)
         {

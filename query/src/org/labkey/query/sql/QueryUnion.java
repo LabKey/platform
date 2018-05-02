@@ -89,9 +89,8 @@ public class QueryUnion extends QueryRelation
             else if (n instanceof QQuery)
             {
                 // NOTE inFromClause==true because we want 'nested' behavior (especially wrt comments)
-                QuerySelect select = new QuerySelect(_query, (QQuery)n, true);
+                QuerySelect select = new QuerySelect(_query, (QQuery)n, this, true);
                 select._queryText = null; // see issue 23918, we don't want to repeat the source sql for each term in devMode
-                select._parent = this;
                 select.markAllSelected(qunion);
                 _termList.add(select);
             }
@@ -276,6 +275,8 @@ public class QueryUnion extends QueryRelation
             {
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(getSql()).append(") ").append(alias);
+                if (null != getQueryWith())
+                    f.append(getQueryWith().getQueryWithSql());         // Only CTEs
                 return f;
             }
 

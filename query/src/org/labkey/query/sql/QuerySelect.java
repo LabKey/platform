@@ -134,14 +134,21 @@ public class QuerySelect extends QueryRelation implements Cloneable
     }
 
 
-	QuerySelect(@NotNull Query query, QQuery root, boolean inFromClause)
-	{
-		this(query, query.getSchema(), null);
+    QuerySelect(@NotNull Query query, QQuery root, QueryRelation parent, boolean inFromClause)
+    {
+        this(query, query.getSchema(), null);
+        this._parent = parent;
         this._query = query;
         this._inFromClause = inFromClause;
-		initializeFromQQuery(root);
-		initializeSelect();
+        initializeFromQQuery(root);
+        initializeSelect();
         MemTracker.getInstance().put(this);
+    }
+
+
+    QuerySelect(@NotNull Query query, QQuery root, boolean inFromClause)
+	{
+		this(query, root, null, inFromClause);
 	}
 
 
@@ -263,25 +270,66 @@ groupByLoop:
             String alias = qtable.getAlias().getName();
             QNode node = qtable.getTable();
 
-            QueryRelation relation;
+            QueryRelation relation = null;
             if (null != qtable.getQueryRelation())
             {
                 relation = qtable.getQueryRelation();
             }
-            else if (node instanceof QQuery)
+            else if (node instanceof QIdentifier && null != key)
             {
-                relation = createSubquery((QQuery) node, true, alias);
+                // Check With
+                relation = _query.lookupWithTable(QueryWith.getLegalName(getSqlDialect(), key.getName()));
+
+                if (null != relation && relation instanceof QueryWith.QueryTableWith)
+                {
+                    QueryWith.QueryTableWith queryTableWith = (QueryWith.QueryTableWith)relation;
+                    if (queryTableWith.isParsingWith())
+                    {
+                        if (queryTableWith.isSeenRecursiveReference())
+                        {
+                            parseError("Cannot reference query in WITH recursively more than once: " + ((QIdentifier) node).getIdentifier(), node);
+                        }
+                        queryTableWith.setSeenRecursiveReference(true);
+                    }
+                    if (getParseErrors().isEmpty() && null == relation.getTableInfo())
+                    {
+                        // Can happen in a recursive query. To be valid, WITH must be in a UNION, not in the first child of the UNION
+                        // Use the tableInfo from the first child of the UNION
+                        QueryRelation parent = this._parent;
+                        if (null != parent && parent instanceof QueryUnion &&
+                                ((QueryUnion) parent)._termList.size() > 0)
+                        {
+                            queryTableWith.setTableInfo(((QueryUnion) parent)._termList.get(0).getTableInfo());
+                        }
+                        if (null != parent && null != relation.getTableInfo())
+                        {
+                            _query.setHasRecursiveWith(true);
+                        }
+                        else
+                        {
+                            parseError("TableInfo not found for " + ((QIdentifier) node).getIdentifier(), node);
+                        }
+                    }
+                }
             }
-            else if (node instanceof  QUnion)
+
+            if (null == relation)
             {
-                relation = new QueryUnion(this, (QUnion) node, true, alias);
-            }
-            else
-            {
-                relation = _query.resolveTable(_schema, node, key, alias);
-                assert relation == null || alias.equals(relation.getAlias());
-                if (null != relation)
-                    relation._parent = this;
+                if (node instanceof QQuery)
+                {
+                    relation = createSubquery((QQuery) node, true, alias);
+                }
+                else if (node instanceof QUnion)
+                {
+                    relation = new QueryUnion(this, (QUnion) node, true, alias);
+                }
+                else
+                {
+                    relation = _query.resolveTable(_schema, node, key, alias);
+                    assert relation == null || alias.equals(relation.getAlias());
+                    if (null != relation)
+                        relation._parent = this;
+                }
             }
             assert relation != null || !getParseErrors().isEmpty();
             if (!getParseErrors().isEmpty())
@@ -1145,6 +1193,10 @@ groupByLoop:
                 SQLFragment s = getSql();
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(s).append(") ").append(alias);
+
+                if (null != getQueryWith())
+                    f.append(getQueryWith().getQueryWithSql());     // Only CTEs
+
                 return f;
             }
 
