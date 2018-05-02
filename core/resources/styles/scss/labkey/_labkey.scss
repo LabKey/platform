@@ -327,15 +327,10 @@ tr.dataregion_column_header_row_spacer td div {
 
 /* This is the class for the missing value indicator icon that can be included in a table cell.
  The image src should be #{$internal-images-dir}/mv_indicator.gif */
-img.labkey-mv-indicator
+td.labkey-mv-indicator
 {
-  background-color: transparent;
-  color: #FF0000;
-  width: 0.6em;
-  height: auto;
-  position: relative;
-  top: -0.7em;
-  right: -0.2em;
+  background: url('#{$internal-images-dir}/mv_indicator.gif') no-repeat right 0;
+  background-size: 0.6em;
 }
 
 @import "components/button";
@@ -378,7 +373,7 @@ li.labkey-indented
 }
 
 /* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
-.labkey-mv
+.labkey-mv, .labkey-mv a
 {
   color: #606060;
 }
