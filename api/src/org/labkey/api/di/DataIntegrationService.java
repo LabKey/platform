@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.remoteapi.Connection;
 
 /**
  * Services provided for running ETLs within the server.
@@ -43,4 +44,12 @@ public interface DataIntegrationService
 
     void registerStepProviders();
     @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
+
+    public RemoteConnection getRemoteConnection(String name, Container c);
+
+    public static class RemoteConnection
+    {
+        public Connection connection;
+        public String remoteContainer;
+    }
 }

@@ -66,7 +66,11 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             ,monitorValid: true
             ,items: [{
                 xtype: 'container',
-                itemId: 'templateArea'
+                itemId: 'templateArea',
+                items: [{
+                    border: false,
+                    html: '<i class="fa fa-spinner fa-pulse"></i> Loading...'
+                }]
             },{
                 xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
             },{
@@ -164,7 +168,15 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             ,schemaName: this.schemaName
             ,queryName: this.queryName
             ,scope: this
-            ,success: this.populateTemplates
+            ,success: this.onQueryLoad
+            ,failure: function(){
+                var target = this.down('#templateArea');
+                target.removeAll();
+                target.add({
+                    border: false,
+                    html: 'Error loading template data'
+                })
+            }
         });
 
         this.uploadType = 'text';
@@ -240,13 +252,19 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         };
     },
 
-    populateTemplates: function(meta){
+    onQueryLoad: function(meta){
         //this allows for the possibility that some other component on the page opened a waiting dialog
         if (this.doCloseExtMsg && Ext4.Msg.isVisible()) {
             Ext4.Msg.hide();
         }
         this.doCloseExtMsg = false;
 
+        //separate this so subclasses can override populateTemplates() without needing to deal with the loading indicator
+        this.down('#templateArea').removeAll();
+        this.populateTemplates(meta);
+    },
+
+    populateTemplates: function(meta){
         var toAdd = [];
 
         if (meta.importMessage){

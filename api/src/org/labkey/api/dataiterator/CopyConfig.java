@@ -48,6 +48,7 @@ public class CopyConfig
     protected String _sourceRunColumnName = null;
     protected List<String> _sourceColumns = null;
     protected SourceOptions _sourceOptions = null;
+    protected Integer _sourceTimeout = null;
     protected boolean _useSource = true;
     protected boolean _useFilterStrategy = true;
     protected String _sourceContainerFilter = null;
@@ -182,6 +183,16 @@ public class CopyConfig
     public void setSourceColumns(List<String> sourceColumns)
     {
         _sourceColumns = sourceColumns;
+    }
+
+    public Integer getSourceTimeout()
+    {
+        return _sourceTimeout;
+    }
+
+    public void setSourceTimeout(Integer sourceTimeout)
+    {
+        _sourceTimeout = sourceTimeout;
     }
 
     public SchemaKey getTargetSchema()

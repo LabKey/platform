@@ -199,7 +199,7 @@ public class ModuleHtmlView extends HtmlView
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
             if (null != simpleTest)
-                assertEquals("HTML view definitions from the simpletest module", 6, MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("HTML view definitions from the simpletest module", 7, MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(simpleTest).size());
         }
     }
 }
