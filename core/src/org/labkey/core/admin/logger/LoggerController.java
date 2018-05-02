@@ -27,6 +27,7 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -47,7 +48,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -178,7 +178,7 @@ public class LoggerController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ResetAction extends ApiAction<Object>
+    public class ResetAction extends MutatingApiAction<Object>
     {
         @Override
         public SimpleResponse execute(Object o, BindException errors)
@@ -191,15 +191,8 @@ public class LoggerController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class UpdateAction extends ApiAction<LoggerLevel>
+    public class UpdateAction extends MutatingApiAction<LoggerLevel>
     {
-        @Override
-        protected ModelAndView handleGet() throws Exception
-        {
-            getViewContext().getResponse().sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "You must use the POST method when calling this action.");
-            return null;
-        }
-
         @Override
         public SimpleResponse<LoggerLevel> execute(LoggerLevel loggerLevel, BindException errors)
         {
