@@ -1390,6 +1390,7 @@ pipeline/resources/schemas/dbscripts/postgresql/pipeline-0.00-16.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.20-17.30.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.30-17.31.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.30-18.10.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-18.10-18.11.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-10.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-10.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-0.00-14.20.sql -text
@@ -1403,6 +1404,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-16.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.20-17.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.30-17.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.30-18.10.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-18.10-18.11.sql -text
 pipeline/schemas/pipelineTasks.xsd -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
@@ -1516,6 +1518,7 @@ pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
 pipeline/src/org/labkey/pipeline/status/deleteStatus.jsp -text
 pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
 pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
+pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerManager.java -text
 pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerRegistryImpl.java -text
 pipeline/src/org/labkey/pipeline/validators/PipelineSetupValidator.java -text
 pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text

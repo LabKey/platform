@@ -27,11 +27,14 @@ import org.labkey.api.pipeline.trigger.PipelineTriggerConfigImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
 import org.labkey.pipeline.api.PipelineSchema;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -119,5 +122,35 @@ public class PipelineTriggerRegistryImpl implements PipelineTriggerRegistry
             config.setLastChecked(new java.sql.Timestamp(System.currentTimeMillis()));
             Table.update(null, PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), config, rowId);
         }
+    }
+
+    @Override
+    public Date getLastTriggeredTime(PipelineTriggerConfig config, Path filePath)
+    {
+        return PipelineTriggerManager.getInstance().getLastTriggeredTime(config, filePath);
+    }
+
+    @Override
+    public Date getLastTriggeredTime(Container container, int triggerConfigId, Path filePath)
+    {
+        return PipelineTriggerManager.getInstance().getLastTriggeredTime(container, triggerConfigId, filePath);
+    }
+
+    @Override
+    public void setTriggeredTime(PipelineTriggerConfig config, User user, Path filePath, Date date)
+    {
+        PipelineTriggerManager.getInstance().setTriggeredTime(config, user, filePath, date);
+    }
+
+    @Override
+    public void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date)
+    {
+        PipelineTriggerManager.getInstance().setTriggeredTime(container, user, triggerConfigId, filePath, date);
+    }
+
+    @Override
+    public void purgeTriggeredEntries(PipelineTriggerConfig config)
+    {
+        PipelineTriggerManager.getInstance().purgeTriggeredEntries(config);
     }
 }

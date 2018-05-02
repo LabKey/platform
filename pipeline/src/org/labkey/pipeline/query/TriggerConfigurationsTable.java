@@ -308,6 +308,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String name = getStringFromRow(oldRowMap, "Name");
             PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
 
+            PipelineTriggerRegistry.get().purgeTriggeredEntries(config);
             Map<String, Object> deleteRow = super.deleteRow(user, container, oldRowMap);
 
             // call the stop() method for this config if it was successfully deleted

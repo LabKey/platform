@@ -159,5 +159,15 @@
       </column>
     </columns>
   </table>
-
+  <table tableName="TriggeredFiles" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Container"/>
+      <column columnName="TriggerId"/>
+      <column columnName="FilePath"/>
+      <column columnName="LastRun"/>
+    </columns>
+  </table>
 </tables>

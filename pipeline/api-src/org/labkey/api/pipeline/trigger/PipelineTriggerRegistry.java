@@ -18,9 +18,12 @@ package org.labkey.api.pipeline.trigger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Date;
 
 public interface PipelineTriggerRegistry
 {
@@ -48,4 +51,14 @@ public interface PipelineTriggerRegistry
     <C extends PipelineTriggerConfig> C getConfigById(int rowId);
 
     void updateConfigLastChecked(int rowId);
+
+    Date getLastTriggeredTime(PipelineTriggerConfig config, Path filePath);
+    Date getLastTriggeredTime(Container container, int triggerConfigId, Path filePath);
+    void setTriggeredTime(PipelineTriggerConfig config, User user, Path filePath, Date date);
+    void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date);
+
+    /**
+     * Clean up triggered records for a specified trigger configuration
+     */
+    void purgeTriggeredEntries(PipelineTriggerConfig config);
 }

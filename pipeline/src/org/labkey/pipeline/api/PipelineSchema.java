@@ -66,4 +66,9 @@ public class PipelineSchema
     {
         return getSchema().getTable("TriggerConfigurations");
     }
+
+    public TableInfo getTableInfoTriggeredFiles()
+    {
+        return getSchema().getTable("TriggeredFiles");
+    }
 }
