@@ -28,8 +28,7 @@ public interface AssayHeaderLinkProvider
 {
     String PARAM_PREFIX = "assay";
 
-    @NotNull
-    List<NavTree> getLinks(ExpProtocol protocol, Container container, User user);
+    List<NavTree> getLinks(AssayProvider provider, ExpProtocol protocol, Container container, User user);
 
     @NotNull
     default List<NavTree> getManageAssayDesignLinks(ExpProtocol protocol, Container container, User user)

@@ -83,7 +83,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         // give the registered AssayHeaderLinkProviders a chance to include links
         for (AssayHeaderLinkProvider headerLinkProvider : AssayService.get().getAssayHeaderLinkProviders())
         {
-            links.addAll(headerLinkProvider.getLinks(_protocol, getViewContext().getContainer(), getViewContext().getUser()));
+            links.addAll(headerLinkProvider.getLinks(_provider, _protocol, getViewContext().getContainer(), getViewContext().getUser()));
         }
 
         return links;
