@@ -33,6 +33,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -103,6 +104,8 @@ import org.labkey.etl.xml.ParameterType;
 import org.labkey.etl.xml.PipelineParameterType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.RemoteConnections;
 import org.quartz.CronExpression;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -1002,6 +1005,35 @@ public class TransformManager implements DataIntegrationService
         if (etl == null)
             throw new NotFoundException(transformId);
         return runNowPipeline(etl, c, u, new LinkedHashMap<>());
+    }
+
+    public RemoteConnection getRemoteConnection(String name, Container c)
+    {
+        // Check that an entry for the remote connection name exists
+        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
+        if (connectionMap.get(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name) == null)
+        {
+            LOG.error("The remote connection " + name + " has not yet been setup in the remote connection manager.  You may configure a new remote connection through the schema browser.");
+            return null;
+        }
+
+        // Extract the username, password, and container from the secure property store
+        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name);
+        String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
+        String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
+        String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
+        String container = singleConnectionMap.get(RemoteConnections.FIELD_CONTAINER);
+        if (url == null || user == null || password == null || container == null)
+        {
+            LOG.error("Invalid login credentials in the secure user store");
+            return null;
+        }
+
+        RemoteConnection ret = new RemoteConnection();
+        ret.connection = new Connection(url, user, password);
+        ret.remoteContainer = container;
+
+        return ret;
     }
 
     //

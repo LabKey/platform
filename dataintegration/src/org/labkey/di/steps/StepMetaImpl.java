@@ -112,6 +112,11 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 setSourceColumns(Arrays.asList(source.getSourceColumns().getColumnArray()));
             }
 
+            if (source.isSetSourceTimeout() && source.getSourceTimeout() != null)
+            {
+                setSourceTimeout(source.getSourceTimeout().intValue());
+            }
+
             if (null != source.getTimestampColumnName())
                 setSourceTimestampColumnName(source.getTimestampColumnName());
             else if (null != source.getRunColumnName())

@@ -92,6 +92,7 @@
         </attribute>
         <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
         <attribute name="remoteSource" type="string" use="optional"/>
+        <attribute name="sourceTimeout" type="integer" use="optional"/>
         <attribute name="useTransaction" type="boolean" use="optional" default="true">
             <annotation>
                 <documentation>Wrap selecting from source query in a transaction. Only used for simple query transform types.</documentation>

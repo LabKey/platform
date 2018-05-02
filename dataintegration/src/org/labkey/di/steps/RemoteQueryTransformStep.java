@@ -24,11 +24,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
@@ -39,7 +39,6 @@ import org.labkey.di.pipeline.TransformTaskFactory;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.GuestCredentialsProvider;
-import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 
@@ -88,23 +87,10 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
             return null;
         }
 
-        // Check that an entry for the remote connection name exists
-        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
-        if (connectionMap.get(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name) == null)
+        DataIntegrationService.RemoteConnection connection = DataIntegrationService.get().getRemoteConnection(name, c);
+        if (connection == null)
         {
-            log.error("The remote connection " + name + " has not yet been setup in the remote connection manager.  You may configure a new remote connection through the schema browser.");
-            return null;
-        }
-
-        // Extract the username, password, and container from the secure property store
-        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name);
-        String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
-        String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
-        String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
-        String container = singleConnectionMap.get(RemoteConnections.FIELD_CONTAINER);
-        if (url == null || user == null || password == null || container == null)
-        {
-            log.error("Invalid login credentials in the secure user store");
+            log.warn("Unable to create a remote connection for source: " + name + ".  please see the server log for more detail.");
             return null;
         }
         // Pass in named query parameters
@@ -112,7 +98,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         ((TransformPipelineJob) getJob()).getTransformDescriptor().getDeclaredVariables().forEach((pd, o) -> parameters.put(pd.getName(), o.toString()));
         try
         {
-            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), url, user, password, container, meta.getSourceColumns(), parameters);
+            return selectFromSource(meta.getSourceSchema().toString(), meta.getSourceQuery(), connection.connection, connection.remoteContainer, meta.getSourceColumns(), parameters, meta.getSourceTimeout());
         }
         catch (IOException | CommandException exception)
         {
@@ -122,24 +108,27 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     }
 
     // Variant that takes valid, non-null credentials
-    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, @NotNull String user, @NotNull String password, String container, @Nullable List<String> columns, Map<String, String> parameters)
+    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, @NotNull Connection connection, String remoteContainer, @Nullable List<String> columns, Map<String, String> parameters, @Nullable Integer timeout)
             throws IOException, CommandException
     {
-        return selectFromSource(new Connection(url, user, password), schemaName, queryName, container, columns, parameters);
+        return selectFromSource(connection, schemaName, queryName, remoteContainer, columns, parameters, timeout);
     }
 
     // Version that connects as guest; for testing purposes only
     private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, String container)
             throws IOException, CommandException
     {
-        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container, null, Collections.emptyMap());
+        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container, null, Collections.emptyMap(), null);
     }
 
-    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container, @Nullable List<String> columns, Map<String, String> parameters)
+    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container, @Nullable List<String> columns, Map<String, String> parameters, @Nullable Integer timeout)
             throws IOException, CommandException
     {
         // connect to the remote server and retrieve an input stream
         final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
+        if (timeout != null)
+            cmd.setTimeout(timeout);
+
         if (columns != null)
         {
             cmd.setColumns(columns);
