@@ -1575,13 +1575,17 @@ public class ReportsController extends SpringActionController
                 {
                     errors.reject(getErrorCode(), "Report not found.");
                 }
-                // on new reports, check for duplicates
+                // on new reports, check for duplicates and non-blank name (issue 32912)
                 else if (null == report.getDescriptor().getReportId())
                 {
-                    if (ReportService.get().reportNameExists(getViewContext(), report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(report.getDescriptor())))
+                    if (StringUtils.isEmpty(report.getDescriptor().getReportName()))
                     {
-                        errors.reject(getErrorCode(), "There is already a report with the name of: '" + report.getDescriptor().getReportName() +
-                                "'. Please specify a different name.");
+                        errors.reject(getErrorCode(), "A report name is required. Please specify a name.");
+                    }
+                    else if (ReportService.get().reportNameExists(getViewContext(), report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(report.getDescriptor())))
+                    {
+                        errors.reject(getErrorCode(), "There is already a report with the name of: '"
+                                + report.getDescriptor().getReportName() + "'. Please specify a different name.");
                     }
                 }
             }
