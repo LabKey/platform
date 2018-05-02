@@ -18,6 +18,7 @@ package org.labkey.api.writer;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.module.SafeFlushResponseWrapper;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.PrintWriters.StandardPrintWriter;
@@ -26,12 +27,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -47,9 +49,14 @@ public class ZipFile extends AbstractVirtualFile
     private final String _path;
     private final PrintWriter _pw;
     private final boolean _shouldCloseOutputStream;
-    private File _root;
+    private Path _root;
 
-    public ZipFile(File root, String name) throws FileNotFoundException
+    public ZipFile(File root, String name) throws IOException
+    {
+        this(root.toPath(), name);
+    }
+
+    public ZipFile(Path root, String name) throws IOException
     {
         this(getOutputStream(root, name), true);
         _root = root;
@@ -75,12 +82,14 @@ public class ZipFile extends AbstractVirtualFile
         _shouldCloseOutputStream = shouldCloseOutputStream;
     }
 
-    private static OutputStream getOutputStream(File root, String name) throws FileNotFoundException
+    private static OutputStream getOutputStream(Path root, String name) throws IOException
     {
         // Make sure directory exists, is writeable
-        FileSystemFile.ensureWriteableDirectory(root);
-        File zipFile = new File(root, _makeLegalName(name));
-        FileOutputStream fos = new FileOutputStream(zipFile);
+        if (!FileUtil.hasCloudScheme(root))
+            FileSystemFile.ensureWriteableDirectory(root.toFile());
+
+        Path zipFile = root.resolve(_makeLegalName(name));
+        OutputStream fos = Files.newOutputStream(zipFile);
 
         return new BufferedOutputStream(fos);
     }
@@ -95,7 +104,7 @@ public class ZipFile extends AbstractVirtualFile
 
     public String getLocation()
     {
-        return _root != null ? _root.getAbsolutePath():"ZipFile stream.";
+        return _root != null ? FileUtil.getAbsolutePath(_root) : "ZipFile stream.";
     }
 
     public PrintWriter getPrintWriter(String path) throws IOException

@@ -148,7 +148,7 @@ public class FileUtil
             Files.createDirectory(destPath);
         for (Path srcChild : Files.list(srcPath).collect(Collectors.toList()))
         {
-            Path destChild = destPath.resolve(srcChild.getFileName().toString());
+            Path destChild = destPath.resolve(getFileName(srcChild));
             if (Files.isDirectory(srcChild))
                 copyDirectory(srcChild, destChild);
             else
@@ -262,6 +262,15 @@ public class FileUtil
         {
             return false;
         }
+    }
+
+    public static String getAbsolutePath(Path path)
+    {
+        if (!FileUtil.hasCloudScheme(path))
+            return path.toFile().getAbsolutePath();
+        else
+            return getPathStringWithoutAccessId(path.toAbsolutePath().toUri());
+
     }
 
     public static String getAbsolutePath(Container container, Path path)

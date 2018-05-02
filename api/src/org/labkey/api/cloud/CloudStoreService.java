@@ -80,11 +80,6 @@ public interface CloudStoreService
     void setEnabledCloudStores(Container c, Set<String> enabledCloudStores);
 
     /**
-     * Add cloud storage portal tab with web part
-     */
-    void addCloudStorageTab(Container container);
-
-    /**
      * Return nio.Path to cloud file/directory
      */
     Path getPath(Container container, String storeName, org.labkey.api.util.Path path);

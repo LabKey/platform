@@ -106,7 +106,7 @@ public class FileSystemFile extends AbstractVirtualFile
         return new FileSystemFile(new File(_root, makeLegalName(name)));
     }
 
-    public VirtualFile createZipArchive(String name) throws FileNotFoundException
+    public VirtualFile createZipArchive(String name) throws IOException
     {
         return new ZipFile(_root, name);
     }

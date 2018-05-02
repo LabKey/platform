@@ -15,6 +15,7 @@
  */
 package org.labkey.api.webdav;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
@@ -30,14 +31,17 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class WebFilesResolverImpl extends AbstractWebdavResolver
 {
@@ -176,24 +180,27 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                 }
 
                 // get directories under @files
-                File fileRootFolder = getFileRootFile(container);
+                java.nio.file.Path fileRootFolder = getFileRootFile(container);
                 if (fileRootFolder != null)
                 {
-                    File[] fileRootContent = fileRootFolder.listFiles();
-                    if (fileRootContent != null)
+                    try
                     {
-                        for (File file : fileRootContent)
+                        Files.list(fileRootFolder).forEach(path ->
                         {
-                            if (file.isDirectory())
+                            String rawFileName = FileUtil.getFileName(path);
+                            if (Files.isDirectory(path))
                             {
-                                String rawFileName = file.getName();
                                 String noConflictName = getFolderNameNoConflict(children, rawFileName);
                                 children.add(noConflictName);
                                 folderNamesMap.put(noConflictName, rawFileName);
                             }
                             else
-                                children.add(file.getName());
-                        }
+                                children.add(rawFileName);
+                        });
+                    }
+                    catch (IOException e)
+                    {
+                        throw new RuntimeException(e);
                     }
                 }
 
@@ -244,58 +251,58 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
 
             if (name != null)
             {
-                Path path = getPath().append(name);
-                WebdavResource resource = null;
-
                 // if child container
                 if (c != null)
                 {
-                    resource = new WebFilesFolderResource(_resolver, c);
+                    return new WebFilesFolderResource(_resolver, c);
                 }
                 else // if directory under @files
                 {
-                    File fileRootFile = getFileRootFile(parentContainer);
+                    java.nio.file.Path fileRootFile = getFileRootFile(parentContainer);
                     if (fileRootFile != null)
                     {
                         String rawFolderName = folderNamesMap.get(name);
-                        File targetFile = null;
-                        File[] fileRootContent = fileRootFile.listFiles();
-                        if (fileRootContent != null)
+                        try
                         {
-                            for (File file : fileRootContent)
+                            for (java.nio.file.Path path : Files.list(fileRootFile).collect(Collectors.toList()))
                             {
-                                if (file.isDirectory() && file.getName().equals(rawFolderName))
-                                    targetFile = file;
-                                else if (!file.isDirectory() && file.getName().equals(name))
-                                    targetFile = file;
+                                String pathFileName = FileUtil.getFileName(path);
+                                if ((Files.isDirectory(path) && StringUtils.equals(rawFolderName, pathFileName)) ||
+                                    (!Files.isDirectory(path) && StringUtils.equals(name, pathFileName)))
+                                {
+                                    if (!FileUtil.hasCloudScheme(path))
+                                        return new FileSystemResource(this, name, path.toFile(), parentContainer.getPolicy());
+                                    //else
+                                    //    return ...;    // TODO cloud file
+                                }
                             }
                         }
-                        if (targetFile != null)
-                            resource = new FileSystemResource(this, name, targetFile, parentContainer.getPolicy());
-
+                        catch (IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
                     }
-
                 }
-
-                if (resource != null)
-                    return resource;
             }
             else // uploading, creating subfolder directly under child (but maps to @files) is supported
             {
-                File fileRootFile = getFileRootFile(parentContainer);
+                java.nio.file.Path fileRootFile = getFileRootFile(parentContainer);
                 if (fileRootFile != null)
                 {
-                    FileSystemResource fileRootResource = new FileSystemResource(this, "@files", fileRootFile, parentContainer.getPolicy());
-                    if (child.equals("@files"))
-                        return fileRootResource;
-                    return new FileSystemResource(fileRootResource, child);
+                    if (!FileUtil.hasCloudScheme(fileRootFile))
+                    {
+                        FileSystemResource fileRootResource = new FileSystemResource(this, "@files", fileRootFile.toFile(), parentContainer.getPolicy());
+                        if (child.equals("@files"))
+                            return fileRootResource;
+                        return new FileSystemResource(fileRootResource, child);
+                    }
                 }
             }
 
             return new UnboundResource(this.getPath().append(child));
         }
 
-        private File getFileRootFile(Container container)
+        private java.nio.file.Path getFileRootFile(Container container)
         {
             FileContentService svc = FileContentService.get();
             if (svc != null)
@@ -304,7 +311,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                 {
                     AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
                     if (dir != null)
-                        return dir.getFileSystemDirectory();
+                        return dir.getFileSystemDirectoryPath();
                 }
                 catch (MissingRootDirectoryException e)
                 {

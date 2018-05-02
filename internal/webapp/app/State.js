@@ -55,6 +55,8 @@ Ext.define('LABKEY.app.controller.State', {
 
     olap: undefined,
 
+    modelClazz: 'LABKEY.app.model.State',
+
     init : function() {
 
         if (LABKEY.devMode) {
@@ -72,7 +74,7 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         this.state = Ext.create('Ext.data.Store', {
-            model : 'LABKEY.app.model.State'
+            model : this.modelClazz
         });
 
         this.customState = {};

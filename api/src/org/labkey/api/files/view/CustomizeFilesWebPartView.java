@@ -184,7 +184,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
 
         public String getDecodedFileRoot()
         {
-            return URLDecoder.decode(fileRoot);
+            return null != fileRoot ? URLDecoder.decode(fileRoot) : null;
         }
 
         public void setFileRoot(String fileRoot)
