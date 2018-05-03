@@ -229,6 +229,7 @@
     {
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL("logger", "reset.api"),
+            method: 'POST',
             success: LABKEY.Utils.getCallbackWrapper(function (response)
             {
                 if (response.success) {
