@@ -1173,6 +1173,9 @@ public class ContainerManager
                     name = "Home";
 
                 NavTree t = new NavTree(name);
+
+                // 34137: Support folder path expansion for containers where label != name
+                t.setId(f.getId());
                 if (hasPolicyRead)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);

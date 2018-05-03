@@ -15,8 +15,8 @@
  */
 package org.labkey.api.view.menu;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -63,26 +63,34 @@ public class FolderMenu extends NavTreeMenu
         if (null != elements && (root = elements.get(0)) != null && root.hasChildren())
         {
             out.print("<div class=\"folder-nav\">");
-            renderChildLinks(root, "", root.getId(), context, out, null);
+            renderChildLinks(root, root.getId(), context, out, null);
             out.print("</div>");
         }
     }
 
-    private void renderChildLinks(NavTree nav, String pathToHere, String rootId,
+    private void renderChildLinks(NavTree nav, String rootId,
                                   ViewContext context, PrintWriter out, @Nullable Boolean shouldExpand) throws URISyntaxException
     {
         out.print("<ul>");
         for (NavTree child: nav.getChildren())
         {
-            renderLink(child, pathToHere, rootId, context, out, shouldExpand);
+            renderLink(child, rootId, context, out, shouldExpand);
         }
         out.print("</ul>");
     }
 
-    private void renderLink(NavTree nav, String pathToHere, String rootId,
+    private void renderLink(NavTree nav, String rootId,
                             ViewContext context, PrintWriter out, Boolean shouldExpand) throws URISyntaxException
     {
-        final String currentPath = (pathToHere + "/" + nav.getText()).toLowerCase();
+        // 34137: Support folder path expansion for containers where label != name
+        final Container container = ContainerManager.getForId(nav.getId());
+        if (container == null)
+        {
+            renderChildLinks(nav, rootId, context, out, false);
+            return;
+        }
+
+        final String currentPath = container.getPath().toLowerCase();
         final String containerPath = context.getContainer().getPath().toLowerCase();
 
         if (shouldExpand == null)
@@ -90,9 +98,6 @@ public class FolderMenu extends NavTreeMenu
 
         boolean isSelected = shouldExpand && currentPath.equals(containerPath);
         boolean hasChildren = nav.hasChildren();
-
-        if (null != nav.getText())
-            pathToHere = pathToHere + "/" + nav.getEscapedKey();
 
         List<String> liCls = new ArrayList<>();
         liCls.add("folder-tree-node");
@@ -115,10 +120,7 @@ public class FolderMenu extends NavTreeMenu
         String link = nav.getHref();
         if (null != link)
         {
-            if (!StringUtils.isEmpty(nav.getId()))
-                out.printf("<a id=\"%s\" href=\"%s\"", filter(nav.getId()), filter(link));
-            else
-                out.printf("<a href=\"%s\"", filter(link));
+            out.printf("<a href=\"%s\"", filter(link));
 
             if (isSelected)
                 out.print(" class=\"nav-tree-selected\" id=\"folder-target\"");
@@ -140,9 +142,9 @@ public class FolderMenu extends NavTreeMenu
         if (hasChildren)
         {
             if (shouldExpand)
-                renderChildLinks(nav, pathToHere, rootId, context, out, null);
+                renderChildLinks(nav, rootId, context, out, null);
             else
-                renderChildLinks(nav, pathToHere, rootId, context, out, false);
+                renderChildLinks(nav, rootId, context, out, false);
         }
         out.print("</li>");
     }
