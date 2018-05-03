@@ -412,7 +412,6 @@ public class StatementDataIterator extends AbstractDataIterator
     {
         _data.close();
         _queue.close();
-        SQLException sqlx = null;
         if (_asyncThread != null)
         {
             try {_asyncThread.join();}catch(InterruptedException x){}
@@ -422,19 +421,10 @@ public class StatementDataIterator extends AbstractDataIterator
         {
             if (stmt != null)
             {
-                try
-                {
-                    stmt.close();
-                }
-                catch (SQLException x)
-                {
-                    sqlx = x;
-                }
+                stmt.close();
             }
         }
         _stmts = new Parameter.ParameterMap[0];
-        if (null != sqlx)
-            throw new RuntimeSQLException(sqlx);
     }
 
 
