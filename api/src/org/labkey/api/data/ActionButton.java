@@ -136,6 +136,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private String _encodedSubmitForm;
     private boolean _noFollow = false;
     private boolean _enabled = true;
+    private Boolean _primary; // allow for null to fall back to default behavior
 
     private String _id;
 
@@ -422,6 +423,17 @@ public class ActionButton extends DisplayElement implements Cloneable
         return this;
     }
 
+    public Boolean getPrimary()
+    {
+        return _primary;
+    }
+
+    public ActionButton setPrimary(Boolean primary)
+    {
+        _primary = primary;
+        return this;
+    }
+
     public String getTooltip()
     {
         return _tooltip;
@@ -446,6 +458,9 @@ public class ActionButton extends DisplayElement implements Cloneable
                 .tooltip(getTooltip())
                 .enabled(_enabled)
                 .id(_id);
+
+        if (_primary != null)
+            button.primary(_primary);
 
         Map<String, String> attributes = new HashMap<>();
 

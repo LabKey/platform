@@ -374,6 +374,9 @@ public class Button extends DisplayElement
         {
             if (primary)
                 this.typeCls = PRIMARY_CLS;
+            // explicitly set typeCls to something other than null so that the default cls isn't applied
+            else
+                this.typeCls = "";
             return this;
         }
 

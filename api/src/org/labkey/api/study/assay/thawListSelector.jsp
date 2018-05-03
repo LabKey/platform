@@ -156,9 +156,12 @@
         var resetDefaultBtn = Ext.get('Btn-ResetDefaultValues');
         if (resetDefaultBtn)
         {
-            if (disabled)
-                resetDefaultBtn.replaceClass('labkey-button', 'labkey-disabled-button');
-            else resetDefaultBtn.replaceClass('labkey-disabled-button', 'labkey-button');
+            if (disabled) {
+                resetDefaultBtn.addClass('labkey-disabled-button');
+            }
+            else {
+                resetDefaultBtn.removeClass('labkey-disabled-button');
+            }
         }
     };
 

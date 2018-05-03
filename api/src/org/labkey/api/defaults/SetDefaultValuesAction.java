@@ -212,6 +212,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             ActionURL clearURL = new ActionURL(ClearDefaultValuesAction.class, domainIdForm.getContainer());
             ActionButton clearButton = new ActionButton(clearURL, "Clear Defaults");
             clearButton.setActionType(ActionButton.Action.POST);
+            clearButton.setPrimary(false);
             bbar.add(clearButton);
         }
         bbar.add(new ActionButton("Cancel", _returnUrl));
