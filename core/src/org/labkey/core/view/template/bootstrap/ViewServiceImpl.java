@@ -328,6 +328,7 @@ public class ViewServiceImpl implements ViewService
                 out.print("</a>");
             }
 
+            out.print("<div class=\"clearfix\"></div>");
             out.print("</div><div class=\"" + StringUtils.defaultString(getConfig()._className,"") + " panel-body\">");
         }
 
