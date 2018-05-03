@@ -721,7 +721,7 @@ public class Parameter implements AutoCloseable
 
 
         @Override
-        public void close() throws SQLException
+        public void close()
         {
             try
             {
@@ -731,7 +731,14 @@ public class Parameter implements AutoCloseable
             {
                 // Don't blow up if the statement was already closed
             }
-            _stmt.close();
+            try
+            {
+                _stmt.close();
+            }
+            catch (SQLException ignored)
+            {
+                // Don't blow up if the statement was already closed
+            }
             afterClose();
         }
 
