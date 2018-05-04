@@ -22,9 +22,9 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TestSchema;
@@ -33,7 +33,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.Portal;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -59,6 +58,9 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 
         // Delete any rows in test.TestTable associated with this container
         Table.delete(TestSchema.getInstance().getTableInfoTestTable(), SimpleFilter.createContainerFilter(c));
+
+        // QC States
+        Table.delete(CoreSchema.getInstance().getTableInfoQCState(), SimpleFilter.createContainerFilter(c));
 
         // Let containerManager delete ACLs, we want that to happen last
 

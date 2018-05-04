@@ -121,7 +121,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -160,7 +159,6 @@ import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -3064,10 +3062,6 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getSchema().getTable("WellGroup"));
             Table.delete(StudySchema.getInstance().getTableInfoPlate(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoPlate());
-
-            // QC States
-            Table.delete(StudySchema.getInstance().getTableInfoQCState(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoQCState());
 
             // Specimen comments
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
