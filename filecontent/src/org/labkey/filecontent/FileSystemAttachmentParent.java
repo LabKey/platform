@@ -25,9 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;

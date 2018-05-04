@@ -29,7 +29,6 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
@@ -38,7 +37,6 @@ import org.labkey.filecontent.message.FileContentDigestProvider;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

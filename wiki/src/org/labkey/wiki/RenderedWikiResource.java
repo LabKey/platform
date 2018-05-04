@@ -16,7 +16,6 @@
 package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 

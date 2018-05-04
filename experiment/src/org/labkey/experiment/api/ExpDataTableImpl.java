@@ -50,7 +50,6 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;

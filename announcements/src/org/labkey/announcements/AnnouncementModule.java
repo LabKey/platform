@@ -54,7 +54,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -91,7 +90,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         setLabel("Message Board and Discussion Service");
 
         RSSServiceImpl i = new RSSServiceImpl();
-        RSSService.set(i);
+        RSSService.setInstance(i);
     }
 
     @Override
@@ -114,7 +113,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         addController("tours", ToursController.class);
 
         AnnouncementSchema.register(this);
-        DiscussionService.register(new DiscussionServiceImpl());
+        DiscussionService.setInstance(new DiscussionServiceImpl());
         EmailTemplateService.get().registerTemplate(AnnouncementManager.NotificationEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(AnnouncementDigestProvider.DailyDigestEmailTemplate.class);
 

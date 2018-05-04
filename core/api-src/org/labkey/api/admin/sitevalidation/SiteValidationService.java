@@ -36,7 +36,7 @@ public interface SiteValidationService
 {
     static SiteValidationService get()
     {
-        return ServiceRegistry.get(SiteValidationService.class);
+        return ServiceRegistry.get().getService(SiteValidationService.class);
     }
 
     static void setInstance(SiteValidationService impl)

@@ -26,6 +26,7 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
+import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
@@ -229,7 +230,6 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -306,11 +306,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("notification", NotificationController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
-        AttachmentService.register(new AttachmentServiceImpl());
-        AnalyticsServiceImpl.register();
+        AttachmentService.setInstance(new AttachmentServiceImpl());
+        AnalyticsService.setInstance(new AnalyticsServiceImpl());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
-        NotificationService.register(NotificationServiceImpl.getInstance());
+        NotificationService.setInstance(NotificationServiceImpl.getInstance());
 
         ViewService.setInstance(ViewServiceImpl.getInstance());
         ExperimentalFeatureService.setInstance(new ExperimentalFeatureServiceImpl());

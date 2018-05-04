@@ -19,11 +19,11 @@ package org.labkey.wiki.renderer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.markdown.MarkdownService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.wiki.FormattedHtml;
 
 import javax.script.ScriptException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
 
 public class MarkdownRenderer extends HtmlRenderer
 {

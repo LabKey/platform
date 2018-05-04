@@ -19,12 +19,10 @@
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.pipeline.view.SetupForm" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SetupForm> thisView = (JspView<SetupForm>) HttpView.currentView();

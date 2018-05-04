@@ -55,7 +55,6 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -63,7 +62,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyManagementOption;
@@ -111,9 +109,7 @@ import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -137,11 +133,6 @@ public class StudyServiceImpl implements StudyService
     private static List<StudyManagementOption> _managementOptions = new ArrayList<>();
 
     private StudyServiceImpl() {}
-
-    public static StudyServiceImpl get()
-    {
-        return (StudyServiceImpl)ServiceRegistry.get(StudyService.class);
-    }
 
     public StudyImpl getStudy(Container container)
     {

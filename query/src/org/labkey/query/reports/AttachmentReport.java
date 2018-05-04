@@ -35,7 +35,6 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportNameContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;

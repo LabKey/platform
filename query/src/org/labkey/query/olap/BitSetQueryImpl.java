@@ -36,7 +36,6 @@ import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;

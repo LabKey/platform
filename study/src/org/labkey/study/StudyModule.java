@@ -250,7 +250,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("participant-group", ParticipantGroupController.class);
         addController("study-design", StudyDesignController.class);
 
-        PlateService.register(new PlateManager());
+        PlateService.setInstance(new PlateManager());
         AssayService.setInstance(new AssayManager());
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -362,8 +362,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         // the Experiment listener needs to be called after the Study listener,
         // because Study needs the metadata held by Experiment to delete properly.
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
-        AssayPublishService.register(new AssayPublishManager());
-        SpecimenService.register(new SpecimenServiceImpl());
+        AssayPublishService.setInstance(new AssayPublishManager());
+        SpecimenService.setInstance(new SpecimenServiceImpl());
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 

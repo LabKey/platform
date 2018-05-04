@@ -28,7 +28,6 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
@@ -61,7 +60,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
 
     public static DataLoaderServiceImpl get()
     {
-        return (DataLoaderServiceImpl) ServiceRegistry.get(DataLoaderService.class);
+        return (DataLoaderServiceImpl) DataLoaderService.get();
     }
 
     public DataLoaderServiceImpl()

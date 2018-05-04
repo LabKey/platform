@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
 <%@ page import="org.labkey.api.rstudio.RStudioService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>

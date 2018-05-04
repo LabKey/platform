@@ -32,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;

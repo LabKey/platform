@@ -39,12 +39,9 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * User: kevink

@@ -27,7 +27,6 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;

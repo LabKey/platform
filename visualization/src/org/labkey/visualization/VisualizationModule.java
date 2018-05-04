@@ -17,14 +17,13 @@
 package org.labkey.visualization;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReport;

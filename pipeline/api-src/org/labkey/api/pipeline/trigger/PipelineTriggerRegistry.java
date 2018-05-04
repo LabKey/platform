@@ -29,7 +29,7 @@ public interface PipelineTriggerRegistry
 {
     static PipelineTriggerRegistry get()
     {
-        return ServiceRegistry.get(PipelineTriggerRegistry.class);
+        return ServiceRegistry.get().getService(PipelineTriggerRegistry.class);
     }
 
     static void setInstance(PipelineTriggerRegistry instance)

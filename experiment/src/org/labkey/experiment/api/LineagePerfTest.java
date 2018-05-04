@@ -32,7 +32,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;

@@ -42,7 +42,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     static public void register()
     {
-        AnalyticsService.set(new AnalyticsServiceImpl());
+        AnalyticsService.setInstance(new AnalyticsServiceImpl());
     }
 
 

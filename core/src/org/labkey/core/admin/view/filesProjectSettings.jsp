@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -30,8 +29,6 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 

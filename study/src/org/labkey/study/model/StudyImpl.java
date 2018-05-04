@@ -50,7 +50,6 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;

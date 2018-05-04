@@ -40,7 +40,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;

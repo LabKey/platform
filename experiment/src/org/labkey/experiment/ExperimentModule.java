@@ -50,7 +50,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;

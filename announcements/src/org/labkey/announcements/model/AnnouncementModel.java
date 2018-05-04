@@ -31,7 +31,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;

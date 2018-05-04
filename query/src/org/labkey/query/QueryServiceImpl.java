@@ -48,7 +48,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;

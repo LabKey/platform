@@ -26,7 +26,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavResource;
@@ -104,7 +103,7 @@ public class FileWriter extends BaseFolderWriter
 
     private WebdavResource getFilesDirectory(Container container)
     {
-        WebdavService webdavService = ServiceRegistry.get().getService(WebdavService.class);
+        WebdavService webdavService = WebdavService.get();
         FileContentService fileContentService = FileContentService.get();
         if (null == webdavService || null == fileContentService || !(fileContentService instanceof FileContentServiceImpl))
             return null;

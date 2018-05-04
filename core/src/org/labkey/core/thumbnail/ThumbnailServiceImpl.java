@@ -23,7 +23,6 @@ import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;

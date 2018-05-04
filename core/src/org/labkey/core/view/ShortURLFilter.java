@@ -15,7 +15,6 @@
  */
 package org.labkey.core.view;
 
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 

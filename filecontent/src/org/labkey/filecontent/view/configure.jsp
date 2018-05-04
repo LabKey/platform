@@ -19,17 +19,15 @@
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
 <%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
-<%@ page import="java.io.File" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="java.nio.file.Path" %>
 <%@ page import="java.nio.file.Files" %>
+<%@ page import="java.nio.file.Path" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

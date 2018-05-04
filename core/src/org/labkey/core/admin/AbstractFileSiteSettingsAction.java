@@ -36,7 +36,6 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.FileUtil;

@@ -16,11 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.files.FileContentService"%>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override

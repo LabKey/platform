@@ -19,7 +19,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.util.StringUtils;

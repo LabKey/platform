@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
