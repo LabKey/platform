@@ -152,6 +152,7 @@ public class Query
 
     final private Map<String, QueryRelation> _withTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
     private boolean _hasRecursiveWith = false;
+    private Map<String, TableType> _metadataTableMap = null;
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -834,8 +835,12 @@ public class Query
 
         if (t instanceof TableInfo)
         {
-            _resolveCache.get(currentSchema).put(key, new Pair<>(resolvedSchema, (TableInfo) t));
-            return new QueryTable(this, resolvedSchema, (TableInfo)t, alias);
+            TableInfo tableInfo = (TableInfo)t;
+            TableType tableType = lookupMetadataTable(tableInfo.getName());
+            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
+                tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
+            _resolveCache.get(currentSchema).put(key, new Pair<>(resolvedSchema, tableInfo));
+            return new QueryTable(this, resolvedSchema, tableInfo, alias);
         }
 
         if (t instanceof QueryDefinition)
@@ -937,8 +942,19 @@ public class Query
         _withTables.remove(legalName);
     }
 
+    public void setMetadataTableMap(Map<String, TableType> metadataTableMap)
+    {
+        _metadataTableMap = metadataTableMap;
+    }
 
-	//
+    @Nullable
+    public TableType lookupMetadataTable(String tableName)
+    {
+        return null != _metadataTableMap ? _metadataTableMap.get(tableName) : null;
+    }
+
+
+    //
 	// TESTING
 	//
     private static class TestDataLoader extends DataLoader

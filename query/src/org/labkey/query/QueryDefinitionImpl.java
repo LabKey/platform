@@ -114,6 +114,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
     private  Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
 
+    private Map<String, TableType> _metadataTableMap = null;
+
     public QueryDefinitionImpl(User user, Container container, QueryDef queryDef)
     {
         _user = user;
@@ -441,6 +443,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         Query query = new Query(schema, parent);
         query.setName(getSchemaName() + "." + getName());
         query.setContainerFilter(getContainerFilter());
+        query.setMetadataTableMap(_metadataTableMap);
         String sql = getSql();
         if (sql != null)
         {
@@ -1084,6 +1087,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isMetadataEditable()
     {
         return true;
+    }
+
+    public void setMetadataTableMap(Map<String, TableType> metadataTableMap)
+    {
+        _metadataTableMap = metadataTableMap;
     }
 
     public ViewOptions getViewOptions()

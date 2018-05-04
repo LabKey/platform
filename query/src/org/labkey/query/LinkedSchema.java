@@ -242,10 +242,15 @@ public class LinkedSchema extends ExternalSchema
     @Override
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
     {
-        QueryDefinition queryDef = createWrapperQueryDef(name, sourceTable);
-
         TableType metaData = getXbTable(name);
         ArrayList<QueryException> errors = new ArrayList<>();
+        if (null != metaData && sourceTable.isMetadataOverrideable())
+            sourceTable.overlayMetadata(Collections.singletonList(metaData), _sourceSchema, errors);
+
+        QueryDefinition queryDef = createWrapperQueryDef(name, sourceTable);
+        // Hand in entire metaDataMap (of tables) into queryDef. Then when Query.resolveTable binds to a table, apply the metadata if it exists.
+        queryDef.setMetadataTableMap(_metaDataMap);
+
         TableInfo tableInfo = queryDef.getTable(errors, true);
         if (!errors.isEmpty())
         {
