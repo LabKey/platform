@@ -17,28 +17,16 @@
 package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HttpsUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.Filter;
@@ -50,15 +38,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -272,7 +253,7 @@ public class AuthFilter implements Filter
             AppProps.getInstance().ensureBaseServerUrl(request);
             ModuleLoader.getInstance().attemptStartBackgroundThreads();
 
-            _securityPointcut = ServiceRegistry.get(SecurityPointcutService.class);
+            _securityPointcut = SecurityPointcutService.get();
 
             _firstRequestHandled = true;
         }

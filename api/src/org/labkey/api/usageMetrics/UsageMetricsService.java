@@ -30,7 +30,7 @@ public interface UsageMetricsService
 
     static UsageMetricsService get()
     {
-        return ServiceRegistry.get(UsageMetricsService.class);
+        return ServiceRegistry.get().getService(UsageMetricsService.class);
     }
 
     static void setInstance(UsageMetricsService impl)

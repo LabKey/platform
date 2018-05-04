@@ -21,7 +21,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HtmlView;

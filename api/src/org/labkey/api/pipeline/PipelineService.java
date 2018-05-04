@@ -56,7 +56,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     
     static PipelineService get()
     {
-        return ServiceRegistry.get(PipelineService.class);
+        return ServiceRegistry.get().getService(PipelineService.class);
     }
 
     static void setInstance(PipelineService instance)

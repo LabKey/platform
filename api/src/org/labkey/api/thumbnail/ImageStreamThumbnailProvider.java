@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.reader.Readers;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.CheckedInputStream;
 import org.labkey.api.util.ExceptionUtil;

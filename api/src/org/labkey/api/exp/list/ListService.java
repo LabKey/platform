@@ -33,7 +33,7 @@ public interface ListService
 {
     static ListService get()
     {
-        return ServiceRegistry.get(ListService.class);
+        return ServiceRegistry.get().getService(ListService.class);
     }
 
     static void setInstance(ListService ls)

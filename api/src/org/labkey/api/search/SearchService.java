@@ -74,7 +74,7 @@ public interface SearchService
 
     static @Nullable SearchService get()
     {
-        return ServiceRegistry.get(SearchService.class);
+        return ServiceRegistry.get().getService(SearchService.class);
     }
 
     static void setInstance(SearchService impl)

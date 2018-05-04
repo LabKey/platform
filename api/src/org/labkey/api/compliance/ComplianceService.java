@@ -37,7 +37,7 @@ public interface ComplianceService
     static @NotNull ComplianceService get()
     {
         // Return default service if module not registered
-        ComplianceService service = ServiceRegistry.get(ComplianceService.class);
+        ComplianceService service = ServiceRegistry.get().getService(ComplianceService.class);
         if (null == service)
             service = new DefaultComplianceService();
         return service;

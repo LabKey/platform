@@ -46,14 +46,14 @@ public interface PlateService
         }
     }
 
-    static void register(PlateService serviceImpl)
+    static void setInstance(PlateService serviceImpl)
     {
         ServiceRegistry.get().registerService(PlateService.class, serviceImpl);
     }
 
     static PlateService get()
     {
-        return ServiceRegistry.get(PlateService.class);
+        return ServiceRegistry.get().getService(PlateService.class);
     }
 
     /**

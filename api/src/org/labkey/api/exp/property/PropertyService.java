@@ -36,7 +36,7 @@ public interface PropertyService
 {
     static PropertyService get()
     {
-        return ServiceRegistry.get(PropertyService.class);
+        return ServiceRegistry.get().getService(PropertyService.class);
     }
 
     static void setInstance(PropertyService impl)

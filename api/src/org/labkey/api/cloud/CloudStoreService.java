@@ -36,7 +36,7 @@ public interface CloudStoreService
 
     static @Nullable CloudStoreService get()
     {
-        return ServiceRegistry.get(CloudStoreService.class);
+        return ServiceRegistry.get().getService(CloudStoreService.class);
     }
 
     static void setInstance(CloudStoreService impl)

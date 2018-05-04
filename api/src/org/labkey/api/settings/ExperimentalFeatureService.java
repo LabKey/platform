@@ -36,7 +36,7 @@ public interface ExperimentalFeatureService
 {
     static ExperimentalFeatureService get()
     {
-        return ServiceRegistry.get(ExperimentalFeatureService.class);
+        return ServiceRegistry.get().getService(ExperimentalFeatureService.class);
     }
 
     static void setInstance(ExperimentalFeatureService impl)

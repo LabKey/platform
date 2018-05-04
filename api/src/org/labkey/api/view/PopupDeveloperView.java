@@ -19,7 +19,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.rstudio.RStudioService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;

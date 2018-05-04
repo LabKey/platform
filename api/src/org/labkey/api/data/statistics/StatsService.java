@@ -24,7 +24,7 @@ public interface StatsService
 {
     static StatsService get()
     {
-        return ServiceRegistry.get(StatsService.class);
+        return ServiceRegistry.get().getService(StatsService.class);
     }
 
     static void setInstance(StatsService impl)

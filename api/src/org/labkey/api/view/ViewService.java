@@ -31,7 +31,7 @@ public interface ViewService
 {
     static @NotNull ViewService get()
     {
-        return ServiceRegistry.get(ViewService.class);
+        return ServiceRegistry.get().getService(ViewService.class);
     }
 
     static void setInstance(ViewService impl)

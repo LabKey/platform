@@ -27,7 +27,7 @@ public interface FolderSerializationRegistry
 {
     static FolderSerializationRegistry get()
     {
-        return ServiceRegistry.get(FolderSerializationRegistry.class);
+        return ServiceRegistry.get().getService(FolderSerializationRegistry.class);
     }
 
     static void setInstance(FolderSerializationRegistry impl)

@@ -49,7 +49,7 @@ public interface AuditLogService
 
     static AuditLogService get()
     {
-        AuditLogService svc = ServiceRegistry.get(AuditLogService.class);
+        AuditLogService svc = ServiceRegistry.get().getService(AuditLogService.class);
         return svc != null ? svc : _defaultProvider;
     }
 

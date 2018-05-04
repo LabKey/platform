@@ -26,11 +26,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;

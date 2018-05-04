@@ -20,11 +20,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ResourceURL;
-import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 
 /**

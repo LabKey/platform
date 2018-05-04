@@ -36,14 +36,14 @@ import java.util.List;
  */
 public interface NotificationService
 {
-    static void register(NotificationService serviceImpl)
+    static void setInstance(NotificationService serviceImpl)
     {
         ServiceRegistry.get().registerService(NotificationService.class, serviceImpl);
     }
 
     static NotificationService get()
     {
-        return ServiceRegistry.get(NotificationService.class);
+        return ServiceRegistry.get().getService(NotificationService.class);
     }
 
     /*

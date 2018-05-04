@@ -21,7 +21,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Set;
 

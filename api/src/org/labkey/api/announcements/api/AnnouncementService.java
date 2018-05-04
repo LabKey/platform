@@ -30,7 +30,7 @@ public interface AnnouncementService
 {
     static AnnouncementService get()
     {
-        return ServiceRegistry.get(AnnouncementService.class);
+        return ServiceRegistry.get().getService(AnnouncementService.class);
     }
 
     static void setInstance(AnnouncementService impl)

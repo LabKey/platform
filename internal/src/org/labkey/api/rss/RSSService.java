@@ -15,7 +15,6 @@
  */
 package org.labkey.api.rss;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -33,7 +32,7 @@ public interface RSSService
         return ServiceRegistry.get().getService(RSSService.class);
     }
 
-    static void set(RSSService impl)
+    static void setInstance(RSSService impl)
     {
         ServiceRegistry.get().registerService(RSSService.class, impl);
     }

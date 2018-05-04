@@ -35,7 +35,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
@@ -110,7 +109,7 @@ public final class RhinoService
     public static void register()
     {
         SandboxContextFactory.initGlobal();
-        ServiceRegistry.get().registerService(ScriptService.class, RHINO_FACTORY);
+        ScriptService.setInstance(RHINO_FACTORY);
     }
 
     public static void clearCaches()

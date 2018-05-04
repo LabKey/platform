@@ -99,7 +99,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     static ExperimentService get()
     {
-        return ServiceRegistry.get(ExperimentService.class);
+        return ServiceRegistry.get().getService(ExperimentService.class);
     }
 
     static void setInstance(ExperimentService impl)

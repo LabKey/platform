@@ -25,7 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.usageMetrics.UsageMetricsService;

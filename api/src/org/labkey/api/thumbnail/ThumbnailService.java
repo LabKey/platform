@@ -34,7 +34,7 @@ public interface ThumbnailService
 {
     static ThumbnailService get()
     {
-        return ServiceRegistry.get(ThumbnailService.class);
+        return ServiceRegistry.get().getService(ThumbnailService.class);
     }
 
     static void setInstance(ThumbnailService impl)

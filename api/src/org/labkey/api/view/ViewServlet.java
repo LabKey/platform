@@ -30,7 +30,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryService.Environment;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.CSRFUtil;
@@ -273,7 +272,7 @@ public class ViewServlet extends HttpServlet
     {
         initializeControllerMaps();
         initializeAllSpringControllers();
-        securityPointcut = ServiceRegistry.get(SecurityPointcutService.class);
+        securityPointcut = SecurityPointcutService.get();
 
         _serverHeader =  "Labkey/" + AppProps.getInstance().getLabKeyVersionString();
     }
@@ -330,7 +329,7 @@ public class ViewServlet extends HttpServlet
         {
             if (0==_pendingRequestCount.get())
                 break;
-            try {Thread.sleep(100);}catch(InterruptedException x){}
+            try {Thread.sleep(100);}catch(InterruptedException ignored){}
             msWaitForRequests -= 100;
         }
     }

@@ -11,7 +11,7 @@ public interface CustomLabelService
 {
     static CustomLabelService get()
     {
-        return ServiceRegistry.get(CustomLabelService.class);
+        return ServiceRegistry.get().getService(CustomLabelService.class);
     }
 
     static void setInstance(CustomLabelService impl)

@@ -888,7 +888,7 @@ public class RReport extends ExternalScriptEngineReport
         {
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension("r");
             ViewContext context = HttpView.currentContext();
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "print('hello world')\n\nprint('line 3')\n";
@@ -909,7 +909,7 @@ public class RReport extends ExternalScriptEngineReport
         {
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "html");
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension("r");
             //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Html);
             //assertEquals(RReportDescriptor.KnitrFormat.Html, r.getKnitrFormat());
             ViewContext context = HttpView.currentContext();
@@ -931,7 +931,7 @@ public class RReport extends ExternalScriptEngineReport
         {
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "markdown");
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get(ScriptEngineManager.class).getEngineByExtension("r");
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension("r");
             //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Markdown);
             ViewContext context = HttpView.currentContext();
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");

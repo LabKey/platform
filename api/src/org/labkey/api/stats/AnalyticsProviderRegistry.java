@@ -27,7 +27,7 @@ public interface AnalyticsProviderRegistry
 {
     static AnalyticsProviderRegistry get()
     {
-        return ServiceRegistry.get(AnalyticsProviderRegistry.class);
+        return ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
     }
 
     static void setInstance(AnalyticsProviderRegistry impl)

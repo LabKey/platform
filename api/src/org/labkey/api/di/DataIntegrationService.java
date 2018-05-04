@@ -34,7 +34,7 @@ public interface DataIntegrationService
 
     static DataIntegrationService get()
     {
-        return ServiceRegistry.get(DataIntegrationService.class);
+        return ServiceRegistry.get().getService(DataIntegrationService.class);
     }
 
     static void setInstance(DataIntegrationService impl)

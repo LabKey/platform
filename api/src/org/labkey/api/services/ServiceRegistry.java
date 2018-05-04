@@ -107,6 +107,7 @@ public class ServiceRegistry
 
 
     /** Returns a service implementation for a given service interface. */
+    @Deprecated // Use ServiceRegistry.get().getService() instead
     public static <T> T get(Class<T> type)
     {
         return get().getService(type);

@@ -18,7 +18,6 @@ package org.labkey.api.thumbnail;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.data.CacheableWriter;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;

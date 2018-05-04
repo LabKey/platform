@@ -19,7 +19,6 @@ import org.apache.batik.transcoder.TranscoderException;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reader.Readers;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;

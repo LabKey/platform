@@ -46,7 +46,7 @@ public interface RStudioService
 
     static RStudioService get()
     {
-        return ServiceRegistry.get(RStudioService.class);
+        return ServiceRegistry.get().getService(RStudioService.class);
     }
 
     static void setInstance(RStudioService impl)

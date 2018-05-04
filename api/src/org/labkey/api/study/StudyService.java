@@ -70,7 +70,7 @@ public interface StudyService
     @Nullable
     static StudyService get()
     {
-        return ServiceRegistry.get(StudyService.class);
+        return ServiceRegistry.get().getService(StudyService.class);
     }
 
     /**

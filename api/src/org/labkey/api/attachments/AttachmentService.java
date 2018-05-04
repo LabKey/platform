@@ -52,14 +52,14 @@ public interface AttachmentService
 {
     String ATTACHMENT_AUDIT_EVENT = "AttachmentAuditEvent";
 
-    static void register(AttachmentService serviceImpl)
+    static void setInstance(AttachmentService serviceImpl)
     {
         ServiceRegistry.get().registerService(AttachmentService.class, serviceImpl);
     }
 
     static AttachmentService get()
     {
-        return ServiceRegistry.get(AttachmentService.class);
+        return ServiceRegistry.get().getService(AttachmentService.class);
     }
 
     void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;

@@ -169,7 +169,7 @@ public class WebdavService
 
     public WebdavResolver getRootResolver()
     {
-        return ServiceRegistry.get(WebdavResolver.class);
+        return ServiceRegistry.get().getService(WebdavResolver.class);
     }
 
     /**

@@ -33,7 +33,7 @@ public interface ShortURLService
 {
     static ShortURLService get()
     {
-        return ServiceRegistry.get(ShortURLService.class);
+        return ServiceRegistry.get().getService(ShortURLService.class);
     }
 
     static void setInstance(ShortURLService impl)

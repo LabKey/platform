@@ -32,6 +32,11 @@ public interface SecurityPointcutService
         ServiceRegistry.get().registerService(SecurityPointcutService.class, impl);
     }
 
+    static SecurityPointcutService get()
+    {
+        return ServiceRegistry.get().getService(SecurityPointcutService.class);
+    }
+
     /**
      * This handler is called before a action request (.api,.view,.post) is dispatched to an module for resolving to an action.
      * Typically called by ViewServlet, but if anyone calls an action w/o dispatching through ViewServlet (e.g WebdavService)

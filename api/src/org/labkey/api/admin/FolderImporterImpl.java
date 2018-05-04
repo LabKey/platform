@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 

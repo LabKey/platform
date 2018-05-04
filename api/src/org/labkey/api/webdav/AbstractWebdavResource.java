@@ -41,7 +41,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;

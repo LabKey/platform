@@ -52,7 +52,7 @@ public interface AssayService
 
     static AssayService get()
     {
-        return ServiceRegistry.get(AssayService.class);
+        return ServiceRegistry.get().getService(AssayService.class);
     }
 
     static void setInstance(AssayService impl)

@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.data.Container;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
@@ -31,9 +30,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

@@ -53,7 +53,7 @@ public interface ReportService
 
     static ReportService get()
     {
-        return ServiceRegistry.get(ReportService.class);
+        return ServiceRegistry.get().getService(ReportService.class);
     }
 
     static void registerProvider(ReportService provider)

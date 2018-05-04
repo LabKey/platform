@@ -16,7 +16,6 @@
 package org.labkey.api.docker;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.services.ServiceRegistry;
 
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
@@ -49,7 +48,7 @@ public class DockerSessionListener implements HttpSessionBindingListener
 
         try
         {
-            ServiceRegistry.get(DockerService.class).stop(_containerId);
+            DockerService.get().stop(_containerId);
         }
         catch (Exception ex)
         {

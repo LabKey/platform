@@ -28,7 +28,7 @@ public interface ContainerService
 {
     static ContainerService get()
     {
-        return ServiceRegistry.get(ContainerService.class);
+        return ServiceRegistry.get().getService(ContainerService.class);
     }
 
     static void setInstance(ContainerService impl)

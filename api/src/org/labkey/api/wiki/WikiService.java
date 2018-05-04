@@ -36,7 +36,7 @@ public interface WikiService
 {
     static @Nullable WikiService get()
     {
-        return ServiceRegistry.get(WikiService.class);
+        return ServiceRegistry.get().getService(WikiService.class);
     }
 
     static void setInstance(WikiService impl)

@@ -24,7 +24,7 @@ public interface ActivityService
 {
     static ActivityService get()
     {
-        return ServiceRegistry.get(ActivityService.class);
+        return ServiceRegistry.get().getService(ActivityService.class);
     }
 
     static void setInstance(ActivityService impl)

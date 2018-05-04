@@ -30,7 +30,7 @@ public interface TourService
     @Nullable
     static TourService get()
     {
-        return ServiceRegistry.get(TourService.class);
+        return ServiceRegistry.get().getService(TourService.class);
     }
 
     static void setInstance(TourService impl)

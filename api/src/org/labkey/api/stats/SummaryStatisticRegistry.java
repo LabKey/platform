@@ -23,7 +23,7 @@ public interface SummaryStatisticRegistry
 {
     static SummaryStatisticRegistry get()
     {
-        return ServiceRegistry.get(SummaryStatisticRegistry.class);
+        return ServiceRegistry.get().getService(SummaryStatisticRegistry.class);
     }
 
     static void setInstance(SummaryStatisticRegistry impl)

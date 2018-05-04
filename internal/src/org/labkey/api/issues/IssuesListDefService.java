@@ -31,7 +31,7 @@ public interface IssuesListDefService
 {
     static IssuesListDefService get()
     {
-        return ServiceRegistry.get(IssuesListDefService.class);
+        return ServiceRegistry.get().getService(IssuesListDefService.class);
     }
 
     static void setInstance(IssuesListDefService impl)

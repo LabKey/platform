@@ -35,7 +35,7 @@ public interface DataLoaderService
 {
     static DataLoaderService get()
     {
-        return ServiceRegistry.get(DataLoaderService.class);
+        return ServiceRegistry.get().getService(DataLoaderService.class);
     }
 
     static void setInstance(DataLoaderService impl)

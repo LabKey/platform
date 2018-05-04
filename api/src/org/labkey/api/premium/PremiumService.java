@@ -8,7 +8,7 @@ public interface PremiumService
     static @NotNull PremiumService get()
     {
         // Return default service if premium module not registered
-        PremiumService service = ServiceRegistry.get(PremiumService.class);
+        PremiumService service = ServiceRegistry.get().getService(PremiumService.class);
         if (null == service)
             service = new DefaultPremiumService();
         return service;

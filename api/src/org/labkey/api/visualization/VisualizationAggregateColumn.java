@@ -15,9 +15,8 @@
  */
 package org.labkey.api.visualization;
 
-import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.data.Aggregate;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.view.ViewContext;
 
 /**

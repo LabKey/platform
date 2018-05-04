@@ -16,15 +16,17 @@
 
 package org.labkey.api.announcements;
 
-import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.*;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Collection;
@@ -53,14 +55,14 @@ public interface DiscussionService
     registerResolver(String name, Resolver resolver);
     */
 
-    static void register(DiscussionService serviceImpl)
+    static void setInstance(DiscussionService serviceImpl)
     {
         ServiceRegistry.get().registerService(DiscussionService.class, serviceImpl);
     }
 
     static DiscussionService get()
     {
-        return ServiceRegistry.get(DiscussionService.class);
+        return ServiceRegistry.get().getService(DiscussionService.class);
     }
 
     /**

@@ -27,10 +27,10 @@ public interface AnalyticsService
 {
     static AnalyticsService get()
     {
-        return ServiceRegistry.get(AnalyticsService.class);
+        return ServiceRegistry.get().getService(AnalyticsService.class);
     }
 
-    static void set(AnalyticsService impl)
+    static void setInstance(AnalyticsService impl)
     {
         ServiceRegistry.get().registerService(AnalyticsService.class, impl);
     }

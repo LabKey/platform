@@ -16,7 +16,6 @@
 package org.labkey.api.reports;
 
 import org.labkey.api.rstudio.RStudioService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 
 import javax.script.ScriptEngine;

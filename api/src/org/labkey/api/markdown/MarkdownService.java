@@ -32,7 +32,7 @@ public interface MarkdownService
 {
     static @Nullable MarkdownService get()
     {
-        return ServiceRegistry.get(MarkdownService.class);
+        return ServiceRegistry.get().getService(MarkdownService.class);
     }
 
     static void setInstance(MarkdownService impl)

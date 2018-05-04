@@ -50,14 +50,14 @@ public interface AssayPublishService
     String AUTO_COPY_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
 
 
-    static void register(AssayPublishService serviceImpl)
+    static void setInstance(AssayPublishService serviceImpl)
     {
         ServiceRegistry.get().registerService(AssayPublishService.class, serviceImpl);
     }
 
     static AssayPublishService get()
     {
-        return ServiceRegistry.get(AssayPublishService.class);
+        return ServiceRegistry.get().getService(AssayPublishService.class);
     }
 
     ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,

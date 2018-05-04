@@ -49,7 +49,7 @@ public interface FileContentService
 
     static @Nullable FileContentService get()
     {
-        return ServiceRegistry.get(FileContentService.class);
+        return ServiceRegistry.get().getService(FileContentService.class);
     }
 
     static void setInstance(FileContentService impl)

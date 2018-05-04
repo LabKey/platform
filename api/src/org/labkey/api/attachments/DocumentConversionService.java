@@ -34,7 +34,7 @@ public interface DocumentConversionService
 {
     static @Nullable DocumentConversionService get()
     {
-        return ServiceRegistry.get(DocumentConversionService.class);
+        return ServiceRegistry.get().getService(DocumentConversionService.class);
     }
 
     static void setInstance(DocumentConversionService impl)

@@ -40,7 +40,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;

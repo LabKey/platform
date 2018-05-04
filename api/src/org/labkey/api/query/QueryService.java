@@ -69,7 +69,7 @@ public interface QueryService
 
     static QueryService get()
     {
-        return ServiceRegistry.get(QueryService.class);
+        return ServiceRegistry.get().getService(QueryService.class);
     }
 
     static void setInstance(QueryService impl)

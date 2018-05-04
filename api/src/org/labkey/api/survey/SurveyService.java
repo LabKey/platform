@@ -32,7 +32,7 @@ public interface SurveyService
 {
     static SurveyService get()
     {
-        return ServiceRegistry.get(SurveyService.class);
+        return ServiceRegistry.get().getService(SurveyService.class);
     }
 
     static void setInstance(SurveyService impl)

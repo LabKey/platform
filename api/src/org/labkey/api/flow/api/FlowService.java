@@ -32,7 +32,7 @@ public interface FlowService
 {
     static @Nullable FlowService get()
     {
-        return ServiceRegistry.get(FlowService.class);
+        return ServiceRegistry.get().getService(FlowService.class);
     }
 
     static void setInstance(FlowService impl)

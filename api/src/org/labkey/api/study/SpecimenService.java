@@ -44,14 +44,14 @@ import java.util.Set;
  */
 public interface SpecimenService
 {
-    static void register(SpecimenService serviceImpl)
+    static void setInstance(SpecimenService serviceImpl)
     {
         ServiceRegistry.get().registerService(SpecimenService.class, serviceImpl);
     }
 
     static SpecimenService get()
     {
-        return ServiceRegistry.get(SpecimenService.class);
+        return ServiceRegistry.get().getService(SpecimenService.class);
     }
 
     /** Does a search for matching GlobalUniqueIds  */
