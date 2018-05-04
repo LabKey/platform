@@ -24,6 +24,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.query.QueryChangeListener.QueryProperty;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
+import org.labkey.data.xml.TableType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -145,4 +146,5 @@ public interface QueryDefinition
     boolean isSqlEditable();
     boolean isMetadataEditable();
     ViewOptions getViewOptions();
+    void setMetadataTableMap(Map<String, TableType> metadataTableMap);
 }
