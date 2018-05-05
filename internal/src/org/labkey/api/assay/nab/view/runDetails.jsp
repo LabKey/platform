@@ -89,7 +89,11 @@
     {
 %>
         <labkey:panel title="Discussions">
-            <% me.include(bean.getDiscussionView(getViewContext()), out); %>
+            <%
+                HttpView discussion = bean.getDiscussionView(getViewContext());
+                if (discussion != null)
+                    me.include(discussion, out);
+            %>
         </labkey:panel>
 <%
     }

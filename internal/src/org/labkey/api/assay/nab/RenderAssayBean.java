@@ -16,6 +16,7 @@
 package org.labkey.api.assay.nab;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
@@ -300,6 +301,7 @@ public class RenderAssayBean extends RenderAssayForm
         return _printView;
     }
 
+    @Nullable
     public HttpView getDiscussionView(ViewContext context)
     {
         ExpRun run = _assay.getRun();
