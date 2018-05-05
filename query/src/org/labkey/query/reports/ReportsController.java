@@ -1287,11 +1287,15 @@ public class ReportsController extends SpringActionController
 
             if (!isPrint() && !(ret instanceof HttpRedirectView))
             {
-                VBox box = new VBox(ret);
                 DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
-                box.addView(service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
-                ret = box;
+                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
+                if (discussion != null)
+                {
+                    VBox box = new VBox(ret);
+                    box.addView(discussion);
+                    ret = box;
+                }
             }
             return ret;
         }
@@ -1424,7 +1428,9 @@ public class ReportsController extends SpringActionController
 
                 DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + report.getDescriptor().getReportName();
-                box.addView(service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
+                if (discussion != null)
+                    box.addView(discussion);
 
                 return box;
             }
@@ -2825,7 +2831,9 @@ public class ReportsController extends SpringActionController
                     {
                         DiscussionService service = DiscussionService.get();
                         String title = "Discuss report - " + _reportName;
-                        view.addView(service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                        DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
+                        if (discussion != null)
+                            view.addView(discussion);
                     }
                     return view;
                 }

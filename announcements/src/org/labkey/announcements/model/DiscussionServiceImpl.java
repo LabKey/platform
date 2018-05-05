@@ -18,6 +18,7 @@ package org.labkey.announcements.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.CompareType;
@@ -127,6 +128,7 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
+    @Nullable
     public DiscussionService.DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
         Container c = context.getContainer();
@@ -136,11 +138,12 @@ public class DiscussionServiceImpl implements DiscussionService
         return getDiscussionArea(c, user, currentURL, objectId, pageURL, newDiscussionTitle, allowMultipleDiscussions, displayFirstDiscussionByDefault);
     }
 
+    @Nullable
     public DiscussionService.DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
-        if(!LookAndFeelProperties.getInstance(c).isDiscussionEnabled()){
+        if (!LookAndFeelProperties.getInstance(c).isDiscussionEnabled())
             return null;
-        }
+
         // get discussion parameters
         Map<String, String> params = currentURL.getScopeParameters("discussion");
         List<AnnouncementModel> discussions = getDiscussions(c, objectId);

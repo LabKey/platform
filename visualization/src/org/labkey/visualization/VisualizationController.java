@@ -1189,7 +1189,8 @@ public class VisualizationController extends SpringActionController
                     String title = "Discuss report - " + report.getDescriptor().getReportName();
                     DiscussionService service = DiscussionService.get();
                     HttpView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                    boxView.addView(discussion);
+                    if (discussion != null)
+                        boxView.addView(discussion);
                 }
             }
 

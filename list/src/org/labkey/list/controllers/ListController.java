@@ -664,9 +664,11 @@ public class ListController extends SpringActionController
 
                 // Display discussion by default in single-discussion case, #4529
                 DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), entityId, linkBackURL, discussionTitle, multiple, !multiple);
-                view.addView(discussion);
-
-                getPageConfig().setFocusId(discussion.getFocusId());
+                if (discussion != null)
+                {
+                    view.addView(discussion);
+                    getPageConfig().setFocusId(discussion.getFocusId());
+                }
             }
 
             return view;

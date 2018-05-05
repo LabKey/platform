@@ -989,14 +989,16 @@ public class StudyController extends BaseStudyController
                     // discuss the report
                     String title = "Discuss report - " + report.getDescriptor().getReportName();
                     HttpView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                    view.addView(discussion);
+                    if (discussion != null)
+                        view.addView(discussion);
                 }
                 else
                 {
                     // discuss the dataset
                     String title = "Discuss dataset - " + def.getLabel();
                     HttpView discussion = service.getDiscussionArea(getViewContext(), def.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                    view.addView(discussion);
+                    if (discussion != null)
+                        view.addView(discussion);
                 }
             }
             return view;
