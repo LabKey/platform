@@ -1808,7 +1808,6 @@ api/src/proteowizard/pwiz/RAMPAdapter/vectord.java -text
 api/webapp/Ext3.lib.xml -text
 api/webapp/Ext4.lib.xml -text
 api/webapp/WEB-INF/applicationContext.xml -text
-api/webapp/WEB-INF/classes/distribution -text
 api/webapp/WEB-INF/labkey.tld -text
 api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text

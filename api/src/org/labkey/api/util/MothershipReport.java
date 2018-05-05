@@ -451,7 +451,7 @@ public class MothershipReport implements Runnable
             }
             else
             {
-                distributionStamp = "Distribution File Missing";
+                distributionStamp = "localBuild";
             }
         }
         catch (IOException e)
