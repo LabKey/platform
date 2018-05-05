@@ -25,6 +25,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
@@ -70,6 +71,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     // NOTE: CallableStatement supports getObject(), but PreparedStatement doesn't
     private OneBasedList<Object> _parameters = null;
     private @Nullable StackTraceElement[] _stackTrace = null;
+    /** Track the place that closed this statement for troubleshooting purposes */
+    private @Nullable Throwable _closingStackTrace = null;
     private @Nullable Boolean _requestThread = null;
     private QueryLogging _queryLogging = QueryLogging.emptyQueryLogging();
 
@@ -98,6 +101,11 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public @Nullable Boolean isRequestThread()
     {
         return null != _requestThread ? _requestThread : ViewServlet.isRequestThread();
+    }
+
+    public Throwable getClosingStackTrace()
+    {
+        return _closingStackTrace;
     }
 
     public void setRequestThread(@Nullable Boolean requestThread)
@@ -1747,6 +1755,10 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         try
         {
             _stmt.close();
+            if (AppProps.getInstance().isDevMode() && _closingStackTrace == null)
+            {
+                _closingStackTrace = new Throwable("Remembering stack for closing Statement on thread " + Thread.currentThread().getName());
+            }
         }
         catch (SQLException e)
         {

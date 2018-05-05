@@ -726,18 +726,19 @@ public class Parameter implements AutoCloseable
             try
             {
                 _stmt.clearParameters();
-            }
-            catch (SQLException ignored)
-            {
-                // Don't blow up if the statement was already closed
-            }
-            try
-            {
                 _stmt.close();
             }
             catch (SQLException ignored)
             {
-                // Don't blow up if the statement was already closed
+                LOG.warn("Failed to close backing statement during close operation", ignored);
+                if (_stmt instanceof StatementWrapper)
+                {
+                    Throwable t = ((StatementWrapper)_stmt).getClosingStackTrace();
+                    if (t != null)
+                    {
+                        LOG.warn("Stack trace of the operation that previously closed the statement:", t);
+                    }
+                }
             }
             afterClose();
         }
