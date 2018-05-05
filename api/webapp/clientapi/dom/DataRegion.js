@@ -4089,7 +4089,11 @@ if (!LABKEY.DataRegions) {
         var url = LABKEY.ActionURL.buildURL('query', 'clearSelected.api', config.containerPath,
                 { 'key': config.selectionKey });
 
-        LABKEY.Ajax.request({ url: url });
+        LABKEY.Ajax.request({
+            url: url,
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+        });
     };
 
     /**
