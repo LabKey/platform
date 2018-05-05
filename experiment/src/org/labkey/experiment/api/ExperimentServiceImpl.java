@@ -5753,7 +5753,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         ExpSampleSet existing = getSampleSet(c, name);
         if (existing != null)
-            throw new IllegalArgumentException("SampleSet '" + name + "' already exists");
+            throw new IllegalArgumentException("SampleSet '" + existing.getName() + "' already exists");
 
         if (properties == null || properties.size() < 1)
             throw new ExperimentException("At least one property is required");
@@ -5872,7 +5872,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         ExpDataClass existing = getDataClass(c, u, name);
         if (existing != null)
-            throw new IllegalArgumentException("DataClass '" + name + "' already exists");
+            throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists");
 
         if (sampleSetId != null)
         {

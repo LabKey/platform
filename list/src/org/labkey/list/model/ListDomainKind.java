@@ -48,6 +48,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.list.client.ListEditorService;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -314,6 +315,8 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
         if (name == null)
             throw new IllegalArgumentException("List name must not be null");
+        if (name.length() > ListEditorService.MAX_NAME_LENGTH)
+            throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
 
         if (keyName == null)
             throw new IllegalArgumentException("List keyName must not be null");

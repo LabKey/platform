@@ -128,7 +128,7 @@
             <% if (form.isImportMoreSamples() || form.getNameReadOnly()) {  %>
                 <input type="hidden" name="importMoreSamples" value="<%=h(form.isImportMoreSamples())%>"/>
                 <input type="hidden" name="nameReadOnly" value="<%=h(form.getNameReadOnly())%>"/>
-                <input id="name" type="hidden" name="name" value="<%=h(form.getName())%>"><%= h(form.getName())%>
+                <input id="name" type="hidden" name="name" value="<%=h(form.getName())%>"><%= h(sampleSet != null ? sampleSet.getName() : form.getName())%>
             <% }
             else
             { %>
