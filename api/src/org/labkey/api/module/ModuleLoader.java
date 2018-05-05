@@ -69,8 +69,12 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.template.WarningProvider;
+import org.labkey.api.view.template.WarningService;
+import org.labkey.api.view.template.Warnings;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
@@ -380,6 +384,7 @@ public class ModuleLoader implements Filter
 
         List<String> modulesRequiringUpgrade = new LinkedList<>();
         List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
+        List<String> downgradedModules = new LinkedList<>();
 
         for (Module m : _modules)
         {
@@ -394,7 +399,26 @@ public class ModuleLoader implements Filter
                 // The scenario is a schema in an external data source that needs to be installed or upgraded.
                 List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(m);
                 additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
+
+                // Also check for module "downgrades" so we can warn admins, #30773
+                if (m.getVersion() < ctx.getInstalledVersion())
+                    downgradedModules.add(ctx.getName());
             }
+        }
+
+        if (!downgradedModules.isEmpty())
+        {
+            int count = downgradedModules.size();
+            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
+            _log.error(message);
+            WarningService.get().register(new WarningProvider()
+            {
+                @Override
+                public void addStaticWarnings(Warnings warnings)
+                {
+                    warnings.add(message);
+                }
+            });
         }
 
         if (!modulesRequiringUpgrade.isEmpty())
@@ -406,7 +430,7 @@ public class ModuleLoader implements Filter
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        // terminateAfterStartup flag allows "headless upgrade". Now supports initial install as well
+        // terminateAfterStartup flag allows "headless" install/upgrade
         boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
         Execution execution = terminateAfterStartup ? Execution.Synchronous : Execution.Asynchronous;
 
@@ -1369,7 +1393,7 @@ public class ModuleLoader implements Filter
         ModuleContext stored = getModuleContext(context.getName());
         if (null == stored)
             Table.insert(null, getTableInfoModules(), context);
-        else
+        else if (context.getInstalledVersion() > stored.getInstalledVersion()) // Never "downgrade" a module version, #30773
             Table.update(null, getTableInfoModules(), context, context.getName());
     }
 
