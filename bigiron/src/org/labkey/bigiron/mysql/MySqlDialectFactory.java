@@ -58,9 +58,12 @@ public class MySqlDialectFactory implements SqlDialectFactory
         // Version 5.1 or greater is allowed...
         if (version >= 51)
         {
-            // ...but warn for anything greater than 5.7
-            if (logWarnings && version > 57)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  getProductName() + " 5.7 is the recommended version.");
+            // ...but warn for anything greater than 8.0.x
+            if (logWarnings && version > 80)
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  getProductName() + " 8.0.x is the recommended version.");
+
+            if (version >= 80)
+                return new MySql80Dialect();
 
             if (version >= 57)
                 return new MySql57Dialect();

@@ -141,6 +141,7 @@ bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2017Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServerDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySql56Dialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySql57Dialect.java -text
+bigiron/src/org/labkey/bigiron/mysql/MySql80Dialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialect.java -text
 bigiron/src/org/labkey/bigiron/mysql/MySqlDialectFactory.java -text
 bigiron/src/org/labkey/bigiron/oracle/Oracle11gR1Dialect.java -text
