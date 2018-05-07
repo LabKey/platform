@@ -28,7 +28,7 @@
     {
         dependencies.add("internal/jQuery");
         dependencies.add("Ext3");
-        dependencies.add("Ext4");
+        dependencies.add("Ext4ClientApi");
     }
 %>
 <style type="text/css">
@@ -377,10 +377,15 @@
         <div class="lk-sg-example">
             <div class="lk-sg-example-ext4">
                 <div id="ext4-panel"></div>
+                <br/>
                 <div id="ext4-button"></div>
                 <div id="ext4-button-d"></div>
+                <br/>
                 <div id="ext4-dialog"></div>
+                <br/>
                 <div id="ext4-form"></div>
+                <br/>
+                <div id="ext4-tabpanel"></div>
             </div>
             <script type="application/javascript">
                 if (typeof Ext4 !== 'undefined') {
@@ -518,6 +523,43 @@
                 else {
                     document.getElementById('ext4-panel').innerHTML = 'Ext 4 is not available.'
                 }
+
+                Ext4.create('LABKEY.ext4.BootstrapTabPanel', {
+                    renderTo: 'ext4-tabpanel',
+                    title: 'LABKEY.ext4.BootstrapTabPanel Example',
+                    description: 'This is a bootstrap styled tab panel that allows for Ext4 components to live within it.',
+                    items: [{
+                        title: 'Tab 1',
+                        active: true,
+                        items: [{
+                            xtype: 'box',
+                            html: 'content for tab 1'
+                        }]
+                    },{
+                        title: 'Tab 2',
+                        items: [
+                            Ext4.create('LABKEY.ext4.BootstrapTabPanel', {
+                                usePills: true,
+                                // justified: true,
+                                //stacked: true,
+                                items: [{
+                                    title: 'Inner Tab A',
+                                    active: true,
+                                    items: [{
+                                        xtype: 'box',
+                                        html: 'content for inner tab A'
+                                    }]
+                                },{
+                                    title: 'Inner Tab B',
+                                    items: [{
+                                        xtype: 'box',
+                                        html: 'content for inner tab B'
+                                    }]
+                                }]
+                            })
+                        ]
+                    }]
+                });
             </script>
         </div>
     </labkey:panel>
