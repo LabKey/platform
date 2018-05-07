@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.search;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -22,10 +23,12 @@ import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
+import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PortalHelper;
@@ -102,6 +105,7 @@ public abstract class SearchTest extends StudyBaseTest
 
     private void doSetup()
     {
+        Log4jUtils.setLogLevel("org.labkey.api.search.SearchService", ManagerPage.LoggingLevel.DEBUG);
         SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         _searchHelper.initialize();
         enableEmailRecorder();
@@ -398,5 +402,11 @@ public abstract class SearchTest extends StudyBaseTest
     public void testSteps()
     {
         // Mask parent test
+    }
+
+    @AfterClass
+    public static void resetLogger()
+    {
+        Log4jUtils.resetAllLogLevels();
     }
 }
