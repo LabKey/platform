@@ -5,6 +5,7 @@
         <script path="extWidgets/Ext4FormPanel.js"/>
         <script path="extWidgets/Ext4GridPanel.js"/>
         <script path="extWidgets/DetailsPanel.js"/>
+        <script path="extWidgets/BootstrapTabPanel.js"/>
     </library>
     <dependencies>
         <dependency path="clientapi/ext4"/>
