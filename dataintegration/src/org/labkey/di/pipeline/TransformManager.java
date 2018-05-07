@@ -1007,13 +1007,17 @@ public class TransformManager implements DataIntegrationService
         return runNowPipeline(etl, c, u, new LinkedHashMap<>());
     }
 
-    public RemoteConnection getRemoteConnection(String name, Container c)
+    public RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log)
     {
+        if (log == null)
+        {
+            log = LOG;
+        }
+
         // Check that an entry for the remote connection name exists
         Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
         if (connectionMap.get(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name) == null)
         {
-            LOG.error("The remote connection " + name + " has not yet been setup in the remote connection manager.  You may configure a new remote connection through the schema browser.");
             return null;
         }
 
@@ -1025,7 +1029,7 @@ public class TransformManager implements DataIntegrationService
         String container = singleConnectionMap.get(RemoteConnections.FIELD_CONTAINER);
         if (url == null || user == null || password == null || container == null)
         {
-            LOG.error("Invalid login credentials in the secure user store");
+            log.error("Invalid login credentials in the secure user store");
             return null;
         }
 

@@ -1,6 +1,8 @@
 <view xmlns="http://labkey.org/data/xml/view">
     <dependencies>
         <dependency path="Ext4ClientApi"/>
+        <dependency path="ux/CheckCombo/CheckCombo.js"/>
+        <dependency path="ux/CheckCombo/CheckCombo.css"/>
         <dependency path="/extWidgets/SearchPanel.js"/>
     </dependencies>
 </view>

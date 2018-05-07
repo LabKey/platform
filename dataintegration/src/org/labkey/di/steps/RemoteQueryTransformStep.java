@@ -87,10 +87,9 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
             return null;
         }
 
-        DataIntegrationService.RemoteConnection connection = DataIntegrationService.get().getRemoteConnection(name, c);
+        DataIntegrationService.RemoteConnection connection = DataIntegrationService.get().getRemoteConnection(name, c, log);
         if (connection == null)
         {
-            log.warn("Unable to create a remote connection for source: " + name + ".  please see the server log for more detail.");
             return null;
         }
         // Pass in named query parameters
