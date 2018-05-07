@@ -15,8 +15,6 @@
  */
 package org.labkey.core.admin.logger;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.log4j.Level;
@@ -77,26 +75,12 @@ public class LoggerController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    static class LoggerLevel
+    public static class LoggerLevel
     {
-        public final String name;
-        public final String parent;
-        public final String level;
-        public final boolean inherited;
-
-        public LoggerLevel(String name, String parent, String level, boolean inherited)
-        {
-            this.name = name;
-            this.parent = parent;
-            this.level = level;
-            this.inherited = inherited;
-        }
-
-        @JsonCreator
-        public static LoggerLevel fromJson(@JsonProperty("name") String name, @JsonProperty("level") String level)
-        {
-            return new LoggerLevel(name, null, level, false);
-        }
+        private String name;
+        private String parent;
+        private String level;
+        private boolean inherited;
 
         public static LoggerLevel fromLogger(Logger log)
         {
@@ -104,10 +88,52 @@ public class LoggerController extends SpringActionController
             Level level = log.getLevel();
             Level effectiveLevel = log.getEffectiveLevel();
 
-            return new LoggerLevel(log.getName(),
-                    parent != null ? parent.getName() : null,
-                    level != null ? level.toString() : effectiveLevel.toString(),
-                    level == null);
+            LoggerLevel loggerLevel = new LoggerLevel();
+            loggerLevel.setName(log.getName());
+            loggerLevel.setParent(parent != null ? parent.getName() : null);
+            loggerLevel.setLevel(level != null ? level.toString() : effectiveLevel.toString());
+            loggerLevel.setInherited(level == null);
+            return loggerLevel;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getParent()
+        {
+            return parent;
+        }
+
+        public void setParent(String parent)
+        {
+            this.parent = parent;
+        }
+
+        public String getLevel()
+        {
+            return level;
+        }
+
+        public void setLevel(String level)
+        {
+            this.level = level;
+        }
+
+        public boolean isInherited()
+        {
+            return inherited;
+        }
+
+        public void setInherited(boolean inherited)
+        {
+            this.inherited = inherited;
         }
     }
 
