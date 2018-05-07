@@ -291,8 +291,11 @@ public class ListImporter
         }
 
         int size = lists.size() - failedLists;
-        log.info(size + " list" + (1 == size ? "" : "s") + " imported");
-        log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
+        log.info(size + " list" + (1 == size ? "" : "s") + " imported" + (failedLists == 0 ? ", all successfully" : ""));
+        if (failedLists > 0)
+        {
+            log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
+        }
         if (fileTypeMap.size() > 0)
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
