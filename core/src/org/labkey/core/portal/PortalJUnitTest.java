@@ -29,10 +29,11 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.WebPartFactory;
 
-import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: marki
@@ -62,27 +63,21 @@ public class PortalJUnitTest extends Assert
 
         WebPartFactory wikiFactory = Portal.getPortalPart("Wiki");
         assertNotNull(wikiFactory);
-        WebPartFactory searchFactory = Portal.getPortalPart("Search");
-        assertNotNull(searchFactory);
+        WebPartFactory filesFactory = Portal.getPortalPart("Files");
+        assertNotNull(filesFactory);
         WebPartFactory pagesFactory = Portal.getPortalPart("Wiki Table of Contents");
         assertNotNull(pagesFactory);
 
-        Portal.addPart(folder, wikiFactory, "body");
-        Portal.addPart(folder, searchFactory, "body");
+        final String location_body = "body";
+        Portal.addPart(folder, wikiFactory, location_body);
+        Portal.addPart(folder, filesFactory, location_body);
         Portal.addPart(folder, pagesFactory, WebPartFactory.LOCATION_RIGHT);
 
         List<WebPart> parts = Portal.getParts(folder);
         assertEquals(parts.size(), 3);
 
-        MultiValuedMap<String, WebPart> locMap = Portal.getPartsByLocation(parts);
-        WebPart[] bodyParts = locMap.get("body").toArray(new WebPart[locMap.get("body").size()]);
-        assertEquals(bodyParts.length, 2);
-        assertEquals(parts.get(0).getName(), "Wiki");
-        assertEquals(parts.get(1).getName(), "Search");
-
-        WebPart[] rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
-        assertEquals(1, rightParts.length);
-        assertEquals("Wiki Table of Contents", rightParts[0].getName());
+        assertEquals("Wrong body webparts", Arrays.asList("Wiki", "Files"), getWebPartNames(location_body, parts));
+        assertEquals("Wrong side webparts", Arrays.asList("Wiki Table of Contents"), getWebPartNames(WebPartFactory.LOCATION_RIGHT, parts));
 
         //Delete a part
         List<WebPart> modifiedParts = new LinkedList<>();
@@ -92,47 +87,37 @@ public class PortalJUnitTest extends Assert
 
         parts = Portal.getParts(folder);
         assertEquals(parts.size(), 2);
-        locMap = Portal.getPartsByLocation(parts);
-        bodyParts = locMap.get("body").toArray(new WebPart[locMap.get("body").size()]);
-        assertEquals(bodyParts.length, 1);
-        assertEquals(parts.get(0).getName(), "Wiki");
-
-        rightParts = locMap.get(WebPartFactory.LOCATION_RIGHT).toArray(new WebPart[locMap.get(WebPartFactory.LOCATION_RIGHT).size()]);
-        assertEquals(rightParts.length, 1);
-        assertEquals(rightParts[0].getName(), "Wiki Table of Contents");
+        assertEquals("Wrong body webparts", Arrays.asList("Wiki"), getWebPartNames(location_body, parts));
+        assertEquals("Wrong side webparts", Arrays.asList("Wiki Table of Contents"), getWebPartNames(WebPartFactory.LOCATION_RIGHT, parts));
 
         ///Now add it back at a specific position
-        Portal.addPart(folder, searchFactory, "body", 0);
+        Portal.addPart(folder, filesFactory, location_body, 0);
         parts = Portal.getParts(folder);
         assertEquals(parts.size(), 3);
-        locMap = Portal.getPartsByLocation(parts);
-        bodyParts = locMap.get("body").toArray(new WebPart[locMap.get("body").size()]);
-        assertEquals(bodyParts.length, 2);
-        assertEquals(parts.get(0).getName(), "Search");
+        assertEquals("Wrong body webparts", Arrays.asList("Files", "Wiki"), getWebPartNames(location_body, parts));
+        assertEquals("Wrong side webparts", Arrays.asList("Wiki Table of Contents"), getWebPartNames(WebPartFactory.LOCATION_RIGHT, parts));
 
         //Create some parts on a new page
         String newPageGuid = GUID.makeGUID();
         parts = Portal.getParts(folder, newPageGuid);
         assertEquals(parts.size(), 0);
-        Portal.addPart(folder, newPageGuid, wikiFactory, "body", -1, PageFlowUtil.map("pageName", "testPage"));
+        Portal.addPart(folder, newPageGuid, wikiFactory, location_body, -1, PageFlowUtil.map("pageName", "testPage"));
         //Make sure we have a part on our new page
         parts = Portal.getParts(folder, newPageGuid);
         assertEquals(parts.size(), 1);
         Map<String,String> props = parts.get(0).getPropertyMap();
         assertEquals(props.get("pageName"), "testPage");
-        Portal.addPart(folder,  newPageGuid, searchFactory, "body", -1, null);
+        Portal.addPart(folder,  newPageGuid, filesFactory, location_body, -1, null);
         parts = Portal.getParts(folder, newPageGuid);
         assertEquals(parts.size(), 2);
-        assertEquals(parts.get(0).getName(), "Wiki");
-        assertEquals(parts.get(1).getName(), "Search");
+        assertEquals("Wrong body webparts", Arrays.asList("Wiki", "Files"), getWebPartNames(location_body, parts));
         //Now swap the parts
         //Should come back in index order
         parts.get(0).setIndex(1);
         parts.get(1).setIndex(0);
         Portal.saveParts(folder, newPageGuid, parts);
         parts = Portal.getParts(folder, newPageGuid);
-        assertEquals(parts.get(0).getName(), "Search");
-        assertEquals(parts.get(1).getName(), "Wiki");
+        assertEquals("Wrong body webparts", Arrays.asList("Files", "Wiki"), getWebPartNames(location_body, parts));
 
         //Check to see that the old page is still the same length
         parts = Portal.getParts(folder);
@@ -146,5 +131,12 @@ public class PortalJUnitTest extends Assert
         assertEquals(parts.size(), 0);
         parts = Portal.getParts(folder, newPageGuid);
         assertEquals(parts.size(), 0);
+    }
+
+    private List<String> getWebPartNames(String body, List<WebPart> parts)
+    {
+        List<String> bodyParts;MultiValuedMap<String, WebPart> lfocMap = Portal.getPartsByLocation(parts);
+        bodyParts = lfocMap.get(body).stream().map(WebPart::getName).collect(Collectors.toList());
+        return bodyParts;
     }
 }
