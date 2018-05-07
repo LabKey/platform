@@ -1517,4 +1517,14 @@ public abstract class SqlDialect
         ret.append("}");
         return ret;
     }
+
+    public boolean isLabKeyWithSupported()
+    {
+        return false;
+    }
+
+    public boolean isWithRecursiveKeywordRequired()
+    {
+        return false;
+    }
 }

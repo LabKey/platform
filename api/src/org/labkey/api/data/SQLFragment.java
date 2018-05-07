@@ -265,8 +265,35 @@ public class SQLFragment implements Appendable, CharSequence
                 ret.addAll(params);
         }
         return Collections.unmodifiableList(ret);
-     }
+    }
 
+    public List<Pair<SQLFragment, Integer>> getParamsWithFragments()
+    {
+        List<Pair<SQLFragment, Integer>> ret;
+        ret = new ArrayList<>();
+        if (null != commonTableExpressionsMap)
+        {
+            for (CTE cte : commonTableExpressionsMap.values())
+            {
+                if (null != cte.sqlf && null != cte.sqlf.params)
+                {
+                    for (int i = 0; i < cte.sqlf.params.size(); i++)
+                    {
+                        ret.add(new Pair<>(cte.sqlf, i));
+                    }
+                }
+            }
+        }
+
+        if (null != params)
+        {
+            for (int i = 0; i < params.size(); i++)
+            {
+                ret.add(new Pair<>(this, i));
+            }
+        }
+        return ret;
+    }
 
     private final static Object[] EMPTY_ARRAY = new Object[0];
 
@@ -275,6 +302,10 @@ public class SQLFragment implements Appendable, CharSequence
         return null == params ? EMPTY_ARRAY : params.toArray();
     }
 
+    public List<Object> getParamsNoCTEs()
+    {
+        return params == null ? Collections.emptyList() : Collections.unmodifiableList(params);
+    }
 
     private List<Object> getMutableParams()
     {
@@ -475,7 +506,8 @@ public class SQLFragment implements Appendable, CharSequence
     public void prepend(SQLFragment sql)
     {
         insert(0, sql.getSqlCharSequence().toString());
-        getMutableParams().addAll(0, sql.getParams());
+        if (null != sql.params)
+            getMutableParams().addAll(0, sql.params);
         mergeCommonTableExpressions(sql);
     }
 
