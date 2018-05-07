@@ -15,6 +15,7 @@
  */
 package org.labkey.api.di;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -45,7 +46,7 @@ public interface DataIntegrationService
     void registerStepProviders();
     @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
 
-    public RemoteConnection getRemoteConnection(String name, Container c);
+    public RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
 
     public static class RemoteConnection
     {

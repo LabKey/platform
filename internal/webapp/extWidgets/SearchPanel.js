@@ -6,8 +6,9 @@
 
 Ext4.namespace('LABKEY.ext4');
 
-LABKEY.requiresScript('ux/CheckCombo/CheckCombo.js');
-LABKEY.requiresCss('ux/CheckCombo/CheckCombo.css');
+//These should be requested as ClientDependencies
+//LABKEY.requiresScript('ux/CheckCombo/CheckCombo.js');
+//LABKEY.requiresCss('ux/CheckCombo/CheckCombo.css');
 
 /**
  * Constructs a new LabKey Search Panel using the supplied configuration.
