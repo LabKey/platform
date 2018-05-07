@@ -2313,4 +2313,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         return search.replaceAll("_", "[_]").replaceAll("%", "[%]");
     }
+
+    @Override
+    public boolean isLabKeyWithSupported()
+    {
+        return true;
+    }
 }

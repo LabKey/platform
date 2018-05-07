@@ -1195,7 +1195,7 @@ groupByLoop:
                 f.append("(").append(s).append(") ").append(alias);
 
                 if (null != getQueryWith())
-                    f.append(getQueryWith().getQueryWithSql());     // Only CTEs
+                    f.prepend(getQueryWith().getQueryWithSql());     // Only CTEs
 
                 return f;
             }

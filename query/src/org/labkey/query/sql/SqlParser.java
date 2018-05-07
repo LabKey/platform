@@ -188,7 +188,10 @@ public class SqlParser
                 if (!list.isEmpty() && list.get(0).getType() == SqlBaseParser.WITH)
                 {
                     CommonTree withStmt = list.remove(0);
-                    qnodeWith = convertParseTree(withStmt);
+                    if (null == _dialect || _dialect.isLabKeyWithSupported())    // Check dialect if we have one
+                        qnodeWith = convertParseTree(withStmt);
+                    else
+                        errors.add(new QueryParseException("WITH statement not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
                 }
 
 

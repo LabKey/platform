@@ -2128,14 +2128,17 @@ public class QueryServiceImpl implements QueryService
     @Override
     public void bindNamedParameters(SQLFragment frag, @Nullable Map<String, Object> in)
     {
-        Map<String, Object> params = null == in ? Collections.emptyMap() :
+        Map<String, Object> parameterMap = null == in ? Collections.emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
                 new CaseInsensitiveHashMap<>(in);
 
-        List<Object> list = frag.getParams();
-        for (int i=0 ; i<list.size() ; i++)
+        for (Pair<SQLFragment, Integer> paramWithFragment :frag.getParamsWithFragments())    // list contains params from any CTEs
         {
-            Object o = list.get(i);
+            SQLFragment paramFragment = paramWithFragment.getKey();
+            Integer paramIndex = paramWithFragment.getValue();
+            if (null == paramIndex)
+                throw new IllegalStateException("Unexpected null param index.");
+            Object o = paramFragment.getParamsNoCTEs().get(paramIndex);
             if (!(o instanceof ParameterDecl))
                 continue;
 
@@ -2145,9 +2148,9 @@ public class QueryServiceImpl implements QueryService
             boolean required = p.isRequired();
             boolean provided = null != value;
 
-            if (params.containsKey(name))
+            if (parameterMap.containsKey(name))
             {
-                value = params.get(p.getName());
+                value = parameterMap.get(p.getName());
                 if (value instanceof String && ((String)value).isEmpty())
                     value = null;
                 provided = true;
@@ -2161,7 +2164,7 @@ public class QueryServiceImpl implements QueryService
             try
             {
                 Object converted = p.getJdbcType().convert(value);
-                frag.set(i, new Parameter.TypedValue(converted, p.getJdbcType()));
+                paramFragment.set(paramIndex, new Parameter.TypedValue(converted, p.getJdbcType()));
             }
             catch (ConversionException e)
             {

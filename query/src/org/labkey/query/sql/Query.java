@@ -1511,6 +1511,7 @@ public class Query
         new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
         new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
         new SqlTest("SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
+        new SqlTest("PARAMETERS(Y INTEGER DEFAULT 5) SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
 
         // Issue 18257: postgres error executing query selecting empty string value
         new SqlTest("SELECT '' AS EmptyString"),

@@ -1868,6 +1868,18 @@ abstract class PostgreSql91Dialect extends SqlDialect
             return super.formatJdbcFunction(fn, arguments);
     }
 
+    @Override
+    public boolean isLabKeyWithSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean isWithRecursiveKeywordRequired()
+    {
+        return true;
+    }
+
 
     /* 25146: timestampdiff() inconsistent between sql server and postgres
      * As of dec/2015 {fn timestampdiff()} is not implemented correctly in pgjdbc
