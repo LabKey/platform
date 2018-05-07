@@ -62,6 +62,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleNamedObject;
@@ -89,6 +90,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -843,47 +845,46 @@ public class LoginController extends SpringActionController
         }
 
         ValidEmail email;
-        User user;
 
         try
         {
             email = new ValidEmail(rawEmail);
-
-            if (SecurityManager.isLdapEmail(email))
-            {
-                // ldap authentication users must reset through their ldap administrator
-                return Pair.of(false, "Reset Password failed: " + email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
-            }
-            else if (!SecurityManager.loginExists(email))
-            {
-                return Pair.of(false, "Reset Password failed: " + email + " does not have a password.");
-            }
-            else
-            {
-                user = UserManager.getUser(email);
-
-                // We've validated that a login exists, so the user better not be null... but crashweb #8379 indicates this can happen.
-                if (null == user)
-                {
-                    return Pair.of(false, "This account does not exist.");
-                }
-                else if (!user.isActive())
-                {
-                    return Pair.of(false, "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
-                }
-            }
         }
         catch (InvalidEmailException e)
         {
             return Pair.of(false, "Reset Password failed: " + rawEmail + " is not a valid email address.");
         }
 
-        StringBuilder sbReset = new StringBuilder();
+        if (SecurityManager.isLdapEmail(email))
+        {
+            // ldap authentication users must reset through their ldap administrator
+            return Pair.of(false, "Reset Password failed: " + email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
+        }
+
+        // Every case below this point should result in the same, generic message being displayed to the user to avoid revealing any details about accounts, #33907
+
+        final User user = UserManager.getUser(email);
+
+        if (null == user)
+        {
+            _log.error("Password reset attempted for an email that doesn't match an existing account: " + email);
+            return resetPasswordResponse(user, null, null);
+        }
+
+        if (!SecurityManager.loginExists(email))
+        {
+            _log.error("Password reset attempted for an account that doesn't have a password: " + email);
+            return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via a single sign-on provider. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
+        }
+
+        if (!user.isActive())
+        {
+            return resetPasswordResponse(user, "You cannot reset your password because your account has been deactivated. Contact a server administrator if you have questions.", email + " attempted to reset the password for an inactive account" );
+        }
 
         try
         {
-            // Create a placeholder password that's impossible to guess and a separate email
-            // verification key that gets emailed.
+            // Create a verification key to email the user
             String verification = SecurityManager.createTempPassword();
             SecurityManager.setVerification(email, verification);
             try
@@ -897,34 +898,57 @@ public class LoginController extends SpringActionController
                 system.setFirstName(laf.getCompanyName());
                 SecurityManager.sendEmail(c, system, message, email.getEmailAddress(), verificationURL);
 
+                // TODO: When is this ever true? Admin reset goes through a different code path!
                 if (!user.getEmail().equals(email.getEmailAddress()))
                 {
                     final SecurityMessage adminMessage = SecurityManager.getResetMessage(true, user, providerName);
                     message.setTo(email.getEmailAddress());
                     SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
                 }
-                sbReset.append("An email has been sent to you with instructions for how to reset your password.");
-                UserManager.addToUserHistory(UserManager.getUser(email), email + " reset the password.");
             }
-            catch (ConfigurationException e)
+            catch (ConfigurationException | MessagingException e)
             {
-                sbReset.append("Failed to send password reset email at this time due to a server configuration problem. <br>");
-                sbReset.append(AppProps.getInstance().getAdministratorContactHTML());
-                UserManager.addToUserHistory(UserManager.getUser(email), email + " reset the password, but sending the email failed.");
-            }
-            catch (MessagingException e)
-            {
-                sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
-                UserManager.addToUserHistory(UserManager.getUser(email), email + " reset the password, but sending the email failed.");
+                _log.error("Password reset email could not be sent", e);
+                return resetPasswordResponse(user, "Your reset password email could not be sent due to a server configuration problem. Contact a server administrator.", email + " reset the password, but sending the email failed");
             }
         }
         catch (UserManagementException e)
         {
-            sbReset.append(": failed to reset password due to: ").append(e.getMessage());
-            UserManager.addToUserHistory(UserManager.getUser(email), email + " attempted to reset the password, but the reset failed: " + e.getMessage());
+            _log.error("Password reset failed", e);
+            return resetPasswordResponse(user, null, email + " attempted to reset the password, but the reset failed: " + e.getMessage());
         }
 
-        return Pair.of(true, sbReset.toString());
+        return resetPasswordResponse(user, null, null);
+    }
+
+    // Generic message that we display to users for most success and failure situations, to avoid revealing whether an account exists or not, #33907
+    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server then you will receive an email message with password reset instructions.";
+
+    private Pair<Boolean, String> resetPasswordResponse(User user, @Nullable String failureEmailMessage, @Nullable String failureLogMessage)
+    {
+        if (null != failureEmailMessage)
+        {
+            try
+            {
+                Container c = getContainer();
+                LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+                Message msg = MailHelper.createMessage(laf.getSystemEmailAddress(), user.getEmail());
+                msg.setSubject(laf.getShortName() + " Password Reset Attempt Failed");
+                msg.setText(failureEmailMessage + "\n\nThe " + laf.getCompanyName() + " " + laf.getShortName() + " home page is " + ActionURL.getBaseServerURL() + ".");
+                MailHelper.send(msg, user, c);
+            }
+            catch (MessagingException e)
+            {
+                _log.error("Error sending failure message email to password reset user", e);
+            }
+        }
+
+        if (null != failureLogMessage)
+        {
+            UserManager.addToUserHistory(user, failureLogMessage);
+        }
+
+        return Pair.of(true, GENERIC_RESET_PASSWORD_MESSAGE);
     }
 
     @RequiresNoPermission
@@ -2074,7 +2098,7 @@ public class LoginController extends SpringActionController
 
         public void validateCommand(LoginForm form, Errors errors)
         {
-            // All validation is handlied in attemptReset()
+            // All validation is handled in attemptReset()
         }
 
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
