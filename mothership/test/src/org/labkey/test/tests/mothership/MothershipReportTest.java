@@ -33,6 +33,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({DailyB.class})
@@ -79,7 +80,7 @@ public class MothershipReportTest extends BaseWebDriverTest
 
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
-        String distributionName = "localBuild";
+        String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
         assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
         assertNotNull("Usage reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Usage Reporting Level")));
         assertNotNull("Exception reporting level is empty", StringUtils.trimToNull(installDetail.getInstallationValue("Exception Reporting Level")));
