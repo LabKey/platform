@@ -1018,6 +1018,7 @@ public class TransformManager implements DataIntegrationService
         Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
         if (connectionMap.get(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name) == null)
         {
+            log.error("The remote connection " + name + " has not yet been setup in the remote connection manager.  You may configure a new remote connection through the schema browser.");
             return null;
         }
 
