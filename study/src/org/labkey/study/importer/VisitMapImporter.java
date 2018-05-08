@@ -213,7 +213,7 @@ public class VisitMapImporter
             VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
 
             // we're using sequenceNumMin as the key in this instance
-            if (visit != null && visit.getSequenceNumMin() != record.getSequenceNumMin())
+            if (visit != null && visit.getSequenceNumMinDouble() != record.getSequenceNumMin())
                 visit = null;
 
             if (visit == null)
@@ -249,12 +249,12 @@ public class VisitMapImporter
                     visit = _ensureMutable(visit);
                     visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 }
-                if (visit.getSequenceNumMax() != record.getSequenceNumMax())
+                if (visit.getSequenceNumMaxDouble() != record.getSequenceNumMax())
                 {
                     visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());
                 }
-                if (!Objects.equals(visit.getProtocolDay(), record.getProtocolDay()))
+                if (!Objects.equals(visit.getProtocolDayDouble(), record.getProtocolDay()))
                 {
                     visit = _ensureMutable(visit);
                     visit.setProtocolDay(record.getProtocolDay());
@@ -268,7 +268,7 @@ public class VisitMapImporter
                 {
                     if (visitManager.isVisitOverlapping(visit))
                     {
-                        String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMin();
+                        String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMinDouble();
                         throw new VisitMapImportException("Visit " + visitLabel + " range overlaps with an existing visit in this study.");
                     }
 

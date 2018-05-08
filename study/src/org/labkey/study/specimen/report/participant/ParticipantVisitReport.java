@@ -105,7 +105,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
             return "&nbsp;";
         ActionURL link = SpecimenController.getSamplesURL(_container);
         link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
-        link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
+        link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
         link = updateURLFilterParameter(link, "SpecimenDetail." + StudyService.get().getSubjectColumnName(getContainer()), summary.getParticipantId());
         String linkHtml = link.getLocalURIString();
         if (_filter != null)

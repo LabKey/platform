@@ -1957,8 +1957,8 @@ public class StudyController extends BaseStudyController
             {
                 if (v.getRowId() == postedVisit.getRowId())
                     continue;
-                double maxL = Math.max(v.getSequenceNumMin(), postedVisit.getSequenceNumMin());
-                double minR = Math.min(v.getSequenceNumMax(), postedVisit.getSequenceNumMax());
+                double maxL = Math.max(v.getSequenceNumMinDouble(), postedVisit.getSequenceNumMinDouble());
+                double minR = Math.min(v.getSequenceNumMaxDouble(), postedVisit.getSequenceNumMaxDouble());
                 if (maxL<=minR)
                 {
                     errors.reject("visitSummary", getVisitLabel() + " range overlaps with '" + v.getDisplayString() + "'");
@@ -2116,9 +2116,9 @@ public class StudyController extends BaseStudyController
                 for (VisitImpl visit : visits)
                 {
                     sb.append("<tr><td>");
-                    sb.append(PageFlowUtil.filter(visit.getLabel())).append(" (").append(visit.getSequenceNumMin());
-                    if (visit.getSequenceNumMax() != visit.getSequenceNumMin())
-                        sb.append("-").append(visit.getSequenceNumMax());
+                    sb.append(PageFlowUtil.filter(visit.getLabel())).append(" (").append(visit.getSequenceNumMinDouble());
+                    if (visit.getSequenceNumMaxDouble() != visit.getSequenceNumMinDouble())
+                        sb.append("-").append(visit.getSequenceNumMaxDouble());
                     sb.append(")");
                     sb.append("</td></tr>\n");
                 }
@@ -6012,7 +6012,7 @@ public class StudyController extends BaseStudyController
 
     public static class StudyChartReport extends ChartQueryReport
     {
-        public static final String TYPE = "Study.chartReport";
+        private static final String TYPE = "Study.chartReport";
 
         public String getType()
         {

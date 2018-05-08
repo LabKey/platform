@@ -65,7 +65,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -822,7 +821,7 @@ public class StudyDesignController extends BaseStudyController
 
             response.put("RowId", visit.getRowId());
             response.put("Label", visit.getDisplayString());
-            response.put("SequenceNumMin", visit.getSequenceNumMin());
+            response.put("SequenceNumMin", visit.getSequenceNumMinDouble());
             response.put("DisplayOrder", visit.getDisplayOrder());
             response.put("Included", true);
             response.put("success", true);

@@ -128,7 +128,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
             {
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
                 {
-                    _visitMap.put(visit.getSequenceNumMin(), visit);
+                    _visitMap.put(visit.getSequenceNumMinDouble(), visit);
                 }
             }
         }

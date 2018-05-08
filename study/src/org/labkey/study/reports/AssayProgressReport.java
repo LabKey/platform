@@ -234,7 +234,7 @@ public class AssayProgressReport extends AbstractReport
                     assayVisits.add(visitMap.get(visitId));
             }
 
-            assayVisits.sort((o1, o2) -> (int) (o1.getSequenceNumMin() - o2.getSequenceNumMin()));
+            assayVisits.sort((o1, o2) -> (int) (o1.getSequenceNumMinDouble() - o2.getSequenceNumMinDouble()));
             assay.setExpectedVisits(assayVisits);
 
             if (assayConfigMap.containsKey(assay.getRowId()))

@@ -113,8 +113,8 @@ assign dataset data to the correct timepoints.</p>
     <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId()))) %></td>
         <td><%=h(timepoint.getLabel())%></td>
-        <td><%=h(""+timepoint.getSequenceNumMin())%></td>
-        <td><%=h(""+timepoint.getSequenceNumMax())%></td>
+        <td><%=h(""+timepoint.getSequenceNumMinDouble())%></td>
+        <td><%=h(""+timepoint.getSequenceNumMaxDouble())%></td>
         <td><%= h(timepoint.getCohort() != null ? h(timepoint.getCohort().getLabel()) : "All") %></td>
         <td><%= h(timepoint.getType() != null ? timepoint.getType().getMeaning() : "[Not defined]") %></td>
         <td><%= timepoint.isShowByDefault()%></td>

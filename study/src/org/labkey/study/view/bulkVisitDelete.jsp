@@ -104,7 +104,7 @@
         <tr class="visit-row <%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><input type="checkbox" name="visitIds" value="<%=visit.getRowId()%>"></td>
             <td class="visit-label"><a href="<%=visitSummaryURL.getLocalURIString()%>"><%= h(visit.getDisplayString()) %></a></td>
-            <td class="visit-range"><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? " - " + visit.getSequenceNumMax() : "") %></td>
+            <td class="visit-range"><%= visit.getSequenceNumMinDouble() %><%= h(visit.getSequenceNumMinDouble()!= visit.getSequenceNumMaxDouble() ? " - " + visit.getSequenceNumMaxDouble() : "") %></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
             <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>
             <td align="right" class="visit-dataset-count"><%=h(Formats.commaf0.format(dataCount))%></td>

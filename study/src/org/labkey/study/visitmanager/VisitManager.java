@@ -379,7 +379,7 @@ public abstract class VisitManager
         List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<Double, VisitImpl> visitMap = new TreeMap<>();
         for (VisitImpl v : visits)
-            visitMap.put(v.getSequenceNumMin(),v);
+            visitMap.put(v.getSequenceNumMinDouble(),v);
         return visitMap;
     }
 
@@ -398,7 +398,7 @@ public abstract class VisitManager
         // v will be null only if we already searched for seq and didn't find it
         if (null == v)
             return null;
-        if (!(v.getSequenceNumMin() <= seq && seq <= v.getSequenceNumMax()))
+        if (!(v.getSequenceNumMinDouble() <= seq && seq <= v.getSequenceNumMaxDouble()))
             v = null;
         _sequenceMap.put(seq, v);
         return v;
@@ -419,8 +419,8 @@ public abstract class VisitManager
         SQLFragment sql = new SQLFragment("SELECT * FROM ");
         sql.append(visitTable, "vt");
         sql.append(" WHERE SequenceNumMax >= ? AND SequenceNumMin <= ? AND Container = ? AND RowId <> ?");
-        sql.add(visit.getSequenceNumMin());
-        sql.add(visit.getSequenceNumMax());
+        sql.add(visit.getSequenceNumMinDouble());
+        sql.add(visit.getSequenceNumMaxDouble());
         sql.add(visit.getContainer());
         sql.add(visit.getRowId()); // exclude the specified visit itself; new visits will have a rowId of 0, which shouldn't conflict
 

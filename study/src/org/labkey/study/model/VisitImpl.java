@@ -36,6 +36,8 @@ import org.labkey.study.StudySchema;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -55,9 +57,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static final double DEMOGRAPHICS_VISIT = -1;
 
     private int _rowId = 0;
-    private double _sequenceMin = 0;
-    private double _sequenceMax = 0;
-    private Double _protocolDay = null;
+    private BigDecimal _sequenceMin = BigDecimal.valueOf(0);
+    private BigDecimal _sequenceMax = BigDecimal.valueOf(0);
+    private BigDecimal _protocolDay = null;
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
@@ -70,25 +72,33 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
-    public VisitImpl(Container container, double seq, String label, Type type)
-    {
-        this(container, seq, label, null == type ? null : type.getCode());
-    }
-
-
-    public VisitImpl(Container container, double seqMin, String label, Character typeCode)
-    {
-        this(container, seqMin, seqMin, label, typeCode);
-    }
-
-
+    @Deprecated // Use BigDecimal constructor instead
     public VisitImpl(Container container, double seqMin, double seqMax, String label, @Nullable Type type)
     {
         this(container, seqMin, seqMax, label, null == type ? null : type.getCode());
     }
 
 
-    public VisitImpl(Container container, double seqMin, double seqMax, String name, Character typeCode)
+    @Deprecated // Use BigDecimal constructor instead
+    public VisitImpl(Container container, double seqMin, double seqMax, String name, @Nullable Character typeCode)
+    {
+        this(container, BigDecimal.valueOf(seqMin), BigDecimal.valueOf(seqMax), name, typeCode);
+    }
+
+
+    public VisitImpl(Container container, @NotNull BigDecimal seqMin, String label, Type type)
+    {
+        this(container, seqMin, seqMin, label, null == type ? null : type.getCode());
+    }
+
+
+    public VisitImpl(Container container, BigDecimal seqMin, BigDecimal seqMax, String label, @Nullable Type type)
+    {
+        this(container, seqMin, seqMax, label, null == type ? null : type.getCode());
+    }
+
+
+    public VisitImpl(Container container, @NotNull BigDecimal seqMin, @NotNull BigDecimal seqMax, String name, @Nullable Character typeCode)
     {
         setContainer(container);
         _sequenceMin = seqMin;
@@ -103,7 +113,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     @Override
     public String getSequenceString()
     {
-        if (_sequenceMin == _sequenceMax)
+        if (_sequenceMin.equals(_sequenceMax))
             return VisitImpl.formatSequenceNum(_sequenceMin);
         else
             return VisitImpl.formatSequenceNum(_sequenceMin) + "-" + VisitImpl.formatSequenceNum(_sequenceMax);
@@ -117,16 +127,26 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return sb.append(BigDecimal.valueOf((long)Math.round(d * 10000),4).toPlainString());
     }
 
-    /* always formats using "." */
-    public StringBuilder appendSqlSequenceNumMin(StringBuilder sb)
+    private static final MathContext ROUNDING_CONTEXT = new MathContext(4);
+
+    // TODO: Fix rounding to work with TestCase (below)
+    public static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
     {
-        return appendSqlSequenceNum(sb, _sequenceMin);
+        return sb.append(seqnum.round(ROUNDING_CONTEXT).toPlainString());
     }
 
     /* always formats using "." */
+    // TODO: Switch to _sequenceNumMin
+    public StringBuilder appendSqlSequenceNumMin(StringBuilder sb)
+    {
+        return appendSqlSequenceNum(sb, getSequenceNumMinDouble());
+    }
+
+    /* always formats using "." */
+    // TODO: Switch to _sequenceNumMax
     public StringBuilder appendSqlSequenceNumMax(StringBuilder sb)
     {
-        return appendSqlSequenceNum(sb, _sequenceMax);
+        return appendSqlSequenceNum(sb, getSequenceNumMaxDouble());
     }
 
 
@@ -200,34 +220,62 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
-    public double getSequenceNumMin()
+    @Deprecated // Use getSequenceNumMin()
+    public double getSequenceNumMinDouble()
+    {
+        return _sequenceMin.doubleValue();
+    }
+
+    public BigDecimal getSequenceNumMin()
     {
         return _sequenceMin;
     }
 
-    public void setSequenceNumMin(double sequenceMin)
+    public void setSequenceNumMin(BigDecimal sequenceMin)
     {
-        this._sequenceMin = sequenceMin;
+        _sequenceMin = sequenceMin;
     }
 
-    public double getSequenceNumMax()
+    @Deprecated // Use getSequenceNumMax()
+    public double getSequenceNumMaxDouble()
+    {
+        return _sequenceMax.doubleValue();
+    }
+
+    public BigDecimal getSequenceNumMax()
     {
         return _sequenceMax;
     }
 
+    @Deprecated // Use BigDecimal version instead
     public void setSequenceNumMax(double sequenceMax)
     {
-        this._sequenceMax = sequenceMax;
+        _sequenceMax = BigDecimal.valueOf(sequenceMax);
     }
 
-    public Double getProtocolDay()
+    public void setSequenceNumMax(BigDecimal sequenceMax)
+    {
+        _sequenceMax = sequenceMax;
+    }
+
+    public Double getProtocolDayDouble()
+    {
+        return null == _protocolDay ? null : _protocolDay.doubleValue();
+    }
+
+    public BigDecimal getProtocolDay()
     {
         return _protocolDay;
     }
 
-    public void setProtocolDay(Double protocolDay)
+    public void setProtocolDay(@Nullable Double protocolDay)
     {
-        this._protocolDay = protocolDay;
+        _protocolDay = null == protocolDay ? null : BigDecimal.valueOf(protocolDay);
+    }
+
+    public void setProtocolDay(@Nullable BigDecimal protocolDay)
+    {
+        _protocolDay = protocolDay;
     }
 
     public int getRowId()
@@ -237,8 +285,8 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setRowId(int rowId)
     {
-        assert this._rowId == 0;
-        this._rowId = rowId;
+        assert _rowId == 0;
+        _rowId = rowId;
     }
 
     // only 4 scale digits
@@ -250,12 +298,17 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
 
     // only 4 scale digits
-    static NumberFormat sequenceFormat = new DecimalFormat("0.####");
+    private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.####");
 
     public static String formatSequenceNum(double d)
     {
         d = Math.round(d*10000) / 10000.0;
-        return sequenceFormat.format(d);
+        return SEQUENCE_FORMAT.format(d);
+    }
+
+    public static String formatSequenceNum(BigDecimal bd)
+    {
+        return SEQUENCE_FORMAT.format(bd);
     }
 
     @Override
@@ -312,8 +365,8 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     {
         Map<String, Object> map = new HashMap<>();
         map.put("rowid", getRowId());
-        map.put("sequencenummin", getSequenceNumMin());
-        map.put("sequencenummax", getSequenceNumMax());
+        map.put("sequencenummin", getSequenceNumMinDouble());
+        map.put("sequencenummax", getSequenceNumMaxDouble());
         map.put("label", getLabel());
         map.put("typecode", getTypeCode());
         map.put("container", getContainer());
@@ -324,7 +377,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         map.put("chronologicalorder", getChronologicalOrder());
         map.put("sequencenumhandling", getSequenceNumHandling());
         map.put("description", getDescription());
-        map.put("protocolday", getProtocolDay());
+        map.put("protocolday", getProtocolDayDouble());
 
         return map;
     }
@@ -333,9 +386,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static VisitImpl fromMap(Map<String, Object> map, Container container)
     {
         // required properties
-        // For now, assume incoming SequenceNums could be BigDecimal or Double. TODO: Change this to BigDecimal always and migrate VisitImpl to work with BigDecimal.
-        double seqNumMin = (double)JdbcType.DOUBLE.convert(map.get("sequencenummin"));
-        double seqNumMax = map.containsKey("sequencenummax") ? (double)JdbcType.DOUBLE.convert(map.get("sequencenummax")) : seqNumMin;
+        // For now, assume incoming SequenceNums could be BigDecimal or Double. TODO: Change this to BigDecimal always.
+        BigDecimal seqNumMin = (BigDecimal)JdbcType.DECIMAL.convert(map.get("sequencenummin"));
+        BigDecimal seqNumMax = map.containsKey("sequencenummax") ? (BigDecimal)JdbcType.DECIMAL.convert(map.get("sequencenummax")) : seqNumMin;
         String label = map.containsKey("label") ? (String) map.get("label") : null;
         Character type = map.containsKey("type") ? (Character) map.get("type") : null;
 
@@ -355,7 +408,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         if (map.containsKey("sequencenumhandling"))
             visit.setSequenceNumHandling((String) map.get("sequencenumhandling"));
         if (map.containsKey("protocolday"))
-            visit.setProtocolDay((double)JdbcType.DOUBLE.convert(map.get("protocolday")));
+            visit.setProtocolDay((BigDecimal)JdbcType.DECIMAL.convert(map.get("protocolday")));
 
         return visit;
     }
@@ -414,9 +467,17 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         }
     }
 
+    @Deprecated // Use BigDecimal version instead
     public static double calcDefaultDateBasedProtocolDay(double sequenceMin, double sequenceMax)
     {
         return (double)Math.round((sequenceMin + sequenceMax)/2);
+    }
+
+
+    public static BigDecimal calcDefaultDateBasedProtocolDay(BigDecimal sequenceMin, BigDecimal sequenceMax)
+    {
+        // Average and round, which is what the double version does
+        return sequenceMin.add(sequenceMax).divide(BigDecimal.valueOf(2)).setScale(0, RoundingMode.HALF_UP);
     }
 
 
@@ -428,27 +489,27 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             VisitImpl v;
             Container c = JunitUtil.getTestContainer();
 
-            v = new VisitImpl(c,0.0, 0.9999, "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(0), BigDecimal.valueOf(0.9999), "label", (Type)null);
             assertEquals("0", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("0.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
-            v = new VisitImpl(c,1.0, 1.09999999999999999, "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(1), BigDecimal.valueOf(1.09999999999999999), "label", (Type)null);
             assertEquals("1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("1.1000", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
-            v = new VisitImpl(c, 2.0, 2.0099, "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(2), BigDecimal.valueOf(2.0099), "label", (Type)null);
             assertEquals("2", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("2.0099", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
-            v = new VisitImpl(c, 3.0, 3.0000999999, "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(3), BigDecimal.valueOf(3.0000999999), "label", (Type)null);
             assertEquals("3", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("3.0001", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
-            v = new VisitImpl(c,-1.0, "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(-1), "label", (Type)null);
             assertEquals("-1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("-1", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
-            v = new VisitImpl(c,12345678901.1234, 99999999999.9999, "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.valueOf(12345678901.1234), BigDecimal.valueOf(99999999999.9999), "label", (Type)null);
             assertEquals("12345678901.1234", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("99999999999.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
         }

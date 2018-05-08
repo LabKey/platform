@@ -68,7 +68,7 @@ public class VisitUpdateService extends DefaultQueryUpdateService
             throw new ValidationException("A visit must include SequenceNumMin");
 
         VisitImpl visit = VisitImpl.fromMap(newRow, container);
-        VisitImpl currentVisit = studyManager.getVisitForSequence(study, visit.getSequenceNumMin());
+        VisitImpl currentVisit = studyManager.getVisitForSequence(study, visit.getSequenceNumMinDouble());
 
         if (null != currentVisit)
         {

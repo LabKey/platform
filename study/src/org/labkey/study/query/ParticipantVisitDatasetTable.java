@@ -95,7 +95,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
             VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
             if (null == visit)
                 continue;
-            sequenceSet.add(visit.getSequenceNumMin());
+            sequenceSet.add(visit.getSequenceNumMinDouble());
         }
         //Now find all the sequenceNums where data actually exists.
         //Make sure their visits show up...
@@ -110,7 +110,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
                     visitList.add(visit);
             }
             //Resort the visit list
-            visitList.sort((v1, v2) -> v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : (int) (v1.getSequenceNumMin() - v2.getSequenceNumMin()));
+            visitList.sort((v1, v2) -> v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : (int) (v1.getSequenceNumMinDouble() - v2.getSequenceNumMinDouble()));
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit
@@ -129,7 +129,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
         for (VisitImpl visit : visitList)
         {
             boolean uniqueLabel = labelMap.get(visit.getLabel()).size() == 1;
-            boolean hasSequenceRange = visit.getSequenceNumMin() != visit.getSequenceNumMax();
+            boolean hasSequenceRange = visit.getSequenceNumMinDouble() != visit.getSequenceNumMaxDouble();
 
             // add columns for each sequence, show if there is a sequence range
             for (double seq : sequenceSet)
@@ -215,8 +215,8 @@ public class ParticipantVisitDatasetTable extends VirtualTable
 
     private static boolean _inSequence(VisitImpl v, double seq)
     {
-        assert v.getSequenceNumMin() <= v.getSequenceNumMax();
-        return seq >= v.getSequenceNumMax() && seq <= v.getSequenceNumMax();
+        assert v.getSequenceNumMinDouble() <= v.getSequenceNumMaxDouble();
+        return seq >= v.getSequenceNumMaxDouble() && seq <= v.getSequenceNumMaxDouble();
     }
 
     
@@ -297,12 +297,12 @@ public class ParticipantVisitDatasetTable extends VirtualTable
 
         for (VisitImpl v : StudyManager.getInstance().getVisits(_study, Visit.Order.SEQUENCE_NUM))
         {
-            if (name.equals(v.getLabel()) || (seq != -1 && seq >= v.getSequenceNumMin() && seq <= v.getSequenceNumMax()))
+            if (name.equals(v.getLabel()) || (seq != -1 && seq >= v.getSequenceNumMinDouble() && seq <= v.getSequenceNumMaxDouble()))
             {
                 if (null != visitMatch)
                     return null;        // ambiguous
                 visitMatch = v;
-                seq = v.getSequenceNumMin();
+                seq = v.getSequenceNumMinDouble();
             }
         }
         if (-1 == seq)

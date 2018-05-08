@@ -96,8 +96,8 @@ public class StudySchedule implements CustomApiForm
         JSONObject o = new JSONObject();
 
         o.put("label", visit.getDisplayString());
-        o.put("sequenceMin", visit.getSequenceNumMin());
-        o.put("sequenceMax", visit.getSequenceNumMax());
+        o.put("sequenceMin", visit.getSequenceNumMinDouble());
+        o.put("sequenceMax", visit.getSequenceNumMaxDouble());
         o.put("id", visit.getRowId());
         o.put("showByDefault", visit.isShowByDefault());
         if (visit.getCohort() != null)

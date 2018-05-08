@@ -16,22 +16,22 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Dataset"%>
+<%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.study.Visit"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitDataset" %>
 <%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -61,13 +61,13 @@
         <tr>
             <td class="labkey-form-label">Day Range&nbsp;<%=helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2")%></td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=(int) visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=(int) visit.getSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=(int) visit.getSequenceNumMinDouble()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=(int) visit.getSequenceNumMaxDouble()%>">
             </td>
         </tr>
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%= null != visit.getProtocolDay() ? (int)(double)visit.getProtocolDay() : ""%>">
+                <input type="text" size="26" name="protocolDay" value="<%= null != visit.getProtocolDayDouble() ? (int)(double)visit.getProtocolDayDouble() : ""%>">
             </td>
         </tr>
 <%
@@ -78,13 +78,13 @@
         <tr>
             <td class="labkey-form-label">VisitId/Sequence Range</td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMinDouble()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMaxDouble()%>">
             </td>
         </tr>
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%=null != visit.getProtocolDay() ? visit.getProtocolDay() : ""%>">
+                <input type="text" size="26" name="protocolDay" value="<%=null != visit.getProtocolDayDouble() ? visit.getProtocolDayDouble() : ""%>">
             </td>
         </tr>
 <%

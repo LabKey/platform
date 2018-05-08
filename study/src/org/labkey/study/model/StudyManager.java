@@ -160,6 +160,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -1061,7 +1062,7 @@ public class StudyManager
             throw new VisitCreationException("Visit container does not match study");
         visit.setContainer(visitStudy.getContainer());
 
-        if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
+        if (visit.getSequenceNumMinDouble() > visit.getSequenceNumMaxDouble())
             throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
 
         if (null == existingVisits)
@@ -1072,21 +1073,21 @@ public class StudyManager
 
         for (VisitImpl existingVisit : existingVisits)
         {
-            if (existingVisit.getSequenceNumMin() < visit.getSequenceNumMin())
+            if (existingVisit.getSequenceNumMinDouble() < visit.getSequenceNumMinDouble())
             {
                 prevChronologicalOrder = existingVisit.getChronologicalOrder();
                 prevDisplayOrder = existingVisit.getDisplayOrder();
             }
 
-            if (existingVisit.getSequenceNumMin() > existingVisit.getSequenceNumMax())
+            if (existingVisit.getSequenceNumMinDouble() > existingVisit.getSequenceNumMaxDouble())
                 throw new VisitCreationException("Corrupt existing visit " + existingVisit.getLabel() +
                         ": SequenceNumMin must be less than or equal to SequenceNumMax");
-            boolean disjoint = visit.getSequenceNumMax() < existingVisit.getSequenceNumMin() ||
-                    visit.getSequenceNumMin() > existingVisit.getSequenceNumMax();
+            boolean disjoint = visit.getSequenceNumMaxDouble() < existingVisit.getSequenceNumMinDouble() ||
+                    visit.getSequenceNumMinDouble() > existingVisit.getSequenceNumMaxDouble();
             if (!disjoint)
             {
-                String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMin();
-                String existingVisitLabel = existingVisit.getLabel() != null ? existingVisit.getLabel() : ""+existingVisit.getSequenceNumMin();
+                String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMinDouble();
+                String existingVisitLabel = existingVisit.getLabel() != null ? existingVisit.getLabel() : ""+existingVisit.getSequenceNumMinDouble();
                 throw new VisitCreationException("New visit " + visitLabel + " overlaps existing visit " + existingVisitLabel);
             }
         }
@@ -1146,17 +1147,17 @@ public class StudyManager
         double previousVisit = Double.NEGATIVE_INFINITY;
         for (VisitImpl visit : existingVisits)
         {
-            if (visit.getSequenceNumMin() <= sequencenum && visit.getSequenceNumMax() >= sequencenum)
+            if (visit.getSequenceNumMinDouble() <= sequencenum && visit.getSequenceNumMaxDouble() >= sequencenum)
                 return visit;
             // check to see if our new sequencenum is within the range of an existing visit:
             // Check if it's the closest to the requested id, either before or after
-            if (visit.getSequenceNumMin() < nextVisit && visit.getSequenceNumMin() > sequencenum)
+            if (visit.getSequenceNumMinDouble() < nextVisit && visit.getSequenceNumMinDouble() > sequencenum)
             {
-                nextVisit = visit.getSequenceNumMin();
+                nextVisit = visit.getSequenceNumMinDouble();
             }
-            if (visit.getSequenceNumMax() > previousVisit && visit.getSequenceNumMax() < sequencenum)
+            if (visit.getSequenceNumMaxDouble() > previousVisit && visit.getSequenceNumMaxDouble() < sequencenum)
             {
-                previousVisit = visit.getSequenceNumMax();
+                previousVisit = visit.getSequenceNumMaxDouble();
             }
         }
         double visitIdMin = sequencenum;
@@ -1300,7 +1301,7 @@ public class StudyManager
 
             // Use the **first** instance of each label
             if (null != label && !map.containsKey(label))
-                map.put(label, visit.getSequenceNumMin());
+                map.put(label, visit.getSequenceNumMinDouble());
         }
 
         // Now load custom mapping, overwriting any existing standard labels
@@ -1339,7 +1340,7 @@ public class StudyManager
             if (null != label)
             {
                 boolean overridden = labels.contains(label) || customMap.containsKey(label);
-                list.add(new VisitAlias(label, visit.getSequenceNumMin(), visit.getSequenceString(), overridden));
+                list.add(new VisitAlias(label, visit.getSequenceNumMinDouble(), visit.getSequenceString(), overridden));
 
                 if (!overridden)
                     labels.add(label);
@@ -2413,7 +2414,7 @@ public class StudyManager
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         for (VisitImpl v : visits)
         {
-            if (seqNum >= v.getSequenceNumMin() && seqNum <= v.getSequenceNumMax())
+            if (seqNum >= v.getSequenceNumMinDouble() && seqNum <= v.getSequenceNumMaxDouble())
                 return v;
         }
         return null;
@@ -5822,9 +5823,9 @@ public class StudyManager
             study.setTimepointType(TimepointType.VISIT);
 
             List<VisitImpl> existingVisits = new ArrayList<>(3);
-            existingVisits.add(new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 2.5, 3.0, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(1), BigDecimal.valueOf(1), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(2), BigDecimal.valueOf(2), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(2.5), BigDecimal.valueOf(3.0), null, Visit.Type.BASELINE));
 
             assertEquals("Should return existing visit", existingVisits.get(0), getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
             assertEquals("Should return existing visit", existingVisits.get(1), getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
@@ -5882,9 +5883,9 @@ public class StudyManager
             study.setTimepointType(TimepointType.DATE);
 
             List<VisitImpl> existingVisits = new ArrayList<>(3);
-            existingVisits.add(new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(1), BigDecimal.valueOf(1), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(2), BigDecimal.valueOf(2), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(7), BigDecimal.valueOf(13), null, Visit.Type.BASELINE));
 
             assertSame("Should be existing visit", existingVisits.get(0), getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
             assertSame("Should be existing visit", existingVisits.get(1), getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
@@ -5908,10 +5909,10 @@ public class StudyManager
             study.setTimepointType(TimepointType.DATE);
 
             List<VisitImpl> existingVisits = new ArrayList<>(4);
-            existingVisits.add(new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE));
-            existingVisits.add(new VisitImpl(null, 62, 64, null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(1), BigDecimal.valueOf(1), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(2), BigDecimal.valueOf(2), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(7), BigDecimal.valueOf(13), null, Visit.Type.BASELINE));
+            existingVisits.add(new VisitImpl(null, BigDecimal.valueOf(62), BigDecimal.valueOf(64), null, Visit.Type.BASELINE));
 
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 3);
             validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 14, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 14);
@@ -5984,8 +5985,8 @@ public class StudyManager
                 assertNotSame("Should be a new visit", newVisit, existingVisit);
             }
             assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
-            assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMin(), DELTA);
-            assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMax(), DELTA);
+            assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMinDouble(), DELTA);
+            assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMaxDouble(), DELTA);
         }
     }
 
@@ -6073,8 +6074,8 @@ public class StudyManager
 
         private void populateAssaySchedule()
         {
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 1.0, "Visit 1", Visit.Type.BASELINE)));
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 2.0, "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
             assertEquals(_visits.size(), 2);
 
             for (AssaySpecimenConfigImpl assay : _assays)

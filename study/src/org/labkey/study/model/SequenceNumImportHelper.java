@@ -254,7 +254,7 @@ translateToDouble:
             return new VisitImpl()
             {
                 @Override
-                public double getSequenceNumMin()
+                public double getSequenceNumMinDouble()
                 {
                     return Math.floor(d);
                 }

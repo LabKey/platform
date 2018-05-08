@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.model.StudyManager;
@@ -28,6 +29,7 @@ import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.math.BigDecimal;
 
 /**
  * User: cnathe
@@ -37,9 +39,9 @@ public class VisitForm extends ViewForm
 {
     private int[] _datasetIds;
     private String[] _datasetStatus;
-    private Double _sequenceNumMin;
-    private Double _sequenceNumMax;
-    private Double _protocolDay;
+    private BigDecimal _sequenceNumMin;
+    private BigDecimal _sequenceNumMax;
+    private BigDecimal _protocolDay;
     private Character _typeCode;
     private boolean _showByDefault;
     private Integer _cohortId;
@@ -88,10 +90,9 @@ public class VisitForm extends ViewForm
         if (null == getSequenceNumMax() && null != getSequenceNumMin())
             setSequenceNumMax(getSequenceNumMin());
 
-        Double maxSeqNum = Math.pow(10,11);
-        if (!(-maxSeqNum < getSequenceNumMin() && getSequenceNumMin() < maxSeqNum))
+        if (!(Visit.MIN_SEQUENCE_NUM.compareTo(getSequenceNumMin()) < 0 && getSequenceNumMin().compareTo(Visit.MAX_SEQUENCE_NUM) < 0))
             errors.rejectValue("sequenceNumMin", null, "Out of range");
-        if (!(-maxSeqNum < getSequenceNumMax() && getSequenceNumMax() < maxSeqNum))
+        if (!(Visit.MIN_SEQUENCE_NUM.compareTo(getSequenceNumMax()) < 0 && getSequenceNumMax().compareTo(Visit.MAX_SEQUENCE_NUM) < 0))
             errors.rejectValue("sequenceNumMax", null, "Out of range");
 
         // if target sequence num is null, set to min
@@ -99,7 +100,7 @@ public class VisitForm extends ViewForm
             setProtocolDay(VisitImpl.calcDefaultDateBasedProtocolDay(getSequenceNumMin(), getSequenceNumMax()));
 
         VisitImpl visit = getBean();
-        if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
+        if (visit.getSequenceNumMinDouble() > visit.getSequenceNumMaxDouble())
         {
             errors.reject(null, "The minimum value cannot be greater than the maximum value for the visit range.");
 /*
@@ -151,9 +152,9 @@ public class VisitForm extends ViewForm
 
     public void setBean(VisitImpl bean)
     {
-        if (0 != bean.getSequenceNumMax())
+        if (null != bean.getSequenceNumMax())
             setSequenceNumMax(bean.getSequenceNumMax());
-        if (0 != bean.getSequenceNumMin())
+        if (null != bean.getSequenceNumMin())
             setSequenceNumMin(bean.getSequenceNumMin());
         if (null != bean.getProtocolDay())
             setProtocolDay(bean.getProtocolDay());
@@ -184,32 +185,32 @@ public class VisitForm extends ViewForm
         _datasetIds = datasetIds;
     }
 
-    public Double getSequenceNumMin()
+    public BigDecimal getSequenceNumMin()
     {
         return _sequenceNumMin;
     }
 
-    public void setSequenceNumMin(Double sequenceNumMin)
+    public void setSequenceNumMin(BigDecimal sequenceNumMin)
     {
         _sequenceNumMin = sequenceNumMin;
     }
 
-    public Double getSequenceNumMax()
+    public BigDecimal getSequenceNumMax()
     {
         return _sequenceNumMax;
     }
 
-    public void setSequenceNumMax(Double sequenceNumMax)
+    public void setSequenceNumMax(BigDecimal sequenceNumMax)
     {
         _sequenceNumMax = sequenceNumMax;
     }
 
-    public Double getProtocolDay()
+    public BigDecimal getProtocolDay()
     {
         return _protocolDay;
     }
 
-    public void setProtocolDay(Double protocolDay)
+    public void setProtocolDay(BigDecimal protocolDay)
     {
         _protocolDay = protocolDay;
     }
@@ -231,7 +232,7 @@ public class VisitForm extends ViewForm
 
     public void setShowByDefault(boolean showByDefault)
     {
-        this._showByDefault = showByDefault;
+        _showByDefault = showByDefault;
     }
 
     public String getLabel()
@@ -241,7 +242,7 @@ public class VisitForm extends ViewForm
 
     public void setLabel(String label)
     {
-        this._label = label;
+        _label = label;
     }
 
     public String getDescription()
@@ -251,7 +252,7 @@ public class VisitForm extends ViewForm
 
     public void setDescription(String description)
     {
-        this._description = description;
+        _description = description;
     }
 
     public Integer getCohortId()

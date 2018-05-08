@@ -94,7 +94,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
             return "&nbsp;";
         ActionURL link = SpecimenController.getSamplesURL(_container);
         link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
-        link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
+        link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
         SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();

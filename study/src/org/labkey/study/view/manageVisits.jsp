@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkDeleteVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteUnusedVisitsAction" %>
@@ -28,7 +29,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -106,7 +106,7 @@
         <tr class="visit-row <%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
             <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(visit.getRowId()))) %></td>
             <td align=left><%= h(visit.getDisplayString()) %></td>
-            <td class="visit-range-cell"><%= visit.getSequenceNumMin() %><%= h(visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? " - " + visit.getSequenceNumMax() : "") %></td>
+            <td class="visit-range-cell"><%= visit.getSequenceNumMinDouble() %><%= h(visit.getSequenceNumMinDouble()!= visit.getSequenceNumMaxDouble() ? " - " + visit.getSequenceNumMaxDouble() : "") %></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
             <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>
             <td><%= visit.isShowByDefault()%></td>

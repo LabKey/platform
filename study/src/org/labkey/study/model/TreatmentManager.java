@@ -47,6 +47,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -681,7 +682,7 @@ public class TreatmentManager
         {
             verifyTreatmentVisitMapRecords(8);
 
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 3.0, "Visit 3", Visit.Type.FINAL_VISIT)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(3.0), "Visit 3", Visit.Type.FINAL_VISIT)));
             assertEquals("Unexpected number of treatment schedule visits", 2, _manager.getVisitsForTreatmentSchedule(_container).size());
         }
 
@@ -728,8 +729,8 @@ public class TreatmentManager
             _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));
             assertEquals(_cohorts.size(), 2);
 
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 1.0, "Visit 1", Visit.Type.BASELINE)));
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 2.0, "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE)));
+            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
             assertEquals(_visits.size(), 2);
 
             for (CohortImpl cohort : _cohorts)

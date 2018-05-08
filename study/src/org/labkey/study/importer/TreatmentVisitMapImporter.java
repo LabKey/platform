@@ -119,7 +119,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
             {
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
                 {
-                    _visitMap.put(visit.getSequenceNumMin(), visit);
+                    _visitMap.put(visit.getSequenceNumMinDouble(), visit);
                 }
             }
         }
