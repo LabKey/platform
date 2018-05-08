@@ -4,9 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 
+import java.io.Serializable;
 import java.util.Set;
 
-public interface ContainerType
+public interface ContainerType extends Serializable
 {
     /**
      * An enumeration of the different types of data relevant to a container that may be stored in a different container
@@ -29,7 +30,7 @@ public interface ContainerType
         protocol,
         sharedDataTable,
         tabs,
-        userSchema,
+        userSchema
     }
 
     enum TitleContext
