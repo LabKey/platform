@@ -1521,7 +1521,18 @@ public class Query
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps", -1, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
         new SqlTest("WITH \"P 1\" AS (SELECT * FROM R), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
-        new SqlTest("WITH \"P 1\" AS (SELECT * FROM Folder.qtest.lists.S), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84)
+        new SqlTest("WITH \"P 1\" AS (SELECT * FROM Folder.qtest.lists.S), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
+        new SqlTest("WITH peeps1 AS (SELECT * FROM Folder.qtest.lists.S)," +
+                "peeps AS (\n" +
+                "   SELECT * FROM peeps1\n" +
+                "   UNION ALL\n" +
+                "   SELECT * FROM peeps WHERE (1=0)\n" +
+                ")\n" +
+                "SELECT date, month, MAX(seven) AS MaxDay \n" +
+                "  FROM peeps\n" +
+                "  GROUP BY date, month \n" +
+                "  PIVOT MaxDay BY month", -1, 84),
+        new SqlTest("PARAMETERS(Z INTEGER DEFAULT 2, A INTEGER DEFAULT 2, B INTEGER DEFAULT 2) WITH peeps AS (SELECT * FROM R WHERE (Z=2)) SELECT * FROM peeps WHERE (A=B)", -1, 84),
     };
 
 

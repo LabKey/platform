@@ -299,6 +299,8 @@ public class QueryPivot extends QueryRelation
                 sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
                 sqlPivotValues.append("\nFROM ").append(fromSql);
                 sqlPivotValues.append("\nORDER BY 1 ASC");
+                if (null != getQueryWith())
+                    sqlPivotValues.prepend(getQueryWith().getQueryWithSql());   // CTEs
             }
         }
         if (null == sqlPivotValues)
@@ -857,6 +859,8 @@ public class QueryPivot extends QueryRelation
                 throw qpe;
             }
             f.append("(").append(fromSql).append(") ").append(pivotTableAlias);
+            if (null != getQueryWith())
+                f.prepend(getQueryWith().getQueryWithSql());         // Only CTEs
             _sqlPivot = f;
             return _sqlPivot;
         }
