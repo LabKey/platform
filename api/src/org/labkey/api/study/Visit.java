@@ -18,23 +18,37 @@ package org.labkey.api.study;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
+
 /**
  * User: kevink
  * Date: May 27, 2009
  */
 public interface Visit extends StudyEntity
 {
+    BigDecimal MAX_SEQUENCE_NUM = BigDecimal.valueOf(10).pow(11);
+    BigDecimal MIN_SEQUENCE_NUM = MAX_SEQUENCE_NUM.negate();
+
     String getSequenceString();
 
     Type getType();
 
     Integer getVisitDateDatasetId();
 
-    double getSequenceNumMin();
+    BigDecimal getSequenceNumMin();
 
-    double getSequenceNumMax();
+    @Deprecated // Use getSequenceNumMin()
+    double getSequenceNumMinDouble();
 
-    Double getProtocolDay();
+    BigDecimal getSequenceNumMax();
+
+    @Deprecated // Use getSequenceNumMax()
+    double getSequenceNumMaxDouble();
+
+    BigDecimal getProtocolDay();
+
+    @Deprecated // Use getProtocolDay()
+    Double getProtocolDayDouble();
 
     Integer getCohortId();
 
@@ -65,8 +79,8 @@ public interface Visit extends StudyEntity
         FINAL_VISIT('F', "Final visit (terminates all cycles)"),
         STUDY_TERMINATION_WINDOW('W', "Study termination window");
 
-        private char _code;
-        private String _meaning;
+        private final char _code;
+        private final String _meaning;
 
         private Type(char code, String meaning)
         {
@@ -101,7 +115,7 @@ public interface Visit extends StudyEntity
         DISPLAY("DisplayOrder,SequenceNumMin"),
         SEQUENCE_NUM("SequenceNumMin");
 
-        private String _sortColumns;
+        private final String _sortColumns;
 
         Order(String sortColumn)
         {
@@ -117,7 +131,7 @@ public interface Visit extends StudyEntity
     public enum SequenceHandling
     {
         normal,             // as determined by TimepointType
-        logUniqueByDate    // append days since start of study in factional part of sequencenum
+        logUniqueByDate     // append days since start of study in fractional part of sequencenum
         ;
 
         static SequenceHandling from(String s)
