@@ -21,10 +21,13 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineQueue;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.pipeline.status.StatusController;
 import org.mule.util.StringUtils;
 
 import java.nio.file.Path;
@@ -101,6 +104,20 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             {
                 n.setActionLinkURL(job.getStatusHref().getLocalURIString());
                 n.setActionLinkText("view");
+            }
+            else
+            {
+                Integer jobId = PipelineService.get().getJobId(user, job.getContainer(), job.getJobGUID());
+                if (jobId != null)
+                {
+                    n.setActionLinkURL(new ActionURL(StatusController.DetailsAction.class, job.getContainer()).addParameter("rowId", jobId).getLocalURIString());
+                    n.setActionLinkText("view");
+                }
+                else
+                {
+                    n.setActionLinkURL(new ActionURL(StatusController.ShowListAction.class, job.getContainer()).getLocalURIString());
+                    n.setActionLinkText("pipeline");
+                }
             }
             NotificationService.get().addNotification(job.getContainer(), user, n);
         }
