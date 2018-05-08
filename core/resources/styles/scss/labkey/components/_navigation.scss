@@ -35,6 +35,10 @@
         color: $lk-page-nav-text-color;
       }
 
+      & > .dropdown-backdrop {
+        display: none;
+      }
+
       &:hover,
       &:focus,
       &.open {
