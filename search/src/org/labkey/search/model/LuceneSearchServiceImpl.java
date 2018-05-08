@@ -24,6 +24,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
@@ -32,6 +33,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexUpgrader;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -79,6 +81,7 @@ import org.labkey.api.search.SearchUtils.LuceneMessageParser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -119,6 +122,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Predicate;
@@ -161,6 +165,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         identifiersHi,    // Weighted twice the medium identifiers (e.g., unique ids like PTIDs, sample IDs, etc.)... be careful, these will dominate the search results
 
         searchCategories, // Used for special filtering, but analyzed like an identifier
+
+        created,
+        modified,
+        owner,
+
+        // Created and modified dates are stored as document fields for sorting results
+
+        createdBy,
+        modifiedBy,
 
         // The following are all stored, but not indexed
 
@@ -559,9 +572,26 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Add all container path parts as low-priority keywords... see #9362
             String identifiersLo = StringUtils.join(c.getParsedPath(), " ");
 
-            String summary = extractSummary(body, title);
+            // Use summary text provided by the document props, otherwise use the document body
+            String summary = StringUtils.trimToNull(Objects.toString(props.get(PROPERTY.summary.toString()), null));
+            if (summary == null)
+                summary = body;
+
+            // extract and trim summary
+            summary = extractSummary(summary, title);
 
             Document doc = new Document();
+
+            addUserField(doc, FIELD_NAME.createdBy, r.getCreatedBy());
+            addDateField(doc, FIELD_NAME.created, r.getCreated());
+            addUserField(doc, FIELD_NAME.modifiedBy, r.getModifiedBy());
+            addDateField(doc, FIELD_NAME.modified, r.getLastModified());
+
+            Object owner = props.get(FIELD_NAME.owner.toString());
+            if (owner instanceof Integer)
+                addUserField(doc, FIELD_NAME.owner, (Integer)owner);
+            else if (owner instanceof User)
+                addUserField(doc, FIELD_NAME.owner, (User)owner);
 
             // === Index without analyzing, store ===
 
@@ -618,6 +648,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (stringValue.length() > 0)
                         doc.add(new TextField(key.toLowerCase(), stringValue, Field.Store.NO));
                 }
+            }
+
+            if (_log.isDebugEnabled())
+            {
+                String dump = dump(r, doc);
+                _log.debug("indexing " + dump);
             }
 
             return index(r.getDocumentId(), r, doc);
@@ -688,6 +724,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return false;
+    }
+
+    private String dump(WebdavResource r, Document doc)
+    {
+        StringBuilder sb = new StringBuilder("docid: ").append(r.getDocumentId()).append("\n");
+        for (IndexableField field : doc.getFields())
+        {
+            sb.append(" - ").append(field.toString()).append("\n");
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 
     private void handleTikaException(WebdavResource r, TikaException e)
@@ -805,6 +852,35 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         if (!terms.isEmpty())
             doc.add(new TextField(fieldName.toString(), terms, Field.Store.NO));
+    }
+
+    private void addUserField(Document doc, FIELD_NAME fieldName, @Nullable Integer userId)
+    {
+        if (userId == null)
+            return;
+
+        addUserField(doc, fieldName, UserManager.getUser(userId));
+    }
+
+    private void addUserField(Document doc, FIELD_NAME fieldName, @Nullable User user)
+    {
+        if (user == null)
+            return;
+
+        // NOTE: The user's display value is expanded for the search user into: display name, email, firstName, lastName
+        doc.add(new TextField(fieldName.toString(), user.getDisplayName(User.getSearchUser()), Field.Store.NO));
+    }
+
+    private void addDateField(Document doc, FIELD_NAME fieldName, long date)
+    {
+        if (date <= 0)
+            return;
+
+        // We store dates as milliseconds since 1970 as a NumericDocValuesField -- so the search results can be sorted by this date field
+        // CONSIDER: Also store as LongPoint for searching by a date range.
+        // see: http://search-lucene.com/m/Lucene/l6pAi1jKqde24IDEp?subj=Re+Indexing+a+Date+DateTime+Time+field+in+Lucene+4
+        //doc.add(new LongPoint(fieldName.toString(), date));
+        doc.add(new NumericDocValuesField(fieldName.toString(), date));
     }
 
 
@@ -1184,7 +1260,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    SearchHit find(String id) throws IOException
+    @Override
+    @Nullable
+    public SearchHit find(String id) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
 
@@ -1233,13 +1311,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     @Override
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
-                               Container current, SearchScope scope, int offset, int limit) throws IOException
+                               Container current, SearchScope scope,
+                               @Nullable String sortField,
+                               int offset, int limit) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
 
         try
         {
-            String sort = null;  // TODO: add sort parameter
             int hitsToRetrieve = offset + limit;
             boolean requireCategories = (null != categories);
 
@@ -1321,6 +1400,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
             }
 
+            Sort sort = null;
+            if (sortField != null && !sortField.equals("score"))
+            {
+                if (sortField.equals(FIELD_NAME.created.name()) || sortField.equals(FIELD_NAME.modified.name()))
+                    sort = new Sort(new SortField(sortField, SortField.Type.LONG, true), SortField.FIELD_SCORE);
+                else
+                    sort = new Sort(new SortField(sortField, SortField.Type.STRING), SortField.FIELD_SCORE);
+            }
+
             IndexSearcher searcher = _indexManager.getSearcher();
 
             try
@@ -1340,7 +1428,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (null == sort)
                     topDocs = searcher.search(query, hitsToRetrieve);
                 else
-                    topDocs = searcher.search(query, hitsToRetrieve, new Sort(new SortField(sort, SortField.Type.STRING)));
+                    topDocs = searcher.search(query, hitsToRetrieve, sort);
 
                 iTimer.setPhase(SEARCH_PHASE.processHits);
                 SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
@@ -1698,15 +1786,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         @Test
         public void testAnalyzers() throws IOException
         {
-            String originalText = "casale WISP-R 123ABC this.doc running coding dance dancing danced DIAMOND ACCEPTOR FACTOR";
+            String originalText = "casale WISP-R PS-12 3BXC17_LS 123ABC the this.doc bob@example.com running coding dance dancing danced DIAMOND ACCEPTOR FACTOR";
 
-            String simpleResult = "[casale, wisp, r, abc, this, doc, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
+            String simpleResult = "[casale, wisp, r, ps, bxc, ls, abc, the, this, doc, bob, example, com, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
             String keywordResult = "[" + originalText + "]";
-            String englishResult = "[casal, wisp, r, 123abc, this.doc, run, code, danc, danc, danc, diamond, acceptor, factor]";
-            String identifierResult = "[casale, wisp-r, 123abc, this.doc, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
+            String classicResult = "[casale, wisp, r, ps-12, 3bxc17_ls, 123abc, this.doc, bob@example.com, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
+            String englishResult = "[casal, wisp, r, ps, 12, 3bxc17_l, 123abc, this.doc, bob, example.com, run, code, danc, danc, danc, diamond, acceptor, factor]";
+            String identifierResult = "[casale, wisp-r, ps-12, 3bxc17_ls, 123abc, the, this.doc, bob@example.com, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
 
             analyze(LuceneAnalyzer.SimpleAnalyzer, originalText, simpleResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
             analyze(LuceneAnalyzer.KeywordAnalyzer, originalText, keywordResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
+            analyze(LuceneAnalyzer.ClassicAnalyzer, originalText, classicResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
             analyze(LuceneAnalyzer.EnglishAnalyzer, originalText, englishResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
             analyze(LuceneAnalyzer.IdentifierAnalyzer, originalText, identifierResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
             analyze(LuceneAnalyzer.LabKeyAnalyzer, originalText, englishResult, FIELD_NAME.body.name(), FIELD_NAME.keywordsLo.name(), FIELD_NAME.keywordsMed.name(), FIELD_NAME.keywordsHi.name(), "foo");
@@ -1722,22 +1812,28 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             for (String fieldName : fieldNames)
             {
-                List<String> result = new LinkedList<>();
+                String result = analyze(analyzer, text, fieldName);
 
-                try (TokenStream stream = analyzer.tokenStream(fieldName, text))
-                {
-                    stream.reset();
-
-                    while (stream.incrementToken())
-                        result.add(stream.getAttribute(CharTermAttribute.class).toString());
-
-                    stream.end();
-                }
-
-                assertEquals(expectedResult, result.toString());
+                assertEquals(expectedResult, result);
             }
 
             analyzer.close();
+        }
+
+        private String analyze(Analyzer analyzer, String text, String fieldName) throws IOException
+        {
+            List<String> result = new LinkedList<>();
+
+            try (TokenStream stream = analyzer.tokenStream(fieldName, text))
+            {
+                stream.reset();
+
+                while (stream.incrementToken())
+                    result.add(stream.getAttribute(CharTermAttribute.class).toString());
+
+                stream.end();
+            }
+            return result.toString();
         }
 
         @Test
@@ -1837,7 +1933,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         private List<SearchHit> search(String query) throws IOException
         {
-            SearchResult result = _ss.search(query, Collections.singletonList(_category), _context.getUser(), _c, SearchScope.Folder, 0, 100);
+            SearchResult result = _ss.search(query, Collections.singletonList(_category), _context.getUser(), _c, SearchScope.Folder, null, 0, 100);
 
             return result.hits;
         }

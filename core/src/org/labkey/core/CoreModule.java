@@ -1172,6 +1172,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     "text/plain",
                     body,
                     startURL,
+                    UserManager.getUser(c.getCreatedBy()), c.getCreated(),
+                    null, null,
                     properties);
             (null==task?ss.defaultTask():task).addResource(doc, SearchService.PRIORITY.item);
         };

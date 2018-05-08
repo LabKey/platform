@@ -565,7 +565,7 @@ public class SearchController extends SpringActionController
                     //UNDONE: paging, rowlimit etc
                     int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
                     result = ss.search(query, ss.getCategories(form.getCategory()), getUser(), getContainer(), form.getSearchScope(),
-                        form.getOffset(), limit);
+                        form.getSortField(), form.getOffset(), limit);
                 }
                 catch (Exception x)
                 {
@@ -668,7 +668,7 @@ public class SearchController extends SpringActionController
     {
         ActionURL getPostURL(Container c);    // Search does not actually post
         String getDescription(Container c);
-        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException;
+        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
         boolean includeAdvancedUI();
         boolean includeNavigationLinks();
     }
@@ -695,9 +695,9 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, int offset, int limit) throws IOException
+        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, offset, limit);
+            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit);
         }
 
         @Override
@@ -815,7 +815,7 @@ public class SearchController extends SpringActionController
     public static class SearchForm
     {
         private String[] _query;
-        private String _sort;
+        private String _sortField;
         private boolean _print = false;
         private int _offset = 0;
         private int _limit = 1000;
@@ -859,14 +859,14 @@ public class SearchController extends SpringActionController
             _query = query;
         }
 
-        public String getSort()
+        public String getSortField()
         {
-            return _sort;
+            return _sortField;
         }
 
-        public void setSort(String sort)
+        public void setSortField(String sortField)
         {
-            _sort = sort;
+            _sortField = sortField;
         }
 
         public boolean isPrint()

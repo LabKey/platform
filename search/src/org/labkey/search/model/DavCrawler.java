@@ -28,6 +28,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -354,7 +355,32 @@ public class DavCrawler implements ShutdownListener
                         props.put(SearchService.PROPERTY.categories.toString(), SearchService.fileCategory.toString());
                         props.put(SearchService.PROPERTY.title.toString(), wrap.getPath().getName());
                         props.put(SearchService.PROPERTY.keywordsMed.toString(), FileUtil.getSearchKeywords(wrap.getPath().getName()));
+
                         child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), "text/plain", (String)null, url, props) {
+                            @Override
+                            public long getLastModified()
+                            {
+                                return wrap.getLastModified();
+                            }
+
+                            @Override
+                            public long getCreated()
+                            {
+                                return wrap.getCreated();
+                            }
+
+                            @Override
+                            public User getCreatedBy()
+                            {
+                                return wrap.getCreatedBy();
+                            }
+
+                            @Override
+                            public User getModifiedBy()
+                            {
+                                return wrap.getModifiedBy();
+                            }
+
                             @Override
                             public void setLastIndexed(long ms, long modified)
                             {

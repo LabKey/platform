@@ -19,6 +19,7 @@ package org.labkey.wiki;
 import org.apache.poi.util.IOUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -412,9 +413,9 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
     public static class WikiPageResource extends AbstractDocumentResource
     {
-        WikiFolder _folder = null;
-        Wiki _wiki = null;
-        WikiVersion _version = null;
+        @Nullable WikiFolder _folder = null;
+        @Nullable Wiki _wiki = null;
+        @Nullable WikiVersion _version = null;
 
         Container _c;
         String _entityId;
@@ -505,7 +506,15 @@ public class WikiWebdavProvider implements WebdavService.Provider
         @Override
         public User getCreatedBy()
         {
-            return UserManager.getUser(_wiki.getCreatedBy());
+            if (_wiki != null)
+                return UserManager.getUser(_wiki.getCreatedBy());
+
+            // Properties contains the user when search is indexing the wiki
+            User user = null;
+            if (_properties.get("createdby") instanceof Integer)
+                user = UserManager.getUser((Integer)_properties.get("createdby"));
+
+            return user;
         }
 
         @Override
@@ -517,7 +526,15 @@ public class WikiWebdavProvider implements WebdavService.Provider
         @Override
         public User getModifiedBy()
         {
-            return UserManager.getUser(_wiki.getModifiedBy());
+            if (_wiki != null)
+                return UserManager.getUser(_wiki.getModifiedBy());
+
+            // Properties contains the user when search is indexing the wiki
+            User user = null;
+            if (_properties.get("modifiedBy") instanceof Integer)
+                user = UserManager.getUser((Integer)_properties.get("modifiedBy"));
+
+            return user;
         }
 
 
@@ -618,13 +635,27 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         public long getCreated()
         {
-            return _wiki.getCreated().getTime();
+            if (_wiki != null)
+                return _wiki.getCreated().getTime();
+
+            // Properties contains the created date when search is indexing the wiki
+            if (_properties.get("created") instanceof Number)
+                return ((Number)_properties.get("created")).longValue();
+
+            return Long.MIN_VALUE;
         }
 
         public long getLastModified()
         {
             WikiVersion v = getWikiVersion();
-            return null != v && null != v.getCreated() ? v.getCreated().getTime() : Long.MIN_VALUE;
+            if (v != null && v.getCreated() != null)
+                return v.getCreated().getTime();
+
+            // Properties contains the modified date when search is indexing the wiki
+            if (_properties.get("modified") instanceof Number)
+                return ((Number)_properties.get("modified")).longValue();
+
+            return Long.MIN_VALUE;
         }
 
         public String getContentType()

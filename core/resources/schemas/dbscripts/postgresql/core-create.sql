@@ -47,6 +47,4 @@ CREATE VIEW core.Contacts AS
         INNER JOIN core.Members Members ON Groups.UserId = Members.GroupId
         INNER JOIN core.ActiveUsers Users ON Members.UserId = Users.UserId;
 
-CREATE VIEW core.UserSearchTerms AS
-    SELECT U.UserId, U.Email || ' ' || U.FirstName || ' ' || U.LastName || ' ' || U.DisplayName AS SearchTerms
-    FROM core.Users U;
+

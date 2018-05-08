@@ -224,6 +224,7 @@
     String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());
     String safeCategories = categories == null ? "" : categories.toLowerCase();
     String queryString = form.getQueryString();
+    String sortField = form.getSortField();
 
     SearchConfiguration searchConfig = form.getConfig();
     boolean includeNavigationResults = !form.isWebPart() && searchConfig.includeNavigationLinks() && template.includeNavigationLinks() && scope != SearchScope.Folder;
@@ -247,11 +248,11 @@
     {
         try
         {
-            result = searchConfig.getSearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, offset, hitsPerPage);
+            result = searchConfig.getSearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, sortField, offset, hitsPerPage);
 
             if (includeNavigationResults)
             {
-                navResult = SearchService.get().search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, offset, hitsPerPage);
+                navResult = SearchService.get().search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, sortField, offset, hitsPerPage);
                 hasNavResults = navResult != null && navResult.hits.size() > 0;
             }
         }
@@ -284,6 +285,7 @@
             <% } %>
             <% if (showAdvancedUI) { %>
             <labkey:input type="hidden" name="category" value="<%=h(categories)%>"/>
+            <labkey:input type="hidden" name="sortField" value="<%=h(form.getSortField())%>"/>
             <labkey:input type="hidden" name="showAdvanced" value="<%=h(form.isShowAdvanced())%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
@@ -306,7 +308,7 @@
         <div class="panel-body">
             <labkey:form id="<%=h(advFormId)%>">
                 <div class="form-group">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <h5>
                             Scope
                             <%= helpPopup("Scope", "Scoping allows the search to be refined to the contents of the entire site (default), contents of this project including sub-folders, or contents of just this folder.")%>
@@ -336,7 +338,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <h5>
                             Categories
                             <%= helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your " + h(template.getResultNameSingular()) + ".")%>
@@ -385,6 +387,30 @@
                                         <input type="checkbox" name="category" value="Wiki" <%=checked(safeCategories.contains("wiki"))%>> Wikis
                                     </label>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <h5>Sort
+                            <%= helpPopup("Sort", "Sort the results by the relevance, created, or modified date")%>
+                        </h5>
+                        <div style="padding-top: 1px;">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="sortField" value="<%=text("score")%>" <%=checked(sortField == null || "score".equals(sortField))%>> Relevance
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="sortField" value="<%=text("created")%>" <%=checked("created".equals(sortField))%>> Created
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="sortField" value="<%=text("modified")%>" <%=checked("modified".equals(sortField))%>> Modified
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -580,6 +606,9 @@
                     if (p.name.toLowerCase() === 'scope') {
                         form.find('input[name="scope"]').val(p.value);
                     }
+                    else if (p.name.toLowerCase() === "sortfield") {
+                        form.find('input[name="sortField"]').val(p.value);
+                    }
                     else {
                         category += sep + p.value;
                         sep = '+';
@@ -594,6 +623,9 @@
                         e.value = '';
                     }
                     else if (e.name === 'showAdvanced' && e.value.toLowerCase() === 'false') {
+                        e.value = '';
+                    }
+                    else if (e.name === 'sortField' && e.value.toLocaleLowerCase() === 'score') {
                         e.value = '';
                     }
                     if (e.value === '' && e.name !== 'q') {

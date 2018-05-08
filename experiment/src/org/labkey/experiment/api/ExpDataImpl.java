@@ -77,6 +77,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -381,15 +382,15 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     // Get all text strings from the data class for indexing
     @NotNull
-    private List<String> getIndexValues()
+    private void getIndexValues(Set<String> identifiers, Set<String> keywords)
     {
         ExpDataClassImpl dc = this.getDataClass();
         if (dc == null)
-            return Collections.emptyList();
+            return;
 
         TableInfo table = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
         if (table == null)
-            return Collections.emptyList();
+            return;
 
         // collect the set of columns to index
         Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
@@ -415,7 +416,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             return true;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
 
-        List<String> values = new ArrayList<>();
         TableSelector ts = new TableSelector(table, columns, new SimpleFilter("rowId", getRowId()), null);
         ts.setForDisplay(true);
         try (Results r = ts.getResults())
@@ -438,11 +438,23 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                     if (!(o instanceof String))
                         continue;
 
+                    List<String> values;
+
                     String s = (String)o;
                     if (col instanceof MultiValuedLookupColumn)
-                        values.addAll(Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX)));
+                        values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
                     else
-                        values.add(s);
+                        values = Arrays.asList(s);
+
+                    // treat multi-line text values as keywords, otherwise treat as an identifier
+                    if ("textarea".equalsIgnoreCase(col.getInputType()))
+                    {
+                        keywords.addAll(values);
+                    }
+                    else
+                    {
+                        identifiers.addAll(values);
+                    }
                 }
             }
 
@@ -451,7 +463,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         {
             // ignore
         }
-        return values;
     }
 
     @NotNull
@@ -530,31 +541,38 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public WebdavResource createDocument()
     {
         Map<String, Object> props = new HashMap<>();
-        Set<String> keywords = new HashSet<>();
-        Set<String> identifiers = new HashSet<>();
+        Set<String> keywordsMed = new HashSet<>();
+        Set<String> keywordsLo = new HashSet<>();
 
-        // Add name to title
+        Set<String> identifiersHi = new HashSet<>();
+        Set<String> identifiersMed = new HashSet<>();
+        Set<String> identifiersLo = new HashSet<>();
+
+        // Name is an identifier with highest weight
+        identifiersHi.add(getName());
+
+        // Description is added as a keywordsLo -- in Biologics it is common for the description to
+        // contain names of other DataClasses, e.g., "Mature desK of PS-10", which would will be tokenized as
+        // [mature, desk, ps, 10] if added it as a keyword so we lower it's priority to avoid useless results.
+        // CONSIDER: tokenize the description and extract identifiers
         if (null != getDescription())
-            keywords.add(getDescription());
+            keywordsLo.add(getDescription());
 
         String comment = getComment();
         if (comment != null)
-            keywords.add(comment);
-
-        StringBuilder title = new StringBuilder(getName());
-        identifiers.add(getName());
+            keywordsMed.add(comment);
 
         // Add aliases in parenthesis in the title
+        StringBuilder title = new StringBuilder(getName());
         Collection<String> aliases = this.getAliases();
         if (!aliases.isEmpty())
         {
             title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
-            identifiers.addAll(aliases);
+            identifiersHi.addAll(aliases);
         }
 
-        List<String> indexValues = getIndexValues();
-        keywords.addAll(indexValues);
-        //identifiers.addAll(indexValues);
+        // Collect other text columns and lookup display columns
+        getIndexValues(identifiersMed, keywordsLo);
 
         ExpDataClass dc = this.getDataClass();
         if (null != dc)
@@ -567,26 +585,41 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             props.put(DataSearchResultTemplate.PROPERTY, dc.getName());
         }
 
+
+        // === Not stemmed
+
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
+        props.put(SearchService.PROPERTY.identifiersLo.toString(), StringUtils.join(identifiersLo, " "));
+
+
+        // === Stemmed
+
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
+
+
+        // === Stored, not indexed
+
         props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
-        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiers, " "));
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywords, " "));
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
         view.setExtraPath(getContainer().getId());
         String docId = getDocumentId();
 
-        // All identifiers (indexable text values) in the body
-        StringBuilder sb = new StringBuilder(title)
-                .append("\n")
-                .append(keywords.stream().map(s -> s.length() > 30 ? s.substring(0, 30) + "\u2026" : s).collect(Collectors.joining(", ")))
-                .append("\n")
-                .append(identifiers.stream().map(s -> s.length() > 30 ? s.substring(0, 30) + "\u2026" : s).collect(Collectors.joining(", ")));
-        String body;
-        if (sb.length() > 120)
-            body = sb.substring(0, 120) + "\u2026";
-        else
-            body = sb.toString();
+        // Generate a summary explicitly instead of relying on a summary to be extracted
+        // from the document body.  Placing lookup values and the description in the  body
+        // would tokenize using the English analyzer and index "PS-12" as ["ps", "12"] which leads to poor results.
+        StringBuilder summary = new StringBuilder();
+        if (StringUtils.isNotEmpty(getDescription()))
+            summary.append(getDescription()).append("\n");
+
+        appendTokens(summary, keywordsMed);
+        appendTokens(summary, identifiersMed);
+        appendTokens(summary, identifiersLo);
+
+        props.put(SearchService.PROPERTY.summary.toString(), summary);
 
         final int id = getRowId();
         return new ExpDataResource(
@@ -595,17 +628,32 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 docId,
                 getContainer().getId(),
                 "text/plain",
-                body,
-                view, props);
+                null,
+                view,
+                props,
+                getCreatedBy(),
+                getCreated(),
+                getModifiedBy(),
+                getModified()
+        );
+    }
+
+
+    private static void appendTokens(StringBuilder sb, Collection<String> toks)
+    {
+        if (toks.isEmpty())
+            return;
+
+        sb.append(toks.stream().map(s -> s.length() > 30 ? s.substring(0, 30) + "\u2026" : s).collect(Collectors.joining(", "))).append("\n");
     }
 
     private static class ExpDataResource extends SimpleDocumentResource
     {
         final int _rowId;
 
-        public ExpDataResource(int rowId, Path path, String documentId, String containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties)
+        public ExpDataResource(int rowId, Path path, String documentId, String containerId, String contentType, String body, URLHelper executeUrl, Map<String, Object> properties, User createdBy, Date created, User modifiedBy, Date modified)
         {
-            super(path, documentId, containerId, contentType, body, executeUrl, properties);
+            super(path, documentId, containerId, contentType, body, executeUrl, createdBy, created, modifiedBy, modified, properties);
             _rowId = rowId;
         }
 

@@ -20,10 +20,12 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.StopFilterFactory;
 import org.apache.lucene.analysis.core.WhitespaceTokenizerFactory;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 
 import java.io.IOException;
 
@@ -48,14 +50,25 @@ public enum LuceneAnalyzer
         {
             return new KeywordAnalyzer();
         }},
+    ClassicAnalyzer {
+        @Override
+        Analyzer getAnalyzer()
+        {
+            return new ClassicAnalyzer();
+        }
+    },
     EnglishAnalyzer {
         @Override
         Analyzer getAnalyzer()
         {
+            //EnglishTok
             return new EnglishAnalyzer();
         }},
 
-    // A simple, non-stemming analyzer for identifiers. Tokenizes only on whitespace (all punctuation is left intact) and then lower-cases.
+    /**
+     * A simple, non-stemming analyzer for identifiers.
+     * Tokenizes only on whitespace (all punctuation is left intact) and then lower-cases.
+     */
     IdentifierAnalyzer {
         @Override
         Analyzer getAnalyzer()

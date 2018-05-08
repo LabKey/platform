@@ -576,12 +576,6 @@
       <column columnName="Role"/>
     </columns>
   </table>
-  <table tableName="UserSearchTerms" tableDbType="VIEW">
-    <columns>
-      <column columnName="UserId"/>
-      <column columnName="SearchTerms"/>
-    </columns>
-  </table>
   <table tableName="ViewCategory" tableDbType="TABLE">
     <columns>
       <column columnName="RowId"/>

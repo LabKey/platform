@@ -250,6 +250,7 @@ public class LoggerController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
+            getPageConfig().setTitle("Manage Log4J Loggers");
             return new JspView<>("/org/labkey/core/admin/logger/manage.jsp", null, errors);
         }
 

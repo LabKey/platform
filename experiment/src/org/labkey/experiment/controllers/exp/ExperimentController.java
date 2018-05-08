@@ -99,6 +99,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
@@ -5948,6 +5949,42 @@ public class ExperimentController extends SpringActionController
                 ExperimentServiceImpl.get().rebuildAllEdges();
             }
             return success();
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class CheckDataClassesIndexedAction extends ApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            SearchService search = SearchService.get();
+            if (search == null)
+                return null;
+
+            List<Map<String, Object>> notInIndex = new ArrayList<>(100);
+
+            List<? extends ExpDataClass> list = ExperimentService.get().getDataClasses(getContainer(), getUser(), false);
+            for (ExpDataClass dc : list)
+            {
+                for (ExpData d : dc.getDatas())
+                {
+                    String docId = d.getDocumentId();
+                    if (docId != null)
+                    {
+                        SearchService.SearchHit hit = search.find(docId);
+                        if (hit == null)
+                        {
+                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d);
+                            props.put("docid", docId);
+                            notInIndex.add(props);
+                        }
+                    }
+                }
+            }
+
+            return success(notInIndex);
         }
     }
 

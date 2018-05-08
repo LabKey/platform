@@ -36,6 +36,3 @@ CREATE VIEW core.Contacts AS
 
 GO
 
-CREATE VIEW core.UserSearchTerms AS
-    SELECT U.UserId, U.Email + ' ' + U.FirstName + ' ' + U.LastName + ' ' + U.DisplayName as SearchTerms
-    FROM core.Users U;

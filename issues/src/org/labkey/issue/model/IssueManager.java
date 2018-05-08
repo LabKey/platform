@@ -1613,6 +1613,41 @@ public class IssueManager
             _properties.put(categories.toString(), searchCategory.getName());
         }
 
+        @Override
+        public long getCreated()
+        {
+            Date date = (Date)_properties.get("created");
+            if (date != null)
+                return date.getTime();
+            return Long.MIN_VALUE;
+        }
+
+        @Override
+        public User getCreatedBy()
+        {
+            Integer userId = (Integer)_properties.get("createdBy");
+            if (userId != null)
+                return UserManager.getUser(userId);
+            return null;
+        }
+
+        @Override
+        public User getModifiedBy()
+        {
+           Integer userId = (Integer)_properties.get("modifiedBy");
+           if (userId != null)
+               return UserManager.getUser(userId);
+            return null;
+        }
+
+        @Override
+        public long getLastModified()
+        {
+            Date date = (Date)_properties.get("modified");
+            if (date != null)
+                return date.getTime();
+            return Long.MIN_VALUE;
+        }
 
         @Override
         public void setLastIndexed(long ms, long modified)

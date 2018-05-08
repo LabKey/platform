@@ -53,6 +53,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
@@ -701,6 +702,8 @@ public class AnnouncementManager
                             "text/html",
                             html.toString(),
                             url,
+                            UserManager.getUser(ann.getCreatedBy()), ann.getCreated(),
+                            UserManager.getUser(ann.getModifiedBy()), ann.getModified(),
                             props)
                     {
                         @Override

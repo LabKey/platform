@@ -35,6 +35,7 @@ import org.labkey.api.util.PageFlowUtil;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 /**
  * User: adam
@@ -54,7 +55,7 @@ public class IndexInspector
 
     public void export(HttpServletResponse response, final String format) throws IOException
     {
-        try (TextWriter writer = !"Excel".equals(format) ? new TSVIndexWriter() : new TSVIndexWriter() {
+        try (TSVIndexWriter writer = !"Excel".equals(format) ? new TSVIndexWriter() : new TSVIndexWriter() {
             @Override
             protected String getContentType()
             {
@@ -68,6 +69,7 @@ public class IndexInspector
             }
         })
         {
+            writer.setFilenamePrefix("search-index");
             writer.write(response);
         }
     }
@@ -87,13 +89,14 @@ public class IndexInspector
         @Override
         protected void writeColumnHeaders()
         {
-            writeLine(new CsvSet("Title,Type,Folder,URL,UniqueId,Body Terms"));
+            writeLine(new CsvSet("Title,Type,Folder,URL,NavTrail,UniqueId,Body Terms,Summary"));
         }
 
         @Override
         protected void writeBody()
         {
-            try (Directory directory = WritableIndexManagerImpl.openDirectory(getIndexDirectory()); IndexReader reader = DirectoryReader.open(directory))
+            try (Directory directory = WritableIndexManagerImpl.openDirectory(getIndexDirectory());
+                 IndexReader reader = DirectoryReader.open(directory))
             {
                 // Lucene provides no way to query a document for its size in the index, so we enumerate the terms and increment
                 // term counts on each document to calculate a proxy for doc size.
@@ -128,10 +131,12 @@ public class IndexInspector
                     Document doc = reader.document(i);
                     String[] titles = doc.getValues("title");
                     String[] urls = doc.getValues("url");
+                    String[] navtrails = doc.getValues("navtrail");
                     String[] uniqueIds = doc.getValues("uniqueId");
                     String[] containerIds = doc.getValues("container");
+                    String[] summarys = doc.getValues("summary");
 
-                    if (titles.length != 1 || urls.length != 1 || uniqueIds.length != 1 || containerIds.length != 1)
+                    if (titles.length != 1 || urls.length != 1 || navtrails.length != 1 || uniqueIds.length != 1 || containerIds.length != 1 || summarys.length != 1)
                     {
                         throw new IOException("Incorrect number of term values found for document " + i);
                     }
@@ -141,7 +146,7 @@ public class IndexInspector
                     Container c = ContainerManager.getForId(containerIds[0]);
                     String path = null != c ? c.getPath() : "UNKNOWN: " + containerIds[0];
 
-                    writeLine(PageFlowUtil.set(titles[0], type, path, urls[0], uniqueIds[0], String.valueOf(termCountPerDoc[i])));
+                    writeLine(Arrays.asList(titles[0], type, path, urls[0], navtrails[0], uniqueIds[0], String.valueOf(termCountPerDoc[i]), summarys[0]));
                 }
             }
             catch (IOException e)

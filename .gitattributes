@@ -1962,7 +1962,6 @@ search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SearchPropertyManager.java -text
 search/src/org/labkey/search/model/SearchSchema.java -text
 search/src/org/labkey/search/model/SecurityQuery.java -text
-search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/model/WritableIndexManager.java -text
 search/src/org/labkey/search/model/WritableIndexManagerImpl.java -text
 search/src/org/labkey/search/model/tikaConfig.xml -text

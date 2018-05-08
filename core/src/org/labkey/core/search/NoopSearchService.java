@@ -240,7 +240,13 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit)
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit)
+    {
+        return null;
+    }
+
+    @Override
+    public @Nullable SearchHit find(String docId) throws IOException
     {
         return null;
     }

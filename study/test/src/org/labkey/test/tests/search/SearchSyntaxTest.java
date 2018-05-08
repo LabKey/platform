@@ -5,6 +5,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Search;
 import org.labkey.test.util.SearchHelper;
 
 import java.util.Arrays;
@@ -12,7 +13,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
-@Category({DailyC.class})
+@Category({DailyC.class, Search.class})
 public class SearchSyntaxTest extends BaseWebDriverTest
 {
     @Test

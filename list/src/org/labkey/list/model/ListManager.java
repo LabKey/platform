@@ -57,6 +57,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -516,6 +517,12 @@ public class ListManager implements SearchService.DocumentProvider
 
         FieldKey keyKey = new FieldKey(null, list.getKeyName());
         FieldKey entityIdKey = new FieldKey(null, "EntityId");
+
+        FieldKey createdKey = new FieldKey(null, "created");
+        FieldKey createdByKey = new FieldKey(null, "createdBy");
+        FieldKey modifiedKey = new FieldKey(null, "modified");
+        FieldKey modifiedByKey = new FieldKey(null, "modifiedBy");
+
         MutableInt count = new MutableInt(0);
 
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
@@ -531,6 +538,14 @@ public class ListManager implements SearchService.DocumentProvider
             props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
             String displayTitle = titleTemplate.eval(map);
             props.put(SearchService.PROPERTY.title.toString(), displayTitle);
+
+            Date created = null;
+            if (map.get(createdKey) instanceof Date)
+                created = (Date)map.get(createdKey);
+
+            Date modified = null;
+            if (map.get(modifiedKey) instanceof Date)
+                modified = (Date)map.get(modifiedKey);
 
             String body = bodyTemplate.eval(map);
 
@@ -554,6 +569,8 @@ public class ListManager implements SearchService.DocumentProvider
                     "text/plain",
                     body,
                     itemURL,
+                    UserManager.getUser((Integer)map.get(createdByKey)), created,
+                    UserManager.getUser((Integer)map.get(modifiedByKey)), modified,
                     props) {
                 @Override
                 public void setLastIndexed(long ms, long modified)

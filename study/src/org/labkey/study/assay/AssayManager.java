@@ -102,6 +102,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -688,6 +689,10 @@ public class AssayManager implements AssayService
             String instrument = protocol.getInstrument();
             String description = protocol.getDescription();
             String comment = protocol.getComment();
+            User createdBy = protocol.getCreatedBy();
+            Date created = protocol.getCreated();
+            User modifiedBy = protocol.getModifiedBy();
+            Date modified = protocol.getModified();
 
             ActionURL assayRunsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
 
@@ -700,7 +705,7 @@ public class AssayManager implements AssayService
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
             assayRunsURL.setExtraPath(c.getId());
-            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayRunsURL, m);
+            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayRunsURL, createdBy, created, modifiedBy, modified, m);
             task.addResource(r, SearchService.PRIORITY.item);
         }
     }

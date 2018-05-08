@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -51,8 +52,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implements ExpMaterial
@@ -231,10 +234,25 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                 url.setExtraPath(getContainer().getId());
 
                 Map<String, Object> props = new HashMap<>();
+                Set<String> identifiersHi = new HashSet<>();
+
+                // Name is identifier with highest weight
+                identifiersHi.add(getName());
+
+                // Add aliases in parenthesis in the title
+                StringBuilder title = new StringBuilder("Sample - " + getName());
+                Collection<String> aliases = this.getAliases();
+                if (!aliases.isEmpty())
+                {
+                    title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
+                    identifiersHi.addAll(aliases);
+                }
+
+
                 props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
-                props.put(SearchService.PROPERTY.title.toString(), "Sample - " + getName());
-                props.put(SearchService.PROPERTY.keywordsMed.toString(), "Sample");      // Treat the word "Sample" a medium priority keyword
-                props.put(SearchService.PROPERTY.identifiersMed.toString(), getName());  // Treat the name as a medium priority identifier
+                props.put(SearchService.PROPERTY.title.toString(), title.toString());
+                props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
+                props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
                 StringBuilder body = new StringBuilder();
 
@@ -265,7 +283,12 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                         append(body, sampleSetName);
                 }
 
-                SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(), getContainer().getId(), "text/plain", body.toString(), url, props)
+                SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                        getContainer().getId(), "text/plain",
+                        body.toString(), url,
+                        getCreatedBy(), getCreated(),
+                        getModifiedBy(), getModified(),
+                        props)
                 {
                     @Override
                     public void setLastIndexed(long ms, long modified)

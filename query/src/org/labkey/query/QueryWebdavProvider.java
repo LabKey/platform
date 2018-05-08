@@ -26,6 +26,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -34,6 +35,7 @@ import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.query.persist.QueryDef;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -180,6 +182,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 	{
 		SchemaResource _parent;
 		QueryDefinition _q;
+		QueryDef _qdef;
 
 		SqlResource(SchemaResource parent, QueryDefinition query)
 		{
@@ -187,6 +190,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			_parent = parent;
 			setPolicy(_parent._parent._c.getPolicy());
 			_q = query;
+			if (_q instanceof QueryDefinitionImpl)
+				_qdef = ((QueryDefinitionImpl)_q).getQueryDef();
 		}
 
 		public boolean exists()
@@ -196,12 +201,36 @@ public class QueryWebdavProvider implements WebdavService.Provider
 
 		public long getCreated()
 		{
-			return 0;	// TODO
+			if (_qdef != null && _qdef.getCreated() != null)
+				return _qdef.getCreated().getTime();
+
+			return 0;
 		}
 
 		public long getLastModified()
 		{
-			return 0;	// TODO
+			if (_qdef != null && _qdef.getModified() != null)
+				return _qdef.getModified().getTime();
+
+			return 0;
+		}
+
+		@Override
+		public User getCreatedBy()
+		{
+			if (_qdef != null)
+				return UserManager.getUser(_qdef.getCreatedBy());
+
+			return null;
+		}
+
+		@Override
+		public User getModifiedBy()
+		{
+			if (_qdef != null)
+				return UserManager.getUser(_qdef.getModifiedBy());
+
+			return null;
 		}
 
 		@Override
