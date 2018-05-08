@@ -107,6 +107,7 @@ public interface SearchService
         identifiersMed("identifiersMed"),
         identifiersHi("identifiersHi"),
         categories("searchCategories"),
+        summary("summary"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
@@ -288,7 +289,9 @@ public interface SearchService
 
     WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
-    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, int offset, int limit) throws IOException;
+    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
+
+    @Nullable SearchHit find(String docId) throws IOException;
 
     String escapeTerm(String term);
     

@@ -27,6 +27,7 @@ import org.labkey.api.view.ViewContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,8 +42,20 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     private final String _contentType;
     private final byte[] _body;
     private final URLHelper _executeUrl;
+    private final User _createdBy;
+    private final User _modifiedBy;
+    private final long _created;
+    private final long _modified;
 
     public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, @Nullable String body, URLHelper executeUrl, @Nullable Map<String, Object> properties)
+    {
+        this(path, documentId, containerId, contentType, body, executeUrl, null, null, null, null, properties);
+    }
+
+    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, @Nullable String body, URLHelper executeUrl,
+                                  @Nullable User createdBy, @Nullable Date created,
+                                  @Nullable User modifiedBy, @Nullable Date modified,
+                                  @Nullable Map<String, Object> properties)
     {
         super(path);
         _containerId = containerId;
@@ -50,6 +63,10 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         _contentType = contentType;
         _body = null == body ? new byte[0] : body.getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
         _executeUrl = executeUrl;
+        _createdBy = createdBy;
+        _created = toTime("created", created, properties);
+        _modifiedBy = modifiedBy;
+        _modified = toTime("modified", modified, properties);
         assert !(_executeUrl instanceof ActionURL) || ((ActionURL)executeUrl).getExtraPath().equals(_containerId);
         if (null != properties)
             _properties = new HashMap<>(properties);
@@ -58,6 +75,24 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     public SimpleDocumentResource(Path path, String documentId, String contentType, @Nullable String body, ActionURL executeUrl, @Nullable Map<String, Object> properties)
     {
         this(path, documentId, executeUrl.getExtraPath(), contentType, body, executeUrl, properties);
+    }
+
+    private static long toTime(String fieldName, @Nullable Date d, @Nullable Map<String, Object> properties)
+    {
+        if (d != null)
+            return d.getTime();
+
+        if (properties != null)
+        {
+            Object o = properties.get(fieldName);
+            if (o instanceof Date)
+                return ((Date)o).getTime();
+
+            if (o instanceof Number)
+                return ((Number)o).longValue();
+        }
+
+        return Long.MIN_VALUE;
     }
 
     @Override
@@ -102,5 +137,29 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     public String getExecuteHref(ViewContext context)
     {
         return _executeUrl.getLocalURIString();
+    }
+
+    @Override
+    public long getCreated()
+    {
+        return _created;
+    }
+
+    @Override
+    public User getCreatedBy()
+    {
+        return _createdBy;
+    }
+
+    @Override
+    public long getLastModified()
+    {
+        return _modified;
+    }
+
+    @Override
+    public User getModifiedBy()
+    {
+        return _modifiedBy;
     }
 }
