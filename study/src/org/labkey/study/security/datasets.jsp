@@ -46,6 +46,11 @@
         else
             return g.getName();
     }
+
+    String getTooltip(Dataset ds, Group group)
+    {
+        return "Dataset: " + ds.getLabel() + ", " + "Group: " + groupName(group);
+    }
 %>
 <%
     Pair<StudyImpl, ActionURL> pair = ((HttpView<Pair<StudyImpl, ActionURL>>) HttpView.currentView()).getModelBean();
@@ -140,13 +145,22 @@ else
     <%
             }
 %>group's access to each dataset is controlled by the drop-down list in each cell.
+<style type="text/css">
+    table.table {
+        width: auto !important;
+    }
+
+    td.dataset-permission {
+        padding: 5px 5px 0 5px !important;
+    }
+</style>
 <labkey:form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
 <%
     if (returnUrl != null)
         out.write("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
 
     int row = 0;
-    %><br/><table class="labkey-data-region-legacy labkey-show-borders" id="datasetSecurityFormTable"><colgroup>
+    %><br/><table class="table table-striped table-bordered table-hover" id="datasetSecurityFormTable"><colgroup>
     <%
     for (int i = 0; i < restrictedGroups.size() + 1; i++)
     {
@@ -180,7 +194,7 @@ else
     <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
-        %><td style="padding: 0 5px 0 5px; text-align: left"><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
+        %><td class="dataset-permission" data-toggle="tooltip" title='Set all values in column'><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
             <option value="" selected>&lt;set all to...&gt;</option>
             <option value="None">None</option>
             <option value="Read">Read</option><%
@@ -221,7 +235,7 @@ else
 
             boolean noPerm = !writePerm && !readPerm && assignedRole == null;
             int id = g.getUserId();
-            %><td style="text-align: left;">
+            %><td style="text-align: left;" data-toggle="tooltip" title='<%=h(getTooltip(ds, g))%>'>
                 <select name="<%=h(inputName)%>">
                     <option value="<%=id%>_NONE"<%=selected(noPerm)%>>None</option>
                     <option value="<%=id%>_<%= h(ReaderRole.class.getName()) %>"<%=selected(readPerm)%>>Read</option><%
