@@ -428,6 +428,7 @@
       <column columnName="Scale"/>
       <column columnName="RedactedText"/>
       <column columnName="MvIndicatorStorageColumnName"/>
+      <column columnName="TextExpression"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">

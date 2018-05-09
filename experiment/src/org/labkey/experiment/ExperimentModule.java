@@ -106,6 +106,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 {
     private static final String SAMPLE_SET_WEB_PART_NAME = "Sample Sets";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
+
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
     public String getName()
@@ -115,7 +116,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 18.11;
+        return 18.12;
     }
 
     @Nullable
