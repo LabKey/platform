@@ -112,7 +112,7 @@
     {
 %>
             <span class="button-icon">
-                <a id="permalink_vis" href="#" title="Permalink Page">
+                <a id="permalink_vis" name="permalink" href="#" title="Permalink Page">
                     <span class="fa fa-link fa-lg" alt="Permalink Page"></span>
                 </a>
             </span>

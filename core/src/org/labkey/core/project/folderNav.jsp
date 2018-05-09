@@ -126,7 +126,7 @@
     </span>
     <% } if (!c.isRoot()) { %>
     <span class="folder-menu-button-icon" style="margin-left: -2px">
-            <a id="permalink_vis" href="#" title="Permalink Page">
+            <a id="permalink_vis" name="permalink" href="#" title="Permalink Page">
                 <span class="fa fa-link" alt="Permalink Page"></span>
             </a>
         </span>

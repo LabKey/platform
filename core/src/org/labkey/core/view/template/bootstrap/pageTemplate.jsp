@@ -17,14 +17,14 @@
 --%>
 <%@ page buffer="none" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.analytics.AnalyticsService" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
-<%@ page import="org.labkey.api.analytics.AnalyticsService" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -107,6 +107,6 @@
 %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
-<a href="<%= me.getPermaLink() %>" id="permalink" style="display: none;"></a>
+<a href="<%= me.getPermaLink() %>" id="permalink" name="permalink" style="display: none;"></a>
 </body>
 </html>
