@@ -196,6 +196,11 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                         failure : function(response, opts)
                         {
                             waitMask.close();
+
+                            // Force the error message to be displayed even on communication failure or timeout
+                            if (response.status === 0)
+                                response.status = "Request timeout or communication failure.";
+
                             LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                         }
                     });
