@@ -442,9 +442,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
                 public @NotNull Map<String, Object> toMap(PropertyDescriptor bean, @Nullable Map<String, Object> m)
                 {
                     m = super.toMap(bean, m);
-                    Object o = m.get("URL");
-                    if (o instanceof StringExpression)
-                        m.put("URL", o.toString());
+                    Object url = m.get("URL");
+                    if (url instanceof StringExpression)
+                        m.put("URL", url.toString());
+
+                    Object textExpr = m.get("textExpression");
+                    if (textExpr instanceof StringExpression)
+                        m.put("textExpression", textExpr.toString());
                     return m;
                 }
             }
