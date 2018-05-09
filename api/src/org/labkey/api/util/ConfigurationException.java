@@ -63,7 +63,7 @@ public class ConfigurationException extends MinorConfigurationException implemen
 
     public String getMessageHtml()
     {
-        return "<b style=\"color:red;\" class=\"exception-message\">" + getMessage() + (null != _advice ? " " + _advice : "") + "</b><br><br>This is a problem with your configuration.  Please contact your local server administrator for assistance, or <a href=\"http://www.labkey.com\">LabKey</a> at <a href=\"mailto:support@labkey.com\">support@labkey.com</a> for operational assistance with correcting the configuration error.<br><br>";
+        return "<b style=\"color:red;\" class=\"exception-message\">" + getMessage() + (null != _advice ? " " + _advice : "") + "</b><br><br>There is a problem with your configuration. Please <strong>contact your organization's server administrator</strong> for assistance or <a href=\"https://www.labkey.org/home/Support/Product%20Support/project-begin.view\" target=\"_blank\">visit the LabKey Support Portal</a> to view additional support options.<br><br>";
     }
 
     public String getHeading(boolean startup)
