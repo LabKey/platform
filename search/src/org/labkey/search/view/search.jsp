@@ -452,12 +452,12 @@
                     <a href="<%=h(href)%>"><%=h(hit.title)%></a>
                 </h4>
                 <div class="labkey-search-content">
+                    <div>
                     <%
                         NavTree nav = getDocumentContext(documentContainer, hit);
                         if (null != nav)
                         {
                     %>
-                    <div>
                         <a class="labkey-search-cite" href="<%=h(nav.getHref())%>"><%=h(nav.getText())%></a>
                         <%
                             if (!nav.getHref().equals(documentContainer.getStartURL(user).toString()))
@@ -465,19 +465,21 @@
                         %>
                         in <a class="labkey-search-cite" href="<%=h(documentContainer.getStartURL(user))%>"><%=h(documentContainer.getPath())%></a>
                         <% } %>
-                    </div>
                     <%
                         }
 
                         if (!StringUtils.isEmpty(hit.navtrail))
                         {
                     %>&nbsp;<%=text(formatNavTrail(parseNavTrail(hit.navtrail)))%><%
-                    }
-                    Collection<NavTree> actions = getActions(hit);
-                    if (null != actions && !actions.isEmpty())
-                    {
-                %>&nbsp;<%=text(formatNavTrail(actions))%><%
-                    }
+                        }
+                        Collection<NavTree> actions = getActions(hit);
+                        if (null != actions && !actions.isEmpty())
+                        {
+                    %>&nbsp;<%=text(formatNavTrail(actions))%><%
+                        }
+                    %>
+                    </div>
+                    <%
 
                     HttpView summaryView = ss.getCustomSearchResult(user, hit.docid);
                     if (null != summaryView)

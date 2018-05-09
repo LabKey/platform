@@ -62,12 +62,7 @@ public abstract class SearchTest extends StudyBaseTest
     private static final String ISSUE_TITLE = "Sedimentary";
     private static final String ISSUE_BODY = "Igneous";
 
-    private static final String MESSAGE_TITLE = "King";
-    private static final String MESSAGE_BODY = "Queen";
-
     private String FOLDER_NAME = FOLDER_A;
-    private static final String GRID_VIEW_NAME = "DRT Eligibility Query";
-    private static final String REPORT_NAME = "TestReport";
 
     private PortalHelper portalHelper = new PortalHelper(this);
 
@@ -125,10 +120,8 @@ public abstract class SearchTest extends StudyBaseTest
         addSearchableStudy(); // Must come first;  Creates project.
         addSearchableLists();
         addSearchableContainers();
-        //addSearchableReports(); // Reports not currently indexed.
         addSearchableWiki();
         addSearchableIssues();
-        //addSearchableMessages();
         addSearchableFiles();
     }
 
@@ -256,51 +249,6 @@ public abstract class SearchTest extends StudyBaseTest
     }
 
     @LogMethod
-    private void addSearchableReports()
-    {
-        clickFolder(FOLDER_A);
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-
-        _extHelper.clickMenuButton("Views", "Create", "Crosstab View");
-        selectOptionByValue(Locator.name("rowField"),  "DEMsex");
-        selectOptionByValue(Locator.name("colField"), "DEMsexor");
-        selectOptionByValue(Locator.name("statField"), "MouseId");
-        clickButton("Submit");
-
-        String[] row3 = new String[] {"Male", "2", "9", "3", "14"};
-        assertTableRowsEqual("report", 3, new String[][] {row3});
-
-        setFormElement(Locator.name("label"), REPORT_NAME);
-        clickButton("Save");
-
-        // create new grid view report:
-        goToManageViews();
-        _extHelper.clickExtMenuButton(false, Locator.linkContainingText("Add Report"), "Grid View");
-        setFormElement(Locator.id("label"), GRID_VIEW_NAME);
-        selectOptionByText(Locator.name("params"), "ECI-1 (ECI-1: Eligibility Criteria)");
-        clickButton("Create View");
-
-        // create new external report
-        clickFolder(FOLDER_A);
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickMenuButton("Views", "Create", "Advanced View");
-        selectOptionByText(Locator.name("queryName"), "DEM-1 (DEM-1: Demographics)");
-        String java = System.getProperty("java.home") + "/bin/java";
-        setFormElement(Locator.name("program"), java);
-        setFormElement(Locator.name("arguments"), "-cp " + new File(TestFileUtils.getTestBuildDir(), "classes") + " org.labkey.test.util.Echo ${DATA_FILE} ${REPORT_FILE}");
-        clickButton("Submit");
-        assertTextPresent("Female");
-        setFormElement(Locator.name("program"), java);
-        setFormElement(Locator.name("arguments"), "-cp " + new File(TestFileUtils.getTestBuildDir(), "classes") + " org.labkey.test.util.Echo ${DATA_FILE}");
-        selectOptionByValue(Locator.name("fileExtension"), "tsv");
-        clickButton("Submit");
-        assertTextPresent("Female");
-        setFormElement(Locator.name("label"), "tsv");
-        selectOptionByText(Locator.name("showWithDataset"), "DEM-1: Demographics");
-        clickButton("Save");
-    }
-
-    @LogMethod
     private void addSearchableWiki()
     {
         WikiHelper _wikiHelper = new WikiHelper(this);
@@ -358,24 +306,6 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem("UFO", Locator.linkContainingText(ISSUE_TITLE));
         // TODO: 9583: Index issue attachments
         //_searchHelper.enqueueSearchItem("Background", Locator.linkWithText(String.format("\"%s\" attached to issue \"%s\"", file.getName(), ISSUE_TITLE))); // some text from attached file
-    }
-
-    @LogMethod
-    private void addSearchableMessages()
-    {
-        clickFolder(getFolderName());
-        portalHelper.addWebPart("Messages");
-        portalHelper.clickWebpartMenuItem("Messages", "New");
-        setFormElement(Locator.name("title"), MESSAGE_TITLE);
-        setFormElement(Locator.id("body"), MESSAGE_BODY);
-        click(Locator.linkWithText("Attach a file"));
-        File file = TestFileUtils.getSampleData("dataloading/excel/fruits.tsv");
-        setFormElement(Locator.name("formFiles[0]"), file);
-        clickButton("Submit");
-
-        _searchHelper.enqueueSearchItem(MESSAGE_TITLE, Locator.linkContainingText(MESSAGE_TITLE));
-        _searchHelper.enqueueSearchItem(MESSAGE_BODY, Locator.linkContainingText(MESSAGE_TITLE));
-        _searchHelper.enqueueSearchItem("persimmon", Locator.linkContainingText("\"fruits.tsv\" attached to message \"" + MESSAGE_TITLE + "\"")); // some text from attached file
     }
 
     @LogMethod
