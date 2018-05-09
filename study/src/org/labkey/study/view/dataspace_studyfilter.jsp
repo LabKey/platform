@@ -79,9 +79,15 @@
 <% } else if (studies.size() == 0) { %>
     <div>All studies</div>
 <% } else { %>
+    <% int count = 1; %>
     Studies:<ul style="list-style-type:none;padding-left:1em;margin:4px;">
     <% for (Study s : studies) { %>
-        <li data-container="<%=s.getContainer().getEntityId()%>"><%=h(s.getLabel())%></li>
+        <% if (studies.size() != count) { %>
+            <span data-container="<%=s.getContainer().getEntityId()%>"><%=h(s.getLabel())%>,&nbsp;</span>
+        <% } else { %>
+            <span data-container="<%=s.getContainer().getEntityId()%>"><%=h(s.getLabel())%></span>
+        <% } %>
+        <% count++; %>
     <% } %>
     </ul>
 <% } %>
