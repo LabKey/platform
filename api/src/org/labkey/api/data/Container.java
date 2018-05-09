@@ -742,7 +742,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // Check for illegal project names
     public static boolean isLegalProjectName(String name)
     {
-        return !ILLEGAL_PROJECT_NAMES.contains(name);
+        return !ILLEGAL_PROJECT_NAMES.contains(name) &&
+                !name.matches("__r\\d+"); // Used by permalinks to alias containers by rowId
     }
 
     public static boolean isLegalTitle(String name, StringBuilder error)
