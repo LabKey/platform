@@ -18,9 +18,9 @@ package org.labkey.test.tests.study;
 
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
-import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
 
@@ -225,9 +225,10 @@ public abstract class StudyManualTest extends StudyTest
         click(Locator.radioButtonById("button_dataField"));
 
         _listHelper.addField("Dataset Fields", "otherData", "Other Data", ListHelper.ListColumnType.String);
-        click(Locator.xpath("//span[contains(@class,'x-tab-strip-text') and text()='Advanced']"));
-        waitForElement(Locator.id("importAliases"), WAIT_FOR_JAVASCRIPT);
-        setFormElement(Locator.id("importAliases"), "aliasedColumn");
+        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
+        PropertiesEditor.FieldRow row = editor.selectField("otherData");
+        PropertiesEditor.FieldPropertyDock.AdvancedTabPane tabPane = row.properties().selectAdvancedTab();
+        tabPane.importAliasesInput.set("aliasedColumn");
 
         editDatasetPage
                 .save()

@@ -639,10 +639,8 @@ public class StudyExportTest extends StudyManualTest
 
         waitForElement(Locator.xpath("//span[@id='button_Import']"), WAIT_FOR_JAVASCRIPT);
 
-        Locator.XPathLocator mouseId = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='MouseId:']/../div/div");
-        _extHelper.selectGWTComboBoxItem(mouseId, "name");
-        Locator.XPathLocator sequenceNum = Locator.xpath("//label[contains(@class, 'x-form-item-label') and text() ='Sequence Num:']/../div/div");
-        _extHelper.selectGWTComboBoxItem(sequenceNum, "visit number");
+        selectOptionByValue(Locator.gwtListBoxByLabel("MouseId:"), "name");
+        selectOptionByValue(Locator.gwtListBoxByLabel("Sequence Num:"), "visit number");
 
         clickButton("Import", defaultWaitForPage);
         waitForElement(Locator.paginationText(9));

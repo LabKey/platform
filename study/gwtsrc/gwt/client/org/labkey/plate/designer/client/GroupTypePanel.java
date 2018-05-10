@@ -16,17 +16,15 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
-import com.extjs.gxt.ui.client.event.ComponentEvent;
-import com.extjs.gxt.ui.client.event.KeyListener;
-import com.extjs.gxt.ui.client.event.SelectionChangedEvent;
-import com.extjs.gxt.ui.client.event.SelectionChangedListener;
-import com.extjs.gxt.ui.client.widget.form.ComboBox;
-import com.extjs.gxt.ui.client.widget.form.Field;
-import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
-import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
+import com.google.gwt.event.dom.client.KeyDownEvent;
+import com.google.gwt.event.dom.client.KeyDownHandler;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.IncrementalCommand;
 import com.google.gwt.user.client.Window;
@@ -35,6 +33,11 @@ import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ScrollPanel;
+import com.sencha.gxt.cell.core.client.form.ComboBoxCell;
+import com.sencha.gxt.data.shared.StringLabelProvider;
+import com.sencha.gxt.widget.core.client.form.Field;
+import com.sencha.gxt.widget.core.client.form.SimpleComboBox;
+import com.sencha.gxt.widget.core.client.form.TextField;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.ImageButton;
@@ -86,32 +89,28 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             groupList.setWidget(0, 1, new Label("No groups defined."));
         add(groupList);
 
-        KeyListener fieldKeyListener = new KeyListener(){
-
+        KeyDownHandler fieldKeyDownListener = new KeyDownHandler()
+        {
             @Override
-            public void componentKeyDown(ComponentEvent event)
+            public void onKeyDown(KeyDownEvent event)
             {
-                if (event.getKeyCode() == KeyCodes.KEY_ENTER)
+                if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER)
                 {
-                    _view.createWellGroup(_newGroupField.getRawValue(), _type);
+                    // we might want to remove this capability (create wellgroup using keyboard ENTER), the later
+                    // versions of GWT don't allow access to the raw value and the current behavior is components
+                    // don't update their value until a blur event
+                    _view.createWellGroup(String.valueOf(_newGroupField.getValue()), _type);
                 }
-                super.componentKeyDown(event);
             }
+        };
 
+        KeyUpHandler fieldKeyUpListener = new KeyUpHandler()
+        {
             @Override
-            public void componentKeyUp(ComponentEvent event)
+            public void onKeyUp(KeyUpEvent event)
             {
-                Field cmp = event.getComponent();
-                if (cmp != null)
-                {
-                    String value = cmp.getRawValue();
-
-                    boolean enable = (value.length() > 0);
-
-                    _createButton.setEnabled(enable);
-                    _multiCreateButton.setEnabled(enable);
-                }
-                super.componentKeyUp(event);
+                _createButton.setEnabled(true);
+                _multiCreateButton.setEnabled(true);
             }
         };
 
@@ -124,8 +123,9 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             final TextField textField = new TextField();
 
             textField.setEmptyText(NEW_GROUP_DEFAULT_TEXT);
-            textField.enableEvents(true);
-            textField.addKeyListener(fieldKeyListener);
+            textField.enableEvents();
+            textField.addKeyDownHandler(fieldKeyDownListener);
+            textField.addKeyUpHandler(fieldKeyUpListener);
 
             _newGroupField = textField;
         }
@@ -133,17 +133,19 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         {
             List<String> defaults = typeToGroupMap.get(_type);
 
-            final SimpleComboBox selector = new SimpleComboBox<String>();
+            final SimpleComboBox selector = new SimpleComboBox(new StringLabelProvider());
 
             selector.setEmptyText(NEW_GROUP_DEFAULT_TEXT);
-            selector.enableEvents(true);
-            selector.setTriggerAction(ComboBox.TriggerAction.ALL);
-            selector.addKeyListener(fieldKeyListener);
-            selector.addSelectionChangedListener(new SelectionChangedListener(){
+            selector.enableEvents();
+            selector.setTriggerAction(ComboBoxCell.TriggerAction.ALL);
+            selector.addKeyDownHandler(fieldKeyDownListener);
+            selector.addKeyUpHandler(fieldKeyUpListener);
+            selector.addSelectionHandler(new SelectionHandler()
+            {
                 @Override
-                public void selectionChanged(SelectionChangedEvent event)
+                public void onSelection(SelectionEvent event)
                 {
-                    String value = selector.getRawValue();
+                    String value = String.valueOf(event.getSelectedItem());
 
                     boolean enable = (value.length() > 0);
 
@@ -164,7 +166,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         {
             public void onClick(ClickEvent event)
             {
-                _view.createWellGroup(_newGroupField.getRawValue(), _type);
+                _view.createWellGroup(String.valueOf(_newGroupField.getValue()), _type);
             }
         });
 
@@ -173,7 +175,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         {
             public void onClick(ClickEvent event)
             {
-                String defaultBaseName = _newGroupField.getRawValue();
+                String defaultBaseName = String.valueOf(_newGroupField.getValue());
                 if (NEW_GROUP_DEFAULT_TEXT.equals(defaultBaseName))
                     defaultBaseName = "";
 

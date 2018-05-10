@@ -27,8 +27,10 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
+import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -863,11 +865,11 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("StudyDesign Extensible Tables: adding custom fields");
         // add custom fields to all the extensible tables
-        addCustomField("Treatment", "cust_treatment", ListHelper.ListColumnType.String);
-        addCustomField("TreatmentProductMap", "cust_map", ListHelper.ListColumnType.Integer);
-        addCustomField("Product", "cust_product", ListHelper.ListColumnType.DateTime);
-        addCustomField("ProductAntigen", "cust_antigen", ListHelper.ListColumnType.Double);
-        addCustomField("Personnel", "cust_personnel", ListHelper.ListColumnType.MultiLine);
+        addCustomField("Treatment", "cust_treatment", FieldDefinition.ColumnType.String);
+        addCustomField("TreatmentProductMap", "cust_map", FieldDefinition.ColumnType.Integer);
+        addCustomField("Product", "cust_product", FieldDefinition.ColumnType.DateTime);
+        addCustomField("ProductAntigen", "cust_antigen", FieldDefinition.ColumnType.Double);
+        addCustomField("Personnel", "cust_personnel", FieldDefinition.ColumnType.MultiLine);
 
         // add data and export
         Map<String, List<Map>> tableData = new LinkedHashMap<>();
@@ -930,7 +932,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         verifyTableData(tableData, FOLDER_NAME, null);
     }
 
-    private void addCustomField(String tableName, String fieldName, ListHelper.ListColumnType type)
+    private void addCustomField(String tableName, String fieldName, FieldDefinition.ColumnType type)
     {
         goToSchemaBrowser();
         selectQuery("study", tableName);
@@ -938,10 +940,9 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("Edit Definition"));
         waitForText("No fields have been defined.");
 
-        clickButton("Add Field", 0);
-
-        _listHelper.setColumnName(0, fieldName);
-        _listHelper.setColumnType(0, type);
+        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Field Properties").find();
+        editor.addField(new FieldDefinition(fieldName)
+            .setType(type));
         clickButton("Save", WAIT_FOR_JAVASCRIPT);
 
         // update the default view to contain the custom column
@@ -1099,21 +1100,17 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Edit Additional Properties"));
         waitForText("No fields have been defined.");
 
-        clickButton("Add Field", 0);
-        _listHelper.setColumnName(0, "cust_string");
-        _listHelper.setColumnType(0, ListHelper.ListColumnType.String);
-        clickButton("Add Field", 0);
-        _listHelper.setColumnName(1, "cust_integer");
-        _listHelper.setColumnType(1, ListHelper.ListColumnType.Integer);
-        clickButton("Add Field", 0);
-        _listHelper.setColumnName(2, "cust_dateTime");
-        _listHelper.setColumnType(2, ListHelper.ListColumnType.DateTime);
-        clickButton("Add Field", 0);
-        _listHelper.setColumnName(3, "cust_double");
-        _listHelper.setColumnType(3, ListHelper.ListColumnType.Double);
-        clickButton("Add Field", 0);
-        _listHelper.setColumnName(4, "cust_multiline");
-        _listHelper.setColumnType(4, ListHelper.ListColumnType.MultiLine);
+        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Field Properties").find();
+        editor.addField(new FieldDefinition("cust_string")
+            .setType(FieldDefinition.ColumnType.String));
+        editor.addField(new FieldDefinition("cust_integer")
+                .setType(FieldDefinition.ColumnType.Integer));
+        editor.addField(new FieldDefinition("cust_dateTime")
+                .setType(FieldDefinition.ColumnType.DateTime));
+        editor.addField(new FieldDefinition("cust_double")
+                .setType(FieldDefinition.ColumnType.Double));
+        editor.addField(new FieldDefinition("cust_multiline")
+                .setType(FieldDefinition.ColumnType.MultiLine));
 
         clickButton("Save", WAIT_FOR_JAVASCRIPT);
 

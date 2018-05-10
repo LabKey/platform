@@ -795,7 +795,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     "combination of participant, visit and key. " +
                     "<ul><li>None: No additional key</li>" +
                     "<li>Data Field: A user-managed key field</li>" +
-                    "<li>Managed Field: A numeric or string field defined below will be managed" +
+                    "<li>Managed Field: A numeric or string field defined below will be managed " +
                     "by the server to make each new entry unique. Numbers will be " +
                     "assigned auto-incrementing integer values, strings will be assigned " +
                     "globally unique identifiers (GUIDs).</li>" +

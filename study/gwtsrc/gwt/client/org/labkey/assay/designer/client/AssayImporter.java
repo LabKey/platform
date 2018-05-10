@@ -15,12 +15,6 @@
  */
 package gwt.client.org.labkey.assay.designer.client;
 
-import com.extjs.gxt.ui.client.data.BaseModelData;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.FieldEvent;
-import com.extjs.gxt.ui.client.event.Listener;
-import com.extjs.gxt.ui.client.store.ListStore;
-import com.extjs.gxt.ui.client.widget.form.ComboBox;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -33,6 +27,8 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.sencha.gxt.cell.core.client.form.ComboBoxCell;
+import com.sencha.gxt.widget.core.client.form.SimpleComboBox;
 import gwt.client.org.labkey.study.StudyApplication;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -61,7 +57,7 @@ import java.util.Set;
  * Date: Dec 10, 2010
  * Time: 1:28:17 PM
  */
-public class AssayImporter implements EntryPoint, Listener<FieldEvent>
+public class AssayImporter implements EntryPoint
 {
     private AssayDomainImporter _domainImporter;
     private String _path;
@@ -183,32 +179,31 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
                         "a spreadsheet or text file. If you want to define other custom columns check this box and the advanced " +
                         "assay designer will be displayed after the next button is clicked."));
 
-                ListStore<AssayLocation> store = new ListStore<AssayLocation>();
                 AssayLocation defaultLocation = null;
+                SimpleComboBox<AssayLocation> combo = new SimpleComboBox<AssayLocation>(item -> item.getLabel());
 
+                combo.setEditable(false);
+                combo.setEmptyText("No location");
+                combo.setWidth(250);
                 for (Map<String, String> location : locations)
                 {
                     AssayLocation aLoc = new AssayLocation(location.get("id"), location.get("label"));
-                    store.add(aLoc);
+                    combo.add(aLoc);
                     if (Boolean.parseBoolean(location.get("default")))
                         defaultLocation = aLoc;
                 }
 
-                ComboBox<AssayLocation> combo = new ComboBox<AssayLocation>();
-
-                combo.setStore(store);
-                combo.setEditable(false);
-                combo.setEmptyText("No location");
-                combo.setDisplayField("label");
-                combo.setValueField("id");
-                combo.setWidth(250);
                 if (defaultLocation != null)
                 {
                     _containerId = defaultLocation.getId();
                     combo.setValue(defaultLocation);
                 }
-                combo.setTriggerAction(ComboBox.TriggerAction.ALL);
-                combo.addListener(Events.Change, AssayImporter.this);
+                combo.setTriggerAction(ComboBoxCell.TriggerAction.ALL);
+                combo.addValueChangeHandler(event -> {
+                    AssayLocation value = event.getValue();
+                    if (value != null)
+                        _containerId = value.getId();
+                });
 
                 FlowPanel locationPanel = new FlowPanel();
                 locationPanel.add(new InlineHTML("Location&nbsp;"));
@@ -368,16 +363,6 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
             navigate(cancelURL);
     }
 
-    public void handleEvent(FieldEvent fieldEvent)
-    {
-        if (fieldEvent != null)
-        {
-            AssayLocation value = (AssayLocation)fieldEvent.getValue();
-            if (value != null)
-                _containerId = value.getId();
-        }
-    }
-
     public static native void navigate(String url) /*-{
         $wnd.location.href = url;
     }-*/;
@@ -387,8 +372,10 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
         $wnd.history.back();
     }-*/;
 
-    public static class AssayLocation extends BaseModelData
+    public static class AssayLocation //extends BaseModelData
     {
+        private String _id;
+        private String _label;
         public AssayLocation(String id, String label)
         {
             setId(id);
@@ -397,22 +384,22 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
 
         public String getLabel()
         {
-            return get("label");
+            return _label;
         }
 
         public void setLabel(String label)
         {
-            set("label", label);
+            _label = label;
         }
 
         public String getId()
         {
-            return get("id");
+            return _id;
         }
 
         public void setId(String id)
         {
-            set("id", id);
+            _id = id;
         }
     }
 

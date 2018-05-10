@@ -30,6 +30,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
@@ -784,9 +785,11 @@ public class StudyTest extends StudyBaseTest
         checkCheckbox(Locator.xpath("//input[@name='demographicData']"));
 
         // add a comment field
-        _listHelper.setColumnName(0, COMMENT_FIELD_NAME);
-        _listHelper.setColumnLabel(0, PARTICIPANT_COMMENT_LABEL);
-        _listHelper.setColumnType(0, ListHelper.ListColumnType.MultiLine);
+        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
+        PropertiesEditor.FieldRow row = editor.selectField(0);
+        row.setName(COMMENT_FIELD_NAME);
+        row.setLabel(PARTICIPANT_COMMENT_LABEL);
+        row.setType(null, FieldDefinition.ColumnType.MultiLine);
         clickButton("Save");
 
         if(isVisitBased)
@@ -800,9 +803,11 @@ public class StudyTest extends StudyBaseTest
             waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
 
             // add a comment field
-            _listHelper.setColumnName(0, COMMENT_FIELD_NAME);
-            _listHelper.setColumnLabel(0, PARTICIPANT_VISIT_COMMENT_LABEL);
-            _listHelper.setColumnType(0, ListHelper.ListColumnType.MultiLine);
+            editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
+            row = editor.selectField(0);
+            row.setName(COMMENT_FIELD_NAME);
+            row.setLabel(PARTICIPANT_VISIT_COMMENT_LABEL);
+            row.setType(null, FieldDefinition.ColumnType.MultiLine);
             clickButton("Save");
         }
         log("configure comments");
@@ -1186,7 +1191,8 @@ public class StudyTest extends StudyBaseTest
         editDatasetPage
                 .getFieldsEditor()
                 .addField(new FieldDefinition("VisitDay").setLabel("VisitDay").setType(FieldDefinition.ColumnType.Integer));
-        Locator element3 = Locator.gwtListBoxByLabel("Visit Date Column");
+        Locator element3 = Locator.tagWithClass("select", "gwt-ListBox").withPredicate(Locator.xpath("../preceding-sibling::td/table/tbody/tr/td/div").withText("Visit Date Column"));
+
         selectOptionByValue(element3, "DEMdt");
 
         editDatasetPage
