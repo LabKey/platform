@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -39,7 +40,10 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
+import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbooksTableInfo;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +88,16 @@ public class CoreQuerySchema extends UserSchema
     {
         super(NAME, SCHEMA_DESCR, user, c, CoreSchema.getInstance().getSchema());
         _mustCheckPermissions = mustCheckPermissions;
+    }
+
+    @Override
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    {
+        if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
+        {
+            return new WorkbookQueryView(context, this);
+        }
+        return super.createView(context, settings, errors);
     }
 
     public Set<String> getTableNames()
