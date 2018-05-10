@@ -1989,7 +1989,12 @@ public class PageFlowUtil
         boolean modified = false;
         try
         {
-            Document document = loadXMLFromString(html);
+            // wrap content with a temp root node to avoid illegal xml parsing error
+            String rootTag = "tag" + GUID.makeGUID();
+            String startRootTag = "<" + rootTag + ">";
+            String endRootTag = "</" + rootTag + ">";
+            String wrappedHtml = startRootTag + html + endRootTag;
+            Document document = loadXMLFromString(wrappedHtml);
             NodeList hrefs = document.getElementsByTagName("a");
             for(int hrefIndex = 0; hrefIndex < hrefs.getLength(); hrefIndex++)
             {
@@ -2008,8 +2013,13 @@ public class PageFlowUtil
             if (!modified)
                 return html;
             String xhtml = documentToString(document);
-            if (xhtml != null && xhtml.startsWith(XML_ENCODING_DECLARATION) && !html.trim().startsWith(XML_ENCODING_DECLARATION))
-                xhtml = xhtml.substring(XML_ENCODING_DECLARATION.length());
+            if (xhtml != null)
+            {
+                if (xhtml.startsWith(XML_ENCODING_DECLARATION))
+                    xhtml = xhtml.substring(XML_ENCODING_DECLARATION.length());
+                xhtml = xhtml.replace(startRootTag, "").replace(endRootTag, "");
+            }
+
             return xhtml;
         }
         catch (Exception e)
@@ -2036,7 +2046,7 @@ public class PageFlowUtil
         return null;
     }
 
-    public static Document loadXMLFromString(String xml) throws Exception
+    private static Document loadXMLFromString(String xml) throws Exception
     {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
