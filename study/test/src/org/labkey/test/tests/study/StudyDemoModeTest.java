@@ -22,6 +22,7 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Crawler;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -112,7 +113,7 @@ public class StudyDemoModeTest extends StudyBaseTest
         private DemoModeCrawler(StudyDemoModeTest test)
         {
             // Crawl for max five minutes... which is way more than we currently need.
-            super(test, 300000);
+            super(test, Duration.ofMinutes(5));
         }
 
         @Override
